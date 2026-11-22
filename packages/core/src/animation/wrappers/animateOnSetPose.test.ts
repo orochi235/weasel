@@ -162,6 +162,22 @@ describe('animateOnSetPose', () => {
     expect(setPose).toHaveBeenCalledWith('a', { x: 7, y: 0, width: 10, height: 10 });
     expect(applyOps).not.toHaveBeenCalled();
   });
+  it('ends a running glide when a gesture write passes straight through, and that pose stands', () => {
+    const clock = makeClock();
+    const initial = new Map<string, RectPose>([['a', { x: 0, y: 0, width: 10, height: 10 }]]);
+    const { base } = makeAdapter(initial);
+    const { result } = renderHook(() => useAnimator(clock));
+    const scope = new Set<string>();
+    const wrapped = animateOnSetPose(base, result.current, { ms: 100, skipDuringGesture: true, gestureScope: scope });
+    act(() => { wrapped.setPose('a', { x: 100, y: 0, width: 10, height: 10 }); });
+    act(() => clock.advance(0));
+    act(() => clock.advance(30));
+    scope.add('a');
+    act(() => { wrapped.setPose('a', { x: -50, y: 0, width: 10, height: 10 }); });
+    act(() => clock.advance(30));
+    act(() => clock.advance(100));
+    expect(initial.get('a')!.x).toBe(-50);
+  });
 });
 
 describe('animateOnSetPose under prefers-reduced-motion', () => {

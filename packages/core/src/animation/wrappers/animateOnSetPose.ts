@@ -41,7 +41,8 @@ export interface AnimateOnSetPoseOptions<TPose> {
  * holds the pose on screen, and takes the written one as the glide ends. Writing a node again while it glides
  * bends the glide toward the new pose, or under `spring` carries its velocity
  * into the new one. Over an adapter with no `poseTarget`, a second write ends
- * the glide: the new pose is written at once and stands.
+ * the glide, and so does a write passed straight through for a node under a gesture
+ * or refused by `shouldAnimate`: the new pose is written at once and stands.
  */
 export function animateOnSetPose<TPose, A extends PoseAnimationAdapter<TPose> = PoseAnimationAdapter<TPose>>(
   adapter: A & PoseAnimationAdapter<TPose>,
@@ -59,7 +60,14 @@ export function animateOnSetPose<TPose, A extends PoseAnimationAdapter<TPose> = 
     ...instantPoseWrite(adapter),
     setPose(id: string, pose: TPose): void {
       const from = adapter.getPose(id);
+      // Without a pose target a second glide would fight the first, so the write ends it.
+      const endGlide = (): boolean => {
+        if (adapter.poseTarget?.(id, opts.geometry) || !animator.isActive(poseKey(id))) return false;
+        animator.cancelKey(poseKey(id));
+        return true;
+      };
       if (skipPredicate(id, from, pose)) {
+        endGlide();
         adapter.setPose(id, pose);
         return;
       }
@@ -70,9 +78,7 @@ export function animateOnSetPose<TPose, A extends PoseAnimationAdapter<TPose> = 
         adapter.setPose(id, pose);
         return;
       }
-      // Without a pose target a second glide would fight the first, so the write ends it.
-      if (!adapter.poseTarget?.(id, opts.geometry) && animator.isActive(poseKey(id))) {
-        animator.cancelKey(poseKey(id));
+      if (endGlide()) {
         adapter.setPose(id, pose);
         return;
       }
