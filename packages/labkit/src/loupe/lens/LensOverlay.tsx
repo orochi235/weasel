@@ -278,6 +278,8 @@ export function LensOverlay<C>({
   const attachLayer = useLensShapes(scene, redraw, setLayer);
 
   useSyncExternalStore(scene.subscribe, scene.getVersion);
+  // A Follow reticle moves through the scene's overrides, which bump no version.
+  useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
   const view = useSyncExternalStore(attachment.subscribe, attachment.view);
   useEffect(() => attachment.subscribe(redraw), [attachment, redraw]);
   const selection = scene.getSelection();

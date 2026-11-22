@@ -1,6 +1,6 @@
 import { useLatest } from '@weasel-js/react';
 import { KeymapHint } from '@weasel-js/ui/components/KeymapHint';
-import { useMemo, useReducer, useState, useSyncExternalStore } from 'react';
+import { useMemo, useReducer, useState } from 'react';
 import type { LabContribution } from '../../chrome/labTypes';
 import { createCloneSource } from './cloneSource';
 import { LensActions } from './LensActions';
@@ -32,8 +32,6 @@ export function LabLoupe() {
     createLensApi(scene, { body: bodyRef, frame: frameRef, pointer, focus, sources: sourcesRef }),
   );
   const [, rerender] = useReducer((n: number) => n + 1, 0);
-  // A Follow reticle moves through the scene's overrides, which bump no version; the lenses re-read it on a render.
-  useSyncExternalStore(scene.overrides.subscribe, scene.overrides.getGeneration);
   const remeasured = useMemo(() => [live], [live]);
   useLensRemeasure(remeasured, body, rerender);
 
