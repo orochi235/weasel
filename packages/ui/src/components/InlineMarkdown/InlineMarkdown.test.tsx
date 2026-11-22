@@ -70,6 +70,13 @@ describe('InlineMarkdown', () => {
     expect(c.querySelector('code, em')).toBeNull();
     expect(c.textContent).toBe('a literal `tick` and *star*');
   });
+
+  it('opens a same-page fragment link in place, and any other link in a new tab', () => {
+    const fragment = html('see [below](#options)').querySelector('a');
+    expect(fragment?.getAttribute('href')).toBe('#options');
+    expect(fragment?.hasAttribute('target')).toBe(false);
+    expect(html('see [docs](https://example.com)').querySelector('a')?.getAttribute('target')).toBe('_blank');
+  });
 });
 
 describe('inlineMarkdownText', () => {
