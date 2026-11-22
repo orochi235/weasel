@@ -40,6 +40,19 @@ describe('a derivation memo — what it re-checks of a dependency', () => {
     expect(derivedPose(source, reader)!.x).toBe(7);
   });
 
+  it('re-derives when what a dependency inherits from its container changes', () => {
+    const g: Loose = { id: id('g'), pose: box(0, 0), data: { fill: { paint: '#f00' } } };
+    const a: Loose = { id: id('a'), pose: box(0, 0), data: { fill: 'inherit' }, parent: id('g') };
+    const reader: Loose = {
+      id: id('r'), pose: box(0, 0), data: {}, dependsOn: [id('a')],
+      derivePose: (_n: never, [dep]: Deps) => box(dep!.inherited?.fill == null ? 0 : 1, 0),
+    };
+    const source = sourceOf([g, a, reader]);
+    expect(derivedPose(source, reader)!.x).toBe(1);
+    g.data = { fill: null };
+    expect(derivedPose(source, reader)!.x).toBe(0);
+  });
+
   it('re-derives when a dependency changes layer', () => {
     const a: Loose = { id: id('a'), pose: box(0, 0), data: {}, layer: 'back' };
     const reader: Loose = {
