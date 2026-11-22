@@ -1,22 +1,13 @@
 import type { Action } from '@weasel-js/routing';
-import type { Fill, Paint } from '@weasel-js/paint';
+import type { Fill } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
+import { colorPaintReader, type ColorPaintState } from './colorPaintState';
 import type { PaintParams } from '@weasel-js/core';
 import { paintWithColor, DEFAULT_FILL_COLOR } from '@weasel-js/paint';
 
-/** `setFill`'s gesture state. A `paint` shadows the color until a later color
- *  supersedes it. */
-interface SetFillState {
-  /** May be 6- or 8-char hex. Ignored while `paint` is set. */
-  color: string;
-  /** `null` is None, distinct from `undefined`, which means this gesture
-   *  carries no paint and the color applies. */
-  paint?: Paint | null;
-}
-
 /** Repaint a node's fill, keeping whatever else the fill carries. None is
  *  that record without its `paint`. */
-function repaint(prev: Fill | null | undefined, state: SetFillState): Fill | null {
+function repaint(prev: Fill | null | undefined, state: ColorPaintState): Fill | null {
   if (state.paint === null) {
     if (prev == null) return null;
     const { paint: _dropped, ...rest } = prev;
@@ -36,7 +27,7 @@ function repaint(prev: Fill | null | undefined, state: SetFillState): Fill | nul
  * its own. A `paint` is written verbatim.
  */
 export const setFillAction: Action = createPaintAction<
-  SetFillState,
+  ColorPaintState,
   Fill,
   'fill',
   PaintParams
@@ -44,18 +35,6 @@ export const setFillAction: Action = createPaintAction<
   id: 'setFill',
   label: 'Set fill',
   dataKey: 'fill',
-  initialState: (pick) => ({
-    color: pick('color') ?? DEFAULT_FILL_COLOR,
-    paint: pick('paint'),
-  }),
-  readParams: (prev, params) => {
-    const color = params?.color;
-    const paint = params?.paint;
-    if (color === undefined && paint === undefined) return null;
-    if (color === undefined) return { ...prev, paint };
-    // An explicit color supersedes a paint from an earlier tick; otherwise a
-    // picker drag after a gradient would do nothing.
-    return { color, paint };
-  },
+  ...colorPaintReader(DEFAULT_FILL_COLOR),
   merge: repaint,
 });

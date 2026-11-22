@@ -1,22 +1,14 @@
 import type { Action } from '@weasel-js/routing';
-import type { Paint, Stroke } from '@weasel-js/paint';
+import type { Stroke } from '@weasel-js/paint';
 import { createPaintAction } from './createPaintAction';
+import { colorPaintReader, type ColorPaintState } from './colorPaintState';
 import type { PaintParams } from '@weasel-js/core';
 import { paintWithColor, DEFAULT_STROKE_COLOR } from '@weasel-js/paint';
-
-/** `setStroke`'s gesture state — `setFill`'s, against a stroke. */
-interface SetStrokeState {
-  /** May be 6- or 8-char hex. Ignored while `paint` is set. */
-  color: string;
-  /** `null` is None, distinct from `undefined`, which means this gesture
-   *  carries no paint and the color applies. */
-  paint?: Paint | null;
-}
 
 /** Repaint a node's stroke, keeping its width, cap, join, dash and align, so
  *  picking a paint does not discard the rest of the stroke, and None keeps
  *  them for the next paint. A node with no stroke yet gets a hairline one. */
-function repaint(prev: Stroke | null | undefined, state: SetStrokeState): Stroke | null {
+function repaint(prev: Stroke | null | undefined, state: ColorPaintState): Stroke | null {
   if (state.paint === null) {
     if (prev == null) return null;
     const { paint: _dropped, ...rest } = prev;
@@ -42,7 +34,7 @@ export function strokeUnderPaint(prev: Stroke | null | undefined): Stroke {
  * 8-char color states its own. A `paint` is written verbatim.
  */
 export const setStrokeAction: Action = createPaintAction<
-  SetStrokeState,
+  ColorPaintState,
   Stroke,
   'stroke',
   PaintParams
@@ -50,18 +42,6 @@ export const setStrokeAction: Action = createPaintAction<
   id: 'setStroke',
   label: 'Set stroke',
   dataKey: 'stroke',
-  initialState: (pick) => ({
-    color: pick('color') ?? DEFAULT_STROKE_COLOR,
-    paint: pick('paint'),
-  }),
-  readParams: (prev, params) => {
-    const color = params?.color;
-    const paint = params?.paint;
-    if (color === undefined && paint === undefined) return null;
-    if (color === undefined) return { ...prev, paint };
-    // An explicit color supersedes a paint from an earlier tick; otherwise a
-    // picker drag after a gradient would do nothing.
-    return { color, paint };
-  },
+  ...colorPaintReader(DEFAULT_STROKE_COLOR),
   merge: repaint,
 });

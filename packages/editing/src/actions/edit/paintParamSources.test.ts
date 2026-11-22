@@ -30,4 +30,12 @@ describe("a color paint action's params from the invocation and the binding", ()
   it("setStroke takes the invocation's color over the binding's None", () => {
     expect(run(setStrokeAction, { color: '#ff0000ff' }, { paint: null }).stroke).toEqual(solidStroke('#ff0000ff', 3));
   });
+
+  it('setFill ignores a color that is not a string', () => {
+    expect(run(setFillAction, { color: '#ff0000ff' }, {}, [{ color: null }, { color: 7 }]).fill).toEqual({ paint: solid('#ff0000ff') });
+  });
+
+  it('setStroke ignores a color that is not a string at start', () => {
+    expect(run(setStrokeAction, { color: 7 }, { color: '#0000ffff' }).stroke).toEqual(solidStroke('#0000ffff', 3));
+  });
 });
