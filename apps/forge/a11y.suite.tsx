@@ -34,7 +34,16 @@ const settled = (host: HTMLElement) => finishing(host.getAnimations({ subtree: t
 const judgeFile = (path: string) => {
   const key = storyKey(path);
   if (Object.hasOwn(UNSWEPT, key)) {
-    it.skip(`is not swept: ${UNSWEPT[key]}`, () => {});
+    it(`still faults as UNSWEPT records: ${UNSWEPT[key]}`, async () => {
+      const mod = (await modules[path]!()) as Record<string, unknown>;
+      const title = titleOf(path);
+      let faults = 0;
+      for (const story of loadStories(mod, title, setup.parameters)) {
+        if (story.isolate !== null) continue;
+        await runStory(mod, story.exportName, path, title, { setup, globals: { mode: 'light' } }).catch(() => (faults += 1));
+      }
+      expect(faults, `${key} renders: take it out of UNSWEPT so the sweep judges it`).toBeGreaterThan(0);
+    }, 120_000);
     return;
   }
   const known = KNOWN[key] ?? {};
