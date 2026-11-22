@@ -80,8 +80,8 @@ export interface ReorderGhost {
 
 /**
  * Live drag state for rendering feedback: which ids are being dragged, the
- * insertion index the drop would use, and where their ghost goes. All `null`
- * when no drag is engaged.
+ * insertion index the drop would use (`null` where releasing would leave them
+ * in place), and where their ghost goes. All `null` when no drag is engaged.
  */
 export interface ReorderDragState {
   draggedIds: string[] | null;
@@ -229,7 +229,11 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey,
     };
     let draggedIds: string[] = [];
-    let targetIndex = 0;
+    const liveTarget = (ev: { clientX: number; clientY: number }): number | null => {
+      const t = computeTargetIndex(ev, index);
+      const { items } = optsRef.current;
+      return isNoopDrop(indicesOf(items, draggedIds), t, items.length) ? null : t;
+    };
     // Where in the grabbed row the pointer went down, so the ghost keeps that point under it. The handler may sit on
     // a handle inside the row rather than the row itself, so the row is the container's child holding it.
     const pressed = e.currentTarget as Element;
@@ -253,12 +257,10 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
         : optsRef.current.threshold,
       onStart: (ev) => {
         draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
-        targetIndex = computeTargetIndex(ev, index);
-        setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
+        setState({ draggedIds, targetIndex: liveTarget(ev), ghost: ghostAt(ev) });
       },
       onMove: (ev) => {
-        targetIndex = computeTargetIndex(ev, index);
-        setState({ draggedIds, targetIndex, ghost: ghostAt(ev) });
+        setState({ draggedIds, targetIndex: liveTarget(ev), ghost: ghostAt(ev) });
       },
       onEnd: (ev) => {
         const drop = computeTargetIndex(ev, index);
