@@ -134,3 +134,13 @@ describe('the guide\'s lines', () => {
     expect(onCanvas).toHaveLength(1);
   });
 });
+
+describe('createSymmetryGuideLayer, repeat line', () => {
+  it('draws a repeat\'s half-line toward its copies when its spacing is negative', () => {
+    const draws = createSymmetryGuideLayer(source(spec({ kind: 'repeat', angle: 0, spacing: -30, count: 3 }))).draw(undefined, VIEW, DIMS);
+    const lines = draws.filter((d) => d.kind === 'path' && !('fill' in d && d.fill) && !d.stroke?.dash);
+    const half = lines.map((d) => boundsOfPath((d as { path: Parameters<typeof boundsOfPath>[0] }).path)).find((b) => b.height === 0 && b.width > 60)!;
+    expect(half.x).toBeCloseTo(0);
+    expect(half.x + half.width).toBeCloseTo(100);
+  });
+});

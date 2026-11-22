@@ -161,7 +161,7 @@ export function createSymmetryGuideLayer(source: SymmetryGuideSource, style: Sym
         for (let k = 0; k < n; k++) across(spec.angle + (2 * Math.PI * k) / n, faint, true);
       }
       if (spec.kind === 'repeat') {
-        across(spec.angle, faint, true);
+        across(spec.spacing < 0 ? spec.angle + Math.PI : spec.angle, faint, true);
         for (const m of SYMMETRY_KINDS.repeat.transforms(spec, center)) {
           const [wx, wy] = transformPoint(m, center.x, center.y);
           const [x, y] = worldToScreen(wx, wy, t);
