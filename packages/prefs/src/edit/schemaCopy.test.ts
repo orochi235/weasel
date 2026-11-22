@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { PrefGroup, PrefLeaf, PrefSection } from '@weasel-js/prefs';
 import { aliasNodes, copyNodes } from './schemaCopy';
+import { keyClashes, shiftNodes } from './schemaEdit';
 import { nodeAt } from './schemaTree';
 
 const num = (name: string): PrefLeaf => ({ kind: 'number', name, description: '', default: 0 });
@@ -76,5 +77,26 @@ describe('the key a copied leaf takes', () => {
     const label = { kind: 'label', name: 'Stroke', description: '', default: undefined } as PrefLeaf;
     const root: PrefGroup = { name: 'R', children: { a: box({ 'stroke.width': num('Width') }), b: box({ stroke: label }) } };
     expect(copyNodes(root, ['b/stroke'], { parentPath: 'a', index: 0 }).paths).toEqual(['a/stroke2']);
+  });
+});
+
+describe('a section copied or moved into an `object` leaf, whose leaves join the scope it lands in', () => {
+  const box = (members: PrefSection['members']): PrefLeaf => ({ kind: 'object', name: 'Box', description: '', default: {}, children: members } as PrefLeaf);
+  const edge = (): PrefSection => ({ name: 'Edge', members: { width: num('Width') } });
+
+  it('numbers a copied leaf a leaf already there holds the value path of', () => {
+    const root: PrefGroup = { name: 'R', children: { frame: box({ edge: edge() }) } };
+    const { root: next, paths } = copyNodes(root, ['frame/edge'], { parentPath: 'frame', index: 1 });
+    expect(paths).toEqual(['frame/edge2']);
+    expect(members(next as never, 'frame/edge2')).toEqual(['width2']);
+    expect(keyClashes(next).size).toBe(0);
+  });
+
+  it('numbers a moved one the same way', () => {
+    const root: PrefGroup = { name: 'R', children: { a: box({ width: num('Width') }), b: box({ edge: edge() }) } };
+    const { root: next, paths } = shiftNodes(root, ['b/edge'], { parentPath: 'a', index: 1 });
+    expect(paths).toEqual(['a/edge']);
+    expect(members(next as never, 'a/edge')).toEqual(['width2']);
+    expect(keyClashes(next).size).toBe(0);
   });
 });

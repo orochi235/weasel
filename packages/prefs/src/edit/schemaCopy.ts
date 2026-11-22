@@ -102,7 +102,7 @@ export function copyNodes<R extends SchemaRoot>(root: R, paths: readonly string[
         return [leafKey(shown === node ? keyOf(path) : aliasKey(root, keyOf(path)), shown), shown];
       }
       const key = top ? uniqueKey(taken, keyOf(path)) : keyOf(path);
-      if (!aliasing || !isPrefSection(node)) return [key, node];
+      if (!isPrefSection(node)) return [key, node];
       const members = Object.fromEntries(Object.entries(node.members).map(([k, kid]) => copyOf(joinPath(path, k), kid, false)));
       return [key, { ...node, members } as SchemaNode];
     };
