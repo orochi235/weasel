@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { unionAabb } from 'core/geometry/unionBounds';
 import type { Scene } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
+import type { View } from 'core/viewport/view';
 import { sceneContentBounds } from '../contentBounds';
 import type { GestureSource } from '../gestureBounds';
 import { gestureBoundsOf, useInFlightBounds } from '../useInFlightBounds';
@@ -13,8 +14,8 @@ import { adapterWorldPoseOf, type ViewPoseAdapter } from '../useViewHelpers';
  * whatever an in-flight gesture proposes, such as a node being dragged, where
  * it is shown, or a shape drawn before it exists. `null`
  * when nothing is drawn. Read live: the scene's part is kept until its version,
- * its pose overrides, its scroll or its bounds source moves, none of which the
- * version alone covers, and the gesture's part is read fresh.
+ * its pose overrides, its scroll, its bounds source or the camera moves, none of
+ * which the version alone covers, and the gesture's part is read fresh.
  */
 export function useContentBounds<TPose>(args: {
   scene: Scene<unknown, string, TPose>;
@@ -25,8 +26,10 @@ export function useContentBounds<TPose>(args: {
   adapter: ViewPoseAdapter<TPose>;
   gestureSource: GestureSource | undefined;
   previewPoseExtra: ((id: string) => unknown) | undefined;
+  /** The camera `boundsOf` boxes under: a stroke can take its scale, and a parallax layer its plane. */
+  getView?: () => View | null;
 }): () => Bounds | null {
-  const { scene, boundsOf, adapter, gestureSource } = args;
+  const { scene, boundsOf, adapter, gestureSource, getView } = args;
   const committedPoseOf = useCallback((id: string): TPose | null => {
     try {
       return adapterWorldPoseOf(adapter, id);
@@ -41,7 +44,7 @@ export function useContentBounds<TPose>(args: {
     gestureSource, previewPoseExtra: args.previewPoseExtra, boxOf: args.boundsOfPose, committedPoseOf, worldOfStored,
   });
 
-  const committed = useRef<{ scene: unknown; boundsOf: unknown; version: number; bounds: Bounds | null } | null>(null);
+  const committed = useRef<{ scene: unknown; boundsOf: unknown; version: number; camera: string; bounds: Bounds | null } | null>(null);
   useEffect(() => {
     const stale = () => { committed.current = null; };
     const offOverrides = scene.overrides.subscribe(stale);
@@ -50,12 +53,21 @@ export function useContentBounds<TPose>(args: {
   }, [scene]);
   return useCallback((): Bounds | null => {
     const version = scene.getVersion();
+    const camera = cameraKey(scene, getView?.() ?? null);
     let held = committed.current;
-    if (held === null || held.scene !== scene || held.boundsOf !== boundsOf || held.version !== version) {
+    if (held === null || held.scene !== scene || held.boundsOf !== boundsOf || held.version !== version || held.camera !== camera) {
       const bounds = sceneContentBounds(scene, boundsOf, (node) => committedPoseOf(node.id) ?? node.pose);
-      held = { scene, boundsOf, version, bounds };
+      held = { scene, boundsOf, version, camera, bounds };
       committed.current = held;
     }
     return unionAabb([held.bounds, gestureBoundsOf(gestureSource, previewBoundsOf)]);
-  }, [scene, boundsOf, committedPoseOf, gestureSource, previewBoundsOf]);
+  }, [scene, boundsOf, committedPoseOf, gestureSource, previewBoundsOf, getView]);
+}
+
+/** What of the camera a committed box can depend on: its scale always, and where it looks only with a parallax
+ *  layer in the scene, so a plain pan keeps the box. */
+function cameraKey(scene: Scene<unknown, string, unknown>, view: View | null): string {
+  if (view === null) return '';
+  const scale = `${view.scale.x},${view.scale.y}`;
+  return scene.layers.some((l) => l.parallax) ? `${scale}@${view.x},${view.y}` : scale;
 }

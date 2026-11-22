@@ -11,6 +11,7 @@ import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/
 import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { hidesSubtree } from 'core/scene/nodeGates';
+import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
 import type { RemovedNode } from 'core/scene/poseWrites';
 import type { Node, NodeId, Scene } from 'core/scene/types';
 import { deriveParallaxView, type PlaneMap } from 'core/viewport/parallax';
@@ -62,6 +63,7 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       };
       const draw = (
         r: RemovedNode<TPose, Node<TData, TLayer, TPose>>, pose: TPose, parentPlane: PlaneMap | null, out: DrawCommand[],
+        above: () => Iterable<{ kind?: string; data?: unknown }>,
       ): void => {
         if (hidesSubtree(r.node)) return;
         const layer = r.node.layer;
@@ -69,10 +71,14 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const v = viewOf(layer);
         const drawn = shown.has(layer) && slot.drawnPose ? slot.drawnPose(r.node, pose) : pose;
         const scaled = pixelScaleCtx(v, dims.dpr);
+        // A removed container is gone from the scene, so what its children inherit is read from the removal.
+        const ctx = inheritsPaint(r.node) ? { ...scaled, inherited: inheritedPaintOf(r.node, above()) } : scaled;
         const children: DrawCommand[] = shown.has(layer)
-          ? wrapWithPoseRotation(drawOne(r.node, drawn, v, scaled), drawn) : [];
+          ? wrapWithPoseRotation(drawOne(r.node, drawn, v, ctx), drawn) : [];
         const kids: DrawCommand[] = [];
-        for (const c of r.children) draw(c, composes ? compose(pose, c.pose) : c.pose, plane, kids);
+        for (const c of r.children) {
+          draw(c, composes ? compose(pose, c.pose) : c.pose, plane, kids, () => [r.node, ...above()]);
+        }
         // The node's clip is its children's, not its own paint's.
         const clip = kids.length > 0
           ? ownClipOf(r.node, pose, () => slot.derivedPathOf?.(r.node, pose), nodeShapesOf(sc), scaled.scale) : null;
@@ -87,7 +93,7 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         if (!shownUnder(parent)) return [];
         const world = composes && parent !== null ? compose(composeChildFrame(frames, parent, compose), pose) : pose;
         const children: DrawCommand[] = [];
-        draw(removal, world, null, children);
+        draw(removal, world, null, children, () => sceneAncestors((id: never) => sc.get(id), removal.node));
         return [{ kind: 'group', alpha: Math.max(0, Math.min(1, alpha)), children }];
       });
     },
