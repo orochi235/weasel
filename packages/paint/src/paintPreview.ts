@@ -67,10 +67,11 @@ function sampledStops(paint: Extract<Paint, { stops: unknown }>): string {
   return sampledCssStops((t) => faded(sampleGradientStops(paint.stops, t, space), alpha), SAMPLES, (t) => `${(t * 100).toFixed(1)}%`);
 }
 
-/** A fraction of the box as a CSS percentage. A gradient in absolute units has
- *  no box to be a fraction of, so its geometry only ever approximates here. */
-function pct(v: number): string {
-  return `${(v * 100).toFixed(1)}%`;
+/** Where a radial or conic gradient centers in the chip: a `'bounds'` center is a fraction of the box, and a
+ *  center in any other units has no box to be a fraction of, so it sits in the middle. */
+function centerAt(paint: { center: { x: number; y: number }; units?: string }): string {
+  if (paint.units !== 'bounds') return 'at 50% 50%';
+  return `at ${(paint.center.x * 100).toFixed(1)}% ${(paint.center.y * 100).toFixed(1)}%`;
 }
 
 /**
@@ -80,9 +81,9 @@ function pct(v: number): string {
  *
  * Gradient geometry is honored as far as CSS can carry it: the angle of a
  * linear gradient, the center of a radial or conic one. A paint's `opacity` fades its colors, though not an
- * image's, which a `background` value cannot fade. A paint in `'world'`
- * or `'local'` units is measured in the scene rather than in the chip, so its
- * preview shows the ramp and not the placement.
+ * image's, which a `background` value cannot fade. A paint in any units but
+ * `'bounds'` is measured outside the chip, so its preview shows the ramp and
+ * not the placement.
  */
 export function paintPreviewCss(paint: Paint | null | undefined): string | undefined {
   if (paint == null) return undefined;
@@ -98,8 +99,7 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
     return `linear-gradient(${angle.toFixed(1)}deg, ${sampledStops(paint)})`;
   }
   if (paint.kind === 'radial-gradient') {
-    const at = `at ${pct(paint.center.x)} ${pct(paint.center.y)}`;
-    return `radial-gradient(circle ${at}, ${sampledStops(paint)})`;
+    return `radial-gradient(circle ${centerAt(paint)}, ${sampledStops(paint)})`;
   }
   if ((paint.kind as string) === 'mesh-gradient') {
     return meshPreview(paint as unknown as { patches?: { colors: string[] }[] }, paintAlpha(paint));
@@ -109,7 +109,7 @@ export function paintPreviewCss(paint: Paint | null | undefined): string | undef
   if (paint.kind === 'conic-gradient') {
     // CSS starts a conic gradient at "to top"; the paint starts at +x.
     const from = (paint.angle * RAD_TO_DEG + 90).toFixed(1);
-    return `conic-gradient(from ${from}deg at ${pct(paint.center.x)} ${pct(paint.center.y)}, ${sampledStops(paint)})`;
+    return `conic-gradient(from ${from}deg ${centerAt(paint)}, ${sampledStops(paint)})`;
   }
   return undefined;
 }

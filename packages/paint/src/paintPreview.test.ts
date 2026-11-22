@@ -59,6 +59,15 @@ describe('paintPreviewCss', () => {
     expect(css).toMatch(/^radial-gradient\(circle at 25\.0% 75\.0%, /);
   });
 
+  it('centers a radial or conic gradient measured outside the chip', () => {
+    for (const units of [undefined, 'screen', 'world', 'local'] as const) {
+      expect(paintPreviewCss({ kind: 'radial-gradient', center: { x: 200, y: 150 }, radius: 100, stops: STOPS, units }))
+        .toMatch(/^radial-gradient\(circle at 50% 50%, /);
+      expect(paintPreviewCss({ kind: 'conic-gradient', center: { x: 200, y: 150 }, angle: 0, stops: STOPS, units }))
+        .toMatch(/^conic-gradient\(from 90\.0deg at 50% 50%, /);
+    }
+  });
+
   it('turns a conic gradient a quarter, since CSS starts at the top', () => {
     const css = paintPreviewCss({
       kind: 'conic-gradient', center: { x: 0.5, y: 0.5 }, angle: 0,
