@@ -323,6 +323,18 @@ describe('TokenPanel', () => {
     expect(slider('--s-lg')).toHaveAttribute('aria-valuemax', String(Math.log2(24 * 1.5)));
   });
 
+  it('draws a group named in scales as a scale, with its base and rule, however few steps it has', () => {
+    const radii: TokenEntry[] = [
+      { name: '--radius-sm', type: 'dimension', group: 'radius', value: '4px' },
+      { name: '--radius-md', type: 'dimension', group: 'radius', value: '8px' },
+    ];
+    const scale: TokenScale = { tokens: radii.map((t) => t.name), base: 4, rule: { kind: 'ratio', ratio: 2 } };
+    renderWithIcons(<TokenPanel tokens={radii} onChange={() => {}} scales={{ radius: scale }} onScaleChange={() => {}} />);
+    const group = within(screen.getByRole('group', { name: 'radius' }));
+    expect(group.getAllByRole('slider')).toHaveLength(2);
+    expect(group.getByRole('textbox', { name: 'radius base' })).toBeInTheDocument();
+  });
+
   it('keeps a unit on each step of a scale whose units differ', () => {
     const scale: TokenEntry[] = [
       { name: '--tracking-none', type: 'dimension', group: 'tracking', value: '0' },
