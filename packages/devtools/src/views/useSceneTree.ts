@@ -38,6 +38,14 @@ export function useSceneTree(client: DevtoolsClient, rootId: string): SceneTree 
       (err: Error) => {
         if (!alive.current) return;
         if (parent === TOP) setError(err.message);
+        else {
+          setExpandedState((prev) => {
+            if (!prev.has(parent)) return prev;
+            const next = new Set(prev);
+            next.delete(parent);
+            return next;
+          });
+        }
         setLevels((prev) => {
           const next = new Map(prev);
           next.delete(parent);

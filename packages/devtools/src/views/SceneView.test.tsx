@@ -49,3 +49,28 @@ it('draws a branch whose levels name each other in a loop without recursing fore
   await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
   expect(screen.getAllByRole('treeitem', { name: /^B\b/ })).toHaveLength(1);
 });
+
+it('stops reloading a branch once its node is gone, and shows a node reusing its id closed', async () => {
+  const tree: Record<string, DevtoolsNodeSummary[]> = { '': [group('G')], G: [group('X', 0)] };
+  const page = fakePage(tree);
+  const asked: string[] = [];
+  page.client.request = (async (_root: string, m: { type: string; nodeId?: string }) => {
+    if (m.nodeId) asked.push(m.nodeId);
+    const rows = tree[m.nodeId ?? ''];
+    if (!rows) throw new Error(`no node ${m.nodeId}`);
+    return rows;
+  }) as typeof page.client.request;
+  renderWithIcons(<SceneView client={page.client} rootId="r" />);
+  fireEvent.keyDown(await waitFor(() => row('G')), { key: 'ArrowRight' });
+  await waitFor(() => row('X'));
+  tree[''] = [];
+  delete tree.G;
+  await act(async () => { page.changed(); await new Promise((r) => setTimeout(r, 0)); });
+  asked.length = 0;
+  await act(async () => { page.changed(); await new Promise((r) => setTimeout(r, 0)); });
+  expect(asked).toEqual([]);
+  tree[''] = [group('G')];
+  tree.G = [group('X', 0)];
+  await act(async () => { page.changed(); await new Promise((r) => setTimeout(r, 0)); });
+  expect(row('G')).toHaveAttribute('aria-expanded', 'false');
+});
