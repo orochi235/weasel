@@ -3660,3 +3660,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a `Sequence` grid's `cap` bounds its cells, not each axis: an axis shorter than
   √`cap` keeps every step and the other takes what that leaves, else both keep ⌊√`cap`⌋. Two open sweeps had drawn
   `cap`² live cells. Capping rows alone, at ⌊`cap` / columns⌋, was the alternative.
+
+## Audit round sixty-nine (2026-11-22): labkit.loupe
+
+- 2026-11-22 (my call, audit round 69): two loupes in one camera (`<CanvasStack>`, `<Stage>`) stay unsupported, since
+  their actions share ids on the camera's registry and one hover runs one action; the second to mount warns once in
+  development that only the newest aims, peeks and magnifies, rather than both being routed.

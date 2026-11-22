@@ -18,6 +18,8 @@ import {
   useGestureDispatcher,
 } from '@weasel-js/core';
 import { createLoupeActions, type LoupeInputApi } from '@weasel-js/loupe';
+import { isDev } from '@weasel-js/react';
+import { createPart } from '@weasel-js/registry';
 import { type RefObject, useContext, useEffect, useMemo } from 'react';
 import { CameraContext } from '../canvas/CameraInput';
 
@@ -37,6 +39,26 @@ const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = { pointer: false, hover: true, contextMenu: false, ingest: false } as const;
 const DROPPING_CHANNELS = { ...CHANNELS, pointer: true } as const;
 
+/** The loupes registered on each camera's registry. */
+const loupesOn = createPart((_registry: ActionsRegistry) => new Set<object>());
+
+/** Warns when a second loupe joins a camera's registry: their actions share ids, so only the newest takes input. */
+function useSoleLoupe(registry: ActionsRegistry, shared: boolean): void {
+  useEffect(() => {
+    if (!shared) return;
+    const token = {};
+    const loupes = loupesOn(registry);
+    loupes.add(token);
+    if (loupes.size === 2 && isDev())
+      console.warn(
+        '[labkit] two loupes in one camera: only the newest aims, peeks and magnifies. Mount one loupe per camera.',
+      );
+    return () => {
+      loupes.delete(token);
+    };
+  }, [registry, shared]);
+}
+
 function LoupeDispatch({
   hostRef,
   input,
@@ -46,6 +68,7 @@ function LoupeDispatch({
   ownDispatcher,
 }: LoupeGesturesProps & { registry: ActionsRegistry; ownDispatcher: boolean }) {
   const actions = useMemo(() => createLoupeActions(input, peekKey), [input, peekKey]);
+  useSoleLoupe(registry, !ownDispatcher);
 
   useEffect(() => {
     const offs = actions.map((a) => registry.register(a));
