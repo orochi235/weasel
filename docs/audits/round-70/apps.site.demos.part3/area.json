@@ -1,0 +1,113 @@
+{
+ "id": "apps.site.demos.part3",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "apps/site/demos/KeymapDemo.module.css",
+  "apps/site/demos/KeymapDemo.tsx",
+  "apps/site/demos/KitSettingsDemo.module.css",
+  "apps/site/demos/KitSettingsDemo.tsx",
+  "apps/site/demos/KneadLabDemo.tsx",
+  "apps/site/demos/LabLoupeDemo.tsx",
+  "apps/site/demos/LassoDemo.module.css",
+  "apps/site/demos/LassoDemo.tsx",
+  "apps/site/demos/LayerListDemo.module.css",
+  "apps/site/demos/LayerListDemo.tsx",
+  "apps/site/demos/LayeredCurveDemo.module.css",
+  "apps/site/demos/LayeredCurveDemo.tsx",
+  "apps/site/demos/LayoutDemo.module.css",
+  "apps/site/demos/LayoutDemo.tsx",
+  "apps/site/demos/LevelOfDetailDemo.tsx",
+  "apps/site/demos/Lines3dDemo.module.css",
+  "apps/site/demos/Lines3dDemo.tsx",
+  "apps/site/demos/LoupeDemo.module.css",
+  "apps/site/demos/LoupeDemo.tsx",
+  "apps/site/demos/LoupeModelDemo.module.css",
+  "apps/site/demos/LoupeModelDemo.tsx",
+  "apps/site/demos/MeasureLabDemo.module.css",
+  "apps/site/demos/MeasureLabDemo.tsx",
+  "apps/site/demos/MenuDemo.module.css",
+  "apps/site/demos/MenuDemo.tsx",
+  "apps/site/demos/MermaidKindsDemo.tsx",
+  "apps/site/demos/MinimapDemo.module.css",
+  "apps/site/demos/MinimapDemo.tsx",
+  "apps/site/demos/ModesDemo.module.css",
+  "apps/site/demos/ModesDemo.tsx",
+  "apps/site/demos/MoveSnapDemo.tsx",
+  "apps/site/demos/MultiSelectDemo.tsx",
+  "apps/site/demos/PTouchLabelDemo.module.css",
+  "apps/site/demos/PTouchLabelDemo.tsx",
+  "apps/site/demos/PageGridDemo.module.css",
+  "apps/site/demos/PageGridDemo.tsx",
+  "apps/site/demos/PaintDemo.module.css",
+  "apps/site/demos/PaintDemo.tsx",
+  "apps/site/demos/PaintKindsDemo.module.css",
+  "apps/site/demos/PaintKindsDemo.tsx",
+  "apps/site/demos/PanZoomDemo.tsx",
+  "apps/site/demos/ParallaxDemo.tsx",
+  "apps/site/demos/PathAnchorEditDemo.tsx",
+  "apps/site/demos/PathConstraintsLabDemo.module.css",
+  "apps/site/demos/PathConstraintsLabDemo.tsx",
+  "apps/site/demos/PathDirectionLabDemo.tsx",
+  "apps/site/demos/PathMotionDemo.tsx",
+  "apps/site/demos/PathPoseDemo.tsx"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11.5,
+ "unfound": 4.5,
+ "read": {
+  "A": 48,
+  "B": 48
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 11.5,
+  "unfound": 4.5
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 385,
+   "total": 385
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 2102974,
+  "costUsd": 5.72
+ },
+ "fixCommits": [
+  "a0d32851eb3efb094e945a843039f7e50d95d06a",
+  "1bed44e6cbd33c0bc710e7233dbd137e9d17d417",
+  "f970d8d6e51e163644c153c9d2b8fea86f30b408",
+  "b5e8255076eb49cdb405889332c39931d5f139f0",
+  "87e53958c18f709c02e80dbc7dc3559bd4672259",
+  "d1d921879c118c6862bc88c1449345de36a99ea3",
+  "32bb74403f37e2d5d152a36ec36146bece75b862"
+ ]
+}

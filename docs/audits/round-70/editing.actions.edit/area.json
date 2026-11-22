@@ -1,0 +1,82 @@
+{
+ "id": "editing.actions.edit",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "packages/editing/src/actions/edit/createPaintAction.ts",
+  "packages/editing/src/actions/edit/deselect.ts",
+  "packages/editing/src/actions/edit/duplicate.ts",
+  "packages/editing/src/actions/edit/group.ts",
+  "packages/editing/src/actions/edit/ingest.ts",
+  "packages/editing/src/actions/edit/nudge.ts",
+  "packages/editing/src/actions/edit/paintActionTestUtils.ts",
+  "packages/editing/src/actions/edit/selectAll.ts",
+  "packages/editing/src/actions/edit/setFill.ts",
+  "packages/editing/src/actions/edit/setFillOpacity.ts",
+  "packages/editing/src/actions/edit/setStroke.ts",
+  "packages/editing/src/actions/edit/setStrokeOpacity.ts",
+  "packages/editing/src/actions/edit/setStrokeWidth.ts",
+  "packages/editing/src/actions/edit/setVertexColor.ts"
+ ],
+ "a": 7,
+ "b": 5,
+ "m": 1,
+ "distinct": 11,
+ "chapman": 23,
+ "unfound": 12,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 23,
+  "unfound": 12
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1477,
+   "total": 1477
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0,
+   "repair": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1341385,
+  "costUsd": 3.94
+ },
+ "fixCommits": [
+  "4fe7cd3e3ccba6d93f7232994e3999a27fa22d08",
+  "72e63022cbddbaf3ab6b96c00b0c452ae2fc4f58",
+  "2e422ca27c1a5c3ef6cd4665e9a02190dd7e1d88",
+  "b9cdca80f7d6e45e35db5241e761f8e1b017d391",
+  "cbeb3f66900823e5d26a924711c654d0c59f4d1a",
+  "c94daf558b0e24453286a29ffeaa12ac07c5e03d",
+  "fe2b35db0d523edea981fdef4672c71922b0eb70",
+  "2b898bd956e74cba35ce13cd7eebcc2e0bdc6e3b",
+  "6bab3eece8431a64c6e0d25070fbf1a1d28bb94d"
+ ]
+}

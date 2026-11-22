@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "Quadrant axis ends holding `-->` are written quoted but read back split inside the quotes",
+  "Sequence writer emits `Note over : text` for a note with no participants, which the reader rejects",
+  "State writer drops a pool's lane labels without a warning",
+  "State writer drops a fork/join bar's text without a warning",
+  "Sequence writer drops a `create` step for a participant missing from `participants`, without a warning",
+  "Mind map reader reads a bang node as a cloud without a warning"
+ ],
+ "b": [
+  "Mind map writer counts a self-loop as the node's parent, so a real root can be dropped",
+  "Sequence writer writes a note over no participants as a line its own reader refuses"
+ ]
+}

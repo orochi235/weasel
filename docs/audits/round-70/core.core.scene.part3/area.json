@@ -1,0 +1,102 @@
+{
+ "id": "core.core.scene.part3",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/core/scene/renderOrder.ts",
+  "packages/core/src/core/scene/renderRank.ts",
+  "packages/core/src/core/scene/rigidFoldable.ts",
+  "packages/core/src/core/scene/sameValue.ts",
+  "packages/core/src/core/scene/scene.ts",
+  "packages/core/src/core/scene/sceneChanges.ts",
+  "packages/core/src/core/scene/sceneEdits.ts",
+  "packages/core/src/core/scene/sceneJournals.ts",
+  "packages/core/src/core/scene/sceneMutators.ts",
+  "packages/core/src/core/scene/scenePoseAdapter.ts",
+  "packages/core/src/core/scene/sceneRecording.ts",
+  "packages/core/src/core/scene/sceneRegistry.ts",
+  "packages/core/src/core/scene/sceneReplay.ts",
+  "packages/core/src/core/scene/sceneSelection.ts",
+  "packages/core/src/core/scene/sceneState.ts",
+  "packages/core/src/core/scene/sceneTouches.ts",
+  "packages/core/src/core/scene/scrollOffsets.ts",
+  "packages/core/src/core/scene/serialization.ts",
+  "packages/core/src/core/scene/serializedTypes.ts",
+  "packages/core/src/core/scene/sessionHost.ts",
+  "packages/core/src/core/scene/snapshotShape.ts",
+  "packages/core/src/core/scene/snapshotShapeError.ts",
+  "packages/core/src/core/scene/stackIndex.ts",
+  "packages/core/src/core/scene/staleReplay.ts",
+  "packages/core/src/core/scene/statedFields.ts",
+  "packages/core/src/core/scene/strategyView.ts",
+  "packages/core/src/core/scene/testing/makeScene.ts",
+  "packages/core/src/core/scene/touchJournal.ts",
+  "packages/core/src/core/scene/treeEdits.ts",
+  "packages/core/src/core/scene/treeOrder.ts",
+  "packages/core/src/core/scene/treeReads.ts",
+  "packages/core/src/core/scene/treeShape.ts",
+  "packages/core/src/core/scene/trivialScene.ts",
+  "packages/core/src/core/scene/types.ts",
+  "packages/core/src/core/scene/unionOfChildren.ts",
+  "packages/core/src/core/scene/unitScopes.ts",
+  "packages/core/src/core/scene/useEditingSession.ts",
+  "packages/core/src/core/scene/useScene.ts",
+  "packages/core/src/core/scene/useSceneOptions.ts",
+  "packages/core/src/core/scene/worldSave.ts"
+ ],
+ "a": 1,
+ "b": 3,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 7,
+ "unfound": 3,
+ "read": {
+  "A": 40,
+  "B": 40
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 5,
+  "unfound": 1
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2735,
+   "total": 2735
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.7,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 2078009,
+  "costUsd": 6.02
+ },
+ "fixCommits": [
+  "3b0f654b6955f49a2d655ae350a76b5a043174e9",
+  "1a5f5de20164ac07bdc308ea73b802b3692a2ad7",
+  "3eb5dc0a65d16f3a77b32ce6f1086b2b3d6640bc",
+  "a785cf35e20b6ac51fbe52842a8c898c5fca5be6"
+ ]
+}

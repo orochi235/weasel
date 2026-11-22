@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "useVisibleRaf's IntersectionObserver callback acts after unmount: fires `onSuspend` on a dead loop and leaves `suspendedRef` set",
+  "leakProbe leaves its own `once` drop-listener attached when the listener is removed by hand before it fires"
+ ],
+ "b": [
+  "A loop gated on a target stays suspended for good when that target is removed while offscreen",
+  "A stale IntersectionObserver entry delivered after unmount calls the consumer's `onSuspend`",
+  "`useNotified` passes no server snapshot, so it throws in a server render, unlike its siblings"
+ ]
+}

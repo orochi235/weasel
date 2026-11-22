@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "PTouchLabelDemo hides the Download button's result and errors wherever printing is unavailable",
+  "MermaidKindsDemo leaves a failed parse as an unhandled rejection and keeps showing the previous diagram",
+  "MenuDemo's menu items sit in a plain `<ul>`, so they are not owned by the `role=\"menu\"` container, and the highlight is never exposed",
+  "MeasureLabDemo keeps one `Measurements` store across trial scenes, so a measurement picked in one trial stays picked in the next"
+ ],
+ "b": [
+  "LevelOfDetailDemo stores its cards in world coordinates under a rigid group frame, so every container but the first draws its cards at twice its offset",
+  "ParallaxDemo's tree parts are posed in world coordinates under their group, so since rigid composition became the default the trees draw at twice their position, off the bottom of the stage",
+  "MermaidKindsDemo lets a parse failure escape: a synchronous throw from `read` crashes the effect, an async rejection is unhandled and leaves the previous kind's diagram shown",
+  "PTouchLabelDemo's preview effect drops a `renderLabel` rejection unhandled, while its buttons route the same call's failures to the status line"
+ ]
+}

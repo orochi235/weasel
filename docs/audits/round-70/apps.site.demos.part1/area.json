@@ -1,0 +1,111 @@
+{
+ "id": "apps.site.demos.part1",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "apps/site/demos/AddExtremesLabDemo.tsx",
+  "apps/site/demos/AlignDemo.tsx",
+  "apps/site/demos/AlignmentGuidesDemo.tsx",
+  "apps/site/demos/AnchorFieldsLabDemo.tsx",
+  "apps/site/demos/AnchorSelectLabDemo.tsx",
+  "apps/site/demos/AnimationDemo.module.css",
+  "apps/site/demos/AnimationDemo.tsx",
+  "apps/site/demos/AnimatorDemo.module.css",
+  "apps/site/demos/AnimatorDemo.tsx",
+  "apps/site/demos/AnnotationCaptureDemo.tsx",
+  "apps/site/demos/AudioDemo.tsx",
+  "apps/site/demos/AutoControlsDemo.tsx",
+  "apps/site/demos/BendAlongLabDemo.tsx",
+  "apps/site/demos/BidiDemo.module.css",
+  "apps/site/demos/BidiDemo.tsx",
+  "apps/site/demos/BooleanOpsDemo.tsx",
+  "apps/site/demos/BridgeLabDemo.tsx",
+  "apps/site/demos/CanvasViewDemo.module.css",
+  "apps/site/demos/CanvasViewDemo.tsx",
+  "apps/site/demos/ClipDemo.module.css",
+  "apps/site/demos/ClipDemo.tsx",
+  "apps/site/demos/ClockDemo.module.css",
+  "apps/site/demos/ClockDemo.tsx",
+  "apps/site/demos/ClothWarpLabDemo.tsx",
+  "apps/site/demos/ColorMatrixDemo.module.css",
+  "apps/site/demos/ColorMatrixDemo.tsx",
+  "apps/site/demos/CompoundPathsDemo.module.css",
+  "apps/site/demos/CompoundPathsDemo.tsx",
+  "apps/site/demos/ContextMenuDemo.tsx",
+  "apps/site/demos/CursorDemo.module.css",
+  "apps/site/demos/CursorDemo.tsx",
+  "apps/site/demos/CurvatureCombLabDemo.tsx",
+  "apps/site/demos/CurveLabDemo.tsx",
+  "apps/site/demos/CustomShaderDemo.module.css",
+  "apps/site/demos/CustomShaderDemo.tsx",
+  "apps/site/demos/D3SortableDemo.tsx",
+  "apps/site/demos/DebugOverlayDemo.tsx",
+  "apps/site/demos/DemoStage.tsx",
+  "apps/site/demos/DevtoolsDemo.module.css",
+  "apps/site/demos/DevtoolsDemo.tsx",
+  "apps/site/demos/DiagramClustersDemo.tsx",
+  "apps/site/demos/DiagramDataDemo.tsx",
+  "apps/site/demos/DiagramDrawOnDemo.tsx",
+  "apps/site/demos/DiagramDropDemo.module.css",
+  "apps/site/demos/DiagramDropDemo.tsx",
+  "apps/site/demos/DiagramEdgesDemo.tsx",
+  "apps/site/demos/DiagramElkDemo.tsx",
+  "apps/site/demos/DiagramLayoutDemo.tsx"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 4,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 48,
+  "B": 48
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 5,
+  "unfound": 0
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 0,
+   "passed": 21,
+   "total": 21
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1606366,
+  "costUsd": 4.65
+ },
+ "fixCommits": [
+  "c5fc774a422e4cdd3ba0cda311213f1360d86b72",
+  "1c58eefd9c54caad052a0148cd0e64928eab2f77",
+  "27023279b8d6f24950f6f938272b96e84c26d22e",
+  "658409f9fc1b2a130b05472bd79ca7416feb992e",
+  "eca5f1a81ddda4727cd41705ee6136f249db6f93"
+ ]
+}

@@ -1,0 +1,104 @@
+{
+ "id": "diagram-formats",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram-formats/src/colorCheck.ts",
+  "packages/diagram-formats/src/document.ts",
+  "packages/diagram-formats/src/dot/format.ts",
+  "packages/diagram-formats/src/dot/lex.ts",
+  "packages/diagram-formats/src/dot/parse.ts",
+  "packages/diagram-formats/src/dot/read.ts",
+  "packages/diagram-formats/src/dot/values.ts",
+  "packages/diagram-formats/src/dot/write.ts",
+  "packages/diagram-formats/src/dot/x11.ts",
+  "packages/diagram-formats/src/exportPage.ts",
+  "packages/diagram-formats/src/formats.ts",
+  "packages/diagram-formats/src/fromScene.ts",
+  "packages/diagram-formats/src/graphPageMeta.ts",
+  "packages/diagram-formats/src/graphRead.ts",
+  "packages/diagram-formats/src/graphWrite.ts",
+  "packages/diagram-formats/src/index.ts",
+  "packages/diagram-formats/src/jsonFormat.ts",
+  "packages/diagram-formats/src/lineError.ts",
+  "packages/diagram-formats/src/markReaders.ts",
+  "packages/diagram-formats/src/pageKinds.ts",
+  "packages/diagram-formats/src/pageLayout.ts",
+  "packages/diagram-formats/src/pageRoots.ts",
+  "packages/diagram-formats/src/pageSvg.ts",
+  "packages/diagram-formats/src/pbt.fixture.ts",
+  "packages/diagram-formats/src/plotPages.ts",
+  "packages/diagram-formats/src/rowLines.ts",
+  "packages/diagram-formats/src/sceneReaders.ts",
+  "packages/diagram-formats/src/sequencePage.ts",
+  "packages/diagram-formats/src/shiftData.ts",
+  "packages/diagram-formats/src/templates/catalog.ts",
+  "packages/diagram-formats/src/templates/starters.ts",
+  "packages/diagram-formats/src/templates/templateScene.ts",
+  "packages/diagram-formats/src/testing/asGraph.ts",
+  "packages/diagram-formats/src/testing/authoredScene.ts",
+  "packages/diagram-formats/src/testing/docScene.ts",
+  "packages/diagram-formats/src/testing/pageScene.ts",
+  "packages/diagram-formats/src/testing/samePage.ts",
+  "packages/diagram-formats/src/toScene.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 0,
+ "distinct": 8,
+ "chapman": 24,
+ "unfound": 16,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 10.7,
+  "unfound": 2.7
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 71,
+   "total": 71
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 6,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "teitou",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1990363,
+  "costUsd": 6.01
+ },
+ "fixCommits": [
+  "31879ffa646a6322c05756c3213e79a68b32aaf2",
+  "37a11cabeda8fcc6e2c6284899717467f179920e",
+  "609eee668058a39bfe3781ce4ebc10094087548f",
+  "ca9d6da113dde0ec3bc15191b70b8eb0848d8e97",
+  "2921e211c9ad7bfa7bb28dbbf65e06aa79e6bbee",
+  "0e088d7b2f52a58a5deb4df4d430f968e9c652df",
+  "0d1ebfb29ccfaa8127db59227e598fcd4a00034f",
+  "0a7b13843551a2d8eed959cd8bdc2d67064a9add"
+ ]
+}

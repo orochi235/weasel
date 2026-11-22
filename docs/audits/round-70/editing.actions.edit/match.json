@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   4,
+   0
+  ]
+ ],
+ "a": [
+  "Group is enabled and runs over a locked member, whose reparent and setPose the scene's lock guard refuses",
+  "Paint actions write `setData` to locked operands with no lock check, through either the selection or explicit `ids`",
+  "Nudge's `run` moves the raw selection, but its `enabled` and `recordTransform` use the selection without page structure",
+  "Duplicate and Group take the raw selection, page structure included, though `enabled` counts only content",
+  "A paint write that resolves to the inherited paint still detaches an `'inherit'` node, against the spec's \"equal to prev leaves the node out\"",
+  "setStrokeWidth with no usable width gives every strokeless operand a default stroke",
+  "setFill / setStroke \"None\" on a node with no paint record writes `{}` and makes an undo entry"
+ ],
+ "b": [
+  "A paint run on an `'inherit'` node that changes nothing still writes, replacing the inheritance with a concrete copy",
+  "A paint action with explicit `ids` naming a locked node is enabled, then throws from the scene at commit",
+  "Explicit `ids` naming missing nodes: the action stays enabled, previews nodes that don't exist, and commits nothing",
+  "`setStrokeOpacity` on a stroke with no paint and no width writes a widthless stroke, where `setStroke` seeds width 1 in the same state",
+  "`setStrokeWidth` validates `width` but passes `vertexWidths` through unchecked"
+ ]
+}

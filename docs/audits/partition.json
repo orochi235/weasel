@@ -136,13 +136,13 @@
    "apps/chart/src/pages/pageCommands.ts",
    "apps/chart/src/pages/pageSizes.ts",
    "apps/chart/src/pages/useChartPages.ts",
-   "apps/chart/src/pages/useFittedView.ts"
+   "apps/chart/src/pages/useFittedView.ts",
+   "apps/chart/src/prefs.ts"
   ]
  },
  {
   "id": "apps.chart.src.part2",
   "files": [
-   "apps/chart/src/prefs.ts",
    "apps/chart/src/reportFailure.ts",
    "apps/chart/src/stencilDrop.ts",
    "apps/chart/src/templates/TemplateDialog.tsx",
@@ -154,6 +154,7 @@
    "apps/chart/src/testing/mountChartApp.tsx",
    "apps/chart/src/testing/pointer.ts",
    "apps/chart/src/testing/savedChart.ts",
+   "apps/chart/src/testing/toolName.ts",
    "apps/chart/src/theme/StylePanel.tsx",
    "apps/chart/src/theme/ThemePanel.tsx",
    "apps/chart/src/theme/ThemeRoles.tsx",
@@ -3655,6 +3656,7 @@
    "packages/geom/src/paths/nearestAnchor.ts",
    "packages/geom/src/paths/pathAt.ts",
    "packages/geom/src/paths/pathAwayFromAnchors.ts",
+   "packages/geom/src/paths/pathData.ts",
    "packages/geom/src/paths/pathDistance.ts",
    "packages/geom/src/paths/pathEndExtension.ts",
    "packages/geom/src/paths/pathFromD.ts",
@@ -5464,6 +5466,7 @@
    "packages/renderer/src/gpu/vertexLayout.ts",
    "packages/renderer/src/gpu/webgl/GlProgram.ts",
    "packages/renderer/src/gpu/webgl/WebGLDevice.ts",
+   "packages/renderer/src/gpu/webgl/contextAttributes.ts",
    "packages/renderer/src/gpu/webgl/glCache.ts",
    "packages/renderer/src/gpu/webgl/glResources.ts",
    "packages/renderer/src/gpu/webgl/glTargets.ts",

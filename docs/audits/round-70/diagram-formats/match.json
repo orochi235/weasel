@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "DOT `detect` rejects valid DOT whose header tokens are separated only by a comment, or whose quoted id continues a line",
+  "Diagram JSON reader checks crossPageEdges' items, but never a page's nodes or edges",
+  "Diagram JSON with no `version` is refused as \"newer than this reader's\"",
+  "documentFromScene puts a connector in crossPageEdges when one end is a shape it left out"
+ ],
+ "b": [
+  "documentFromScene puts edges to shapes on a plot or sequence page into crossPageEdges, though those shapes are left out of the document",
+  "DOT reader warns that root and plain-subgraph graph attributes were dropped, yet still applies them to every cluster opened after them",
+  "DOT style words other than filled/rounded/dashed/dotted are ignored with no warning, `invis` included",
+  "DOT `detect` rejects headers the DOT reader accepts"
+ ]
+}

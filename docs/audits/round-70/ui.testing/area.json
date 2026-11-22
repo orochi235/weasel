@@ -1,0 +1,83 @@
+{
+ "id": "ui.testing",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/testing/badge.ts",
+  "packages/ui/src/testing/composeStory.tsx",
+  "packages/ui/src/testing/contextMenu.ts",
+  "packages/ui/src/testing/fontCascade.tsx",
+  "packages/ui/src/testing/geometry.ts",
+  "packages/ui/src/testing/icon.ts",
+  "packages/ui/src/testing/labViews.ts",
+  "packages/ui/src/testing/paintedContrast.ts",
+  "packages/ui/src/testing/paramsText.ts",
+  "packages/ui/src/testing/prefs.ts",
+  "packages/ui/src/testing/readModuleCss.ts",
+  "packages/ui/src/testing/selectRow.ts",
+  "packages/ui/src/testing/sweep.ts",
+  "packages/ui/src/testing/teardown.tsx",
+  "packages/ui/src/testing/withIcons.tsx"
+ ],
+ "a": 7,
+ "b": 8,
+ "m": 5,
+ "distinct": 10,
+ "chapman": 11,
+ "unfound": 1,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 11,
+  "unfound": 1
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 30,
+   "total": 30
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1098570,
+  "costUsd": 3.18
+ },
+ "fixCommits": [
+  "df4263ecf81d284f5bada5ff3275e708a344fe8e",
+  "5b39bed41edcfba761ec1f4cdacea9f3b018ec56",
+  "9912db5fe46d11b613e3e7998f6d692482c4fa11",
+  "ceea9e72a97c56ed2684ffeb1b3d173340d1ca7d",
+  "cd67ad628b2163b5e57433585ffecc3e0de368d3",
+  "814b9a39bce6a37c3e7b8cadf43d448b01a13362",
+  "81fab089e2e7867d3c4fc29b50ef2f6bf010529d",
+  "3c5fa3e86d0d1b8a9c8a3831c32c11f3da342e5a",
+  "057ad794363c6cd18fb2b3ece6de2fa41f0ab0b1",
+  "39ce732129333dcd7af5b7d4440df76c8f064434"
+ ]
+}

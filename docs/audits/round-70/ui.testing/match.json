@@ -1,0 +1,43 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   6
+  ],
+  [
+   5,
+   7
+  ],
+  [
+   6,
+   4
+  ]
+ ],
+ "a": [
+  "`settle` returns after one wait when a story's first markup is empty, so a lazy-loaded story is judged before it renders",
+  "The two \"visually hidden\" predicates disagree; paramsText's skips any row under a zero-width or zero-height ancestor",
+  "`trigger(label)` matches every row whose label ends in the same words, so `pick('Mode', …)` throws when a \"Blend Mode\" row is also on the page",
+  "`sweepAcross` releases with `buttons: 1`, which a real pointerup never reports",
+  "`readModuleCss` inlines a sheet once per import path, where the bundler inlines it once",
+  "`readModuleCss` misreads a `supports()` condition nested two parentheses deep as a media query",
+  "The unmounted-list staleness check never flags an entry whose component no longer exists"
+ ],
+ "b": [
+  "`trigger(label)` matches any row whose label merely ends in `label`",
+  "paramsText's `shown` and fontCascade's `shown` disagree on what counts as visually hidden",
+  "`rowTexts` counts the row's own label text among its \"other\" values",
+  "`exportedComponents` skips components whose names start with two capitals",
+  "The stale-`unmounted` check ignores entries for components that no longer exist",
+  "`settle` waits on the host's markup only, not on the portals it then judges",
+  "`sweepAcross` releases with `buttons: 1` and a non-primary pointer",
+  "`readModuleCss` mis-wraps `supports()` conditions nested more than one level"
+ ]
+}

@@ -1,0 +1,83 @@
+{
+ "id": "ui.components.Timeline",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/Timeline/AnimatedTimeline.tsx",
+  "packages/ui/src/components/Timeline/Lane.tsx",
+  "packages/ui/src/components/Timeline/LaneGraph.tsx",
+  "packages/ui/src/components/Timeline/LaneMarks.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.module.css",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.tsx",
+  "packages/ui/src/components/Timeline/Timeline.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.tsx",
+  "packages/ui/src/components/Timeline/Timeline.tsx",
+  "packages/ui/src/components/Timeline/TimelineInspector.tsx",
+  "packages/ui/src/components/Timeline/index.ts",
+  "packages/ui/src/components/Timeline/keys.ts",
+  "packages/ui/src/components/Timeline/lanes.ts",
+  "packages/ui/src/components/Timeline/timeScale.ts",
+  "packages/ui/src/components/Timeline/timelineState.ts",
+  "packages/ui/src/components/Timeline/useKeyDrag.ts"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 3,
+ "distinct": 8,
+ "chapman": 9.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 9.5,
+  "unfound": 1.5
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 489,
+   "total": 489
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 533735,
+  "costUsd": 3.63
+ },
+ "fixCommits": [
+  "033673a9897fcffe8e7e0e54f99e1501aa567d7e",
+  "a21472b69254ec2c6572d8c7fb57f70138b78264",
+  "06996882a51ba401fd2d5b3940335990167fb21d",
+  "304bad3e5e463ec381881a3830a2ce50fe90d2ad",
+  "533169a253715effebf7d2019f6d48b95db92a48",
+  "2d9d28a23d5e4254c1e3cf83b2580294d316db9b",
+  "26c336fa1895de19d4e71d0798c52f388cf713d8"
+ ]
+}

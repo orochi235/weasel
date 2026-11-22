@@ -1,0 +1,101 @@
+{
+ "id": "core.core.scene.part1",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/core/scene/NodeProperties.ts",
+  "packages/core/src/core/scene/NodeRouting.ts",
+  "packages/core/src/core/scene/annotation.ts",
+  "packages/core/src/core/scene/anyScene.ts",
+  "packages/core/src/core/scene/appliedLog.ts",
+  "packages/core/src/core/scene/arrivalTypes.ts",
+  "packages/core/src/core/scene/arrivalWindow.ts",
+  "packages/core/src/core/scene/arrivals.ts",
+  "packages/core/src/core/scene/booleanGroup.ts",
+  "packages/core/src/core/scene/booleanOfChildren.ts",
+  "packages/core/src/core/scene/boundOps.ts",
+  "packages/core/src/core/scene/carryDescendants.ts",
+  "packages/core/src/core/scene/clipNothing.ts",
+  "packages/core/src/core/scene/composeFrame.ts",
+  "packages/core/src/core/scene/composePose.ts",
+  "packages/core/src/core/scene/declaredFieldSetters.ts",
+  "packages/core/src/core/scene/depFrame.ts",
+  "packages/core/src/core/scene/depMemo.ts",
+  "packages/core/src/core/scene/dependents.ts",
+  "packages/core/src/core/scene/derivedParts.ts",
+  "packages/core/src/core/scene/derivedPath.ts",
+  "packages/core/src/core/scene/docValues.ts",
+  "packages/core/src/core/scene/documentOf.ts",
+  "packages/core/src/core/scene/editMode.ts",
+  "packages/core/src/core/scene/editPass.ts",
+  "packages/core/src/core/scene/editingSession.ts",
+  "packages/core/src/core/scene/effectivePose.ts",
+  "packages/core/src/core/scene/fieldEdits.ts",
+  "packages/core/src/core/scene/fontReads.ts",
+  "packages/core/src/core/scene/frameFixture.ts",
+  "packages/core/src/core/scene/historyFacade.ts",
+  "packages/core/src/core/scene/historyForm.ts",
+  "packages/core/src/core/scene/historyIds.ts",
+  "packages/core/src/core/scene/index.ts",
+  "packages/core/src/core/scene/inheritedPaint.ts",
+  "packages/core/src/core/scene/kitOps.ts",
+  "packages/core/src/core/scene/kitRegistry.ts",
+  "packages/core/src/core/scene/layerOps.ts",
+  "packages/core/src/core/scene/layerStack.ts",
+  "packages/core/src/core/scene/layerTypes.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 40,
+  "B": 40
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 5,
+  "unfound": 1
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2724,
+   "total": 2724
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1251200,
+  "costUsd": 3.7
+ },
+ "fixCommits": [
+  "25c65f0faeb6a12c7819f1a8bd72742df5662de8",
+  "a60d266fac5835032796ae19d8c9d7f5693637fe",
+  "afd054a8bc3c78941ceda730caf197c9d02ded81"
+ ]
+}

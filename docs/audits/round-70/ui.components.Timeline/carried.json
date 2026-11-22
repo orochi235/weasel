@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r59-8",
+   "claim": "A controlled `selection` set by the consumer leaves a selected segment selected beside it",
+   "where": "packages/ui/src/components/Timeline/timelineState.ts:31-44 (useKeyAndSegment)",
+   "from": "A",
+   "round": 59,
+   "rounds": [
+    59
+   ]
+  }
+ ]
+}

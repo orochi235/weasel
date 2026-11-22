@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "Ring arrow keys treat the last swatch of the previous ring (and the first of the next) as an along-the-ring neighbor, so Left/Right can jump across the whole arc",
+  "An arrow key on a seekable SpanStrip whose `at` lies past the window steps from the off-window value, so the first presses do nothing visible",
+  "Switch reports stale modifier keys on a keyboard toggle after a click that did not toggle"
+ ],
+ "b": [
+  "ShortcutSheet's useSyncExternalStore has no server snapshot, so server rendering a page that mounts it throws"
+ ]
+}

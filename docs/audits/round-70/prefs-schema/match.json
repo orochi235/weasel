@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "prefBoundedNumber can leave min above max, and prefClampNumber then returns a value below min",
+  "repairPrefValue passes any non-object through unchecked for an object leaf with fromScalar"
+ ],
+ "b": [
+  "A group's own `from: 'group'` test reads its parent group, so a mounted group cannot be switched by its own leaf",
+  "`applyPrefConditions` never hands back the schema itself when it holds a group test, though its docs promise it does"
+ ]
+}

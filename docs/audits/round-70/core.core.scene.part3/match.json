@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "Stale-replay check for `kit:setLayer` ignores the layer floor, so a replay after an untracked reparent can leave a child on a layer below its parent"
+ ],
+ "b": [
+  "A replayed `kit:setLayer` is never skipped for breaking the layer floor, so undo/redo after an untracked reparent puts a child below its parent's layer",
+  "`Scene.childrenOf`'s doc says a mark has no children, but marks can hold children and `childrenOf` returns them",
+  "`foldable` checks a version 1–2 save after its poses were already localized, so NaN poses can get past the guard it exists for"
+ ]
+}

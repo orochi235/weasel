@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "Inside a camera, `<LoupeGestures>` drops `hostRef`: the lens's input comes from the camera's element, not the element it tracks",
+  "A press on a reticle lying over a Split lens's seam drags the seam instead of the reticle",
+  "`<LensOverlay>` does not re-render on a Follow hold: only `LabLoupe` subscribes to `scene.overrides`, so any other host's lenses lag their reticles",
+  "A clone copy is scaled by the root's x scale on both axes, so it misaligns vertically under a non-uniform scale"
+ ],
+ "b": [
+  "A round Split lens's seam hit box takes presses outside the visible lens",
+  "`createCloneSource` drops a frame when two sources share one `useFrameSchedule`"
+ ]
+}

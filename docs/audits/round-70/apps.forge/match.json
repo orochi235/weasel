@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "followScheme subscribes to the OS scheme at module load and never unsubscribes, so each re-evaluation of the frame config leaves a live listener re-applying stale globals",
+  "csf.mjs waits on the last settled host but checks the last host, which can be a different element"
+ ],
+ "b": [
+  "labkit stories drop the Theme and Density globals: LabRoot re-themes them as interstellar",
+  "The a11y sweep titles stories from their directory, not the title the workshop gives them",
+  "The focus-ring sweep passes a Tab stop it took no unfocused snapshot of",
+  "The Weight global defaults to a weight the default font hides",
+  "The animation waits hang on a paused finite animation",
+  "followScheme's OS-scheme subscription is never released"
+ ]
+}

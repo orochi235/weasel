@@ -1,0 +1,93 @@
+{
+ "id": "prefs-schema",
+ "commit": "c0e15f5f0574e6fa86132e42a6de61cf9f5e45bc",
+ "date": "2026-11-22",
+ "files": [
+  "packages/prefs-schema/src/action.ts",
+  "packages/prefs-schema/src/alias.ts",
+  "packages/prefs-schema/src/bounds.ts",
+  "packages/prefs-schema/src/build.ts",
+  "packages/prefs-schema/src/condition.ts",
+  "packages/prefs-schema/src/groupConditions.ts",
+  "packages/prefs-schema/src/groups.ts",
+  "packages/prefs-schema/src/helpers.ts",
+  "packages/prefs-schema/src/holding.ts",
+  "packages/prefs-schema/src/index.ts",
+  "packages/prefs-schema/src/internal.ts",
+  "packages/prefs-schema/src/judge.ts",
+  "packages/prefs-schema/src/label.ts",
+  "packages/prefs-schema/src/leafValue.ts",
+  "packages/prefs-schema/src/list.ts",
+  "packages/prefs-schema/src/map.ts",
+  "packages/prefs-schema/src/number.ts",
+  "packages/prefs-schema/src/object.ts",
+  "packages/prefs-schema/src/paths.ts",
+  "packages/prefs-schema/src/presets.ts",
+  "packages/prefs-schema/src/repair.ts",
+  "packages/prefs-schema/src/schema.ts",
+  "packages/prefs-schema/src/schemaIcon.typetest.ts",
+  "packages/prefs-schema/src/scope.ts",
+  "packages/prefs-schema/src/scopeSpec.ts",
+  "packages/prefs-schema/src/shown.ts",
+  "packages/prefs-schema/src/status.ts",
+  "packages/prefs-schema/src/statusAt.ts",
+  "packages/prefs-schema/src/testing/pbt.fixture.ts",
+  "packages/prefs-schema/src/union.ts",
+  "packages/prefs-schema/src/unit.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 8,
+ "unfound": 4,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 8,
+  "unfound": 4
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3557,
+   "total": 3557
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1572146,
+  "costUsd": 4.89
+ },
+ "fixCommits": [
+  "e245e8c8abc2e0e91302b7411a0fc9cb0da82c42",
+  "4767214a75319be8ca1ca256490eab00eb285f35",
+  "59d65b8bce0fc1f9483191783ac234952e6d619e",
+  "d0e93de42bced48a802b86c4b6ef92a5b77663a5"
+ ]
+}

@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   0
+  ],
+  [
+   4,
+   2
+  ]
+ ],
+ "a": [
+  "Delete removes a selected key on a row that is no longer drawn (collapsed nested timeline)",
+  "Delete on a stale held selection reports an edit that changed nothing",
+  "Keys, segments and nested bars before the window's start draw over the label column",
+  "A disabled timeline's ruler swallows page scroll",
+  "A dope drag that reorders equal-time keys and ends at its start time leaves the preview reordered with no onChange or onCancel"
+ ],
+ "b": [
+  "Dope-sheet marks before the window's start draw over the label column and swallow its presses",
+  "A keydown that changes nothing leaves `refocus` set, and a later unrelated render moves focus to the selected key",
+  "A dope-sheet drag back to its own starting time ends its `onInput` run with neither `onChange` nor `onCancel`",
+  "Delete with a selection index past the track's keys reports an edit that changed nothing",
+  "A nested row's end and its bar's length read a nested timeline's `duration` two different ways",
+  "The press guard against keyboard edits is released by any pointer, not the one that pressed"
+ ]
+}

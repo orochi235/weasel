@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   4
+  ]
+ ],
+ "a": [
+  "The last capture's object URL is never revoked when the demo unmounts, and survives into the next mount",
+  "Per-card effect entries are never deleted, so the effects map grows with every card ever added",
+  "The weasel-mark load has no error path, so one failed load disables the Ripple panel for the page's life",
+  "Pinned Columns and Gap can make the cell width negative, and the bars then overlap and run past the grid"
+ ],
+ "b": [
+  "AnimationDemo's per-card effects map is never pruned when cards leave the scene",
+  "CustomShaderDemo's shared texture load never settles if the image fails, disabling Ripple for every later mount",
+  "AnnotationCaptureDemo's last capture blob URL outlives the demo, and a failed capture throws away the previous good one",
+  "AudioDemo's voice readout shows the total across buses against a per-bus cap",
+  "AutoControlsDemo draws past its own width when cols and gap are pinned high at a narrow width"
+ ]
+}

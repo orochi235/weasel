@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A WebGPU draw binds a texture destroyed since a program last had it set, so one stale uniform voids the whole submit",
+  "WebGPU `createTarget` makes the multisampled color and stencil textures at the raw size while the color texture is clamped to 1×1",
+  "The GL backend draws a program sampling the pass's own target, which WebGPU replaces with the dummy texture",
+  "`@group`/`@binding` are read only as bare decimal literals, so a binding written with a const (or `@binding( 0 )`) is silently dropped from the layout",
+  "`beginFrame` leaves WebGLSampler objects a context sharer bound, overriding the kit textures' filter and wrap"
+ ],
+ "b": [
+  "A lost WebGL context is reported as a shader compile failure, and the program keeps that failure for good",
+  "WebGPU `createTarget` clamps the color texture to 1×1 but makes the multisampled color and the stencil at the size asked for, so a zero-sized target is an invalid texture that voids its submit",
+  "WebGPU canvas pass on a 0×0 canvas copies into an invalid current texture, voiding the submit"
+ ]
+}

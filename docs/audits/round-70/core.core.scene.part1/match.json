@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "`kit:add`'s revert takes the node out of the scene without narrowing any session's selection",
+  "`kit:setLayer`'s revert can put a node back on a hidden layer and leave it selected in other sessions"
+ ],
+ "b": [
+  "A derived node's memo never re-checks a dependency's inherited paint, so a container's fill change leaves it stale",
+  "A failed atomic edit whose log names an op kind no longer registered throws out of the revert loop, skipping the rest of the revert and masking the original error",
+  "Reverting `kit:setLayer` onto a hidden or locked layer leaves the node in the selection"
+ ]
+}
