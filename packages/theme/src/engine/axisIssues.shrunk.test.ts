@@ -39,4 +39,13 @@ describe('axes loaded malformed', () => {
     ]);
     expect(derive(def, { mode: 'dark' }).tokens.x!.value).toBe('4px');
   });
+
+  it('bakes the tokens that do not vary on an axis whose default is not one of its values', () => {
+    for (const d of ['"cozy"', '5', 'null']) {
+      const def = loaded(`{"name":"t","axes":{"density":{"default":${d},"values":{"compact":{},"roomy":{}}}},"pins":{"x":{"value":"4px","type":"dimension"},"y":{"by":"density","compact":{"value":"1px","type":"dimension"},"roomy":{"value":"2px","type":"dimension"}}}}`);
+      const { tokens } = bake(def);
+      expect(tokens.x).toEqual({ type: 'dimension', value: '4px' });
+      expect(tokens.y).toEqual({ by: 'density', compact: { type: 'dimension', value: '1px' }, roomy: { type: 'dimension', value: '2px' } });
+    }
+  });
 });

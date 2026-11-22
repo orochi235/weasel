@@ -101,7 +101,8 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     );
 
     const build = (i: number, sel: Record<string, string>): Varying<RawToken> | undefined => {
-      if (i === varying.length) return at(fullAxisChoice(axes, sel), name);
+      // Not `fullAxisChoice`: a default the editor holds mid-edit may name no value, which no selection was derived at.
+      if (i === varying.length) return at(selections.find((s) => Object.entries(sel).every(([a, v]) => getOwn(s, a) === v)) ?? sel, name);
       const [axis, d] = varying[i];
       const branch: Record<string, unknown> = { by: axis };
       let any = false;
