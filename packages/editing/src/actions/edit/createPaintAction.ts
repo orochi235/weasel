@@ -11,7 +11,7 @@ import { anyLocked } from '../lockedWrites';
 /** The node data one paint action reads and writes: its own key, nothing else. */
 type PaintData<K extends string, TValue> = { [P in K]?: TValue | null };
 
-/** Read a param from the invocation, falling back to the binding's. */
+/** Read a param from the binding. */
 export type PickParam<P> = <Key extends keyof P>(key: Key) => P[Key] | undefined;
 
 /**
@@ -26,7 +26,8 @@ export interface PaintActionSpec<TState, TValue, K extends string, P> {
   label: string;
   /** The `data` key this action owns. */
   dataKey: K;
-  /** Gesture state at start. */
+  /** Gesture state at start, from the binding's params. The invocation's params are then read over it as
+   *  `readParams` reads a tick, so an invocation's color supersedes a binding's paint as a later tick's would. */
   initialState(pick: PickParam<P>): TState;
   /** The state one onMove tick moves to, or `null` when its params carry
    *  nothing this action reads — the preview then stands. */
@@ -133,8 +134,8 @@ export function createPaintAction<TState, TValue, K extends string, P>(
         const ids = [...targetsOf(ctx.deps, { ids: (ctx.params as Targeted)?.ids ?? (fallback as Targeted)?.ids })];
         if (ids.length === 0 || anyLocked(scene, ids)) return {};
 
-        // `??` would lose a `paint: null`, which is None, not "no paint given".
-        const pick: PickParam<P> = (key) => (ctx.params?.[key] !== undefined ? ctx.params[key] : fallback?.[key]);
+        const pick: PickParam<P> = (key) => fallback?.[key];
+        const initial = spec.initialState(pick);
 
         const startData = new Map<NodeId, Data>();
         const bases = new Map<NodeId, TValue | null | undefined>();
@@ -150,7 +151,7 @@ export function createPaintAction<TState, TValue, K extends string, P>(
           scene,
           startData,
           bases,
-          state: spec.initialState(pick),
+          state: spec.readParams(initial, ctx.params) ?? initial,
           previews: new Map(),
         };
         refreshPreviews(scratch);
