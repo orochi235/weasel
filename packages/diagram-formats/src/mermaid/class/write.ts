@@ -31,6 +31,16 @@ export function classParts(node: DataNode): { annotations: string[]; name: strin
   return { annotations, name: names[0] ?? node.id, attributes, methods };
 }
 
+/** Whether every `<` in `text` closes, in order, and nothing else does: a generic Mermaid's tildes can nest. */
+function balanced(text: string): boolean {
+  let depth = 0;
+  for (const c of text) {
+    if (c === '<') depth += 1;
+    else if (c === '>' && --depth < 0) return false;
+  }
+  return depth === 0 && !/~|<>/.test(text);
+}
+
 const HEADS: Readonly<Record<string, readonly [string, string]>> = {
   'triangle-hollow': ['<|', '|>'], diamond: ['*', '*'], 'diamond-hollow': ['o', 'o'], arrow: ['<', '>'], 'arrow-open': ['<', '>'],
 };
@@ -59,9 +69,9 @@ class ClassWriter {
     if (this.notes.has(node.id)) return;
     const { annotations, name, attributes, methods } = classParts(node);
     const id = this.id(node.id);
-    const generic = /^(.*)<([^<>]*)>$/.exec(name);
+    const generic = /^([^<>]*)<(.*)>$/.exec(name);
     const head = name === id ? id
-      : generic !== null && generic[1] === id ? `${id}~${generic[2]}~`
+      : generic !== null && generic[1] === id && balanced(generic[2]!) ? `${id}~${generic[2]!.replace(/[<>]/g, '~')}~`
         : `${id}["${spelled(name)}"]`;
     const members = [...attributes, ...methods].map((m) => oneLine(m, 'class diagram member', (w) => this.out.warnings.add(w)).trim());
     const kept = members.filter((m) => m !== '}' && readsAsStatement(m));

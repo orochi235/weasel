@@ -6,7 +6,7 @@ import { onlyPage, sortedPage } from '../../testing/samePage';
 import { documentSpecs } from '../../toScene';
 import { parseClassDiagram } from './parse';
 import { readClassDiagram } from './read';
-import { writeClassDiagram } from './write';
+import { classParts, writeClassDiagram } from './write';
 
 const SHOP = readFileSync(join(__dirname, '..', '..', '__fixtures__', 'mermaid', 'class', 'shop.mmd'), 'utf8');
 const page = (text: string) => onlyPage(readClassDiagram(text).document);
@@ -96,6 +96,14 @@ describe('writing a Mermaid class diagram', () => {
     expect(text).toContain('  Customer "1" --> "0..*" Order : places');
     expect(text).toContain('  Repository <|.. OrderRepository');
     expect(text).toContain('  note for Customer "Registered\\nshoppers only"');
+  });
+
+  it('reads and writes nested generics, in a class and a relation', () => {
+    const read = readClassDiagram('classDiagram\n  class Foo~List~int~~\n  Foo~List~int~~ --> Bar');
+    const p = onlyPage(read.document);
+    expect(classParts(p.data.nodes.find((n) => n.id === 'Foo')!).name).toBe('Foo<List<int>>');
+    expect(p.data.edges).toMatchObject([{ from: 'Foo', to: 'Bar' }]);
+    expect(writeClassDiagram(read.document).text).toContain('  class Foo~List~int~~\n');
   });
 
   it('writes a plain box\'s lines as a class, warning of ends it has no head for', () => {

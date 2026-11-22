@@ -32,8 +32,8 @@ export interface ClassDiagram {
   stmts: ClassStmt[];
 }
 
-const ID = String.raw`([\w-]+)(?:~[^~\s]*~)?`;
-const CLASS = /^class\s+([\w-]+)(?:~([^~]*)~)?(?:\s*\[\s*"([^"]*)"\s*\])?(?::::([\w-]+))?\s*(\{.*)?$/s;
+const ID = String.raw`([\w-]+)(?:~[^\s"]*?~)?`;
+const CLASS = /^class\s+([\w-]+)(?:~([^[{"]*?)~)?(?:\s*\[\s*"([^"]*)"\s*\])?(?::::([\w-]+))?\s*(\{.*)?$/s;
 const RELATION = new RegExp(
   `^${ID}(?:\\s+"([^"]*)")?\\s*(<\\||\\*|o|<)?(--|\\.\\.)(\\|>|\\*|o|>)?\\s*(?:"([^"]*)"\\s*)?${ID}(?:\\s*:\\s*(.*))?$`, 's',
 );
