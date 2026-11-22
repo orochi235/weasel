@@ -15,7 +15,7 @@ import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt
 import { freshId, getOwn } from '@weasel-js/registry';
 
 const DIRECTIONS: Readonly<Record<string, LayoutDirection>> = {
-  TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left', 'v': 'down', '^': 'up', '>': 'right', '<': 'left',
+  TB: 'down', TD: 'down', BT: 'up', LR: 'right', RL: 'left', V: 'down', '^': 'up', '>': 'right', '<': 'left',
 };
 
 export const SHAPE_OUTLINES: Readonly<Partial<Record<MermaidShape, Outline>>> = {
@@ -260,6 +260,7 @@ export function readFlowchart(text: string): ImportResult {
     };
   });
   const direction = getOwn(DIRECTIONS, chart.direction);
+  if (direction === undefined) r.warnings.list('Mermaid flowchart directions it does not know were read as top to bottom', chart.direction);
   const page = graphPage({
     ...(name !== undefined ? { name } : {}),
     ...(direction !== undefined ? { direction } : {}),
