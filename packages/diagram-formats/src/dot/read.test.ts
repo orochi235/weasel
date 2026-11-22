@@ -201,3 +201,14 @@ describe("reading a DOT graph's bgcolor", () => {
     expect(warnings).toContain('DOT attributes a diagram does not hold were dropped: bgcolor.');
   });
 });
+
+describe('reading DOT keywords set to ""', () => {
+  it('reads an empty arrowhead, arrowtail, shape, or dir as Graphviz\'s default, with no warning', () => {
+    const { document, warnings } = readDot('digraph { a [shape=""]; a -> b [arrowhead="", arrowtail="", dir=""] }');
+    const data = asGraph(document.pages[0]!).data;
+    expect(node(data, 'a').outline).toBe('ellipse');
+    expect(data.edges[0]!.colors?.markerStart).toBeUndefined();
+    expect(data.edges[0]!.colors?.markerEnd).toBeUndefined();
+    expect(warnings).toEqual([]);
+  });
+});

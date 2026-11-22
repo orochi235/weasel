@@ -32,6 +32,8 @@ const POINTS_PER_INCH = 72;
 
 const round = (n: number) => Math.round(n * 100) / 100;
 const str = (attrs: Attrs, key: string) => attrs.get(key)?.value;
+/** A keyword attribute, `undefined` when unset or set to `""`, which Graphviz reads as its default. */
+const keyword = (attrs: Attrs, key: string) => str(attrs, key) || undefined;
 
 /** A color attribute as CSS reads it; `undefined` for one unset or set to `""`, Graphviz's default, and, with a warning,
  *  for one naming a color a diagram cannot draw. */
@@ -146,7 +148,7 @@ function nodeColors(r: DotReader, attrs: Attrs, styles: readonly string[], unset
 
 function readNode(r: DotReader, id: string, attrs: Attrs): DataNode {
   const styles = stylesOf(str(attrs, 'style'));
-  const shape = str(attrs, 'shape') ?? 'ellipse';
+  const shape = keyword(attrs, 'shape') ?? 'ellipse';
   let outline = str(attrs, OUTLINE_ATTR) ?? outlineOf(shape, styles);
   if (outline === null) {
     r.warnings.list('DOT shapes read as rectangles', shape);
@@ -206,9 +208,9 @@ function marker(r: DotReader, name: string | undefined): MarkerRef | null {
 
 function readEdge(r: DotReader, e: RawEdge): DataEdge {
   const styles = stylesOf(str(e.attrs, 'style'));
-  const dir = str(e.attrs, 'dir') ?? (r.graph.directed ? 'forward' : 'none');
-  const end = dir === 'forward' || dir === 'both' ? marker(r, str(e.attrs, 'arrowhead')) : null;
-  const start = dir === 'back' || dir === 'both' ? marker(r, str(e.attrs, 'arrowtail')) : null;
+  const dir = keyword(e.attrs, 'dir') ?? (r.graph.directed ? 'forward' : 'none');
+  const end = dir === 'forward' || dir === 'both' ? marker(r, keyword(e.attrs, 'arrowhead')) : null;
+  const start = dir === 'back' || dir === 'both' ? marker(r, keyword(e.attrs, 'arrowtail')) : null;
   const stroke = colorAttr(r, e.attrs, 'color');
   const label = colorAttr(r, e.attrs, 'fontcolor');
   const width = numberAttr(r, e.attrs, 'penwidth');
