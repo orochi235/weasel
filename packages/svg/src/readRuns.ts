@@ -14,6 +14,7 @@ import { deriveStyle, ownProp, ownValue, setsOwn, styleValue, visibilityHides, t
 import { shiftInEms } from './properties';
 import { readStroke, isNonScalingStroke, setsOwnStroke, coreStroke, coreTextFill } from './readPaint';
 import { withOutlinedStroke } from './strokeOutlineSvg';
+import { tspanStretches } from './nestedTspans';
 
 const glyphCount = (text: string): number => Array.from(text).length;
 
@@ -52,20 +53,20 @@ export function readRuns(
   } else {
     // Every run is read before any is placed: the text's `x` list is folded
     // into spacing by measuring together the runs it reaches.
-    const pieces = Array.from(el.childNodes).flatMap((child): Piece[] => {
+    const styled = new ChainStyle(gradients, leafStyle, onWarn);
+    const pieces = Array.from(el.childNodes).flatMap((child): (Piece & { hidden: boolean })[] => {
       if (child.nodeType === 1 && (child as Element).tagName.toLowerCase() === 'tspan') {
-        const sp = child as Element;
-        for (const inner of Array.from(sp.children)) {
-          onWarn(`<${inner.tagName}> inside a <tspan> is read as that tspan's text: its own styling and position are dropped`);
-        }
-        const run = readTspanRun(sp, gradients, leafStyle, onWarn);
-        return [{ tspan: sp, run: ownProp(sp, 'baseline-shift') == null ? { ...run, ...inheritedShift } : run }];
+        return tspanStretches(child as Element, onWarn).map(({ at, chain, text }) => {
+          const run = styled.run(chain, text);
+          const shifted = chain.some((e) => ownProp(e, 'baseline-shift') != null);
+          return { tspan: at, run: shifted ? run : { ...run, ...inheritedShift }, hidden: visibilityHides(styled.style(chain)) };
+        });
       }
       if (child.nodeType === 1) onWarn(`<text> child <${(child as Element).tagName}> not supported; flattening text content`);
       else if (child.nodeType !== 3 /* TEXT_NODE */) return [];
       const t = child.textContent ?? '';
-      return t ? [{ tspan: null, run: { text: t, ...inheritedShift } }] : [];
-    }).map((p) => (visibilityHides(p.tspan ? deriveStyle(leafStyle, p.tspan) : leafStyle) ? { ...p, run: unpainted(p.run) } : p));
+      return t ? [{ tspan: null, run: { text: t, ...inheritedShift }, hidden: visibilityHides(leafStyle) }] : [];
+    }).map(({ tspan, run, hidden }) => ({ tspan, run: hidden ? unpainted(run) : run }));
     const shifts = new TextShifts(el, onWarn, pieces, textStyle, lineOpenings(el, pieces));
     for (const { tspan: sp, run } of pieces) {
       if (!sp) {
@@ -114,14 +115,57 @@ function lineOpenings(el: Element, pieces: readonly Piece[]): boolean[] {
   });
 }
 
+/** The run style a chain of nested tspans gives its text, outermost first, each element read once. */
+class ChainStyle {
+  private readonly runs = new Map<Element, StyledRun>();
+  private readonly styles = new Map<Element, StyleContext>();
+
+  constructor(
+    private readonly gradients: GradientTable,
+    private readonly leafStyle: StyleContext,
+    private readonly onWarn: (m: string) => void,
+  ) {}
+
+  /** The cascade on the innermost of `chain`. */
+  style(chain: readonly Element[]): StyleContext {
+    let style = this.leafStyle;
+    for (const e of chain) {
+      let own = this.styles.get(e);
+      if (own === undefined) this.styles.set(e, (own = deriveStyle(style, e)));
+      style = own;
+    }
+    return style;
+  }
+
+  /** `text`'s run under `chain`: each tspan's own overrides over the ones around it. */
+  run(chain: readonly Element[], text: string): StyledRun {
+    const out: StyledRun = { text };
+    chain.forEach((e, i) => {
+      let own = this.runs.get(e);
+      if (own === undefined) this.runs.set(e, (own = readTspanRun(e, this.gradients, this.style(chain.slice(0, i)), this.onWarn)));
+      overlay(out, own);
+    });
+    return out;
+  }
+}
+
+/** Fields one property sets together: a run that sets any of a group replaces the whole group. */
+const TOGETHER: readonly (readonly (keyof StyledRun)[])[] = [['bold', 'fontWeight'], ['fontSize', 'fontScale'], ['script', 'baselineShift']];
+
+function overlay(run: StyledRun, over: StyledRun): void {
+  for (const group of TOGETHER) {
+    if (group.some((k) => over[k] !== undefined)) for (const k of group) delete run[k];
+  }
+  Object.assign(run, Object.fromEntries(Object.entries(over).filter(([k, v]) => k !== 'text' && v !== undefined)));
+}
+
 function readTspanRun(
   el: Element,
   gradients: GradientTable,
   style: StyleContext,
   onWarn: (m: string) => void,
 ): StyledRun {
-  const text = el.textContent ?? '';
-  const run: StyledRun = { text };
+  const run: StyledRun = { text: '' };
   const tspanStyle = deriveStyle(style, el);
   const own = ownValue(el, 'font-weight', onWarn);
   // `bolder` and `lighter` are read as the weight they compute to over the text's.
