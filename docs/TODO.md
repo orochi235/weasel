@@ -495,6 +495,11 @@ only story runner in the repo.
   read, on each request and after two quiet seconds, and logs `[watch] <file> changed with no file
   event` when it fixes one. What is left is the cause: the next time that line appears for a file in
   a checkout, note the server, the file, and whether `fseventsd` was busy, here.
+  Sighting (2026-11-22): dev:draw, edits to `packages/hud/src/**` with `fseventsd` at 103% CPU and 2.9 GB.
+  The server logged that it had fallen back to modification times, but the edits never reached the page:
+  draw loads `@weasel-js/hud` from the workspace pre-bundle (`scripts/vite-prebundle.ts`), and recovery checks
+  only files the server serves itself, so the stale bundle stood until `emilia restart dev:draw`. Recovery
+  covering the pre-bundle's inputs is the fix for that half.
   Closes when such a line is recorded here with its server, file, and `fseventsd` state, or on 2026-12-31
   with none, delete it.
 
