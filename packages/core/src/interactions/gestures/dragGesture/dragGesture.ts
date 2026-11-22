@@ -47,8 +47,9 @@ export interface UseDragGestureOptions<TScratch = unknown> {
   onMove?: (ctx: DragGestureCtx<TScratch>) => void;
   onEnd?: (ctx: DragGestureEndCtx<TScratch>) => boolean | void;
   onCancel?: (ctx: DragGestureCtx<TScratch>) => void;
-  /** Fired when a gesture opens. A `start()` that replaces a live gesture
-   *  does not fire it again. */
+  /** Fired when a gesture opens. A `start()` during a live gesture replaces
+   *  it as the same gesture: this does not fire again, and the replaced one
+   *  gets no `onCancel` or `onEnd`. */
   onGestureStart?: () => void;
   /** Fired once per `onGestureStart`, when that gesture ends or cancels. */
   onGestureEnd?: (committed: boolean) => void;
@@ -73,6 +74,16 @@ interface InternalState<TScratch> {
   scratch: TScratch;
 }
 
+function ctxOf<TScratch>(s: InternalState<TScratch>): DragGestureCtx<TScratch> {
+  return {
+    get start() { return s.start; },
+    get current() { return s.current; },
+    get modifiers() { return s.modifiers; },
+    get scratch() { return s.scratch; },
+    get phase() { return s.phase; },
+  };
+}
+
 /**
  * The base drag primitive: tracks a pointer from press to release, with an
  * optional threshold below which the gesture stays pending and commits
@@ -94,16 +105,7 @@ export function useDragGesture<TScratch = unknown>(
     setPhaseTick((n) => n + 1);
   }, []);
 
-  const buildCtx = useCallback((): DragGestureCtx<TScratch> => {
-    const s = stateRef.current!;
-    return {
-      get start() { return s.start; },
-      get current() { return s.current; },
-      get modifiers() { return s.modifiers; },
-      get scratch() { return s.scratch; },
-      get phase() { return s.phase; },
-    };
-  }, []);
+  const buildCtx = useCallback((): DragGestureCtx<TScratch> => ctxOf(stateRef.current!), []);
 
   const start = useCallback((point: DragGesturePoint, modifiers: ModifierState) => {
     const opts = optsRef.current;
@@ -145,22 +147,16 @@ export function useDragGesture<TScratch = unknown>(
     const s = stateRef.current;
     const opts = optsRef.current;
     if (!s) return;
-    const wasSubThreshold = s.phase === 'pending';
-    const endCtx: DragGestureEndCtx<TScratch> = {
-      get start() { return s.start; },
-      get current() { return s.current; },
-      get modifiers() { return s.modifiers; },
-      get scratch() { return s.scratch; },
-      get phase() { return s.phase; },
-      wasSubThreshold,
-    };
+    const endCtx = Object.assign(ctxOf(s), { wasSubThreshold: s.phase === 'pending' });
+    // Closed before `onEnd` runs, so a `cancel()` from it is a no-op and a
+    // `start()` from it opens a gesture of its own that outlives this one.
+    stateRef.current = null;
     let committed = false;
     try {
       const r = opts.onEnd?.(endCtx);
       committed = r !== false;
     } finally {
-      stateRef.current = null;
-      bumpPhase('idle');
+      if (!stateRef.current) bumpPhase('idle');
       opts.onGestureEnd?.(committed);
     }
   }, [bumpPhase, optsRef]);
@@ -169,14 +165,14 @@ export function useDragGesture<TScratch = unknown>(
     const s = stateRef.current;
     const opts = optsRef.current;
     if (!s) return;
+    stateRef.current = null;
     try {
-      opts.onCancel?.(buildCtx());
+      opts.onCancel?.(ctxOf(s));
     } finally {
-      stateRef.current = null;
-      bumpPhase('idle');
+      if (!stateRef.current) bumpPhase('idle');
       opts.onGestureEnd?.(false);
     }
-  }, [buildCtx, bumpPhase, optsRef]);
+  }, [bumpPhase, optsRef]);
 
   useEffect(() => cancel, [cancel]);
 

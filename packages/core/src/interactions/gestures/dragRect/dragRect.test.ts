@@ -187,6 +187,24 @@ describe('useDragRect', () => {
   });
 });
 
+describe('useDragRect — chained from onEnd', () => {
+  it('keeps the overlay of a gesture its onEnd starts', () => {
+    const ref: { c: ReturnType<typeof useDragRect> | null } = { c: null };
+    let chained = false;
+    const { result } = renderHook(() => useDragRect({
+      onEnd: () => { if (!chained) { chained = true; ref.c!.start(50, 50, NO_MODS); } },
+    }));
+    ref.c = result.current;
+    act(() => result.current.start(0, 0, NO_MODS));
+    act(() => result.current.end());
+    expect(result.current.isActive).toBe(true);
+    expect(result.current.overlay!.start).toEqual({ x: 50, y: 50 });
+    ref.c = result.current;
+    act(() => { result.current.move(60, 70, NO_MODS); });
+    expect(result.current.overlay!.bounds).toEqual({ x: 50, y: 50, width: 10, height: 20 });
+  });
+});
+
 describe('useDragRect — abandoned render', () => {
   it('fires the committed callbacks, not ones from a render React threw away', () => {
     const onStartA = vi.fn();
