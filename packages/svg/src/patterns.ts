@@ -18,6 +18,7 @@ import {
   type TilePaint, type TilePatternSpec,
 } from '@weasel-js/core';
 import { collectElementsByTag } from './elements';
+import { readLength } from './lengths';
 import { imageHref } from './readImage';
 import { exportedHref } from './bitmapHref';
 import { applyMatrix, formatMatrix, isIdentity, parseTransform, trimNumber } from './transform';
@@ -151,8 +152,9 @@ function readImagePattern(el: Element, onWarn?: (m: string) => void): ImagePatte
  *  `origin` and `transform`, each present only when it moves the tile, in the
  *  user space of the element it fills. */
 function readPlacement(el: Element, onWarn?: (m: string) => void): PatternPlacement {
-  const x = parseFloat(el.getAttribute('x') ?? '0');
-  const y = parseFloat(el.getAttribute('y') ?? '0');
+  const warn = onWarn ?? (() => {});
+  const x = readLength(el, 'x', 'x', 0, warn);
+  const y = readLength(el, 'y', 'y', 0, warn);
   const m = parseTransform(el.getAttribute('patternTransform'), onWarn);
   const origin = applyMatrix(m, x, y);
   const placement: PatternPlacement = { units: 'world' };
