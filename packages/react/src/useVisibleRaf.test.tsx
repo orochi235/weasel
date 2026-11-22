@@ -332,6 +332,19 @@ describe('useVisibleRaf', () => {
     expect(frame).toHaveBeenCalledTimes(2);
   });
 
+  it('resumes a held request when its element leaves the document while out of view', async () => {
+    const clock = makeClock();
+    const a = document.body.appendChild(document.createElement('div'));
+    const frame = vi.fn();
+    const { loop } = mount(frame, { ...clock, target: () => a });
+    act(() => { setIntersecting(false); });
+    act(() => { loop().request(); });
+    expect(clock.pending()).toBe(0);
+    await act(async () => { a.remove(); });
+    act(() => { clock.flush(); });
+    expect(frame).toHaveBeenCalledTimes(1);
+  });
+
   it('resumes a suspended loop on the commit that points its target at a visible element', () => {
     const clock = makeClock();
     const frame = vi.fn((_t: number, self: VisibleRaf) => self.request());

@@ -78,6 +78,15 @@ const resolveTarget = (target: VisibleRafTarget | undefined): Element | null => 
   return el?.isConnected ? el : null;
 };
 
+/** Calls `onGone` once `el` has left its document: an element already out of view gets no intersection report
+ *  for that. Returns the function that stops watching. */
+function watchRemoval(el: Element, onGone: () => void): () => void {
+  if (typeof MutationObserver === 'undefined') return () => {};
+  const mo = new MutationObserver(() => { if (!el.isConnected) onGone(); });
+  mo.observe(el.ownerDocument, { childList: true, subtree: true });
+  return () => mo.disconnect();
+}
+
 /**
  * A `requestAnimationFrame` loop that runs only while someone can see it: never while the document is hidden,
  * and, given a `target`, never while that element is outside the viewport. Nothing runs until `request()`.
@@ -101,6 +110,7 @@ export function useVisibleRaf(
   const observedRef = useRef<Element | null>(null);
   const handleRef = useRef<VisibleRaf | null>(null);
   const syncGateRef = useRef<() => void>(() => {});
+  const removalRef = useRef<{ el: Element; stop: () => void } | null>(null);
 
   const isVisible = useCallback(() => gateOpen(optsRef.current, intersectingRef.current), [optsRef]);
 
@@ -122,24 +132,34 @@ export function useVisibleRaf(
     if (el) io.observe(el);
   }, [optsRef]);
 
+  /** Watches for the observed element leaving the document only while it is what holds the loop suspended. */
+  const syncRemoval = useCallback(() => {
+    const el = aliveRef.current && suspendedRef.current && !intersectingRef.current ? observedRef.current : null;
+    if (el === (removalRef.current?.el ?? null)) return;
+    removalRef.current?.stop();
+    removalRef.current = el ? { el, stop: watchRemoval(el, () => syncGateRef.current()) } : null;
+  }, []);
+
   /** Re-reads the gate after something that could have changed it. Suspending
    *  drops the outstanding frame but keeps the request; resuming hands the
    *  loop its rebase before re-arming. */
   const syncGate = useCallback(() => {
     syncObserver();
     if (!isVisible()) {
-      if (suspendedRef.current) return;
-      suspendedRef.current = true;
-      cancelRaf();
-      optsRef.current.onSuspend?.();
-      return;
+      if (!suspendedRef.current) {
+        suspendedRef.current = true;
+        cancelRaf();
+        optsRef.current.onSuspend?.();
+      }
+    } else if (suspendedRef.current) {
+      suspendedRef.current = false;
+      if (aliveRef.current) {
+        optsRef.current.onResume?.();
+        if (pendingRef.current) scheduleRaf();
+      }
     }
-    if (!suspendedRef.current) return;
-    suspendedRef.current = false;
-    if (!aliveRef.current) return;
-    optsRef.current.onResume?.();
-    if (pendingRef.current) scheduleRaf();
-  }, [cancelRaf, isVisible, optsRef, scheduleRaf, syncObserver]);
+    syncRemoval();
+  }, [cancelRaf, isVisible, optsRef, scheduleRaf, syncObserver, syncRemoval]);
 
   const request = useCallback(() => {
     if (!aliveRef.current) return;
@@ -182,8 +202,9 @@ export function useVisibleRaf(
       cancelRaf();
       pendingRef.current = false;
       suspendedRef.current = false;
+      syncRemoval();
     };
-  }, [cancelRaf, syncGate, syncObserver]);
+  }, [cancelRaf, syncGate, syncObserver, syncRemoval]);
 
   // The escape hatch and a re-pointed target change the gate with no event to say so.
   useLayoutEffect(() => { syncGate(); });
