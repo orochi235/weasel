@@ -283,3 +283,13 @@ describe('woodgrain on an outline that reaches past the viewBox', () => {
     expect(d).toMatch(/ 60 50 T 105 /);
   });
 });
+
+describe('perforation spacing', () => {
+  it('never sets holes closer than twice their radius', () => {
+    for (let total = 12; total <= 30; total += 0.75) {
+      const boxW = total / 2 - 3;
+      const holes = draw(Perforations, { holeRadius: 3, holeSpacing: 6 }, boxW, 3).querySelectorAll('ellipse').length;
+      expect(holes === 2 || total / holes >= 6).toBe(true);
+    }
+  });
+});
