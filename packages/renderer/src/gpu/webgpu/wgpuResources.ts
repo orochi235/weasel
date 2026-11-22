@@ -1,10 +1,11 @@
 /** Buffers, geometry, textures and samplers on a WebGPU device. */
 import type {
-  GpuBuffer, GpuBufferUsage, GpuGeometry, GpuGeometryDesc, GpuImageSource, GpuSampling, GpuTexture,
+  GpuBuffer, GpuBufferUsage, GpuGeometry, GpuGeometryDesc, GpuSampling, GpuTexture,
   GpuTextureData, GpuTextureFormat,
 } from '../types';
 import { BufferUsage, TextureUsage } from './flags';
 import { packedStride } from '../vertexLayout';
+import { textureSize } from '../textureSize';
 
 /** Something a command in the open encoder may read, which a write must not
  *  overtake: queue writes land before the encoder's commands run. */
@@ -139,12 +140,6 @@ export const TEXTURE_USAGE = TextureUsage.TEXTURE_BINDING | TextureUsage.COPY_DS
 
 let nextTextureId = 1;
 
-function sizeOf(data: GpuTextureData): { width: number; height: number } {
-  if (!('source' in data)) return { width: data.width, height: data.height };
-  const source = data.source as GpuImageSource & { naturalWidth?: number; naturalHeight?: number };
-  return { width: source.naturalWidth || source.width, height: source.naturalHeight || source.height };
-}
-
 export function gpuTexture(device: GPUDevice, format: GpuTextureFormat, width: number, height: number, mipLevels = 1): GPUTexture {
   return device.createTexture({
     label: `${format} ${width}x${height}`,
@@ -155,7 +150,7 @@ export function gpuTexture(device: GPUDevice, format: GpuTextureFormat, width: n
 export function createTexture(
   host: ResourceHost, format: GpuTextureFormat, sampling: GpuSampling, data: GpuTextureData,
 ): WgpuTexture {
-  const { width, height } = sizeOf(data);
+  const { width, height } = textureSize(data);
   const gpu = gpuTexture(host.device, format, width, height);
   const texture: WgpuTexture = {
     kind: 'texture', id: nextTextureId++, format, gpu, view: gpu.createView(), width, height, mipLevels: 1,
@@ -201,7 +196,7 @@ function writeRegion(host: ResourceHost, texture: WgpuTexture, x: number, y: num
 }
 
 export function writeTexture(host: ResourceHost, texture: WgpuTexture, data: GpuTextureData): void {
-  const { width, height } = sizeOf(data);
+  const { width, height } = textureSize(data);
   const resized = width !== texture.width || height !== texture.height;
   // GL's texImage2D of null leaves the texture empty, and a fresh one is.
   const empty = !('source' in data) && data.data === null;

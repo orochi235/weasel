@@ -287,6 +287,26 @@ describe('WebGLDevice sampler arrays', () => {
   });
 });
 
+describe('WebGLDevice mipmapped textures', () => {
+  const MIPMAPPED = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp', mipmap: true } as const;
+  const maxLevels = (rec: GLRecorder): unknown[] =>
+    argsOf(rec, 'texParameteri').filter(([, pname]) => pname === rec.gl.TEXTURE_MAX_LEVEL).map(([, , v]) => v);
+
+  it('samples level 0 alone until mipmaps are made, and again once a write resizes it, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const tex = gpu.createTexture('rgba8', MIPMAPPED, { width: 4, height: 4, data: new Uint8Array(64) });
+    expect(maxLevels(rec)).toEqual([0]);
+    rec.reset();
+    gpu.generateMipmaps(tex);
+    expect(maxLevels(rec)).toEqual([1000]);
+    rec.reset();
+    gpu.writeTexture(tex, { width: 4, height: 4, data: new Uint8Array(64) });
+    expect(maxLevels(rec)).toEqual([]);
+    gpu.writeTexture(tex, { width: 8, height: 8, data: new Uint8Array(256) });
+    expect(maxLevels(rec)).toEqual([0]);
+  });
+});
+
 describe('WebGLDevice id targets', () => {
   it('draws the id attachment only for a draw that writes ids, and clears both', () => {
     const { rec, gpu } = setup();

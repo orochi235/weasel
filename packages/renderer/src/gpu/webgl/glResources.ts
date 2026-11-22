@@ -6,6 +6,7 @@ import type {
 import type { GlCache } from './glCache';
 import { withFlagHonoringSource } from './bitmapCanvas';
 import { packedStride } from '../vertexLayout';
+import { textureSize } from '../textureSize';
 
 export interface GlBuffer extends GpuBuffer {
   readonly handle: WebGLBuffer;
@@ -25,6 +26,10 @@ export interface GlTexture extends GpuTexture {
   /** The sampling last set, so an unchanged one is not sent again. */
   sampling: GpuSampling;
   deleted: boolean;
+  width: number;
+  height: number;
+  /** Whether levels past 0 hold mipmaps of level 0's size; until they do, sampling reads level 0 alone. */
+  mipmapped: boolean;
 }
 
 function usageOf(gl: WebGL2RenderingContext, usage: GpuBufferUsage): number {
@@ -159,16 +164,26 @@ export function createTexture(
 ): GlTexture {
   const handle = gl.createTexture();
   if (!handle) throw new Error('createTexture returned null');
-  const texture: GlTexture = { kind: 'texture', handle, format, sampling, deleted: false };
+  const texture: GlTexture = { kind: 'texture', handle, format, sampling, deleted: false, ...textureSize(data), mipmapped: false };
   cache.withTexture(handle, () => {
     upload(gl, format, data);
     applySampling(gl, sampling);
+    // GL's default of 1000 leaves a mipmap filter reading levels nothing has filled, which samples black; WebGPU reads level 0.
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 0);
   });
   return texture;
 }
 
 export function writeTexture(gl: WebGL2RenderingContext, cache: GlCache, texture: GlTexture, data: GpuTextureData): void {
-  cache.withTexture(texture.handle, () => upload(gl, texture.format, data));
+  const { width, height } = textureSize(data);
+  const resized = width !== texture.width || height !== texture.height;
+  cache.withTexture(texture.handle, () => {
+    upload(gl, texture.format, data);
+    if (resized && texture.mipmapped) gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 0);
+  });
+  texture.width = width;
+  texture.height = height;
+  if (resized) texture.mipmapped = false;
 }
 
 export function writeSubTexture(
@@ -187,7 +202,11 @@ export function writeSubTexture(
 }
 
 export function generateMipmaps(gl: WebGL2RenderingContext, cache: GlCache, texture: GlTexture): void {
-  cache.withTexture(texture.handle, () => gl.generateMipmap(gl.TEXTURE_2D));
+  cache.withTexture(texture.handle, () => {
+    if (!texture.mipmapped) gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 1000);
+    gl.generateMipmap(gl.TEXTURE_2D);
+  });
+  texture.mipmapped = true;
 }
 
 export function setSampling(
