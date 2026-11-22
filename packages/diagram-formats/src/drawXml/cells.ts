@@ -13,6 +13,8 @@ export interface RawCell {
   edge: boolean;
   source: string | null;
   target: string | null;
+  /** `false` for a cell its `visible="0"` hides. */
+  visible: boolean;
   geometry: Element | null;
 }
 
@@ -63,6 +65,7 @@ function rawCell(outer: Element, cell: Element, id: string): RawCell {
     edge: cell.getAttribute('edge') === '1',
     source: cell.getAttribute('source'),
     target: cell.getAttribute('target'),
+    visible: cell.getAttribute('visible') !== '0',
     geometry: childElements(cell).find((c) => c.tagName === 'mxGeometry') ?? null,
   };
 }

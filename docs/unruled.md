@@ -3595,3 +3595,6 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a draw-style XML placeholder filled into an `html=1` label is escaped first, so its
   value reads as the text it holds and never as markup. Letting a value carry HTML into the label was the alternative
   (`drawXml/cells.ts`, `filled`).
+- 2026-11-21 (the fixer's call): reading draw-style XML leaves out a cell its `visible="0"` hides, every cell under it,
+  and every connector with an end on one, with one warning. Importing them shown, or keeping a connector between a
+  shown shape and a hidden one as a loose end, were the alternatives (`drawXml/pageCells.ts`, `shown`).

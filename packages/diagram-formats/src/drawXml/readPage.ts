@@ -181,6 +181,7 @@ export function readPage(model: Element, src: PageSource, ids: IdSpace, warn: Wa
   const page = pageCells(model);
   const label = src.name !== undefined ? `"${src.name}"` : 'the page';
   if (page.layers > 1) warn(`The ${page.layers} layers on ${label} were merged into one.`);
+  if (page.hidden > 0) warn('Hidden shapes, connectors, and layers were left out.');
   const kept = keptGroups(page, warn);
   // Only what the page keeps takes an id, so a dropped group or connector leaves its id to a later page.
   const idOf = new Map<RawCell, string>();

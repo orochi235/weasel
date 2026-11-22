@@ -24,6 +24,8 @@ export interface PageCells {
   regionOf(cell: RawCell): RawCell | null;
   /** How many layers the page has. */
   layers: number;
+  /** How many cells were left out as hidden. */
+  hidden: number;
 }
 
 /** Lanes span a pool's body across its stack; a swimlane holding swimlanes that do not is a container of containers. */
@@ -58,9 +60,27 @@ function acyclic(cells: readonly RawCell[]): RawCell[] {
   });
 }
 
-/** Sorts a graph model's cells. */
+/** `cells` less every hidden one: one whose own `visible` or an ancestor's hides it, and a connector with a hidden end. */
+function shown(cells: readonly RawCell[]): RawCell[] {
+  const byId = new Map(cells.map((c) => [c.id, c]));
+  const hidden = new Map<RawCell, boolean>();
+  const isHidden = (cell: RawCell): boolean => {
+    let is = hidden.get(cell);
+    if (is === undefined) {
+      hidden.set(cell, false);
+      const around = [cell.parent, ...(cell.edge ? [cell.source, cell.target] : [])].map((id) => (id === null ? undefined : byId.get(id)));
+      is = !cell.visible || around.some((c) => c !== undefined && isHidden(c));
+      hidden.set(cell, is);
+    }
+    return is;
+  };
+  return cells.filter((c) => !isHidden(c));
+}
+
+/** Sorts a graph model's cells, leaving out the hidden ones. */
 export function pageCells(model: Element): PageCells {
-  const cells = acyclic(cellsOf(model));
+  const all = acyclic(cellsOf(model));
+  const cells = shown(all);
   const byId = new Map(cells.map((c) => [c.id, c]));
   const children = new Map<string, RawCell[]>();
   for (const cell of cells) {
@@ -125,5 +145,5 @@ export function pageCells(model: Element): PageCells {
     return null;
   };
   const layers = cells.filter((c) => !c.vertex && !c.edge && c.parent !== null && byId.get(c.parent)?.parent === null).length;
-  return { cells, kindOf, childrenOf, originOf, boxOf, regionOf, layers };
+  return { cells, kindOf, childrenOf, originOf, boxOf, regionOf, layers, hidden: all.length - cells.length };
 }

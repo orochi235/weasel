@@ -94,6 +94,22 @@ describe('draw-style XML font styles', () => {
   });
 });
 
+describe('draw-style XML hidden cells', () => {
+  it('leaves out a hidden layer, a hidden shape, what they hold, and connectors to them, with a warning', async () => {
+    const { data, warnings } = await readCells('<mxCell id="h" parent="0" visible="0"/>'
+      + vertex('a', 'rounded=0;', 'width="80" height="40"') + vertex('b', 'rounded=0;', 'x="300" width="80" height="40"', 'b', 'h')
+      + vertex('c', 'container=1;', 'y="100" width="200" height="100"').replace('vertex="1"', 'vertex="1" visible="0"')
+      + vertex('d', 'rounded=0;', 'x="10" y="10" width="40" height="20"', 'd', 'c')
+      + vertex('k', 'rounded=0;', 'y="300" width="80" height="40"')
+      + '<mxCell id="e" edge="1" parent="1" source="a" target="b"><mxGeometry relative="1" as="geometry"/></mxCell>'
+      + '<mxCell id="f" edge="1" parent="1" source="a" target="k"><mxGeometry relative="1" as="geometry"/></mxCell>');
+    expect(data.nodes.map((n) => n.id)).toEqual(['a', 'k']);
+    expect(data.containers).toBeUndefined();
+    expect(data.edges.map((e) => e.id)).toEqual(['f']);
+    expect(warnings).toEqual(['Hidden shapes, connectors, and layers were left out.']);
+  });
+});
+
 describe('draw-style XML rotated and flipped shapes', () => {
   const warningsOf = async (style: string) => (await readCells(vertex('n', style, 'width="80" height="40"'))).warnings;
 
