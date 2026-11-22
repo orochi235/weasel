@@ -12,6 +12,7 @@ let bodyMargin: string | null = null;
 
 /** Mounts the whole app full-window, as `main.tsx` does, and waits for its canvas. */
 export async function mountChartApp(): Promise<{ host: HTMLElement; canvas: HTMLCanvasElement }> {
+  if (root !== null) throw new Error('mountChartApp: the app is already mounted; call unmountChartApp first');
   mountPoint = document.createElement('div');
   mountPoint.style.width = '100vw';
   mountPoint.style.height = '100vh';
