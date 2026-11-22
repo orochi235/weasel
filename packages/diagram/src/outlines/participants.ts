@@ -7,24 +7,21 @@
 import { PathBuilder } from '@weasel-js/core/math';
 import { figureOver } from './figures';
 import { KAPPA } from './flowchart';
-import { outlineFromD } from './fromD';
+import { outlineFromD, ringD } from './fromD';
 import type { Bounds, OutlineDef } from './types';
 
 /** The share of the height a figure takes over its label, as the actor's. */
 const SHARE = 0.75;
 
-/** An ellipse as two arcs, in path data. */
-const ring = (cx: number, cy: number, rx: number, ry: number): string =>
-  `M${cx + rx} ${cy}A${rx} ${ry} 0 1 1 ${cx - rx} ${cy}A${rx} ${ry} 0 1 1 ${cx + rx} ${cy}Z`;
 
 /** A circle on a short stem from a wall at its left. Drawn 1.5 wide, so its ring's x radius is its y radius over 1.5. */
-const boundary = figureOver(outlineFromD(`${ring(0.7, 0.5, 0.4 / 1.5, 0.4)}M0.04 0.1V0.9M0.04 0.5H${0.7 - 0.4 / 1.5}`), 1.5, SHARE);
+const boundary = figureOver(outlineFromD(`${ringD(0.7, 0.5, 0.4 / 1.5, 0.4)}M0.04 0.1V0.9M0.04 0.5H${0.7 - 0.4 / 1.5}`), 1.5, SHARE);
 
 /** A circle with an arrowhead on its rim, turning it. */
-const control = figureOver(outlineFromD(ring(0.5, 0.55, 0.42, 0.42), { detail: 'M0.6 0.02L0.46 0.13L0.6 0.24' }), 1, SHARE);
+const control = figureOver(outlineFromD(ringD(0.5, 0.55, 0.42, 0.42), { detail: 'M0.6 0.02L0.46 0.13L0.6 0.24' }), 1, SHARE);
 
 /** A circle on a rule. */
-const entity = figureOver(outlineFromD(`${ring(0.5, 0.45, 0.42, 0.42)}M0.08 0.97H0.92`), 1, SHARE);
+const entity = figureOver(outlineFromD(`${ringD(0.5, 0.45, 0.42, 0.42)}M0.08 0.97H0.92`), 1, SHARE);
 
 /** How far the back box of a stack stands off the front one. */
 const offsetOf = (w: number, h: number): number => Math.min(6, w / 8, h / 8);

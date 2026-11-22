@@ -8,7 +8,7 @@ import { trimNumber } from '@weasel-js/geom';
 import { PathBuilder, type Path } from '@weasel-js/core/math';
 import { FIGURE_OUTLINES, figureOver } from './figures';
 import { FLOWCHART_OUTLINES, KAPPA } from './flowchart';
-import { outlineFromD } from './fromD';
+import { outlineFromD, ringD } from './fromD';
 import type { Bounds, OutlineDef } from './types';
 
 /** The label strip under an event or a gateway, in px at the default size. */
@@ -49,7 +49,7 @@ const DIAMOND = 'M0.5 0L1 0.5L0.5 1L0 0.5Z';
 const gateway = (marker: string): OutlineDef =>
   figureOver(outlineFromD(DIAMOND, { detail: marker }), 1, GATEWAY / (GATEWAY + STRIP));
 
-const ring = (r: number): string => `M${0.5 + r} 0.5A${r} ${r} 0 1 1 ${0.5 - r} 0.5A${r} ${r} 0 1 1 ${0.5 + r} 0.5`;
+const ring = (r: number): string => ringD(0.5, 0.5, r);
 
 /** A regular pentagon, point up, around the center. */
 const PENTAGON = (() => {

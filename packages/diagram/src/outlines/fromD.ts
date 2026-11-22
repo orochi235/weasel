@@ -17,6 +17,10 @@ export function parseUnitD(d: string, onProblem?: (message: string) => void): { 
   return { path, ok };
 }
 
+/** An ellipse as two closed arcs, in path data. */
+export const ringD = (cx: number, cy: number, rx: number, ry = rx): string =>
+  `M${cx + rx} ${cy}A${rx} ${ry} 0 1 1 ${cx - rx} ${cy}A${rx} ${ry} 0 1 1 ${cx + rx} ${cy}Z`;
+
 const strictD = (d: string, what: string): Path => parseUnitD(d, (message) => {
   throw new Error(`outlineFromD: ${what} ${JSON.stringify(d)} does not parse or draws nothing: ${message}`);
 }).path;
