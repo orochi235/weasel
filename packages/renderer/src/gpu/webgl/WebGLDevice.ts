@@ -34,9 +34,12 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
         const reported: unknown = gl.getParameter(gl.MAX_TEXTURE_SIZE);
         return typeof reported === 'number' && reported > 0 ? reported : undefined;
       },
-      // The default framebuffer's, read while it is bound.
+      // SAMPLES answers for the bound draw framebuffer: read the default one's, and put back whatever was bound.
       get samples(): number | undefined {
+        const bound = gl.getParameter(gl.DRAW_FRAMEBUFFER_BINDING) as WebGLFramebuffer | null | undefined;
+        if (bound) gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, null);
         const reported: unknown = gl.getParameter(gl.SAMPLES);
+        if (bound) gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, bound);
         return typeof reported === 'number' ? reported : undefined;
       },
       get stencil(): boolean | undefined {

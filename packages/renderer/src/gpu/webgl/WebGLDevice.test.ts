@@ -220,3 +220,34 @@ describe('WebGLDevice resolve', () => {
     expect(argsOf(rec, 'bindFramebuffer')).toHaveLength(1);
   });
 });
+
+describe('WebGLDevice limits', () => {
+  it('reads the canvas sample count with the default framebuffer bound, and puts back the one that was', () => {
+    const rec = createGLRecorder();
+    const { gl } = rec;
+    const fbo = { __id: 'offscreen' };
+    let drawBound: unknown = fbo;
+    const answering = new Proxy(gl, {
+      get(target, prop) {
+        if (prop === 'getParameter') {
+          return (name: number) => {
+            target.getParameter(name);
+            if (name === gl.DRAW_FRAMEBUFFER_BINDING) return drawBound;
+            if (name === gl.SAMPLES) return drawBound === null ? 4 : 0;
+            return null;
+          };
+        }
+        if (prop === 'bindFramebuffer') {
+          return (kind: number, bound: unknown) => {
+            target.bindFramebuffer(kind, bound as WebGLFramebuffer | null);
+            drawBound = bound;
+          };
+        }
+        return Reflect.get(target, prop) as unknown;
+      },
+    });
+    const gpu = new WebGLDevice(answering);
+    expect(gpu.limits.samples).toBe(4);
+    expect(drawBound).toBe(fbo);
+  });
+});
