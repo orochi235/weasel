@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { decimalPlaces } from '@weasel-js/quantity';
 import { maxOf, minOf } from '@weasel-js/geom';
 import { NumberField } from '../NumberField';
@@ -123,10 +123,20 @@ function ScaleSlider({
   const round = (n: number) => Number(n.toFixed(places));
   // A key press moves a step by this much: a log track's own step is smaller than the scale can write.
   const finest = 10 ** -places;
-  // Held from the first render: a range that followed the thumbs would move the track under the pointer.
-  const [range, setRange] = useState(() => [Math.log2(minOf(amounts) / MARGIN), Math.log2(maxOf(amounts) * MARGIN)]);
-  const [min, max] = [Math.min(range[0]!, minOf(amounts, Math.log2)), Math.max(range[1]!, maxOf(amounts, Math.log2))];
-  if (min !== range[0] || max !== range[1]) setRange([min, max]);
+  const fit = [Math.log2(minOf(amounts) / MARGIN), Math.log2(maxOf(amounts) * MARGIN)] as const;
+  // Held from a press to its release: a range that followed the thumbs would move the track under the pointer.
+  const [held, setHeld] = useState<readonly [number, number] | null>(null);
+  const [min, max] = held ? [Math.min(held[0], fit[0]), Math.max(held[1], fit[1])] : fit;
+  useEffect(() => {
+    if (!held) return;
+    const release = () => setHeld(null);
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    return () => {
+      window.removeEventListener('pointerup', release);
+      window.removeEventListener('pointercancel', release);
+    };
+  }, [held]);
 
   const factors = generator?.rule.kind === 'factors' && onScaleChange ? generator.rule.factors : null;
   const thumbs: StepThumb[] = tokens.map((t, i) => ({
@@ -173,7 +183,10 @@ function ScaleSlider({
 
   return (
     // A drag that ends where it began commits nothing, so a press, not a commit, is what starts a gesture afresh.
-    <div className={own.gesture} onPointerDownCapture={() => (pressed.current = null)}>
+    <div className={own.gesture} onPointerDownCapture={() => {
+        pressed.current = null;
+        setHeld([min, max]);
+      }}>
       <Slider<StepThumb>
         className={own.slider}
         thumbs={thumbs}
