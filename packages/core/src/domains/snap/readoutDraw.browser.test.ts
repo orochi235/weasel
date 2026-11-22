@@ -53,7 +53,8 @@ function inkCenter(label: string): { x: number; y: number } {
 /** The midpoint of a line's inked span, its first and last pixels counted by their coverage. */
 function middle(line: Float64Array): number {
   const first = line.findIndex((v) => v > 0);
-  const last = line.findLastIndex((v) => v > 0);
+  let last = line.length - 1;
+  while (last > 0 && !(line[last]! > 0)) last--;
   return (first + 1 - line[first]! + last + line[last]!) / 2;
 }
 
