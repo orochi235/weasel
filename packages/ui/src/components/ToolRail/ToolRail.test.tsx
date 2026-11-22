@@ -88,4 +88,11 @@ describe('ToolRail', () => {
     fireEvent.click(screen.getByRole('button', { name: 'ellipse' }), { detail: 1, altKey: true });
     expect(ellipse.onPress).toHaveBeenCalledTimes(2);
   });
+
+  it('leaves out a stack with no members and draws a one-member stack as its member', () => {
+    const rect = btn('rect');
+    renderWithIcons(<ToolRail items={[btn('a'), { id: 'none', members: [] }, { id: 'one', members: [rect] }]} />);
+    expect(labels()).toEqual(['a', 'rect']);
+    expect(screen.getByRole('button', { name: 'rect' })).not.toHaveAttribute('aria-haspopup');
+  });
 });
