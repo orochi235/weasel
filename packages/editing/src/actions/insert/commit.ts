@@ -46,7 +46,7 @@ export function commitInsert(
           adapter: defaultCommitAdapter(session.scene, operandMethods(session.selection)),
         },
         readRunLifecycle(resolved, 'Insert', session.behaviors),
-        r.length > 0 ? [...r, ...selectionOps(session)] : r,
+        r.length > 0 ? [...selectionOps(session), ...r] : r,
       );
     }
   }
