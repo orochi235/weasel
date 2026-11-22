@@ -1,8 +1,8 @@
 /**
  * The `weaselforge` command line: any argv parses to one of its four answers without throwing, a parsed command
  * written back out reads as itself whatever its paths hold, and help wins wherever it is asked for. `outDirPolicy`
- * against a model of paths as segment lists: it refuses exactly an output that is or holds the current directory,
- * and empties exactly one strictly inside the vite root.
+ * against a model of paths as segment lists: it refuses exactly an output that is or holds the current directory or
+ * the root, and empties exactly one strictly inside the vite root.
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
@@ -73,7 +73,7 @@ function walk(from: readonly string[], steps: readonly string[]): string[] {
 const startsWith = (long: readonly string[], short: readonly string[]) => short.every((s, i) => long[i] === s);
 
 describe('outDirPolicy', () => {
-  it('refuses an output that is or holds the current directory, and empties one strictly inside the root', () => {
+  it('refuses an output that is or holds the current directory or the root, and empties one strictly inside the root', () => {
     const seen = tally();
     fc.assert(
       fc.property(fc.array(name, { maxLength: 3 }), fc.array(step, { maxLength: 4 }), fc.boolean(), fc.array(step, { maxLength: 3 }), (cwdSegs, outSteps, absolute, rootSteps) => {
@@ -83,7 +83,7 @@ describe('outDirPolicy', () => {
         const outDir = walk(out.startsWith('/') ? [] : cwdSegs, outSteps);
         const rootDir = walk(root.startsWith('/') ? [] : cwdSegs, rootSteps);
         const policy = outDirPolicy(out, cwd, root);
-        if (startsWith(cwdSegs, outDir)) {
+        if (startsWith(cwdSegs, outDir) || startsWith(rootDir, outDir)) {
           expect(policy.ok).toBe(false);
           seen.count('refused');
           return;

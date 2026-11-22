@@ -3756,3 +3756,9 @@ Calls the lanes made without a ruling:
   move, sends `onInput` the tracks it began from and then calls `onCancel`, as a canceled drag does and as `ColorField`
   does for a pick closed on its starting color. A drag that previewed nothing calls nothing. Calling nothing at all
   was the alternative.
+
+## Audit round seventy-one (2026-11-22): forge
+
+- 2026-11-22 (the fixer's call): `weaselforge build` refuses an `--out` that is the vite root or holds it, as it
+  refuses one holding the current directory, since the build writes its `index.html` and assets over the root's
+  sources. Building there without emptying it, as vite itself does after a warning, was the alternative.
