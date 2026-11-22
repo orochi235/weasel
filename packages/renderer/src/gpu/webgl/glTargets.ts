@@ -116,6 +116,7 @@ export function resolve(
 
 export function readIds(gl: WebGL2RenderingContext, cache: GlCache, target: GlTarget, rect: GpuRect): Uint8Array {
   const bytes = new Uint8Array(rect.width * rect.height * 4);
+  if (!target.ids) return bytes;
   cache.bindFramebuffer(target.fbo);
   gl.readBuffer(gl.COLOR_ATTACHMENT1);
   readRgba(gl, rect, bytes);

@@ -210,6 +210,16 @@ describe('WebGLDevice read-backs', () => {
   });
 });
 
+describe('WebGLDevice ids of a target without them', () => {
+  it('answers no id without reading the color', () => {
+    const { rec, gpu } = setup();
+    const target = gpu.createTarget({ width: 4, height: 4 });
+    rec.reset();
+    expect(gpu.readIdsSync(target, { x: 0, y: 0, width: 2, height: 1 })).toEqual(new Uint8Array(8));
+    expect(names(rec)).not.toContain('readPixels');
+  });
+});
+
 describe('WebGLDevice resolve', () => {
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();

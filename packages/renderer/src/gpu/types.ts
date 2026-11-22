@@ -295,7 +295,7 @@ export interface GpuDevice {
   /** Copy the bottom-left `width × height` of multisampled `source` into
    *  `dest` at `x, y`. Not inside a pass. */
   resolve(source: GpuTarget, dest: GpuTarget, width: number, height: number, x: number, y: number): void;
-  /** The id attachment's RGBA8 texels inside `rect`, rows bottom-up. */
+  /** The id attachment's RGBA8 texels inside `rect`, rows bottom-up; zeros, no id, for a target without one. */
   readIds(target: GpuTarget, rect: GpuRect): Promise<Uint8Array>;
   /** `readIds` answered at once, where the backend can. */
   readonly readIdsSync?: (target: GpuTarget, rect: GpuRect) => Uint8Array;
