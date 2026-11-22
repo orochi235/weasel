@@ -137,8 +137,13 @@ export function pathFromD(
   d: string,
   onWarn?: (message: string) => void,
 ): ReturnType<PathBuilder['build']> {
-  const tokens = tokenizePathData(d);
   const b = new PathBuilder().autoOrigin();
+  const head = /^[ \t\n\r\f]*([^ \t\n\r\f])/.exec(d)?.[1];
+  if (head !== undefined && !/[A-Za-z]/.test(head)) {
+    onWarn?.(`path data does not begin with a moveto ("${head}" comes first); nothing is drawn`);
+    return b.build();
+  }
+  const tokens = tokenizePathData(d);
   const st: ParseState = {
     x: 0, y: 0, startX: 0, startY: 0,
     lastCubicCtrl: null, lastQuadCtrl: null,
