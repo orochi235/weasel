@@ -163,6 +163,10 @@ export function pathFromD(
       st.y = st.startY;
       st.lastCubicCtrl = null;
       st.lastQuadCtrl = null;
+      if (args.length > 0) {
+        onWarn?.(`path command "${cmd}" takes no arguments and has ${args.length}; the path ends after it`);
+        break;
+      }
       continue;
     }
     // M with multiple coord pairs implies subsequent pairs are L (per SVG spec).
