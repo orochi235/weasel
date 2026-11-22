@@ -73,6 +73,21 @@ describe('useArgs with values that cannot cross the port', () => {
     expect(captured?.[0]).toMatchObject({ n: 2, onClick: next });
   });
 
+  it('keeps an update to a key forge owns in the frame, as the workshop drops it', () => {
+    let captured: ReturnType<typeof useArgs> | undefined;
+    const { sent } = mount(
+      load({
+        render: function Read() {
+          captured = useArgs();
+          return <p>{String(captured[0].$globals)}</p>;
+        },
+      }),
+    );
+    act(() => captured?.[1]({ $globals: 'mine' }));
+    expect(sent).toEqual([]);
+    expect(screen.getByText('mine')).toBeInTheDocument();
+  });
+
   it('renders a choice of non-string options with the option itself, and sends an update as its string form', () => {
     let captured: ReturnType<typeof useArgs> | undefined;
     const story = loadCsfModule(
