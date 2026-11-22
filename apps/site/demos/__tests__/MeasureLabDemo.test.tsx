@@ -110,4 +110,18 @@ describe('MeasureLabDemo', () => {
     expect(start).toEqual({ x: expect.closeTo(440 + 100 * Math.cos(Math.PI / 6), 9), y: expect.closeTo(250, 9) });
     expect(end).toEqual({ x: 600, y: 300 });
   });
+
+  it('forgets the picked measurement on Reset, so Move by goes back to the newest one', async () => {
+    const canvas = await mount();
+    click(canvas, 100, 100);
+    click(canvas, 483, 275);
+    await userEvent.click(screen.getByRole('button', { name: 'Rotate by' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
+    expect((node('mover')?.pose as { rotation?: number }).rotation ?? 0).toBe(0);
+    click(canvas, 100, 100);
+    expect(readout().slice(1, 3)).toEqual(['240.00', '120.00']);
+    await userEvent.click(screen.getByRole('button', { name: 'Move by' }));
+    expect(node('mover')?.pose).toMatchObject({ x: 300, y: 180 });
+  });
 });
+
