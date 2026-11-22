@@ -108,6 +108,13 @@ describe('writing a Mermaid C4 diagram', () => {
     expect(text).toContain('  UpdateRelStyle(customer, spa, $textColor="blue", $lineColor="blue")\n');
   });
 
+  it('keeps a description shaped like a technology as the description', () => {
+    const read = readC4('C4Container\n  Container(a, "Api", "", "[beta]")\n  Person(u, "User", "[vip]")');
+    const { text, warnings } = writeC4(read.document);
+    expect(text).toContain('  Container(a, "Api", "", "[beta]")\n  Person(u, "User", "[vip]")\n');
+    expect(warnings).toEqual([]);
+  });
+
   it('writes a plain page as systems, people by their outline, and containers as boundaries', () => {
     const { text } = writeC4({ pages: [{
       kind: 'graph', id: 'p', width: 100, height: 100, notation: 'c4-deployment',

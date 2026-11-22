@@ -4,7 +4,7 @@ import type { DiagramDocument, ExportResult, WriteOptions } from '../../document
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { arrowHead } from '../common/styles';
 import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
-import { elementParts, hasTechnology, macroOf } from './kinds';
+import { elementParts, hasTechnology, macroOf, smallLines } from './kinds';
 import { C4_HEADERS } from './parse';
 import { BOUNDARY_TYPES, C4_NOTATIONS } from './read';
 
@@ -35,7 +35,9 @@ class C4Writer {
   }
 
   element(n: DataNode, indent: string): void {
-    const { kind, name, technology, description } = elementParts(nodeLines(n, this.out.warnings, 'Mermaid'), n.outline, n.style, (m) => this.out.warnings.add(m));
+    const { kind, name, technology, description } = elementParts(
+      nodeLines(n, this.out.warnings, 'Mermaid'), n.outline, n.style, (m) => this.out.warnings.add(m), n.rows && smallLines(n.rows),
+    );
     if (technology !== undefined && !hasTechnology(kind)) this.out.warnings.add('Mermaid C4 people and systems have no technology; it was written into the description.');
     const tech = hasTechnology(kind) ? [technology] : [];
     const desc = !hasTechnology(kind) && technology !== undefined ? `[${technology}] ${description}`.trim() : description;
