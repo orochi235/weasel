@@ -162,7 +162,7 @@ describe('ringStep', () => {
   const top = [{ x: 0, y: 0 }, { x: 10, y: -2 }, { x: 20, y: 0 }, { x: 2, y: 10 }, { x: 10, y: 8 }, { x: 18, y: 10 }];
   const bottom = top.map(({ x, y }) => ({ x, y: -y }));
   const right = top.map(({ x, y }) => ({ x: -y, y: x }));
-  const step = (key: { x: number; y: number }, i: number, centers: typeof top) => ringStep(key, i, 3, centers);
+  const step = (key: { x: number; y: number }, i: number, centers: typeof top) => ringStep(key, i, 3, 2, centers);
   const [L, R, U, D] = [{ x: -1, y: 0 }, { x: 1, y: 0 }, { x: 0, y: -1 }, { x: 0, y: 1 }];
 
   test('on a top arc Down goes in and Right along', () => {
@@ -186,5 +186,18 @@ describe('ringStep', () => {
   test('an arrow with no neighbor its way stays put', () => {
     expect(step(U, 1, top)).toBe(-1);
     expect(step(L, 0, top)).toBe(-1);
+  });
+
+  test('the swatch on either side of a ring boundary is not a neighbor along the ring', () => {
+    // Ring 1's first swatch sits at the arc's left end; ring 0's last lies almost straight to its right.
+    const arc = [{ x: 0, y: 0 }, { x: 10, y: 4 }, { x: 20, y: 0 }, { x: 4, y: -2 }, { x: 10, y: 0 }, { x: 16, y: -2 }];
+    expect(step(R, 3, arc)).toBe(4);
+    expect(step(L, 2, arc)).toBe(1);
+  });
+
+  test('the last ring, holding more than columns, steps along itself', () => {
+    const line = [0, 1, 2, 3, 4, 5, 6].map((x) => ({ x: x * 10, y: 0 }));
+    expect(ringStep(R, 4, 3, 2, line)).toBe(5);
+    expect(ringStep(L, 6, 3, 2, line)).toBe(5);
   });
 });
