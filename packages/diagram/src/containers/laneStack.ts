@@ -3,8 +3,9 @@
  * sit and stretched across the body past the header. The pool's size along
  * the stack is the sum of its lanes; its size across is the author's.
  *
- * The header is the pool trait's own where the layout is handed the pool's node.
- * Which nodes a pool admits (lanes) is `diagramCanDropInto`'s call.
+ * The header is the pool trait's own where the layout is handed the pool's node,
+ * and a child whose node is no lane stays where it is. Which nodes a pool admits
+ * (lanes) is `diagramCanDropInto`'s call.
  */
 import {
   type ContainerBounds,
@@ -16,7 +17,7 @@ import {
   type RectPose,
 } from '@weasel-js/core';
 import { titlePose } from './titlePose';
-import { bodyBox, layoutHeaderOf, titleIdOf, type ContainerHeader } from './trait';
+import { bodyBox, diagramContainerOf, layoutHeaderOf, titleIdOf, type ContainerHeader } from './trait';
 import * as coreOps from '@weasel-js/core/ops';
 
 /** Options for {@link laneStackLayout}. */
@@ -66,9 +67,11 @@ export function laneStackLayout(opts: LaneStackOptions): LayoutStrategy<RectPose
   const { axis } = opts;
   const fallback = poolHeader(axis, opts.headerSize);
   const headerOf = (container: LayoutContainer) => layoutHeaderOf(container, fallback);
+  // A child handed with no node is taken for a lane, as nothing says otherwise.
+  const isLane = (c: Lane) => c.node === undefined || diagramContainerOf(c.node)?.role === 'lane';
   const along = (p: { width: number; height: number }) => (axis === 'y' ? p.height : p.width);
   const lanesOf = (container: LayoutContainer, children: readonly Lane[], skip?: string) =>
-    children.filter((c) => c.id !== titleIdOf(container.id) && c.id !== skip).sort((a, b) => laneMiddle(axis, a.pose) - laneMiddle(axis, b.pose));
+    children.filter((c) => c.id !== titleIdOf(container.id) && c.id !== skip && isLane(c)).sort((a, b) => laneMiddle(axis, a.pose) - laneMiddle(axis, b.pose));
   const sized = (lanes: readonly Lane[]) => lanes.map((l) => ({ id: l.id, size: along(l.pose) }));
   const withTitle = (container: LayoutContainer, children: readonly Lane[], poses: Map<string, RectPose>, bounds = container.bounds) => {
     if (children.some((c) => c.id === titleIdOf(container.id))) poses.set(titleIdOf(container.id), titlePose(bounds, headerOf(container)));
