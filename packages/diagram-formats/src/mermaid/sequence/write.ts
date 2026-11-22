@@ -119,6 +119,10 @@ class SequenceWriter {
         if (s.deactivate === 'to') this.out(depth, `deactivate ${to}`);
         if (s.activate === 'to' && s.deactivate === 'from') this.out(depth, `deactivate ${from}`);
       } else if (s.kind === 'note') {
+        if (s.over.length === 0) {
+          this.warnings.add('Mermaid notes stand beside or over a participant; notes over none were dropped.');
+          continue;
+        }
         const place = s.side === 'left' ? 'left of' : s.side === 'right' ? 'right of' : 'over';
         this.out(depth, `Note ${place} ${s.over.map((id) => this.id(id)).join(',')}: ${mermaidSeqText(s.text)}`);
       } else if (s.kind === 'create') {

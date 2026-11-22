@@ -154,4 +154,10 @@ describe('writing sequence boxes and regions', () => {
     const out = writeMermaidSequence(page({ participants: [{ id: 'A' }], steps: [{ kind: 'fragment', id: 'f', type: 'region', sections: [{ steps: [] }] }] }));
     expect(pageOf(out.text).data.steps[0]).not.toHaveProperty('colors');
   });
+
+  it('drops a note over no participant, with a warning, so the text reads back', () => {
+    const out = writeMermaidSequence(page({ participants: [{ id: 'A' }], steps: [{ kind: 'note', id: 'n', over: [], text: 'x' }] }));
+    expect(out.warnings).toContain('Mermaid notes stand beside or over a participant; notes over none were dropped.');
+    expect(pageOf(out.text).data.steps).toEqual([]);
+  });
 });
