@@ -71,20 +71,22 @@ const fire = (el: Element, type: string, x: number, y: number) =>
     button: 0, buttons: type === 'pointerup' ? 0 : 1, clientX: x, clientY: y,
   }));
 
-test('step 2’s mesh and count follow a pin dragged halfway back, where its fold grows', async () => {
+test('step 2’s mesh and count follow a pin dragged three quarters back, where its fold grows', async () => {
   const { canvas } = await mount();
   await scrubTo(TWO_STEP);
-  await expect.poll(() => screen.getByTestId('inverted').textContent, { timeout: 8000 }).toBe('1');
+  const atRest = meshModelOf(createLabScene('disc').get(asNodeId(SHAPE_ID)) as EditableShape, TWO_STEP)!.inverted;
+  expect(atRest).toBeGreaterThan(0);
+  await expect.poll(() => screen.getByTestId('inverted').textContent, { timeout: 8000 }).toBe(String(atRest));
   const before = magentaIn(canvas());
 
   // The disc's top pin sits at (134, 108), and was placed at (160, 82).
   const { left, top } = canvas().getBoundingClientRect();
   await act(async () => {
     fire(canvas(), 'pointerdown', left + 134, top + 108);
-    for (let i = 1; i <= 8; i++) fire(canvas(), 'pointermove', left + 134 + (13 * i) / 8, top + 108 - (13 * i) / 8);
-    fire(canvas(), 'pointerup', left + 147, top + 95);
+    for (let i = 1; i <= 8; i++) fire(canvas(), 'pointermove', left + 134 + (19.5 * i) / 8, top + 108 - (19.5 * i) / 8);
+    fire(canvas(), 'pointerup', left + 153.5, top + 88.5);
   });
-  await expect.poll(() => Number(screen.getByTestId('inverted').textContent), { timeout: 8000 }).toBeGreaterThan(1);
+  await expect.poll(() => Number(screen.getByTestId('inverted').textContent), { timeout: 8000 }).toBeGreaterThan(atRest);
   await expect.poll(() => magentaIn(canvas()), { timeout: 8000 }).toBeGreaterThan(before);
 });
 
