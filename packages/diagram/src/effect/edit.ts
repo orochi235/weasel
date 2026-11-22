@@ -96,9 +96,9 @@ export function removeWires(doc: EffectDoc, ids: readonly string[]): EffectDoc {
 
 /** An id-less wire is never matched: run `ensureWireIds` first. */
 export function reconnectWire(doc: EffectDoc, id: string, end: 'from' | 'to', to: { stage: string; port: string }): EffectDoc {
-  return withPipeline(doc, {
+  return pruneRoutes(withPipeline(doc, {
     wires: doc.pipeline.wires.map((w) => (w.id === id ? { ...w, [end]: { stage: to.stage, port: to.port } } : w)),
-  });
+  }), [id]);
 }
 
 const addressed = (p: EffectParam, key: string) => (p.id ?? p.label) === key;

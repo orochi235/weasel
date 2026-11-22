@@ -64,6 +64,12 @@ describe('edit', () => {
     expect(r.pipeline.wires[1]!.from).toEqual(ref('b', 'out'));
   });
 
+  it('reconnectWire drops the reconnected wire\'s hand-set route and keeps the others\'', () => {
+    let d = setWireRoute(built(), 'w2', [{ x: 5, y: 5 }]);
+    d = setWireRoute(d, 'w1', [{ x: 1, y: 1 }]);
+    expect(reconnectWire(d, 'w2', 'to', ref('a', 'x')).routes).toEqual({ w1: [{ x: 1, y: 1 }] });
+  });
+
   it('nextStageId and nextWireId skip used ids', () => {
     const d = built();
     expect(nextStageId(d.pipeline, 'blur')).toBe('blur');
