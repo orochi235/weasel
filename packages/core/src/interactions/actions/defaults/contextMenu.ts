@@ -110,5 +110,5 @@ export const contextMenuAction: Action & { requires: string[] } = {
   enabled: (deps, at) => (deps?.menuHost?.has({ hit: menuHitFor(deps, at).hit, client: { x: 0, y: 0 }, world: at })
     ? true
     : ActionDisabledReason.NotApplicable),
-  invoker: { timing: 'immediate', run: (deps, params) => { openContextMenu(deps, params); } },
+  invoker: { timing: 'immediate', run: (deps, params) => (openContextMenu(deps, params) ? undefined : 'pass') },
 };

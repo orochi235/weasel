@@ -35,4 +35,11 @@ describe('menu.context with only menuHost, view and worldToClient', () => {
     expect(contextMenuAction.enabled?.(deps(false) as never, { x: 5, y: 6 })).toBe(ActionDisabledReason.NotApplicable);
     expect(contextMenuAction.enabled?.(deps(true) as never, { x: 5, y: 6 })).toBe(true);
   });
+
+  it('passes the key on when nothing opens', () => {
+    const d = { ...deps(), view: { ...deps().view, hostSize: undefined } };
+    const run = contextMenuAction.invoker.timing === 'immediate' ? contextMenuAction.invoker.run : undefined;
+    expect(run?.(d as never, undefined)).toBe('pass');
+    expect(run?.(deps() as never, undefined)).toBeUndefined();
+  });
 });
