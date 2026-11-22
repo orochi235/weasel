@@ -62,6 +62,20 @@ export interface CaptureDeps {
 
 const NO_CONTENT = { width: 0, height: 0 };
 
+/** An emitter that counts its emits, for a snapshot that moves with every one. */
+function countedEmitter() {
+  const subs = createEmitter();
+  let version = 0;
+  return {
+    subscribe: subs.subscribe,
+    emit: (): void => {
+      version += 1;
+      subs.emit();
+    },
+    version: () => version,
+  };
+}
+
 /** Each target's content box, or its last one with an area: a target the instrument has stopped declaring, or whose
  *  element has not sized yet, still reads its marks where they are. */
 function lastKnownContent(
@@ -90,7 +104,7 @@ function lastKnownContent(
  */
 export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
   const { targets } = opts;
-  const subs = createEmitter();
+  const subs = countedEmitter();
   const history = new MarkHistory();
 
   const exclusive = (): boolean =>
@@ -156,6 +170,7 @@ export function createMarkStore(opts: AnnotationStoreOptions): AnnotationsApi {
     selection: reads.selection,
 
     subscribe: subs.subscribe,
+    version: subs.version,
 
     ...createMarkWrites({
       scenes,

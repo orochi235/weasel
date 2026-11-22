@@ -93,8 +93,10 @@ export function useTrialMarks({
   // again. Through the context's `subscribe` alone: the store's own would have
   // the debounce below save marks that did not change.
   const inputsCommitted = useRef(createEmitter());
+  const commits = useRef(0);
   // biome-ignore lint/correctness/useExhaustiveDependencies: these are what `targets` and `config` answer from — the signal, not values this reads
   useLayoutEffect(() => {
+    commits.current += 1;
     inputsCommitted.current.emit();
   }, [record.state, record.view, config, annotationsCap]);
   const provided = useMemo<AnnotationsApi>(
@@ -108,6 +110,7 @@ export function useTrialMarks({
           offCommitted();
         };
       },
+      version: () => annotations.version() + commits.current,
     }),
     [annotations],
   );

@@ -272,6 +272,9 @@ export interface AnnotationsApi {
    *  channel. A selection change touching several targets is one event. No
    *  delta: re-query, and re-read `selection()`. */
   subscribe(fn: () => void): () => void;
+  /** Counts the notifications `subscribe` has sent: a snapshot that moves with every change, including one made
+   *  before a reader subscribed. */
+  version(): number;
 
   /** Whether the last mark change on any target can be taken back. Weasel
    *  history is the authority; this only decides *which* target's. */
