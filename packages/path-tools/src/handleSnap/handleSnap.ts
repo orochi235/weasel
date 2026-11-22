@@ -9,8 +9,8 @@ import { stepAngles, type AngleCandidate, type PathEditExtension, type SnapMark,
 
 /** Angle snapping for a control-handle drag. */
 export interface HandleSnapOptions {
-  /** Snap to every multiple of this angle, in radians. Default 45°; 0 turns the
-   *  steps off and leaves only the opposite handle. */
+  /** Snap to every multiple of this angle, in radians. Default 45°; 0, or a
+   *  value that is not finite, turns the steps off and leaves only the opposite handle. */
   angleStep?: number;
   /** How near, in radians, the handle must come to an angle to snap. Read
    *  by the drag as it starts. Default 6°. */
@@ -55,7 +55,7 @@ export function handleSnapSource(options: HandleSnapOptionsInput = {}): SnapSour
         yield { angle, mark: { kind: 'line', from: other, to: along(pivot, angle, reach) } };
       }
       const step = opts.angleStep ?? DEFAULT_ANGLE_STEP;
-      if (step <= 0) return;
+      if (!Number.isFinite(step) || step <= 0) return;
       for (const angle of stepAngles(q.theta, step)) yield { angle, mark: guideLine(pivot, angle, reach) };
     },
   };
