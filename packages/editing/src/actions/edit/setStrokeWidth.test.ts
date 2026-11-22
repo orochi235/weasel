@@ -48,6 +48,15 @@ describe('setStrokeWidthAction', () => {
     expect(strokeAfter(scene)).toEqual({ paint: { color: '#000000' }, width: 4 });
   });
 
+  it('keeps a stroke set to None unpainted, however None is stored', () => {
+    for (const stroke of [null, { width: 1 }]) {
+      const scene = makeScene({ a: { stroke } });
+      const ctx = makeCtx({ selectionIds: ['a'], scene, params: { width: 3 } });
+      getInvoker().start(ctx, { params: { width: 3 } }).onEnd?.(ctx, 'commit');
+      expect(strokeAfter(scene)).toEqual({ width: 3 });
+    }
+  });
+
   it('gives a strokeless node no stroke when it has no width to write', () => {
     for (const params of [{}, { width: -1 }, { width: Number.NaN }, { vertexWidths: null }]) {
       const scene = makeScene({ a: {} });
