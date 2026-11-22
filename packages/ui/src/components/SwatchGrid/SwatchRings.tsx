@@ -90,7 +90,7 @@ export function SwatchRings({ shape, align, groups, onSelect, onAltSelect, onHov
     const kept = ringPlan(rows, room);
     return { plan: kept, rings: ringsOf(shape, ringDepths(ringThicknesses(kept, leads, size), gap), direction) };
   }, [shape, rows, leads, size, gap, direction]);
-  const hold = useControlHold(own);
+  const hold = useControlHold(own, { readonlyRole: false });
   const apply = heldApply(useSwatchApply(onSelect, onAltSelect), hold);
   const firsts = plan.map((_, i) => plan.slice(0, i).reduce((a, b) => a + b, 0));
   return hold.wrap(
@@ -140,7 +140,7 @@ function RingGroup({ group, rings, align, apply, hold, hover }: RingGroupProps):
         toggle={marks.toggles}
         apply={apply}
         {...hold.focus}
-        onKeyDown={ringKeyDown(i, columns, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
+        onKeyDown={ringKeyDown(i, columns, rings.length, swatches, swatchKeyDown(i, options, columns, apply, swatches))}
         onFocus={() => {
           tab.focused(i);
           hover?.(options[i]!);
@@ -197,14 +197,17 @@ const MIN_ALIGN = 0.35;
 /** Where an arrow moves focus from swatch `i` on rings: whichever of its neighbors along the ring or on the next ring
  *  in or out lies most nearly the arrow's way on screen, so Down goes down on a bottom arc and Left goes in on a right
  *  one. -1 where none lies that way. */
-export function ringStep(arrow: { x: number; y: number }, i: number, columns: number, centers: readonly ({ x: number; y: number } | undefined)[]): number {
+export function ringStep(arrow: { x: number; y: number }, i: number, columns: number, rings: number, centers: readonly ({ x: number; y: number } | undefined)[]): number {
   const from = centers[i];
   if (from === undefined) return -1;
+  // The last ring holds every swatch past the others, so it can be longer than `columns`.
+  const ringOf = (j: number): number => Math.min(Math.floor(j / columns), rings - 1);
+  const ring = ringOf(i);
   let best = -1;
   let bestAlign = MIN_ALIGN;
-  for (const j of [i - 1, i + 1, i - columns, i + columns]) {
+  for (const [j, apart] of [[i - 1, 0], [i + 1, 0], [i - columns, 1], [i + columns, 1]] as const) {
     const to = centers[j];
-    if (to === undefined) continue;
+    if (to === undefined || Math.abs(ringOf(j) - ring) !== apart) continue;
     const dx = to.x - from.x;
     const dy = to.y - from.y;
     const len = Math.hypot(dx, dy);
@@ -219,7 +222,7 @@ export function ringStep(arrow: { x: number; y: number }, i: number, columns: nu
 }
 
 /** The key handler of swatch `i` on rings: arrows move by {@link ringStep}, every other key as `fallback` takes it. */
-function ringKeyDown(i: number, columns: number, swatches: () => HTMLElement[], fallback: (e: KeyboardEvent<HTMLButtonElement>) => void) {
+function ringKeyDown(i: number, columns: number, rings: number, swatches: () => HTMLElement[], fallback: (e: KeyboardEvent<HTMLButtonElement>) => void) {
   return (e: KeyboardEvent<HTMLButtonElement>): void => {
     const arrow = getOwn(ARROWS, e.key);
     if (arrow === undefined) return fallback(e);
@@ -229,7 +232,7 @@ function ringKeyDown(i: number, columns: number, swatches: () => HTMLElement[], 
       const r = el.getBoundingClientRect();
       return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
     });
-    const next = ringStep(arrow, i, columns, centers);
+    const next = ringStep(arrow, i, columns, rings, centers);
     if (next >= 0) all[next]?.focus();
   };
 }

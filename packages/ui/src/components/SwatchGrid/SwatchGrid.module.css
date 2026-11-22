@@ -102,7 +102,7 @@
 }
 
 /* A held palette's swatches apply nothing, so they neither invite a click nor answer the pointer. */
-.swatch[aria-readonly] {
+[data-held='readOnly'] .swatch {
   cursor: default;
 }
 
@@ -112,6 +112,7 @@
   cursor: not-allowed;
 }
 
-.swatch:is([aria-disabled], [aria-readonly]):hover:not([aria-current], [aria-pressed='true']) {
+.swatch[aria-disabled]:hover:not([aria-current], [aria-pressed='true']),
+[data-held='readOnly'] .swatch:hover:not([aria-current], [aria-pressed='true']) {
   border-color: var(--wzl-border);
 }

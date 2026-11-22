@@ -40,8 +40,9 @@ const bare = (n: ReactNode) => n;
 export function describeHold(
   name: string,
   subject: HoldSubject,
-  /** Whether each target carries `aria-disabled` or `aria-readonly` itself; a React Aria field says so its own way. */
-  { ariaHeld = true }: { ariaHeld?: boolean } = {},
+  /** Whether each target carries `aria-disabled` or `aria-readonly` itself; a React Aria field says so its own way.
+   *  `readonlyRole: false` is a target whose role takes no `aria-readonly`, such as a button, which must not carry it. */
+  { ariaHeld = true, readonlyRole = true }: { ariaHeld?: boolean; readonlyRole?: boolean } = {},
 ): void {
   describe(`${name} held`, () => {
     it('unheld, takes its input and is reachable', () => {
@@ -77,7 +78,8 @@ export function describeHold(
       m.tryAll();
       expect(m.changed()).toBe(false);
       expect(m.targets().some(reachable)).toBe(true);
-      if (ariaHeld) for (const t of m.targets()) expect(t.getAttribute('aria-readonly')).toBe('true');
+      if (!readonlyRole) for (const t of m.targets()) expect(t.hasAttribute('aria-readonly')).toBe(false);
+      else if (ariaHeld) for (const t of m.targets()) expect(t.getAttribute('aria-readonly')).toBe('true');
       for (const t of m.described?.() ?? m.targets()) expect(t).toHaveAccessibleDescription('Shared');
     });
 

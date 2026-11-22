@@ -26,7 +26,7 @@ describeHold('SwatchStrip', (mount, own) => {
     },
     changed: () => onSelect.mock.calls.length + onAltSelect.mock.calls.length > 0 || store.get()[0] !== '#00ff00ff',
   };
-});
+}, { readonlyRole: false });
 
 it('holds its palette picker and marks its root', () => {
   render(<SwatchStrip palettes={[WARM, COOL]} onSelect={() => {}} disabled aria-label="Swatches" />);

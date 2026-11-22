@@ -25,14 +25,15 @@ export function useSpanSeek(win: Span, at: number, onSeek: ((ms: number, held: b
     return msAtFraction(win, box.width > 0 ? x / box.width : 0);
   };
   const length = win.to - win.from;
+  const clamp = (ms: number): number => Math.min(win.to, Math.max(win.from, ms));
   return {
     onKeyDown: (e) => {
       const move = arrowMove(e.key, e.shiftKey);
       const steps = move ? move.dx - move.dy : 0;
-      const to = steps !== 0 ? at + steps * KEY_STEP * length : e.key === 'Home' ? win.from : e.key === 'End' ? win.to : null;
+      const to = steps !== 0 ? clamp(at) + steps * KEY_STEP * length : e.key === 'Home' ? win.from : e.key === 'End' ? win.to : null;
       if (to === null) return;
       e.preventDefault();
-      onSeek(Math.min(win.to, Math.max(win.from, to)), false);
+      onSeek(clamp(to), false);
     },
     onPointerDown: (e) => {
       if (e.button !== 0 || held.current !== null) return;

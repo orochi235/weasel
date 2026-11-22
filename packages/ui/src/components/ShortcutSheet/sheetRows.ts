@@ -10,12 +10,14 @@ export function sheetPlatform(apple: boolean): Platform {
   return here === 'macos' ? 'linux' : here;
 }
 
-/** The keys of each of `row`'s shortcuts, every one under each name it goes by: as shown (`⇧`, `⌘`) and spelled out
+/** The keys of each of `row`'s shortcuts, its leaders' included, every one under each name it goes by: as shown (`⇧`, `⌘`) and spelled out
  *  (`Shift`, `Cmd`), folded for comparing. */
 function keyNames(row: ShortcutRow, platform: Platform): Set<string>[] {
   return row.shortcuts.map((s) => {
-    const names = (['auto', 'text'] as const).flatMap((legend) =>
-      formatShortcutParts(s, { platform, legend })?.keys.map((k) => foldText(k.label)) ?? []);
+    const names = (['auto', 'text'] as const).flatMap((legend) => {
+      const parts = formatShortcutParts(s, { platform, legend });
+      return parts ? [...parts.leader.flatMap((l) => l.keys), ...parts.keys].map((k) => foldText(k.label)) : [];
+    });
     return new Set(names);
   });
 }

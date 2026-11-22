@@ -75,10 +75,8 @@ export function ShortcutSheet({
   open, onOpenChange, tools, toolSets = NO_SETS, apple = isApplePlatform(), title = 'Keyboard shortcuts',
 }: ShortcutSheetProps) {
   const registry = useActionsRegistry();
-  const actions = useSyncExternalStore(
-    registry && open ? registry.subscribe : noSubscribe,
-    () => (registry && open ? registry.list() : NO_ACTIONS),
-  );
+  const snapshot = () => (registry && open ? registry.list() : NO_ACTIONS);
+  const actions = useSyncExternalStore(registry && open ? registry.subscribe : noSubscribe, snapshot, snapshot);
   const [query, setQuery] = useState('');
   const [wasOpen, setWasOpen] = useState(open);
   if (open !== wasOpen) {
