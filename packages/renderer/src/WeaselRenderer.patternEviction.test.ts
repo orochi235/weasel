@@ -34,6 +34,8 @@ describe('a pattern tile evicted while a draw command still holds its handle', (
       path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 },
       fill: { paint: { kind: 'texture', texture: handle } },
     }];
+    // A solid draw first, so the device's transparent texel for unused slots is made before the count.
+    r.render([{ kind: 'path', path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: { paint: { color: '#f00' } } }]);
     rec.reset();
     r.render(commands);
     const made = rec.calls.filter((c) => c.name === 'createTexture').map((c) => c.result);

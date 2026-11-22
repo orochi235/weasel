@@ -308,7 +308,7 @@ export interface GpuDevice {
   readCanvas(rect: GpuRect): Promise<Uint8Array>;
   /** `readCanvas` answered at once, where the backend can. */
   readonly readCanvasSync?: (rect: GpuRect) => Uint8Array;
-  /** Free what the device holds of its own, once the one renderer drawing
-   *  through it is done. Absent on a device renderers share. */
+  /** Free what the device holds of its own, once the last renderer drawing
+   *  through it is done. A renderer calls it once, from its own `dispose`. */
   dispose?(): void;
 }

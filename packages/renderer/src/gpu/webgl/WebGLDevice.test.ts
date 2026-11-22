@@ -213,6 +213,49 @@ describe('WebGLDevice textures', () => {
   });
 });
 
+describe('WebGLDevice textures it cannot sample', () => {
+  const handleOf = (t: unknown): WebGLTexture => (t as { handle: WebGLTexture }).handle;
+  const NEAREST = { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' } as const;
+  /** The texture created with one transparent texel, which WebGPU samples for a texture it cannot. */
+  const transparent = (rec: GLRecorder): WebGLTexture[] => {
+    const out: WebGLTexture[] = [];
+    let bound: WebGLTexture | null = null;
+    for (const c of rec.calls) {
+      if (c.name === 'bindTexture') bound = c.args[1] as WebGLTexture | null;
+      if (c.name === 'texImage2D' && c.args[3] === 1 && c.args[4] === 1
+          && c.args[8] instanceof Uint8Array && (c.args[8] as Uint8Array).every((b) => b === 0)) out.push(bound!);
+    }
+    return out;
+  };
+
+  it('samples transparent black for a texture the pass draws into, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    const target = gpu.createTarget({ width: 4, height: 4 });
+    program.setTexture('u_a', target.color);
+    gpu.beginPass({ target, viewport: { x: 0, y: 0, width: 4, height: 4 } });
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    const [dummy] = transparent(rec);
+    expect(dummy).toBeTruthy();
+    expect(argsOf(rec, 'bindTexture').at(-1)).toEqual([rec.gl.TEXTURE_2D, dummy]);
+  });
+
+  it('frees its transparent texel when the last renderer drawing through it is done', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    gpu.retain();
+    gpu.retain();
+    program.setTexture('u_a', null);
+    gpu.draw(state(), geometry, 3);
+    const [dummy] = transparent(rec);
+    gpu.dispose();
+    expect(argsOf(rec, 'deleteTexture')).toEqual([]);
+    gpu.dispose();
+    expect(argsOf(rec, 'deleteTexture')).toEqual([[dummy]]);
+  });
+});
+
 describe('WebGLDevice id targets', () => {
   it('draws the id attachment only for a draw that writes ids, and clears both', () => {
     const { rec, gpu } = setup();
