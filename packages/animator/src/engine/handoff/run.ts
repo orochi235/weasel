@@ -160,8 +160,9 @@ export function launch(
       const a = entry();
       const offset = a ? table.clockOf(a) : 0;
       const old = placed;
+      const animation = animate(binding, s, next);
       motion = next;
-      placed = { id, animation: animate(binding, s, motion), offset };
+      placed = { id, animation, offset };
       finished = false;
       onFinish(placed.animation);
       swap(hs, old, placed);

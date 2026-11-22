@@ -47,6 +47,19 @@ function begin(
   return { s, binding, seed };
 }
 
+/** Commits `value` on `s` and runs `then`, which samples what shows it; a throw from `then` puts
+ *  back what was committed. */
+function committing<R>(s: TargetState, value: unknown, then: () => R): R {
+  const was = s.get();
+  s.set(value);
+  try {
+    return then();
+  } catch (error) {
+    s.set(was);
+    throw error;
+  }
+}
+
 /** A tween on an element target, handed to the compositor; null where it cannot be. */
 export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): AnimationHandle | null {
   if (!(o.ms > 0 && o.ms < Infinity)) {
@@ -75,16 +88,15 @@ export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): Animati
     delta: travel(ax, to, from),
     path: blend && ((e) => ax.to(blend(e))),
   });
-  s.set(o.to);
   if (ctx.atEnd()) seed.startAt = o.ms;
   seed.progress = (now) => Math.min(1, Math.max(0, now / o.ms));
   ctx.seedClock();
-  const run = launch(hs, s, binding, motion, seed, {
+  const run = committing(s, o.to, () => launch(hs, s, binding, motion, seed, {
     endCommit: () => null,
     takeBack: (m, local, backward, done) =>
       continueOnMainThread(ctx, { target: o.target, cancelKey: o.cancelKey, label: o.label }, m, local, backward, done),
     onDone: o.onDone,
-  });
+  }));
   const handle = ctx.register(seed);
   run.start();
   return handle;
@@ -128,18 +140,18 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
     // Its interrupt has run, naming this id: the main thread takes both, and the velocity read.
     return startOffsetPhysics(ctx, o, kind, { id: seed.id, velocity });
   }
-  if (o.to != null) s.set(o.to);
   ctx.seedClock();
   const carried = (): Carried<T> => ({
     target: o.target, cancelKey: o.cancelKey, label: o.label,
     physics: { kind, to: dest, ...constants, restThreshold },
   });
-  const run = launch(hs, s, binding, motion, seed, {
+  const go = () => launch(hs, s, binding, motion, seed, {
     // A coast commits where it stops; a spring's destination is committed already.
     endCommit: (m) => (dest ? null : m.at(m.ms)),
     takeBack: (m, local, backward, done) => continueOnMainThread(ctx, carried(), m, local, backward, done),
     onDone: o.onDone,
   });
+  const run = o.to == null ? go() : committing(s, o.to, go);
   const handle = ctx.register(seed);
   run.start();
   const here = (): [number[], number[]] => [run.motion.at(run.local()), run.motion.velocity(run.local())];
@@ -150,17 +162,21 @@ export function handOffPhysics<T>(hs: Handoffs, o: TargetPhysicsOptions<T>, kind
       if (child) { child.setTarget?.(next); return; }
       if (!ctx.has(seed.id)) return;
       const [at, v] = here();
+      const was = dest;
       if (next == null) {
         if (dest == null) return;
         dest = null;
-        // The committed value stops where the spring had brought it; the coast carries the rest.
-        s.set(ax.from(at));
       } else {
         if (!(constants.stiffness > 0)) throw new Error(`${kind}: setTarget needs a positive stiffness`);
         dest = axesFor(ax, next, 'setTarget');
-        s.set(next);
       }
-      run.replace(motionFrom(at, v));
+      try {
+        // Without one, the committed value stops where the spring had brought it; the coast carries the rest.
+        committing(s, next ?? ax.from(at), () => run.replace(motionFrom(at, v)));
+      } catch (error) {
+        dest = was;
+        throw error;
+      }
     },
     setVelocity(v) {
       const child = run.child as PhysicsHandle<T> | null;
