@@ -150,3 +150,12 @@ describe('a tick count that is not a number', () => {
     expect(log.ticks(Infinity)).toEqual(log.ticks());
   });
 });
+
+describe('a log scale asked for few ticks', () => {
+  it('keeps to powers when thinning leaves one, however many the domain holds', () => {
+    const s = logScale({ domain: [2, 9e9], range: [0, 100] });
+    expect(s.ticks(1)).toEqual([1e5]);
+    expect(s.tickFormat(1)(1e5)).toBe('100000');
+    expect(logScale({ domain: [2, 9e299], range: [0, 100] }).ticks(1).every((v) => Number.isInteger(Math.log10(v)))).toBe(true);
+  });
+});
