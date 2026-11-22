@@ -121,8 +121,8 @@ export interface UseSceneTextEditReturn extends UseTextEditReturn {
   /** The top-most unlocked text node at world point `at`, and the caret at
    *  the glyph there: what `TextEditDep.textAt` wants. */
   textAt: (at: Point2) => { id: string; caret: number } | null;
-  /** The `isText` option asked of the node with this id: what
-   *  `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
+  /** The `isText` option asked of the node with this id, false for a locked
+   *  one: what `TextEditDep.isTextNode` wants, so both ways into an edit agree. */
   isTextNode: (id: string) => boolean;
   /**
    * `defaultDrawOne`, less the glyphs of the node being edited: the overlay
@@ -292,13 +292,20 @@ export function useSceneTextEditor<
     [read, sceneRef, optsRef, surface],
   );
 
+  // A locked node takes no write (`onChange`), so it is not opened, as `textAt` does not find it.
   const isTextNode = useCallback((id: string): boolean => {
-    const node = sceneRef.current.get(asNodeId(id));
-    return node !== undefined && read.isText(node.data);
+    const nid = asNodeId(id);
+    const node = sceneRef.current.get(nid);
+    return node !== undefined && !sceneRef.current.isLocked(nid) && read.isText(node.data);
   }, [read, sceneRef]);
 
+  const { startEdit: open } = edit;
+  const startEdit = useCallback<UseTextEditReturn['startEdit']>((id, opts) => {
+    if (!sceneRef.current.isLocked(asNodeId(id))) open(id, opts);
+  }, [open, sceneRef]);
+
   const drawOne = useMemo(() => drawOneWithoutEditedText(edit.editingId), [edit.editingId]);
-  return { ...edit, textAt, isTextNode, drawOne };
+  return { ...edit, startEdit, textAt, isTextNode, drawOne };
 }
 
 /** A text node's paint as the canvas paints it: an inherited one is its container's. */

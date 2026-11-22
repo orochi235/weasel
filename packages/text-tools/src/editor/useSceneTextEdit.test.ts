@@ -268,6 +268,20 @@ describe('useSceneTextEdit — a double-click on a node that is not text', () =>
     expect(hook.result.current.isTextNode('box')).toBe(false);
     expect(hook.result.current.isTextNode('gone')).toBe(false);
   });
+
+  it('neither answers isTextNode for nor opens a locked node, whose edit it could not write', () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    container.appendChild(document.createElement('canvas'));
+    const hook = renderHook(() => {
+      const scene = useScene({ items: [NODE] });
+      return { scene, edit: useSceneTextEdit(scene, container) };
+    });
+    act(() => hook.result.current.scene.setLocked(asNodeId('a'), true));
+    expect(hook.result.current.edit.isTextNode('a')).toBe(false);
+    act(() => hook.result.current.edit.startEdit('a'));
+    expect(hook.result.current.edit.editingId).toBeNull();
+  });
 });
 
 /**
