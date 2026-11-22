@@ -84,6 +84,14 @@ describe('editAnchorSetTracked', () => {
       .toEqual([4, 3, 2, 1, 0]);
   });
 
+  it('follows each handle of a subpath an edit turns around keeping its anchor objects', () => {
+    expect(carried(curveThenLine(), (set) => {
+      const sub = set.anchors[0].reverse();
+      for (const a of sub) [a.inHandle, a.outHandle] = [a.outHandle, a.inHandle];
+      for (const a of sub) for (const k of ['inHandle', 'outHandle'] as const) if (!a[k]) delete a[k];
+    })).toEqual([4, 3, 2, 1, 0]);
+  });
+
   it('follows a closed curve whose last segment ends on its first point', () => {
     const loop = new PathBuilder().moveTo(0, 0).curveTo(10, 0, 10, 10, 0, 10).curveTo(-5, 10, -5, 0, 0, 0).close().build();
     // Points: anchor 0, out 1, in 2, anchor 3, out 4, in 5, the first point again 6.

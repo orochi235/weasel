@@ -84,6 +84,16 @@ describe('pathToAnchors', () => {
 
 
 describe('anchorsToPath', () => {
+  it('keeps each corner on its anchor past a closed subpath whose last anchor folds onto its first', () => {
+    const bevel = (radius: number) => ({ shape: 'bevel' as const, radius });
+    const anchors: PenAnchor[][] = [
+      [{ x: 0, y: 0, corner: bevel(1) }, { x: 10, y: 0, outHandle: { x: 15, y: 5 } }, { x: 0, y: 0, inHandle: { x: 5, y: 10 }, corner: bevel(2) }],
+      [{ x: 50, y: 50, corner: bevel(3) }, { x: 60, y: 50, corner: bevel(4) }],
+    ];
+    const back = pathToAnchors(anchorsToPath(anchors, [true, false]));
+    expect(back.anchors.map((sub) => sub.map((a) => a.corner?.radius))).toEqual([[1, undefined], [3, 4]]);
+  });
+
   it('serializes a single open subpath of corner anchors to M+L', () => {
     const path = anchorsToPath(
       [[{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }]],

@@ -72,6 +72,14 @@ describe('resolveCorners', () => {
     expect(out.commands[out.commands.length - 1]).toBe(PATH_Z);
   });
 
+  it('cuts the first anchor of a subpath closed by a line back to its start, set on either copy', () => {
+    const p = pathFromD('M 0 0 L 100 0 L 100 100 L 0 100 L 0 0 Z');
+    const want = [[10, 0], [100, 0], [100, 100], [0, 100], [0, 10]];
+    expect(points(resolveCorners(withCorner(p, 0, { shape: 'bevel', radius: 10 })))).toEqual(want);
+    expect(points(resolveCorners(withCorner(p, 4, { shape: 'bevel', radius: 10 })))).toEqual(want);
+    expect(cornerFrameAt(p, 0)?.halfAngle).toBeCloseTo(Math.PI / 4);
+  });
+
   it('clamps two corners on one edge so their cuts meet and never overlap', () => {
     const p = withCorner(withCorner(square(), 0, { shape: 'bevel', radius: 80 }), 1, {
       shape: 'bevel', radius: 80,

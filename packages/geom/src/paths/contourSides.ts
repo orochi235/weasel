@@ -45,7 +45,9 @@ export function outsideSide(contours: readonly (readonly CubicSegment[])[], i: n
   let seg: CubicSegment | undefined;
   let longest = 0;
   for (const s of segs) {
-    const len = Math.hypot(s.c[6] - s.c[0], s.c[7] - s.c[1]);
+    // The control polygon, not the chord: a closed loop drawn as one curve has a chord of 0.
+    const len = Math.hypot(s.c[2] - s.c[0], s.c[3] - s.c[1]) + Math.hypot(s.c[4] - s.c[2], s.c[5] - s.c[3])
+      + Math.hypot(s.c[6] - s.c[4], s.c[7] - s.c[5]);
     if (len > longest) { longest = len; seg = s; }
   }
   if (!seg) return null;

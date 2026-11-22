@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { worldCoords } from './pathOrigin';
 import { PathBuilder, asPolygonPath, polygonFromPoints, polylineFromPoints, rectPath } from './builder';
 import { withCorner } from './cornerSpec';
 import type { PolygonPath } from '../path';
@@ -75,6 +76,13 @@ describe('asPolygonPath', () => {
     expect(Array.from(p.commands)).toEqual([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]);
     expect(Array.from(p.coords)).toEqual([1, 2, 11, 2, 11, 6, 1, 6]);
     expect(countPathAnchors(p)).toBe(countPathAnchors(rectPath(1, 2, 10, 4)));
+  });
+
+  it('keeps a far-out rect exact, measured from an origin', () => {
+    const p = asPolygonPath(rectPath(1e7 + 0.25, 5e6 + 0.75, 10.25, 4.5));
+    const xs = Array.from(worldCoords(p)).filter((_, i) => i % 2 === 0);
+    expect(Math.max(...xs) - Math.min(...xs)).toBeCloseTo(10.25, 3);
+    expect(xs[0]).toBeCloseTo(1e7 + 0.25, 3);
   });
 
   it('hands a polygon back as it is', () => {

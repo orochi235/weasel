@@ -160,9 +160,13 @@ export function editAnchorSetTracked(
   const set = pathToAnchors(path);
   const byAnchor = new Map<PenAnchor, Held>();
   const byPlace = new Map<string, Held>();
+  // An edit that swaps or hands over handle objects (a subpath reversed in place) moves their points with them.
+  const byHandle = new Map<Point, number>();
   heldBy(path, set).forEach((sub, s) => sub.forEach((held, i) => {
     const anchor = set.anchors[s][i];
     byAnchor.set(anchor, held);
+    if (anchor.inHandle && held.in !== undefined) byHandle.set(anchor.inHandle, held.in);
+    if (anchor.outHandle && held.out !== undefined) byHandle.set(anchor.outHandle, held.out);
     if (byPlace.has(keyOf(anchor))) return;
     // Handles are filed under where they are, for an anchor that comes back as a copy.
     if (anchor.inHandle) byPlace.set(`${keyOf(anchor)}:${keyOf(anchor.inHandle)}`, { point: held.in! });
@@ -186,9 +190,12 @@ export function editAnchorSetTracked(
     });
   });
 
+  const flat = set.anchors.flat();
+  const handleOf = (h: Point | undefined, side: number | undefined) => (h && byHandle.get(h)) ?? side;
   const origins = Array.from(writtenFrom(set).filter((_, i) => i % 2 === 0), (code) => {
     const anchor = Math.floor(code / 3);
-    const handle = code % 3 === 1 ? held[anchor]?.in : code % 3 === 2 ? held[anchor]?.out : undefined;
+    const handle = code % 3 === 1 ? handleOf(flat[anchor].inHandle, held[anchor]?.in)
+      : code % 3 === 2 ? handleOf(flat[anchor].outHandle, held[anchor]?.out) : undefined;
     return handle === undefined ? own[anchor] : { a: handle, b: handle, t: 0 };
   });
   return { path: anchorsToPath(set.anchors, set.closed, path), origins };

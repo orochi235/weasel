@@ -31,6 +31,9 @@ export interface Contour {
    *  path's M, L, C, and Q commands: the numbering `countPathAnchors` sizes
    *  per-anchor arrays by. */
   sources: number[];
+  /** Flat index of a last anchor dropped for sitting on `anchors[0]` with a straight
+   *  closing line, which a corner spec may name in place of `first`. */
+  twin?: number;
 }
 
 const lineSeg = (a: Point, b: Point): Seg => ({ line: true, p0: a, c1: a, c2: b, p3: b });
@@ -91,10 +94,13 @@ function closeContour(c: Contour, unfold: () => void): void {
   const n = c.anchors.length;
   const a0 = c.anchors[0];
   const end = c.anchors[n - 1];
-  if (n > 1 && !c.segs[n - 2].line && end.x === a0.x && end.y === a0.y) {
+  const line = n > 1 && c.segs[n - 2].line;
+  if (n > (line ? 2 : 1) && end.x === a0.x && end.y === a0.y) {
     c.anchors.pop();
     c.sources.pop();
-    unfold();
+    // The anchor walkers fold a closing curve and keep a closing line's end as an anchor of its own.
+    if (line) c.twin = c.first + n - 1;
+    else unfold();
     return;
   }
   c.segs.push(lineSeg(end, a0));

@@ -57,7 +57,7 @@ function contourCuts(path: PolygonPath, c: Contour): (AnchorCut | null)[] {
     const bx = tOut.x - tIn.x, by = tOut.y - tIn.y;
     const bl = Math.hypot(bx, by);
     const halfAngle = (Math.PI - turn) / 2;
-    const spec = cornerAt(path, c.first + i);
+    const spec = cornerAt(path, c.first + i) ?? (i === 0 && c.twin !== undefined ? cornerAt(path, c.twin) : null);
     const want = spec ? spec.radius : 0;
     return {
       frame: { index: c.first + i, x: a.x, y: a.y, bisector: { x: bx / bl, y: by / bl }, halfAngle },

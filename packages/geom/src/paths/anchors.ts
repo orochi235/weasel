@@ -16,6 +16,7 @@ import { PathBuilder } from './builder';
 import { worldCoords } from './pathOrigin';
 import { lerp } from '../scalar';
 import { compactCorners, cornerSpecAt, withoutCorners, type CornerSpec } from './cornerSpec';
+import { flatAnchorIndices } from './cornerCarry';
 
 /** One anchor of an editable path: its on-curve point plus the two control
  *  handles that shape the segments either side of it. Handles are in the same
@@ -188,9 +189,28 @@ export function anchorsToPath(
     }
   }
   const built = b.build();
-  const corners = compactCorners(anchors.flatMap((sub) => sub.map((a) => a.corner ?? null)));
+  const corners = compactCorners(cornersAsRead(anchors, closed, built));
   const base = like ? { ...withoutCorners(like), commands: built.commands, coords: built.coords } : built;
   return corners ? { ...base, corners } : base;
+}
+
+/** Each anchor's corner spec at the flat index a reader of `built` gives it: a last anchor
+ *  written as a closing curve onto its subpath's first point folds into it, its spec yielding to the first's. */
+function cornersAsRead(anchors: PenAnchor[][], closed: boolean[], built: PolygonPath): (CornerSpec | null)[] {
+  const out: (CornerSpec | null)[] = [];
+  if (!anchors.some((sub) => sub.some((a) => a.corner))) return out;
+  const flat = flatAnchorIndices(built);
+  let cmd = 0;
+  anchors.forEach((sub, s) => {
+    if (sub.length === 0) return;
+    for (const a of sub) {
+      const at = flat[cmd++];
+      if (a.corner && !out[at]) out[at] = a.corner;
+    }
+    const last = sub[sub.length - 1];
+    if (closed[s] && (last.outHandle != null || sub[0].inHandle != null)) cmd++;
+  });
+  return out;
 }
 
 const SMOOTH_THRESHOLD = 0.001;

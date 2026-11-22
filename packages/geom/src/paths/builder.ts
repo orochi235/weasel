@@ -181,12 +181,10 @@ export function rectPath(x: number, y: number, width: number, height: number): R
  *  corners clockwise from `(x, y)`, the order `countPathAnchors` numbers them in. */
 export function asPolygonPath(path: Path): PolygonPath {
   if (path.kind === 'polygon') return path;
-  return {
-    kind: 'polygon',
-    commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
-    coords: Float32Array.from(rectToContour(path.x, path.y, path.width, path.height)),
-    fillRule: 'nonzero',
-  };
+  const c = rectToContour(path.x, path.y, path.width, path.height);
+  const b = new PathBuilder().autoOrigin().moveTo(c[0], c[1]);
+  for (let i = 2; i < c.length; i += 2) b.lineTo(c[i], c[i + 1]);
+  return b.close().setFillRule('nonzero').build();
 }
 
 /** Build an open polyline from a flat list of points — the same geometry as
