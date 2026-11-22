@@ -140,31 +140,33 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
   }, [selected?.category, selected?.id]);
 
   return (
-    <div className={[s.split, className].filter(Boolean).join(' ')}>
-      <div className={s.listPane} data-pane="list">
-        <Input
-          aria-label="Filter registry"
-          placeholder="Filter…"
-          leadingAdornment={filterIcon}
-          value={filter}
-          onChange={setFilter}
-        />
-        <Tree
-          ref={treeRef}
-          aria-label="Registry"
-          nodes={shown}
-          empty="No matches"
-          expandedIds={q ? treeBranchIds(shown) : openIds}
-          onExpandedChange={q ? undefined : setOpenIds}
-          selectionMode="single"
-          selectedIds={selectedIds}
-          onAction={(id) => {
-            const pick = picks.get(id);
-            if (pick) onSelectionChange(pick);
-          }}
-        />
+    <div className={[s.browser, className].filter(Boolean).join(' ')}>
+      <div className={s.split}>
+        <div className={s.listPane} data-pane="list">
+          <Input
+            aria-label="Filter registry"
+            placeholder="Filter…"
+            leadingAdornment={filterIcon}
+            value={filter}
+            onChange={setFilter}
+          />
+          <Tree
+            ref={treeRef}
+            aria-label="Registry"
+            nodes={shown}
+            empty="No matches"
+            expandedIds={q ? treeBranchIds(shown) : openIds}
+            onExpandedChange={q ? undefined : setOpenIds}
+            selectionMode="single"
+            selectedIds={selectedIds}
+            onAction={(id) => {
+              const pick = picks.get(id);
+              if (pick) onSelectionChange(pick);
+            }}
+          />
+        </div>
+        <div className={s.detailPane} data-pane="detail">{detail}</div>
       </div>
-      <div className={s.detailPane} data-pane="detail">{detail}</div>
     </div>
   );
 }
