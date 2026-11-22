@@ -105,6 +105,10 @@ describe('specificity', () => {
     expect(specificity('rect')).toEqual([0, 0, 1]);
     expect(specificity('.a')).toEqual([0, 1, 0]);
     expect(specificity('#x')).toEqual([1, 0, 0]);
+    expect(specificity('svg|rect')).toEqual([0, 0, 1]);
+    expect(specificity('*|rect')).toEqual([0, 0, 1]);
+    expect(specificity('|rect.a')).toEqual([0, 1, 1]);
+    expect(specificity('rect[xlink|href]')).toEqual([0, 1, 1]);
     expect(specificity('g > rect.a[fill="#f00"]:first-child')).toEqual([0, 3, 2]);
     expect(specificity('*')).toEqual([0, 0, 0]);
     expect(specificity('g#x .a .b rect')).toEqual([1, 2, 2]);
