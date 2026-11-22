@@ -122,6 +122,13 @@ describe('lbxConfig', () => {
     expect((await lbxConfig(page([over]))).config.objects.map((o) => o.type)).toEqual(['rect']);
   });
 
+  it('refuses a raster dpi that is not a positive finite number', async () => {
+    for (const rasterDpi of [0, -180, NaN, Infinity]) {
+      await expect(lbxConfig(page([]), { rasterDpi })).rejects.toThrow(RangeError);
+    }
+    await expect(lbxConfig(page([]), { rasterDpi: 300 })).resolves.toBeDefined();
+  });
+
   it('refuses an auto-length label longer than the ceiling P-touch parks its paper at', async () => {
     await expect(lbxConfig({ ...page([]), length: 3000, autoLength: true })).rejects.toThrow(RangeError);
     await expect(lbxConfig({ ...page([]), length: 2834.4, autoLength: true })).resolves.toBeDefined();

@@ -36,7 +36,7 @@ export interface LbxPage {
 export interface WriteLbxOptions {
   /** Draws what an `.lbx` object cannot state; `commandRasterizer` from `@weasel-js/core` is one. Without it those commands are skipped. */
   rasterize?: CommandRasterizer;
-  /** Pixels per inch for rasterized content. Default 180, the PT-P710BT's. */
+  /** Pixels per inch for rasterized content, a positive finite number. Default 180, the PT-P710BT's. */
   rasterDpi?: number;
 }
 
@@ -240,6 +240,9 @@ async function settle(items: Item[], page: LbxPage, opts: WriteLbxOptions, skipp
 export async function lbxConfig(page: LbxPage, opts: WriteLbxOptions = {}): Promise<{ config: LabelConfig; skipped: LbxSkip[] }> {
   if (!Number.isFinite(page.length) || page.length <= 0) {
     throw new RangeError(`writeLbx: a label's length must be a positive finite number of points, got ${page.length}`);
+  }
+  if (opts.rasterDpi !== undefined && !(Number.isFinite(opts.rasterDpi) && opts.rasterDpi > 0)) {
+    throw new RangeError(`writeLbx: rasterDpi must be a positive finite number, got ${opts.rasterDpi}`);
   }
   if (page.autoLength && page.length > AUTO_LENGTH_MAX_PT) {
     throw new RangeError(
