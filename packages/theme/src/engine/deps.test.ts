@@ -286,3 +286,15 @@ describe('axisDependencies', () => {
   });
 });
 
+describe('a pin with a seed in its value list', () => {
+  it('lets the rule under it show through where the seed has no value', () => {
+    const def = {
+      name: 'ls',
+      axes: D.axes,
+      seeds: { a: { by: 'density', compact: '1px' } },
+      semantics: { x: { value: { by: 'mode', dark: '1px', light: '2px' } } },
+      pins: { x: { value: ['{seeds.a}', 'b'] } },
+    } as unknown as ThemeDefinition;
+    expect(axisDependencies(def).x.all).toEqual(['mode', 'density']);
+  });
+});
