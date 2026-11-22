@@ -69,12 +69,11 @@ function lensShown(over: boolean, enabled: boolean, peeking: boolean): boolean {
   return over && (enabled || peeking);
 }
 
-/** Whether a host point falls inside the lens's box. */
+/** Whether a host point falls inside the lens as drawn: its box, or the ellipse a round one is clipped to. */
 function insideLens(lens: LoupeLens, p: LoupePoint): boolean {
-  return (
-    Math.abs(p.x - lens.center.x) <= lens.width / 2 &&
-    Math.abs(p.y - lens.center.y) <= lens.height / 2
-  );
+  const u = (p.x - lens.center.x) / (lens.width / 2);
+  const v = (p.y - lens.center.y) / (lens.height / 2);
+  return lens.shape === 'circle' ? u * u + v * v <= 1 : Math.abs(u) <= 1 && Math.abs(v) <= 1;
 }
 
 /** The box the lens is drawn in and what it shows: where the host's `place` puts it, asked only while the lens
