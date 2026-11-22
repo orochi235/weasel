@@ -41,6 +41,12 @@ describe('openContextMenu', () => {
       client: { x: 1010, y: 1020 }, world: { x: 10, y: 20 }, source: 'keyboard',
     }));
   });
+  it('puts the selection back when no menu opens for the right-click', () => {
+    const d = deps() as { menuHost: { open: ReturnType<typeof vi.fn> }; selection: { get: () => string[] } };
+    d.menuHost.open.mockReturnValue(false);
+    expect(openContextMenu(d as never, { world: { x: 5, y: 6 }, clientX: 50, clientY: 60 })).toBe(false);
+    expect(d.selection.get()).toEqual(['a']);
+  });
   it('does nothing without a menu host', () => {
     expect(openContextMenu(deps({ menuHost: undefined }) as never, { world: { x: 0, y: 0 }, clientX: 0, clientY: 0 })).toBe(false);
   });

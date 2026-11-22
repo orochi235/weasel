@@ -76,11 +76,14 @@ export function openContextMenu(
   if (typeof p.clientX === 'number' && p.world) {
     const world = p.world;
     const { hit, select } = menuHitFor(deps, world);
+    const before = select && deps.selection ? [...deps.selection.get()] : undefined;
     if (select) deps.selection?.set([asNodeId(select)]);
-    return host.open({
+    const opened = host.open({
       hit,
       client: { x: p.clientX, y: p.clientY as number }, world, source: 'pointer',
     });
+    if (!opened && before) deps.selection?.set(before.map(asNodeId));
+    return opened;
   }
   const world = anchorOf(deps);
   const client = world && deps.worldToClient?.(world.x, world.y);
