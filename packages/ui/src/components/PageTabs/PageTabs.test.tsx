@@ -100,6 +100,19 @@ describe('PageTabs', () => {
     expect(onRename).not.toHaveBeenCalled();
   });
 
+  it('renames nothing when the field is cleared or left blank, so no tab loses its label', () => {
+    const { onRename } = setup();
+    press(tab('Cover'));
+    press(tab('Cover'));
+    fireEvent.change(screen.getByLabelText('Page name'), { target: { value: '' } });
+    fireEvent.keyDown(screen.getByLabelText('Page name'), { key: 'Enter' });
+    press(tab('Page 2'));
+    press(tab('Page 2'));
+    fireEvent.change(screen.getByLabelText('Page name'), { target: { value: '   ' } });
+    fireEvent.blur(screen.getByLabelText('Page name'));
+    expect(onRename).not.toHaveBeenCalled();
+  });
+
   it('hands focus back to the tab when a rename ends from the keyboard', () => {
     setup();
     press(tab('Page 2'));

@@ -5,8 +5,8 @@ import s from './PageTabs.module.css';
 /** Keep an event from the tab around the field: the tab would read the keys and presses as its own. */
 const contain = (e: SyntheticEvent) => e.stopPropagation();
 
-/** A tab's name, edited in place. `onDone` hears the new name, or `null` when the edit was abandoned or left the text
- *  as it was: an unnamed page's field holds its numbered label, which must not become its name. */
+/** A tab's name, edited in place. `onDone` hears the new name, or `null` when the edit was abandoned, left blank, or
+ *  left the text as it was: an unnamed page's field holds its numbered label, which must not become its name. */
 export function RenameField({ initial, onDone }: { initial: string; onDone(name: string | null): void }) {
   const ref = useRef<HTMLInputElement>(null);
   const done = useRef(false);
@@ -16,7 +16,7 @@ export function RenameField({ initial, onDone }: { initial: string; onDone(name:
     const name = value.trim();
     // A key ends the edit with focus in the field, which goes with it.
     from?.closest<HTMLElement>('[role="tab"]')?.focus();
-    onDone(how === 'commit' && name !== initial ? name : null);
+    onDone(how === 'commit' && name !== '' && name !== initial ? name : null);
   };
   useEffect(() => {
     ref.current?.focus();
