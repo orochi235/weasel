@@ -24,4 +24,17 @@ describe('Scene — a revert narrows every session', () => {
     expect(scene.get(id)).toBeUndefined();
     expect(other.getSelection()).toEqual([]);
   });
+
+  it('drops a node from another session\'s selection when undo moves it back onto a hidden layer', () => {
+    const scene = scene2();
+    const other = createEditingSession(scene);
+    const id = scene.add({ kind: 'mark', id: asNodeId('n'), layer: 'base', pose: POSE, data: { label: 'n' } });
+    scene.setLayerVisible('base', false);
+    scene.setLayer(id, 'top');
+    other.setSelection([id]);
+    expect(other.getSelection()).toEqual([id]);
+    scene.undo();
+    expect(scene.get(id)!.layer).toBe('base');
+    expect(other.getSelection()).toEqual([]);
+  });
 });

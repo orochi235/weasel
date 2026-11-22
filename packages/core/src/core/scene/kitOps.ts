@@ -99,6 +99,7 @@ function registerSetLayer<TData, TLayer extends string, TPose>(env: KitOpsEnv<TD
     revert: (p) => {
       const { id, from } = p as { id: NodeId; from: TLayer };
       place(id, from);
+      env.narrowSelection();
     },
   });
 }
