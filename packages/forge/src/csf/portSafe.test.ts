@@ -181,6 +181,11 @@ describe('withUnsent', () => {
     expect(withUnsent([null, null], [fnA, fnB])).toEqual([fnA, fnB]);
   });
 
+  it('keeps an `undefined` list entry apart from one that sent nothing when an entry is removed', () => {
+    const fn = () => {};
+    expect(withUnsent([null], [undefined, fn])).toEqual([fn]);
+  });
+
   it('round-trips a part back to the original', () => {
     const original = { status: 'running', done: 0, failures: [{ index: 3 }], start: cancel, cancel };
     const part = portSafePart(original);
