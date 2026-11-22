@@ -38,10 +38,12 @@ export function curveSpan(t: LengthTable, span: LengthSpan): CurveSpan | null {
   return a && b ? { from: a, to: b } : null;
 }
 
-/** The pen-order length at curve position `at`: the inverse of {@link curveSpan}. */
+/** The pen-order length at curve position `at`: the inverse of {@link curveSpan}. A fractional `run` or `segment`
+ *  is floored, and NaN in any field answers NaN. */
 export function lengthAtCurve(t: LengthTable, at: CurvePosition): number {
+  if (Number.isNaN(at.run) || Number.isNaN(at.segment) || Number.isNaN(at.t)) return NaN;
   const { cum } = tableInternals(t);
-  const r = Math.min(Math.max(at.run, 0), t.runs.length - 1);
+  const r = Math.min(Math.max(Math.floor(at.run), 0), t.runs.length - 1);
   if (r < 0) return 0;
   const c = cum[r];
   const segs = c.length - 1;
