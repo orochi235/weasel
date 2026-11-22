@@ -132,4 +132,10 @@ describe('writing a Mermaid architecture diagram', () => {
     const { text } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'b', lines: [] }], edges: [] } }] });
     expect(page(text).data.nodes[0]!.lines).toEqual([]);
   });
+
+  it('keeps a service\'s lines apart, without a warning', () => {
+    const { text, warnings } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['web', 'tier'] }], edges: [] } }] });
+    expect(page(text).data.nodes[0]!.lines).toEqual(['web', 'tier']);
+    expect(warnings).toEqual([]);
+  });
 });
