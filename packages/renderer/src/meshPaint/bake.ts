@@ -3,8 +3,8 @@
  * quads and rasterized forward, once per paint, into a texture the shader then
  * samples. Inverting a bicubic per fragment would be Newton iteration.
  *
- * The bitmap is straight (non-premultiplied) RGBA; the fragment shader
- * premultiplies.
+ * The bitmap is premultiplied RGBA; the fragment shader only scales it by
+ * opacity.
  */
 
 import { tryParseColor } from '@weasel-js/paint';

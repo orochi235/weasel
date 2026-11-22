@@ -1,7 +1,7 @@
 import { textureWgsl, uniformsWgsl } from './common';
 import { PAINT_FILL_LOCATIONS, PAINT_VERTEX_MEMBERS, PAINT_VERTEX_WGSL } from './paintVertex';
 
-/** `meshPaint/meshShader.ts` (`kit:mesh-gradient`) in WGSL: the straight-RGBA
+/** `meshPaint/meshShader.ts` (`kit:mesh-gradient`) in WGSL: the premultiplied
  *  bake over `u_meshSize`, transparent outside it. */
 export const MESH_WGSL = /* wgsl */ `${uniformsWgsl([
   ...PAINT_VERTEX_MEMBERS, 'u_meshSize: vec2f', 'u_opacity: f32', 'u_alpha: f32',
