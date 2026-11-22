@@ -122,16 +122,22 @@ export class TileStream<K, V, P> {
         loaded = Promise.reject(error);
       }
       loaded.then((payload) => {
-        if (this.disposed || (abort.signal.aborted && !this.wantedIds.has(id))) {
-          this.opts.release(key, payload);
-        } else {
-          this.held.set(id, { key, payload, wantedAt: this.update_ });
-          this.trim();
+        try {
+          if (this.disposed || (abort.signal.aborted && !this.wantedIds.has(id))) {
+            this.opts.release(key, payload);
+          } else {
+            this.held.set(id, { key, payload, wantedAt: this.update_ });
+            this.trim();
+          }
+        } finally {
+          done();
         }
-        done();
       }, (error: unknown) => {
-        if (!abort.signal.aborted) this.opts.onError?.(key, error);
-        done();
+        try {
+          if (!abort.signal.aborted) this.opts.onError?.(key, error);
+        } finally {
+          done();
+        }
       });
     }
   }

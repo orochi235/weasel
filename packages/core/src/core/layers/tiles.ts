@@ -18,7 +18,7 @@ export interface TileOptions {
   /** The finest level. Past it the layer draws live, so a deep zoom stays sharp. */
   maxLevel?: number;
   /** The floor, the level pinned so something can always stand in, holds the layer's whole reach in
-   *  at most this many tiles a side. Default 2. */
+   *  at most this many tiles a side, at least 2. Default 2. */
   floorTiles?: number;
   /** Crossfade length. Default 160. */
   fadeMs?: number;

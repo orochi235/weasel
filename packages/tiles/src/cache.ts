@@ -14,7 +14,7 @@ export interface HeldTile<K, P> {
   stale: boolean;
   /** The frame it was last drawn in. */
   drawnAt: number;
-  /** When it arrived, on the frame clock, for its fade; `-Infinity` for one that replaced a stale one. */
+  /** When it arrived, on the frame clock, for its fade; a rebake keeps the arrival of the tile it replaced. */
   bornAt: number;
   /** The last frame an edit marked it stale in. */
   dirtiedAt: number;
@@ -64,13 +64,13 @@ export class TileCache<K, P> {
   }
 
   /** Keep `payload` as `key`'s, freeing what it replaces. A tile arriving where nothing was fades
-   *  in from `now`; one replacing a stale tile does not. */
+   *  in from `now`; one replacing a tile carries on that tile's fade, if any is left. */
   put(key: K, payload: P, frame: number, now: number): HeldTile<K, P> {
     const id = this.scheme.idOf(key);
     const was = this.held.get(id);
     if (was) this.drop(was, was.payload !== payload);
     const tile: HeldTile<K, P> = {
-      key, id, payload, bytes: this.opts.bytesOf(payload), stale: false, drawnAt: frame, bornAt: was ? -Infinity : now, dirtiedAt: -1,
+      key, id, payload, bytes: this.opts.bytesOf(payload), stale: false, drawnAt: frame, bornAt: was ? was.bornAt : now, dirtiedAt: -1,
     };
     this.held.set(id, tile);
     this.total += tile.bytes;

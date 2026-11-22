@@ -4,7 +4,7 @@
  * in what order under a budget. The payload and how it is baked are the caller's.
  */
 import { TileCache, type HeldTile, type TileCacheOptions } from './cache';
-import type { TileBox, TileScheme } from './scheme';
+import type { TileBox, TileScheme, WantedTile } from './scheme';
 
 /** One quad of a frame: draw `tile`'s payload over `at`'s bounds, sampling `source` of it, at `alpha`. */
 export interface TileDraw<K, P> {
@@ -97,26 +97,35 @@ export class TilePyramid<K, V, P> {
     // The screen and the floor alone would break the byte bound: a coarser level needs a quarter of
     // the tiles, at half the sharpness. Its tiles and their stand-ins all fit.
     const per = this.opts.bytesPerTile;
-    const fits = () => per === undefined || (2 * wanted.filter((w) => !w.ring).length + floor.length) * per <= this.cache.maxBytes;
-    while (!fits() && level > -64) {
+    const shown = (ws: readonly WantedTile<K>[]) => ws.filter((w) => !w.ring).length;
+    let n = shown(wanted);
+    while (per !== undefined && (2 * n + floor.length) * per > this.cache.maxBytes && level > -64) {
+      const coarser = scheme.wanted(view, level - 1);
+      const m = shown(coarser);
+      if (m >= n) break;
       level--;
-      wanted = scheme.wanted(view, level);
+      wanted = coarser;
+      n = m;
     }
     this.level = level;
     const onScreen = wanted.filter((w) => !w.ring).map((w) => w.key);
     const ring = wanted.filter((w) => w.ring).map((w) => w.key);
     this.cache.pinFloor(floor.map((k) => scheme.idOf(k)));
 
-    const { order, waiting } = this.bakeOrder(floor, onScreen, ring, level, view, frame);
-    let baked = 0;
+    // Room the byte bound leaves past the screen, its stand-ins and the floor: tiles baked past it
+    // would be evicted before they were used, and baked again.
+    const room = per === undefined ? Infinity : Math.max(0, Math.floor(this.cache.maxBytes / per) - (2 * n + floor.length));
+    const { order, waiting } = this.bakeOrder(floor, onScreen, ring, level, view, frame, room);
+    let baked = 0, unfinished = 0;
     const start = budget.clock();
     for (const key of order) {
       if (baked > 0 && (baked >= budget.tiles || budget.clock() - start >= budget.ms)) break;
       const payload = bake(key);
       baked++;
       if (payload !== null) this.cache.put(key, payload, frame, now);
+      else unfinished++;
     }
-    const pending = order.length - baked + waiting;
+    const pending = order.length - baked + unfinished + waiting;
 
     const floorLevel = Math.min(...floor.map((k) => scheme.levelOf(k)));
     const { draws, fading, stale } = this.drawsFor(onScreen, frame, now, floorLevel);
@@ -138,9 +147,9 @@ export class TilePyramid<K, V, P> {
     return t.dirtiedAt < frame - 1 ? 'stale' : 'waiting';
   }
 
-  /** Floor, then what is missing on screen, then what is stale there, then the level above and the ring;
-   *  and how many stale tiles wait out their hold before they can join it. */
-  private bakeOrder(floor: readonly K[], onScreen: readonly K[], ring: readonly K[], level: number, view: V, frame: number): { order: K[]; waiting: number } {
+  /** Floor, then what is missing on screen, then what is stale there, then the first `room` of the
+   *  level above and the ring; and how many stale tiles wait out their hold before they can join it. */
+  private bakeOrder(floor: readonly K[], onScreen: readonly K[], ring: readonly K[], level: number, view: V, frame: number, room: number): { order: K[]; waiting: number } {
     const { scheme } = this.opts;
     const seen = new Set<string>();
     const out: K[] = [];
@@ -157,8 +166,8 @@ export class TilePyramid<K, V, P> {
     for (const k of floor) take(k, 'either');
     for (const k of onScreen) take(k, 'missing');
     for (const k of onScreen) take(k, 'stale');
-    for (const w of scheme.wanted(view, level - 1)) if (!w.ring) take(w.key, 'either');
-    for (const k of ring) take(k, 'either');
+    const extra = [...scheme.wanted(view, level - 1).filter((w) => !w.ring).map((w) => w.key), ...ring];
+    for (const k of extra.slice(0, room)) take(k, 'either');
     return { order: out, waiting };
   }
 
@@ -191,7 +200,7 @@ export class TilePyramid<K, V, P> {
         mark(anc);
         coarse.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: 1 });
       }
-      if (t === undefined) this.finerHeld(at, down, 1, (child, depth) => {
+      this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
         (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: 1 });
       });

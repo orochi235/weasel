@@ -3846,3 +3846,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a time scale's weekly ticks fall on Mondays (UTC), starting ISO 8601 weeks, rather
   than on the Thursdays multiples of seven days from the epoch land on. Sunday, or a `weekStart` option, was the
   alternative.
+## Audit round seventy-two (2026-11-22): tiles
+
+- 2026-11-22 (the fixer's call): `planeFloor` throws a `RangeError` for a `floorTiles` under 2 (or not a number), and
+  so does a tiled layer given `floorTiles: 1`: no level holds a box straddling a tile edge in one tile a side. There is
+  no override. Keeping 1 and documenting the bound as `max(floorTiles, 2)` was the alternative.

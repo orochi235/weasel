@@ -143,3 +143,32 @@ describe('TileStream views that come back', () => {
     expect(released).toHaveLength(0);
   });
 });
+
+describe('TileStream throwing callbacks', () => {
+  it('frees the load slot when release throws for a load that settled after it was aborted', async () => {
+    const pending = new Map<string, (p: string) => void>();
+    const stream = new TileStream<PlaneTileKey, PlaneTileView, string>({
+      scheme, level: 0, maxConcurrent: 1,
+      load: (k) => new Promise((resolve) => { pending.set(scheme.idOf(k), resolve); }),
+      release: () => { throw new Error('release'); },
+    });
+    const caught: unknown[] = [];
+    const listeners = process.listeners('unhandledRejection');
+    process.removeAllListeners('unhandledRejection');
+    process.on('unhandledRejection', (e) => { caught.push(e); });
+    try {
+      stream.update(view(0, 0, 50, 50));
+      const [first] = [...pending.keys()];
+      stream.update(view(5000, 5000, 50, 50));
+      pending.get(first!)!('x');
+      await flush();
+      await flush();
+    } finally {
+      process.removeAllListeners('unhandledRejection');
+      for (const l of listeners) process.on('unhandledRejection', l);
+    }
+    expect(caught).toHaveLength(1);
+    expect(stream.inFlight).toBe(1);
+    expect([...pending.keys()].some((id) => id.startsWith('0/50/'))).toBe(true);
+  });
+});

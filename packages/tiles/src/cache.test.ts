@@ -17,4 +17,13 @@ describe('TileCache', () => {
     cache.put(key, { name: 'b' }, 3, 0);
     expect(freed).toEqual(['a']);
   });
+
+  it('carries a replaced tile\'s arrival forward, so a rebake mid-fade keeps fading', () => {
+    const cache = new TileCache<{ z: number; x: number; y: number }, object>(createPlaneScheme(256), {
+      bytesOf: () => 1, release: () => {},
+    });
+    const key = { z: 0, x: 0, y: 0 };
+    cache.put(key, {}, 1, 100);
+    expect(cache.put(key, {}, 2, 150).bornAt).toBe(100);
+  });
 });

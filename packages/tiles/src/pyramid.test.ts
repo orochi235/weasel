@@ -192,3 +192,59 @@ describe('TilePyramid draws', () => {
     expect(draws[1]!.source[0]).toBe(0);
   });
 });
+
+describe('TilePyramid partial bakes', () => {
+  it('counts a tile whose bake answered null as still pending', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, object>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
+    });
+    const v: PlaneTileView = { box: [10, 10, 20, 20], pxPerUnit: 1, ring: 0 };
+    const frame = pyramid.run(v, 0, () => null, { ...budget, tiles: 100 });
+    expect(frame.baked).toBeGreaterThan(0);
+    expect(frame.pending).toBe(frame.baked);
+  });
+});
+
+describe('TilePyramid byte bound', () => {
+  it('stops lowering the level once a coarser one would not put fewer tiles on screen', () => {
+    const floor = planeFloor(scheme, TILE, BOUNDS, 8);
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, object>({
+      scheme, bytesOf: () => TILE_BYTES, release: () => {}, floor: () => floor, fadeMs: 0,
+      bytesPerTile: TILE_BYTES, maxBytes: (floor.length - 1) * TILE_BYTES,
+    });
+    const v = view(100, 100, 1);
+    const frame = pyramid.run(v, 0, () => ({}), budget);
+    const count = (z: number) => scheme.wanted(v, z).filter((w) => !w.ring).length;
+    expect(frame.level).toBeGreaterThan(-64);
+    expect(count(frame.level - 1)).toBe(count(frame.level));
+  });
+});
+
+describe('TilePyramid byte bound and the ring', () => {
+  it('settles with nothing pending when the bound holds the screen but not all of its ring', () => {
+    const v = view(0, 0, 1);
+    const z = scheme.levelFor(v, undefined);
+    const onScreen = scheme.wanted(v, z).filter((w) => !w.ring).length;
+    const { pyramid, made, bake } = setup((2 * onScreen + 1 + 4) * TILE_BYTES);
+    let last = pyramid.run(v, 0, bake, { ...budget, tiles: 100 });
+    for (let f = 1; f < 30; f++) last = pyramid.run(v, f, bake, { ...budget, tiles: 100 });
+    expect(last.level).toBe(z);
+    expect(last.pending).toBe(0);
+    const before = made.length;
+    pyramid.run(v, 30, bake, { ...budget, tiles: 100 });
+    expect(made.length).toBe(before);
+  });
+});
+
+describe('TilePyramid fade over finer stand-ins', () => {
+  it('keeps drawing the finer tiles under a tile fading in after a zoom out', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, object>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => planeFloor(scheme, TILE, BOUNDS), fadeMs: 100,
+    });
+    for (let f = 0; f < 20; f++) pyramid.run(view(0, 0, 2, 400, 300), f * 1000, () => ({}), { ...budget, tiles: 100 });
+    const frame = pyramid.run(view(0, 0, 0.5, 400, 300), 20_000, () => ({}), { ...budget, tiles: 100 });
+    expect(frame.level).toBe(0);
+    expect(frame.draws.some((d) => d.tile.key.z === 0 && d.alpha < 1)).toBe(true);
+    expect(frame.draws.some((d) => d.tile.key.z === 2)).toBe(true);
+  });
+});
