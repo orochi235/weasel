@@ -63,11 +63,11 @@ export interface IngestCtx {
    *  were already consumed at match time, so they do NOT fall through;
    *  only match-level misses flow on to other handlers. */
   clipboard?: ClipboardIngestCtx;
-  /** Set to `true` by the kit weasel-JSON handler when it successfully
-   *  pastes a payload in this event. `kit:svg`'s `text/plain` SVG fallback
-   *  reads this to decline the SVG flavor of a copy whose weasel-JSON flavor
-   *  already ingested (avoids a double-paste when both flavors ride one
-   *  clipboard event). */
+  /** Set to `true` by the kit weasel-JSON handler when a canvas that can
+   *  paste weasel copies gets one in this event, whether or not the paste
+   *  makes anything. `kit:svg`'s `text/plain` SVG fallback reads this to
+   *  decline that copy's SVG flavor, so the copy is never pasted twice, nor
+   *  as a picture of what its paste left out. */
   consumedWeaselPayload?: boolean;
   /** Full action-deps bag, for consumer handlers that need more. */
   deps: ActionDeps;

@@ -59,6 +59,9 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
       dwarn('clipboard', 'weasel payload arrived but the clipboard adapter lacks commitPaste — declining');
       return;
     }
+    // A canvas that can paste weasel copies owns this one, pasted or not: kit:svg's text/plain fallback declines its
+    // SVG flavor. WARNING: no `await` before this — the flag must be written before lower handlers' microtasks run.
+    ctx.consumedWeaselPayload = true;
     const item = items.find((it) => it.kind === 'string');
     if (!item || item.kind !== 'string') return;
     // The metadata-bearing-SVG flavor: unwrap the embedded payload before
@@ -92,9 +95,5 @@ export const kitWeaselJsonHandler: ContentHandlerEntry = {
     // A snapshot is in world, as a copy is; an adapter that has not flushed the insert answers empty.
     const again = adapter.snapshotSelection?.call(adapter, [...result.newIds]).items ?? [];
     lastPasted.set(adapter, { text, items: again.length > 0 ? again : result.created });
-    // So kit:svg's text/plain fallback declines the SVG flavor of this copy.
-    // WARNING: do not add an `await` earlier in this handle — the flag must
-    // be written before lower-priority handlers' microtasks run.
-    ctx.consumedWeaselPayload = true;
   },
 };
