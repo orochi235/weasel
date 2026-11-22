@@ -204,3 +204,18 @@ describe('TilePyramid partial bakes', () => {
     expect(frame.pending).toBe(frame.baked);
   });
 });
+
+describe('TilePyramid byte bound', () => {
+  it('stops lowering the level once a coarser one would not put fewer tiles on screen', () => {
+    const floor = planeFloor(scheme, TILE, BOUNDS, 8);
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, object>({
+      scheme, bytesOf: () => TILE_BYTES, release: () => {}, floor: () => floor, fadeMs: 0,
+      bytesPerTile: TILE_BYTES, maxBytes: (floor.length - 1) * TILE_BYTES,
+    });
+    const v = view(100, 100, 1);
+    const frame = pyramid.run(v, 0, () => ({}), budget);
+    const count = (z: number) => scheme.wanted(v, z).filter((w) => !w.ring).length;
+    expect(frame.level).toBeGreaterThan(-64);
+    expect(count(frame.level - 1)).toBe(count(frame.level));
+  });
+});

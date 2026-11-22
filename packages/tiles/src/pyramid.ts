@@ -4,7 +4,7 @@
  * in what order under a budget. The payload and how it is baked are the caller's.
  */
 import { TileCache, type HeldTile, type TileCacheOptions } from './cache';
-import type { TileBox, TileScheme } from './scheme';
+import type { TileBox, TileScheme, WantedTile } from './scheme';
 
 /** One quad of a frame: draw `tile`'s payload over `at`'s bounds, sampling `source` of it, at `alpha`. */
 export interface TileDraw<K, P> {
@@ -97,10 +97,15 @@ export class TilePyramid<K, V, P> {
     // The screen and the floor alone would break the byte bound: a coarser level needs a quarter of
     // the tiles, at half the sharpness. Its tiles and their stand-ins all fit.
     const per = this.opts.bytesPerTile;
-    const fits = () => per === undefined || (2 * wanted.filter((w) => !w.ring).length + floor.length) * per <= this.cache.maxBytes;
-    while (!fits() && level > -64) {
+    const shown = (ws: readonly WantedTile<K>[]) => ws.filter((w) => !w.ring).length;
+    let n = shown(wanted);
+    while (per !== undefined && (2 * n + floor.length) * per > this.cache.maxBytes && level > -64) {
+      const coarser = scheme.wanted(view, level - 1);
+      const m = shown(coarser);
+      if (m >= n) break;
       level--;
-      wanted = scheme.wanted(view, level);
+      wanted = coarser;
+      n = m;
     }
     this.level = level;
     const onScreen = wanted.filter((w) => !w.ring).map((w) => w.key);
