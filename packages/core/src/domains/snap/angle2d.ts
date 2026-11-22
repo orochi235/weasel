@@ -54,7 +54,7 @@ function collectAngles(
   const { req } = inputs;
   const out: SnapCandidate<SnapMarks>[] = [];
   const c = req.constrain;
-  if (mods.constrain && typeof c === 'object' && c.step > 0) {
+  if (mods.constrain && typeof c === 'object') {
     for (const at of stepAngles(theta, c.step)) {
       out.push({ probe: PROBE, locus: { at: [at], dirs: [] }, source: 'constrain', order: -1, tier: 'target', reachPx: 0, required: true });
     }

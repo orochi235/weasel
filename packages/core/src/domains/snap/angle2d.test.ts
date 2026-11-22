@@ -79,4 +79,14 @@ describe('SnapSession.angle', () => {
     };
     expect(session({}, [twice]).angle(10 * DEG_TO_RAD, FREE).theta).toBe(first);
   });
+
+  it('throws on a step that is zero or not finite, as a point gesture does', () => {
+    for (const step of [0, NaN, Infinity]) {
+      expect(() => session({ constrain: { step } }, []).angle(0.3, SHIFT)).toThrow(RangeError);
+    }
+  });
+
+  it('steps by a negative step as by its size', () => {
+    expect(session({ constrain: { step: -0.7 } }, []).angle(6.4, SHIFT).theta).toBeCloseTo(6.3, 9);
+  });
 });
