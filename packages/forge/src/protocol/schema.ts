@@ -17,7 +17,7 @@ import {
 } from '@weasel-js/labkit/config';
 import { isPlainObject } from '@weasel-js/core';
 import { setOwn } from '@weasel-js/registry';
-import { isPortSafe } from '../csf/portSafe';
+import { isPortSafe, portSafePart } from '../csf/portSafe';
 
 /** The section a described entry sits in, as structured-clone data. */
 export interface SectionDescription {
@@ -88,12 +88,13 @@ const DROPPED = Symbol('dropped');
 /**
  * `value` as structured-clone data: a function is left out, and so is any other object holding one, which is code (a
  * scale's pair, a function unit, a motif) rather than data. An object carrying a `kind` or `members` is a nested leaf
- * or section, and like the bag at the top (`keepsKeys`) loses only its function-valued keys.
+ * or section, and like the bag at the top (`keepsKeys`) loses only its function-valued keys. Any other object a port
+ * would not deliver as itself, a class instance or a Map holding a function, is left out too.
  */
 function dataOf(value: unknown, keepsKeys = false): unknown {
   if (typeof value === 'function' || typeof value === 'symbol') return DROPPED;
   if (Array.isArray(value)) return value.map((member) => dataOf(member)).filter((member) => member !== DROPPED);
-  if (!isPlainObject(value)) return value;
+  if (!isPlainObject(value)) return value === null || typeof value !== 'object' || isPortSafe(value) ? value : DROPPED;
   const described = keepsKeys || typeof value.kind === 'string' || 'members' in value;
   if (!described && Object.values(value).some((member) => typeof member === 'function')) return DROPPED;
   const out: Record<string, unknown> = {};
@@ -135,7 +136,8 @@ function describeShape(shape: ConfigShape): DescribedShape {
       : {
           branch: false,
           kind: entry.kind,
-          default: entry.default,
+          // The part a port delivers, so `ready` posts, and the workshop's default is the value the frame can be sent.
+          default: portSafePart(entry.default)?.value,
           ...common,
           validated: entry.options.validate !== undefined,
           customControl: entry.options.render !== undefined,
