@@ -32,4 +32,15 @@ describe('requestRendererDevice', () => {
     expect(requestDevice).toHaveBeenCalledTimes(2);
     warn.mockRestore();
   });
+
+  it('asks again after finding no adapter, as while a lost GPU restarts', async () => {
+    const requestAdapter = vi.fn()
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ limits: { maxTextureDimension2D: 16384 }, requestDevice: async () => ({ lost: new Promise(() => {}) }) });
+    vi.stubGlobal('navigator', { gpu: { requestAdapter } });
+    const { requestRendererDevice } = await import('./requestRendererDevice');
+    expect(await requestRendererDevice()).toBeNull();
+    expect(await requestRendererDevice()).not.toBeNull();
+    expect(requestAdapter).toHaveBeenCalledTimes(2);
+  });
 });
