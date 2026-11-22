@@ -27,6 +27,11 @@ describe('resolveStroke', () => {
     expect(resolveStroke(null)).toBeNull();
   });
 
+  it('keeps a stroke with no paint that carries a marker, which draws its heads alone', () => {
+    const headed = { width: 4, markerEnd: 'arrow' };
+    expect(resolveStroke(headed)).toBe(headed);
+  });
+
   it('takes the inherited stroke whole', () => {
     const wide = { ...red, width: 6 };
     expect(resolveStroke(INHERIT, wide)).toBe(wide);

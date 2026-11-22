@@ -1,4 +1,7 @@
-import { resolveScreenLength, scaleVertexWidth, type CommandPaint, type Stroke, type Paint, type VertexWidth } from '@weasel-js/paint';
+import {
+  hasMarker, resolveScreenLength, scaleVertexWidth, type CommandPaint, type CommandStroke, type Stroke, type Paint, type VertexWidth,
+} from '@weasel-js/paint';
+import type { Path } from '@weasel-js/geom';
 import type { PathDrawCommand } from '../DrawCommand';
 import { createPart } from '@weasel-js/registry';
 import type { GLMeshHandle } from '../cache/GLMeshCache';
@@ -37,6 +40,15 @@ export function drawPath(ctx: DrawContext, given: PathDrawCommand): void {
   // can carry one.
   if (cmd.fill?.paint) drawPathFill(ctx, cmd, cmd.fill.paint);
   if (cmd.stroke?.paint) drawPathStroke(ctx, cmd as StrokedPathCommand);
+  // SVG draws a stroke's heads whatever its line paints.
+  else if (cmd.stroke) drawUnpaintedHeads(ctx, { ...cmd, stroke: cmd.stroke });
+}
+
+function drawUnpaintedHeads(ctx: DrawContext, rawCmd: PathDrawCommand & { stroke: CommandStroke }): void {
+  if (!hasMarker(rawCmd.stroke)) return;
+  const { cmd, spaces } = resolveStrokeLengths(ctx.state.transform, rawCmd);
+  const width = resolveScreenLength(cmd.stroke.width ?? 1, 1);
+  if (widthHasInk(width)) drawHeads(ctx, cmd.path, rawCmd.stroke, cmd.stroke, width, spaces);
 }
 
 function drawPathFill(ctx: DrawContext, cmd: PathDrawCommand, fill: CommandPaint): void {
@@ -134,7 +146,14 @@ function drawPathStroke(ctx: DrawContext, rawCmd: StrokedPathCommand): void {
     drawPathStrokeUnclipped(ctx, cmd, spaces);
   }
   // After the ribbon, so a head sits on top of the line it caps.
-  const heads = cachedMarkerHeads(cmd.path, rawCmd.stroke, stroke, width, flattenToleranceOf(ctx), spaces);
+  drawHeads(ctx, cmd.path, rawCmd.stroke, stroke, width, spaces);
+}
+
+/** `stroke`'s marker heads on `path`; `source` is the stroke before its lengths were resolved. */
+function drawHeads(
+  ctx: DrawContext, path: Path, source: CommandStroke, stroke: CommandStroke, width: number, spaces: StrokeSpaces,
+): void {
+  const heads = cachedMarkerHeads(path, source, stroke, width, flattenToleranceOf(ctx), spaces);
   for (const { draws, transform } of heads) {
     for (const { cmd: head, inLineFrame } of draws) {
       ctx.state.push({ transform, keepPaintFrame: inLineFrame });

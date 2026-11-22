@@ -92,7 +92,9 @@ function pathObj(
     // emits gradients as `userSpaceOnUse` — so a box-relative gradient has
     // to be resolved against the same pose.
     fill: painted.fill && { ...painted.fill, paint: paintToLocalUnits(painted.fill.paint, pose) },
-    stroke: painted.stroke && { ...painted.stroke, paint: paintToLocalUnits(painted.stroke.paint, pose) },
+    stroke: painted.stroke && (painted.stroke.paint
+      ? { ...painted.stroke, paint: paintToLocalUnits(painted.stroke.paint, pose) }
+      : painted.stroke),
   };
   if (pose.rotation) o.rotation = pose.rotation;
   return o;

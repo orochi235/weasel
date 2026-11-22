@@ -14,7 +14,7 @@ import {
 } from '@weasel-js/geom';
 import { pathUnion } from '@weasel-js/geom/booleans';
 import {
-  resolveFill, resolveStroke, type Fill, type Inherit, type PaintedFill, type PaintedStroke, type Stroke,
+  resolveFill, resolveStroke, type Fill, type Inherit, type DrawnStroke, type PaintedFill, type Stroke,
 } from '@weasel-js/paint';
 
 /** One painted piece of a derived path. */
@@ -33,7 +33,7 @@ export function resolvePartPaint(
   part: DerivedPart,
   own: { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null } | null | undefined,
   inherited?: InheritedPaint,
-): { fill: PaintedFill | null; stroke: PaintedStroke | null } {
+): { fill: PaintedFill | null; stroke: DrawnStroke | null } {
   return {
     fill: resolveFill(part.fill, resolveFill(own?.fill, inherited?.fill)),
     stroke: resolveStroke(part.stroke, resolveStroke(own?.stroke, inherited?.stroke)),

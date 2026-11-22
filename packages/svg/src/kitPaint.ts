@@ -27,15 +27,16 @@ export function svgPaintFromKit(fill: Paint | null, box: SvgKitPose): SvgPaint {
 }
 
 /** A kit `Stroke` as an `SvgStroke` — the inverse of `strokeDataFromSvg`.
- *  One with no paint or no width draws nothing and is written as no stroke. */
+ *  One with no width draws nothing and is written as no stroke; one with no
+ *  paint is written only where it carries a marker, as `stroke="none"`. */
 export function svgStrokeFromKit(raw: Stroke | null | undefined, box: SvgKitPose): SvgStroke | undefined {
   const stroke = resolveStroke(raw);
   if (!stroke) return undefined;
   const width = stroke.width ?? 1;
   if (!((typeof width === 'object' ? width.px : width) > 0)) return undefined;
-  const opacity = stroke.paint.opacity;
+  const opacity = stroke.paint?.opacity;
   return {
-    paint: svgPaintFromKit(stroke.paint, box),
+    paint: svgPaintFromKit(stroke.paint ?? null, box),
     width,
     ...(opacity != null ? { opacity } : {}),
     ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),

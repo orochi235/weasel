@@ -1,5 +1,6 @@
 import { PATH_L, PATH_M, type Path } from '@weasel-js/geom';
 import type { DrawCommand } from '@weasel-js/renderer';
+import { registerMarker } from '@weasel-js/stroke';
 import { describe, expect, it } from 'vitest';
 import { latin1 } from './latin1';
 import { NO_FONTS } from './testing/noFonts';
@@ -207,4 +208,25 @@ describe('writeStroke', () => {
     expect(c).not.toMatch(/\nS\n/);
     expect(c).toMatch(/\nf\n/);
   });
+
+  it('draws the heads of a stroke that paints no line: one in its own color, and none in the line\'s', async () => {
+    const dispose = registerMarker({
+      id: 'test-pdf-own-color-dot',
+      fill: { color: '#ff0000' },
+      path: ({ size }) => ({
+        kind: 'polygon', commands: Uint8Array.from([PATH_M, PATH_L, PATH_L, 4]),
+        coords: Float32Array.from([0, 0, -size, -size, -size, size]), fillRule: 'nonzero',
+      }),
+    });
+    try {
+      const own = await content([{ kind: 'path', path: line, stroke: { width: 2, markerEnd: 'test-pdf-own-color-dot' } }]);
+      expect(own).not.toMatch(/\nS\n/);
+      expect(own.match(/\nf\n/g)?.length ?? 0).toBe(1);
+      const lineColored = await content([{ kind: 'path', path: line, stroke: { width: 2, markerEnd: 'arrow' } }]);
+      expect(lineColored).not.toMatch(/\n[Sf]\n/);
+    } finally {
+      dispose();
+    }
+  });
 });
+

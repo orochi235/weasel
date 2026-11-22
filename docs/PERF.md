@@ -90,12 +90,3 @@ When work merges, retire its entry here in the same change.
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
   Closes when the maintainer has ruled on making the flag forge's default and the ruling is in place.
-
-
-## Readers of outside text
-
-- **(P3) [agent] `parseInline` takes time quadratic in a run of unclosed marks.** Its one regex tries a link from
-  every `[` and strong or emphasis from every `*` to the end of the text, so 8,000 `[` took 83 ms (measured
-  2026-11-18, the round of parser fuzzing). Inline markdown is a label an app writes, not text a user pastes, which is
-  why it was left. Closes when 20,000 of any one mark character parse in under 10 ms, by a scan that remembers where
-  each mark can close.

@@ -48,7 +48,8 @@ function inkOf(
   const { path } = source;
   const fill = resolveFill(source.fill);
   const stroke = resolveStroke(source.stroke);
-  if (!stroke) return { path };
+  // A stroke with no paint draws no line, whatever heads it carries.
+  if (!stroke?.paint) return { path };
   if (strokes === 'ignore' || (strokes === 'unfilled' && fill !== null)) return { path };
   const ribbon = strokeRegion(path, stroke, frame, scale === undefined ? {} : { scale });
   if (ribbon.commands.length === 0) return { path };

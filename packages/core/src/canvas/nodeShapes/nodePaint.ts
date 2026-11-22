@@ -26,7 +26,10 @@ export function inkReach(
   // A marker paints past the path's own end, and the kit's rule is that
   // visible chrome is hittable — so the reach has to cover it.
   const heads = markerReach(stroke);
-  const sides = (width: number, headReach: number) => {
+  // A stroke with no paint draws its heads alone, so its line reaches nowhere.
+  const line = stroke.paint == null ? 0 : 1;
+  const sides = (full: number, headReach: number) => {
+    const width = full * line;
     switch (stroke.align ?? 'center') {
       case 'inner': return { outset: headReach, inset: width };
       case 'outer': return { outset: width + headReach, inset: 0 };
@@ -132,14 +135,15 @@ export interface PathPaint {
  *  being the 1 every painter draws it at. */
 export function hasStroke(stroke: Stroke | null | undefined): boolean {
   const painted = resolveStroke(stroke);
-  if (painted === null) return false;
+  if (painted?.paint == null) return false;
   const width = painted.width ?? 1;
   return (typeof width === 'object' ? width.px : width) > 0;
 }
 
 /** {@link PathPaint} of a node that keeps its paint in `data.fill` and
- *  `data.stroke`, as the built-in path painter draws it: a stroke or a fill
- *  with no `paint` is none, and an `'inherit'` one is `inherited`'s. */
+ *  `data.stroke`, as the built-in path painter draws it: a fill with no `paint`
+ *  is none, and so is a stroke with no `paint` unless it carries a marker; an
+ *  `'inherit'` one is `inherited`'s. */
 export function pathPaintOf(
   data: { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null },
   inherited?: InheritedPaint,

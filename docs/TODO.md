@@ -74,12 +74,6 @@ Owner tags, after the priority (2026-10-26):
 
 ## Paths & booleans
 
-- **(P3) [agent] A stroke that paints nothing still draws its marker heads.** SVG draws `marker-*` under
-  `stroke="none"`, and SVG import now keeps them on an `SvgStroke` whose paint is `none`, but
-  `svgNodesToKitDrafts` drops that stroke and the renderer's `drawPath` draws no heads for a stroke with no
-  `paint`. Closes when a kit `Stroke` with no `paint` and a `markerEnd` draws its head (one painted in its own
-  color; a `'line'` paint draws nothing), and SVG import carries such a stroke into the kit draft.
-
 ### Path editing tricks
 
 - **(P2) [maintainer] Tune Poise hands-on, with the maintainer driving.** First-draft behavior: a
@@ -241,15 +235,6 @@ Owner tags, after the priority (2026-10-26):
   `packages/core/src/domains/paths/pathSnap/`).
   Closes when the maintainer has driven snapping hands-on and the defaults and keys he picks are
   committed.
-
-## Text
-
-- **(P3) [agent] SVG import reads a `<tspan>` nested in a `<tspan>` as its parent's text.** Inkscape and
-  Illustrator write them; `readRuns` (`packages/svg/src/readRuns.ts`) takes the outer tspan's `textContent` as one run
-  and warns, so the inner one's fill, weight, size, `x`/`dy` and `rotate` are lost. Its x/dx/y/dy lists, line breaks
-  and turns are all keyed to one tspan element per run, so an inner tspan needs them to walk the tree. Closes when
-  `<text><tspan font-weight="bold">a<tspan fill="red" dy="5">b</tspan></tspan></text>` reads "b" bold, red and
-  lowered, with no warning.
 
 ### Extension authoring and published consumers
 

@@ -1,3 +1,5 @@
+import { InlineScan } from './inlineScan';
+
 /** One piece of a line of inline markdown, as {@link parseInline} reads it. */
 export type InlineToken =
   | { type: 'text'; text: string }
@@ -6,31 +8,6 @@ export type InlineToken =
   | { type: 'keys'; chord: string }
   | { type: 'strong' | 'em' | 'del'; children: InlineToken[] }
   | { type: 'link'; href: string; children: InlineToken[] };
-
-// Alternatives in precedence order: a code span, a shortcut, emphasis around strong (`***x***`), strong, emphasis, strikethrough, a link, an escaped mark.
-// A mark opens and closes against a non-space, and opens before punctuation only after a space or the line's start,
-// so `a * b` and globs such as `src/*.ts` and `"*.js"` stay as written. Underscores are never emphasis: prose here
-// names snake_case identifiers. Inside a mark or a label a code span is whole, and a backslash pair is one
-// character, so neither can close it.
-const CODE_ATOM = '`[^`]+`|`(?![^`]*`)';
-// A code span, a shortcut and an escape open with punctuation but are not a glob's.
-const opens = (mark: string, next = '\\s') =>
-  '(?:(?<!\\S)' + mark + '(?=[^' + next + '])|' + mark + '(?=[`<\\\\]|[^' + next + '\\p{P}\\p{S}]))';
-const inner = (stop: string) => '(?:\\\\[^]|' + CODE_ATOM + '|[^' + stop + '\\\\`])';
-const INLINE = new RegExp(
-  [
-    '`([^`]+)`',
-    '<kbd>([^<]+)<\\/kbd>',
-    opens('\\*\\*\\*') + '(' + inner('') + '+?)(?<=\\S)\\*\\*\\*',
-    opens('\\*\\*') + '(' + inner('') + '+?)(?<=\\S)\\*\\*',
-    opens('\\*', '\\s*') + '(' + inner('*') + '+?)(?<=\\S)\\*',
-    opens('~~') + '(' + inner('') + '+?)(?<=\\S)~~',
-    // A link's address may hold one level of balanced parentheses, as a Wikipedia page's often does.
-    '\\[(' + inner('\\]') + '+)\\]\\(((?:[^()\\s]|\\([^()\\s]*\\))+)\\)',
-    '\\\\([`*~[\\]\\\\])',
-  ].join('|'),
-  'gu',
-);
 
 const SAFE_HREF = /^(https?:|mailto:|[/#.])/i;
 
@@ -46,26 +23,31 @@ export function parseInline(source: string): InlineToken[] {
     if (last?.type === 'text') last.text += s;
     else if (s) out.push({ type: 'text', text: s });
   };
+  const scan = new InlineScan(source);
   let at = 0;
-  for (const m of source.matchAll(INLINE)) {
-    text(source.slice(at, m.index));
-    at = m.index + m[0].length;
-    const [, code, chord, both, strong, em, del, label, href, escaped] = m;
-    if (code !== undefined) out.push({ type: 'code', text: code });
-    else if (chord !== undefined) out.push({ type: 'keys', chord });
-    else if (both !== undefined) out.push({ type: 'em', children: [{ type: 'strong', children: parseInline(both) }] });
-    else if (strong !== undefined) out.push({ type: 'strong', children: parseInline(strong) });
-    else if (em !== undefined) out.push({ type: 'em', children: parseInline(em) });
-    else if (del !== undefined) out.push({ type: 'del', children: parseInline(del) });
-    else if (label !== undefined && href !== undefined) {
-      const children = parseInline(label);
-      if (SAFE_HREF.test(href)) out.push({ type: 'link', href, children });
-      else
-        for (const child of children) {
-          if (child.type === 'text') text(child.text);
-          else out.push(child);
-        }
-    } else if (escaped !== undefined) text(escaped);
+  for (let p = 0; p < source.length; p++) {
+    const m = scan.matchAt(p);
+    if (m === null) continue;
+    text(source.slice(at, p));
+    at = m.end;
+    p = m.end - 1;
+    const { body } = m;
+    switch (m.kind) {
+      case 'code': out.push({ type: 'code', text: body }); break;
+      case 'keys': out.push({ type: 'keys', chord: body }); break;
+      case 'both': out.push({ type: 'em', children: [{ type: 'strong', children: parseInline(body) }] }); break;
+      case 'strong': case 'em': case 'del': out.push({ type: m.kind, children: parseInline(body) }); break;
+      case 'escaped': text(body); break;
+      case 'link': {
+        const children = parseInline(body);
+        if (SAFE_HREF.test(m.href)) out.push({ type: 'link', href: m.href, children });
+        else
+          for (const child of children) {
+            if (child.type === 'text') text(child.text);
+            else out.push(child);
+          }
+      }
+    }
   }
   text(source.slice(at));
   return out;

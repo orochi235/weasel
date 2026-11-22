@@ -9,6 +9,9 @@ export type Inherit = typeof INHERIT;
 export type PaintedFill = Fill & { paint: Paint };
 /** A stroke that paints. */
 export type PaintedStroke = Stroke & { paint: Paint };
+/** A stroke that draws: its line in a paint, or, with no paint, only the marker heads it carries, which SVG draws
+ *  whatever the line paints. */
+export type DrawnStroke = PaintedStroke | (Stroke & { paint?: undefined });
 
 /**
  * What a fill field means: the fill it paints, or `null` for none. Absent,
@@ -23,13 +26,20 @@ export function resolveFill(
   return fill?.paint == null ? null : (fill as PaintedFill);
 }
 
-/** {@link resolveFill} for a stroke. Width is not consulted here, though a
- *  stroke with no width draws nothing, whatever its per-vertex widths:
- *  `strokeHasInk` answers both. */
+/** {@link resolveFill} for a stroke, except that one with no paint carrying a marker still draws its heads. Width
+ *  is not consulted here, though a stroke with no width draws nothing, whatever its per-vertex widths:
+ *  `strokeHasInk` answers both for the line. */
 export function resolveStroke(
   stroke: Stroke | Inherit | null | undefined,
-  inherited: PaintedStroke | null = null,
-): PaintedStroke | null {
+  inherited: DrawnStroke | null = null,
+): DrawnStroke | null {
   if (stroke === INHERIT) return inherited;
-  return stroke?.paint == null ? null : (stroke as PaintedStroke);
+  if (stroke == null) return null;
+  if (stroke.paint != null) return stroke as PaintedStroke;
+  return hasMarker(stroke) ? (stroke as DrawnStroke) : null;
+}
+
+/** Whether `stroke` carries a marker head at any of its places. */
+export function hasMarker(stroke: Pick<Stroke, 'markerStart' | 'markerMid' | 'markerEnd'>): boolean {
+  return stroke.markerStart !== undefined || stroke.markerMid !== undefined || stroke.markerEnd !== undefined;
 }

@@ -12,8 +12,8 @@ export { isPaint } from './isPaint';
 export type { StrokeTrim, TrimAt, TrimPace } from './strokeTrim';
 export { strokeTrimKey } from './strokeTrim';
 export { paintKey, strokeKey, fillHasInk, strokeHasInk } from './paintKey';
-export { INHERIT, resolveFill, resolveStroke } from './resolvePaint';
-export type { Inherit, PaintedFill, PaintedStroke } from './resolvePaint';
+export { hasMarker, INHERIT, resolveFill, resolveStroke } from './resolvePaint';
+export type { DrawnStroke, Inherit, PaintedFill, PaintedStroke } from './resolvePaint';
 export { DEFAULT_MITER_LIMIT } from './paint';
 export type {
   Paint,

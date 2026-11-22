@@ -58,7 +58,7 @@ export function applyOutlineStroke(
       let outlined = false;
       for (const { path, fill, stroke } of paintedPaths(adapter, id)) {
         const painted = resolveStroke(stroke);
-        const outline = painted === null ? null : strokeRegion(path, painted, frame, opts);
+        const outline = painted?.paint == null ? null : strokeRegion(path, painted, frame, opts);
         if (!outline || outline.commands.length === 0) {
           paths.push(stroke ? { path, fill, stroke } : { path, fill });
           continue;
