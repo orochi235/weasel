@@ -91,3 +91,12 @@ describe('the Mermaid format', () => {
     expect(DIAGRAM_MERMAID.write!(document).text).toMatch(/^---\ntitle: "Energy flows \(TWh\)"\n---\nsankey-beta\n/);
   });
 });
+
+describe('writing a sankey page\'s name', () => {
+  it('warns of a page name that is not the chart\'s title, as the other chart writers do', () => {
+    const data: SankeyData = { kind: 'sankey', links: [{ source: 'a', target: 'b', value: 1 }] };
+    const named = { ...pageOf(data), name: 'Flows' };
+    expect(writeMermaidSankey(named).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
+    expect(writeMermaidSankey({ ...named, data: { ...data, title: 'Flows' } }).warnings).toEqual([]);
+  });
+});

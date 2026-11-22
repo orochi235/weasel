@@ -3503,7 +3503,7 @@ Calls the lanes made without a ruling:
   second in one composite, a start a transition arrives at, an end one leaves, one with no transition) as before,
   with a warning; refusing the page was the alternative. A diamond with text is written as a plain state keeping its
   text, with a warning; writing it as a `<<choice>>` and dropping the text was the alternative.
-- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, xychart, timeline) warns of a page name
+- 2026-11-21 (the fixer's call): A chart writer (pie, packet, quadrant, radar, sankey, xychart, timeline) warns of a page name
   that is not its chart's title and writes none; writing it as front matter, which every chart reader takes as the
   chart's title where it has none, was the alternative. A Mermaid sequence page named `''` reads back unnamed, as an
   empty title statement names no page of any other kind.
