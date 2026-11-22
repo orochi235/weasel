@@ -46,7 +46,8 @@ export function useToolCarry(
         const at = { left: m.clientX, top: m.clientY };
         setGhost((g) => (g ? { ...g, at } : { node: carryGhost(tool), from, at }));
       },
-      onEnd: () => {
+      onEnd: ({ event }) => {
+        moved ||= pastDragThreshold(origin, event, dragPx);
         setGhost(null);
         if (moved) swallowNextClick();
       },
