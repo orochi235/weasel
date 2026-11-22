@@ -77,7 +77,8 @@ class Triangulation {
       this.remove(other.t);
       this.add(u, q, w);
       this.add(q, v, w);
-      stack.push([u, q], [q, v]);
+      // w is a just-inserted point only during insert; the first pass needs v→w and w→u rechecked too.
+      stack.push([u, q], [q, v], [v, w], [w, u]);
     }
   }
 

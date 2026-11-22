@@ -34,7 +34,8 @@ export type ArapStage = 'similarity' | 'rigid' | 'local-global' | 'injective';
 /** A solve's state after one stage: every vertex's position, interleaved `x, y`. */
 export interface ArapStep {
   stage: ArapStage;
-  /** Which round of its stage, from 1. */
+  /** Which round of its stage, from 1. A pass that runs out of rounds still
+   *  tangled reports its result under its last round again. */
   round: number;
   vertices: Float64Array;
 }
@@ -42,8 +43,8 @@ export interface ArapStep {
 /** Options for {@link ArapSolver.solve}. */
 export interface ArapSolveOptions {
   /** The most local/global rounds to run after the two linear steps; 0
-   *  returns their result alone. Rounds stop early once the mesh settles.
-   *  Default {@link ARAP_ROUNDS}. */
+   *  skips them, leaving the injective pass to start from the linear steps'
+   *  result. Rounds stop early once the mesh settles. Default {@link ARAP_ROUNDS}. */
   iterations?: number;
   /** The most rounds of the injective pass; 0 skips it. Default
    *  {@link ARAP_INJECTIVE_ROUNDS}. */
@@ -71,7 +72,7 @@ const SETTLED_ENERGY = 3e-3;
  *  limited-memory descent is often followed by a long one. */
 const CALM_ROUNDS = 2;
 
-/** The mesh's connected pieces: vertex lists and triangle lists. */
+/** The mesh's connected pieces: vertex lists and triangle lists. A vertex no triangle uses is a piece of its own. */
 function piecesOf(mesh: ArapMesh): { verts: number[]; tris: number[] }[] {
   const n = mesh.vertices.length >> 1;
   const parent = Int32Array.from({ length: n }, (_, i) => i);
@@ -93,7 +94,9 @@ function piecesOf(mesh: ArapMesh): { verts: number[]; tris: number[] }[] {
     p.tris.push(t / 3);
     for (let k = 0; k < 3; k++) if (!used[T[t + k]]) { used[T[t + k]] = 1; p.verts.push(T[t + k]); }
   }
-  return [...byRoot.values()];
+  const pieces = [...byRoot.values()];
+  for (let v = 0; v < n; v++) if (!used[v]) pieces.push({ verts: [v], tris: [] });
+  return pieces;
 }
 
 /** The farthest any vertex moved between `a` and `b`. */
@@ -206,7 +209,7 @@ export function createArapSolver(mesh: ArapMesh, pinned: readonly number[]): Ara
           placePiece(piece, pos[k], out);
           fell = true;
         });
-        if (fell) report('injective', r);
+        if (fell) report('injective', r - 1);
       }
       return out;
     },

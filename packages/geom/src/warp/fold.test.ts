@@ -1,20 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { createArapSolver, type ArapStep } from './arap';
 import { barS, backwardStretches, discSquash, invertedTriangles, type FoldCase } from './foldCases';
-import { pinWarpMap } from './pinWarp';
+import { pinTargets, pinWarpMap } from './pinWarp';
 import { pinWarpMesh } from './pinWarpMesh';
 import { warpPath } from './warpPath';
 import { pathToAnchors } from '../paths/anchors';
 
 function solved(c: FoldCase) {
   const mesh = pinWarpMesh(c.shape, c.pins.map((p) => p.from));
-  const pinned: number[] = [], targets: number[] = [];
-  c.pins.forEach((pin, k) => {
-    const v = mesh.pinVertex[k];
-    if (v < 0 || pinned.includes(v)) return;
-    pinned.push(v);
-    targets.push(pin.to.x + mesh.vertices[2 * v] - pin.from.x, pin.to.y + mesh.vertices[2 * v + 1] - pin.from.y);
-  });
+  const { pinned, targets } = pinTargets(mesh, c.pins);
   return { mesh, pinned, targets, solver: createArapSolver(mesh, pinned) };
 }
 
@@ -76,8 +70,16 @@ it('leaves a mesh at rest where it is', () => {
 });
 
 // Before the L-BFGS solve, the refit that split at the worst sample took 6 and 22 here; under the stop
-// relative to the whole energy, 5 and 11 (2026-10-27).
-it.each([{ c: discSquash, anchors: 4 }, { c: barS, anchors: 10 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
+// relative to the whole energy, 5 and 11 (2026-10-27); 4 and 10, then 5 and 11 again over a truly
+// triangular lattice (2026-11-22).
+it.each([{ c: discSquash, anchors: 5 }, { c: barS, anchors: 11 }])('refits the $c.name with about the anchors its bends need', ({ c, anchors }) => {
   const out = warpPath(c.shape, pinWarpMap(c.shape, c.pins), { tolerance: 0.5 });
   expect(pathToAnchors(out).anchors[0]).toHaveLength(anchors);
+});
+
+describe('invertedTriangles', () => {
+  it('skips a triangle flat at rest', () => {
+    const mesh = { vertices: Float64Array.from([0, 0, 10, 0, 20, 0, 0, 10]), triangles: Uint32Array.from([0, 1, 2, 0, 1, 3]) };
+    expect(invertedTriangles(mesh, mesh.vertices)).toBe(0);
+  });
 });

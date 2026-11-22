@@ -21,7 +21,7 @@ import { PathBuilder } from '../paths/builder';
 import { pathToAnchors } from '../paths/anchors';
 import { createArapSolver, type ArapStage } from './arap';
 import { barS, discSquash, type FoldCase } from './foldCases';
-import { pinWarpMap } from './pinWarp';
+import { pinTargets, pinWarpMap } from './pinWarp';
 import { pinWarpMesh } from './pinWarpMesh';
 import { warpPath } from './warpPath';
 
@@ -62,13 +62,7 @@ function timed(count: number, run: () => void): number[] {
 
 function solveCase(c: FoldCase) {
   const mesh = pinWarpMesh(c.shape, c.pins.map((p) => p.from));
-  const pinned: number[] = [], targets: number[] = [];
-  c.pins.forEach((pin, k) => {
-    const v = mesh.pinVertex[k];
-    if (v < 0 || pinned.includes(v)) return;
-    pinned.push(v);
-    targets.push(pin.to.x + mesh.vertices[2 * v] - pin.from.x, pin.to.y + mesh.vertices[2 * v + 1] - pin.from.y);
-  });
+  const { pinned, targets } = pinTargets(mesh, c.pins);
   const solver = createArapSolver(mesh, pinned);
   const rounds: Partial<Record<ArapStage, number>> = {};
   solver.solve(targets, { trace: (s) => { rounds[s.stage] = Math.max(rounds[s.stage] ?? 0, s.round); } });

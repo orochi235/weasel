@@ -48,15 +48,15 @@ export const PRESETS: Record<PresetId, Preset> = {
   disc: {
     label: 'Disc',
     ...placed(disc(), [hold(20, 50), drag(80, 50, 60, 70), drag(50, 20, 40, 30)], 2.6, 30, 30),
-    caption: 'The left pin holds and the other two are pushed toward it. At step 2 one triangle on the left edge has turned over, '
-      + 'so its stretch of outline, drawn heavy, runs backward. The local/global rounds move the fold about without '
-      + 'clearing it, and the untangling pass rights it in its first round.',
+    caption: 'The left pin holds and the other two are pushed toward it. At step 2 two triangles on the left edge have turned over, '
+      + 'so their stretch of outline, drawn heavy, runs backward. The local/global rounds move the fold about without '
+      + 'clearing it, and the untangling pass rights them in its first round.',
   },
   'bar-s': {
     label: 'S bar',
     ...placed(bar(), [drag(10, 10, 50, 10), drag(70, 10, 60, -40), drag(130, 10, 140, 60), drag(190, 10, 150, 10)], 1.35, 30, 110),
-    caption: 'The ends are pushed together and the two middle pins pulled opposite ways. Step 2 turns three triangles over at '
-      + 'those pins, and the local/global rounds make it six. The untangling pass turns more over at first, then '
+    caption: 'The ends are pushed together and the two middle pins pulled opposite ways. Step 2 turns four triangles over at '
+      + 'those pins, and the local/global rounds keep four or five. The untangling pass turns more over at first, then '
       + 'works them all back and ends with none.',
   },
   bend: {
