@@ -55,7 +55,10 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
     else lines.push(`  ${head} {`, ...attributes.map((a) => `    ${a}`), '  }');
   }
   for (const e of out.edges) {
-    if (!ids.has(e.from) || !ids.has(e.to)) continue;
+    if (!ids.has(e.from) || !ids.has(e.to)) {
+      out.warnings.add('Mermaid ER relationships join entities; connectors to containers were dropped.');
+      continue;
+    }
     dropPorts(e, (m) => out.warnings.add(m));
     const style = edgeStyleIn(out, e);
     const body = style.dash !== undefined ? '..' : '--';
