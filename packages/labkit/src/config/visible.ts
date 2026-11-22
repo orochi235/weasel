@@ -73,9 +73,11 @@ function statusAt(
     { aliasOver: over ?? resolved.group, aliasHolds: targets.holds },
   );
   let { shown, enabled } = data;
-  // An alias answers for the leaf it shows as well, as `prefStatusAt` has it for the data conditions.
+  // An alias answers for the leaf it shows as well, as `prefStatusAt` has it for the data conditions. The
+  // functions are keyed by the panel's own paths, so they say nothing of a target in `over`.
   const leaf = prefLeafAt(resolved.group, path);
-  const target = leaf?.kind === 'alias' ? targets.shown(leaf as PrefAlias) : undefined;
+  const target =
+    leaf?.kind === 'alias' && over === undefined ? targets.shown(leaf as PrefAlias) : undefined;
   for (const asked of target ? [path, target.path] : [path]) {
     const steps = asked.split('.');
     for (let i = 1; i <= steps.length; i += 1) {
