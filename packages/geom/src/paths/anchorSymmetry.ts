@@ -119,14 +119,26 @@ export function translateAnchorsSymmetric(
   dy: number,
   syms: readonly AnchorSymmetry[],
 ): boolean {
-  const dragged = new Set(flats);
+  return translateEachSymmetric(set, new Map(flats.map((flat) => [flat, { x: dx, y: dy }])), syms);
+}
+
+/**
+ * `translateAnchorsSymmetric` with a delta of its own for each anchor:
+ * `deltas` maps a flat index to how far that anchor moves. An anchor that is
+ * itself in `deltas` moves as asked, not as another's image.
+ */
+export function translateEachSymmetric(
+  set: AnchorSet,
+  deltas: ReadonlyMap<number, Point>,
+  syms: readonly AnchorSymmetry[],
+): boolean {
   const moves = new Map<number, Point>();
-  for (const flat of flats) {
-    const d = averaged({ x: dx, y: dy }, syms, (s) => s.partners[flat] === flat, linear);
+  for (const [flat, delta] of deltas) {
+    const d = averaged(delta, syms, (s) => s.partners[flat] === flat, linear);
     moves.set(flat, d);
     for (const s of syms) {
       const j = s.partners[flat];
-      if (j === undefined || dragged.has(j) || moves.has(j)) continue;
+      if (j === undefined || deltas.has(j) || moves.has(j)) continue;
       moves.set(j, linear(s.m, d));
     }
   }

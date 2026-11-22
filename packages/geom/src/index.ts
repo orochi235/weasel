@@ -201,7 +201,7 @@ export {
 export { anchorsUnderBrush } from './paths/anchorBrush';
 export {
   anchorSymmetries, anchorSymmetry, bendSegmentSymmetric, moveHandleSymmetric, translateAnchorsSymmetric,
-  type AnchorSymmetry,
+  translateEachSymmetric, type AnchorSymmetry,
 } from './paths/anchorSymmetry';
 export { bendSegment, type BendGrip } from './paths/bendSegment';
 export { kneadPath, type KneadPathOptions } from './paths/kneadPath';
