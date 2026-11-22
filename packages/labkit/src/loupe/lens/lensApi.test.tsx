@@ -298,4 +298,34 @@ describe('a lens API whose scene is in a host container’s px', () => {
     act(() => api.follow({ x: 400, y: 300 }));
     expect(center(`${lensId}:reticle`)).toEqual({ x: 390, y: 290 });
   });
+
+  it('places, follows and reports lenses through the camera they are drawn by', () => {
+    const scene = createLensScene<null>();
+    const body = boxed(210, 110, 400, 300);
+    const frame = boxed(10, 10, 1000, 800);
+    const view = { x: 50, y: 50, scale: { x: 2, y: 2 } };
+    const attachment = { view: () => view, subscribe: () => () => {} };
+    const api = createLensApi(scene, {
+      body: { current: body },
+      frame: { current: frame },
+      attachment,
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+    });
+    const lensId = api.add({ x: 300, y: 250 })!;
+    const center = (id: string) => {
+      const n = scene.get(asNodeId(id))!;
+      const p = effectivePose(scene, n);
+      return { x: p.x + p.width / 2, y: p.y + p.height / 2 };
+    };
+    expect(center(`${lensId}:reticle`)).toEqual({ x: 195, y: 170 });
+    expect(lensClient(scene, lensId, frame, attachment)?.reticle).toEqual({ x: 300, y: 250 });
+    const b = center(`${lensId}:body`);
+    expect(b.x).toBeGreaterThanOrEqual(150 + BODY_SIZE / 2);
+    expect(b.x).toBeLessThanOrEqual(350 - BODY_SIZE / 2);
+    act(() => api.apply(setAimOps(scene, lensId, 'follow')));
+    act(() => api.follow({ x: 400, y: 300 }));
+    expect(center(`${lensId}:reticle`)).toEqual({ x: 245, y: 195 });
+  });
 });

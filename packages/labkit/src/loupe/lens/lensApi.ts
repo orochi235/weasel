@@ -8,9 +8,13 @@ import {
   type PoseHold,
   type RectPose,
   sceneToAdapter,
+  type View,
+  viewScreenToWorld,
+  viewWorldToScreen,
 } from '@weasel-js/core';
 import { clamp } from '@weasel-js/geom';
 import { type RefObject, useCallback, useRef } from 'react';
+import type { LensAttachment } from './LensOverlay';
 import { type LensActionApi, MAX_LENSES } from './lensActionDefs';
 import { addLensOps, aimAt, lensesOf, lensIdsOf, settingsOf } from './lensScene';
 import type { LensSources } from './lensSource';
@@ -22,7 +26,24 @@ const samePose = (a: RectPose, b: RectPose): boolean =>
 /** Each new lens's body sits this far further along than the last, so lenses added in a row do not stack. */
 const STAGGER = 24;
 
-/** Where the lab body lies in the frame's px: the region a new lens is kept inside. */
+/** A client point in the scene's px: in `frame`'s px, then back through the camera the scene is drawn by. */
+function clientToScene(frame: HTMLElement, view: View | undefined, client: LoupePoint): LoupePoint {
+  const [x, y] = clientToCanvas(frame, client.x, client.y);
+  return view ? viewScreenToWorld(view, { x, y }) : { x, y };
+}
+
+/** A scene point in client px: through the camera to `frame`'s px, then out to the client. */
+export function sceneToClient(
+  frame: HTMLElement,
+  view: View | undefined,
+  p: LoupePoint,
+): LoupePoint {
+  const at = view ? viewWorldToScreen(view, p) : p;
+  const [x, y] = canvasToClient(frame, at.x, at.y);
+  return { x, y };
+}
+
+/** Where the lab body lies in the scene's px: the region a new lens is kept inside. */
 interface Region {
   left: number;
   top: number;
@@ -30,15 +51,19 @@ interface Region {
   bottom: number;
 }
 
-function regionOf(body: HTMLElement, frame: HTMLElement): Region {
+function regionOf(body: HTMLElement, frame: HTMLElement, view: View | undefined): Region {
   const box: LayoutBox = layoutBoxOf(body);
-  const [left, top] = clientToCanvas(frame, box.left, box.top);
-  const [right, bottom] = clientToCanvas(
-    frame,
-    box.left + box.width * box.scale.x,
-    box.top + box.height * box.scale.y,
-  );
-  return { left, top, right, bottom };
+  const a = clientToScene(frame, view, { x: box.left, y: box.top });
+  const b = clientToScene(frame, view, {
+    x: box.left + box.width * box.scale.x,
+    y: box.top + box.height * box.scale.y,
+  });
+  return {
+    left: Math.min(a.x, b.x),
+    top: Math.min(a.y, b.y),
+    right: Math.max(a.x, b.x),
+    bottom: Math.max(a.y, b.y),
+  };
 }
 
 /** A new body beside its reticle, in the frame's px, flipped left where the right has no room. */
@@ -52,21 +77,21 @@ function bodyBeside(reticle: LoupePoint, region: Region, n: number): LoupePoint 
   };
 }
 
-/** A lens's reticle and body centers in client px, from the scene's px in `frame` (see {@link LensApiRefs.frame}),
- *  which an ancestor transform scales. */
+/** A lens's reticle and body centers in client px, from the scene's px drawn through `attachment` in `frame` (see
+ *  {@link LensApiRefs.frame}), which an ancestor transform scales. */
 export function lensClient<C>(
   scene: LensScene<C>,
   lensId: string,
   frame: HTMLElement | null,
+  attachment?: LensAttachment,
 ): { reticle: LoupePoint; body: LoupePoint } | null {
   const ids = lensIdsOf(scene, `${lensId}:body`);
   const reticle = ids ? scene.get(ids.reticle) : undefined;
   const lens = ids ? scene.get(ids.body) : undefined;
   if (!frame || !reticle || !lens) return null;
-  const center = (p: RectPose) => {
-    const [x, y] = canvasToClient(frame, p.x + p.width / 2, p.y + p.height / 2);
-    return { x, y };
-  };
+  const view = attachment?.view();
+  const center = (p: RectPose) =>
+    sceneToClient(frame, view, { x: p.x + p.width / 2, y: p.y + p.height / 2 });
   return {
     reticle: center(effectivePose(scene, reticle)),
     body: center(effectivePose(scene, lens)),
@@ -91,6 +116,8 @@ export interface LensApiRefs<C> {
   /** The element whose px the scene holds: the surface container the lens canvas covers, which is the lab body's
    *  over layer under a lab's own surface and a host's container under an outer one. Default `body`. */
   frame?: RefObject<HTMLElement | null>;
+  /** The camera the host's `<LensOverlay>` draws the scene through, the same one it is passed. Default none. */
+  attachment?: LensAttachment;
   pointer: RefObject<LoupePoint | null>;
   focus: RefObject<string | null>;
   sources: RefObject<LensSources<C>>;
@@ -98,7 +125,7 @@ export interface LensApiRefs<C> {
   compare?: RefObject<((lensId: string) => void) | null>;
 }
 
-/** The lens API the lens actions drive, in client px at its edges and the frame's px in the scene. */
+/** The lens API the lens actions drive, in client px at its edges and the scene's px, through its camera, inside. */
 export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): LensActionApi<C> {
   let next = 0;
   // Each held lens, and the aim it was held under: the hold is on the node that aim moves.
@@ -136,10 +163,8 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
     held.hold.set([[aimed.id as never, aimed.pose]]);
   };
   const frameOf = () => refs.frame?.current ?? refs.body.current;
-  const toFrame = (client: LoupePoint, frame: HTMLElement) => {
-    const [x, y] = clientToCanvas(frame, client.x, client.y);
-    return { x, y };
-  };
+  const toScene = (client: LoupePoint, frame: HTMLElement) =>
+    clientToScene(frame, refs.attachment?.view(), client);
   const apply = (ops: readonly Op[]) => {
     if (ops.length > 0) sceneToAdapter(scene).applyOps([...ops], 'lens');
   };
@@ -167,10 +192,10 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
       const frame = frameOf();
       const count = lensesOf(scene).length;
       if (!body || !frame || count >= MAX_LENSES) return null;
-      const region = regionOf(body, frame);
+      const region = regionOf(body, frame, refs.attachment?.view());
       const client = at ?? refs.pointer.current;
       const reticle = client
-        ? toFrame(client, frame)
+        ? toScene(client, frame)
         : { x: (region.left + region.right) / 2, y: (region.top + region.bottom) / 2 };
       const lensId = mint();
       apply(addLensOps(scene, lensId, { body: bodyBeside(reticle, region, count), reticle }));
@@ -181,7 +206,7 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
       const lensId = named ?? current();
       const frame = frameOf();
       if (lensId === null || !frame) return;
-      const at = toFrame(client, frame);
+      const at = toScene(client, frame);
       if (aimAt(scene, lensId, at) === null) return;
       if (!holds.has(lensId))
         holds.set(lensId, {
