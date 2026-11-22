@@ -143,14 +143,21 @@ function lerpWidth(a: ScreenLength | undefined, b: ScreenLength | undefined, t: 
   return t < 0.5 ? a : b;
 }
 
-const widthNumber = (s: Stroke): number => (typeof s.width === 'object' ? s.width.px : s.width ?? 1);
+/** What a missing `vertexWidths` entry reads as: the stroke's width, or `NaN` on a `{ px }` stroke, whose width in
+ *  world units only the view knows. */
+const entryFallback = (s: Stroke): number => (typeof s.width === 'object' ? NaN : s.width ?? 1);
 
-/** Per-anchor widths `t` of the way from `a`'s to `b`'s, each side's missing entries read as its own width. */
+/** Per-anchor widths `t` of the way from `a`'s to `b`'s, each side's missing entries read as its own width. A
+ *  missing entry on a `{ px }` stroke has no world width to blend, so the nearer side's is kept as it stands. */
 function lerpVertexWidths(a: Stroke, b: Stroke, t: number): VertexWidth[] {
-  const wa = widthNumber(a), wb = widthNumber(b);
+  const wa = entryFallback(a), wb = entryFallback(b);
+  const side = (x: number, y: number): number => (Number.isNaN(x) || Number.isNaN(y) ? (t < 0.5 ? x : y) : lerp(x, y, t));
   return a.vertexWidths!.map((entry, i) => {
-    const p = vertexHalfWidths(entry, wa), q = vertexHalfWidths(b.vertexWidths![i], wb);
-    return vertexWidthFromSides(lerp(p.left, q.left, t), lerp(p.right, q.right, t));
+    const other = b.vertexWidths![i]!;
+    const p = vertexHalfWidths(entry, wa), q = vertexHalfWidths(other, wb);
+    const left = side(p.left, q.left), right = side(p.right, q.right);
+    if (Number.isNaN(left) && Number.isNaN(right)) return t < 0.5 ? entry : other;
+    return vertexWidthFromSides(left, right);
   });
 }
 

@@ -115,6 +115,15 @@ describe('lerpStroke per-anchor arrays', () => {
     expect(mid.vertexColors).toEqual([0.5, 0.5, 0.5, 1]);
   });
 
+  it('keeps a missing entry on a screen-pixel stroke missing, so it follows the zoom', () => {
+    const px = (vertexWidths: Stroke['vertexWidths']): Stroke => ({ paint: { color: '#000' }, width: { px: 4 }, vertexWidths });
+    const gap = undefined as unknown as number;
+    expect(lerpStroke(px([2, gap]), px([6, gap]), 0)!.vertexWidths).toEqual([2, gap]);
+    expect(lerpStroke(px([2, gap]), px([6, gap]), 0.5)!.vertexWidths).toEqual([4, gap]);
+    expect(lerpStroke(px([2, gap]), px([6, 8]), 0.25)!.vertexWidths).toEqual([3, gap]);
+    expect(lerpStroke(px([2, gap]), px([6, 8]), 0.75)!.vertexWidths).toEqual([5, 8]);
+  });
+
   it("takes the nearer side's array when the lengths differ", () => {
     expect(lerpStroke(s([1, 2]), s([3, 4, 5]), 0.25)!.vertexWidths).toEqual([1, 2]);
     expect(lerpStroke(s([1, 2]), s(undefined), 0.75)!.vertexWidths).toBeUndefined();

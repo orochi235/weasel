@@ -601,6 +601,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-20: `lerpStroke` interpolates `vertexWidths` and `vertexColors` entry by entry when both strokes hold an
   array of one length, reading a missing width entry as that stroke's width; otherwise it keeps the nearer side's
   array as written, as it keeps every other field.
+- 2026-11-22 (the fixer's call, audit round 72): on a `{ px }` stroke, whose width in world units only the view
+  knows, a missing `vertexWidths` entry or side is not blended: `lerpStroke` keeps the nearer stroke's as it stands,
+  missing or not, rather than reading it as a world width.
 - Ruled 2026-11-10: `paintKey` keys every fully transparent solid as one, whatever its color; none draws anything.
   It still keys apart from no paint (`'none'`).
 - 2026-11-10 (property tests): `RetainedSurfaces.reserve` drops the surface's key, so until `commit` names a new
