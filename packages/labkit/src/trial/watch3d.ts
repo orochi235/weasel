@@ -1,5 +1,5 @@
 import { isDev } from '@weasel-js/react';
-import { createKeyedEmitter } from '@weasel-js/registry';
+import { after, createKeyedEmitter } from '@weasel-js/registry';
 
 type Hook = EventTarget;
 type Global = { __THREE_DEVTOOLS__?: Hook; [ctor: string]: unknown };
@@ -13,7 +13,7 @@ const RETRIES_MS = [0, 50, 250, 1000];
 function findTrial(canvas: Element, how: string, attempt = 0): void {
   if (!canvas.isConnected) {
     const wait = RETRIES_MS[attempt + 1];
-    if (wait !== undefined) setTimeout(() => findTrial(canvas, how, attempt + 1), wait);
+    if (wait !== undefined) after(wait, () => findTrial(canvas, how, attempt + 1));
     return;
   }
   const id = canvas.closest('[data-trial-id]')?.getAttribute('data-trial-id');
@@ -27,7 +27,7 @@ const isElement = (el: unknown): el is Element =>
 
 /** Reported later rather than now, so a trial whose watch subscribes in an effect after its instrument's still hears. */
 const report = (canvas: Element, how: string): void => {
-  setTimeout(() => findTrial(canvas, how), RETRIES_MS[0]);
+  after(0, () => findTrial(canvas, how));
 };
 
 let threeInstalled = false;
@@ -78,9 +78,9 @@ function installDepthWatch(): void {
       if (cap === DEPTH_TEST && isElement(canvas) && !depthSeen.has(canvas)) {
         depthSeen.add(canvas);
         // Deferred, as three announces its renderer only once its constructor has turned depth testing on.
-        setTimeout(() => {
+        after(0, () => {
           if (!threeCanvases.has(canvas)) findTrial(canvas, 'WebGL with depth testing');
-        }, RETRIES_MS[0]);
+        });
       }
       return enable.call(this, cap);
     };
@@ -108,9 +108,9 @@ function gpuFound(canvas: Element): void {
   if (depthSeen.has(canvas)) return;
   depthSeen.add(canvas);
   // Deferred, as three may build a pipeline before it announces its renderer.
-  setTimeout(() => {
+  after(0, () => {
     if (!threeCanvases.has(canvas)) findTrial(canvas, 'WebGPU with depth testing');
-  }, RETRIES_MS[0]);
+  });
 }
 
 /**
