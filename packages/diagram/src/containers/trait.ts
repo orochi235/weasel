@@ -6,6 +6,7 @@
  * `<container id>/title`. The layouts find it by that name, because a layout
  * strategy sees only ids and poses.
  */
+import type { ClusterInset } from '../cluster';
 import type { Outline } from '../outline';
 import { DIAGRAM_TRAIT_KEY } from '../trait';
 import type { Rect } from '@weasel-js/geom';
@@ -24,9 +25,13 @@ export interface ContainerHeader {
 export interface DiagramContainer {
   role: ContainerRole;
   header?: ContainerHeader;
-  /** Its box is fitted to its members each time the diagram is built from data
-   *  (`DataContainer` with no `box`), so a move that carries it along is no edit of its own. */
+  /** Its box is fitted to its members (`DataContainer` with no `box`): each time the diagram is built from
+   *  data, and after each layout write or live frame that moves them. A move that carries it along is no
+   *  edit of its own. A layout treats it as a cluster. */
   fitted?: true;
+  /** The room a fitted container keeps around what it holds, header included. Default its header and
+   *  `DEFAULT_CLUSTER_INSET` all round. */
+  inset?: ClusterInset;
   /** A container whose members are reordered along this axis (`DataContainer.reorder`). */
   reorder?: 'x' | 'y';
 }
@@ -52,6 +57,9 @@ export function laneOutlineOf(node: { data: unknown }): Outline | undefined {
   if (diagramContainerOf(node)?.role !== 'lane') return undefined;
   return traitOf(node)?.outline as Outline | undefined;
 }
+
+/** Whether `c` is a container whose box is fitted to its members, which a layout keeps as a cluster. */
+export const isFittedContainer = (c: DiagramContainer): boolean => c.role === 'container' && c.fitted === true;
 
 /** The id of a container's title node. */
 export const titleIdOf = (containerId: string): string => `${containerId}/title`;
