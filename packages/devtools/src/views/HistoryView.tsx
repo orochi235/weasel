@@ -50,7 +50,8 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
     return () => { live = false; off(); };
   }, [client, rootId, follower]);
 
-  usePoll(() => setNow(Date.now()), AGE_MS, true);
+  // A read that failed has no notice coming to retry it, so the Age poll does.
+  usePoll(() => { setNow(Date.now()); if (error) readNow.current(); }, AGE_MS, true);
 
   const toggleStack = (on: boolean): void => {
     follower.setHistoryEntries(on);

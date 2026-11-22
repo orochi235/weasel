@@ -116,6 +116,19 @@ describe('<HistoryView>', () => {
     expect(screen.getByText('kit:open')).toBeTruthy();
   });
 
+  it('reads again after a failed read, with no history notice to prompt it', async () => {
+    const page = fakePage();
+    const request = page.client.request.bind(page.client);
+    let fail = true;
+    page.client.request = ((...args: Parameters<typeof request>) =>
+      fail ? Promise.reject(new Error('lost the page')) : request(...args)) as typeof request;
+    renderWithIcons(<HistoryView client={page.client} rootId="r" />);
+    expect(await screen.findByRole('alert')).toBeTruthy();
+    fail = false;
+    await waitFor(() => expect(screen.queryByRole('alert')).toBeNull(), { timeout: 2000 });
+    expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('0 / 0');
+  });
+
   it('leaves the open step open when a step with nothing to show is clicked', async () => {
     const page = fakePage();
     renderWithIcons(<HistoryView client={page.client} rootId="r" />);
