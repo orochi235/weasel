@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
-  ANY_MODS, asNodeId, createScene,
+  ANY_MODS, asNodeId, createActionDeps, createScene,
   type ActionDeps, type CanvasExtensionApi, type ContributionFrameCtx, type ImmediateInvoker, type InvocationCtx,
   type OngoingInvoker, type RectPose, type RenderLayer, type UnitScope, type View,
 } from '@weasel-js/core';
@@ -235,5 +235,34 @@ describe('createRulers', () => {
     expect(repaint).not.toHaveBeenCalled();
     drag(action('guide'), { view: { get: () => VIEW } } as unknown as ActionDeps, 'top', screenToWorld(100, 10)).move(screenToWorld(100, 80));
     expect(repaint).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads the left ruler upward for a document whose y runs up the screen', () => {
+    const { rulers } = fixture({ majorPx: 72, yAxis: 'up' });
+    // Canvas world y 52 is 72 px below the top, where the upward document reads -1 in.
+    const majors = rulers.layout()!.left.ticks.filter((t) => t.major).map((t) => [t.at, t.label]);
+    expect(majors.slice(0, 3)).toEqual([[20, '0'], [92, '-1'], [164, '-2']]);
+  });
+
+  it('follows a view and size a host reports without a canvas', () => {
+    const rulers = createRulers({ guides: store(), root: PT });
+    const view: View = { x: 0, y: 0, scale: { x: 2, y: 2 } };
+    rulers.follow(view, { width: 300, height: 200 });
+    expect(rulers.get()).toMatchObject({ view, width: 300, height: 200 });
+    const heard = vi.fn();
+    rulers.subscribe(heard);
+    rulers.follow({ ...view, scale: { x: 2, y: 2 } }, { width: 300, height: 200 });
+    expect(heard).not.toHaveBeenCalled();
+  });
+
+  it('declares every dep its actions read, so a dispatcher\'s guarded deps let a drag run', () => {
+    const { guides, action } = fixture();
+    const registry = { get: (name: string) => (name === 'view' ? { get: () => VIEW } : undefined) };
+    const deps = createActionDeps(action('guide'), registry as never);
+    const d = drag(action('guide'), deps, 'top', screenToWorld(100, 10));
+    d.end(screenToWorld(100, 80));
+    expect(guides.list).toEqual([{ id: 'g1', axis: 'y', offset: 60 }]);
+    const pointer = action('pointer');
+    expect(() => (pointer.invoker as ImmediateInvoker).run(createActionDeps(pointer, registry as never), { world: { x: 1, y: 1 }, over: true } as never)).not.toThrow();
   });
 });

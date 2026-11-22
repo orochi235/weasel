@@ -37,14 +37,22 @@ export interface RulersLayout {
   pointer: Point | null;
 }
 
+/** Which way the left ruler reads: `'down'` reads the canvas's world y, and
+ *  `'up'` reads it negated, for a document whose y grows up the screen over a
+ *  canvas world whose y grows down it. */
+export type RulersYAxis = 'down' | 'up';
+
 /** Lay out both rulers for `state`, or `null` before the canvas has a view. */
-export function rulersLayout(state: RulersState, spacing: RulersSpacing = {}): RulersLayout | null {
+export function rulersLayout(state: RulersState, spacing: RulersSpacing = {}, yAxis: RulersYAxis = 'down'): RulersLayout | null {
   const { view, frame } = state;
   if (view === null) return null;
   const common = { scopes: frame.scopes, ...spacing };
+  const flip = yAxis === 'up' ? -1 : 1;
   return {
     top: rulerTicks({ ...common, pxPerUnit: view.scale.x, start: view.x, length: state.width, origin: frame.origin.x }),
-    left: rulerTicks({ ...common, pxPerUnit: view.scale.y, start: view.y, length: state.height, origin: frame.origin.y }),
+    left: rulerTicks({
+      ...common, pxPerUnit: flip * view.scale.y, start: flip * view.y, length: state.height, origin: flip * frame.origin.y,
+    }),
     pointer: state.pointer === null ? null : viewWorldToScreen(view, state.pointer),
   };
 }
