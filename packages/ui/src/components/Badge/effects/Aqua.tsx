@@ -26,7 +26,7 @@ export interface BadgeAquaEffectParams {
   upperAlpha?: number;
   /** Equator Y position in viewBox units (0..100). */
   equator?: number;
-  /** Half-width of the transition band around the equator (viewBox units). */
+  /** How far the transition band reaches above the equator, in viewBox units; below it, the band reaches 1.6× as far. */
   equatorSpread?: number;
   /** Mix ratios for the bright equator and dark base stops (0..100, % accent). */
   equatorTint?: number;
