@@ -32,13 +32,16 @@ export function startOffsetTween<T>(ctx: AnimationContext, o: TargetTweenOptions
   const easing = resolveEasing(o.easing ?? easeOutQuad);
   const ms = voiceMs(o.ms);
 
-  ctx.targets.attach(s as never);
-  commitOver(ctx, s as never, o.to);
   const atEnd = ctx.atEnd();
-  ctx.seedClock();
   const offsetAt = (u: number): number[] => minus(ax.to(path!(easing(u))), to);
   /** Its offset at its start, where a run backward ends. */
   const first = path ? offsetAt(0) : travel(ax, given ?? base, to);
+  // Its path's ends, read where a throw from them still finds the target as it was.
+  if (path && atEnd) offsetAt(1);
+
+  ctx.targets.attach(s as never);
+  commitOver(ctx, s as never, o.to);
+  ctx.seedClock();
   const share = shareBehind(ax, committed, to, travel(ax, given ?? base, to));
   const own = (): number[] => codec.own(id)!.value;
   const behind = goBehind(s, own, () => times(own(), share), share);

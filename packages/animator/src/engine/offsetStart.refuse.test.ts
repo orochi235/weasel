@@ -65,3 +65,22 @@ describe('a start refused as it starts', () => {
     vi.restoreAllMocks();
   });
 });
+
+describe('a target tween whose path throws as it starts', () => {
+  it('throws to the caller and leaves the target at rest where it was', () => {
+    const a = hosted();
+    const { target } = numberTarget();
+    const other = hosted();
+    expect(() => a.animator.tween({
+      target, to: 10, ms: 100, interpolator: () => () => { throw new Error('bad path'); },
+    })).toThrow('bad path');
+    expect(() => a.animator.tween({
+      target, to: 10, ms: 100, interpolate: (x, y, u) => x + (y - x) * u, easing: () => { throw new Error('bad easing'); },
+    })).toThrow('bad easing');
+    expect(target.committed()).toBe(0);
+    expect(target.active).toBe(false);
+    expect(stateOf(target).behind).toHaveLength(0);
+    // No longer this animator's, so another may move it.
+    expect(() => other.animator.tween({ target, to: 5, ms: 100 })).not.toThrow();
+  });
+});
