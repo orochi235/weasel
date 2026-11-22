@@ -1,0 +1,13 @@
+probe http://localhost:62462/skulkr/ headed false channel chrome dpr 2 cold true
+1/2 goto   longest task   455 ms  canvases 1  tasks [[109,455],[564,54]]
+    gl (profile, inclusive) {"getContext":1.8,"getParameter":0.2,"getShaderParameter":61.3,"getProgramParameter":280.6,"texImage2D":0.2,"drawElements":3.8,"texSubImage2D":0.2,"bufferData":13.4}
+    top self [["(idle) :-1",1737.6],["getProgramParameter :-1",280.6],["(garbage collector) :-1",269.9],["(program) :-1",199.1],["pS index--U-6iS6u.js:397",148.8],["getShaderParameter :-1",61.3],["tm index--U-6iS6u.js:77",46.4],["oS index--U-6iS6u.js:397",42]]
+1/2 reload longest task    79 ms  canvases 1  tasks [[118,79],[198,54]]
+    gl (profile, inclusive) {"getContext":1.9,"getParameter":0.3,"getShaderParameter":7.1,"getProgramParameter":0.5,"texImage2D":0.2,"bufferData":18.4,"texSubImage2D":0.3,"drawElements":3.5}
+    top self [["(idle) :-1",1960.2],["(garbage collector) :-1",283.4],["(program) :-1",215.3],["pS index--U-6iS6u.js:397",187.9],["tm index--U-6iS6u.js:77",57.7],["Zce index--U-6iS6u.js:397",44.8],["oS index--U-6iS6u.js:397",43.9],["Xu index--U-6iS6u.js:77",42.6]]
+2/2 goto   longest task   328 ms  canvases 1  tasks [[110,328],[438,52]]
+    gl (profile, inclusive) {"getContext":2,"getParameter":0.5,"getShaderParameter":25,"getProgramParameter":191.5,"texImage2D":0.2,"bufferData":11.6,"drawElements":4.6}
+    top self [["(idle) :-1",1836.6],["(garbage collector) :-1",276.8],["(program) :-1",194.3],["getProgramParameter :-1",191.5],["pS index--U-6iS6u.js:397",166.6],["tm index--U-6iS6u.js:77",46.9],["oS index--U-6iS6u.js:397",39.8],["ko index--U-6iS6u.js:76",39.6]]
+2/2 reload longest task    72 ms  canvases 1  tasks [[117,72]]
+    gl (profile, inclusive) {"getContext":1.8,"getParameter":0.5,"getShaderParameter":5.8,"getProgramParameter":0.8,"texImage2D":0.3,"drawElements":3.5,"bufferData":13.5}
+    top self [["(idle) :-1",2025.9],["(garbage collector) :-1",271.3],["(program) :-1",209],["pS index--U-6iS6u.js:397",184.1],["oS index--U-6iS6u.js:397",50.3],["tm index--U-6iS6u.js:77",49.9],["ko index--U-6iS6u.js:76",45.8],["Zce index--U-6iS6u.js:397",44.3]]

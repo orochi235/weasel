@@ -23,6 +23,7 @@ const RING_BYTES = 4 << 20;
 
 export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
   readonly language = 'wgsl' as const;
+  readonly compilesInBackground = false;
   readonly limits: GpuLimits;
   readonly ringBuffer: GPUBuffer;
   readonly ndcLayout: GPUBindGroupLayout;

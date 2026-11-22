@@ -195,6 +195,11 @@ export interface GpuProgram {
   set(name: string, type: GpuUniformType, data: GpuUniformData, offset?: number, count?: number): void;
   /** The texture a sampler samples; `index` names an element of a sampler array. */
   setTexture(name: string, texture: GpuTexture | null, index?: number): void;
+  /** Whether the program has finished compiling, asked without waiting. A program the backend compiles in
+   *  the background waits for that when first used; one it builds at once is always ready. */
+  ready(): boolean;
+  /** Wait for the program to finish compiling, and throw `ShaderCompileError` if it failed. */
+  settle(): void;
 }
 
 /** A program's source in each language a backend can compile. WGSL is one
@@ -209,6 +214,9 @@ export interface GpuProgramOptions {
   /** Add the id output. Default `true`; `false` for a program that writes
    *  location 1 itself. */
   readonly ids?: boolean;
+  /** The locations the source's own `layout(location = N)` qualifiers give its attributes, by name.
+   *  `attribute` answers these without waiting for a link still running in the background. */
+  readonly attributes?: Readonly<Record<string, number>>;
 }
 
 /** What a device reports of itself and its canvas target. */
@@ -236,6 +244,9 @@ export type GpuTextureData =
 export interface GpuDevice {
   /** The language the backend compiles programs from. */
   readonly language: 'glsl' | 'wgsl';
+  /** Whether a program compiles in the background after `createProgram` returns, so starting one before it
+   *  is needed takes its compile off the frame that first draws with it. */
+  readonly compilesInBackground: boolean;
   readonly limits: GpuLimits;
   isContextLost(): boolean;
   /** The canvas target's size in pixels. */

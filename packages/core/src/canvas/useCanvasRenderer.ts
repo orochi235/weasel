@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { watchDevicePixelRatio } from '../core/device/watchDevicePixelRatio';
-import { getProgramSource, programSourceRegistry, type ShaderProgramHandle } from '@weasel-js/renderer';
+import { getProgramSource, programSourceRegistry, warmPrograms, type ShaderProgramHandle } from '@weasel-js/renderer';
 import { leaseCanvasRenderer, shaderKeyOf, type CanvasRendererLease } from './canvasRenderer';
 import type { CanvasBackend } from './canvasBackend';
 import { CanvasBackendContext } from './canvasBackendContext';
@@ -16,7 +16,11 @@ import { CanvasBackendContext } from './canvasBackendContext';
 export function useCanvasRenderer(backend?: CanvasBackend): CanvasRendererLease {
   const ambient = useContext(CanvasBackendContext);
   const backendRef = useLatest(backend ?? ambient);
-  const [lease] = useState(() => leaseCanvasRenderer({ backend: () => backendRef.current }));
+  const [lease] = useState(() => {
+    // Rendering, before the canvas element exists to make a renderer on, so the compiles start sooner.
+    if (backendRef.current !== 'webgpu') warmPrograms();
+    return leaseCanvasRenderer({ backend: () => backendRef.current });
+  });
   useEffect(() => () => lease.release(), [lease]);
   return lease;
 }

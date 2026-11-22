@@ -1,0 +1,33 @@
+probe http://localhost:61305/skulkr/ headed false channel chrome dpr 2 cold false
+1/4 goto   longest task   127 ms  canvases 1  tasks [[125,127],[253,55]]
+    gl (profile, inclusive) {"getContext":1.8,"getParameter":0.3,"getShaderParameter":7.8,"getProgramParameter":2,"bufferData":17.8,"texImage2D":0.2,"drawElements":5.1}
+    links [at ms, frag length, waited ms] [[212.9,3797,0.8],[233.3,6152,0.9],[236.6,563,0.3]]
+    top self [["(idle) :-1",1790.7],["(garbage collector) :-1",310.8],["(program) :-1",226.5],["pS index--U-6iS6u.js:397",173.6],["oS index--U-6iS6u.js:397",50.4],["tm index--U-6iS6u.js:77",48.6],["Zce index--U-6iS6u.js:397",45.2],["bufferSubData :-1",45.1]]
+1/4 reload longest task    72 ms  canvases 1  tasks [[137,72]]
+    gl (profile, inclusive) {"getContext":2,"getParameter":0.3,"getShaderParameter":5.5,"getProgramParameter":0.7,"texImage2D":0.3,"bufferData":13.9,"texSubImage2D":0.2,"drawElements":4.6}
+    links [at ms, frag length, waited ms] [[185.3,3797,0.2],[192.9,6152,0.2],[194.6,563,0.1]]
+    top self [["(idle) :-1",1950.3],["(garbage collector) :-1",297.3],["(program) :-1",221.6],["pS index--U-6iS6u.js:397",171.3],["tm index--U-6iS6u.js:77",50.2],["Zce index--U-6iS6u.js:397",47.6],["oS index--U-6iS6u.js:397",45],["ko index--U-6iS6u.js:76",43]]
+2/4 goto   longest task   119 ms  canvases 1  tasks [[115,119],[235,57]]
+    gl (profile, inclusive) {"getContext":1.8,"getParameter":0.3,"getShaderParameter":6.3,"getProgramParameter":1.8,"texImage2D":0.6,"bufferData":11.1,"drawElements":4.3}
+    links [at ms, frag length, waited ms] [[199.4,3797,0.7],[215.8,6152,0.8],[218.6,563,0.3]]
+    top self [["(idle) :-1",1893],["(garbage collector) :-1",279.5],["(program) :-1",224.2],["pS index--U-6iS6u.js:397",174.1],["tm index--U-6iS6u.js:77",48],["ko index--U-6iS6u.js:76",42.8],["Zce index--U-6iS6u.js:397",41],["h index--U-6iS6u.js:397",40.4]]
+2/4 reload longest task    79 ms  canvases 1  tasks [[125,79],[206,51]]
+    gl (profile, inclusive) {"getContext":1.6,"getShaderParameter":6.1,"getProgramParameter":0.8,"bufferData":17.3,"drawElements":4.8}
+    links [at ms, frag length, waited ms] [[181,3797,0.2],[188.9,6152,0.2],[190.5,563,0.2]]
+    top self [["(idle) :-1",1930.6],["(garbage collector) :-1",293.3],["(program) :-1",219.5],["pS index--U-6iS6u.js:397",181.5],["tm index--U-6iS6u.js:77",50.4],["oS index--U-6iS6u.js:397",47.5],["Zce index--U-6iS6u.js:397",47.1],["Xu index--U-6iS6u.js:77",43.5]]
+3/4 goto   longest task   135 ms  canvases 1  tasks [[125,135],[261,57]]
+    gl (profile, inclusive) {"getContext":1.8,"getParameter":0.3,"getShaderParameter":7.6,"getProgramParameter":2.1,"bufferData":16.3,"drawElements":4.1,"texSubImage2D":0.3}
+    links [at ms, frag length, waited ms] [[221.4,3797,0.9],[241,6152,0.8],[244.5,563,0.3]]
+    top self [["(idle) :-1",1834.7],["(garbage collector) :-1",303.2],["(program) :-1",221.6],["pS index--U-6iS6u.js:397",179.6],["tm index--U-6iS6u.js:77",53.6],["Zce index--U-6iS6u.js:397",47.3],["oS index--U-6iS6u.js:397",45.6],["Xu index--U-6iS6u.js:77",39.5]]
+3/4 reload longest task    74 ms  canvases 1  tasks [[141,74]]
+    gl (profile, inclusive) {"getContext":2,"getShaderParameter":5.8,"getProgramParameter":0.5,"texImage2D":0.3,"texSubImage2D":0.3,"drawElements":4.2,"bufferData":13.9}
+    links [at ms, frag length, waited ms] [[192,3797,0.1],[199.8,6152,0.2],[201.4,563,0.3]]
+    top self [["(idle) :-1",1975.9],["(garbage collector) :-1",241.8],["(program) :-1",214.1],["pS index--U-6iS6u.js:397",181.2],["tm index--U-6iS6u.js:77",58.4],["oS index--U-6iS6u.js:397",50.7],["Hme index--U-6iS6u.js:397",47.2],["Xu index--U-6iS6u.js:77",45.1]]
+4/4 goto   longest task   127 ms  canvases 1  tasks [[114,127],[242,58]]
+    gl (profile, inclusive) {"getContext":1.8,"getParameter":0.3,"getShaderParameter":6.5,"getProgramParameter":1.7,"texImage2D":0.2,"bufferData":17.3,"drawElements":3.3}
+    links [at ms, frag length, waited ms] [[201.9,3797,0.7],[219.8,6152,0.7],[222.8,563,0.2]]
+    top self [["(idle) :-1",1982.4],["(program) :-1",213.3],["pS index--U-6iS6u.js:397",184],["(garbage collector) :-1",181.7],["tm index--U-6iS6u.js:77",51.1],["oS index--U-6iS6u.js:397",46.9],["ko index--U-6iS6u.js:76",40.9],["Zce index--U-6iS6u.js:397",40.7]]
+4/4 reload longest task    78 ms  canvases 1  tasks [[130,78]]
+    gl (profile, inclusive) {"getContext":2.2,"getParameter":0.2,"getShaderParameter":6,"getProgramParameter":0.5,"texImage2D":0.2,"drawElements":5.3,"bufferData":21.7}
+    links [at ms, frag length, waited ms] [[183,3797,0.2],[190.8,6152,0.1],[192.4,563,0.1]]
+    top self [["(idle) :-1",1846.6],["(garbage collector) :-1",305.5],["(program) :-1",228],["pS index--U-6iS6u.js:397",187.5],["oS index--U-6iS6u.js:397",49.9],["tm index--U-6iS6u.js:77",48.7],["Zce index--U-6iS6u.js:397",48.1],["ko index--U-6iS6u.js:76",43.5]]

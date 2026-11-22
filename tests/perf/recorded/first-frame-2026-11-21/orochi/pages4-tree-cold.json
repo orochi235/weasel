@@ -1,0 +1,579 @@
+{
+  "url": "http://localhost:62454/skulkr/",
+  "headed": true,
+  "channel": "chrome",
+  "dpr": 2,
+  "cold": true,
+  "rounds": [
+    {
+      "round": 1,
+      "browser": "159.0.8154.13",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4216,
+          "canvases": 1,
+          "longtasks": [
+            [
+              216,
+              306
+            ],
+            [
+              522,
+              91
+            ]
+          ],
+          "links": [
+            {
+              "at": 253.4,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 253.9,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 253.9,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 366.1,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 366.9,
+              "frag": 563,
+              "waited": 0.1
+            },
+            {
+              "at": 367.4,
+              "frag": 6152,
+              "waited": 85.2
+            }
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              407.7
+            ],
+            [
+              "mS index-BgDTtAIt.js:397",
+              385.7
+            ],
+            [
+              "(garbage collector) :-1",
+              314.5
+            ],
+            [
+              "tm index-BgDTtAIt.js:77",
+              96.5
+            ],
+            [
+              "Xce index-BgDTtAIt.js:397",
+              91.6
+            ],
+            [
+              "ko index-BgDTtAIt.js:76",
+              85.6
+            ],
+            [
+              "getProgramParameter :-1",
+              85
+            ],
+            [
+              "sS index-BgDTtAIt.js:397",
+              80.6
+            ],
+            [
+              "Vme index-BgDTtAIt.js:397",
+              80.2
+            ],
+            [
+              "(idle) :-1",
+              78.9
+            ],
+            [
+              "Xu index-BgDTtAIt.js:77",
+              70.8
+            ],
+            [
+              "(anonymous) index-BgDTtAIt.js:77",
+              66.8
+            ],
+            [
+              "h index-BgDTtAIt.js:397",
+              66
+            ],
+            [
+              "zme index-BgDTtAIt.js:397",
+              61.9
+            ],
+            [
+              "Ap index-BgDTtAIt.js:77",
+              60.7
+            ],
+            [
+              "bufferSubData :-1",
+              60.5
+            ],
+            [
+              "gre index-BgDTtAIt.js:158",
+              52.9
+            ],
+            [
+              "pushGradientMesh index-BgDTtAIt.js:397",
+              49
+            ],
+            [
+              "jp index-BgDTtAIt.js:77",
+              48.1
+            ],
+            [
+              "Zc index-BgDTtAIt.js:77",
+              43.1
+            ]
+          ],
+          "gl": {
+            "getContext": 30.8,
+            "getProgramParameter": 85,
+            "getShaderParameter": 20.9,
+            "bufferData": 35.7,
+            "texSubImage2D": 0.3,
+            "drawElements": 7.9
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4336,
+          "canvases": 1,
+          "longtasks": [
+            [
+              268,
+              117
+            ],
+            [
+              387,
+              91
+            ]
+          ],
+          "links": [
+            {
+              "at": 283.4,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 283.8,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 283.8,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 357.6,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 357.9,
+              "frag": 563,
+              "waited": 0.2
+            },
+            {
+              "at": 358.1,
+              "frag": 6152,
+              "waited": 0.1
+            }
+          ],
+          "top": [
+            [
+              "mS index-BgDTtAIt.js:397",
+              443.8
+            ],
+            [
+              "(program) :-1",
+              423.1
+            ],
+            [
+              "(garbage collector) :-1",
+              374.7
+            ],
+            [
+              "tm index-BgDTtAIt.js:77",
+              111.6
+            ],
+            [
+              "sS index-BgDTtAIt.js:397",
+              101.2
+            ],
+            [
+              "Xce index-BgDTtAIt.js:397",
+              88.8
+            ],
+            [
+              "Xu index-BgDTtAIt.js:77",
+              82.9
+            ],
+            [
+              "Ap index-BgDTtAIt.js:77",
+              81.7
+            ],
+            [
+              "Vme index-BgDTtAIt.js:397",
+              80.9
+            ],
+            [
+              "ko index-BgDTtAIt.js:76",
+              78.8
+            ],
+            [
+              "(idle) :-1",
+              66.2
+            ],
+            [
+              "(anonymous) index-BgDTtAIt.js:77",
+              65
+            ],
+            [
+              "h index-BgDTtAIt.js:397",
+              61.9
+            ],
+            [
+              "zme index-BgDTtAIt.js:397",
+              61.3
+            ],
+            [
+              "gre index-BgDTtAIt.js:158",
+              61.2
+            ],
+            [
+              "bufferSubData :-1",
+              59.7
+            ],
+            [
+              "jp index-BgDTtAIt.js:77",
+              47.9
+            ],
+            [
+              "pushGradientMesh index-BgDTtAIt.js:397",
+              45.2
+            ],
+            [
+              "zce index-BgDTtAIt.js:397",
+              39.4
+            ],
+            [
+              "bufferData :-1",
+              38.2
+            ]
+          ],
+          "gl": {
+            "getContext": 7.3,
+            "getParameter": 4.9,
+            "getShaderParameter": 2,
+            "drawElements": 12,
+            "bufferData": 38.2
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "browser": "159.0.8154.13",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M2 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4220,
+          "canvases": 1,
+          "longtasks": [
+            [
+              225,
+              295
+            ],
+            [
+              521,
+              89
+            ]
+          ],
+          "links": [
+            {
+              "at": 262.4,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 262.9,
+              "frag": 6152,
+              "waited": 0.1
+            },
+            {
+              "at": 262.9,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 374.7,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 375.4,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 375.9,
+              "frag": 6152,
+              "waited": 76.2
+            }
+          ],
+          "top": [
+            [
+              "(program) :-1",
+              382.9
+            ],
+            [
+              "mS index-BgDTtAIt.js:397",
+              370.1
+            ],
+            [
+              "(garbage collector) :-1",
+              346.6
+            ],
+            [
+              "(idle) :-1",
+              93.3
+            ],
+            [
+              "sS index-BgDTtAIt.js:397",
+              93
+            ],
+            [
+              "Vme index-BgDTtAIt.js:397",
+              84.6
+            ],
+            [
+              "tm index-BgDTtAIt.js:77",
+              81.9
+            ],
+            [
+              "Xce index-BgDTtAIt.js:397",
+              76.7
+            ],
+            [
+              "h index-BgDTtAIt.js:397",
+              75.5
+            ],
+            [
+              "ko index-BgDTtAIt.js:76",
+              72.6
+            ],
+            [
+              "getProgramParameter :-1",
+              72.3
+            ],
+            [
+              "(anonymous) index-BgDTtAIt.js:77",
+              65.3
+            ],
+            [
+              "Xu index-BgDTtAIt.js:77",
+              65
+            ],
+            [
+              "Ap index-BgDTtAIt.js:77",
+              61.9
+            ],
+            [
+              "zme index-BgDTtAIt.js:397",
+              54.8
+            ],
+            [
+              "checkVisibility :-1",
+              52.2
+            ],
+            [
+              "gre index-BgDTtAIt.js:158",
+              52.1
+            ],
+            [
+              "pushGradientMesh index-BgDTtAIt.js:397",
+              49.1
+            ],
+            [
+              "jp index-BgDTtAIt.js:77",
+              49
+            ],
+            [
+              "bufferSubData :-1",
+              44.7
+            ]
+          ],
+          "gl": {
+            "getContext": 18.1,
+            "linkProgram": 0.2,
+            "getProgramParameter": 72.3,
+            "getShaderParameter": 22.7,
+            "texSubImage2D": 0.4,
+            "bufferData": 25.2,
+            "drawElements": 10.8
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4352,
+          "canvases": 1,
+          "longtasks": [
+            [
+              277,
+              125
+            ],
+            [
+              402,
+              82
+            ],
+            [
+              3405,
+              50
+            ]
+          ],
+          "links": [
+            {
+              "at": 291.2,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 291.5,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 291.6,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 367.5,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 367.8,
+              "frag": 563,
+              "waited": 0.1
+            },
+            {
+              "at": 368,
+              "frag": 6152,
+              "waited": 0
+            }
+          ],
+          "top": [
+            [
+              "(garbage collector) :-1",
+              473.6
+            ],
+            [
+              "(program) :-1",
+              415
+            ],
+            [
+              "mS index-BgDTtAIt.js:397",
+              357.1
+            ],
+            [
+              "sS index-BgDTtAIt.js:397",
+              142.3
+            ],
+            [
+              "gre index-BgDTtAIt.js:158",
+              113.9
+            ],
+            [
+              "tm index-BgDTtAIt.js:77",
+              97.2
+            ],
+            [
+              "(anonymous) index-BgDTtAIt.js:77",
+              91.4
+            ],
+            [
+              "Vme index-BgDTtAIt.js:397",
+              83.6
+            ],
+            [
+              "Xce index-BgDTtAIt.js:397",
+              82.1
+            ],
+            [
+              "Xu index-BgDTtAIt.js:77",
+              72.2
+            ],
+            [
+              "ko index-BgDTtAIt.js:76",
+              69.9
+            ],
+            [
+              "jp index-BgDTtAIt.js:77",
+              66.8
+            ],
+            [
+              "h index-BgDTtAIt.js:397",
+              60.1
+            ],
+            [
+              "(idle) :-1",
+              55.6
+            ],
+            [
+              "deleteVertexArray :-1",
+              50.9
+            ],
+            [
+              "Ap index-BgDTtAIt.js:77",
+              50.2
+            ],
+            [
+              "zce index-BgDTtAIt.js:397",
+              49
+            ],
+            [
+              "pushGradientMesh index-BgDTtAIt.js:397",
+              43
+            ],
+            [
+              "bufferSubData :-1",
+              36.2
+            ],
+            [
+              "zme index-BgDTtAIt.js:397",
+              33.6
+            ]
+          ],
+          "gl": {
+            "getContext": 6.4,
+            "getParameter": 0.2,
+            "texImage2D": 0.3,
+            "getShaderParameter": 4.1,
+            "getProgramParameter": 0.3,
+            "drawElements": 9.5,
+            "bufferData": 30.2,
+            "texSubImage2D": 0.3
+          }
+        }
+      ]
+    }
+  ]
+}

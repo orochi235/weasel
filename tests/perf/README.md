@@ -727,6 +727,40 @@ on 18 cores) on 2026-11-07, medians of 7 runs of a default bitmap:
 So the pass adds a few tenths of a millisecond, once per image, at small sizes and saves time at
 4096. Only Chromium has been measured. The runs are in `tests/perf/recorded/image-upload-2026-11-07/`.
 
+## A canvas's first frame and its shader compiles
+
+`first-frame.spec.ts` times a new renderer's first frame of a treemap-like scene (rects, circles, a gradient,
+text labels) in a browser launched for the round, and each built-in program compiled alone. macOS keeps every
+Metal library it compiles in a per-user cache that outlives the browser and its profile, so on a machine that
+has drawn weasel before, a fresh browser links from it; `WEASEL_PERF_COLD_METAL=1` renames each shader's
+`main` per round, which is what a first visit or a browser update pays. On teitou (Apple M5 Max, headless
+Chromium 159 on ANGLE Metal) on 2026-11-21, medians of 5 rounds with cold shaders:
+
+| frame | create (ms) | ready (ms) | main-thread block (ms) |
+|---|---:|---:|---:|
+| before, compiled at once |  90.9 | 191.5 | 193 |
+| after, in the background |   2.2 | 130.5 | 133 |
+| after, held to `programsReady()` |   2.1 | 149.0 |   0 |
+| reload, before |   2.4 |  14.4 |   0 |
+| reload, after |   1.8 |  11.1 |   0 |
+
+That frame draws with the batch program and its text build, about 90 ms and 70 ms to link cold. Any program
+links in 45 to 75 ms cold there, so the shaders' text is not the cost; when the compile starts is. A renderer
+starts its first frame's programs at construction (`FIRST_FRAME_SPECS`) and flushes them, a canvas starts them
+again on a context of its own as it first renders, and `warmPrograms()` starts them from app startup; the
+browser hands a later context the compile already under way. `pages.sh` over skulkr's demo audits page, cold
+shaders, longest task (2026-11-21):
+
+| build | teitou, M5 Max, headless, median of 4 (ms) | orochi, M2 Max, headed, load 27 rising to 140 (ms) |
+|---|---:|---:|
+| merge-base | 344 | 612, 614 |
+| renderer compiling in the background | 260 | 423, 441 |
+| and the canvas warming its programs | 185 | 306, 295 |
+| and the app calling `warmPrograms()` at startup | 139 | 221, 213 |
+
+Reloads read 66 to 130 ms on every build on both machines: Chrome 159 finds the Metal cache. The runs, and
+`probe.mjs`'s earlier loads of the page, are in `tests/perf/recorded/first-frame-2026-11-21/`.
+
 ## Timing a frame
 
 Specs that time the renderer draw **one frame per task** and take the median,

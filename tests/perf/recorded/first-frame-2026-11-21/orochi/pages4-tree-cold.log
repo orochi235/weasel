@@ -1,0 +1,17 @@
+probe http://localhost:62454/skulkr/ headed true channel chrome dpr 2 cold true
+1/2 goto   longest task   306 ms  canvases 1  tasks [[216,306],[522,91]]
+    gl (profile, inclusive) {"getContext":30.8,"getProgramParameter":85,"getShaderParameter":20.9,"bufferData":35.7,"texSubImage2D":0.3,"drawElements":7.9}
+    links [at ms, frag length, waited ms] [[253.4,3797,0],[253.9,6152,0],[253.9,563,0],[366.1,3797,0],[366.9,563,0.1],[367.4,6152,85.2]]
+    top self [["(program) :-1",407.7],["mS index-BgDTtAIt.js:397",385.7],["(garbage collector) :-1",314.5],["tm index-BgDTtAIt.js:77",96.5],["Xce index-BgDTtAIt.js:397",91.6],["ko index-BgDTtAIt.js:76",85.6],["getProgramParameter :-1",85],["sS index-BgDTtAIt.js:397",80.6]]
+1/2 reload longest task   117 ms  canvases 1  tasks [[268,117],[387,91]]
+    gl (profile, inclusive) {"getContext":7.3,"getParameter":4.9,"getShaderParameter":2,"drawElements":12,"bufferData":38.2}
+    links [at ms, frag length, waited ms] [[283.4,3797,0],[283.8,6152,0],[283.8,563,0],[357.6,3797,0],[357.9,563,0.2],[358.1,6152,0.1]]
+    top self [["mS index-BgDTtAIt.js:397",443.8],["(program) :-1",423.1],["(garbage collector) :-1",374.7],["tm index-BgDTtAIt.js:77",111.6],["sS index-BgDTtAIt.js:397",101.2],["Xce index-BgDTtAIt.js:397",88.8],["Xu index-BgDTtAIt.js:77",82.9],["Ap index-BgDTtAIt.js:77",81.7]]
+2/2 goto   longest task   295 ms  canvases 1  tasks [[225,295],[521,89]]
+    gl (profile, inclusive) {"getContext":18.1,"linkProgram":0.2,"getProgramParameter":72.3,"getShaderParameter":22.7,"texSubImage2D":0.4,"bufferData":25.2,"drawElements":10.8}
+    links [at ms, frag length, waited ms] [[262.4,3797,0],[262.9,6152,0.1],[262.9,563,0],[374.7,3797,0],[375.4,563,0],[375.9,6152,76.2]]
+    top self [["(program) :-1",382.9],["mS index-BgDTtAIt.js:397",370.1],["(garbage collector) :-1",346.6],["(idle) :-1",93.3],["sS index-BgDTtAIt.js:397",93],["Vme index-BgDTtAIt.js:397",84.6],["tm index-BgDTtAIt.js:77",81.9],["Xce index-BgDTtAIt.js:397",76.7]]
+2/2 reload longest task   125 ms  canvases 1  tasks [[277,125],[402,82],[3405,50]]
+    gl (profile, inclusive) {"getContext":6.4,"getParameter":0.2,"texImage2D":0.3,"getShaderParameter":4.1,"getProgramParameter":0.3,"drawElements":9.5,"bufferData":30.2,"texSubImage2D":0.3}
+    links [at ms, frag length, waited ms] [[291.2,3797,0],[291.5,6152,0],[291.6,563,0],[367.5,3797,0],[367.8,563,0.1],[368,6152,0]]
+    top self [["(garbage collector) :-1",473.6],["(program) :-1",415],["mS index-BgDTtAIt.js:397",357.1],["sS index-BgDTtAIt.js:397",142.3],["gre index-BgDTtAIt.js:158",113.9],["tm index-BgDTtAIt.js:77",97.2],["(anonymous) index-BgDTtAIt.js:77",91.4],["Vme index-BgDTtAIt.js:397",83.6]]

@@ -21,6 +21,7 @@ import {
   BATCH_HULL_UNIFORMS,
   BATCH_FILL_ATTRIBUTES,
   BATCH_TEXTURE_SLOTS,
+  BATCH_ATTRIBUTE_LOCATIONS,
 } from './batchFill';
 import {
   GRAD_VERT_SRC,
@@ -41,7 +42,7 @@ import {
 import { KIT_WGSL, batchFillProgram, glyphLayerProgram } from '../gpu/webgpu/wgsl/kitPrograms';
 import {
   GLYPH_LAYER_VERT_SRC, GLYPH_LAYER_AREA_VERT_SRC, GLYPH_LAYER_FRAG_SRC, GLYPH_LAYER_AREA_FRAG_SRC,
-  GLYPH_LAYER_UNIFORMS, GLYPH_LAYER_ATTRIBUTES,
+  GLYPH_LAYER_UNIFORMS, GLYPH_LAYER_ATTRIBUTES, GLYPH_LAYER_LOCATIONS,
 } from './glyphLayer';
 import type { BatchBuild } from '../gpu/webgpu/wgsl/batchFill';
 import {
@@ -59,6 +60,8 @@ export interface ProgramSpec {
   readonly uniforms: readonly string[];
   readonly attributes: readonly string[];
   readonly arrays?: ReadonlyMap<string, { type: string; size: number }>;
+  /** The locations the GLSL's `layout(location = N)` qualifiers give its attributes, where it gives them. */
+  readonly locations?: Readonly<Record<string, number>>;
 }
 
 /** The batch's sampler array, which a flush fills slot by slot. */
@@ -67,9 +70,9 @@ const BATCH_ARRAYS: ReadonlyMap<string, { type: string; size: number }> = new Ma
 ]);
 
 /** `spec` compiled on `gpu`, every name it is written through looked up. */
-function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
-  const { vert, frag, wgsl, uniforms, attributes, arrays } = spec;
-  const program = gpu.createProgram({ glsl: { vert, frag }, wgsl });
+export function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
+  const { vert, frag, wgsl, uniforms, attributes, arrays, locations } = spec;
+  const program = gpu.createProgram({ glsl: { vert, frag }, wgsl }, { attributes: locations });
   program.lookupUniforms(uniforms);
   if (arrays) program.lookupUniformArrays(arrays);
   program.lookupAttributes(attributes);
@@ -84,11 +87,16 @@ function buildProgram(gpu: GpuDevice, spec: ProgramSpec): ShaderProgram {
 export class LazyProgram {
   private program: ShaderProgram | null = null;
 
-  constructor(private readonly gpu: GpuDevice, private readonly spec: ProgramSpec) {}
+  constructor(private readonly gpu: GpuDevice, readonly spec: ProgramSpec) {}
 
   get(): ShaderProgram {
     this.program ??= buildProgram(this.gpu, this.spec);
     return this.program;
+  }
+
+  /** Whether the program has finished compiling, if it was started; one never built has nothing to wait for. */
+  ready(): boolean {
+    return this.program?.ready() ?? true;
   }
 
   /** Delete the program if it was built. It builds again on the next `get`. */
@@ -119,7 +127,7 @@ export const GRAD_FILL_SPEC: ProgramSpec = {
 function batchSpec(vert: string, frag: string, build: BatchBuild): ProgramSpec {
   return {
     vert, frag, wgsl: batchFillProgram(build).code, uniforms: build.hulls ? BATCH_HULL_UNIFORMS : BATCH_FILL_UNIFORMS,
-    attributes: BATCH_FILL_ATTRIBUTES, arrays: BATCH_ARRAYS,
+    attributes: BATCH_FILL_ATTRIBUTES, arrays: BATCH_ARRAYS, locations: BATCH_ATTRIBUTE_LOCATIONS,
   };
 }
 export const BATCH_FILL_MATRICES_SPEC = batchSpec(BATCH_VERT_SRC, BATCH_MATRICES_FRAG_SRC, { matrices: true, hulls: false, area: false });
@@ -134,7 +142,7 @@ export const GLYPH_LAYER_SPECS: readonly [ProgramSpec, ProgramSpec] = [false, tr
   vert: area ? GLYPH_LAYER_AREA_VERT_SRC : GLYPH_LAYER_VERT_SRC,
   frag: area ? GLYPH_LAYER_AREA_FRAG_SRC : GLYPH_LAYER_FRAG_SRC,
   wgsl: glyphLayerProgram(area).code, uniforms: GLYPH_LAYER_UNIFORMS, attributes: GLYPH_LAYER_ATTRIBUTES,
-  arrays: BATCH_ARRAYS,
+  arrays: BATCH_ARRAYS, locations: GLYPH_LAYER_LOCATIONS,
 })) as [ProgramSpec, ProgramSpec];
 export const PATTERN_FILL_SPEC: ProgramSpec = {
   vert: PATTERN_VERT_SRC, frag: PATTERN_FRAG_SRC, wgsl: KIT_WGSL.patternFill.code, uniforms: PATTERN_FILL_UNIFORMS,
@@ -157,10 +165,19 @@ export const GLYPH_PAINT_SPECS: Readonly<Record<GlyphPaintKind, ProgramSpec>> = 
   },
 };
 
+const BATCH_FILL_SPEC = batchSpec(BATCH_VERT_SRC, BATCH_FRAG_SRC, { matrices: false, hulls: false, area: false });
+/** The batch's builds with the glyph taps, indexed by `matrices + 2 * hulls`. */
+const BATCH_AREA_SPECS = [false, true].flatMap((hulls) => [false, true].map((matrices) =>
+  batchSpec(BATCH_AREA_VERT_SRC, batchAreaFragSrc(matrices, hulls), { matrices, hulls, area: true })));
+
+/** What a first frame of shapes and text draws with: the batch, its build for small text, and the fill a
+ *  path the batch does not take draws with. A renderer starts these at construction, and `warmPrograms` sooner. */
+export const FIRST_FRAME_SPECS: readonly ProgramSpec[] = [BATCH_FILL_SPEC, BATCH_AREA_SPECS[0], PATH_FILL_SPEC];
+
 /** Built eagerly: nearly every frame draws with it, and `DrawBatch` binds its
  *  attributes at construction. */
 export function createBatchFill(gpu: GpuDevice): ShaderProgram {
-  return buildProgram(gpu, batchSpec(BATCH_VERT_SRC, BATCH_FRAG_SRC, { matrices: false, hulls: false, area: false }));
+  return buildProgram(gpu, BATCH_FILL_SPEC);
 }
 
 /** The batch program's other builds, which a run picks by what it holds, and
@@ -213,8 +230,7 @@ export class BatchVariantPrograms implements BatchVariants {
     this.hull = new LazyProgram(gpu, BATCH_FILL_HULL_SPEC);
     this.matricesHull = new LazyProgram(gpu, BATCH_FILL_MATRICES_HULL_SPEC);
     this.trimmed = new LazyProgram(gpu, TRIMMED_RIBBON_SPEC);
-    this.area = [false, true].flatMap((hulls) => [false, true].map((matrices) => new LazyProgram(gpu,
-      batchSpec(BATCH_AREA_VERT_SRC, batchAreaFragSrc(matrices, hulls), { matrices, hulls, area: true }))));
+    this.area = BATCH_AREA_SPECS.map((spec) => new LazyProgram(gpu, spec));
   }
 
   get(matrices: boolean, hulls: boolean, area = false): ShaderProgram {

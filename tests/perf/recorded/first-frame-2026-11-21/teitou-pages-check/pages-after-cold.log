@@ -1,0 +1,13 @@
+probe http://localhost:62641/skulkr/ headed false channel chrome dpr 2 cold true
+1/2 goto   longest task   261 ms  canvases 1  tasks [[109,261],[371,54]]
+    gl (profile, inclusive) {"getContext":1.8,"getParameter":0.2,"getShaderParameter":20.7,"getProgramParameter":130.6,"drawElements":4.3,"bufferData":13.5,"texSubImage2D":0.2}
+    top self [["(idle) :-1",1838.8],["(garbage collector) :-1",279.7],["(program) :-1",211.8],["pS index-CUFQ2wlZ.js:397",164.6],["getProgramParameter :-1",130.6],["oS index-CUFQ2wlZ.js:397",43.9],["tm index-CUFQ2wlZ.js:77",43.2],["Zce index-CUFQ2wlZ.js:397",41]]
+1/2 reload longest task    70 ms  canvases 1  tasks [[116,70]]
+    gl (profile, inclusive) {"getContext":2.1,"getParameter":0.2,"texImage2D":0.3,"getShaderParameter":3.3,"getProgramParameter":0.3,"drawElements":3.8,"bufferData":11.9}
+    top self [["(idle) :-1",1988],["(garbage collector) :-1",301.8],["(program) :-1",208.2],["pS index-CUFQ2wlZ.js:397",188.7],["tm index-CUFQ2wlZ.js:77",55.1],["ko index-CUFQ2wlZ.js:76",45.4],["Zce index-CUFQ2wlZ.js:397",41.5],["oS index-CUFQ2wlZ.js:397",41]]
+2/2 goto   longest task   266 ms  canvases 1  tasks [[111,266],[377,56]]
+    gl (profile, inclusive) {"getContext":2,"getParameter":0.3,"getShaderParameter":20.8,"getProgramParameter":133.2,"bufferData":15.1,"drawElements":4.6}
+    top self [["(idle) :-1",1845.8],["(garbage collector) :-1",255.7],["(program) :-1",207.4],["pS index-CUFQ2wlZ.js:397",162.3],["getProgramParameter :-1",133.2],["oS index-CUFQ2wlZ.js:397",48.1],["Zce index-CUFQ2wlZ.js:397",48],["tm index-CUFQ2wlZ.js:77",42.5]]
+2/2 reload longest task    70 ms  canvases 1  tasks [[144,70]]
+    gl (profile, inclusive) {"getContext":2,"texImage2D":0.3,"getShaderParameter":4,"bufferData":14.5,"drawElements":3.2}
+    top self [["(idle) :-1",1942.1],["(garbage collector) :-1",295.9],["(program) :-1",216.4],["pS index-CUFQ2wlZ.js:397",179.6],["tm index-CUFQ2wlZ.js:77",54],["ko index-CUFQ2wlZ.js:76",47.9],["Zce index-CUFQ2wlZ.js:397",46.3],["Xu index-CUFQ2wlZ.js:77",41.8]]

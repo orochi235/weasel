@@ -1,0 +1,1131 @@
+{
+  "url": "http://localhost:62084/skulkr/",
+  "headed": false,
+  "channel": "chrome",
+  "dpr": 2,
+  "cold": true,
+  "rounds": [
+    {
+      "round": 1,
+      "browser": "157.0.8103.79",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4086,
+          "canvases": 1,
+          "longtasks": [
+            [
+              122,
+              139
+            ],
+            [
+              261,
+              55
+            ]
+          ],
+          "links": [
+            {
+              "at": 63.1,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 63.5,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 63.5,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 210.4,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 211.1,
+              "frag": 563,
+              "waited": 0.2
+            },
+            {
+              "at": 211.3,
+              "frag": 6152,
+              "waited": 0.1
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1866.4
+            ],
+            [
+              "(garbage collector) :-1",
+              298.1
+            ],
+            [
+              "(program) :-1",
+              221.9
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              171.6
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              50.1
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              48
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              41.7
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              39
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              38.3
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              35.3
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              33.9
+            ],
+            [
+              "bufferSubData :-1",
+              32.9
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              30.2
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              30.1
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              26.6
+            ],
+            [
+              "_re index-CeGo5YeO.js:150",
+              23.8
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              23.8
+            ],
+            [
+              "checkVisibility :-1",
+              23.3
+            ],
+            [
+              "getShaderParameter :-1",
+              20.2
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              19.3
+            ]
+          ],
+          "gl": {
+            "getContext": 3.8,
+            "linkProgram": 0.2,
+            "texImage2D": 0.3,
+            "getShaderParameter": 20.2,
+            "bufferData": 12.4,
+            "drawElements": 3.5
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4162,
+          "canvases": 1,
+          "longtasks": [
+            [
+              144,
+              66
+            ],
+            [
+              212,
+              59
+            ]
+          ],
+          "links": [
+            {
+              "at": 138.3,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 138.5,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 138.6,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 192.8,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 193,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 193.1,
+              "frag": 6152,
+              "waited": 0.1
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1883.3
+            ],
+            [
+              "(garbage collector) :-1",
+              290.8
+            ],
+            [
+              "(program) :-1",
+              228.4
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              189.1
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              50.6
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              48.6
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              43.3
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              42.1
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              41.6
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              40
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              38
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              33.4
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              31.4
+            ],
+            [
+              "bufferSubData :-1",
+              31
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              28.8
+            ],
+            [
+              "_re index-CeGo5YeO.js:150",
+              26.7
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              25.3
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              21.5
+            ],
+            [
+              "Zx index-CeGo5YeO.js:389",
+              21.4
+            ],
+            [
+              "zce index-CeGo5YeO.js:389",
+              18.6
+            ]
+          ],
+          "gl": {
+            "getContext": 3.6,
+            "getParameter": 0.5,
+            "texImage2D": 0.3,
+            "getShaderParameter": 2,
+            "drawElements": 5,
+            "texSubImage2D": 1,
+            "bufferData": 12.9
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "browser": "157.0.8103.79",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4086,
+          "canvases": 1,
+          "longtasks": [
+            [
+              119,
+              133
+            ],
+            [
+              253,
+              55
+            ]
+          ],
+          "links": [
+            {
+              "at": 62.5,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 62.9,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 62.9,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 203.3,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 204.1,
+              "frag": 563,
+              "waited": 0.1
+            },
+            {
+              "at": 204.2,
+              "frag": 6152,
+              "waited": 0.1
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1774.2
+            ],
+            [
+              "(garbage collector) :-1",
+              305
+            ],
+            [
+              "(program) :-1",
+              231.1
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              175.3
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              48.6
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              43.6
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              41
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              39.3
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              35.6
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              35.2
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              34.9
+            ],
+            [
+              "bufferSubData :-1",
+              33.3
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              31.8
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              30.2
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              30.1
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              25.4
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              25.4
+            ],
+            [
+              "checkVisibility :-1",
+              23.3
+            ],
+            [
+              "Zx index-CeGo5YeO.js:389",
+              22.7
+            ],
+            [
+              "_re index-CeGo5YeO.js:150",
+              22.5
+            ]
+          ],
+          "gl": {
+            "getContext": 3.3,
+            "getParameter": 0.3,
+            "texImage2D": 0.2,
+            "getShaderParameter": 19.5,
+            "getProgramParameter": 0.3,
+            "bufferData": 17.6,
+            "drawElements": 3.5
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4167,
+          "canvases": 1,
+          "longtasks": [
+            [
+              134,
+              72
+            ]
+          ],
+          "links": [
+            {
+              "at": 127.7,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 127.9,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 127.9,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 185.2,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 185.4,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 185.5,
+              "frag": 6152,
+              "waited": 0
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1957.6
+            ],
+            [
+              "(garbage collector) :-1",
+              290.4
+            ],
+            [
+              "(program) :-1",
+              210.9
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              182.5
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              52.7
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              48.9
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              46.4
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              40.9
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              40.7
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              37.2
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              31.4
+            ],
+            [
+              "bufferSubData :-1",
+              30.5
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              29.9
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              29.8
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              28.3
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              26.4
+            ],
+            [
+              "zce index-CeGo5YeO.js:389",
+              21.5
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              21.4
+            ],
+            [
+              "Zx index-CeGo5YeO.js:389",
+              20.3
+            ],
+            [
+              "_re index-CeGo5YeO.js:150",
+              17.7
+            ]
+          ],
+          "gl": {
+            "getContext": 3.6,
+            "getParameter": 0.3,
+            "bufferData": 14.9,
+            "texImage2D": 0.3,
+            "getShaderParameter": 2.5,
+            "drawElements": 3.6
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "browser": "157.0.8103.79",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4091,
+          "canvases": 1,
+          "longtasks": [
+            [
+              122,
+              136
+            ],
+            [
+              258,
+              53
+            ]
+          ],
+          "links": [
+            {
+              "at": 64.4,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 64.8,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 64.8,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 205.1,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 205.9,
+              "frag": 563,
+              "waited": 0.2
+            },
+            {
+              "at": 206,
+              "frag": 6152,
+              "waited": 0.1
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1959.8
+            ],
+            [
+              "(program) :-1",
+              215.2
+            ],
+            [
+              "(garbage collector) :-1",
+              210.7
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              174.2
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              48.9
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              44.2
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              39.1
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              38.9
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              36.3
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              35.8
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              32.7
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              32.6
+            ],
+            [
+              "bufferSubData :-1",
+              31.5
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              30.7
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              29.3
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              26.2
+            ],
+            [
+              "_re index-CeGo5YeO.js:150",
+              25.4
+            ],
+            [
+              "checkVisibility :-1",
+              21
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              20.8
+            ],
+            [
+              "getShaderParameter :-1",
+              20.6
+            ]
+          ],
+          "gl": {
+            "getContext": 3.6,
+            "getProgramParameter": 0.5,
+            "getShaderParameter": 20.6,
+            "drawElements": 3.6,
+            "bufferData": 16.7
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4152,
+          "canvases": 1,
+          "longtasks": [
+            [
+              135,
+              69
+            ]
+          ],
+          "links": [
+            {
+              "at": 126.6,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 126.8,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 126.8,
+              "frag": 563,
+              "waited": 0.1
+            },
+            {
+              "at": 185.8,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 186,
+              "frag": 563,
+              "waited": 0.1
+            },
+            {
+              "at": 186.1,
+              "frag": 6152,
+              "waited": 0.1
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1998.6
+            ],
+            [
+              "(garbage collector) :-1",
+              232
+            ],
+            [
+              "(program) :-1",
+              217.8
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              180.7
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              45.1
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              44.4
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              43.2
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              41.1
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              40.7
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              40
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              35.7
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              34.9
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              34.7
+            ],
+            [
+              "_re index-CeGo5YeO.js:150",
+              32.3
+            ],
+            [
+              "bufferSubData :-1",
+              32
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              30.2
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              27.4
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              26.6
+            ],
+            [
+              "zce index-CeGo5YeO.js:389",
+              20.7
+            ],
+            [
+              "Zx index-CeGo5YeO.js:389",
+              20.4
+            ]
+          ],
+          "gl": {
+            "getContext": 3.5,
+            "texImage2D": 0.2,
+            "getShaderParameter": 2,
+            "getProgramParameter": 0.3,
+            "drawElements": 2.5,
+            "texSubImage2D": 0.3,
+            "bufferData": 13.7
+          }
+        }
+      ]
+    },
+    {
+      "round": 4,
+      "browser": "157.0.8103.79",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4099,
+          "canvases": 1,
+          "longtasks": [
+            [
+              151,
+              158
+            ],
+            [
+              310,
+              61
+            ]
+          ],
+          "links": [
+            {
+              "at": 74.3,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 74.8,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 74.8,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 252.8,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 253.6,
+              "frag": 563,
+              "waited": 0.1
+            },
+            {
+              "at": 253.9,
+              "frag": 6152,
+              "waited": 0
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1828.9
+            ],
+            [
+              "(garbage collector) :-1",
+              293.2
+            ],
+            [
+              "(program) :-1",
+              237.4
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              155.8
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              51.8
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              47.7
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              43.9
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              42.2
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              41.7
+            ],
+            [
+              "bufferSubData :-1",
+              35.5
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              33.9
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              32.4
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              32.2
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              30.8
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              27.8
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              27
+            ],
+            [
+              "checkVisibility :-1",
+              26.8
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              25.8
+            ],
+            [
+              "getShaderParameter :-1",
+              22.2
+            ],
+            [
+              "zce index-CeGo5YeO.js:389",
+              20
+            ]
+          ],
+          "gl": {
+            "getContext": 4.1,
+            "linkProgram": 0.3,
+            "getParameter": 0.3,
+            "texImage2D": 0.2,
+            "getShaderParameter": 22.2,
+            "drawElements": 4.8,
+            "bufferData": 13.2,
+            "texSubImage2D": 0.3
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4156,
+          "canvases": 1,
+          "longtasks": [
+            [
+              130,
+              66
+            ]
+          ],
+          "links": [
+            {
+              "at": 124,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 124.1,
+              "frag": 6152,
+              "waited": 0
+            },
+            {
+              "at": 124.2,
+              "frag": 563,
+              "waited": 0
+            },
+            {
+              "at": 175.6,
+              "frag": 3797,
+              "waited": 0
+            },
+            {
+              "at": 175.8,
+              "frag": 563,
+              "waited": 0.1
+            },
+            {
+              "at": 175.9,
+              "frag": 6152,
+              "waited": 0
+            }
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              1950.4
+            ],
+            [
+              "(garbage collector) :-1",
+              304.5
+            ],
+            [
+              "(program) :-1",
+              210.3
+            ],
+            [
+              "sS index-CeGo5YeO.js:389",
+              171.3
+            ],
+            [
+              "Wp index-CeGo5YeO.js:69",
+              46.6
+            ],
+            [
+              "go index-CeGo5YeO.js:68",
+              44.9
+            ],
+            [
+              "eS index-CeGo5YeO.js:389",
+              44.8
+            ],
+            [
+              "Pu index-CeGo5YeO.js:69",
+              42
+            ],
+            [
+              "Xce index-CeGo5YeO.js:389",
+              41.1
+            ],
+            [
+              "h index-CeGo5YeO.js:389",
+              40.3
+            ],
+            [
+              "zme index-CeGo5YeO.js:389",
+              36.3
+            ],
+            [
+              "bufferSubData :-1",
+              34.7
+            ],
+            [
+              "gp index-CeGo5YeO.js:69",
+              34.5
+            ],
+            [
+              "Vme index-CeGo5YeO.js:389",
+              31.5
+            ],
+            [
+              "pushGradientMesh index-CeGo5YeO.js:389",
+              29.8
+            ],
+            [
+              "hp index-CeGo5YeO.js:69",
+              27.7
+            ],
+            [
+              "(anonymous) index-CeGo5YeO.js:69",
+              26.5
+            ],
+            [
+              "_re index-CeGo5YeO.js:150",
+              21.6
+            ],
+            [
+              "zce index-CeGo5YeO.js:389",
+              20.3
+            ],
+            [
+              "Zx index-CeGo5YeO.js:389",
+              19.6
+            ]
+          ],
+          "gl": {
+            "getContext": 3.5,
+            "linkProgram": 0.2,
+            "texImage2D": 0.3,
+            "getShaderParameter": 2.2,
+            "getProgramParameter": 0.3,
+            "texSubImage2D": 0.5,
+            "bufferData": 12.7,
+            "drawElements": 3.5
+          }
+        }
+      ]
+    }
+  ]
+}

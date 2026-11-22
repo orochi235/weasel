@@ -1,0 +1,27 @@
+pages: start 2026-11-22T02:54:03Z tree 11f5dcdf135241f812216aac5d7b1ca94483be83 headed '--headed'
+pages: Apple M2 Max (12 threads), node v26.13.1, load { 104.04 88.03 54.90 }
+pages: Chrome Metal caches before:
+  372 KiB, 10 files, newest 16777235_434  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.eoepdplemcmffnimfchfmjfofbcehdgo/com.apple.metal
+  11580 KiB, 6 files, newest 32024  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper.plugin/com.apple.metal
+  136464 KiB, 46 files, newest 32024  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper/com.apple.metal
+  1320 KiB, 20 files, newest 16777235_434  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome/com.apple.metal
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.Default-fhbjgbiflinjbdggehcddcbncdddomop/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.eoepdplemcmffnimfchfmjfofbcehdgo/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.mdpkiolbdkhdjpekfbkbmhigcaggjagi/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper.plugin/com.apple.metalfe
+  0 KiB, 1 files, newest modules.timestamp  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome/com.apple.metalfe
+pages: Chrome Metal caches after:
+  372 KiB, 10 files, newest 16777235_434  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.eoepdplemcmffnimfchfmjfofbcehdgo/com.apple.metal
+  11580 KiB, 6 files, newest 32024  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper.plugin/com.apple.metal
+  137184 KiB, 46 files, newest 32024  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper/com.apple.metal
+  1320 KiB, 20 files, newest 16777235_434  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome/com.apple.metal
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.Default-fhbjgbiflinjbdggehcddcbncdddomop/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.eoepdplemcmffnimfchfmjfofbcehdgo/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.app.mdpkiolbdkhdjpekfbkbmhigcaggjagi/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper.plugin/com.apple.metalfe
+  0 KiB, 1 files, newest modules.timestamp  /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome.helper/com.apple.metalfe
+  0 KiB, 0 files, newest   /var/folders/4q/gjtb13255dg_t7_dkqbf_71m0000gn/C//com.google.Chrome/com.apple.metalfe
+pages: load { 184.32 126.29 75.69 }; end 2026-11-22T02:56:40Z
+cold-only: start 2026-11-22T03:55:09Z tree 06adf720cf3882f08754161d5274d5183ff10950 load { 27.49 29.31 39.00 }
+cold-only: end 2026-11-22T03:57:00Z load { 140.46 70.76 54.18 }

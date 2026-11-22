@@ -18,9 +18,17 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   private target: GlTarget | null = null;
 
   readonly limits: GpuLimits;
+  readonly completionStatus: number | null;
+  readonly compilesInBackground: boolean;
 
   constructor(readonly gl: WebGL2RenderingContext) {
     this.cache = new GlCache(gl);
+    // A stub that cannot answer compiles in the foreground.
+    const parallel = typeof gl.getExtension === 'function'
+      ? gl.getExtension('KHR_parallel_shader_compile') as { COMPLETION_STATUS_KHR: number } | null
+      : null;
+    this.completionStatus = typeof parallel?.COMPLETION_STATUS_KHR === 'number' ? parallel.COMPLETION_STATUS_KHR : null;
+    this.compilesInBackground = this.completionStatus !== null;
     this.limits = {
       get maxTextureSize(): number | undefined {
         const reported: unknown = gl.getParameter(gl.MAX_TEXTURE_SIZE);
@@ -185,6 +193,7 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     const gl = this.gl;
     const cache = this.cache;
     const program = state.program as GlProgram;
+    program.settle();
     cache.useProgram(program.handle);
     cache.setBlend(state.blend);
     const target = this.target;

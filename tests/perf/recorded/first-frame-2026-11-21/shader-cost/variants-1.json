@@ -1,0 +1,59 @@
+{
+ "rounds": [
+  {
+   "batch no-glyph": 179,
+   "batch slots=1": 62.40000009536743,
+   "batch": 64,
+   "area": 70.30000019073486,
+   "area slots=1 taps=1": 66.59999990463257,
+   "batch slots=4": 62.30000019073486,
+   "batch no-ids": 62.80000019073486,
+   "area taps=1": 67.40000009536743,
+   "batch slots=8": 62.200000286102295
+  },
+  {
+   "batch": 93.19999980926514,
+   "batch no-ids": 63.69999980926514,
+   "batch slots=8": 65.39999961853027,
+   "batch slots=1": 65.59999990463257,
+   "batch no-glyph": 65.40000009536743,
+   "area slots=1 taps=1": 67,
+   "area": 70.89999961853027,
+   "batch slots=4": 63.09999990463257,
+   "area taps=1": 68.30000019073486
+  },
+  {
+   "batch slots=1": 104,
+   "batch slots=8": 67.80000019073486,
+   "batch no-glyph": 66,
+   "area slots=1 taps=1": 71.60000038146973,
+   "batch": 66,
+   "area taps=1": 71,
+   "batch no-ids": 65.7999997138977,
+   "batch slots=4": 63.799999713897705,
+   "area": 71.59999990463257
+  },
+  {
+   "batch": 91.7000002861023,
+   "area taps=1": 69,
+   "batch slots=4": 63,
+   "batch no-glyph": 61.200000286102295,
+   "area slots=1 taps=1": 67.5,
+   "batch no-ids": 62.90000009536743,
+   "batch slots=1": 67.90000009536743,
+   "batch slots=8": 65.09999990463257,
+   "area": 71.80000019073486
+  },
+  {
+   "area": 103.89999961853027,
+   "batch": 67.30000019073486,
+   "batch slots=1": 65.39999961853027,
+   "batch slots=4": 64.39999961853027,
+   "area taps=1": 75.59999990463257,
+   "batch slots=8": 71.5,
+   "batch no-ids": 72.30000019073486,
+   "batch no-glyph": 69.69999980926514,
+   "area slots=1 taps=1": 77.5
+  }
+ ]
+}

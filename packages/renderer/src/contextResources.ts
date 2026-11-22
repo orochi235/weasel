@@ -3,7 +3,7 @@ import type { ShaderProgram } from './shaders/ShaderProgram';
 import type { GpuBuffer, GpuDevice, GpuTexture } from './gpu/types';
 import {
   LazyProgram, PATH_FILL_SPEC, PATH_FILL_VCOLOR_SPEC, GRAD_FILL_SPEC, PATTERN_FILL_SPEC, GLYPH_PAINT_SPECS,
-  BatchVariantPrograms, createBatchFill, GLYPH_LAYER_SPECS,
+  BatchVariantPrograms, createBatchFill, GLYPH_LAYER_SPECS, FIRST_FRAME_SPECS,
 } from './shaders/builtinPrograms';
 import { TextLayers } from './draw/textLayer';
 import { GLMeshCache } from './cache/GLMeshCache';
@@ -71,6 +71,19 @@ export class ContextResources {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(gpu);
+    this.startFirstFrame();
+  }
+
+  /** Where programs compile in the background, start the rest of `FIRST_FRAME_SPECS` beside the batch's own,
+   *  so they compile at once and before the first frame asks for them. */
+  private startFirstFrame(): void {
+    if (!this.gpu.compilesInBackground) return;
+    for (const lazy of this.lazyPrograms()) if (FIRST_FRAME_SPECS.includes(lazy.spec)) lazy.get();
+  }
+
+  /** Whether every program started so far has finished compiling, asked without waiting. */
+  programsReady(): boolean {
+    return this.batchFill.ready() && this.lazyPrograms().every((lazy) => lazy.ready());
   }
 
   private lazyPrograms(): LazyProgram[] {
@@ -107,6 +120,7 @@ export class ContextResources {
     this.uploadQuadGeometry();
     this.drawBatch = new DrawBatch(gpu, this.batchFill);
     this.whiteTexture = createWhiteTexture(gpu);
+    this.startFirstFrame();
   }
 
   /** Free every image texture and sample images under `mode` from here on. */

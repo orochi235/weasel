@@ -1,0 +1,647 @@
+{
+  "url": "http://localhost:65311/skulkr/",
+  "rounds": [
+    {
+      "round": 1,
+      "browser": "159.0.8154.6",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4094,
+          "canvases": 1,
+          "longtasks": [
+            [
+              120,
+              329
+            ],
+            [
+              450,
+              52
+            ]
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              2106
+            ],
+            [
+              "getContext :-1",
+              199.8
+            ],
+            [
+              "(program) :-1",
+              165.5
+            ],
+            [
+              "(garbage collector) :-1",
+              158.8
+            ],
+            [
+              "uS index-C_pjen0b.js:397",
+              143.1
+            ],
+            [
+              "Yp index-C_pjen0b.js:77",
+              41.2
+            ],
+            [
+              "rS index-C_pjen0b.js:397",
+              40.6
+            ],
+            [
+              "Zce index-C_pjen0b.js:397",
+              34.8
+            ],
+            [
+              "Vu index-C_pjen0b.js:77",
+              34.2
+            ],
+            [
+              "h index-C_pjen0b.js:397",
+              32.3
+            ],
+            [
+              "bo index-C_pjen0b.js:76",
+              31.9
+            ],
+            [
+              "zme index-C_pjen0b.js:397",
+              31.9
+            ],
+            [
+              "checkVisibility :-1",
+              31.3
+            ],
+            [
+              "xp index-C_pjen0b.js:77",
+              30.9
+            ],
+            [
+              "Lme index-C_pjen0b.js:397",
+              29.3
+            ],
+            [
+              "pee index-C_pjen0b.js:77",
+              29
+            ],
+            [
+              "bufferSubData :-1",
+              24.7
+            ],
+            [
+              "pushGradientMesh index-C_pjen0b.js:397",
+              20.2
+            ],
+            [
+              "vre index-C_pjen0b.js:158",
+              18.1
+            ],
+            [
+              "(anonymous) index-C_pjen0b.js:77",
+              17.5
+            ]
+          ],
+          "gl": {
+            "getContext": 199.8,
+            "getShaderParameter": 9.9,
+            "getProgramParameter": 3,
+            "bufferData": 12.5,
+            "texImage2D": 0.6,
+            "drawElements": 2.6
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4132,
+          "canvases": 1,
+          "longtasks": [
+            [
+              109,
+              72
+            ]
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              2179.3
+            ],
+            [
+              "(program) :-1",
+              194.1
+            ],
+            [
+              "(garbage collector) :-1",
+              182.4
+            ],
+            [
+              "uS index-C_pjen0b.js:397",
+              177.5
+            ],
+            [
+              "rS index-C_pjen0b.js:397",
+              56.2
+            ],
+            [
+              "Yp index-C_pjen0b.js:77",
+              50.4
+            ],
+            [
+              "Zce index-C_pjen0b.js:397",
+              43.1
+            ],
+            [
+              "bo index-C_pjen0b.js:76",
+              40.7
+            ],
+            [
+              "Vu index-C_pjen0b.js:77",
+              40.1
+            ],
+            [
+              "Lme index-C_pjen0b.js:397",
+              36.3
+            ],
+            [
+              "h index-C_pjen0b.js:397",
+              35.8
+            ],
+            [
+              "zme index-C_pjen0b.js:397",
+              31.8
+            ],
+            [
+              "bufferSubData :-1",
+              31
+            ],
+            [
+              "xp index-C_pjen0b.js:77",
+              30.6
+            ],
+            [
+              "pushGradientMesh index-C_pjen0b.js:397",
+              28.8
+            ],
+            [
+              "pee index-C_pjen0b.js:77",
+              28.1
+            ],
+            [
+              "(anonymous) index-C_pjen0b.js:77",
+              26.7
+            ],
+            [
+              "vre index-C_pjen0b.js:158",
+              20.4
+            ],
+            [
+              "Bce index-C_pjen0b.js:397",
+              17.2
+            ],
+            [
+              "bufferData :-1",
+              14.1
+            ]
+          ],
+          "gl": {
+            "getContext": 1.8,
+            "getParameter": 0.3,
+            "getShaderParameter": 4.8,
+            "getProgramParameter": 0.3,
+            "drawElements": 3.9,
+            "bufferData": 14.1
+          }
+        }
+      ]
+    },
+    {
+      "round": 2,
+      "browser": "159.0.8154.6",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4073,
+          "canvases": 1,
+          "longtasks": [
+            [
+              97,
+              107
+            ],
+            [
+              206,
+              56
+            ]
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              2147.2
+            ],
+            [
+              "uS index-C_pjen0b.js:397",
+              184.9
+            ],
+            [
+              "(program) :-1",
+              182.4
+            ],
+            [
+              "(garbage collector) :-1",
+              177.6
+            ],
+            [
+              "Zce index-C_pjen0b.js:397",
+              47.7
+            ],
+            [
+              "rS index-C_pjen0b.js:397",
+              46.2
+            ],
+            [
+              "Yp index-C_pjen0b.js:77",
+              44.3
+            ],
+            [
+              "Vu index-C_pjen0b.js:77",
+              41.8
+            ],
+            [
+              "h index-C_pjen0b.js:397",
+              37.2
+            ],
+            [
+              "bo index-C_pjen0b.js:76",
+              36.4
+            ],
+            [
+              "xp index-C_pjen0b.js:77",
+              35.3
+            ],
+            [
+              "pee index-C_pjen0b.js:77",
+              34.1
+            ],
+            [
+              "Lme index-C_pjen0b.js:397",
+              32.3
+            ],
+            [
+              "zme index-C_pjen0b.js:397",
+              27.8
+            ],
+            [
+              "bufferSubData :-1",
+              26.2
+            ],
+            [
+              "pushGradientMesh index-C_pjen0b.js:397",
+              23
+            ],
+            [
+              "(anonymous) index-C_pjen0b.js:77",
+              22.5
+            ],
+            [
+              "Bce index-C_pjen0b.js:397",
+              18.5
+            ],
+            [
+              "checkVisibility :-1",
+              18.1
+            ],
+            [
+              "vre index-C_pjen0b.js:158",
+              17.6
+            ]
+          ],
+          "gl": {
+            "getContext": 1.8,
+            "getShaderParameter": 5.4,
+            "getProgramParameter": 1.5,
+            "bufferData": 15.6,
+            "texSubImage2D": 0.3,
+            "drawElements": 2.1
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4134,
+          "canvases": 1,
+          "longtasks": [
+            [
+              118,
+              65
+            ]
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              2105.5
+            ],
+            [
+              "uS index-C_pjen0b.js:397",
+              200.8
+            ],
+            [
+              "(program) :-1",
+              200.7
+            ],
+            [
+              "(garbage collector) :-1",
+              186.4
+            ],
+            [
+              "Yp index-C_pjen0b.js:77",
+              61.4
+            ],
+            [
+              "rS index-C_pjen0b.js:397",
+              45.6
+            ],
+            [
+              "Zce index-C_pjen0b.js:397",
+              42.6
+            ],
+            [
+              "h index-C_pjen0b.js:397",
+              42.4
+            ],
+            [
+              "Vu index-C_pjen0b.js:77",
+              41.9
+            ],
+            [
+              "bo index-C_pjen0b.js:76",
+              38.3
+            ],
+            [
+              "Lme index-C_pjen0b.js:397",
+              34.6
+            ],
+            [
+              "xp index-C_pjen0b.js:77",
+              32.6
+            ],
+            [
+              "bufferSubData :-1",
+              29.9
+            ],
+            [
+              "zme index-C_pjen0b.js:397",
+              29.3
+            ],
+            [
+              "pee index-C_pjen0b.js:77",
+              28.4
+            ],
+            [
+              "vre index-C_pjen0b.js:158",
+              26.5
+            ],
+            [
+              "pushGradientMesh index-C_pjen0b.js:397",
+              25.6
+            ],
+            [
+              "(anonymous) index-C_pjen0b.js:77",
+              22.9
+            ],
+            [
+              "bufferData :-1",
+              17.6
+            ],
+            [
+              "Bce index-C_pjen0b.js:397",
+              14.8
+            ]
+          ],
+          "gl": {
+            "getContext": 2.1,
+            "getShaderParameter": 5.1,
+            "texImage2D": 0.3,
+            "bufferData": 17.6,
+            "texSubImage2D": 0.3,
+            "drawElements": 3
+          }
+        }
+      ]
+    },
+    {
+      "round": 3,
+      "browser": "159.0.8154.6",
+      "glRenderer": "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Unspecified Version)",
+      "errors": [],
+      "loads": [
+        {
+          "how": "goto",
+          "wallMs": 4077,
+          "canvases": 1,
+          "longtasks": [
+            [
+              100,
+              109
+            ],
+            [
+              210,
+              53
+            ]
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              2159.8
+            ],
+            [
+              "(program) :-1",
+              180.5
+            ],
+            [
+              "uS index-C_pjen0b.js:397",
+              179.4
+            ],
+            [
+              "(garbage collector) :-1",
+              178.6
+            ],
+            [
+              "Yp index-C_pjen0b.js:77",
+              48
+            ],
+            [
+              "rS index-C_pjen0b.js:397",
+              42.3
+            ],
+            [
+              "h index-C_pjen0b.js:397",
+              42.1
+            ],
+            [
+              "Vu index-C_pjen0b.js:77",
+              40.8
+            ],
+            [
+              "Zce index-C_pjen0b.js:397",
+              38.8
+            ],
+            [
+              "bo index-C_pjen0b.js:76",
+              38.6
+            ],
+            [
+              "zme index-C_pjen0b.js:397",
+              32.9
+            ],
+            [
+              "Lme index-C_pjen0b.js:397",
+              32.7
+            ],
+            [
+              "bufferSubData :-1",
+              29.2
+            ],
+            [
+              "pee index-C_pjen0b.js:77",
+              28.5
+            ],
+            [
+              "xp index-C_pjen0b.js:77",
+              27.6
+            ],
+            [
+              "pushGradientMesh index-C_pjen0b.js:397",
+              25.9
+            ],
+            [
+              "(anonymous) index-C_pjen0b.js:77",
+              22.9
+            ],
+            [
+              "checkVisibility :-1",
+              19
+            ],
+            [
+              "Bce index-C_pjen0b.js:397",
+              18.3
+            ],
+            [
+              "vre index-C_pjen0b.js:158",
+              17.8
+            ]
+          ],
+          "gl": {
+            "getContext": 1.8,
+            "getShaderParameter": 5.4,
+            "getProgramParameter": 1.5,
+            "texImage2D": 0.3,
+            "bufferData": 14.2,
+            "drawElements": 3.8
+          }
+        },
+        {
+          "how": "reload",
+          "wallMs": 4127,
+          "canvases": 1,
+          "longtasks": [
+            [
+              108,
+              67
+            ]
+          ],
+          "top": [
+            [
+              "(idle) :-1",
+              2205.4
+            ],
+            [
+              "(program) :-1",
+              185
+            ],
+            [
+              "uS index-C_pjen0b.js:397",
+              179.4
+            ],
+            [
+              "(garbage collector) :-1",
+              177.9
+            ],
+            [
+              "Yp index-C_pjen0b.js:77",
+              51.3
+            ],
+            [
+              "rS index-C_pjen0b.js:397",
+              47.4
+            ],
+            [
+              "Zce index-C_pjen0b.js:397",
+              44
+            ],
+            [
+              "bo index-C_pjen0b.js:76",
+              41.5
+            ],
+            [
+              "h index-C_pjen0b.js:397",
+              38.5
+            ],
+            [
+              "Vu index-C_pjen0b.js:77",
+              37.7
+            ],
+            [
+              "bufferSubData :-1",
+              34.8
+            ],
+            [
+              "Lme index-C_pjen0b.js:397",
+              34.1
+            ],
+            [
+              "pee index-C_pjen0b.js:77",
+              34.1
+            ],
+            [
+              "zme index-C_pjen0b.js:397",
+              31.5
+            ],
+            [
+              "(anonymous) index-C_pjen0b.js:77",
+              28.8
+            ],
+            [
+              "xp index-C_pjen0b.js:77",
+              27.7
+            ],
+            [
+              "pushGradientMesh index-C_pjen0b.js:397",
+              22.3
+            ],
+            [
+              "vre index-C_pjen0b.js:158",
+              21.7
+            ],
+            [
+              "oS index-C_pjen0b.js:397",
+              16
+            ],
+            [
+              "QE index-C_pjen0b.js:619",
+              12.6
+            ]
+          ],
+          "gl": {
+            "getContext": 1.8,
+            "getShaderParameter": 5.2,
+            "getProgramParameter": 0.3,
+            "texSubImage2D": 0.3,
+            "bufferData": 12,
+            "drawElements": 2.7
+          }
+        }
+      ]
+    }
+  ]
+}

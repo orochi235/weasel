@@ -51,14 +51,82 @@ describe('GlProgram', () => {
   });
 
   it('throws ShaderCompileError when compile reports failure', () => {
-    // Override getShaderParameter to return false → compile failed.
+    // A stage that fails to compile fails the link too.
     const failingGl = new Proxy(recorder.gl, {
       get(target, prop) {
-        if (prop === 'getShaderParameter') return () => false;
+        if (prop === 'getShaderParameter' || prop === 'getProgramParameter') return () => false;
         if (prop === 'getShaderInfoLog') return () => 'ERROR: fake compile error';
         return Reflect.get(target, prop);
       },
     });
-    expect(() => new GlProgram(new WebGLDevice(failingGl), VERT_SRC, FRAG_SRC)).toThrow(ShaderCompileError);
+    expect(() => new GlProgram(new WebGLDevice(failingGl), VERT_SRC, FRAG_SRC)).toThrow(
+      expect.objectContaining({ stage: 'vertex' }),
+    );
+  });
+});
+
+describe('GlProgram compiling in the background', () => {
+  const COMPLETION_STATUS_KHR = 0x91b1;
+  let recorder: ReturnType<typeof createGLRecorder>;
+  let done: boolean;
+  let linkFails: boolean;
+  let gl: WebGL2RenderingContext;
+  beforeEach(() => {
+    recorder = createGLRecorder();
+    done = false;
+    linkFails = false;
+    gl = new Proxy(recorder.gl, {
+      get(target, prop) {
+        if (prop === 'getProgramParameter') {
+          return (p: WebGLProgram, pname: number) => {
+            recorder.calls.push({ name: 'getProgramParameter', args: [p, pname], result: undefined });
+            return pname === COMPLETION_STATUS_KHR ? done : !linkFails;
+          };
+        }
+        if (prop === 'getProgramInfoLog') return () => 'ERROR: fake link error';
+        return Reflect.get(target, prop);
+      },
+    });
+  });
+  const host = () => ({ gl, completionStatus: COMPLETION_STATUS_KHR, use() {} });
+  const named = (name: string) => recorder.calls.filter((c) => c.name === name);
+
+  it('waits on nothing until a location is read', () => {
+    const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC);
+    prog.lookupUniforms(PATH_FILL_UNIFORMS);
+    expect(named('getProgramParameter')).toHaveLength(0);
+    expect(named('getUniformLocation')).toHaveLength(0);
+    expect(prog.has(PATH_FILL_UNIFORMS[0])).toBe(true);
+    expect(named('getUniformLocation').length).toBeGreaterThan(0);
+  });
+
+  it('flushes after the link, so the compile starts before the next call that syncs', () => {
+    new GlProgram(host(), VERT_SRC, FRAG_SRC);
+    const link = recorder.calls.findIndex((c) => c.name === 'linkProgram');
+    expect(recorder.calls.findIndex((c, i) => i > link && c.name === 'flush')).toBeGreaterThan(link);
+  });
+
+  it('reports ready only once the driver says the link is complete', () => {
+    const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC);
+    prog.lookupUniforms(PATH_FILL_UNIFORMS);
+    expect(prog.ready()).toBe(false);
+    expect(named('getUniformLocation')).toHaveLength(0);
+    done = true;
+    expect(prog.ready()).toBe(true);
+    expect(named('getUniformLocation').length).toBeGreaterThan(0);
+  });
+
+  it('answers an attribute whose location the source gives without waiting for the link', () => {
+    const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC, { attributes: { a_position: 0, a_uv: 2, a_post: 3 } });
+    expect([prog.attribute('a_position'), prog.attribute('a_uv'), prog.attribute('a_post')]).toEqual([0, 2, 3]);
+    expect(named('getProgramParameter')).toHaveLength(0);
+    expect(named('getAttribLocation')).toHaveLength(0);
+  });
+
+  it('throws a failed link at the first use, and at every use after', () => {
+    linkFails = true;
+    const prog = new GlProgram(host(), VERT_SRC, FRAG_SRC);
+    expect(() => prog.has('u_color')).toThrow(expect.objectContaining({ stage: 'link' }));
+    expect(() => prog.settle()).toThrow(ShaderCompileError);
   });
 });
