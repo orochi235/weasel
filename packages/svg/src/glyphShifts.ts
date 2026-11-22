@@ -127,13 +127,16 @@ function placeRun(
   lists: Lists, run: StyledRun, lines: StyledRun[][], style: TextStyle, onWarn: (m: string) => void,
 ): number {
   const line = lines[lines.length - 1];
-  const names = (['dx', 'x'] as const).filter((n) => (n === 'dx' ? lists.dx.some((v) => v !== 0) : lists.x.length > 1));
-  const named = `<${lists.tag} ${names.map((n) => `${n}="${lists.raw[n]}"`).join(' ')}>`;
-  if (names.length > 0 && collapses(lists.el, run.text)) {
-    onWarn(`${named} is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
-    line.push(run);
-    return 0;
+  const namesIn = (l: Lists) => (['dx', 'x'] as const).filter((n) => (n === 'dx' ? l.dx.some((v) => v !== 0) : l.x.length > 1));
+  const named = `<${lists.tag} ${namesIn(lists).map((n) => `${n}="${lists.raw[n]}"`).join(' ')}>`;
+  // Collapsing white space moves the glyphs after the first, never the first, so a list keeps its first value.
+  if (collapses(lists.el, run.text)) {
+    if (lists.dx.slice(1).some((v) => v !== 0) || lists.x.length > 1) {
+      onWarn(`${named} is read only to its first value: its text has white space SVG collapses, which moves the glyphs the list names`);
+    }
+    lists = { ...lists, dx: lists.dx.slice(0, 1), x: lists.x.slice(0, 1) };
   }
+  const names = namesIn(lists);
   const rtl = style.direction === 'rtl';
   const shifts = names.length > 0 ? foldPositions(lists, run, style, rtl, onWarn) : null;
   // Spacing moves the glyphs after one to one side only, which a glyph read
@@ -312,11 +315,10 @@ export class TextShifts {
     const dx = readList(text, 'dx', onWarn);
     const x = readList(text, 'x', onWarn);
     const collapsible = collapses(text);
-    const unread = dx.some((v) => v !== 0) && collapsible;
-    if (unread) {
-      onWarn(`<text dx="${this.raw}"> is not read: its text has white space SVG collapses, which moves the glyphs the list names`);
+    if (collapsible && dx.slice(1).some((v) => v !== 0)) {
+      onWarn(`<text dx="${this.raw}"> is read only to its first value: its text has white space SVG collapses, which moves the glyphs the list names`);
     }
-    this.dx = unread ? [] : dx;
+    this.dx = collapsible ? dx.slice(0, 1) : dx;
     const through = lastPlacedOnLine(pieces, opens, onWarn);
     if (x.length < 2 && through < 0) return;
     const folded = collapsible

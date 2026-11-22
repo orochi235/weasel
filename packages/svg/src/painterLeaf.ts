@@ -6,7 +6,6 @@
  */
 import {
   findNodeShape,
-  isPatternPaint,
   poseFrameOf,
   type DrawCommand,
   type GroupDrawCommand,
@@ -20,7 +19,7 @@ import {
 import { identity, invert, mat3, multiply, type Affine } from '@weasel-js/geom';
 import type { SvgKitInherited } from './kitInherits';
 import { svgPaintFromKit, svgStrokeFromKit, type SvgKitPose } from './kitPaint';
-import { fillThroughMatrix } from './paintThroughMatrix';
+import { documentPaintThrough, inDocumentSpace } from './paintThroughMatrix';
 import type { SvgGroupNode, SvgNode, SvgPaint, SvgPathNode } from './types';
 
 /** Says `message` once for `key`. */
@@ -108,18 +107,11 @@ function lowerGroup(cmd: GroupDrawCommand, toDoc: Affine, pose: SvgKitPose, pain
  */
 function paintIn(paint: Paint | undefined, toDoc: Affine, pose: SvgKitPose, warn: PainterWarn): SvgPaint {
   const out = svgPaintFromKit(paint ?? null, pose);
-  if (out.kind !== 'gradient' || !(GRADIENTS.has(out.paint.kind as string) || isPatternPaint(out.paint))) return out;
-  const units = (out.paint as { units?: string }).units;
-  if (units === 'local') return out;
+  if (out.kind !== 'gradient' || !inDocumentSpace(out.paint)) return out;
   const back = invert(toDoc);
   if (!back || isIdentity(back)) return out;
-  const mapped = fillThroughMatrix({ ...out.paint, units: 'world' } as Paint, back, (m) => warn(`gradient:${m}`, m));
-  if (units === undefined) delete (mapped as { units?: string }).units;
-  else (mapped as { units?: string }).units = units;
-  return { kind: 'gradient', paint: mapped };
+  return { kind: 'gradient', paint: documentPaintThrough(out.paint, back, (m) => warn(`gradient:${m}`, m)) };
 }
-
-const GRADIENTS = new Set(['linear-gradient', 'radial-gradient', 'conic-gradient']);
 
 function isIdentity(m: Affine): boolean {
   return m[0] === 1 && m[1] === 0 && m[2] === 0 && m[3] === 1 && m[4] === 0 && m[5] === 0;

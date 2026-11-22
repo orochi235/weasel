@@ -805,6 +805,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   rather than clamping; they built NaN coordinates or a bare `Z`.
 - Ruled 2026-11-20 (my call, audit round 49): `joinPaths` gives the joined path the `openFill` its parts holding
   an open subpath share; where they disagree it takes the first such part's and warns, since one path holds one rule.
+- 2026-11-22 (my call, audit round 67): `parseSvg` reads one viewport for an outermost `<svg>` with no
+  `viewBox`, for its percentages and its media and container queries: each side it sizes (an `em` side included), a
+  missing one from the `viewBox` aspect. A percentage on a side it leaves unsized still warns and reads its number,
+  where media take 300 × 150. An `em` side reads the root's `font-size` attribute for media, since the cascade
+  reads them, so a stylesheet sizing the root's font moves only its percentages.
 
 - Ruled 2026-11-10 (my call, overnight sweep): `serializeSvg` writes a character XML 1.0 cannot hold (a
   control, U+FFFE, U+FFFF, or half a surrogate pair) as U+FFFD and warns once, where it used to drop it

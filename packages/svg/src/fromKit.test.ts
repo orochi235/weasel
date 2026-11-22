@@ -310,6 +310,22 @@ describe('svgNodesFromKit', () => {
     expect(m.fill).toMatchObject({ kind: 'solid', color: '#ff0000' });
   });
 
+  it('writes an inherited paint on a node at the top of a walk, since no group written above it carries it', () => {
+    const nested: SvgKitTree<string> = {
+      roots: ['g'],
+      childrenOf: (id) => (id === 'g' ? ['h'] : id === 'h' ? ['m'] : []),
+      get: (id) => {
+        if (id === 'g') return { kind: 'group', data: { fill: { paint: solid('#ff0000') } }, pose: BOX };
+        if (id === 'h') return { kind: 'group', parent: 'g', data: { fill: 'inherit' }, pose: BOX };
+        return { kind: 'mark', parent: 'h', data: { path: { kind: 'rect', x: 0, y: 0, width: 10, height: 10 }, fill: 'inherit' }, pose: { x: 0, y: 0, width: 10, height: 10 } };
+      },
+    } as SvgKitTree<string>;
+    const leafBack = parseSvg(serializeSvg(svgNodesFromKit(nested, { roots: ['m'] }))).nodes[0] as SvgPathNode;
+    expect(leafBack.fill).toMatchObject({ kind: 'solid', color: '#ff0000' });
+    const groupBack = parseSvg(serializeSvg(svgNodesFromKit(nested, { roots: ['h'] }))).nodes[0] as SvgGroupNode;
+    expect((groupBack.children[0] as SvgPathNode).fill).toMatchObject({ kind: 'solid', color: '#ff0000' });
+  });
+
   it('writes a hidden node, leaf or group, with display="none" so it reads back hidden', () => {
     const hiding: SvgKitTree<string> = {
       ...tree,

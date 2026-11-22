@@ -196,6 +196,10 @@ describe('mediaEnvironmentFor', () => {
   it('falls back to the replaced-element default of 300 by 150', () => {
     expect(mediaEnvironmentFor(root('<svg/>'))).toMatchObject({ width: 300, height: 150 });
   });
+
+  it('sizes an em root as its percentages read it', () => {
+    expect(mediaEnvironmentFor(root('<svg width="10em" height="5em" font-size="20"/>'))).toMatchObject({ width: 200, height: 100 });
+  });
   it('lets overrides win over everything derived', () => {
     expect(mediaEnvironmentFor(root('<svg width="10" height="20"/>'), { width: 1200, prefersColorScheme: 'dark' }))
       .toMatchObject({ width: 1200, height: 20, prefersColorScheme: 'dark' });

@@ -81,6 +81,12 @@ describe('a percentage length on a shape, image, or text', () => {
     expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 100, height: 100 });
   });
 
+  it('resolves a percentage on the side a root gives, and warns on the side it leaves out', () => {
+    const { nodes, warnings } = parseSvg(`<svg ${NS} width="400"><rect width="50%" height="50%"/></svg>`);
+    expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 200, height: 50 });
+    expect(warnings).toEqual([expect.stringMatching(/height="50%".*no viewport/)]);
+  });
+
   it('warns and reads the number when there is no viewport', () => {
     const { nodes, warnings } = parseSvg(`<svg ${NS}><rect width="100%" height="20"/></svg>`);
     expect((nodes[0] as SvgPathNode).path).toMatchObject({ width: 100, height: 20 });
