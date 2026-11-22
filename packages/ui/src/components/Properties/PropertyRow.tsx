@@ -62,6 +62,9 @@ export interface PropertyRowProps extends PropertyMetricProps, DisableableProps 
   hint?: ReactNode;
   /** The row stands for several values that differ: its label is drawn in the warning color. Outranks `changed`. */
   mixed?: boolean;
+  /** Whether disabling the row disables the controls inside it. Default `true`. `false` dims the label alone, for a
+   *  row whose controls each say whether they are disabled, such as an object leaf whose switch stays live. */
+  holds?: boolean;
 }
 
 /** The label-plus-control frame `<PropertyField>` draws its rows in. Use it
@@ -85,7 +88,7 @@ export function PropertyRow(props: PropertyRowProps) {
     spacing,
     align,
     hint,
-    mixed = false,
+    mixed = false, holds = true,
   } = props;
   const state = useRowState();
   const { auto, onAutoChange, onReset, changed = false, autoValue, error } = state;
@@ -169,7 +172,7 @@ export function PropertyRow(props: PropertyRowProps) {
   const body = (
     <FieldScope value={field}>
       {head}
-      <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(props, children)}</ReasonTold></InsideRow>
+      <InsideRow scope={scope}><ReasonTold reason={why}>{holdScope(holds ? props : { ...props, disabled: false }, children)}</ReasonTold></InsideRow>
       {tail}
       {message}
     </FieldScope>

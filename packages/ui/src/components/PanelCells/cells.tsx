@@ -46,6 +46,9 @@ export interface RenderedCell {
   disabled: boolean;
   /** Every leaf the cell draws is one a `showIf` hides. */
   hidden: boolean;
+  /** Its controls each say whether they are disabled, as a built-in object leaf's fields do, so a disabled row
+   *  around it dims its label without holding them. */
+  selfHeld?: boolean;
   content: ReactNode;
   pair?: { key: string; label: string };
 }
@@ -64,6 +67,11 @@ export function isFlagLeaf(leaf: PrefLeaf, path: string, renderers?: Record<stri
 /** True for an action leaf drawn as its own buttons, which read their own words and want no row label. */
 function builtinActionRow(cell: LeafCell, renderers?: Record<string, LeafRenderer>): boolean {
   return prefDrawsActionRow(cell.leaf) && rendererOf(renderers, cell.ctx.path, cell.leaf.kind) === undefined;
+}
+
+/** True for an object leaf the kit draws, whose fields each answer whether they are disabled. */
+function selfHeld(cell: LeafCell, renderers?: Record<string, LeafRenderer>): boolean {
+  return cell.leaf.kind === 'object' && rendererOf(renderers, cell.ctx.path, cell.leaf.kind) === undefined;
 }
 
 /** True for a leaf that can join a flag bar: a paired {@link isFlagLeaf}. */
@@ -86,7 +94,7 @@ export function renderCells(
     if (!isFlagCell(cell, renderers)) {
       const content = cell.render();
       if (content != null) {
-        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf) || builtinActionRow(cell, renderers), disabled: cell.ctx.disabled === true, hidden: cell.ctx.hidden === true, content, ...(cell.pair ? { pair: cell.pair } : {}) });
+        out.push({ key: cell.key, leaf: cell.leaf, block: cell.leaf.block === true || prefDrawsNoControl(cell.leaf) || builtinActionRow(cell, renderers), disabled: cell.ctx.disabled === true, hidden: cell.ctx.hidden === true, ...(selfHeld(cell, renderers) ? { selfHeld: true } : {}), content, ...(cell.pair ? { pair: cell.pair } : {}) });
       }
       i += 1;
       continue;
