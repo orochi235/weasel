@@ -24,9 +24,9 @@ import {
 import type { Vec2 } from '@weasel-js/core/math';
 import { boxFrameOf, transformPoint } from '@weasel-js/geom';
 import { createClaimPressAction, claimPressBindings } from '../connect';
-import { addLane, canReleaseMembers, releaseMembers } from './containerStencils';
+import { addLane, addLaneLocked, canReleaseMembers, releaseMembers } from './containerStencils';
 import {
-  addLaneLocked, LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizable, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
+  LANE_AFFORDANCE_KIND, LANE_LAYER_ID, createLaneLayer, laneResizable, laneScratchOf, poolLanesOf, poolsOf, stackDirection, type LaneLayerOptions,
   type PoolLanes,
 } from './laneBoundaryLayer';
 import { MIN_LANE_SIZE } from './laneStack';
@@ -208,7 +208,7 @@ export function createAddLaneAction(opts: LaneActionOptions): Action {
       run(deps, params) {
         const pressed = laneScratchOf(params?.affordance);
         const world = params?.world;
-        if (pressed === null || pressed.laneId !== undefined || !world || addLaneLocked(opts.scene, { id: pressed.poolId })) return 'pass';
+        if (pressed === null || pressed.laneId !== undefined || !world || addLaneLocked(opts.scene, pressed.poolId)) return 'pass';
         commit(pressed.poolId, { world, modifiers: NO_MODIFIERS, deps } as InvocationCtx);
         return undefined;
       },

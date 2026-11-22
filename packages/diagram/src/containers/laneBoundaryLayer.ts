@@ -24,7 +24,7 @@ import {
   type RenderLayer,
   type AnyScene,
 } from '@weasel-js/core';
-import { lanesOf, poolAxisOf } from './containerStencils';
+import { addLaneLocked, lanesOf, poolAxisOf } from './containerStencils';
 import { diagramContainerOf, titleIdOf } from './trait';
 import { payloadOf } from '../payload';
 
@@ -96,12 +96,6 @@ export function laneResizeLocked(scene: AnyScene, pool: PoolLanes, index: number
  *  the resize would write no locked node. */
 export function laneResizable(scene: AnyScene, pool: PoolLanes, index: number): boolean {
   return !scene.isHidden(pool.lanes[index]!.id as NodeId) && !laneResizeLocked(scene, pool, index);
-}
-
-/** Whether adding a lane at the end of `pool` would write a locked node: the pool's title, which grows with it. The
- *  add-lane button is offered, and the add runs, only where this is false. */
-export function addLaneLocked(scene: AnyScene, pool: Pick<PoolLanes, 'id'>): boolean {
-  return [pool.id, titleIdOf(pool.id)].some((id) => scene.isLocked(id as NodeId));
 }
 
 /** Options for {@link createLaneLayer}. */
@@ -187,7 +181,7 @@ export function createLaneAffordance(scene: AnyScene, opts: LaneLayerOptions = {
             bind: () => ({ initialScratch: { targetId: pool.id, poolId: pool.id, laneId: lane.id } satisfies LaneScratch }),
           });
         }
-        if (addSizePx <= 0 || addLaneLocked(scene, pool)) continue;
+        if (addSizePx <= 0 || addLaneLocked(scene, pool.id)) continue;
         const { dir } = stackDirection(pool.axis, pool.at);
         const end = { ...midOf(stackEdges(pool.axis, pool.at).end), normal: dir };
         out.push({

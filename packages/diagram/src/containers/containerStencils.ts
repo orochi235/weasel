@@ -120,11 +120,19 @@ function restackLocked(scene: AnyScene, poolId: NodeId, kept: readonly NodeId[],
   return reachesLocked(scene as never, [...shifted, ...moved]);
 }
 
+/** Whether {@link addLane} at `index` would write a locked node, and so writes nothing. */
+export function addLaneLocked(scene: AnyScene, poolId: string, index?: number): boolean {
+  const lanes = lanesOf(scene, poolId);
+  const at = index === undefined ? lanes.length : Math.min(index, lanes.length);
+  return restackLocked(scene, poolId as NodeId, lanes.slice(0, at), lanes.slice(at));
+}
+
 /**
  * Add a lane to `poolId` before the lane at `index`, or at the end of the
  * stack when `index` is absent or past the last lane, as one history entry.
- * The pool grows to hold it. Returns the new lane's id, or null when `poolId`
- * is not a pool. Throws a `RangeError` for a negative or fractional `index`.
+ * The pool grows to hold it. Returns the new lane's id, or null, changing
+ * nothing, when `poolId` is not a pool or the add would move or restyle a
+ * locked node. Throws a `RangeError` for a negative or fractional `index`.
  */
 export function addLane(scene: AnyScene, poolId: string, index?: number, style?: NodeStyle): string | null {
   const pool = scene.get(poolId as NodeId);
@@ -133,6 +141,7 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   if (index !== undefined && !(Number.isInteger(index) && index >= 0)) {
     throw new RangeError(`addLane: index ${index} is not a lane's place; pass a whole number from 0, or none for the end`);
   }
+  if (addLaneLocked(scene, poolId, index)) return null;
   const axis = poolAxisOf(trait);
   const lanes = lanesOf(scene, poolId);
   // Laid out in the pool's own box, where a layout sees it.

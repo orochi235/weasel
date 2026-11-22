@@ -3589,3 +3589,8 @@ Calls the lanes made without a ruling:
 - 2026-11-21 (the fixer's call): a `'click-curve'` function layer with fewer than two anchors, which draws no curve to
   press, adds a point from a click anywhere in the plot until it has two. Holding `minPoints` at 2 in that mode, so a
   delete could never leave it there, was the alternative; it would not help a state the consumer passes in that short.
+## Audit round sixty-six (2026-11-21): diagram containers
+
+- 2026-11-21 (the fixer's call): `addLane` returns null and changes nothing when the add would move or restyle a
+  locked node (the pool, its title, a lane it shifts, or what that lane holds), as `releaseMembers` does; throwing,
+  or adding the lane and leaving locked lanes overlapping it, were the alternatives.
