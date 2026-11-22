@@ -30,6 +30,15 @@ describe('paintPreviewCss', () => {
     } as unknown as Paint)).toBeUndefined();
   });
 
+  it('has nothing to show for a gradient with a stop color it cannot read', () => {
+    for (const color of ['lab(50% 20 30)', 'currentColor']) {
+      expect(paintPreviewCss({
+        kind: 'linear-gradient', from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+        stops: [STOPS[0], { offset: 1, color }], units: 'bounds',
+      })).toBeUndefined();
+    }
+  });
+
   it('shows an image pattern\'s picture whole', () => {
     expect(paintPreviewCss({ kind: 'image', src: 'data:image/png;base64,AAAA' }))
       .toBe('url("data:image/png;base64,AAAA") center / cover no-repeat');
