@@ -6,7 +6,7 @@ import { loopsAgain, type TransportProps } from './Transport';
 /** Whether the playhead will move on its own. A timeline that ran to the end it
  *  plays toward without looping still reports itself unpaused. */
 function isAdvancing(handle: TimelineHandle): boolean {
-  if (handle.isPaused()) return false;
+  if (handle.isPaused() || handle.isCanceled()) return false;
   if (handle.timeScale() < 0) return handle.time() > 0;
   return loopsAgain(handle.loop()) || handle.time() < handle.duration();
 }

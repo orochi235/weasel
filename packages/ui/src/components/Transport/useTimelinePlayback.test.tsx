@@ -23,6 +23,15 @@ describe('useTimelinePlayback', () => {
     }
   });
 
+  it('reads a canceled timeline as stopped', () => {
+    const h = fakeHandle();
+    h.resume();
+    renderWithIcons(<AnimatedTransport handle={h} />);
+    expect(screen.getByRole('button', { name: 'Pause' })).toBeTruthy();
+    act(() => { h.cancel(); });
+    expect(screen.getByRole('button', { name: 'Play' })).toBeTruthy();
+  });
+
   it('rewinds a timeline played backward to 0 to its end on play', () => {
     const h = fakeHandle();
     h.setTimeScale(-1);

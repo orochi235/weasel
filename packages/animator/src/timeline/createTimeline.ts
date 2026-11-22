@@ -124,14 +124,14 @@ export function createTimeline(
   };
   return {
     ...entry.base,
-    // Not just `onCancel`: canceling a finished timeline never reaches the
-    // animator, and must still keep a later seek from reviving it.
+    // Not just `onCancel`: canceling a finished timeline never reaches the animator, yet a seek must not revive it.
     cancel() { onCancel(); entry.base.cancel(); },
     pause() { entry.pause(); crossings.retract(); playbackChanged(); },
     resume() { entry.resume(); playbackChanged(); },
     setTimeScale(s) { entry.setTimeScale(s); playbackChanged(); },
     timeScale: entry.timeScale,
     isPaused: entry.isPaused,
+    isCanceled: () => canceled,
     seek(to) {
       const landed = landing(to, pos.duration(), pos.lapsLeft());
       crossings.retract();
