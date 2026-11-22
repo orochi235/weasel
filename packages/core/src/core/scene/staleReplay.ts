@@ -85,7 +85,11 @@ export function createStaleReplay<TData, TLayer extends string, TPose>(
       }
       case 'kit:setLayer': {
         const p = payload as { id: NodeId; from: TLayer; to: TLayer };
-        return !nodes.has(p.id) || !layers.has(forward ? p.to : p.from);
+        const node = nodes.get(p.id);
+        const layer = forward ? p.to : p.from;
+        if (node === undefined || !layers.has(layer) || !fits(p.id, layer, node.parent)) return true;
+        const at = layers.get(layer)!;
+        return hasChildren(node) && node.children.some((c) => (layers.get(nodes.get(c)!.layer) ?? -1) < at);
       }
       case 'kit:setLayerVisible':
       case 'kit:setLayerLocked':
