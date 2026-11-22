@@ -46,6 +46,9 @@ export interface AudioGraph {
    *  A structural error anywhere in the list throws before anything changes.
    *  A param write or a source's start that throws is skipped; the rest apply, then the first error is rethrown. */
   apply(patches: readonly GraphPatch[]): void;
+  /** Throws the structural error `apply` would throw for `patches`, and changes nothing: an `apply` that throws after a
+   *  passing `check` has landed every patch. */
+  check(patches: readonly GraphPatch[]): void;
   /** Start every source now, and every source added later, until `stop`. A source whose start
    *  throws is left stopped while the rest start, and the first error is rethrown. */
   start(): void;

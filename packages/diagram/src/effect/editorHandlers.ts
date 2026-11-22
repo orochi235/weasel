@@ -7,9 +7,10 @@ import { isBodyEnd } from '../connectTargets';
 import type { DeleteReport, DiagramEdit, LabelMove, ReconnectChange, RouteChange } from '../DiagramView';
 import type { DataEdge, DiagramSpec } from '../dataTypes';
 import {
-  addWire, canWire, ensureWireIds, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
+  addWire, canWire, ensureWireIds, inputFed, reconnectWire, removeStages, removeWires, setWireLabel, setWireRoute,
 } from './edit';
 import type { EditorLook, EditorScene } from './editorMapping';
+import { untapped } from './rack';
 import { dragEdit, type DragReports } from './clusterHandlers';
 import { setLookRoute, wireEnds } from './lookRoutes';
 import type { EffectDoc, EffectPipeline, EffectWire } from './types';
@@ -27,16 +28,8 @@ function orient(p: EffectPipeline, a: Ref, b: Ref): EffectWire | null {
   return null;
 }
 
-const same = (a: Ref, b: Ref) => a.stage === b.stage && a.port === b.port;
-const takesMany = (p: EffectPipeline, to: Ref) =>
-  p.stages.find((s) => s.id === to.stage)?.inputs?.find((i) => i.id === to.port)?.many === true;
-
-/** Whether input `to` may not take wire `from`–`to`, `except` aside: it is fed
- *  already, or for an input that takes many, fed already from `from`. */
-const fed = (p: EffectPipeline, from: Ref, to: Ref, except?: string) => {
-  const many = takesMany(p, to);
-  return p.wires.some((w) => same(w.to, to) && (!many || same(w.from, from)) && (except === undefined || w.id !== except));
-};
+const fed = (p: EffectPipeline, from: Ref, to: Ref, except?: string) =>
+  inputFed(p, except === undefined ? p.wires : p.wires.filter((w) => w.id !== except), from, to);
 
 /** A wire may join only an output to an input of its type that is free, or takes many. */
 function wireFor(p: EffectPipeline, a: Ref, b: Ref, except?: string): EffectWire | null {
@@ -84,20 +77,20 @@ export function editHandlers(now: () => EditorNow, unpick: () => void, rename: (
     if (isBodyEnd(from) || isBodyEnd(to)) return false;
     const { doc, built } = now();
     const except = moving === undefined ? undefined : built.wireOf(moving.edge);
-    return wireFor(doc.pipeline, { stage: from.nodeId, port: from.id }, { stage: to.nodeId, port: to.id }, except) !== null;
+    return wireFor(doc.pipeline, { stage: from.nodeId, port: untapped(from.id) }, { stage: to.nodeId, port: untapped(to.id) }, except) !== null;
   };
   return {
     canConnect,
     onConnect: (e: DataEdge) => commit('Connect', (d) => {
       if (e.fromPort === undefined || e.toPort === undefined) return null;
-      const wire = wireFor(d.pipeline, { stage: e.from, port: e.fromPort }, { stage: e.to, port: e.toPort });
+      const wire = wireFor(d.pipeline, { stage: e.from, port: untapped(e.fromPort) }, { stage: e.to, port: untapped(e.toPort) });
       return wire === null ? null : addWire(d, wire);
     }),
     onReconnect: (c: ReconnectChange) => commit('Reconnect', (d, b) => {
       const id = b.wireOf(c.edge);
       const wire = d.pipeline.wires.find((w) => w.id === id);
       if (id === undefined || wire === undefined || c.port === undefined) return null;
-      const moved = { stage: c.node, port: c.port };
+      const moved = { stage: c.node, port: untapped(c.port) };
       const [from, to] = c.end === 'from' ? [moved, wire.to] : [wire.from, moved];
       return canWire(d.pipeline, from, to) && !fed(d.pipeline, from, to, id) ? reconnectWire(d, id, c.end, moved) : null;
     }),

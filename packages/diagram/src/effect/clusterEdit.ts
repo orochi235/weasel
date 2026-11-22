@@ -152,7 +152,7 @@ export function clusterContents(doc: EffectDoc, id: string): { stages: Set<strin
 
 /**
  * Moves cluster `id` by `offset`: the places of the stages inside it, its box
- * and the boxes inside it, and the routes of wires with both ends inside it.
+ * and the boxes inside it, and the routes and `{ near }` label points of wires with both ends inside it.
  * A stage with no place stays where layout puts it.
  */
 export function moveCluster(doc: EffectDoc, id: string, offset: Vec2): EffectDoc {
@@ -162,11 +162,15 @@ export function moveCluster(doc: EffectDoc, id: string, offset: Vec2): EffectDoc
   const inside = new Set(doc.pipeline.wires.flatMap((w) => (w.id !== undefined && stages.has(w.from.stage) && stages.has(w.to.stage) ? [w.id] : [])));
   const routes = doc.routes === undefined ? undefined
     : Object.fromEntries(Object.entries(doc.routes).map(([w, r]) => [w, inside.has(w) ? r.map(by) : r]));
+  const labels = doc.labels === undefined ? undefined
+    : Object.fromEntries(Object.entries(doc.labels).map(([w, l]) =>
+      [w, inside.has(w) && typeof l.at === 'object' ? { ...l, at: { near: by(l.at.near) } } : l]));
   const boxes = doc.clusterBoxes === undefined ? undefined
     : Object.fromEntries(Object.entries(doc.clusterBoxes).map(([g, b]) => [g, clusters.has(g) ? { ...b, ...by(b) } : b]));
   return {
     ...doc, places,
     ...(routes !== undefined ? { routes } : {}),
+    ...(labels !== undefined ? { labels } : {}),
     ...(boxes !== undefined ? { clusterBoxes: boxes } : {}),
   };
 }

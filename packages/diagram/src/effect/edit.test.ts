@@ -64,6 +64,12 @@ describe('edit', () => {
     expect(r.pipeline.wires[1]!.from).toEqual(ref('b', 'out'));
   });
 
+  it('reconnectWire drops the reconnected wire\'s hand-set route and keeps the others\'', () => {
+    let d = setWireRoute(built(), 'w2', [{ x: 5, y: 5 }]);
+    d = setWireRoute(d, 'w1', [{ x: 1, y: 1 }]);
+    expect(reconnectWire(d, 'w2', 'to', ref('a', 'x')).routes).toEqual({ w1: [{ x: 1, y: 1 }] });
+  });
+
   it('nextStageId and nextWireId skip used ids', () => {
     const d = built();
     expect(nextStageId(d.pipeline, 'blur')).toBe('blur');
@@ -102,6 +108,15 @@ describe('edit', () => {
     const [first, second] = d.pipeline.wires;
     const bare = { ...d, pipeline: { ...d.pipeline, wires: [{ from: first!.from, to: first!.to }, { ...second!, id: 'w1' }] } };
     expect(ensureWireIds(bare).pipeline.wires.map((w) => w.id)).toEqual(['w2', 'w1']);
+  });
+
+  it('ensureWireIds gives a wire repeating an earlier wire\'s id one of its own', () => {
+    const d = built();
+    const [first, second] = d.pipeline.wires;
+    const twice = { ...d, pipeline: { ...d.pipeline, wires: [first!, { ...second!, id: first!.id }] } };
+    const fixed = ensureWireIds(twice);
+    expect(fixed.pipeline.wires.map((w) => w.id)).toEqual([first!.id, 'w2']);
+    expect(removeWires(fixed, [first!.id!]).pipeline.wires).toEqual([{ ...second!, id: 'w2' }]);
   });
 
   it('a doc built through edits has no problems and renders', () => {

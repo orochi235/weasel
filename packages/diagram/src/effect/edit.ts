@@ -96,9 +96,9 @@ export function removeWires(doc: EffectDoc, ids: readonly string[]): EffectDoc {
 
 /** An id-less wire is never matched: run `ensureWireIds` first. */
 export function reconnectWire(doc: EffectDoc, id: string, end: 'from' | 'to', to: { stage: string; port: string }): EffectDoc {
-  return withPipeline(doc, {
+  return pruneRoutes(withPipeline(doc, {
     wires: doc.pipeline.wires.map((w) => (w.id === id ? { ...w, [end]: { stage: to.stage, port: to.port } } : w)),
-  });
+  }), [id]);
 }
 
 const addressed = (p: EffectParam, key: string) => (p.id ?? p.label) === key;
@@ -126,17 +126,38 @@ export function setLaneOrder(doc: EffectDoc, order: readonly string[]): EffectDo
   return { ...doc, laneOrder: [...order] };
 }
 
-/** Mints ids for id-less wires; returns `doc` itself when none lacks one. */
+/** Mints ids for id-less wires and for each wire repeating an earlier wire's id, so an edit through one
+ *  id touches one wire; returns `doc` itself when every wire has an id of its own. */
 export function ensureWireIds(doc: EffectDoc): EffectDoc {
-  if (doc.pipeline.wires.every((w) => w.id !== undefined)) return doc;
+  const seen = new Set<string>();
+  const minted = doc.pipeline.wires.map((w) => {
+    const own = w.id !== undefined && !seen.has(w.id);
+    if (own) seen.add(w.id!);
+    return !own;
+  });
+  if (!minted.includes(true)) return doc;
   const used = new Set(doc.pipeline.wires.map((w) => w.id));
-  const wires = doc.pipeline.wires.map((w) => {
-    if (w.id !== undefined) return w;
+  const wires = doc.pipeline.wires.map((w, k) => {
+    if (!minted[k]) return w;
     const id = freshId('w', used, { sep: '' });
     used.add(id);
     return { ...w, id };
   });
   return withPipeline(doc, { wires });
+}
+
+type Ref = { stage: string; port: string };
+const sameRef = (a: Ref, b: Ref) => a.stage === b.stage && a.port === b.port;
+
+/** Whether input `to` of `p` takes many wires. */
+export const takesMany = (p: EffectPipeline, to: Ref): boolean =>
+  p.stages.find((s) => s.id === to.stage)?.inputs?.find((i) => i.id === to.port)?.many === true;
+
+/** Whether input `to` may not take wire `from`–`to` beside `wires`: one of them feeds it already,
+ *  or for an input that takes many, one from `from` does. */
+export function inputFed(p: EffectPipeline, wires: readonly EffectWire[], from: Ref, to: Ref): boolean {
+  const many = takesMany(p, to);
+  return wires.some((w) => sameRef(w.to, to) && (!many || sameRef(w.from, from)));
 }
 
 /** An output into an input of the same type, both existing, on different stages. */

@@ -1,7 +1,7 @@
 /** The field a cluster's title is renamed in, held over the title on the canvas. */
 import { adoptCssOnce, useLatest } from '@weasel-js/react';
 import { imeKey } from '@weasel-js/ui-input';
-import { useMemo, useState, type ReactElement } from 'react';
+import { useMemo, useRef, useState, type ReactElement } from 'react';
 import { titleIdOf } from '../containers/trait';
 import { clusterLabelIdOf } from '../dataClusters';
 import type { DiagramOverlay } from '../overlays';
@@ -51,10 +51,10 @@ export function useClusterTitle(
 /** A text field holding `initial`: Enter or leaving it hands `onDone` the text, Escape hands it `null`. */
 export function ClusterTitleField({ initial, onDone }: { initial: string; onDone: (text: string | null) => void }): ReactElement {
   const [text, setText] = useState(initial);
-  const [done, setDone] = useState(false);
+  const done = useRef(false);
   const finish = (value: string | null) => {
-    if (done) return;
-    setDone(true);
+    if (done.current) return;
+    done.current = true;
     onDone(value);
   };
   return (

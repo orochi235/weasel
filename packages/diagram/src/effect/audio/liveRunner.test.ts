@@ -20,7 +20,7 @@ interface FakeGraph extends AudioGraph {
   applies: GraphPatch[][];
   calls: string[];
   failWhen: ((patches: readonly GraphPatch[]) => unknown) | undefined;
-  /** A failing apply still lands its patches first, as one whose source fails to start does. */
+  /** `failWhen` is a start that fails after the patches land, which `check` passes, not a refused batch. */
   landOnFail: boolean;
 }
 const fakeGraph = (): FakeGraph => {
@@ -30,6 +30,10 @@ const fakeGraph = (): FakeGraph => {
     failWhen: undefined as FakeGraph['failWhen'],
     landOnFail: false,
     live: new Set<string>(),
+    check(patches: readonly GraphPatch[]) {
+      const err = g.landOnFail ? undefined : g.failWhen?.(patches);
+      if (err !== undefined) throw err;
+    },
     apply(patches: readonly GraphPatch[]) {
       g.applies.push([...patches]);
       const err = g.failWhen?.(patches);
@@ -157,13 +161,13 @@ describe('createLiveAudioRunner', () => {
     runner.setPipeline(withGain(220));
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]![0]).toMatch(/^@weasel-js\/diagram: /);
-    expect(graph.applies).toHaveLength(2);
+    expect(graph.applies).toHaveLength(1);
     expect(runner.state.run?.stages.gain?.error).toMatch(/no input port/);
     graph.failWhen = undefined;
     runner.setPipeline(withGain(220));
-    expect(graph.applies).toHaveLength(4);
-    expect(graph.applies[2]!.some((p) => p.kind === 'add' && p.id === 'gain')).toBe(true);
-    expect(graph.applies[3]).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+    expect(graph.applies).toHaveLength(3);
+    expect(graph.applies[1]!.some((p) => p.kind === 'add' && p.id === 'gain')).toBe(true);
+    expect(graph.applies[2]).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
     expect(runner.state.run?.stages.gain?.error).toBeUndefined();
   });
 
@@ -235,6 +239,19 @@ describe('createLiveAudioRunner', () => {
     runner.setPipeline(withGain(220));
     expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
     expect(graph.applies.flat().filter((p) => p.kind === 'add' && p.id === 'gain')).toHaveLength(1);
+  });
+
+  it('adopts the next plan when a batch with no adds throws after it landed', () => {
+    const { runner, graph } = setup();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    runner.setPipeline(withGain(440));
+    graph.landOnFail = true;
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'remove') ? new Error('start failed') : undefined);
+    runner.setPipeline(osc(440));
+    graph.failWhen = undefined;
+    runner.setPipeline(osc(220));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
+    expect(graph.applies.flat().filter((p) => p.kind === 'remove')).toHaveLength(1);
   });
 
   it('starts nothing when a pause or reset comes while play waits on the unlock', async () => {

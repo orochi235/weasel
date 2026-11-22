@@ -27,6 +27,24 @@ describe('livePlan', () => {
     ]));
   });
 
+  it('plays a level its params leave out at the stage type\'s default', () => {
+    const p = plan([stage('d', 'audio.delay', { params: [] }), stage('osc', 'audio.oscillator'), stage('out', 'audio.output')],
+      [wire('osc', 'd'), wire('d', 'out')]);
+    expect(p.nodes.d!.levels).toEqual({ time: 300, feedback: 0.4, mix: 0.5 });
+  });
+
+  it('plays no wire from a port its stage lacks or from an input, nor one into a port the output lacks', () => {
+    const p = plan(
+      [stage('osc', 'audio.oscillator'), stage('gain', 'audio.gain'), stage('out', 'audio.output')],
+      [
+        { from: { stage: 'osc', port: 'bogus' }, to: { stage: 'gain', port: 'in' } },
+        { from: { stage: 'gain', port: 'in' }, to: { stage: 'out', port: 'in' } },
+        { from: { stage: 'osc', port: 'out' }, to: { stage: 'out', port: 'nope' } },
+      ],
+    );
+    expect(p.edges).toEqual([]);
+  });
+
   it('plans a stage whose id is __proto__ as its own node', () => {
     const p = plan([stage('__proto__', 'audio.oscillator'), stage('out', 'audio.output')], [wire('__proto__', 'out')]);
     expect(Object.getPrototypeOf(p.nodes)).toBe(Object.prototype);

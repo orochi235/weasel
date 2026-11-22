@@ -20,6 +20,7 @@ const PIPELINE: EffectPipeline = {
 const fakeEngine = () => {
   const graph = {
     apply: vi.fn(),
+    check: vi.fn(),
     start: vi.fn(),
     stop: vi.fn(),
     dispose: vi.fn(),
@@ -89,7 +90,7 @@ describe('useLiveAudioRunner', () => {
       context: createFakeAudioContext(),
       unlock: async () => {},
       graph: () => {
-        const g = { apply: vi.fn(), start: vi.fn(), stop: vi.fn(), dispose: vi.fn(), tap: vi.fn(() => ({ dispose: vi.fn() })) };
+        const g = { apply: vi.fn(), check: vi.fn(), start: vi.fn(), stop: vi.fn(), dispose: vi.fn(), tap: vi.fn(() => ({ dispose: vi.fn() })) };
         graphs.push(g);
         return g as never as AudioGraph;
       },

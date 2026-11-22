@@ -72,6 +72,34 @@ describe('moveInChain', () => {
     expect(mainChain(next!.pipeline)).toEqual(['src', 'b', 'c', 'a']);
   });
 
+  it('gives a wire minted into a dropped wire\'s id none of its label or route', () => {
+    const bare: EffectDoc = {
+      places: {},
+      pipeline: { stages: [img('a'), img('b'), img('c')], wires: [wire('w1', 'a', 'out', 'b', 'image'), wire('w2', 'b', 'out', 'c', 'image')] },
+      labels: { w1: { at: 'start' }, w2: { at: 'end' } },
+      routes: { w2: [{ x: 1, y: 1 }] },
+    };
+    const next = moveInChain(bare, 'c', 1)!;
+    expect(next.pipeline.wires.find((w) => w.id === 'w2')).toMatchObject({ from: { stage: 'c' }, to: { stage: 'b' } });
+    expect(next.labels).toEqual({ w1: { at: 'start' } });
+    expect(next.routes).toEqual({});
+  });
+
+  it('wires into an input that takes many though a side wire feeds it', () => {
+    const many = (id: string): EffectStage => img(id, { inputs: [{ id: 'image', type: 'image', many: true }] });
+    const doc: EffectDoc = {
+      places: {},
+      pipeline: {
+        stages: [{ id: 'src', title: 'src', kind: 'source', outputs: [{ id: 'out', type: 'image' }] }, many('f'), many('g'),
+          { id: 'n', title: 'n', kind: 'source', outputs: [{ id: 'out', type: 'image' }] }],
+        wires: [wire('w1', 'src', 'out', 'f', 'image'), wire('w2', 'f', 'out', 'g', 'image'), wire('w3', 'n', 'out', 'g', 'image')],
+      },
+    };
+    const next = moveInChain(doc, 'g', 1);
+    expect(mainChain(next!.pipeline)).toEqual(['src', 'g', 'f']);
+    expect(ends(next)).toContain('n.out>g.image');
+  });
+
   it('moves a stage to the front of a chain with no source', () => {
     const bare: EffectDoc = {
       places: {},

@@ -117,22 +117,29 @@ function buildablePlan(
 }
 
 /**
- * Applies the structural patches, and whether they landed. A throw changed nothing unless the
- * nodes it adds are in the graph, as when a source added while playing fails to start.
+ * Applies the structural patches, and whether they landed: a batch the graph refuses changes nothing,
+ * and one that passes its check lands though a source in it fails to start.
  */
 function applyStructure(graph: AudioGraph, structural: readonly GraphPatch[], errors: Record<string, string>): boolean {
   if (structural.length === 0) return true;
-  try {
-    graph.apply(structural);
-    return true;
-  } catch (err) {
+  const fail = (err: unknown) => {
     const message = messageOf(err);
     const id = failingStage(structural, message);
     if (id !== undefined) setOwn(errors, id, message);
     console.warn(`@weasel-js/diagram: audio graph edit failed: ${message}`);
-    const added = structural.flatMap((p) => (p.kind === 'add' ? [p.id] : []));
-    return added.length > 0 && added.every((a) => graph.has(a));
+  };
+  try {
+    graph.check(structural);
+  } catch (err) {
+    fail(err);
+    return false;
   }
+  try {
+    graph.apply(structural);
+  } catch (err) {
+    fail(err);
+  }
+  return true;
 }
 
 /** A runner over `opts.pipeline` holding a fresh graph on `opts.engine`, not playing. */

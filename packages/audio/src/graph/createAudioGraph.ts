@@ -92,6 +92,7 @@ export function createAudioGraph(
       }
       if (failed) throw failed.error;
     }),
+    check: guard((patches: readonly GraphPatch[]): void => validatePatches(edits.view(), patches)),
     start: guard(transport.start),
     stop: guard(transport.stop),
     isPlaying: transport.playing,

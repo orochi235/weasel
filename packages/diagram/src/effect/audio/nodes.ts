@@ -15,6 +15,8 @@ export interface AudioStageNode {
   settings(params: Readonly<Record<string, unknown>>, sources: AudioSources): Readonly<Record<string, unknown>>;
   /** The ids of its numeric params, each a `params` key of the def `build` returns. */
   levels: readonly string[];
+  /** What each level plays at when the stage's params give it no number; one left out gets the factory's own default. */
+  levelDefaults?: Readonly<Record<string, number>>;
   build(ctx: BaseAudioContext, settings: Readonly<Record<string, unknown>>, levels: Readonly<Record<string, number>>): GraphNodeDef;
 }
 /** The graph node of each stage type, by `type`. */
@@ -24,9 +26,15 @@ export type AudioStageNodes = Readonly<Record<string, AudioStageNode>>;
 const defaultOf = (type: string, id: string): unknown =>
   AUDIO_STAGE_TYPES.find((t) => t.type === type)?.params?.find((p) => p.id === id)?.control?.value;
 
+const levelDefaultsOf = (type: string, levels: readonly string[]): Record<string, number> =>
+  Object.fromEntries(levels.flatMap((id) => {
+    const value = defaultOf(type, id);
+    return typeof value === 'number' ? [[id, value]] : [];
+  }));
+
 /**
- * A node whose settings are the named param values, each its stage type's default when missing and
- * held to its check, so a value the factory would refuse fails the stage in `settings`. The factory
+ * A node whose settings and levels are the named param values, each its stage type's default when missing,
+ * and each setting held to its check, so a value the factory would refuse fails the stage in `settings`. The factory
  * takes the settings with the levels as one options bag.
  */
 const node = (
@@ -40,6 +48,7 @@ const node = (
     return [[id, value]];
   })),
   levels,
+  levelDefaults: levelDefaultsOf(type, levels),
   build: (ctx, settings, levels) => make(ctx, { ...settings, ...levels } as never),
 });
 
@@ -64,6 +73,7 @@ export const audioStageNodes: AudioStageNodes = {
   'audio.mix': {
     settings: () => ({}),
     levels: ['a', 'b'],
+    levelDefaults: levelDefaultsOf('audio.mix', ['a', 'b']),
     build: (ctx, _settings, levels) => {
       const def = createMixNode(ctx, { inputs: ['a', 'b'] });
       for (const id of ['a', 'b'] as const) if (levels[id] !== undefined) def.params[id]!(levels[id], 0);

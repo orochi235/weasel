@@ -42,7 +42,7 @@ export function diffPlans(prev: LivePlan, next: LivePlan, build: BuildNode): Gra
     if (was === undefined || gone.has(id)) {
       fresh.add(id);
       clusters.add.push({ kind: 'add', id, def: build(id, now) });
-    } else if (!sameSettings(was.settings, now.settings)) {
+    } else if (!sameSettings(was.settings, now.settings) || Object.keys(was.levels).some((k) => !Object.hasOwn(now.levels, k))) {
       clusters.replace.push({ kind: 'replace', id, def: build(id, now) });
     } else {
       for (const param of Object.keys(now.levels).sort()) {
