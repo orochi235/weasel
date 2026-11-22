@@ -3,7 +3,7 @@ import { enumerateAxisChoices, fullAxisChoice, axisChoiceKey, type AxisDefs, typ
 import { tokenAt } from '../chainTokens.ts';
 import type { SerializableColorList } from '../colorListItems.ts';
 import type { ThemeDefinition } from '../definition.ts';
-import type { RawToken } from '../dtcg/types.ts';
+import { isSafeTokenName, type RawToken } from '../dtcg/types.ts';
 import { derive } from './derive.ts';
 import { mergeChain, type Lookup } from './merge.ts';
 import { declaredSteps } from './steps.ts';
@@ -118,7 +118,7 @@ function bakeOver(definition: ThemeDefinition, merged: ThemeDefinition, above: r
     if (value !== undefined) setOwn(tokens, name, value);
   }
 
-  const ramps = Object.fromEntries(Object.entries(definition.ramps ?? {}).map(([name, entry]) => [name, declaredSteps(entry, merged)]));
+  const ramps = Object.fromEntries(Object.entries(definition.ramps ?? {}).filter(([name]) => isSafeTokenName(name)).map(([name, entry]) => [name, declaredSteps(entry, merged)]));
   return {
     name: definition.name,
     extends: definition.extends ?? null,
