@@ -219,7 +219,7 @@ function positions(nodes: DataNode[], attrs: ReadonlyMap<string, Attrs>, bb: str
 }
 
 function portOf(r: DotReader, ref: DotNodeRef, attr: string | undefined): string | undefined {
-  const [port, compass] = ref.port !== undefined || ref.compass !== undefined ? [ref.port, ref.compass]
+  const [port, compass] = hasPort(ref) ? [ref.port, ref.compass]
     : attr === undefined || attr === '' ? [undefined, undefined]
     : attr.includes(':') ? attr.split(':') : COMPASS_PORTS.has(attr) || attr === '_' ? [undefined, attr] : [attr, undefined];
   if (port === undefined && (compass === undefined || compass === '_')) return undefined;
@@ -322,6 +322,8 @@ function clusterIds(clusters: Iterable<string>, nodes: ReadonlyMap<string, unkno
 
 const isInvisible = (attrs: Attrs) => stylesOf(str(attrs, 'style')).includes('invis');
 
+const hasPort = (ref: DotNodeRef) => ref.port !== undefined || ref.compass !== undefined;
+
 /** A strict graph's edges: one per pair of ends, the first, with the attributes every later statement naming the
  *  pair sets. */
 function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
@@ -329,7 +331,13 @@ function strictEdges(edges: readonly RawEdge[], directed: boolean): RawEdge[] {
   for (const e of edges) {
     const key = compositeKey(directed ? [e.tail.id, e.head.id] : [e.tail.id, e.head.id].sort());
     const first = kept.get(key);
-    kept.set(key, first === undefined ? e : { ...first, attrs: new Map([...first.attrs, ...e.own]) });
+    if (first === undefined) { kept.set(key, e); continue; }
+    // An undirected statement may name the pair the other way round; its ports go with the ends they name.
+    const [tail, head] = first.tail.id === e.tail.id ? [e.tail, e.head] : [e.head, e.tail];
+    kept.set(key, {
+      ...first, attrs: new Map([...first.attrs, ...e.own]),
+      tail: hasPort(tail) ? tail : first.tail, head: hasPort(head) ? head : first.head,
+    });
   }
   return [...kept.values()];
 }

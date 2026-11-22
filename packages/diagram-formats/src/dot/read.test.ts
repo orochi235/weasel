@@ -149,6 +149,15 @@ describe('reading DOT', () => {
     }
   });
 
+  it('gives a strict graph\'s merged edge the ports a later statement names', () => {
+    expect(page('strict digraph { a -> b; a:n -> b:s [color=red] }').data.edges).toMatchObject([
+      { from: 'a', to: 'b', fromPort: 'n', toPort: 's', colors: { stroke: 'red' } },
+    ]);
+    const [e] = page('strict graph { a -- b:e; b:w -- a }').data.edges;
+    expect(e).toMatchObject({ from: 'a', to: 'b', toPort: 'w' });
+    expect(e).not.toHaveProperty('fromPort');
+  });
+
   it('keeps one edge per pair of ends in a strict graph', () => {
     expect(page('strict graph { a -- b; b -- a; a -- b }').data.edges).toHaveLength(1);
     expect(page('strict digraph { "a\u0000b" -> c; a -> "b\u0000c" }').data.edges).toHaveLength(2);
