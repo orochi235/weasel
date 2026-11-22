@@ -146,6 +146,8 @@ describe("useScenePickers, geometry.picking: 'pixels'", () => {
     expect(pick(50, 50, { scale: { x: 1, y: 1 }, layerIsPainted: () => true })).toEqual(['back', 'front']);
     expect(pick(50, 50, { scale: { x: 3, y: 3 } })).toEqual(['back', 'front']);
     expect(pick(50, 50, { scale: { x: 1, y: 1 }, x: 0, y: 0 })).toEqual([]);
+    // A declared view reads its own drawing, not the surface's id frame, whatever its camera.
+    expect(pick(50, 50, { scale: { x: 1, y: 1 }, x: 0, y: 0, viewId: 'inset' })).toEqual(['back', 'front']);
   });
 
   it('draws one frame past the last node it finds', () => {

@@ -352,7 +352,7 @@ function reachableHits<TData, TLayer extends string, TPose>(scene: Scene<TData, 
  *  are what its id frames were painted with. */
 function askedOwnView(view: PickView | null | undefined, own: Pick<PickView, 'scale' | 'x' | 'y'>): boolean {
   if (!view) return true;
-  if (view.alphaOf || view.layerIsPainted) return false;
+  if (view.viewId != null || view.alphaOf || view.layerIsPainted) return false;
   return view.scale.x === own.scale.x && view.scale.y === own.scale.y
     && (view.x === undefined || view.x === own.x) && (view.y === undefined || view.y === own.y);
 }
