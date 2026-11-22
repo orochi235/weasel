@@ -1,6 +1,7 @@
 import { act, fireEvent, screen } from '@testing-library/react';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import type { Stroke, Fill } from '@weasel-js/core';
+import { PATH_Z } from '@weasel-js/geom';
 import { StrokeAndFillDemo } from '../StrokeAndFillDemo';
 import { renderWithIcons } from '../../testIcons';
 
@@ -10,6 +11,16 @@ function click(canvas: HTMLCanvasElement, x: number, y: number) {
   act(() => {
     canvas.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
     canvas.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+  });
+}
+
+function drag(canvas: HTMLCanvasElement, points: readonly (readonly [number, number])[]) {
+  act(() => {
+    const fire = (type: string, [x, y]: readonly [number, number]) =>
+      canvas.dispatchEvent(new PointerEvent(type, { bubbles: true, clientX: x, clientY: y, pointerId: 1 }));
+    fire('pointerdown', points[0]!);
+    for (const p of points.slice(1)) fire('pointermove', p);
+    fire('pointerup', points.at(-1)!);
   });
 }
 
@@ -37,6 +48,17 @@ afterEach(() => {
 });
 
 describe('StrokeAndFillDemo', () => {
+  it('commits a pencil stroke as an open path, with no edge back to its start', () => {
+    const canvas = renderWithIcons(<StrokeAndFillDemo />).container.querySelector('canvas')!;
+    const existing = new Set(window.__weaselTest!.getScene().nodes.map((n) => n.id));
+    fireEvent.click(screen.getByRole('button', { name: /pencil/i }));
+    drag(canvas, [[60, 260], [90, 200], [150, 190], [180, 250]]);
+    const stroke = window.__weaselTest!.getScene().nodes.find((n) => !existing.has(n.id));
+    const path = (stroke!.data as { path: { kind: string; commands: Uint8Array } }).path;
+    expect(path.kind).toBe('polygon');
+    expect(path.commands.at(-1)).not.toBe(PATH_Z);
+  });
+
   it('opens on the rect with both paint slots in the panel', () => {
     const { container } = renderWithIcons(<StrokeAndFillDemo />);
     expect(container.querySelector('canvas')).toBeTruthy();

@@ -1,7 +1,19 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { getPaintKind } from '@weasel-js/paint-kinds';
 import { SvgDemo } from '../SvgDemo';
+
+const UNREADABLE = '<svg data-test="unreadable"/>';
+vi.mock('@weasel-js/svg', async (importOriginal) => {
+  const real = await importOriginal<typeof import('@weasel-js/svg')>();
+  return {
+    ...real,
+    parseSvg: ((source: string, ...rest: unknown[]) => {
+      if (source === UNREADABLE) throw new Error('unreadable');
+      return (real.parseSvg as (...a: unknown[]) => unknown)(source, ...rest);
+    }) as typeof real.parseSvg,
+  };
+});
 
 const MESH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:wzl="urn:weasel-js:svg" viewBox="0 0 420 320">
   <defs>
@@ -29,5 +41,18 @@ describe('SvgDemo', () => {
     await waitFor(() => expect(document.querySelector('pre')?.textContent).toContain('<wzl:patch'), { timeout: 10_000 });
     expect(screen.queryByLabelText('parseSvg warnings')).toBeNull();
     expect(screen.queryByLabelText('serializeSvg warnings')).toBeNull();
+  });
+
+  it('keeps the viewBox of the content it still holds while the source fails to parse', async () => {
+    render(<SvgDemo />);
+    const source = screen.getByLabelText('SVG source');
+    fireEvent.change(source, {
+      target: { value: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600"><rect width="10" height="10"/></svg>' },
+    });
+    await waitFor(() => expect(document.querySelector('pre')?.textContent).toContain('viewBox="0 0 800 600"'), { timeout: 10_000 });
+    fireEvent.change(source, { target: { value: UNREADABLE } });
+    expect(await screen.findByLabelText('parseSvg warnings')).toBeTruthy();
+    await new Promise((r) => setTimeout(r, 50));
+    expect(document.querySelector('pre')?.textContent).toContain('viewBox="0 0 800 600"');
   });
 });

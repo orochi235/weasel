@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { solid, solidStroke } from '@weasel-js/paint';
-import { SceneCanvas, WeaselProvider, asNodeId, boundsOfPath, hexToRgba, pathFromD, polygonFromPoints, polylineFromPoints, pressureToWidth, regularPolygonPath, rgbaToHex, useActionsRegistry, vertexHalfWidths, useScene, type InsertNodeFactories, type InvokeParams, type Paint, type GradientPaint, type Path, type Scene, type Stroke, type View, type Fill, pathNode } from '@weasel-js/core';
+import { SceneCanvas, WeaselProvider, asNodeId, boundsOfPath, hexToRgba, pathFromD, polylineFromPoints, pressureToWidth, regularPolygonPath, rgbaToHex, useActionsRegistry, vertexHalfWidths, useScene, type InsertNodeFactories, type InvokeParams, type Paint, type GradientPaint, type Path, type Scene, type Stroke, type View, type Fill, pathNode } from '@weasel-js/core';
 import { usePencilTool } from '@weasel-js/path-tools';
 import * as pathTools from '@weasel-js/path-tools/presets';
 import { ColorField } from '@weasel-js/ui/components/ColorField';
@@ -114,14 +114,14 @@ function StrokeAndFill() {
 
   const selectedId = selection.get()[0] ?? null;
 
-  // One anchor per captured sample (`polygonFromPoints`, not a curve fit) so
+  // One anchor per captured sample (`polylineFromPoints`, not a curve fit) so
   // `vertexWidths[i]` lines up with anchor i exactly. Mapping the pointer
   // trail to geometry is the consumer's call, which is why the pressure curve
   // lives in an `insertNodeFactories` entry rather than on the pencil tool.
   const insertNodeFactories = useMemo((): InsertNodeFactories => ({
     pencil: (_bounds, { samples }) => {
       if (samples.length < 2) return null;
-      const path = polygonFromPoints(samples);
+      const path = polylineFromPoints(samples);
       const { x, y, width, height } = boundsOfPath(path);
       return {
         data: {

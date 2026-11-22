@@ -60,7 +60,8 @@ export function SceneScrollerDemo() {
 function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
   const animator = useAnimator();
   const input = usePlatformerInput();
-  const game = useRef<GameRefs>(freshGame());
+  const [initialGame] = useState(freshGame);
+  const game = useRef<GameRefs>(initialGame);
 
   const scene = useScene<WorldData, WorldLayer, RectPose>({
     systemLayers: [{ id: 'tiles' }, { id: 'entities' }, { id: 'player' }],
@@ -71,11 +72,11 @@ function SceneScrollerDemoInner({ onRestart }: { onRestart: () => void }) {
     initial: useMemo(
       () => [
         ...tileNodes(WORLD),
-        ...entityNodes(game.current.coins, game.current.enemies),
+        ...entityNodes(initialGame.coins, initialGame.enemies),
         ...flagpoleNodes(POLE),
         ...boneNodes(),
       ],
-      [],
+      [initialGame],
     ),
     // The loop rewrites poses every frame; re-rendering this component for
     // each of those writes would undo the point of the imperative camera.

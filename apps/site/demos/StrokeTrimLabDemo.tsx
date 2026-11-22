@@ -103,14 +103,19 @@ const createLabScene = (cfg: Config) => () =>
 
 /** The scene as the SVG export writes it, drawn by the browser's own SVG renderer. */
 function SvgExport({ scene, version }: { scene: ExportScene; version: string }) {
-  const [svg, setSvg] = useState<string | null>(null);
+  const [svg, setSvg] = useState<{ text: string } | { error: string } | null>(null);
   useEffect(() => {
     let live = true;
-    void exportRegionSvg(scene, PAGE, { background: '#ffffff' }).then((text) => live && setSvg(text));
+    exportRegionSvg(scene, PAGE, { background: '#ffffff' }).then(
+      (text) => { if (live) setSvg({ text }); },
+      (err: unknown) => { if (live) setSvg({ error: String(err) }); },
+    );
     return () => { live = false; };
   }, [scene, version]);
-  return svg === null ? null : (
-    <img className={s.svg} alt="The scene as exported SVG" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`} />
+  if (svg === null) return null;
+  if ('error' in svg) return <p role="alert" className={s.error}>{svg.error}</p>;
+  return (
+    <img className={s.svg} alt="The scene as exported SVG" src={`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg.text)}`} />
   );
 }
 
@@ -123,14 +128,21 @@ function PdfExport({ scene }: { scene: ExportScene }) {
     live.current = true;
     return () => { live.current = false; };
   }, []);
+  const [error, setError] = useState<string | null>(null);
   const write = async () => {
-    const blob = await exportRegionsPdf(scene, [PAGE], { background: '#ffffff', title: 'Stroke trim' });
-    if (live.current) setUrl(URL.createObjectURL(blob));
+    setError(null);
+    try {
+      const blob = await exportRegionsPdf(scene, [PAGE], { background: '#ffffff', title: 'Stroke trim' });
+      if (live.current) setUrl(URL.createObjectURL(blob));
+    } catch (err) {
+      if (live.current) setError(String(err));
+    }
   };
   return (
     <div className={s.buttons}>
       <Button onClick={() => void write()}>Write PDF</Button>
       {url && <a href={url} target="_blank" rel="noreferrer">Open the PDF</a>}
+      {error && <span role="alert" className={s.error}>{error}</span>}
     </div>
   );
 }
