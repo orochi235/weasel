@@ -29,11 +29,14 @@ export function sceneContentBounds<TData, TLayer extends string, TPose>(
   const shown = (id: NodeId): (Bounds | null)[] => {
     const node = scene.get(id);
     if (node === undefined || flags.hidden(node)) return [];
-    return gates.hidden(node) ? scene.childrenOf(id).flatMap(shown) : [boxOf(id)];
+    if (!gates.hidden(node)) return [boxOf(id)];
+    return node.consumesChildren === true ? [] : scene.childrenOf(id).flatMap(shown);
   };
+  // An operand of a node that consumes its children is drawn only as part of that node's result.
+  const consumed = (id: NodeId) => scene.ancestorsOf(id).some((a) => scene.get(a)?.consumesChildren === true);
   const parts: (Bounds | null)[] = scene.roots.flatMap(shown);
   for (const node of scene.nodes.values()) {
-    if (!node.copiesFromPose || flags.hidden(node)) continue;
+    if (!node.copiesFromPose || flags.hidden(node) || consumed(node.id)) continue;
     const copies = copiesWithin(scene, node.id, poseOf);
     if (copies.length === 0) continue;
     const own = gates.hidden(node) ? unionAabb(scene.childrenOf(node.id).flatMap(shown)) : boxOf(node.id);
