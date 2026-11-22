@@ -17,6 +17,9 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   /** The target the open pass draws into; `null` the canvas. */
   private target: GlTarget | null = null;
   private drawnInto: readonly (res.GlTexture | null)[] = [];
+  /** One transparent texel, sampled where a program has no texture it can sample, as WebGPU's dummy is. */
+  private unset: res.GlTexture | null = null;
+  private renderers = 0;
 
   readonly limits: GpuLimits;
   readonly completionStatus: number | null;
@@ -62,6 +65,8 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
   beginFrame(): void {
     const gl = this.gl;
     this.cache.reset();
+    // A restored context keeps this object but not the texture.
+    if (this.unset && !gl.isTexture(this.unset.handle)) this.unset = null;
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.blendEquation(gl.FUNC_ADD);
@@ -221,13 +226,31 @@ export class WebGLDevice implements GpuDevice, GlProgramHost {
     cache.setStencil(state.stencil);
     const geom = geometry as res.GlGeometry;
     cache.bindVertexArray(geom.vao);
-    // A texture the pass draws into reads as unset, as on WebGPU, rather than a feedback loop GL drops the draw for.
-    cache.bindTextures(program.textures as readonly (res.GlTexture | null)[], this.drawnInto);
+    // A texture the pass draws into reads as unset, rather than a feedback loop GL drops the draw for.
+    cache.bindTextures(program.textures as readonly (res.GlTexture | null)[], this.drawnInto, this.unsetTexture);
     const type = res.indexType(gl, geom.indexFormat);
     const offset = firstIndex * (geom.indexFormat === 'uint16' ? 2 : 4);
     if (instances === undefined) gl.drawElements(gl.TRIANGLES, count, type, offset);
     else gl.drawElementsInstanced(gl.TRIANGLES, count, type, offset, instances);
   }
+
+  /** One more renderer draws through this device; its `dispose` is the release. */
+  retain(): void {
+    this.renderers++;
+  }
+
+  dispose(): void {
+    if (--this.renderers > 0) return;
+    this.renderers = 0;
+    if (this.unset) res.deleteTexture(this.gl, this.cache, this.unset);
+    this.unset = null;
+  }
+
+  private readonly unsetTexture = (): WebGLTexture => {
+    this.unset ??= res.createTexture(this.gl, this.cache, 'rgba8',
+      { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 1, height: 1, data: new Uint8Array(4) });
+    return this.unset.handle;
+  };
 
   resolve(source: GpuTarget, dest: GpuTarget, width: number, height: number, x: number, y: number): void {
     resolve(this.gl, this.cache, source as GlTarget, dest as GlTarget, width, height, x, y);

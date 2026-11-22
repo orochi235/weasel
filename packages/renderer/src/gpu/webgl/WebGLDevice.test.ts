@@ -213,6 +213,113 @@ describe('WebGLDevice textures', () => {
   });
 });
 
+describe('WebGLDevice textures it cannot sample', () => {
+  const handleOf = (t: unknown): WebGLTexture => (t as { handle: WebGLTexture }).handle;
+  const NEAREST = { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' } as const;
+  /** The texture created with one transparent texel, which WebGPU samples for a texture it cannot. */
+  const transparent = (rec: GLRecorder): WebGLTexture[] => {
+    const out: WebGLTexture[] = [];
+    let bound: WebGLTexture | null = null;
+    for (const c of rec.calls) {
+      if (c.name === 'bindTexture') bound = c.args[1] as WebGLTexture | null;
+      if (c.name === 'texImage2D' && c.args[3] === 1 && c.args[4] === 1
+          && c.args[8] instanceof Uint8Array && (c.args[8] as Uint8Array).every((b) => b === 0)) out.push(bound!);
+    }
+    return out;
+  };
+
+  it('samples transparent black for a texture deleted while a program still holds it, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    const tex = gpu.createTexture('rgba8', NEAREST, { width: 2, height: 2, data: null });
+    program.setTexture('u_a', tex);
+    gpu.draw(state(), geometry, 3);
+    gpu.deleteTexture(tex);
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    const bound = argsOf(rec, 'bindTexture').map(([, t]) => t);
+    expect(bound).not.toContain(handleOf(tex));
+    expect(bound.at(-1)).toBe(transparent(rec)[0]);
+  });
+
+  it('samples transparent black for a texture the pass draws into, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    const target = gpu.createTarget({ width: 4, height: 4 });
+    program.setTexture('u_a', target.color);
+    gpu.beginPass({ target, viewport: { x: 0, y: 0, width: 4, height: 4 } });
+    rec.reset();
+    gpu.draw(state(), geometry, 3);
+    const [dummy] = transparent(rec);
+    expect(dummy).toBeTruthy();
+    expect(argsOf(rec, 'bindTexture').at(-1)).toEqual([rec.gl.TEXTURE_2D, dummy]);
+  });
+
+  it('frees its transparent texel when the last renderer drawing through it is done', () => {
+    const { rec, gpu } = setup();
+    const { program, geometry, state } = drawable(gpu);
+    gpu.retain();
+    gpu.retain();
+    program.setTexture('u_a', null);
+    gpu.draw(state(), geometry, 3);
+    const [dummy] = transparent(rec);
+    gpu.dispose();
+    expect(argsOf(rec, 'deleteTexture')).toEqual([]);
+    gpu.dispose();
+    expect(argsOf(rec, 'deleteTexture')).toEqual([[dummy]]);
+  });
+});
+
+describe('WebGLDevice sampler arrays', () => {
+  it('refuses a texture index outside the sampler, which would take another sampler\'s unit', () => {
+    const { gpu } = setup();
+    const program = gpu.createProgram({ glsl: { vert: VERT, frag: '#version 300 es\nprecision highp float;\n'
+      + 'uniform sampler2D u_a[2];\nuniform sampler2D u_b;\nout vec4 o;\n'
+      + 'void main() { o = texture(u_a[1], vec2(0.0)) + texture(u_b, vec2(0.0)); }\n' } });
+    program.lookupUniforms(['u_b']);
+    program.lookupUniformArrays(new Map([['u_a', { type: 'sampler2D', size: 2 }]]));
+    const tex = gpu.createTexture('rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 1, height: 1, data: null });
+    program.setTexture('u_a', tex, 1);
+    program.setTexture('u_b', tex);
+    expect(() => program.setTexture('u_a', tex, 2)).toThrow(RangeError);
+    expect(() => program.setTexture('u_b', tex, 1)).toThrow(RangeError);
+    expect(() => program.setTexture('u_a', tex, -1)).toThrow(RangeError);
+  });
+});
+
+describe('WebGLDevice mipmapped textures', () => {
+  const MIPMAPPED = { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp', mipmap: true } as const;
+  const maxLevels = (rec: GLRecorder): unknown[] =>
+    argsOf(rec, 'texParameteri').filter(([, pname]) => pname === rec.gl.TEXTURE_MAX_LEVEL).map(([, , v]) => v);
+
+  it('samples level 0 alone until mipmaps are made, and again once a write resizes it, as WebGPU does', () => {
+    const { rec, gpu } = setup();
+    const tex = gpu.createTexture('rgba8', MIPMAPPED, { width: 4, height: 4, data: new Uint8Array(64) });
+    expect(maxLevels(rec)).toEqual([0]);
+    rec.reset();
+    gpu.generateMipmaps(tex);
+    expect(maxLevels(rec)).toEqual([1000]);
+    rec.reset();
+    gpu.writeTexture(tex, { width: 4, height: 4, data: new Uint8Array(64) });
+    expect(maxLevels(rec)).toEqual([]);
+    gpu.writeTexture(tex, { width: 8, height: 8, data: new Uint8Array(256) });
+    expect(maxLevels(rec)).toEqual([0]);
+  });
+});
+
+describe('WebGLDevice buffer writes', () => {
+  it('refuses one running past the buffer, as WebGPU does, rather than dropping it with a GL error', () => {
+    const { rec, gpu } = setup();
+    const buffer = gpu.createBuffer('vertex', 8, 'dynamic');
+    gpu.writeBuffer(buffer, 0, new Float32Array(4), 2, 2);
+    expect(() => gpu.writeBuffer(buffer, 4, new Float32Array(2))).toThrow(RangeError);
+    expect(() => gpu.writeBuffer(buffer, 0, new Float32Array(4), 1)).toThrow(RangeError);
+    gpu.resizeBuffer(buffer, new Float32Array(4), 'dynamic');
+    gpu.writeBuffer(buffer, 4, new Float32Array(3));
+    expect(argsOf(rec, 'bufferSubData')).toHaveLength(2);
+  });
+});
+
 describe('WebGLDevice id targets', () => {
   it('draws the id attachment only for a draw that writes ids, and clears both', () => {
     const { rec, gpu } = setup();

@@ -6,9 +6,12 @@ import type {
 import type { GlCache } from './glCache';
 import { withFlagHonoringSource } from './bitmapCanvas';
 import { packedStride } from '../vertexLayout';
+import { textureSize } from '../textureSize';
+import { bytesOf, checkBufferWrite } from '../bufferWrite';
 
 export interface GlBuffer extends GpuBuffer {
   readonly handle: WebGLBuffer;
+  size: number;
   /** The geometry this index buffer was last bound into, which holds it as
    *  its element binding: a write binds that, not some other. */
   owner?: GlGeometry;
@@ -24,6 +27,11 @@ export interface GlTexture extends GpuTexture {
   readonly format: GpuTextureFormat;
   /** The sampling last set, so an unchanged one is not sent again. */
   sampling: GpuSampling;
+  deleted: boolean;
+  width: number;
+  height: number;
+  /** Whether levels past 0 hold mipmaps of level 0's size; until they do, sampling reads level 0 alone. */
+  mipmapped: boolean;
 }
 
 function usageOf(gl: WebGL2RenderingContext, usage: GpuBufferUsage): number {
@@ -49,7 +57,7 @@ export function createBuffer(
 ): GlBuffer {
   const handle = gl.createBuffer();
   if (!handle) throw new Error(`createBuffer (${kind}) returned null`);
-  const buffer: GlBuffer = { kind, handle };
+  const buffer: GlBuffer = { kind, handle, size: 0 };
   resizeBuffer(gl, cache, buffer, init, usage);
   return buffer;
 }
@@ -59,12 +67,14 @@ export function resizeBuffer(
 ): void {
   const target = bindBuffer(gl, cache, buffer);
   gl.bufferData(target, init as ArrayBufferView, usageOf(gl, usage));
+  buffer.size = typeof init === 'number' ? init : init.byteLength;
 }
 
 export function writeBuffer(
   gl: WebGL2RenderingContext, cache: GlCache, buffer: GlBuffer, dstByteOffset: number, data: ArrayBufferView,
   srcOffset?: number, length?: number,
 ): void {
+  checkBufferWrite(dstByteOffset, dstByteOffset + bytesOf(data, srcOffset, length).byteLength, buffer.size);
   const target = bindBuffer(gl, cache, buffer);
   if (srcOffset === undefined && length === undefined) gl.bufferSubData(target, dstByteOffset, data);
   else gl.bufferSubData(target, dstByteOffset, data, srcOffset ?? 0, length);
@@ -158,16 +168,26 @@ export function createTexture(
 ): GlTexture {
   const handle = gl.createTexture();
   if (!handle) throw new Error('createTexture returned null');
-  const texture: GlTexture = { kind: 'texture', handle, format, sampling };
+  const texture: GlTexture = { kind: 'texture', handle, format, sampling, deleted: false, ...textureSize(data), mipmapped: false };
   cache.withTexture(handle, () => {
     upload(gl, format, data);
     applySampling(gl, sampling);
+    // GL's default of 1000 leaves a mipmap filter reading levels nothing has filled, which samples black; WebGPU reads level 0.
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 0);
   });
   return texture;
 }
 
 export function writeTexture(gl: WebGL2RenderingContext, cache: GlCache, texture: GlTexture, data: GpuTextureData): void {
-  cache.withTexture(texture.handle, () => upload(gl, texture.format, data));
+  const { width, height } = textureSize(data);
+  const resized = width !== texture.width || height !== texture.height;
+  cache.withTexture(texture.handle, () => {
+    upload(gl, texture.format, data);
+    if (resized && texture.mipmapped) gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 0);
+  });
+  texture.width = width;
+  texture.height = height;
+  if (resized) texture.mipmapped = false;
 }
 
 export function writeSubTexture(
@@ -186,7 +206,11 @@ export function writeSubTexture(
 }
 
 export function generateMipmaps(gl: WebGL2RenderingContext, cache: GlCache, texture: GlTexture): void {
-  cache.withTexture(texture.handle, () => gl.generateMipmap(gl.TEXTURE_2D));
+  cache.withTexture(texture.handle, () => {
+    if (!texture.mipmapped) gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAX_LEVEL, 1000);
+    gl.generateMipmap(gl.TEXTURE_2D);
+  });
+  texture.mipmapped = true;
 }
 
 export function setSampling(
@@ -202,5 +226,6 @@ export function setSampling(
 
 export function deleteTexture(gl: WebGL2RenderingContext, cache: GlCache, texture: GlTexture): void {
   cache.forgetTexture(texture.handle);
+  texture.deleted = true;
   gl.deleteTexture(texture.handle);
 }

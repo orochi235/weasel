@@ -280,3 +280,38 @@ describe('a WGSL program holding a texture since freed', () => {
     expect(program.boundTextures(1, new Set())).not.toContain(target.color);
   });
 });
+
+describe('a WGSL program given a texture index outside its sampler', () => {
+  it('refuses it, as the WebGL backend does', () => {
+    const wgsl = [
+      '@group(1) @binding(0) var u_a_0: texture_2d<f32>;',
+      '@group(1) @binding(1) var u_a_0_sampler: sampler;',
+      '@group(1) @binding(2) var u_a_1: texture_2d<f32>;',
+      '@group(1) @binding(3) var u_a_1_sampler: sampler;',
+      '@group(1) @binding(4) var u_b: texture_2d<f32>;',
+      '@group(1) @binding(5) var u_b_sampler: sampler;',
+      '@vertex fn vs(@location(0) a_position: vec2f) -> @builtin(position) vec4f { return vec4f(a_position, 0.0, 1.0); }',
+      '@fragment fn fs() -> @location(0) vec4f { return textureSample(u_a_1, u_a_1_sampler, vec2f(0.0)) + textureSample(u_b, u_b_sampler, vec2f(0.0)); }',
+    ].join('\n');
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const program = gpu.createProgram({ wgsl });
+    const tex = gpu.createTexture('rgba8', { min: 'nearest', mag: 'nearest', wrapS: 'clamp', wrapT: 'clamp' }, { width: 1, height: 1, data: null });
+    program.setTexture('u_a', tex, 1);
+    program.setTexture('u_b', tex);
+    expect(() => program.setTexture('u_a', tex, 2)).toThrow(RangeError);
+    expect(() => program.setTexture('u_b', tex, 1)).toThrow(RangeError);
+    program.setTexture('u_missing', tex, 3);
+  });
+});
+
+describe('a WebGPU buffer write', () => {
+  it('refuses one running past the buffer, which would drop the write with a device error', () => {
+    const fake = fakeGpuDevice();
+    const gpu = new WebGPUDevice(fake.device, fake.canvas as unknown as HTMLCanvasElement, fake.context, 'rgba8unorm', true);
+    const buffer = gpu.createBuffer('vertex', 6, 'dynamic');
+    gpu.writeBuffer(buffer, 0, new Uint8Array(6));
+    expect(() => gpu.writeBuffer(buffer, 0, new Uint8Array(10))).toThrow(/buffer write/);
+    expect(() => gpu.writeBuffer(buffer, 4, new Uint8Array(4))).toThrow(/buffer write/);
+  });
+});

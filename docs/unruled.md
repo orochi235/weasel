@@ -3792,3 +3792,11 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `weaselforge build` refuses an `--out` that is the vite root or holds it, as it
   refuses one holding the current directory, since the build writes its `index.html` and assets over the root's
   sources. Building there without emptying it, as vite itself does after a warning, was the alternative.
+## Audit round seventy-one (2026-11-22): renderer's GPU layer
+
+- 2026-11-22 (the fixer's call): a program's `setTexture` throws a `RangeError` for an index outside the sampler it
+  names, on both backends, where WebGL wrote the next sampler's unit and WebGPU ignored it. A sampler the shader does
+  not have is still ignored. Ignoring an out-of-range index on both was the alternative.
+- 2026-11-22 (the fixer's call): a device's `writeBuffer` throws a `RangeError` for a write running past the buffer's
+  size, on both backends, where WebGL dropped it with a GL error and WebGPU dropped it with a device error. Clipping the
+  write to the buffer was the alternative.

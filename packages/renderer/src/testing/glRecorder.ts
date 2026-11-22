@@ -114,6 +114,7 @@ const GL_CONSTANTS: Readonly<Record<string, number>> = {
   R8: 0x8229,
   UNSIGNED_BYTE: 0x1401,
   TEXTURE_MIN_FILTER: 0x2801,
+  TEXTURE_MAX_LEVEL: 0x813D,
   TEXTURE_MAG_FILTER: 0x2800,
   LINEAR: 0x2601,
   NEAREST: 0x2600,
@@ -170,6 +171,7 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
   const calls: GLCall[] = [];
   // Not `calls.length`, which a reset rewinds: handles minted after it would equal earlier ones.
   let minted = 0;
+  const liveTextures = new WeakSet<object>();
   // Per program, as a real context keeps them: an attribute's index, which `bindAttribLocation` sets and
   // a lookup otherwise picks the lowest free one for, and a uniform's location.
   const attributes = new Map<unknown, Map<string, number>>();
@@ -210,6 +212,13 @@ export function createGLRecorder(options: GLRecorderOptions = {}): GLRecorder {
       case 'createFramebuffer':
       case 'createRenderbuffer':
         result = syntheticHandle(name, minted++);
+        if (name === 'createTexture') liveTextures.add(result as object);
+        break;
+      case 'deleteTexture':
+        if (args[0]) liveTextures.delete(args[0] as object);
+        break;
+      case 'isTexture':
+        result = args[0] !== null && typeof args[0] === 'object' && liveTextures.has(args[0]);
         break;
       case 'bindAttribLocation':
         namesOf(attributes, args[0]).set(args[2] as string, args[1] as number);

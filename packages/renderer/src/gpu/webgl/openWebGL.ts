@@ -12,5 +12,7 @@ export function openWebGL(opts: Pick<WeaselRendererOptions, 'gl' | 'canvas'>): {
   }
   const gl = opts.gl ?? opts.canvas!.getContext('webgl2', RENDERER_CONTEXT_ATTRIBUTES);
   if (!gl) throw new Error('WeaselRenderer: WebGL2 not available');
-  return { device: webglDevice(gl), lossTarget: (gl.canvas as Partial<EventTarget> | undefined) ?? null };
+  const device = webglDevice(gl);
+  device.retain();
+  return { device, lossTarget: (gl.canvas as Partial<EventTarget> | undefined) ?? null };
 }

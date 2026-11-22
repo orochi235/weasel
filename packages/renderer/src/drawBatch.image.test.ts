@@ -152,11 +152,14 @@ describe('renderer — consecutive image batching', () => {
     const other = bitmap();
     r.render([img(0), { ...img(20), image: other }]);
     const [units] = unitsAtDraws();
-    // Unit 0 for white, then one per bitmap, and nothing on the rest: a slot
+    // Unit 0 for white, then one per bitmap, and the device's transparent texel on the rest: a slot
     // no vertex names holds no texture an earlier flush bound.
     expect(units[0]).toBeTruthy();
     expect(units.slice(1, 3)).toEqual([handleOf(atlas), handleOf(other)]);
-    expect(units.slice(3)).toEqual(new Array(BATCH_TEXTURE_SLOTS - 3).fill(null));
+    const unset = units[3];
+    expect(unset).toBeTruthy();
+    expect([units[0], handleOf(atlas), handleOf(other)]).not.toContain(unset);
+    expect(units.slice(3)).toEqual(new Array(BATCH_TEXTURE_SLOTS - 3).fill(unset));
   });
 
   it('keeps eight bitmaps in one run, which seven slots could not', () => {
@@ -220,7 +223,8 @@ describe('renderer — consecutive image batching', () => {
       const ramp = (rendererParts(r).gradRamps.atlas() as unknown as { handle: unknown }).handle;
       expect(units[1]).toBe(handleOf(atlas));
       expect(units[RAMP_SLOT]).toBe(ramp);
-      expect(units.slice(2, RAMP_SLOT)).toEqual(new Array(RAMP_SLOT - 2).fill(null));
+      expect(units.slice(2, RAMP_SLOT)).toEqual(new Array(RAMP_SLOT - 2).fill(units[2]));
+      expect([handleOf(atlas), ramp]).not.toContain(units[2]);
       const v = quadUploads()[0];
       const slot = (vertex: number) => v[vertex * FLOATS_PER_VERTEX + SLOT] % BATCH_TEXTURE_SLOTS;
       expect([slot(0), slot(4)]).toEqual([RAMP_SLOT, 1]);

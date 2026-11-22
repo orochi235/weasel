@@ -15,6 +15,7 @@ import { EFFECT_KIT_WGSL_NAMES } from './wgsl/effectPrelude';
 import { PAINT_KIT_WGSL_NAMES } from './wgsl/paintPrelude';
 import type { WgpuTexture } from './wgpuResources';
 import { getOwn } from '@weasel-js/registry';
+import { checkSamplerIndex } from '../samplerIndex';
 
 /** The kit names a draw sets, and what the custom, effect and paint preludes call them. */
 const ALIASES: Readonly<Record<string, string>> = {
@@ -255,7 +256,12 @@ export class WgpuProgram implements GpuProgram {
 
   setTexture(name: string, texture: GpuTexture | null, index = 0): void {
     const slot = this.textureName(name, index);
-    if (slot !== undefined) this.textures.set(slot, texture as WgpuTexture | null);
+    if (slot !== undefined) {
+      this.textures.set(slot, texture as WgpuTexture | null);
+      return;
+    }
+    const array = this.array(name);
+    if (array || this.textureName(name, 0) !== undefined) checkSamplerIndex(name, index, array?.size ?? 1);
   }
 
   /** Bytes the next draw uploads: every block changed since it was last
