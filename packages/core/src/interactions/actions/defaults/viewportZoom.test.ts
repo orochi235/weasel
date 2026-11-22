@@ -421,9 +421,10 @@ describe('viewport.zoom variants', () => {
     ['Cmd++ on a layout with its own + key', { key: '+', code: 'BracketRight', shiftKey: false }],
     ['Cmd+numpad +', { key: '+', code: 'NumpadAdd', shiftKey: false }],
   ])('zooms in on %s', (_name, keys) => {
-    const binding = createViewportZoomAction().defaultBinding!.find((b) => b.opts?.id === 'viewport.zoom.in')!;
+    const bindings = createViewportZoomAction().defaultBinding as Array<{ spec: GestureSpec; opts: { id: string } }>;
+    const binding = bindings.find((b) => b.opts.id === 'viewport.zoom.in')!;
     const e = { kind: 'key', metaKey: true, ctrlKey: false, altKey: false, ...keys } as unknown as InputEvent;
-    expect(matchSpec(e, binding.spec as GestureSpec, true)).toBe(true);
+    expect(matchSpec(e, binding.spec, true)).toBe(true);
   });
 
   it('finds each variant its key binding as a shortcut', () => {

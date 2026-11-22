@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, contextMenuAction, openContextMenu } from '@weasel-js/core';
+import type { ImmediateInvoker } from '@weasel-js/routing';
 
 function deps(matches = true) {
   return {
@@ -38,8 +39,8 @@ describe('menu.context with only menuHost, view and worldToClient', () => {
 
   it('passes the key on when nothing opens', () => {
     const d = { ...deps(), view: { ...deps().view, hostSize: undefined } };
-    const run = contextMenuAction.invoker.timing === 'immediate' ? contextMenuAction.invoker.run : undefined;
-    expect(run?.(d as never, undefined)).toBe('pass');
-    expect(run?.(deps() as never, undefined)).toBeUndefined();
+    const run = (contextMenuAction.invoker as ImmediateInvoker).run;
+    expect(run(d as never, undefined)).toBe('pass');
+    expect(run(deps() as never, undefined)).toBeUndefined();
   });
 });
