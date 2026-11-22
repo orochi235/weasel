@@ -3761,3 +3761,7 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): an `aqua` effect's `equatorTint` or `baseTint`, or a `metal` effect's `topDarkness` or
   `baseDarkness`, throws a `RangeError` naming it outside 0..100, as round 58 ruled for `plaque({ mix })`, since
   `color-mix()` rejects such a percentage and the stop paints black. Clamping it was the alternative.
+- 2026-11-22 (the fixer's call): a `sunbeams` beam leans at most 89° either way, its `angle` and the jitter
+  `irregularity` adds to it alike, so a beam jittered past 90° no longer leans the other way and `angle: 90` draws
+  thin near-horizontal beams rather than an infinite shear. Reading an angle past 90° as its equivalent mod 180° was
+  the alternative.

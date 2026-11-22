@@ -10,6 +10,7 @@ import Puffs from './Puffs';
 import Rivets from './Rivets';
 import Scallops from './Scallops';
 import Spikes from './Spikes';
+import Sunbeams from './Sunbeams';
 import { rangeMask } from './rangeMask';
 
 const line = (s: number): PerimeterPoint => ({ x: s, y: 0, nx: 0, ny: -1 });
@@ -93,4 +94,19 @@ describe('a glassy effect color-mix percentage', () => {
       for (const v of [0, 100]) expect(draw(effect, { [param]: v }).innerHTML).toContain(`${v}%`);
     });
   }
+});
+
+describe('a sunbeams angle near 90°', () => {
+  const beams = (params: object) => [...draw(Sunbeams, { count: 40, width: 2, gap: 1, ...params }).querySelectorAll('polygon')]
+    .map((p) => p.getAttribute('points')!.split(' ').map((xy) => xy.split(',').map(Number)));
+
+  it('keeps every jittered beam leaning the way `angle` does', () => {
+    for (const pts of beams({ angle: 85, irregularity: 1 })) expect(pts[0][0]).toBeGreaterThan(pts[3][0]);
+    for (const pts of beams({ angle: -85, irregularity: 1 })) expect(pts[0][0]).toBeLessThan(pts[3][0]);
+  });
+
+  it('holds a beam short of horizontal, drawing it at 89°', () => {
+    expect(beams({ angle: 90 })).toEqual(beams({ angle: 89 }));
+    expect(beams({ angle: 135 })).toEqual(beams({ angle: 89 }));
+  });
 });
