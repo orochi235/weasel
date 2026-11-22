@@ -114,19 +114,28 @@ void main() {
 
 function compile(gl: WebGLRenderingContext): WebGLProgram {
   const program = gl.createProgram();
-  for (const [type, src] of [
-    [gl.VERTEX_SHADER, VERT],
-    [gl.FRAGMENT_SHADER, FRAG],
-  ] as const) {
-    const shader = gl.createShader(type);
-    if (!shader) throw new Error('createShader failed');
-    gl.shaderSource(shader, src);
-    gl.compileShader(shader);
-    gl.attachShader(program, shader);
-    gl.deleteShader(shader);
+  if (!program) throw new Error('createProgram failed');
+  try {
+    for (const [type, src] of [
+      [gl.VERTEX_SHADER, VERT],
+      [gl.FRAGMENT_SHADER, FRAG],
+    ] as const) {
+      const shader = gl.createShader(type);
+      if (!shader) throw new Error('createShader failed');
+      gl.shaderSource(shader, src);
+      gl.compileShader(shader);
+      const log = gl.getShaderParameter(shader, gl.COMPILE_STATUS) ? null : gl.getShaderInfoLog(shader);
+      gl.attachShader(program, shader);
+      gl.deleteShader(shader);
+      if (log !== null) throw new Error(`shader compile failed: ${log}`);
+    }
+    gl.linkProgram(program);
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) throw new Error(`program link failed: ${gl.getProgramInfoLog(program)}`);
+    return program;
+  } catch (e) {
+    gl.deleteProgram(program);
+    throw e;
   }
-  gl.linkProgram(program);
-  return program;
 }
 
 /**

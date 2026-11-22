@@ -17,13 +17,16 @@ beforeAll(() => {
   } as unknown as typeof ResizeObserver;
 });
 
-/** A WebGL context whose every call succeeds, counting what is made and what is deleted. */
-function countingGl() {
+/** A WebGL context whose every call succeeds, counting what is made and what is deleted. `fails` names the calls
+ *  that answer 0 instead. */
+function countingGl(fails: readonly string[] = []) {
   const live = new Set<object>();
   const gl = new Proxy({} as Record<string, unknown>, {
     get(_, key: string) {
       if (key === 'canvas') return document.createElement('canvas');
       if (/^[A-Z_]+$/.test(key)) return 1;
+      if (fails.includes(key)) return () => 0;
+      if (key.endsWith('InfoLog')) return () => `${key} says no`;
       return (...args: unknown[]) => {
         if (/^create(Program|Shader|Buffer)$/.test(key)) { const made = { key }; live.add(made); return made; }
         if (/^delete(Program|Shader|Buffer)$/.test(key)) { live.delete(args[0] as object); return undefined; }
@@ -80,5 +83,16 @@ describe('the loupe lab\'s foreign WebGL view', () => {
     await act(async () => {});
     frames();
     expect(queued.size).toBeGreaterThan(0);
+  });
+
+  it.each([
+    ['getShaderParameter', /compile.*getShaderInfoLog says no/],
+    ['getProgramParameter', /link.*getProgramInfoLog says no/],
+  ])('throws with the log when %s reports a failure, deleting what it made', (call, message) => {
+    const { gl, live } = countingGl([call]);
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((kind: string) => (kind === 'webgl' ? gl : null)) as never);
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(() => renderWithIcons(<ForeignGl />)).toThrow(message);
+    expect([...live]).toEqual([]);
   });
 });
