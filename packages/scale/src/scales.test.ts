@@ -278,3 +278,13 @@ describe('ordinalScale', () => {
     expect(() => ordinalScale({ domain: [], range: [] })).toThrow(/empty range/);
   });
 });
+
+describe('a band scale of one band that is all padding', () => {
+  it('steps the whole range and sits at its middle', () => {
+    const s = bandScale({ domain: ['a'], range: [0, 100], paddingInner: 1, paddingOuter: 0 });
+    expect(s.step).toBe(100);
+    expect(s.bandwidth).toBe(0);
+    expect(s.position('a')).toBe(50);
+    expect(s.invert(10)).toBe('a');
+  });
+});

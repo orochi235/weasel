@@ -34,9 +34,12 @@ export function bandScale(opts: BandScaleOptions): BandScale {
   const [r0, r1] = opts.range;
   // A padding that is not a number takes its default, as an absent one does.
   const inner = Math.min(1, Math.max(0, Number.isNaN(opts.paddingInner) ? 0.2 : opts.paddingInner ?? 0.2));
-  const outer = Number.isFinite(opts.paddingOuter) ? Math.max(0, opts.paddingOuter!) : inner / 2;
   const n = domain.length;
-  const step = n === 0 ? 0 : (r1 - r0) / Math.max(1e-9, n - inner + 2 * outer);
+  const given = Number.isFinite(opts.paddingOuter) ? Math.max(0, opts.paddingOuter!) : inner / 2;
+  // One band that is all padding spans no steps (or a sliver past none); it gets a step of the whole range, centered.
+  const steps = n - inner + 2 * given;
+  const outer = steps < 1e-9 ? given + (1 - steps) / 2 : given;
+  const step = n === 0 ? 0 : (r1 - r0) / (n - inner + 2 * outer);
   const bandwidth = Math.abs(step * (1 - inner));
   const index = new Map(domain.map((key, i) => [key, i]));
   const startAt = (i: number) => r0 + step * (outer + i) + (step < 0 ? step * (1 - inner) : 0);
