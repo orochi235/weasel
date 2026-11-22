@@ -318,11 +318,12 @@ provide the corresponding chrome; they compose freely.
 | --- | --- |
 | `canvas` | A stack of layered `<canvas>` elements with pan and zoom, redrawing only the layers that changed |
 | `stage` | Pan and zoom over the instrument's own DOM, laid out at a fixed size |
+| `canvas.rulers`, `stage.rulers` | A Guides menu switching rulers along the camera, the guides dragged off them, and snapping to them (`ctx.trial.snap`), all off at first. `<TrialSceneCanvas rulers>` offers the same |
 | `orbit` | A 3D orbit camera — turn, pan, dolly, home — for a renderer the instrument brings |
 | `layers` | A sidebar list that hides and reorders those layers |
 | `annotations` | Drawing tools, an overlay on each region you name, a Marks panel, undo and export |
 | `dragDrop` | A palette to drag items from, and a drop pipeline that hands you world coordinates |
-| `undo` | On by default: undo and redo buttons, snapshotting state and settings together on `state.change` and `config.change`, or the events you name — or stepping a history of the instrument's own, handed over with `useTrialHistory`. `undo: false` turns it off |
+| `undo` | On by default: undo and redo buttons, snapshotting state and settings together on `state.change` and `config.change`, and each guide edit on `guides.change`, or the events you name — or stepping a history of the instrument's own, handed over with `useTrialHistory`. `undo: false` turns it off |
 | `job` | Starts async work, aborts it on unmount and on a key change, and renders progress and a cancel control |
 | `clock` | Playback time on `ctx.trial.clock`, which a canvas layer marked `timed` redraws from. Outside a presentation the trial draws no play controls: put a `<TrialTransport>` in a chrome contribution, as `{ id: 'transport', region: 'status', render: () => <TrialTransport /> }` |
 | `tools` | A tool palette and a tool slot on the trial |

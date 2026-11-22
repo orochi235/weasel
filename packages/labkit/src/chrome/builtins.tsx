@@ -64,7 +64,6 @@ function guidesMenu(guides: NonNullable<TrialChromeContext['guides']>): TrialCon
     item: {
       kind: 'menu',
       label: 'Guides',
-      showLabel: true,
       entries: GUIDE_SWITCHES.map(([key, label]) => ({
         kind: 'item',
         key,
