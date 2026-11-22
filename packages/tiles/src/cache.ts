@@ -31,8 +31,10 @@ export interface TileCacheOptions<P> {
   minCount?: number;
 }
 
+/** The least a cache's count bound falls to, whatever its working set. */
 export const DEFAULT_MIN_TILE_COUNT = 128;
 
+/** Held tiles by id, bounded by count and bytes: the least recently drawn go first, never a pinned floor tile or one drawn this frame. */
 export class TileCache<K, P> {
   private readonly held = new Map<string, HeldTile<K, P>>();
   private readonly floor = new Set<string>();

@@ -30,6 +30,7 @@ export interface SceneSource<TData, TLayer extends string, TPose> {
   load(cell: SceneCell, signal: AbortSignal): Promise<readonly AddNodeSpec<TData, TLayer, TPose>[]>;
 }
 
+/** How `streamScene` loads: how many cells at once, how many held, and how far past the view. */
 export interface StreamSceneOptions {
   /** Cells loading at once. Default 4. */
   maxConcurrent?: number;

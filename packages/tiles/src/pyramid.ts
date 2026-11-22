@@ -41,6 +41,7 @@ export interface TileBudget {
   readonly clock: () => number;
 }
 
+/** A pyramid's scheme and cache bounds, its deepest level, fade time and floor. */
 export interface TilePyramidOptions<K, V, P> extends TileCacheOptions<P> {
   scheme: TileScheme<K, V>;
   /** The tiles always held, never evicted, so something can always stand in: the content at a level
