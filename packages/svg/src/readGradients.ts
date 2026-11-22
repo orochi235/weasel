@@ -9,7 +9,7 @@ import { tryParseColor, type GradStop, type Paint } from '@weasel-js/core';
 import { parseRatio, readStops } from './gradientStops';
 import { resolveLength, type LengthAxis } from './lengths';
 import { collectElementsByTag, type ElementTable } from './elements';
-import { SUPPORTED_LEAF_TAGS } from './lowerLeaf';
+import { IGNORED_TAGS, SUPPORTED_LEAF_TAGS } from './lowerLeaf';
 import { WEASEL_NS, WEASEL_NS_PREFIX } from './gradients';
 
 /** Collected gradient definitions, keyed by element id. */
@@ -64,7 +64,7 @@ function warnUnsupportedDefsChildren(svg: Element, onWarn?: (m: string) => void)
   for (const defs of Array.from(svg.getElementsByTagName('defs'))) {
     for (const child of Array.from(defs.children)) {
       const tag = child.tagName.toLowerCase();
-      if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag)) || DEFS_READ.has(tag) || SUPPORTED_LEAF_TAGS.has(tag)) continue;
+      if (GRADIENT_TAGS.has(tag) || GRADIENT_TAGS.has(localName(tag)) || DEFS_READ.has(tag) || IGNORED_TAGS.has(tag) || SUPPORTED_LEAF_TAGS.has(tag)) continue;
       onWarn?.(`unsupported <defs> child: <${child.tagName}>`);
     }
   }
