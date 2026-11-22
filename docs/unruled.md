@@ -3800,3 +3800,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a device's `writeBuffer` throws a `RangeError` for a write running past the buffer's
   size, on both backends, where WebGL dropped it with a GL error and WebGPU dropped it with a device error. Clipping the
   write to the buffer was the alternative.
+
+## Audit round seventy-one (2026-11-22): renderer, part one
+
+- 2026-11-22: `WeaselRenderer` throws when given both `gl` and a `canvas` that is not `gl.canvas`, rather than
+  letting `gl` win and ignoring the canvas, or sizing and watching the wrong one as it did. A stand-in `gl.canvas`
+  that is not a real canvas (a test double's) is not checked.

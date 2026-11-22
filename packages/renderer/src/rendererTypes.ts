@@ -96,7 +96,8 @@ export interface WeaselRendererOptions {
    *  context and sets its drawing buffer, as it does a WebGL canvas's. Only
    *  programs and effects with WGSL draw; one without is reported once. */
   gpu?: WebGPUSurface;
-  /** A WebGL2 context to draw with. Wins over `canvas`. */
+  /** A WebGL2 context to draw with. With `canvas` too, that must be the
+   *  context's own canvas, which the renderer then sizes; any other throws. */
   gl?: WebGL2RenderingContext;
   /** A canvas to open a stencil-backed WebGL2 context on, when `gl` is absent.
    *  The renderer sets its drawing buffer and never its CSS size. An `OffscreenCanvas` — one a

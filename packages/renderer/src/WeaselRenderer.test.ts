@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { createGLRecorder } from './testing/glRecorder';
 import { WeaselRenderer } from './WeaselRenderer';
-import { maxImageTextureSide } from './cache/GLImageCache';
+import { imageSourceInLatestFrame, maxImageTextureSide } from './cache/GLImageCache';
 import { registerProgram, _resetProgramRegistryForTests } from './shaders/registerProgram';
 import { mat3 } from '@weasel-js/geom';
 import type { DrawCommand } from './DrawCommand';
@@ -148,6 +148,17 @@ describe('WeaselRenderer context loss', () => {
     expect(idxFirstDelete).toBeGreaterThanOrEqual(0);
     expect(idxFirstDelete).toBeLessThan(idxClear);
     expect(cache._pendingDeleteCount()).toBe(0);
+  });
+
+  it('stops holding the images it drew once its context is lost', () => {
+    const canvas = makeFakeCanvas();
+    const r = new WeaselRenderer({ canvas, width: 100, height: 100, dpr: 1 });
+    const key = {};
+    rendererParts(r).imageCache.upload(key, { width: 2, height: 2 } as unknown as ImageBitmap);
+    expect(imageSourceInLatestFrame(key)).toBe(true);
+    canvas.dispatchEvent('webglcontextlost');
+    expect(imageSourceInLatestFrame(key)).toBe(false);
+    r.dispose();
   });
 
   it('reinitializes after webglcontextrestored', () => {
@@ -325,6 +336,15 @@ describe('dispose', () => {
     expect(links()).toBe(2);
     r.render([vertexColored] as never);
     expect(links()).toBe(2);
+  });
+
+  it('refuses a canvas that is not the canvas of the gl it came with', () => {
+    const rec = createGLRecorder();
+    const own = document.createElement('canvas');
+    const gl = new Proxy(rec.gl, { get: (t, k) => (k === 'canvas' ? own : Reflect.get(t, k)) });
+    expect(() => new WeaselRenderer({ gl, canvas: document.createElement('canvas'), width: 10, height: 10, dpr: 1 }))
+      .toThrow(/not the canvas of the `gl`/);
+    expect(() => new WeaselRenderer({ gl, canvas: own, width: 10, height: 10, dpr: 1 }).dispose()).not.toThrow();
   });
 
   it('builds a lazy program again on a restored context', () => {

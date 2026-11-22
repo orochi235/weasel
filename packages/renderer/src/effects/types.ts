@@ -9,8 +9,9 @@ import { assembleEffectWgsl } from '../gpu/webgpu/wgsl/effectPrelude';
  * One full-screen pass over what a group has already drawn. A group's effects
  * run in order, each reading the previous one's output through `u_source`.
  *
- * `uniforms` are the effect's own; `u_source`, `u_resolution`, and `u_texel`
- * come from the renderer and must not be passed here.
+ * `uniforms` are the effect's own; the renderer sets `EFFECT_KIT_UNIFORMS`
+ * (`u_source`, `u_resolution`, `u_texel`, and `u_windowOrigin`), which must not
+ * be passed here.
  */
 export interface Effect {
   program: ShaderProgramHandle;
@@ -56,7 +57,7 @@ export type EffectProgramSource =
  * samples its source upside down.
  *
  * The GLSL fragment shader reads `v_uv` and `u_source`, may declare
- * `u_resolution` / `u_texel`, and must write premultiplied alpha. See
+ * `u_resolution`, `u_texel`, and `u_windowOrigin`, and must write premultiplied alpha. See
  * `effectPrelude.ts`. The WGSL one supplies `fn effect(in: EffectVaryings) -> vec4f`
  * (`gpu/webgpu/wgsl/effectPrelude.ts`); each backend draws an effect from its
  * own language alone.

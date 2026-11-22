@@ -55,12 +55,12 @@ out vec4 outColor;
 
 void main() {
   vec4 src = texture(u_source, v_uv);
-  // Undo premultiplication before the colour matrix, which is defined on
+  // Undo premultiplication before the color matrix, which is defined on
   // straight alpha, then put it back for the blend.
   float a = src.a;
   vec3 rgb = a > 0.0 ? src.rgb / a : vec3(0.0);
-  vec4 c = u_colorMatrix * vec4(rgb, a) + u_colorBias;
+  vec4 c = clamp(u_colorMatrix * vec4(rgb, a) + u_colorBias, 0.0, 1.0);
   c.a *= u_alpha;
-  outColor = vec4(clamp(c.rgb, 0.0, 1.0) * c.a, c.a);
+  outColor = vec4(c.rgb * c.a, c.a);
 }
 `;

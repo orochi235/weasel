@@ -24,7 +24,9 @@ export const CULL_SLACK_PX = 1;
  * the group drew nothing. A group with `effects` is kept or dropped whole, by
  * its children's bound grown by how far the effects reach (`effectsReach`, in
  * device pixels, so `dpr` converts it) and cut by its clip; one whose effects
- * do not say how far they reach is always kept. Other clips are ignored, which
+ * do not say how far they reach is always kept. A `retain` group is kept or
+ * dropped whole too, by its children's bound, so its surface is not redrawn for
+ * a new `children` array. Other clips are ignored, which
  * can only keep more. A group whose children all go is dropped.
  *
  * Returns `cmds` itself when nothing was dropped.
@@ -59,7 +61,9 @@ function cullOne(cmd: DrawCommand, m: GlMat3, box: Box, dpr: number): DrawComman
   switch (cmd.kind) {
     case 'group': {
       if (isOwnComposite(cmd.composite)) return cmd;
-      if (cmd.effects && cmd.effects.length > 0) return boxMisses(commandBox(cmd, m, dpr), box) ? null : cmd;
+      if ((cmd.effects && cmd.effects.length > 0) || cmd.retain !== undefined) {
+        return boxMisses(commandBox(cmd, m, dpr), box) ? null : cmd;
+      }
       const inner = cmd.transform ? mat3.multiply(m, cmd.transform) : m;
       const children = cullList(cmd.children, inner, box, dpr);
       if (children === cmd.children) return cmd;

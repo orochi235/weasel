@@ -27,9 +27,9 @@ ${ID_OUT_WGSL}${textureWgsl('u_source', 0)}${SOURCE_QUAD_WGSL}
   let src = textureSample(u_source, u_source_sampler, in.uv);
   let a = src.a;
   let rgb = select(vec3f(0.0), src.rgb / a, a > 0.0);
-  var c = u.u_colorMatrix * vec4f(rgb, a) + u.u_colorBias;
+  var c = saturate(u.u_colorMatrix * vec4f(rgb, a) + u.u_colorBias);
   c.a *= u.u_alpha;
-  return weasel_out(vec4f(saturate(c.rgb) * c.a, c.a), u.u_weaselId);
+  return weasel_out(vec4f(c.rgb * c.a, c.a), u.u_weaselId);
 }
 `;
 

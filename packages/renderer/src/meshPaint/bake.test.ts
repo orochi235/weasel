@@ -120,6 +120,28 @@ describe('bakeMesh', () => {
     expect(g + b).toBe(0);
   });
 
+  it('composites a translucent patch over the one beneath it, as painted in order', () => {
+    const under = squarePatch({ x: 0, y: 0, width: 1, height: 1 }, ['#0000ff', '#0000ff', '#0000ff', '#0000ff']);
+    const over = squarePatch({ x: 0, y: 0, width: 1, height: 1 }, ['#ff00004d', '#ff00004d', '#ff00004d', '#ff00004d']);
+    const [r, g, b, a] = texel(bakeMesh([under, over], 'rgb', 32)!, 0.5, 0.5);
+    expect(a).toBe(255);
+    expect(r).toBeCloseTo(77, -1);
+    expect(b).toBeCloseTo(178, -1);
+    expect(g).toBe(0);
+  });
+
+  it('leaves no doubled seam where two translucent patches share an edge', () => {
+    const color: MeshPatch['colors'] = ['#ff000080', '#ff000080', '#ff000080', '#ff000080'];
+    const baked = bakeMesh([
+      squarePatch({ x: 0, y: 0, width: 1, height: 1 }, color),
+      squarePatch({ x: 1, y: 0, width: 1, height: 1 }, color),
+    ], 'rgb', 33)!;
+    const row = 16;
+    for (let x = 0; x < baked.size; x++) {
+      expect(baked.pixels[(row * baked.size + x) * 4 + 3]).toBeCloseTo(128, -1);
+    }
+  });
+
   it('skips a patch whose color does not parse, or that has fewer than four colors, rather than throwing', () => {
     const bad = squarePatch({ x: 0, y: 0, width: 1, height: 1 }, ['red', 'red', 'red', 'bogus']);
     const short = { ...squarePatch({ x: 1, y: 0, width: 1, height: 1 }), colors: ['red', 'red', 'red'] } as unknown as MeshPatch;
