@@ -97,6 +97,23 @@ describe('the lane resize action', () => {
     expect(h.scene.historyIndex()).toBe(entries + 1);
   });
 
+  it('resizes the lane in the scene it previewed, not in another scene the canvas passes', () => {
+    const h = pool();
+    const other = pool();
+    const action = createLaneResizeAction({ scene: h.scene as never });
+    const payload: LaneScratch = { targetId: h.poolId, poolId: h.poolId, laneId: h.first };
+    const ctx = (at: Vec2) => ({
+      world: at, screen: at, modifiers: { alt: false, ctrl: false, meta: false, shift: false },
+      deps: { scene: other.scene } as unknown as ActionDeps,
+      drag: { start: { x: 200, y: 120 }, current: at, delta: { x: at.x - 200, y: at.y - 120 }, affordance: { kind: 'layer:diagram-lanes', payload } },
+    }) as unknown as InvocationCtx;
+    const handle = (action.invoker as OngoingInvoker).start(ctx({ x: 200, y: 120 }), undefined) as OngoingHandle;
+    handle.onMove!(ctx({ x: 200, y: 150 }));
+    handle.onEnd!(ctx({ x: 200, y: 150 }), 'commit');
+    expect(pose(h.scene, h.first)).toMatchObject({ height: 150 });
+    expect(pose(other.scene, other.first)).toMatchObject({ height: 120 });
+  });
+
   it('offers no boundary, and hands the drag on, where the resize would write a locked lane or title', () => {
     for (const lock of ['first', 'second', 'firstTitle', 'poolTitle'] as const) {
       const h = pool();
@@ -232,6 +249,17 @@ describe('the add-lane action', () => {
     const strokes = lanesOf(scene as never, built.id)
       .map((id) => (scene.get(id as NodeId)!.data as { stroke: { paint: { color: string } } }).stroke.paint.color);
     expect(strokes).toEqual(['#aa0000', '#00aa00', '#aa0000']);
+  });
+
+  it('adds the lane to the scene it checked, not to another scene the canvas passes', () => {
+    const h = pool();
+    const other = pool();
+    other.scene.setLocked(`${other.poolId}/title` as NodeId, true);
+    const action = createAddLaneAction({ scene: h.scene as never });
+    const affordance = { payload: { targetId: h.poolId, poolId: h.poolId } satisfies LaneScratch };
+    (action.invoker as ImmediateInvoker).run({ scene: other.scene } as never, { world: { x: 0, y: 0 }, affordance } as never);
+    expect(lanesOf(h.scene as never, h.poolId)).toHaveLength(3);
+    expect(lanesOf(other.scene as never, other.poolId)).toHaveLength(2);
   });
 
   it('offers no button, and passes the press on, where the lane would grow a locked title', () => {

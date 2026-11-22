@@ -57,6 +57,23 @@ describe('containers in a theme', () => {
     expect(fills).toEqual(fills.map((_, i) => bodies[i % bodies.length]!.fill));
   });
 
+  it('leaves a locked lane before the one it adds unwritten, title and all', () => {
+    const scene = makeScene();
+    let n = 0;
+    const built = containerBuild(POOL, AT, { layer: 'main', newId: () => `p${n++}` });
+    commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
+    applyDiagramTheme(scene as never, DIAGRAM_THEMES.paper!);
+    const [first] = lanesOf(scene as never, built.id);
+    const own = scene.get(first!)!.data as { stroke: { paint: { color: string } } };
+    scene.update(first!, { data: { ...own, stroke: { ...own.stroke, paint: { ...own.stroke.paint, color: '#123456' } } } } as never);
+    scene.setLocked(first!, true);
+    const data = scene.get(first!)!.data;
+    const titleData = scene.get(`${first}/title` as never)!.data;
+    expect(addLane(scene as never, built.id)).not.toBeNull();
+    expect(scene.get(first!)!.data).toBe(data);
+    expect(scene.get(`${first}/title` as never)!.data).toBe(titleData);
+  });
+
   it('restripes the lanes after one added with a style of its own', () => {
     const scene = makeScene();
     let n = 0;

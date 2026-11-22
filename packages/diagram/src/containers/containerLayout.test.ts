@@ -17,6 +17,14 @@ describe('diagramContainerLayout', () => {
     expect(regionHas(layout, 150, 140)).toBe(true);
   });
 
+  it('takes drops past the header the container\'s own trait gives', () => {
+    const layout = diagramContainerLayout({ header: { side: 'top', size: 30 } });
+    const node = { data: { diagram: { container: { role: 'container', header: { side: 'top', size: 60 } } } } };
+    const region = layout.dropRegion!({ ...C, node } as never) as Path;
+    expect(pathContainsPoint(region, 50, 45)).toBe(false);
+    expect(pathContainsPoint(region, 50, 65)).toBe(true);
+  });
+
   it('takes drops beside a left header', () => {
     const layout = diagramContainerLayout({ header: { side: 'left', size: 30 } });
     expect(regionHas(layout, 110, 200)).toBe(false);

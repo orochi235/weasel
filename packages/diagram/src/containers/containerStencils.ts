@@ -15,7 +15,7 @@ import { DIAGRAM_THEME_KEY } from '../theme/types';
 import { laneMiddle, poolHeader, stackedLanes } from './laneStack';
 import { firstLanes, regionSpecs, type ContainerBuildOptions } from './regionSpecs';
 import { bodyBox, diagramContainerOf, titleIdOf, type DiagramContainer } from './trait';
-import type { Rect } from '@weasel-js/geom';
+import { EPS, type Rect } from '@weasel-js/geom';
 import * as ops from '@weasel-js/core/ops';
 
 export type { ContainerBuildOptions };
@@ -108,14 +108,17 @@ function restackLocked(scene: AnyScene, poolId: NodeId, kept: readonly NodeId[],
   if (pool === undefined || trait === null) return false;
   if ([poolId, titleIdOf(poolId)].some((id) => scene.isLocked(id as NodeId))) return true;
   const axis = poolAxisOf(trait);
-  const { local, inBox } = poolBox(scene, pool);
+  const { box, local, inBox } = poolBox(scene, pool);
   const at = kept.map(inBox);
+  // A lane's place in the pool is read back through its world pose, so it carries rounding as large as the pool's.
+  const scale = Math.max(1, Math.abs(box.x) + box.width, Math.abs(box.y) + box.height);
+  const near = (a: number, b: number) => Math.abs(a - b) <= EPS * scale;
   const sizes = kept.map((id, k) => ({ id: id as string, size: (axis === 'y' ? at[k]?.height : at[k]?.width) ?? 0 }));
   const stacked = stackedLanes(axis, local, trait.header ?? poolHeader(axis), sizes);
   const shifted = kept.filter((id, k) => {
     const p = at[k];
     const to = stacked.get(id)!;
-    return p == null || p.x !== to.x || p.y !== to.y || p.width !== to.width || p.height !== to.height;
+    return p == null || !near(p.x, to.x) || !near(p.y, to.y) || !near(p.width, to.width) || !near(p.height, to.height);
   });
   return reachesLocked(scene as never, [...shifted, ...moved]);
 }
@@ -150,7 +153,7 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
   const boundary = at !== null ? (axis === 'y' ? at.y : at.x) : axis === 'y' ? b.y + b.height : b.x + b.width;
   // Centered on the boundary it goes in at: the stack orders lanes by where they sit.
   const start = boundary - NEW_LANE_SIZE / 2;
-  const body = bodyBox(b, trait.header);
+  const body = bodyBox(b, trait.header ?? poolHeader(axis));
   const pose: RectPose = axis === 'y'
     ? { x: body.x, y: start, width: body.width, height: NEW_LANE_SIZE }
     : { x: start, y: body.y, width: NEW_LANE_SIZE, height: body.height };
@@ -163,7 +166,8 @@ export function addLane(scene: AnyScene, poolId: string, index?: number, style?:
     // A themed scene colors the lanes as a theme change would, by their places in the stack: those after the new
     // one, which it moved along one, and the new one unless it was given a style.
     if (scene.doc.get(DIAGRAM_THEME_KEY) !== undefined) {
-      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set(style === undefined ? [id, ...lanes] : lanes));
+      const moved = index === undefined ? [] : lanes.slice(index);
+      const writes = themeWrites(scene as unknown as ThemedScene, diagramThemeOf(scene), new Set(style === undefined ? [id, ...moved] : moved));
       for (const [at, data] of writes) scene.update(at as never, { data } as never);
     }
   });
@@ -185,7 +189,8 @@ function releasePlan(scene: AnyScene, id: string) {
   const trait = node === undefined ? null : diagramContainerOf(node);
   if (node === undefined || trait === null || reachesLocked(scene as never, [node.id])) return null;
   const membersOf = (c: NodeId) => scene.childrenOf(c).filter((m) => m !== titleIdOf(c as string));
-  const members = trait.role === 'pool' ? membersOf(node.id).flatMap(membersOf) : membersOf(node.id);
+  const isLane = (m: NodeId) => diagramContainerOf(scene.get(m)!)?.role === 'lane';
+  const members = trait.role === 'pool' ? membersOf(node.id).flatMap((m) => (isLane(m) ? membersOf(m) : [m])) : membersOf(node.id);
   const beside = releasedFrom(scene, node.id);
   // A lane's pool restacks the lanes left: it, its title, and each lane it moves are written too.
   if (beside !== node.id) {
@@ -210,8 +215,8 @@ export function canReleaseMembers(scene: AnyScene, id: string): boolean {
 
 /**
  * Remove container `id` and keep its members, which take its place in its
- * parent, as one history entry. A pool's members are its lanes' members, and
- * a lane's go past its pool. Connectors on what is removed go with it.
+ * parent, as one history entry. A pool's members are its lanes' members and
+ * anything else it holds, and a lane's go past its pool. Connectors on what is removed go with it.
  * Nothing changes when that parent's frame is singular, where the members
  * could not keep their places, or when the release would write a locked node.
  */

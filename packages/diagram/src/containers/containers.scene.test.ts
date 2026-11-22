@@ -220,6 +220,17 @@ describe('pools in a scene', () => {
     expect(lanesOf(scene as never, pool)).toEqual([first, second, lane]);
   });
 
+  it('add a lane past a locked lane in a pool at a fractional place, where the lane stays put', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 123.456, y: 0.3, width: 480, height: 240 });
+    const [first, second] = lanesOf(scene as never, pool);
+    scene.setLocked(first!, true);
+    scene.setLocked(second!, true);
+    const lane = addLane(scene as never, pool);
+    expect(lane).not.toBeNull();
+    expect(lanesOf(scene as never, pool)).toEqual([first, second, lane]);
+  });
+
   it('refuse a lane added at a negative or fractional index, and add one past the end at the end', () => {
     const scene = makeScene();
     const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
@@ -307,6 +318,17 @@ describe('pools in a scene', () => {
     releaseMembers(scene as never, pool);
     expect(scene.get(pool as NodeId)).toBeUndefined();
     expect(parentOf(scene, 's')).toBe(null);
+  });
+
+  it('keep what a pool holds outside its lanes when released', () => {
+    const scene = makeScene();
+    const pool = build(scene, 'pool-rows', { x: 0, y: 0, width: 480, height: 240 });
+    shape(scene, 'loose', { x: 100, y: 30, width: 40, height: 20 }, pool);
+    const at = pose(scene, 'loose');
+    releaseMembers(scene as never, pool);
+    expect(scene.get(pool as NodeId)).toBeUndefined();
+    expect(parentOf(scene, 'loose')).toBe(null);
+    expect(pose(scene, 'loose')).toEqual(at);
   });
 
   it('release a lane\'s members above the pool it stays in, so they are not drawn under its fill', () => {

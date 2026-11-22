@@ -35,6 +35,7 @@ describe('diagramCanDropInto', () => {
   it('lets a pool take only lanes, and a lane go only into a pool', () => {
     expect(can('pool', ['lane2'])).toBe(true);
     expect(can('pool', ['shape'])).toBe(false);
+    expect(can('pool', [])).toBe(false);
     expect(can('box', ['lane'])).toBe(false);
     expect(can('group', ['lane'])).toBe(false);
   });
