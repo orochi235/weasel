@@ -81,10 +81,15 @@ function joinWeightWords(style: string): string {
  */
 export function parseFontStyle(style: string): { weight: number; style: FontStyle } {
   const s = joinWeightWords(style);
-  const italic = s.includes('italic') || s.includes('oblique');
-  const weight = WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? numberedWeight(s) ?? 400;
-  return { weight, style: italic ? 'italic' : 'normal' };
+  return { weight: weightOf(s) ?? 400, style: isSlanted(s) ? 'italic' : 'normal' };
 }
+
+/** The weight `s` names, by the substring scan {@link WEIGHT_WORDS} is ordered for. */
+function weightOf(s: string): number | undefined {
+  return WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? numberedWeight(s);
+}
+
+const isSlanted = (s: string): boolean => s.includes('italic') || s.includes('oblique');
 
 /** A Japanese face's numbered weight, `W0` to `W9` (Hiragino Sans), as hundreds. */
 const NUMBERED_WEIGHT = /(?:^|[\s_-])w(\d)(?=$|[\s_-])/;
@@ -101,8 +106,7 @@ function numberedWeight(style: string): number | undefined {
  */
 function styleQualifierCount(style: string): number {
   const words = joinWeightWords(style).split(/[\s_-]+/).filter(Boolean);
-  return words.filter((w) => w !== 'italic' && w !== 'oblique' && numberedWeight(w) === undefined
-    && !WEIGHT_WORDS.some(([word]) => word === w)).length;
+  return words.filter((w) => !isSlanted(w) && weightOf(w) === undefined).length;
 }
 
 /** Options for `enableLocalFontOutlines`. */

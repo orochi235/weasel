@@ -121,6 +121,18 @@ describe('enableLocalFontOutlines', () => {
     ]);
   });
 
+  it('counts a weight joined to the slant after it as no qualifier, as it reads the weight', async () => {
+    vi.stubGlobal('queryLocalFonts', vi.fn(async () => [
+      fontData('Futura', 'Condensed DemiBold Italic'),
+      fontData('Futura', 'Demi Oblique'),
+      fontData('Futura', 'Wide Thin'),
+      fontData('Futura', 'Ultra Thin'),
+    ]));
+    await enableLocalFontOutlines();
+    expect(outlineCssSource('Futura', 600, 'italic')).toMatchObject({ src: 'local("Futura-DemiOblique")' });
+    expect(outlineCssSource('Futura', 100, 'normal')).toMatchObject({ src: 'local("Futura-UltraThin")' });
+  });
+
   it('honors a family filter', async () => {
     vi.stubGlobal('queryLocalFonts', vi.fn(async () => [
       fontData('Georgia', 'Regular'),
