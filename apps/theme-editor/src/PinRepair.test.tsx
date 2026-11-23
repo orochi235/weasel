@@ -1,4 +1,6 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { PinRepair } from './PinRepair';
@@ -15,6 +17,25 @@ describe('<PinRepair>', () => {
     expect(onChange.mock.calls[0]![0].pins['radius-md']).toEqual({ value: 6, type: 'dimension' });
     fireEvent.change(screen.getByRole('textbox', { name: 'gap' }), { target: { value: '12' } });
     expect(onChange.mock.calls[1]![0].pins.gap).toBe(12);
+  });
+
+  it('takes a decimal, a sign, or a font stack typed one key at a time', async () => {
+    const start = { name: 'probe', pins: { gap: 4, font: ['Inter'] }, } as unknown as ThemeDefinition;
+    let latest = start;
+    function Live() {
+      const [d, setD] = useState(start);
+      return <PinRepair draft={d} error="unknown token nope" onChange={(next) => setD((latest = next))} />;
+    }
+    render(<Live />);
+    const gap = screen.getByRole('textbox', { name: 'gap' });
+    await userEvent.clear(gap);
+    await userEvent.type(gap, '-0.5');
+    expect(gap).toHaveValue('-0.5');
+    expect(latest.pins!.gap).toBe(-0.5);
+    const font = screen.getByRole('textbox', { name: 'font' });
+    await userEvent.type(font, ', Open Sans');
+    expect(font).toHaveValue('Inter, Open Sans');
+    expect(latest.pins!.font).toEqual(['Inter', 'Open Sans']);
   });
 
   it('keeps a string pin a string', () => {
