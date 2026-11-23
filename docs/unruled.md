@@ -3885,3 +3885,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a lightbox opened inside another, sharing its `<LightboxLayers>`, leaves a shared
   `below` layer where the outer one put it and raises a shared `above` layer over itself, then back over the outer
   one when it closes. Giving the inner lightbox no shared layers at all was the alternative.
+
+## Audit round seventy-four (2026-11-22): audio
+
+- 2026-11-22 (the fixer's call): `createAudioEngine`'s `voiceLimit` and `createVoicePool`'s `limit` throw a
+  `RangeError` on a number that is not whole, `Infinity` included, as they already did on one below 1. Flooring a
+  fractional limit was the alternative.

@@ -192,7 +192,7 @@ export interface AudioEngineOptions {
   tickInterval?: number;
   /** Default ['sfx', 'music', 'ui']. */
   buses?: string[];
-  /** Max concurrent voices PER BUS before stealing. Default 32. */
+  /** Max concurrent voices PER BUS before stealing, a whole number. Default 32. */
   voiceLimit?: number;
   /** Default 'oldest'. */
   steal?: StealPolicy;
