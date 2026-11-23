@@ -8,8 +8,12 @@ export interface LoupeAim {
   now(): LoupePoint;
   /** Takes `p` as the aim, unless pinned. Whether it took it. */
   follow(p: LoupePoint): boolean;
+  /** The content point the pin holds, or `null` while following. */
+  readonly pinned: LoupePoint | null;
   /** Pins the content under `p`. */
   pin(p: LoupePoint): void;
+  /** Pins content point `c`, one `pinned` gave. */
+  hold(c: LoupePoint): void;
   /** Pins the content under the aim now, or follows again from where the pin stands. Whether it changed. */
   setMode(mode: LoupeAimMode): boolean;
 }
@@ -23,6 +27,7 @@ export function createLoupeAim(surface: LoupeSurface, mode: LoupeAimMode): Loupe
   const now = () => (pinned ? (surface.pointFor?.(pinned) ?? pinned) : followed);
   return {
     get mode() { return pinned ? 'pinned' : 'follow'; },
+    get pinned() { return pinned; },
     now,
     follow(p) {
       if (pinned) return false;
@@ -30,6 +35,7 @@ export function createLoupeAim(surface: LoupeSurface, mode: LoupeAimMode): Loupe
       return true;
     },
     pin(p) { pinned = held(p); },
+    hold(c) { pinned = c; },
     setMode(next) {
       if ((pinned !== null) === (next === 'pinned')) return false;
       if (next === 'pinned') pinned = held(followed);
