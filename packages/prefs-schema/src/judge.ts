@@ -4,6 +4,7 @@ import { prefConditionHolds, prefConditionReadsItem, type PrefCondition, type Pr
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue, prefSectionLeaves, prefValueAt } from './helpers';
 import { prefSchemaHolding } from './holding';
+import { prefValueAbsent } from './leafValue';
 import type { PrefLeaf } from './schema';
 import { setOwn } from '@weasel-js/registry';
 import { isPrefScope, prefScopeValue } from './scope';
@@ -31,7 +32,7 @@ export interface PrefEntry {
 
 /** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of the item's default. */
 function entryValue({ item, value }: PrefEntry, path: string): unknown {
-  if (path === '') return value !== undefined ? value : item.default;
+  if (path === '') return prefValueAbsent(item, value) ? item.default : value;
   const held = prefValueAt(value, path);
   return held !== undefined ? held : prefValueAt(item.default, path);
 }
@@ -106,7 +107,7 @@ function leafHolding(schema: PrefGroup | PrefSection, path: string): [key: strin
 
 /** What `leaf`, holding `held`, reads as: with nothing held, what it holds unset; a split value, the option `read` selects. */
 function shownValue(leaf: PrefLeaf, held: unknown, read: (path: string) => unknown): unknown {
-  const value = held !== undefined ? held : unsetValue(leaf);
+  const value = prefValueAbsent(leaf, held) ? unsetValue(leaf) : held;
   if (!isPrefScope(value)) return value;
   const selection: Record<string, string> = {};
   for (const { selector } of prefScopesOf(leaf)) {
