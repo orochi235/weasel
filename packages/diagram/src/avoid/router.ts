@@ -227,7 +227,7 @@ function routeDirty(dirty: readonly AvoidEdge[], ctx: EdgeRouteContext & { cross
     fresh.set(edge.id, full);
     if (full !== null) ctx.crossings.add(edge.id, full);
     if (edge.label !== undefined) {
-      const label = labelObstacle(edge, full ?? fullRoute(edge));
+      const label = labelObstacle(edge, full ?? fullRoute(unrouted(edge)));
       if (label === null) ctx.index.delete(edge.label.id);
       else ctx.index.replace(label);
       moves++;
@@ -262,12 +262,17 @@ function bundleOf(
   return bundle;
 }
 
+/** `edge` holding no route, as it falls back once none is found. */
+function unrouted(edge: AvoidEdge): AvoidEdge {
+  const { route: _r, ...rest } = edge;
+  return rest;
+}
+
 /** `edge` holding the route `routes` gave it, when they gave it one. */
 function withRoute(edge: AvoidEdge, routes: AvoidRoutes): AvoidEdge {
   const route = routes.get(edge.id);
   if (route === undefined) return edge;
-  const { route: _r, ...rest } = edge;
-  return route === null ? rest : { ...rest, route };
+  return route === null ? unrouted(edge) : { ...unrouted(edge), route };
 }
 
 /** A segment's box, its thickness zero. */

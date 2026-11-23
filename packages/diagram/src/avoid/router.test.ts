@@ -185,4 +185,17 @@ describe('createAvoidRouter', () => {
     const input = scene([shapes.a, shapes.b], [{ ...edgeBetween('top', shapes.a, shapes.b, 'e', 'w'), label }]);
     expect(createAvoidRouter().update(input).get('top')).toEqual([]);
   });
+
+  it('stations a connector that finds no path’s label on the line it falls back to, not its old route', () => {
+    const shut = rectShape('shut', 1000, 0);
+    const walls = [rectShape('n', 940, -60, 220, 20), rectShape('s', 940, 100, 220, 20), rectShape('w', 940, -60, 20, 180), rectShape('e', 1140, -60, 20, 180)];
+    const left = rectShape('left', 0, 300);
+    const right = rectShape('right', 400, 300);
+    const label = { id: 'stuck/label', placement: { at: { near: { x: 250, y: 330 } } }, size: { width: 40, height: 14 } };
+    const stuck = { ...edgeBetween('stuck', shapes.a, shut, 'e', 'w'), label, route: [{ x: 200, y: 30 }, { x: 200, y: 330 }, { x: 900, y: 330 }, { x: 900, y: 30 }] };
+    const input = scene([shapes.a, shut, ...walls, left, right], [stuck, edgeBetween('flat', left, right, 'e', 'w')]);
+    const routes = createAvoidRouter().update(input);
+    expect(routes.get('stuck')).toBeNull();
+    expect(routes.get('flat')).toEqual([]);
+  });
 });
