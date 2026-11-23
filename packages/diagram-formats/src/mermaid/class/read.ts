@@ -7,6 +7,7 @@ import type { MarkerRef } from '@weasel-js/core';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Row } from '@weasel-js/diagram';
 import type { ImportResult } from '../../document';
 import { IdMint, Membership, Warnings, decodeEntities, graphPage } from '../../graphRead';
+import { lineError } from '../../lineError';
 import { readPageName, type MermaidDirection } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { parseClassDiagram, type ClassHead, type ClassMember, type ClassStmt } from './parse';
@@ -35,7 +36,7 @@ class ClassReader {
   readonly notes: DataNode[] = [];
   readonly edges: DataEdge[] = [];
   readonly noteEdges: DataEdge[] = [];
-  readonly namespaces: string[] = [];
+  readonly namespaces = new Map<string, number>();
   direction: MermaidDirection | undefined;
 
   constructor(readonly mint: IdMint) {}
@@ -64,7 +65,7 @@ class ClassReader {
       else if (s.kind === 'relation') this.relation(s);
       else if (s.kind === 'namespace') {
         this.membership.openCluster(s.id, ns);
-        if (!this.namespaces.includes(s.id)) this.namespaces.push(s.id);
+        if (!this.namespaces.has(s.id)) this.namespaces.set(s.id, s.line);
         this.walk(s.stmts, s.id);
       } else if (s.kind === 'note') this.note(s.text, s.for);
       else if (s.kind === 'cssClass') for (const id of s.ids) this.styles.assign(id, s.name);
@@ -124,7 +125,8 @@ function namedIds(stmts: readonly ClassStmt[], out = new Set<string>()): Set<str
   return out;
 }
 
-/** Reads a Mermaid class diagram into a one-page document of `notation` `'class'`. Throws, naming the line, on text that is not one. */
+/** Reads a Mermaid class diagram into a one-page document of `notation` `'class'`. Throws, naming the line, on text that
+ *  is not one, or on a namespace sharing a class's name. */
 export function readClassDiagram(text: string): ImportResult {
   const { source, stmts } = parseClassDiagram(text);
   const r = new ClassReader(new IdMint(namedIds(stmts)));
@@ -133,7 +135,10 @@ export function readClassDiagram(text: string): ImportResult {
     const colors = r.styles.colorsOf(id);
     return { id, rows: classRows(id, d), ...(colors !== undefined ? { colors } : {}) };
   });
-  const containers: DataContainer[] = r.namespaces.map((id) => {
+  for (const [id, line] of r.namespaces) {
+    if (r.classes.has(id)) throw lineError('Mermaid', line, `"${id}" names both a namespace and a class`);
+  }
+  const containers: DataContainer[] = [...r.namespaces.keys()].map((id) => {
     const members = r.membership.members(id);
     return { id, role: 'container', label: id, ...(members.length > 0 ? { members } : {}) };
   });

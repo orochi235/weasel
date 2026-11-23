@@ -3916,3 +3916,10 @@ Calls the lanes made without a ruling:
   `Deployment_Node`, a `[system]`, `[container]`, or `[enterprise]` one keeping its type, and now warns that such a
   boundary comes back a deployment node, since a page cannot tell `System_Boundary` from a deployment node typed
   `system`. Writing the fixed boundary macro for those types was the alternative, and loses typed deployment nodes.
+
+## Audit round seventy-five (2026-11-22): Mermaid diagrams, part one
+
+- 2026-11-22 (the fixer's call): a Mermaid class diagram throws, naming the namespace's line, on a namespace sharing a
+  class's name, as the block and architecture readers do for a name given twice. There is no override. Renaming the
+  container, as the flowchart reader does for a subgraph, was the alternative; the class writer names a namespace by
+  its id, so the renamed one would not read back under its own name.

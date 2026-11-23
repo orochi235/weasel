@@ -58,6 +58,11 @@ describe('reading a Mermaid class diagram', () => {
     expect(edge('classDiagram\na --o"1" b', 'a', 'b').colors).toEqual({ markerEnd: 'diamond-hollow' });
   });
 
+  it('throws on a namespace sharing a class\'s name', () => {
+    expect(() => readClassDiagram('classDiagram\n  namespace Shapes {\n    class Circle\n  }\n  Shapes <|-- Circle')).toThrow('Mermaid, line 2: "Shapes" names both a namespace and a class');
+    expect(() => readClassDiagram('classDiagram\n  class Shapes\n  namespace Shapes {\n    class Circle\n  }')).toThrow('Mermaid, line 3: "Shapes" names both');
+  });
+
   it('reads namespaces as containers, notes as note shapes, and styles as colors', () => {
     const p = page(SHOP);
     expect(p.data.containers).toEqual([{ id: 'billing', role: 'container', label: 'billing', members: ['Invoice', 'Payment'] }]);
