@@ -165,7 +165,12 @@ export function DitherDemo() {
         ctx.putImageData(new ImageData(image.data, image.width, image.height), 0, 0);
         setExported(`${image.width} × ${image.height} px`);
       })
-      .catch(() => { if (live) setExported(null); });
+      .catch(() => {
+        if (!live) return;
+        const canvas = out.current;
+        if (canvas) canvas.width = canvas.height = 0;
+        setExported(null);
+      });
     return () => { live = false; };
   }, [scene, version, printGrid, method, threshold, crisp]);
 
