@@ -57,7 +57,7 @@ class C4Writer {
   boundary(c: Cluster, indent: string): void {
     const m = /^(.*?)(?: \[([^\]]*)\])?$/s.exec(c.label ?? c.id)!;
     const [title, type] = [m[1]!, m[2]];
-    const fixed = type !== undefined ? BY_TYPE.get(type) : undefined;
+    const fixed = type !== undefined && !this.deployment ? BY_TYPE.get(type) : undefined;
     const macro = fixed ?? (this.deployment ? 'Deployment_Node' : 'Boundary');
     this.lines.push(`${indent}${macro}(${args([this.id(c.id), title, ...(fixed === undefined ? [type] : [])])}) {`);
     for (const id of c.nodes) this.element(this.out.byId.get(id)!, `${indent}  `);

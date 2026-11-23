@@ -190,3 +190,10 @@ describe('C4 style macros naming nothing', () => {
     expect(out.warnings).toContain('Mermaid C4 styles only the first relationship between two elements; colors of the others were dropped.');
   });
 });
+
+describe('C4 deployment nodes', () => {
+  it('write back as deployment nodes whatever their type, so a "container" node stays one', () => {
+    const { document } = readC4('C4Deployment\n  Deployment_Node(d, "Web", "container") {\n    Container(c, "App")\n  }');
+    expect(writeC4(document).text).toContain('Deployment_Node(d, "Web", "container") {');
+  });
+});
