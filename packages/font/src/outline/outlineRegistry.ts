@@ -86,8 +86,10 @@ interface FaceSlot extends OutlineFaceInfo {
   /** The in-flight or settled load, so every caller waiting on it shares one parse. */
   load: Promise<void> | null;
   /** The source's bytes once read, so DOM text asking first and the canvas share one read. Dropped when the load
-   *  settles, which hands DOM text its bytes itself, and when the read fails; held until then, however long. */
+   *  takes them, which hands DOM text its bytes itself, and when the read fails; held until then, however long. */
   read: Promise<ArrayBuffer> | null;
+  /** The load has taken its bytes, so a later read is DOM text's alone and is not kept. */
+  readTaken: boolean;
   /** Whether a glyph this face failed to produce has been reported: glyph lookup runs every frame. */
   glyphWarned: boolean;
 }
@@ -138,6 +140,7 @@ export function registerFontOutlines(
     glyphs: new Map(),
     load: null,
     read: null,
+    readTaken: false,
     glyphWarned: false,
   };
   slots.set(key, slot);
@@ -282,6 +285,7 @@ async function runLoad(slot: FaceSlot): Promise<void> {
     const bytes = await readSlot(slot);
     announceBytes(slot, bytes);
     slot.read = null;
+    slot.readTaken = true;
     slot.face = await slot.parser(bytes);
     slot.status = 'ready';
     slots.bump();
@@ -354,6 +358,7 @@ function announceBytes(slot: FaceSlot, bytes: ArrayBuffer): void {
 }
 
 function readSlot(slot: FaceSlot): Promise<ArrayBuffer> {
+  if (slot.readTaken) return readSource(slot.source);
   if (slot.read) return slot.read;
   const read = readSource(slot.source);
   read.catch(() => { if (slot.read === read) slot.read = null; });
