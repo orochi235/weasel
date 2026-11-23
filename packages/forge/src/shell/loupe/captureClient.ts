@@ -68,7 +68,9 @@ export function createCaptureClient(base: string, send: typeof fetch): CaptureCl
       if (!res.ok) {
         throw new Error((await errorBody(res)).error ?? `capture failed: ${res.status}`);
       }
-      return createImageBitmap(await res.blob());
+      const bitmap = await createImageBitmap(await res.blob());
+      setStatus(true);
+      return bitmap;
     },
   };
 }
