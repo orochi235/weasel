@@ -3,6 +3,7 @@ import type { LoupeMode } from '@weasel-js/loupe';
 import { createHud } from '../hud';
 import { createWindow } from '../widgets/window/window';
 import { createLoupeModel, type LoupeSurface } from '@weasel-js/loupe';
+import { lensAimInput } from './aimInput';
 import { addLensControls, addLoupeControls } from './lensControls';
 import { createModeSwitch } from './modeSwitch';
 import { RIM_GAP, rimTrackIn } from './rimTracks';
@@ -117,4 +118,20 @@ it('puts a canceled pin drag back on the content the pin held, though the camera
   camera.pan = 50;
   pin.onPointer({ type: 'cancel', native: null });
   expect(model.aim).toEqual({ x: 350, y: 300 });
+});
+
+it('hides the controls once the pointer leaves the canvas', () => {
+  const hud = createHud();
+  const controls = addLensControls({
+    hud, win: round(), round: true, stops: [1, 2, 4], requestRedraw: () => {},
+    mode: () => 'vector', setMode: () => {}, factor: () => 2, setFactor: () => {},
+    aimMode: () => 'follow', aim: () => ({ x: 0, y: 0 }), pinAt: () => {}, setAimMode: () => {}, keepAim: () => () => {},
+  });
+  const aim = lensAimInput(document.createElement('div'), {
+    aimAt: () => {}, holds: () => false, pointerAt: controls.pointerAt, leave: controls.leave,
+  });
+  controls.pointerAt({ x: 0, y: 0 });
+  expect(hud.widgets().every((w) => !w.hidden)).toBe(true);
+  aim.leave();
+  expect(hud.widgets().every((w) => w.hidden)).toBe(true);
 });
