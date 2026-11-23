@@ -65,9 +65,9 @@ export interface LaneProps {
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onKeyInput, onKeyChange, onInsert, expanded, snapTimes,
-    limit = Infinity, selectedSegment = null, onPressEmpty, hold = FREE,
+    limit = Infinity, selectedSegment = null, hold = FREE,
   } = props;
-  const { onSelect, onSelectSegment, toggleExpanded, mark } = gated(props, hold);
+  const { onSelect, onSelectSegment, onPressEmpty, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = rowTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
@@ -151,6 +151,7 @@ function gated(props: LaneProps, hold: LaneHold) {
   return {
     onSelect: hold.looks ? props.onSelectionChange : ignore,
     onSelectSegment: hold.looks ? props.onSelectSegment : undefined,
+    onPressEmpty: hold.looks ? props.onPressEmpty : undefined,
     toggleExpanded: hold.looks ? () => props.onExpandedChange(!props.expanded) : ignore,
     mark: { tabIndex: hold.tabIndex, ...hold.focus },
   };
