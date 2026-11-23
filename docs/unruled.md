@@ -414,6 +414,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-22 (the fixer's call, audit round 70): a paint action is disabled with `Locked` while any node it would
   paint, named by `ids` or selected, is locked, and its run writes nothing, after the 2026-11-09 ruling for Ungroup,
   Delete, and Cut. It does not paint the unlocked nodes and skip the locked ones.
+- 2026-11-22 (the fixer's call, audit round 74): the quantize pass leaves a locked node's stored pose and data as
+  they are, as diagram's passes leave a locked connector's route: a grid change snaps every other node and no longer
+  throws, and a write made inside `scene.unlocked` is not snapped either. The node snaps on its next edit once unlocked.
 - 2026-11-22 (the fixer's call, audit round 70): Group is disabled with `Locked` while a member, the container it
   would land in, or a node it would move as a follower is locked, as Ungroup is. It used to throw from the scene.
 - Ruled 2026-11-10 (my call, overnight sweep): a reorder that would shift a locked node's place in the stack

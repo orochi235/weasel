@@ -107,6 +107,19 @@ describe('the quantize pass', () => {
     expect(scene.get(STROKE)!.data).toEqual(before.stroke);
   });
 
+  it('leaves a locked node as it is stored, when the grid changes and after an unlocked() write', () => {
+    const scene = makeScene();
+    scene.setLocked(BOX, true);
+    const held = scene.get(BOX)!.pose;
+    const finer: OutputGrid = { pitch: 72 / 300, origin: { x: 0, y: 0 } };
+    scene.doc.set(OUTPUT_GRID_KEY, finer);
+    expect(scene.doc.get(OUTPUT_GRID_KEY)).toEqual(finer);
+    expect(scene.get(BOX)!.pose).toEqual(held);
+    expect(whole(dots(scene.get(STROKE)!.data.strokeWidth!, finer))).toBe(true);
+    scene.unlocked(() => scene.setPose(BOX, { ...held, width: 3.3 }));
+    expect(scene.get(BOX)!.pose.width).toBe(3.3);
+  });
+
   it('stops when the grid is cleared, and changes no stored value', () => {
     const scene = makeScene();
     const box = scene.get(BOX)!.pose;
