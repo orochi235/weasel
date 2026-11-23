@@ -89,8 +89,10 @@ export function serveCapture(
   let launched: Promise<Launched> | null = null;
   /** Bumped by `revise()`, so a capture that started before an edit is not cached after it. */
   let revision = 0;
+  let closed = false;
 
   const browser = (): Promise<Launched> => {
+    if (closed) return Promise.resolve({ unavailable: 'the dev server is closing' });
     if (!launched) {
       const launching = launchCaptureBrowser();
       launched = launching;
@@ -166,6 +168,7 @@ export function serveCapture(
       cache.clear();
     },
     async close() {
+      closed = true;
       revision += 1;
       cache.clear();
       const closing = launched;

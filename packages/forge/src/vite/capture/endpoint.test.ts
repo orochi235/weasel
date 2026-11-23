@@ -226,6 +226,17 @@ describe('capture endpoint', () => {
     expect(browser.close).toHaveBeenCalledTimes(1);
   });
 
+  it('launches no Chromium for a capture that arrives once the server is closing', async () => {
+    const browser = fakeBrowser();
+    launch.mockResolvedValue(browser);
+    await start();
+    expect((await post(payload)).status).toBe(200);
+    await server.close();
+    const late = await post({ ...payload, dpr: 2 });
+    expect(late.status).toBe(503);
+    expect(launch).toHaveBeenCalledTimes(1);
+  });
+
   it("lets a capture load the origins the shell config's capture.allowOrigins lists", async () => {
     const browser = fakeBrowser();
     launch.mockResolvedValue(browser);
