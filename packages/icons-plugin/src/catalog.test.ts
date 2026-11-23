@@ -12,3 +12,7 @@ describe('iconCatalog', () => {
     expect(() => catalog.variant(ctx, 'toString', false)).toThrow(/names no custom variant/);
   });
 });
+
+it('refuses a table whose namespace is a reserved variant name', () => {
+  expect(() => iconCatalog({}).add({}, table('all'))).toThrow(/namespace "all".*reserved/);
+});

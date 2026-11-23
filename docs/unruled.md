@@ -1606,6 +1606,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   are rewritten as calls. In dev, a regenerated table's new glyphs reload every loaded variant, and a glyph it drops
   stays until a restart. `weaselIcons.vite()`, `.rollup()` and `.rolldown()` return two plugins, the second ordered
   `post` to read modules another plugin compiles to JS.
+- 2026-11-23 (my call, audit round 78): icons-plugin fails the build, and a dev server's start, on a table whose
+  namespace is `all` or empty, the names of `virtual:weasel-icons`'s built-in variants, as it fails a custom variant
+  named after a namespace; there is no opt-in to load such a namespace under another name.
+- 2026-11-23 (my call, audit round 78): `weaselIcons.esbuild({ mode: 'library' })` fails a build that minifies
+  whitespace (`minify` or `minifyWhitespace`), since esbuild then drops every `@icon` annotation and has no hook to
+  write them back; `minify: true` with `minifyWhitespace: false` still builds. There is no opt-in to ship unannotated refs.
 - 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
   and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
   publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose

@@ -94,6 +94,39 @@ describe('rewriteIconCalls on imports it cannot follow', () => {
     expect(warned(src)).toBe('');
   });
 
+  it('says nothing of icon in a type position outside an annotation, an enum member or a bodiless signature', () => {
+    const src = [
+      `import { icon } from './icons.gen';`,
+      `const a = y as typeof icon, b = y satisfies typeof icon, c = <typeof icon>y;`,
+      `class A implements icon { [icon: string]: unknown; m(icon: string): void; m(icon: string) {} }`,
+      `abstract class B { abstract m(icon: string): void; }`,
+      `enum E { icon }`,
+      `function g(icon: string): void;`,
+      `function g(icon: string) {}`,
+      `declare function h(icon: string): void;`,
+      `icon('x');`,
+    ].join('\n');
+    expect(warned(src)).toBe('');
+  });
+
+  it('leaves a call to a local that import-equals binds in a namespace', () => {
+    const src = `import { icon } from './icons.gen';\nnamespace N { import icon = O.fn; icon('x'); }\nicon('y');\n`;
+    const code = rewriteIconCalls(src, 'q.ts', ns)!.code;
+    expect(code).toContain(`icon('x')`);
+    expect(code).toContain(`/* @icon */ 'core:y'`);
+  });
+
+  it('warns on icon named as a JSX element, but not on an intrinsic element or attribute of that name', () => {
+    const jsx = (body: string) => {
+      const warnings: string[] = [];
+      rewriteIconCalls(`import { icon as Icon } from './icons.gen';\n${body}\n`, 'j.tsx', ns, (m) => warnings.push(m));
+      return warnings.join('\n');
+    };
+    expect(jsx(`const a = <Icon name="x" />;`)).toMatch(/used other than as a direct call in 1 place/);
+    expect(jsx(`const a = <Icon.Part></Icon.Part>;`)).toMatch(/used other than as a direct call in 1 place/);
+    expect(jsx(`const a = <icon Icon="x" />;`)).toBe('');
+  });
+
   it('rewrites a call through a non-null assertion or parentheses', () => {
     const src = `import { icon } from './icons.gen';\nconst a = icon!('bang'), b = (icon)('paren');\n`;
     expect(collectIconRefs(rewriteIconCalls(src, 'n.ts', ns)!.code, 'n.ts').sort()).toEqual(['core:bang', 'core:paren']);
