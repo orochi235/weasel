@@ -125,6 +125,8 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   const now = useLatest({ doc, built, specs, look, options, onChange });
   const view = useRef<DiagramViewApi | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
+  // The field unmounts with its cluster without blurring, so it never closes itself.
+  if (renaming !== null && !doc.pipeline.clusters?.some((g) => g.id === renaming)) setRenaming(null);
   const handlers = useMemo(() => editHandlers(() => now.current, picks.unpick, setRenaming), [now, picks.unpick]);
   const ambient = useMemo(() => {
     const source = (): ReorderSource => {

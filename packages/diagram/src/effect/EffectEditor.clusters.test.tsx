@@ -133,6 +133,18 @@ describe('EffectEditor clusters under nodeGraph', () => {
     expect(dissolved.pipeline.clusters).toEqual([]);
     expect(dissolved.clusterBoxes).toBeUndefined();
   });
+
+  it('closes the rename field when its cluster leaves the doc, and keeps it shut for a new one of that id', () => {
+    const api = createRef<EffectEditorApi>();
+    const ui = (doc: EffectDoc) => <EffectEditor ref={api} doc={doc} onChange={vi.fn()} width={800} height={600} />;
+    const { rerender } = render(ui(DOC));
+    act(() => api.current!.renameCluster('g'));
+    expect(seen.at(-1)!.overlays).toHaveLength(1);
+    rerender(ui({ ...DOC, pipeline: { ...DOC.pipeline, clusters: [] }, clusterBoxes: {} }));
+    expect(seen.at(-1)!.overlays).toBeUndefined();
+    rerender(ui(DOC));
+    expect(seen.at(-1)!.overlays).toBeUndefined();
+  });
 });
 
 describe('EffectEditor clusters under rack', () => {
