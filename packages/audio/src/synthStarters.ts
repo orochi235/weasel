@@ -28,7 +28,8 @@ function synthStart(
   patch: { envelope?: Envelope; filter?: VoiceFilter; duration?: number },
   make: (t0: number, into: AudioNode) => { nodes: AudioScheduledSourceNode[]; retune: () => void },
 ): SourceLike {
-  const t0 = whenMs / 1000;
+  // Late, from now: its envelope and gate in the past would start it at the sustain and cut it short.
+  const t0 = Math.max(whenMs / 1000, ctx.currentTime);
   const env = resolveEnvelope(patch.envelope);
   const gate = patch.duration;
   // Its own gain, not the chain's: `setGain` and a fade cancel whatever is
@@ -47,7 +48,7 @@ function synthStart(
   voice.release = () => {
     const at = ctx.currentTime;
     // Already past its gate: the release is running and the stop is booked.
-    if (gate !== undefined && at * 1000 - whenMs >= gate) return;
+    if (gate !== undefined && (at - t0) * 1000 >= gate) return;
     amp.release(at);
     filter?.release(at);
     stopAll(at + env.release / 1000);

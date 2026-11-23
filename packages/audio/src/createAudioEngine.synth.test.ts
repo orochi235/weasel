@@ -28,6 +28,18 @@ function chainOf(osc: FakeOscillator) {
 }
 
 describe('engine.playNote', () => {
+  it('plays a note started late whole, attack and gate from when it starts', async () => {
+    const { ctx, engine, tick } = await harness();
+    engine.playNote({ pitch: 'A4', when: 50, duration: 100, envelope: { attack: 10, release: 20 } });
+    ctx._advance(300);
+    tick();
+    const osc = ctx._oscillators[0];
+    const { env } = chainOf(osc);
+    expect(env.gain.holds[0]).toEqual({ value: 0, at: 0.3 });
+    expect(env.gain.ramps[0]).toEqual({ value: 1, at: expect.closeTo(0.31, 9) });
+    expect(osc.stopped.at(-1)).toBeCloseTo(0.42, 9);
+  });
+
   it('starts an oscillator at the named pitch and the booked time, through its own envelope', async () => {
     const { ctx, engine, tick } = await harness();
     engine.playNote({ pitch: 'A4', when: 50 });
