@@ -18,18 +18,16 @@ import {
 import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-import { configValueAt, isRecord, withConfigValueAt } from '../config/path';
+import { configValueAt, withConfigValueAt } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
 import type { ResolvedConfig } from '../config/types';
 import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
-import { leafValueAt } from './fields';
+import { leafValueAt, siblingsAt } from './fields';
 
 /** What the row at `path` shows of `config` while pinned: an encoded leaf's stored value read through its encoding. */
 export function shownAt(config: Record<string, unknown>, path: string, leaf: PrefLeaf): unknown {
   if (!isEncodedLeaf(leaf)) return leafValueAt(config, path, leaf);
-  const dot = path.lastIndexOf('.');
-  const within = dot === -1 ? config : configValueAt(config, path.slice(0, dot));
-  return prefDecodedValue(leaf, configValueAt(config, path), isRecord(within) ? within : undefined);
+  return prefDecodedValue(leaf, configValueAt(config, path), siblingsAt(config, path));
 }
 
 /** What a lab's config source reads and writes. */
@@ -86,11 +84,8 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
     schema: resolved.group,
     valueAt,
     write,
-    update: (path, fn, options) => {
-      const dot = path.lastIndexOf('.');
-      const within = dot === -1 ? config : configValueAt(config, path.slice(0, dot));
-      write(path, fn(configValueAt(config, path), isRecord(within) ? within : undefined), options);
-    },
+    update: (path, fn, options) =>
+      write(path, fn(configValueAt(config, path), siblingsAt(config, path)), options),
     autoAt,
     setAuto: (path, next) => {
       if (autoAt(path) !== undefined) setRowAuto?.(path, next, valueAt(path).value);
@@ -164,7 +159,18 @@ export function labRowContext(
   setAuto: ((next: boolean) => void) | undefined,
 ): LeafContext {
   const { value, draft } = row;
-  const write = (next: unknown): void => input.setConfig(path, next);
+  // Two updates in one event fold: the second reads what the first wrote, not this render's value.
+  let latest = value;
+  const write = (next: unknown): void => {
+    latest = next;
+    input.setConfig(path, next);
+  };
+  const send =
+    draft &&
+    ((next: unknown): void => {
+      latest = next;
+      draft(next);
+    });
   return {
     ...sourceLeafContext(createLabConfigSource(input), path, pref),
     value,
@@ -172,8 +178,8 @@ export function labRowContext(
     values: input.config,
     changed: row.changed,
     setValue: write,
-    update: (fn) => write(fn(value)),
-    ...(draft ? { drafts: { setValue: draft, update: (fn) => draft(fn(value)) } } : {}),
+    update: (fn) => write(fn(latest)),
+    ...(send ? { drafts: { setValue: send, update: (fn) => send(fn(latest)) } } : {}),
     auto: input.auto?.has(path) ?? false,
     setAuto: setAuto ?? (() => {}),
     fields: row.fields,

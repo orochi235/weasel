@@ -199,6 +199,21 @@ describe('<ControlPanel> collapsible sections', () => {
       [],
     );
 
+    it('leaves the sections and groups that declare nothing unfoldable', () => {
+      const mixed = resolveConfigSchema(
+        f.schema({
+          seed: f.number(0).section('Advanced', { collapsed: false }),
+          size: f.number(1).section('Basic'),
+          look: f.group({ gap: f.number(2) }).label('Look'),
+        }),
+        [],
+      );
+      renderWithIcons(<ControlPanel schema={mixed} config={config} setConfig={vi.fn()} />);
+      expect(screen.getByRole('button', { name: 'Advanced' })).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: 'Basic' })).toBeNull();
+      expect(screen.queryByRole('button', { name: 'Look' })).toBeNull();
+    });
+
     it('opens folded, and is foldable, with no collapse props at all', () => {
       renderWithIcons(<ControlPanel schema={closedSchema} config={config} setConfig={vi.fn()} />);
       expect(screen.getByLabelText('Seed')).not.toBeVisible();

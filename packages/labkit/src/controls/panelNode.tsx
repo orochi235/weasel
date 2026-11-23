@@ -8,7 +8,7 @@ import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import type { Rows } from './controlPack';
-import { extra, leafValueAt } from './fields';
+import { bareSpans, leafValueAt, siblingsAt } from './fields';
 import { headingActions, type liftedControl } from './panelHeadings';
 import type { PanelRowsSource } from './panelRows';
 import { ResetGroup } from './ResetGroup';
@@ -81,6 +81,7 @@ function barRow<TC extends Record<string, unknown>>(
       enabled={s.enabled}
       active={s.active}
       value={(p, leaf) => leafValueAt(s.shown, p, leaf)}
+      siblings={(p) => siblingsAt(s.shown, p)}
       read={(p) => configValueAt(s.shown, p)}
       write={s.setConfig}
       bind={(leaf) => boundAction(leaf, s.config as Record<string, unknown>, s.setConfig)}
@@ -182,9 +183,7 @@ export function pairedRow<TC extends Record<string, unknown>>(
       errors={s.errors}
       layout={rows.layout}
       changed={items.some((path) => s.changed?.has(path) === true)}
-      // A segmented cell carries every choice at once, so a pair holding
-      // one needs the whole row the way a segmented row of its own does.
-      span={cells.some(({ leaf }) => extra<string>(leaf, 'control') === 'radio')}
+      span={cells.some(({ leaf }) => bareSpans(leaf, rows.pack))}
     />
   );
 }

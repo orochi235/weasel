@@ -44,7 +44,10 @@ export function pairableAt(
   if (!visible(path)) return undefined;
   if (drawsOwn(resolved, renderers, path, found)) return undefined;
   // A cell is one bare control, so a leaf with no one field keeps its row.
-  if (isSliderLeaf(found) || labField(found, undefined, unwritten, NO_CHOICES) === null)
+  if (
+    isSliderLeaf(found) ||
+    labField(found, { value: undefined, write: unwritten, fields: NO_CHOICES }) === null
+  )
     return undefined;
   return [path, found];
 }

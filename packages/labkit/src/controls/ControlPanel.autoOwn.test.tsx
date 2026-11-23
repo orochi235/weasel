@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { AUTO } from '../config/auto';
 import { f } from '../config/builder';
 import { withConfigValueAt } from '../config/path';
@@ -47,7 +47,9 @@ describe('<ControlPanel> keeping its own auto set', () => {
   });
 
   it('starts a schema of other leaves from its own start-auto set', () => {
-    const first = f.schema({ a: f.number(1).range(0, 9).initial(AUTO).label('A') });
+    const first = f.schema({
+      a: f.number(1).range(0, 9).initial(AUTO).label('A'),
+    });
     const second = f.schema({
       a: f.number(1).range(0, 9).auto().label('A'),
       b: f.number(2).range(0, 9).initial(AUTO).label('B'),
@@ -62,7 +64,9 @@ describe('<ControlPanel> keeping its own auto set', () => {
   });
 
   it('keeps its pins across a render that resolves the same schema afresh', () => {
-    const schema = f.schema({ a: f.number(1).range(0, 9).initial(AUTO).label('A') });
+    const schema = f.schema({
+      a: f.number(1).range(0, 9).initial(AUTO).label('A'),
+    });
     const draw = () => (
       <ControlPanel schema={resolveConfigSchema(schema, [])} config={{}} setConfig={() => {}} />
     );
@@ -70,5 +74,50 @@ describe('<ControlPanel> keeping its own auto set', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Pin A' }));
     rerender(draw());
     expect(pinned('A')).toBe(true);
+  });
+
+  it('takes back the pin a draft made when the edit is canceled', () => {
+    const schema = f.schema({ a: f.number(1).initial(AUTO).label('A') });
+    const setConfig = vi.fn();
+    function Drafting() {
+      const [config, setDraft] = useState<Record<string, unknown>>({ a: 4 });
+      return (
+        <ControlPanel
+          schema={resolveConfigSchema(schema, [])}
+          config={config}
+          setConfig={setConfig}
+          draftConfig={(path, value) => setDraft((prev) => withConfigValueAt(prev, path, value))}
+        />
+      );
+    }
+    render(<Drafting />);
+    const input = screen.getByRole('spinbutton', { name: 'A' });
+    const before = (input as HTMLInputElement).value;
+    input.focus();
+    fireEvent.change(input, { target: { value: '7' } });
+    expect(pinned('A')).toBe(true);
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(pinned('A')).toBe(false);
+    expect(setConfig).not.toHaveBeenCalled();
+    expect((input as HTMLInputElement).value).toBe(before);
+  });
+
+  it('keeps the pin of a drafted edit that settles', () => {
+    const schema = f.schema({ a: f.number(1).initial(AUTO).label('A') });
+    const setConfig = vi.fn();
+    render(
+      <ControlPanel
+        schema={resolveConfigSchema(schema, [])}
+        config={{ a: 4 }}
+        setConfig={setConfig}
+        draftConfig={() => {}}
+      />,
+    );
+    const input = screen.getByRole('spinbutton', { name: 'A' });
+    input.focus();
+    fireEvent.change(input, { target: { value: '7' } });
+    fireEvent.blur(input);
+    expect(pinned('A')).toBe(true);
+    expect(setConfig.mock.calls).toEqual([['a', 7]]);
   });
 });

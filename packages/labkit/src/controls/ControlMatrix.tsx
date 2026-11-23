@@ -118,6 +118,10 @@ export function ControlMatrix({
 
   // A row is named in `rows`, so a leaf's static `hidden` does not drop it; a `showIf` does.
   const visible = (path: string): boolean => isRowVisible(schema, path, config, true, over);
+  // Read afresh each render: an edit can stop the open cell drawing, or move the setting its alias names.
+  const target = open && visible(open.path) ? cellAt(open.path) : undefined;
+  if (open && !target) setOpen(null);
+  const live = open && target ? { ...open, cell: target } : null;
   const scope: MatrixRowScope = {
     columns,
     schema,
@@ -164,7 +168,7 @@ export function ControlMatrix({
       </table>
       {ready && (
         <MatrixPopover
-          open={open}
+          open={live}
           close={() => setOpen(null)}
           triggerRef={triggerRef}
           provide={provide}

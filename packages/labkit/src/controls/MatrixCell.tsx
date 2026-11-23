@@ -1,10 +1,5 @@
 import { hexAlpha, toHex8, withAlpha01 } from '@weasel-js/paint';
-import {
-  isBuiltinPref,
-  type PrefLeaf,
-  type PrefNumber,
-  prefValueOrDefault,
-} from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefLeaf, type PrefNumber } from '@weasel-js/prefs';
 import { qty } from '@weasel-js/quantity';
 import { prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { type PropertyControlProps, stepDisplay } from '@weasel-js/ui/components/Properties';
@@ -12,6 +7,7 @@ import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Too
 import type { CSSProperties, DOMAttributes, MouseEvent, ReactElement, ReactNode } from 'react';
 import { AUTO } from '../config/auto';
 import { useFieldChoices } from './fieldChoices';
+import { fieldValue } from './fields';
 import { numberText, summarizeLeaf } from './inDialog';
 
 /** A color leaf whose default is empty: unset is a value of its own, not black. */
@@ -60,7 +56,7 @@ export function MatrixCell({
   setConfig: (path: string, value: unknown) => void;
   onOpen: (el: HTMLElement) => void;
 }) {
-  const shown = prefValueOrDefault(leaf, value);
+  const shown = fieldValue(leaf, value);
   const write = (next: unknown): void => setConfig(path, next);
   const choices = useFieldChoices();
   const field = isBuiltinPref(leaf)

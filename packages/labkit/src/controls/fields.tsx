@@ -15,7 +15,9 @@ import {
   withDrafts,
 } from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
-import { configValueAt } from '../config/path';
+import { configValueAt, isRecord } from '../config/path';
+import { isEncodedLeaf } from '../config/storedDefault';
+import { type ControlPack, spansGrid } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
@@ -46,9 +48,41 @@ export function extra<T>(leaf: PrefLeaf, key: LeafExtra): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-/** What the row of `leaf` at `path` shows of `config` ({@link prefValueOrDefault}). */
+/** What `leaf`'s control is handed when it holds `held`: an encoded leaf's stored value as it is, which its
+ *  encoding reads even when absent (its default is the option it reads as), and any other's value or default. */
+export function fieldValue(leaf: PrefLeaf, held: unknown): unknown {
+  return isEncodedLeaf(leaf) ? held : prefValueOrDefault(leaf, held);
+}
+
+/** The object the field at `path` of `config` sits in. */
+export function siblingsAt(config: unknown, path: string): Record<string, unknown> | undefined {
+  const dot = path.lastIndexOf('.');
+  const within = dot === -1 ? config : configValueAt(config, path.slice(0, dot));
+  return isRecord(within) ? within : undefined;
+}
+
+/** What the row of `leaf` at `path` hands its control of `config` ({@link fieldValue}). */
 export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
-  return prefValueOrDefault(leaf, configValueAt(config, path));
+  return fieldValue(leaf, configValueAt(config, path));
+}
+
+/** What {@link labField} draws a leaf from. */
+export interface LabFieldInput {
+  /** What the control is handed: {@link fieldValue}. */
+  value: unknown;
+  /** The object the leaf is a field of, which an `encoding` reads and writes against ({@link siblingsAt}). */
+  siblings?: Record<string, unknown>;
+  write: (value: unknown) => void;
+  fields: readonly PrefFieldChoice[];
+  disabled?: boolean;
+  /** Where the values an edit passes through go. */
+  draft?: (value: unknown) => void;
+  /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
+  read?: PrefBoundReader;
+  /** {@link useLabSettles}. */
+  settles?: Settles;
+  /** How long drafted text waits for the next keystroke ({@link useTextWaitMs}). */
+  textWaitMs?: number;
 }
 
 /**
@@ -57,25 +91,15 @@ export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unkn
  * without it, a typed field writes only that settled value. `null` for a kind with no one field: a paint, which a
  * hex swatch would flatten to a solid and the panel declines, and an object,
  * which a flat row would write one field of and the panel opens in a dialog.
- * `read` reads the panel's values, which a number's `minAt` and `maxAt` bound it by; `settles` is
- * {@link useLabSettles}, and `textWaitMs` how long drafted text waits for the next keystroke ({@link useTextWaitMs}).
  */
-export function labField(
-  given: PrefLeaf,
-  value: unknown,
-  write: (value: unknown) => void,
-  fields: readonly PrefFieldChoice[],
-  disabled = false,
-  draft?: (value: unknown) => void,
-  read?: PrefBoundReader,
-  settles: Settles = PARAMS_SETTLES.lab,
-  textWaitMs = 0,
-): PropertyControlProps | null {
+export function labField(given: PrefLeaf, input: LabFieldInput): PropertyControlProps | null {
+  const { value, siblings, write, fields, disabled = false, draft, read } = input;
+  const { settles = PARAMS_SETTLES.lab, textWaitMs = 0 } = input;
   // `prefFieldProps` answers for the kinds ui draws that are no built-in of the schema's, the font pickers.
   if (given.kind === 'paint' || given.kind === 'object') return null;
   const leaf =
     given.kind === 'number' && read ? prefBoundedNumber(given as PrefNumber, read) : given;
-  const state = { value, setValue: write, fields, disabled };
+  const state = { value, siblings, setValue: write, fields, disabled };
   const settled = prefFieldProps(
     leaf,
     state,
@@ -94,12 +118,21 @@ export function labField(
     : settled;
 }
 
+/** Whether a pair holding `leaf` takes the whole row under `pack`, as `leaf`'s own row would ({@link spansGrid}),
+ *  for the control its {@link BareControl} draws: a number there is always a typed input. */
+export function bareSpans(leaf: PrefLeaf, pack: ControlPack): boolean {
+  const field = labField(leaf, { value: undefined, write: unwritten, fields: [] });
+  if (field === null) return false;
+  return spansGrid(field.kind === 'number' ? { ...field, control: 'input' } : field, pack);
+}
+
 /** A leaf's control without the row chrome a whole row of its own would
  *  bring: a paired cell, or a heading's control. `name` is the accessible name,
  *  the leaf's own unless the control stands for something else. */
 export function BareControl({
   leaf,
   value,
+  siblings,
   write,
   draft,
   name = leaf.name,
@@ -108,6 +141,8 @@ export function BareControl({
 }: {
   leaf: PrefLeaf;
   value: unknown;
+  /** The object the leaf is a field of ({@link siblingsAt}). */
+  siblings?: Record<string, unknown>;
   write: (value: unknown) => void;
   /** Where the values an edit passes through go — see {@link labField}. */
   draft?: (value: unknown) => void;
@@ -117,17 +152,8 @@ export function BareControl({
   /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
   read?: PrefBoundReader;
 }) {
-  const field = labField(
-    leaf,
-    value,
-    write,
-    useFieldChoices(),
-    disabled,
-    draft,
-    read,
-    useLabSettles(),
-    useTextWaitMs(leaf),
-  );
+  const setting = useLabFieldSetting(leaf);
+  const field = labField(leaf, { ...setting, value, siblings, write, disabled, draft, read });
   if (field === null) return null;
   switch (field.kind) {
     case 'number':
@@ -154,6 +180,12 @@ export function BareControl({
     default:
       return <PropertyControl {...field} name={name} />;
   }
+}
+
+/** What every lab field of `leaf` reads from its surroundings: the font choices, the lab's settles, and how
+ *  long its text waits. */
+export function useLabFieldSetting(leaf: PrefLeaf) {
+  return { fields: useFieldChoices(), settles: useLabSettles(), textWaitMs: useTextWaitMs(leaf) };
 }
 
 /** How long `leaf`'s typed text waits before it is written: its own `debounceMs`, else a lab's. */

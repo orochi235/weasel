@@ -101,4 +101,28 @@ describe('ControlMatrix conditions', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(screen.getByRole('button', { name: 'Defaults Glow' })).toBeEnabled();
   });
+
+  it('closes an open popover once its cell stops drawing', () => {
+    const draw = (background: boolean) => (
+      <ControlMatrix
+        schema={schema}
+        columns={columns}
+        rows={rows}
+        config={{
+          locked: false,
+          rims: false,
+          looks: { defaults: held, window: { ...held, background } },
+        }}
+        auto={new Set()}
+        setConfig={vi.fn()}
+      />
+    );
+    const { rerender } = render(draw(true));
+    fireEvent.click(screen.getByRole('button', { name: 'Window Glow' }));
+    expect(screen.getByRole('dialog', { name: 'Window Glow' })).toBeInTheDocument();
+    rerender(draw(false));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    rerender(draw(true));
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
 });

@@ -15,6 +15,12 @@ import { leafValueAt } from './fields';
 import { autoReadout, summarizeAuto } from './inDialog';
 import { createLabConfigSource } from './labSource';
 
+/** What the row of an auto `leaf` at `path` draws: the value in effect in `shown` (`prefAutoValue`: the report or
+ *  the resolver's, else `auto.value`), else what a field holding nothing draws. */
+export function autoRowValue(leaf: PrefLeaf, shown: unknown, path: string): unknown {
+  return prefValueOrDefault(leaf, prefAutoValue(leaf, configValueAt(shown, path)));
+}
+
 /** What a row reads its auto state from. */
 export interface RowAutoSource {
   path: string;
@@ -68,10 +74,9 @@ export function useRowAuto(source: RowAutoSource) {
   // resolver, so the row reports the value the instrument actually got — the
   // two diverge as soon as a resolver reads another auto path.
   const resolvedValue = isAutoRow ? configValueAt(shown, path) : undefined;
-  // An auto row's control stays live, so it draws the value in effect (`prefAutoValue`: the report or the
-  // resolver's, else `auto.value`), never the stale pinned value underneath. Pinning keeps it. With none yet,
-  // the control has to draw something, and draws what a field holding nothing draws.
-  const value = isAutoRow ? prefValueOrDefault(leaf, prefAutoValue(leaf, resolvedValue)) : pinned;
+  // An auto row's control stays live, so it draws the value in effect, never the stale pinned value
+  // underneath. Pinning keeps it.
+  const value = isAutoRow ? autoRowValue(leaf, shown, path) : pinned;
   const setAuto = (next: boolean): void => setRowAuto?.(path, next, value);
   // What the row would read as auto, pinned or not: the config resolved with
   // this path unpinned beside the ones that already are. Only where something
