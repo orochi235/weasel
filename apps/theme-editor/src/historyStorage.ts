@@ -65,6 +65,8 @@ export function fitted(saved: SerializedHistory, budget = SAVED_CHARS): Serializ
     out = oldest
       ? { ...out, undoStack, floor: oldest.id, droppedEntries: out.droppedEntries + 1 }
       : { ...out, redoStack, droppedEntries: out.droppedEntries + 1 };
+    // The estimate leaves out the commas and the counters, so a fit is only taken once measured.
+    if (size <= budget) size = JSON.stringify(out).length;
   }
   return out;
 }
