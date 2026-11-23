@@ -466,6 +466,21 @@ describe('domRuns round-trip — decoration and tracking', () => {
     expect(domToRuns(parent)).toEqual(runs);
   });
 
+  it('reads a fontScale, fontSize and letterSpacing back exactly where CSS keeps fewer digits', () => {
+    const runs: StyledRun[] = [
+      { text: 'a', fontScale: 1 / 3 },
+      { text: 'b', fontSize: 13.123456789 },
+      { text: 'c', letterSpacing: 0.123456789 },
+    ];
+    runsToDom(runs, parent);
+    // Blink serializes an inline length to about six significant digits.
+    const [a, b, c] = [...parent.children] as HTMLElement[];
+    a.style.fontSize = '33.3333%';
+    b.style.fontSize = '13.1235px';
+    c.style.letterSpacing = '0.123457px';
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
   it('round-trips a screen-pixel fontSize and letterSpacing, drawn at the overlay\'s zoom', () => {
     const runs: StyledRun[] = [
       { text: 'a', fontSize: { px: 12 } },
