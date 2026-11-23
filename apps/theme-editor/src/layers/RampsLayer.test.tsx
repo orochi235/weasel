@@ -62,6 +62,19 @@ describe('<RampsLayer>', () => {
     expect(screen.getByRole('slider', { name: 'Min hue gap' })).toBeInTheDocument();
   });
 
+  it('reads its gates from the draft when the draft does not derive', async () => {
+    const swatch = weasel.ramps!.swatch as { gates?: object };
+    const draft = {
+      ...weasel,
+      ramps: { ...weasel.ramps!, swatch: { ...swatch, gates: { ...swatch.gates, hueFloor: 0.6 } } },
+      pins: { ...weasel.pins, 'brand-ink': '{nowhere}' },
+    } as unknown as ThemeDefinition;
+    const lookup = lookupOf();
+    renderWithIcons(<RampsLayer draft={draft} derived={deriveDraft(weasel, lookup, {})} lookup={lookup} highlight={[]} focused={null} onFocus={vi.fn()} onChange={vi.fn()} />);
+    await userEvent.click(within(screen.getByRole('region', { name: 'swatch ramp' })).getByRole('button', { name: 'Edit gates' }));
+    expect(screen.getByRole('slider', { name: 'Min hue gap' })).toHaveValue('0.6');
+  });
+
   it("shows a ramp's own issues inside its section, and does not call authored values generated", () => {
     const broken = { ...weasel, ramps: { ...weasel.ramps!, accent: { ...weasel.ramps!.accent, chroma: { lightBias: 0.5 } } } } as unknown as ThemeDefinition;
     const lookup = lookupOf(broken);

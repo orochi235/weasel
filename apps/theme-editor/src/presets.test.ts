@@ -24,6 +24,13 @@ describe('restoring the live state', () => {
     expect(restored.c).toEqual({ ...INITIAL.c, minContrast: 3 });
   });
 
+  it('takes the default for a constraint outside the values the generator reads', () => {
+    const anchors = [{ name: 'red', hue: 25, lightness: 0.6 }, { name: 'bad' }];
+    const restored = liveOf({ c: { order: 'random', surface: 'blue', anchors, minContrast: 3 } });
+    expect(restored.c).toEqual({ ...INITIAL.c, minContrast: 3, anchors: [anchors[0]] });
+    expect(liveOf({ c: { order: 'hue', surface: '#ABCDEF' } }).c).toMatchObject({ order: 'hue', surface: '#ABCDEF' });
+  });
+
   it('refuses a value that is not a state, so loading keeps it aside', () => {
     expect(() => liveOf('{not json')).toThrow();
     expect(() => liveOf(42)).toThrow();
@@ -32,7 +39,7 @@ describe('restoring the live state', () => {
   it('keeps only the anchors the generator can read', () => {
     const good = { name: 'red', hue: 25, lightness: 0.6 };
     const muted = { name: 'tan', hue: 70, lightness: 0.7, chroma: 0.05 };
-    const anchors = [good, null, 'red', { name: 'x' }, { name: 'y', hue: '25', lightness: 0.5 }, { name: 'z', hue: 25, lightness: null }, { ...muted, chroma: 'lots' }, muted];
+    const anchors = [good, null, 'red', { name: 'x' }, { name: 'y', hue: '25', lightness: 0.5 }, { name: 'z', hue: 25, lightness: null }, { ...muted, chroma: 'lots' }, { ...good, lightness: 1.5 }, { ...muted, chroma: -0.1 }, muted];
     expect(liveOf({ c: {}, anchors }).anchors).toEqual([good, muted]);
   });
 

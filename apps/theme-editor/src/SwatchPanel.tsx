@@ -100,8 +100,8 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
   const swatches = sets[source];
   const colors = useMemo(() => new Map(swatches.map((s) => [s.key, colorOf(s.anchor())])), [swatches]);
   const full = anchors.length >= count;
-  const pinnedByColor = new Map(anchors.map((a) => [colorOf(a), a.name]));
-  const pinnedName = (s: Swatch) => pinnedByColor.get(colors.get(s.key)!);
+  const pinnedColors = new Set(anchors.map(colorOf));
+  const isPinned = (s: Swatch) => pinnedColors.has(colors.get(s.key)!);
 
   const add = (make: () => Anchor) => {
     if (full) return;
@@ -111,10 +111,10 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
     for (let n = 2; taken.has(name); n += 1) name = `${a.name}-${n}`;
     onChange([...anchors, { ...a, name }]);
   };
-  const unpin = (name: string) => onChange(anchors.filter((a) => a.name !== name));
+  const unpin = (s: Swatch) => onChange(anchors.filter((a) => colorOf(a) !== colors.get(s.key)));
   const byKey = new Map(swatches.map((s) => [s.key, s]));
   const crayons: SwatchGridOption[] = swatches.map((s) => {
-    const pinned = pinnedName(s) !== undefined;
+    const pinned = isPinned(s);
     return {
       id: s.key,
       value: s.hex,
@@ -184,13 +184,12 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
           className={styles.crayonGrid}
           aria-label="Swatches to pin"
           options={crayons}
-          value={swatches.filter((s) => pinnedName(s) !== undefined).map((s) => s.key)}
+          value={swatches.filter(isPinned).map((s) => s.key)}
           columns={CRAYON_COLUMNS}
           onSelect={(key) => {
             const s = key === null ? undefined : byKey.get(key);
             if (!s) return;
-            const name = pinnedName(s);
-            if (name !== undefined) unpin(name);
+            if (isPinned(s)) unpin(s);
             else add(s.anchor);
           }}
           onHoverChange={(o) => setHovered(o && `${o.label} · ${o.value}`)}

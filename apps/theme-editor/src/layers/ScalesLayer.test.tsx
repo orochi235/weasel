@@ -17,6 +17,14 @@ describe('<ScalesLayer>', () => {
     expect(within(space).getByText('7px')).toBeInTheDocument();
   });
 
+  it('reads its sliders from the draft when the draft does not derive', () => {
+    const lookup = lookupOf(spaced);
+    const draft: ThemeDefinition = { ...spaced, scales: { space: { ...spaced.scales!.space, base: 9 } }, pins: { 'space-md': '{nowhere}' } };
+    render(<ScalesLayer draft={draft} derived={deriveDraft(spaced, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
+    const space = screen.getByRole('region', { name: 'space scale' });
+    expect(within(space).getByRole('slider', { name: 'Base' })).toHaveValue('9');
+  });
+
   it('shows a parameter that varies by an axis as a note, not a slider', () => {
     const lookup = lookupOf(spaced);
     render(<ScalesLayer draft={spaced} derived={deriveDraft(spaced, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);

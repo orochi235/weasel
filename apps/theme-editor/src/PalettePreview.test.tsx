@@ -1,7 +1,7 @@
 import './labTestSetup';
-import { cleanup, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { DEFAULT_CONSTRAINTS, type Palette } from '@weasel-js/theme/engine';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { PalettePreview } from './PalettePreview';
 import { SURFACES } from './presets';
@@ -42,5 +42,25 @@ describe('<PalettePreview> stats', () => {
   it('marks the pane drawn on the surface the gate measured against', () => {
     renderWithIcons(<PalettePreview palette={palette} constraints={{ ...DEFAULT_CONSTRAINTS, surface: SURFACES.light }} />);
     expect(screen.getByText('contrast gated here').closest('section')).toHaveTextContent(/^light surface/);
+  });
+});
+
+describe('<PalettePreview> copy as tokens', () => {
+  afterEach(cleanup);
+
+  it('copies valid JSON whatever the swatch names hold', async () => {
+    const writeText = vi.fn((_: string) => Promise.resolve());
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const swatches = [
+      { name: 'my "brand"', hex: '#112233' },
+      { name: 'back\\slash', hex: '#445566' },
+    ];
+    renderWithIcons(<PalettePreview palette={{ ...palette, swatches } as unknown as Palette} constraints={DEFAULT_CONSTRAINTS} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Copy as tokens' }));
+    await act(async () => {});
+    expect(JSON.parse(`{${writeText.mock.calls[0]![0]}}`)).toEqual({
+      'swatch-my "brand"': { $value: '#112233' },
+      'swatch-back\\slash': { $value: '#445566' },
+    });
   });
 });

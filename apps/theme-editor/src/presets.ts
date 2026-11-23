@@ -71,31 +71,32 @@ export function liveOf(stored: unknown): LabState {
   return stateOf(stored);
 }
 
-/** Each stored constraint whose kind matches its default's, the default for the rest. `NaN` is stored as `null`. */
+/** Each stored constraint holding a value the generator reads, the default for the rest. `NaN` is stored as `null`. */
 function constraintsOf(stored: unknown): Constraints {
   const from = (typeof stored === 'object' && stored !== null ? stored : {}) as Record<string, unknown>;
   const out: Record<keyof Constraints, unknown> = { ...INITIAL.c };
   for (const key of Object.keys(INITIAL.c) as (keyof Constraints)[]) {
     if (!Object.hasOwn(from, key)) continue;
-    const fallback = INITIAL.c[key];
     const value = from[key];
-    const fits = Array.isArray(fallback)
-      ? Array.isArray(value)
-      : typeof value === typeof fallback && (typeof value !== 'number' || isFiniteNumber(value));
-    if (fits) out[key] = value;
+    if (key === 'anchors') out[key] = anchorsOf(value);
+    else if (key === 'order' ? value === 'hue' || value === 'farthest' : key === 'surface' ? typeof value === 'string' && HEX.test(value) : isFiniteNumber(value)) {
+      out[key] = value;
+    }
   }
   return out as unknown as Constraints;
 }
 
-/** Each stored anchor with a name, a finite hue and lightness, and a chroma that is finite or absent. */
+const HEX = /^#[0-9a-f]{6}$/i;
+
+/** Each stored anchor with a name, a finite hue, a lightness from 0 to 1, and a chroma that is absent or at least 0. */
 function anchorsOf(stored: unknown): Anchor[] {
   if (!Array.isArray(stored)) return [];
   return stored.flatMap((a: unknown): Anchor[] => {
     if (typeof a !== 'object' || a === null) return [];
     const { name, hue, lightness, chroma } = a as Record<string, unknown>;
-    if (typeof name !== 'string' || !isFiniteNumber(hue) || !isFiniteNumber(lightness)) return [];
+    if (typeof name !== 'string' || !isFiniteNumber(hue) || !isFiniteNumber(lightness) || lightness < 0 || lightness > 1) return [];
     if (chroma === undefined) return [{ name, hue, lightness }];
-    return isFiniteNumber(chroma) ? [{ name, hue, lightness, chroma }] : [];
+    return isFiniteNumber(chroma) && chroma >= 0 ? [{ name, hue, lightness, chroma }] : [];
   });
 }
 

@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import type { AxisChoice, ThemeDefinition } from '@weasel-js/theme';
+import type { AxisChoice, PinObject, ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef } from 'react';
@@ -19,6 +19,9 @@ export interface TokenLayerProps {
   readonly highlight: readonly string[];
   readonly onChange: (next: ThemeDefinition, key: string, label?: string) => void;
 }
+
+const isPinObject = (v: unknown): v is PinObject =>
+  typeof v === 'object' && v !== null && !Array.isArray(v) && Object.hasOwn(v, 'value');
 
 /** Seeds, Components and Pins, edited by token type through weasel-ui's `TokenPanel`. */
 export function TokenLayer({ layer, draft, result, merged, selection, highlight, onChange }: TokenLayerProps) {
@@ -52,13 +55,16 @@ export function TokenLayer({ layer, draft, result, merged, selection, highlight,
       return;
     }
     const token = getOwn(result.tokens, name);
+    const own = getOwn(draft.pins ?? {}, name);
+    const leaf = leafAt(own, selection);
     const pin = {
-      value: tokenValueFromText(token?.type, value, token?.value),
       type: token?.type,
       ...(token?.alpha === undefined ? {} : { alpha: token.alpha }),
+      ...(isPinObject(leaf) ? leaf : {}),
+      value: tokenValueFromText(token?.type, value, token?.value),
     };
     onChange(
-      setPin(draft, name, writeAt(getOwn(draft.pins ?? {}, name), selection, pin)),
+      setPin(draft, name, writeAt(own, selection, pin)),
       `pin:${name}`,
       `Edit ${name}`,
     );

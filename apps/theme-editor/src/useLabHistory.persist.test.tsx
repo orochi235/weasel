@@ -148,8 +148,7 @@ describe('useLabHistory with a store', () => {
       nextEntryId: 5,
       droppedEntries: 0,
     };
-    const one = JSON.stringify(entry(1)).length;
-    const cut = fitted(big, JSON.stringify(big).length - one);
+    const cut = fitted(big, JSON.stringify({ ...big, undoStack: [entry(2), entry(3)], floor: 1, droppedEntries: 1 }).length);
     expect(cut.undoStack.map((e) => e.id)).toEqual([2, 3]);
     expect(cut.floor).toBe(1);
     expect(cut.droppedEntries).toBe(1);
