@@ -5,7 +5,7 @@ import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef } from 'react';
 import styles from './ThemeEditor.module.css';
 import { layerEntries } from './theme/entries';
-import { LAYERS, clearAt, keepNumberness, leafAt, tokenValueFromText, removePin, setPin, writeAt, type LayerId } from './theme/model';
+import { LAYERS, clearAt, keepNumberness, leafAt, reachableAt, tokenValueFromText, removePin, setPin, writeAt, type LayerId } from './theme/model';
 
 export interface TokenLayerProps {
   readonly layer: LayerId;
@@ -49,15 +49,20 @@ export function TokenLayer({ layer, draft, result, merged, selection, highlight,
       );
       return;
     }
+    // A pin no selection reaches is replaced by an edit and dropped by a reset, rather than edited at a branch.
+    const pinned = getOwn(draft.pins ?? {}, name);
+    const own = reachableAt(pinned, selection) ? pinned : undefined;
     if (value === null) {
-      const own = getOwn(draft.pins ?? {}, name);
+      if (pinned !== undefined && own === undefined) {
+        onChange(removePin(draft, name), `unpin:${name}`, `Reset ${name}`);
+        return;
+      }
       const rest = clearAt(own, selection);
       if (rest === own) return;
       onChange(rest === undefined ? removePin(draft, name) : setPin(draft, name, rest), `unpin:${name}`, `Reset ${name}`);
       return;
     }
     const token = getOwn(result.tokens, name);
-    const own = getOwn(draft.pins ?? {}, name);
     const leaf = leafAt(own, selection);
     const pin = {
       type: token?.type,

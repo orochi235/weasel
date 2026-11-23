@@ -42,6 +42,13 @@ describe('<TokenLayer>', () => {
     expect(nextDef(onChange).pins?.['brand-ink']).toEqual({ value: '#abcdef', type: 'color' });
   });
 
+  it('replaces a pin varying by an axis the theme does not declare when its token is edited, rather than throw', () => {
+    const pins = { 'panel-border-style': { by: 'flavor', plain: { value: 'dashed', type: 'string' } } };
+    const onChange = renderLayer('components', { ...tiny, pins } as ThemeDefinition);
+    fireEvent.change(screen.getByRole('textbox', { name: 'panel-border-style value' }), { target: { value: 'dotted' } });
+    expect(nextDef(onChange).pins?.['panel-border-style']).toEqual({ value: 'dotted', type: 'string' });
+  });
+
   it('drops the pin when a row is reset', () => {
     const onChange = renderLayer('pins');
     fireEvent.click(screen.getByRole('button', { name: 'Reset brand-ink' }));

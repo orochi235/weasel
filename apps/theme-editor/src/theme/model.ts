@@ -126,6 +126,19 @@ export function leafAt<T>(v: Varying<T> | undefined, selection: AxisChoice): T |
   return cur as T | undefined;
 }
 
+/** Whether `selection` names a value for every `by` on its path through `v`, so {@link writeAt} and {@link clearAt}
+ *  can edit it. One varying by an axis the theme does not declare is not, and applies at no selection. */
+export function reachableAt(v: unknown, selection: AxisChoice): boolean {
+  let cur = v;
+  while (isByAxis(cur)) {
+    const key = getOwn(selection, cur.by);
+    if (key === undefined || key === 'by') return false;
+    if (!Object.hasOwn(cur, key)) return true;
+    cur = (cur as Record<string, unknown>)[key];
+  }
+  return true;
+}
+
 /** The branch of `v` that `selection` names; throws when it names none, where writing a leaf would drop every branch. */
 function branchOf(v: { readonly by: string }, selection: AxisChoice): string {
   const key = getOwn(selection, v.by);
