@@ -16,7 +16,7 @@ import { useEditingId } from './editSession';
 import { useHeldNodeStyle } from './heldNodeStyle';
 import { writeEdit, type EditDraft } from './overlayDraft';
 import { createOverlayEdits } from './overlayEdits';
-import { useEditCarry } from './overlayCarry';
+import { useEditCarry, type CarriedEdit } from './overlayCarry';
 import { overlayTop } from './overlayFrame';
 import { useOverlayFollow } from './overlayFollow';
 import type { OverlayHistory } from './overlayHistory';
@@ -51,19 +51,24 @@ export function useTextEdit(
   // Each way out drops the draft first: a blur `onEnd` causes reaches `commit` while the overlay is still mounted.
   const cancelEdit = useCallback(() => { draftRef.current = null; setEditingId(null); }, [setEditingId]);
 
+  const { takeCarry, stashCarry, peekCarry } = useEditCarry({
+    editingIdRef, optsRef, selectionRef, nodeStyleRef, pendingRef, pendingAtRef,
+  });
+
   const commit = useCallback(() => {
     const id = editingId;
-    const overlay = overlayRef.current;
-    const draft = draftRef.current;
+    const open = overlayRef.current && draftRef.current
+      ? { overlay: overlayRef.current, draft: draftRef.current, held: nodeStyleRef.current }
+      : carriedOpen(peekCarry(id));
     draftRef.current = null;
-    if (id == null || !overlay || !draft) return void setEditingId(null);
-    const edit = draft.finished(overlay, nodeStyleRef.current);
+    if (id == null || !open) return void setEditingId(null);
+    const edit = open.draft.finished(open.overlay, open.held);
     if (edit) {
       holdNodeStyle(null);
       writeEdit(optsRef.current, id, edit);
     }
     setEditingId(null);
-  }, [editingId, optsRef, holdNodeStyle, setEditingId, nodeStyleRef]);
+  }, [editingId, optsRef, holdNodeStyle, setEditingId, nodeStyleRef, peekCarry]);
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
@@ -84,9 +89,6 @@ export function useTextEdit(
     pendingRef, armPending, selectionRef, publishRange,
   });
 
-  const { takeCarry, stashCarry } = useEditCarry({
-    editingIdRef, optsRef, selectionRef, nodeStyleRef, pendingRef, pendingAtRef,
-  });
 
   useEffect(() => {
     const { container, getText, getStyle, getPaint } = optsRef.current;
@@ -150,6 +152,14 @@ export function useTextEdit(
     selection, rangeStyle, pendingStyle, applyStyleToSelection, toggleStyle,
     effectiveStyle: shownStyle(opts, editingId, nodeStyle, rangeStyle, pendingStyle),
   };
+}
+
+/** An edit carried while it has no container, as an overlay detached from the page that commits as one would. */
+function carriedOpen(carried: CarriedEdit | null): { overlay: HTMLElement; draft: EditDraft; held: TextStyle | null } | null {
+  if (!carried) return null;
+  const overlay = document.createElement('div');
+  overlay.append(carried.content.cloneNode(true));
+  return { overlay, draft: carried.draft, held: carried.held };
 }
 
 /** Where the node `id` is on screen now, and the style the edit holds it in, read through the latest options. */

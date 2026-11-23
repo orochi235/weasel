@@ -56,5 +56,10 @@ export function useEditCarry(host: EditCarryHost) {
     };
   }, [editingIdRef, optsRef, selectionRef, nodeStyleRef, pendingRef, pendingAtRef]);
 
-  return { takeCarry, stashCarry };
+  /** The edit carried for `id`, left in place. */
+  const peekCarry = useCallback((id: string | null): CarriedEdit | null => (
+    carryRef.current?.id === id ? carryRef.current : null
+  ), []);
+
+  return { takeCarry, stashCarry, peekCarry };
 }

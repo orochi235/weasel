@@ -69,6 +69,27 @@ describe('useTextEdit — a container that changes mid-edit', () => {
     next.remove();
   });
 
+  it('commits what an edit carried while it had no container', () => {
+    const styles: Record<string, TextStyle> = { a: { fontSize: 16, underline: true } };
+    const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
+    h.opts.getStyle = (id) => styles[id];
+    h.opts.setStyle = (id, style) => { styles[id] = style; };
+    const { result, rerender } = renderHook(
+      ({ container }: { container: HTMLElement | null }) => useTextEdit({ ...h.opts, container }),
+      { initialProps: { container: h.container as HTMLElement | null } },
+    );
+    act(() => result.current.startEdit('a'));
+    const first = getOverlay(h.container)!;
+    selectChars(first, 4, 7);
+    act(() => { pressKey(first, 'u', { meta: true }); });
+    appendChar(first, '!');
+    rerender({ container: null });
+    act(() => result.current.commitEdit());
+    expect(result.current.editingId).toBeNull();
+    expect(styles.a).toEqual({ fontSize: 16 });
+    expect(h.runCommits[0].runs).toEqual([{ text: 'one ', underline: true }, { text: 'two!' }]);
+  });
+
   it('opens a later edit of the same node from the node, not from an edit canceled while it had no container', () => {
     const h = makeRichHarness({ a: { text: 'hello', runs: [{ text: 'hello' }] } });
     const { result, rerender } = renderHook(
