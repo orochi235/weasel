@@ -62,15 +62,15 @@ function obstaclesOf(specs: readonly DiagramSpec[], world: ReadonlyMap<string, R
   return out;
 }
 
-/** Each edge's label spec, by the edge it labels. */
-function labelsOf(specs: readonly DiagramSpec[]): Map<string, AvoidLabel> {
-  const out = new Map<string, AvoidLabel>();
+/** Each edge's label specs, by the edge they label. */
+function labelsOf(specs: readonly DiagramSpec[]): Map<string, AvoidLabel[]> {
+  const out = new Map<string, AvoidLabel[]>();
   for (const spec of specs) {
     const label = diagramLabelOf(spec);
     const owner = Array.isArray(spec.dependsOn) ? spec.dependsOn[0] as string | undefined : undefined;
-    if (label === null || owner === undefined || out.has(owner)) continue;
+    if (label === null || owner === undefined) continue;
     const { width, height } = spec.pose as RectPose;
-    out.set(owner, { id: spec.id as string, placement: label, size: { width, height } });
+    out.set(owner, [...(out.get(owner) ?? []), { id: spec.id as string, placement: label, size: { width, height } }]);
   }
   return out;
 }
@@ -101,9 +101,9 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
       const edge = diagramEdgeOf(spec);
       if (edge === null) continue;
       if (edge.offPage !== undefined) {
-        const label = labels.get(spec.id as string);
-        const box = label === undefined ? undefined : world.get(label.id) ?? (byId.get(label.id)!.pose as RectPose);
-        if (box !== undefined) obstacles.push({ id: label!.id, kind: 'label', edge: spec.id as string, box });
+        for (const { id } of labels.get(spec.id as string) ?? []) {
+          obstacles.push({ id, kind: 'label', edge: spec.id as string, box: world.get(id) ?? (byId.get(id)!.pose as RectPose) });
+        }
         continue;
       }
       const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
@@ -126,7 +126,7 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
         to: { node: b.id as string, ports: to },
         ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints } : {}),
         ...(route != null ? { route } : {}),
-        ...(labels.has(spec.id as string) ? { label: labels.get(spec.id as string)! } : {}),
+        ...(labels.has(spec.id as string) ? { labels: labels.get(spec.id as string)! } : {}),
       });
     }
     if (edges.length === 0) return [...specs];

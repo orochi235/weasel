@@ -71,7 +71,7 @@ export function build(spec: SceneSpec, region = true): AvoidInput {
     obstacles,
     edges: spec.edges.map(({ a, b, from, to, waypoints, label }, k) => ({
       ...edgeBetween(`e${k}`, shapes[a]!, shapes[b >= a ? b + 1 : b]!, from, to, waypoints.length > 0 ? waypoints : undefined),
-      ...(label ? { label: { id: `e${k}/label`, placement: { at: 'mid' as const, offset: 9 }, size: { width: 40, height: 14 } } } : {}),
+      ...(label ? { labels: [{ id: `e${k}/label`, placement: { at: 'mid' as const, offset: 9 }, size: { width: 40, height: 14 } }] } : {}),
     })),
   };
 }

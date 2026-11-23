@@ -1,8 +1,8 @@
 /**
  * A diagram scene as the avoid router reads it: every participant, container,
  * pool, cluster box, and header as an obstacle, and every `avoid` connector not
- * split across pages, with the ports each end may use and its label. A split
- * connector's label, on its first stub, is an obstacle of its own.
+ * split across pages, with the ports each end may use and its labels. A split
+ * connector's labels, on its stubs, are obstacles of their own.
  */
 import {
   worldPoses,
@@ -73,8 +73,8 @@ export function avoidSceneInput<TPose>(
 
   const obstacles: AvoidObstacle[] = [];
   const edgeNodes: SceneNode[] = [];
-  const labels = new Map<string, AvoidLabel>();
-  const labelNodes = new Map<string, SceneNode>();
+  const labels = new Map<string, AvoidLabel[]>();
+  const labelNodes = new Map<string, SceneNode[]>();
   const split: string[] = [];
   for (const node of sc.renderOrderNodes()) {
     const edge = diagramEdgeOf(node);
@@ -87,9 +87,9 @@ export function avoidSceneInput<TPose>(
     if (label !== null) {
       const owner = Array.isArray(node.dependsOn) ? node.dependsOn[0] : undefined;
       const { width, height } = poseDescriptor.getBounds(node.pose as TPose);
-      if (owner !== undefined && !labels.has(owner)) {
-        labels.set(owner, { id: node.id, placement: label, size: { width, height } });
-        labelNodes.set(owner, node);
+      if (owner !== undefined) {
+        labels.set(owner, [...(labels.get(owner) ?? []), { id: node.id, placement: label, size: { width, height } }]);
+        labelNodes.set(owner, [...(labelNodes.get(owner) ?? []), node]);
       }
       continue;
     }
@@ -107,8 +107,7 @@ export function avoidSceneInput<TPose>(
   }
 
   for (const id of split) {
-    const node = labelNodes.get(id);
-    if (node !== undefined) obstacles.push({ id: node.id, kind: 'label', edge: id, box: poseDescriptor.getBounds(pose(node)) });
+    for (const node of labelNodes.get(id) ?? []) obstacles.push({ id: node.id, kind: 'label', edge: id, box: poseDescriptor.getBounds(pose(node)) });
   }
 
   const edges: AvoidEdge[] = [];
@@ -131,7 +130,7 @@ export function avoidSceneInput<TPose>(
       to: { node: b.id, ports: to },
       ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints as Vec2[] } : {}),
       ...(edge.route !== undefined ? { route: edge.route } : {}),
-      ...(labels.has(node.id) ? { label: labels.get(node.id)! } : {}),
+      ...(labels.has(node.id) ? { labels: labels.get(node.id)! } : {}),
     });
   }
   return { obstacles, edges };

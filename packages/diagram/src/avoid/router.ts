@@ -226,10 +226,13 @@ function routeDirty(dirty: readonly AvoidEdge[], ctx: EdgeRouteContext & { cross
     const full = routeEdge(edge, ctx);
     fresh.set(edge.id, full);
     if (full !== null) ctx.crossings.add(edge.id, full);
-    if (edge.label !== undefined) {
-      const label = labelObstacle(edge, full ?? fullRoute(unrouted(edge)));
-      if (label === null) ctx.index.delete(edge.label.id);
-      else ctx.index.replace(label);
+    if (edge.labels !== undefined && edge.labels.length > 0) {
+      const line = full ?? fullRoute(unrouted(edge));
+      for (const label of edge.labels) {
+        const o = labelObstacle(edge.id, label, line);
+        if (o === null) ctx.index.delete(label.id);
+        else ctx.index.replace(o);
+      }
       moves++;
     }
     if (full === null) failedAt.set(edge, moves);

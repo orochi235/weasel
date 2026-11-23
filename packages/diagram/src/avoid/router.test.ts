@@ -159,7 +159,27 @@ describe('createAvoidRouter', () => {
     const label = { id: 'cross/label', placement: { at: 'mid' as const, offset: 9 }, size: { width: 40, height: 14 } };
     const input = scene([left, right, up, down], [
       edgeBetween('flat', left, right, 'e', 'w'),
-      { ...edgeBetween('cross', up, down, 's', 'n'), label },
+      { ...edgeBetween('cross', up, down, 's', 'n'), labels: [label] },
+    ]);
+    const routes = createAvoidRouter().update(input);
+    const cross = [{ x: 200, y: -140 }, ...routes.get('cross')!, { x: 200, y: 200 }];
+    const center = labelCenter(polylineFromPoints(cross), label.placement, label.size)!;
+    const box = { x: center.x - 20, y: center.y - 7, width: 40, height: 14 };
+    const flat = [{ x: 100, y: 30 }, ...routes.get('flat')!, { x: 400, y: 30 }];
+    expect(flat.length).toBeGreaterThan(2);
+    flat.slice(1).forEach((p, i) => expect(entersBox(flat[i]!, p, box)).toBe(false));
+  });
+
+  it('routes a connector around every label of another connector, not only its first', () => {
+    const left = rectShape('left', 0, 0);
+    const right = rectShape('right', 400, 0);
+    const up = rectShape('up', 150, -200);
+    const down = rectShape('down', 150, 200);
+    const label = { id: 'cross/label', placement: { at: 'mid' as const, offset: 9 }, size: { width: 40, height: 14 } };
+    const end = { id: 'cross/label:to', placement: { at: 'end' as const, offset: 4 }, size: { width: 20, height: 14 } };
+    const input = scene([left, right, up, down], [
+      edgeBetween('flat', left, right, 'e', 'w'),
+      { ...edgeBetween('cross', up, down, 's', 'n'), labels: [end, label] },
     ]);
     const routes = createAvoidRouter().update(input);
     const cross = [{ x: 200, y: -140 }, ...routes.get('cross')!, { x: 200, y: 200 }];
@@ -182,7 +202,7 @@ describe('createAvoidRouter', () => {
 
   it('routes a connector straight through its own label', () => {
     const label = { id: 'top/label', placement: { at: 'mid' as const }, size: { width: 40, height: 14 } };
-    const input = scene([shapes.a, shapes.b], [{ ...edgeBetween('top', shapes.a, shapes.b, 'e', 'w'), label }]);
+    const input = scene([shapes.a, shapes.b], [{ ...edgeBetween('top', shapes.a, shapes.b, 'e', 'w'), labels: [label] }]);
     expect(createAvoidRouter().update(input).get('top')).toEqual([]);
   });
 
@@ -192,7 +212,7 @@ describe('createAvoidRouter', () => {
     const left = rectShape('left', 0, 300);
     const right = rectShape('right', 400, 300);
     const label = { id: 'stuck/label', placement: { at: { near: { x: 250, y: 330 } } }, size: { width: 40, height: 14 } };
-    const stuck = { ...edgeBetween('stuck', shapes.a, shut, 'e', 'w'), label, route: [{ x: 200, y: 30 }, { x: 200, y: 330 }, { x: 900, y: 330 }, { x: 900, y: 30 }] };
+    const stuck = { ...edgeBetween('stuck', shapes.a, shut, 'e', 'w'), labels: [label], route: [{ x: 200, y: 30 }, { x: 200, y: 330 }, { x: 900, y: 330 }, { x: 900, y: 30 }] };
     const input = scene([shapes.a, shut, ...walls, left, right], [stuck, edgeBetween('flat', left, right, 'e', 'w')]);
     const routes = createAvoidRouter().update(input);
     expect(routes.get('stuck')).toBeNull();
