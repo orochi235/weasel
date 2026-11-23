@@ -152,6 +152,7 @@ export function Timeline(props: TimelineProps): ReactElement {
               selection={selection && samePath(selection.trackPath, trackPath) ? selection.keyIndex : null}
               expanded={expanded.has(row.key)}
               snapTimes={snapTimes}
+              limit={duration}
               hold={laneHold}
               onExpandedChange={() => toggle(row.key)}
               onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}

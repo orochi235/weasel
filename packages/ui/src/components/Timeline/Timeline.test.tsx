@@ -669,3 +669,41 @@ describe('Timeline Delete away from the lanes', () => {
     expect(onChange).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('Timeline keys held inside the duration', () => {
+  const nearEnd = (): Track[] => ([
+    { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 995, value: 10 }], onTick: () => {} },
+  ] as Track[]);
+  const keyTimes = (fn: ReturnType<typeof vi.fn>): number[] =>
+    ((fn.mock.lastCall![0] as Track[])[0] as SampledTrack<number>).keys.map((k) => k.t);
+
+  it('drops a key dragged past the lane\'s end at the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 700, clientY: 10, altKey: true });
+    fireEvent.pointerUp(document, { clientX: 700, clientY: 10, altKey: true });
+    expect(keyTimes(onChange)).toEqual([0, 1000]);
+  });
+
+  it('steps a key no further than the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={nearEnd()} onChange={onChange} />);
+    fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'ArrowRight' });
+    expect(keyTimes(onChange)).toEqual([0, 1000]);
+  });
+
+  it('inserts no key past the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    fireEvent.doubleClick(screen.getAllByTestId('timeline-lane-track')[0], { clientX: 800 });
+    expect(keyTimes(onChange)).toEqual([0, 500, 1000]);
+  });
+
+  it('steps a graphed key no further than the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} mode="graph" tracks={nearEnd()} onChange={onChange} />);
+    fireEvent.keyDown(document.querySelectorAll('[data-keyframe-index]')[1], { key: 'ArrowRight' });
+    expect(keyTimes(onChange)).toEqual([0, 1000]);
+  });
+});

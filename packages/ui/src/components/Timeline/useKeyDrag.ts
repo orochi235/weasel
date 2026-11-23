@@ -13,6 +13,8 @@ export interface KeyDragArgs {
   window: TimeWindow;
   /** Where the row's own time starts on the ruler. */
   offset: number;
+  /** The ruler time no key moves past, the end of what the ruler can show. Default `Infinity`. */
+  limit?: number;
   /** Ruler times a dragged key is pulled onto. */
   snapTimes: readonly number[];
   /** The row's key times, in its own time. */
@@ -35,7 +37,7 @@ export interface KeyDragArgs {
  * began from.
  */
 export function useKeyDrag(a: KeyDragArgs) {
-  const { trackRef, window: win, offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert, onCancel, drags = true } = a;
+  const { trackRef, window: win, offset, limit = Infinity, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert, onCancel, drags = true } = a;
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
   const [drag, setDrag] = useState<{ keyIndex: number; t: number; times: readonly number[] } | null>(null);
@@ -44,7 +46,7 @@ export function useKeyDrag(a: KeyDragArgs) {
 
   const place = (clientX: number): { f: number; width: number } => alongTrack(trackRef.current, clientX) ?? { f: 0, width: 0 };
   // The track reads ruler times, which `snapTimes` are; the row's keys are measured from its own start.
-  const track = { min: offset, max: Infinity, ...spanMap(win) };
+  const track = { min: offset, max: Math.max(offset, limit), ...spanMap(win) };
   const msAt = (clientX: number): number => sliderAt(place(clientX).f, track) - offset;
   // Read as the pointer moves, so a window or snap times changed mid-drag place the key where its ghost is drawn.
   const at = useLatest((ev: { clientX: number; altKey: boolean }): number => {
