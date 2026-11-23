@@ -21,7 +21,6 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
     onChange(anchors.map((a, j) => (j === i ? { ...a, ...next } : a)));
   const remove = (i: number) => onChange(anchors.filter((_, j) => j !== i));
   const recolor = (i: number, hex: string) => replace(i, anchorFromHex(hex, anchors[i]!.name));
-  // A cleared field commits NaN; the anchor keeps the value it had.
   const setNumber = (i: number, key: 'hue' | 'lightness', value: number) => {
     if (Number.isFinite(value)) replace(i, { [key]: value });
   };

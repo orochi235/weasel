@@ -180,7 +180,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
   };
   const togglePin = (s: StepView) =>
     s.pinned
-      ? onChange(removePin(draft, s.token), `pin:${s.token}`, `unpin ${s.token}`)
+      ? onChange(removePin(draft, s.token), `unpin:${s.token}`, `unpin ${s.token}`)
       : onChange(setPin(draft, s.token, pinOf(s)), `pin:${s.token}`, `pin ${s.token}`);
 
   return (

@@ -46,7 +46,7 @@ export function SemanticsLayer({ draft, derived, lookup, highlight, onChange }: 
   if (rows.length === 0) return <p className={styles.empty}>{draft.name} has no semantics.</p>;
 
   const modes = derived.views.map((v) => v.mode);
-  const revert = (name: string) => onChange(removePin(draft, name), `pin:${name}`, `revert ${name}`);
+  const revert = (name: string) => onChange(removePin(draft, name), `unpin:${name}`, `revert ${name}`);
   const open = rows.find((r) => r.name === selected);
   const allIssues = derived.views.flatMap((v) => v.result.issues);
   const issuesOf = (name: string) => issuesAt(allIssues, 'semantics', name);

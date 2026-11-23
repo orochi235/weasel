@@ -1,5 +1,5 @@
 import type { ThemeDefinition } from '@weasel-js/theme';
-import { derive } from '@weasel-js/theme/engine';
+import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { layerEntries } from './entries';
 import { child, lookupOf, weasel } from './fixtures';
@@ -22,6 +22,13 @@ describe('layerEntries', () => {
   it('offers a pinned alpha as the value alone, so editing cannot write the percentage back', () => {
     const entries = layerEntries('pins', weasel, derived(weasel), { mode: 'dark' }, weasel);
     expect(entries.find((e) => e.name === 'line-subtle')).toMatchObject({ value: '{fg}' });
+  });
+
+  it('lists the components a child inherits, so inspect has a row to jump to', () => {
+    const inherited = Object.keys(weasel.components ?? {});
+    expect(inherited.length).toBeGreaterThan(0);
+    const names = layerEntries('components', child, derived(child), { mode: 'dark' }, mergeChain(child, lookup)).map((e) => e.name);
+    expect(names).toEqual(expect.arrayContaining(inherited));
   });
 
   it('types a seed from its value, so a hex seed edits as a color and a number as a number', () => {

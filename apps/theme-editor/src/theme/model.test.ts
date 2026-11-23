@@ -2,7 +2,7 @@ import { resolveTheme, type ThemeDefinition } from '@weasel-js/theme';
 import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
-import { adoptGenerated, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf } from './model';
+import { adoptGenerated, clearAt, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf, writeAt } from './model';
 
 const lookup = lookupOf(child);
 
@@ -99,5 +99,20 @@ describe('stepOf', () => {
   it('follows references to the ramp step they end on', () => {
     expect(stepOf('surface', derive(weasel, { mode: 'light' }, lookup))).toBe('gray-50');
     expect(stepOf('shadow', derive(weasel, { mode: 'dark' }, lookup))).toBeUndefined();
+  });
+});
+
+describe('writeAt and clearAt', () => {
+  const byDensity = { by: 'density', compact: 4, comfy: 6 };
+
+  it('refuse a variation whose axis the selection does not choose, where leafAt reads no value', () => {
+    expect(() => writeAt(byDensity, { mode: 'dark' }, 8)).toThrow(/no density value is chosen/);
+    expect(() => clearAt(byDensity, { mode: 'dark' })).toThrow(/no density value is chosen/);
+  });
+
+  it('touch only the branch the selection chooses', () => {
+    expect(writeAt(byDensity, { density: 'compact' }, 8)).toEqual({ by: 'density', compact: 8, comfy: 6 });
+    expect(clearAt(byDensity, { density: 'compact' })).toEqual({ by: 'density', comfy: 6 });
+    expect(clearAt({ by: 'density', comfy: 6 }, { density: 'comfy' })).toBeUndefined();
   });
 });

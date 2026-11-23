@@ -1,13 +1,12 @@
-import { floorDegrees, type Constraints, type generate } from '@weasel-js/theme/engine';
+import { floorDegrees, hueGap, toHexPreview, toLch, type Constraints, type generate } from '@weasel-js/theme/engine';
 
 export type Stats = ReturnType<typeof generate>['stats'];
 
 /** Whether `stats` clears a distance or contrast gate; undefined for a gate set to 0, which is off. */
 export function gateVerdict(c: Constraints, stats: Stats, gate: 'minContrast' | 'minDistance' | 'minSurfaceDistance'): 'ok' | 'bad' | undefined {
   if (!(c[gate] > 0)) return undefined;
-  // Contrast is compared exactly; distances get the slack their three printed decimals cannot show.
-  const slack = gate === 'minContrast' ? 0 : 0.005;
-  return stats[gate] < c[gate] - slack ? 'bad' : 'ok';
+  // Exact, as the generator's own check is: any slack here calls a gate met beside a palette marked infeasible.
+  return stats[gate] < c[gate] ? 'bad' : 'ok';
 }
 
 /**
@@ -17,6 +16,11 @@ export function gateVerdict(c: Constraints, stats: Stats, gate: 'minContrast' | 
  * bound — and past about twenty colors more than one usually does.
  */
 export function unmetGates(c: Constraints, stats: Stats): string[] {
+  // The generator drops anchors past `count` and never searches, so no gate is to blame.
+  const over = c.anchors.length - c.count;
+  if (over > 0) {
+    return [`${c.anchors.length} colors are pinned for ${c.count}: add ${over} more ${over === 1 ? 'color' : 'colors'} or unpin ${over}`];
+  }
   const out: string[] = [];
   const floor = floorDegrees(c);
   if (floor > 0 && stats.minHueGap < floor - 0.01) {
@@ -33,8 +37,22 @@ export function unmetGates(c: Constraints, stats: Stats): string[] {
       `distance from the surface reaches ${stats.minSurfaceDistance.toFixed(3)} of ${c.minSurfaceDistance.toFixed(2)}`,
     );
   }
-  if (out.length > 0 && c.count * floor > 360) {
-    out.push(`${c.count} hues ${floor.toFixed(0)}° apart would need ${(c.count * floor).toFixed(0)}° of circle`);
+  const pinned = floor > 0 ? closestPins(c) : undefined;
+  if (pinned && pinned.gap < floor - 0.01) {
+    out.push(`pinned ${pinned.names[0]} and ${pinned.names[1]} sit ${pinned.gap.toFixed(0)}° apart, so no hue gap can reach ${floor.toFixed(0)}°`);
   }
   return out;
+}
+
+/** The two anchors nearest in hue, measured as the generator places them. */
+function closestPins(c: Constraints): { gap: number; names: [string, string] } | undefined {
+  const hues = c.anchors.map((a) => toLch(toHexPreview(a)).H);
+  let best: { gap: number; names: [string, string] } | undefined;
+  for (let i = 0; i < hues.length; i += 1) {
+    for (let j = i + 1; j < hues.length; j += 1) {
+      const gap = hueGap(hues[i], hues[j]);
+      if (!best || gap < best.gap) best = { gap, names: [c.anchors[i].name, c.anchors[j].name] };
+    }
+  }
+  return best;
 }

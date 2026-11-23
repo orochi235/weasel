@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ThemeDefinition } from '@weasel-js/theme';
 import { PinRepair } from './PinRepair';
+import { useLabHistory } from './useLabHistory';
 
 const draft = { name: 'probe', pins: { 'radius-md': { value: 4, type: 'dimension' }, gap: 8, fg: '{nope}' } } as unknown as ThemeDefinition;
 
@@ -36,6 +37,26 @@ describe('<PinRepair>', () => {
     await userEvent.type(font, ', Open Sans');
     expect(font).toHaveValue('Inter, Open Sans');
     expect(latest.pins!.font).toEqual(['Inter', 'Open Sans']);
+  });
+
+  it('undoes a Remove right after an edit back to the edited pin', async () => {
+    let latest = draft;
+    function Live() {
+      const h = useLabHistory(draft);
+      latest = h.state;
+      return (
+        <>
+          <PinRepair draft={h.state} error="unknown token nope" onChange={h.update} />
+          <button onClick={h.undo}>Undo</button>
+        </>
+      );
+    }
+    render(<Live />);
+    fireEvent.change(screen.getByRole('textbox', { name: 'gap' }), { target: { value: '12' } });
+    await userEvent.click(screen.getByRole('button', { name: 'Remove pin gap' }));
+    expect(latest.pins!.gap).toBeUndefined();
+    await userEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(latest.pins!.gap).toBe(12);
   });
 
   it('keeps a string pin a string', () => {

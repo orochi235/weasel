@@ -90,6 +90,19 @@ describe('useLabHistory with a store', () => {
     expect(again.result.current.canUndo).toBe(false);
   });
 
+  it("reads every saved step's states through the store, not only the one it ends on", () => {
+    interface M { n: number; m?: number }
+    const store = { ...memoryStore<M>(), read: (stored: unknown) => ({ m: 9, ...(stored as M) }) };
+    const first = renderHook(() => useLabHistory<M>({ n: 0 }, store));
+    act(() => first.result.current.update({ n: 1 }, 'a'));
+    first.unmount();
+
+    const again = renderHook(() => useLabHistory<M>({ n: 1, m: 9 }, store));
+    expect(again.result.current.canUndo).toBe(true);
+    act(() => again.result.current.undo());
+    expect(again.result.current.state).toEqual({ n: 0, m: 9 });
+  });
+
   it('opens a history saved past the state it opens on at that state, the later steps left to redo', () => {
     const store = memoryStore<S>();
     const first = renderHook(() => useLabHistory<S>({ n: 0 }, store));

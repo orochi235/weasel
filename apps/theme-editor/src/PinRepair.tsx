@@ -105,7 +105,7 @@ export function PinRepair({ draft, error, onChange }: PinRepairProps) {
               />
             )}
             {suspect && <span className={styles.repairNote}>named in the error</span>}
-            <Button size="sm" aria-label={`Remove pin ${token}`} onClick={() => onChange(removePin(draft, token), `pin:${token}`, `Reset ${token}`)}>
+            <Button size="sm" aria-label={`Remove pin ${token}`} onClick={() => onChange(removePin(draft, token), `unpin:${token}`, `Reset ${token}`)}>
               Remove
             </Button>
           </li>

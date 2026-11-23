@@ -13,6 +13,8 @@ export interface SavedLabHistory<T> {
 export interface LabHistoryStore<T> {
   load(): SavedLabHistory<T> | null;
   save(saved: SavedLabHistory<T>): void;
+  /** Each state a saved step holds, as the hook may use it. Without it a saved state is trusted as written. */
+  read?(stored: unknown): T;
   /** Hear the saved history being cleared, to drop a save not yet made. Returns the stop. */
   onClear?(cancel: () => void): () => void;
 }
