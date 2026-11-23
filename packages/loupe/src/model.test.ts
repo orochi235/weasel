@@ -321,3 +321,34 @@ describe('loupe model: magnification invariant', () => {
     expect(finitePositive(loupe.factor)).toBe(true);
   });
 });
+
+describe('loupe model: factor bounds', () => {
+  it.each([Number.NaN, -3, 0])('keeps setFactor(%s) inside minFactor', (f) => {
+    const { surface } = stubSurface();
+    const loupe = createLoupeModel({ surface, minFactor: 1, maxFactor: 64 });
+    loupe.setFactor(f);
+    expect(loupe.factor).toBe(1);
+    expect(createLoupeModel({ surface, minFactor: 1, factor: f }).factor).toBe(1);
+  });
+});
+
+describe('loupe model: teardown', () => {
+  it('calls onDispose once when disposed by its owner', () => {
+    const onDispose = vi.fn();
+    const { surface } = stubSurface();
+    const loupe = createLoupeModel({ surface, onDispose });
+    loupe.dispose();
+    loupe.dispose();
+    expect(onDispose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('loupe model: a surface that answers later', () => {
+  it('handles the promise it refuses, so its rejection is not left unhandled', () => {
+    const then = vi.fn();
+    const { surface } = stubSurface({ sample: () => ({ then }) as unknown as string });
+    const loupe = createLoupeModel({ surface });
+    expect(() => loupe.aimAt({ x: 1, y: 1 })).toThrow(TypeError);
+    expect(then).toHaveBeenCalledWith(undefined, expect.any(Function));
+  });
+});

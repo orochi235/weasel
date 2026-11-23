@@ -119,6 +119,7 @@ export interface LoupeModel {
 function sampleNow(surface: LoupeSurface, p: LoupePoint): string | null {
   const hex: unknown = surface.sample(p);
   if (typeof (hex as { then?: unknown } | null)?.then === 'function') {
+    (hex as PromiseLike<unknown>).then(undefined, () => {});
     throw new TypeError(
       '[weasel loupe] A loupe surface answers at once, and its sample() answered with a promise. ' +
         'Give an asynchronous sampler to createEyedropperModel, and the loupe a surface that reads now.',
