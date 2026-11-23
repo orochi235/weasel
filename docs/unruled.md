@@ -3438,6 +3438,10 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A `CycleButton` given no `options` renders disabled, named and tooltipped by its
   `aria-label` alone, rather than throwing; a filtered rotation can come out empty. Throwing on an empty list was
   the alternative.
+- 2026-11-22 (audit 73, the fixer's call): A `CycleButton` whose `value` none of its `options` holds draws no
+  icon, is named `<aria-label> — click for <first>`, and a click goes to the first option, a shift-click to the
+  last; it warns unless given `allowUnlistedValue`. Showing the first option as current, as it did, was the
+  alternative.
 ## Audit round sixty (2026-11-20): ui components, part three
 
 - 2026-11-20 (the fixer's call): `Disclosure` follows a `<Disabled>` scope and takes `disabledReason`, but not a
