@@ -34,6 +34,7 @@ beforeAll(() => {
 
 const ACTIONS: Action[] = [
   { id: 'copy', label: 'Copy', group: 'clipboard', invoker: { timing: 'immediate', run: () => {} } },
+  { id: 'paste', label: 'Paste', group: 'clipboard', invoker: { timing: 'immediate', run: () => {} } },
 ];
 
 const setFilename = vi.fn();
@@ -86,6 +87,13 @@ describe('a command-row asset', () => {
 
     expect(sidebar().getByRole('button', { name: 'Clipboard', expanded: true })).toBeDefined();
     expect(sidebar().getByRole('button', { name: 'Copy' })).toBeDefined();
+  });
+
+  it('draws its bar in the stored order, as its menu and panel do', () => {
+    surfaces({ clipboard: { order: { actions: ['paste', 'copy'] } } });
+    renderWithIcons(<App />);
+    const bar = strip().getByRole('toolbar', { name: 'clipboard actions' });
+    expect(within(bar).getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)).toEqual(['Paste', 'Copy']);
   });
 });
 
