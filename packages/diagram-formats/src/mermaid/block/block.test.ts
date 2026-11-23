@@ -126,6 +126,16 @@ describe('writing a Mermaid block diagram', () => {
     expect(writeBlockDiagram({ pages: [page(text)] }).text).toBe(text);
   });
 
+  it('writes grid counts as whole numbers its reader reads', () => {
+    const base = page('block-beta\n  block:g\n    a\n  end\n  b');
+    const grid = { columns: 2.5, clusterColumns: { g: 1.6 }, spans: { b: 2.5 }, skips: { b: 1.4, g: 0.2 } };
+    const { text, warnings } = writeBlockDiagram({ pages: [{ ...base, layout: { name: 'grid', options: { grid } } }] });
+    expect(text).toContain('block-beta\n  columns 3\n  block:g\n    columns 2\n    a\n  end\n  space\n  b:3\n');
+    expect(page(text).layout).toMatchObject({ options: { grid: { columns: 3, clusterColumns: { g: 2 }, spans: { b: 3 }, skips: { b: 1 } } } });
+    expect(warnings).toContain('Mermaid block column counts are whole numbers; others were rounded.');
+    expect(warnings).toContain('Mermaid block spaces are whole numbers from 1; others were dropped.');
+  });
+
   it('writes columns, spans, spaces, groups, and links', () => {
     const text = writeBlockDiagram({ pages: [page(SYSTEM)] }).text;
     expect(text).toContain('block-beta\n  columns 3\n  client("Browser")\n  space\n  gateway{{"Gateway"}}\n  block:services:3\n    columns 2\n');
