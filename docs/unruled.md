@@ -3885,3 +3885,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a lightbox opened inside another, sharing its `<LightboxLayers>`, leaves a shared
   `below` layer where the outer one put it and raises a shared `above` layer over itself, then back over the outer
   one when it closes. Giving the inner lightbox no shared layers at all was the alternative.
+## Audit round seventy-four (2026-11-22): labkit.part1
+
+- 2026-11-22 (the fixer's call): a trial whose instrument declares `dragDrop.pickUp`, which labkit never calls,
+  warns once per instrument in development. There is no override, since the warning goes once the option is wired
+  or removed (the open `pickUp` entry in `docs/TODO.md`). Leaving it silent was the alternative.

@@ -281,7 +281,8 @@ Owner tags, after the priority (2026-10-26):
   nothing hit-tests the instrument's items. Wiring it means passing a world point (or a real hit-test) instead,
   claiming the press through an affordance so the pick-up outranks the trial's pan (registration order between
   them is not stable), carrying the item with the palette's ghost and `onDragOver` feedback, and recording the
-  pick-up and its drop as one undo step; removing it is a breaking change (round 50 audit, 2026-11-20). Closes
+  pick-up and its drop as one undo step; removing it is a breaking change (round 50 audit, 2026-11-20). A trial warns in development when an
+  instrument declares it (round 74). Closes
   when a declared `pickUp` starts a drag from the canvas, or the option and `HitResult` are gone.
 
 - **(P3) [agent] A guide placed on a `<TrialSceneCanvas>` cuts the scene's saved undo at reload.** The rulers commit
