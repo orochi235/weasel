@@ -1,3 +1,5 @@
+import { LONGEST_TIMER_MS } from '@weasel-js/registry';
+
 /** A one-shot timer pair, as `AudioEngineOptions.setTimer` takes it. */
 export interface Timers {
   setTimer(cb: () => void, ms: number): unknown;
@@ -9,9 +11,6 @@ export const defaultTimers: Timers = {
   clearTimer: (h) => clearTimeout(h as ReturnType<typeof setTimeout>),
 };
 
-/** The longest delay a timer takes: past it, a browser or Node fires at once, which would
- *  recheck a far time every millisecond. */
-const MOST_TIMER_MS = 2 ** 31 - 1;
 
 /**
  * Run `cb` once the audio clock reaches `at` (seconds), or at once when the
@@ -33,7 +32,7 @@ export function atAudioTime(
     if (!live) return;
     const left = at - ctx.currentTime;
     if (ctx.state === 'running' && left > 1e-6) {
-      handle = timers.setTimer(check, Math.min(MOST_TIMER_MS, Math.max(1, left * 1000)));
+      handle = timers.setTimer(check, Math.min(LONGEST_TIMER_MS, Math.max(1, left * 1000)));
       return;
     }
     live = false;
