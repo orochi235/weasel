@@ -170,20 +170,34 @@ describe('Select', () => {
       ]);
     });
 
+    it("measures React Aria's own placeholder when given none", () => {
+      const { container } = render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red' }]} width="fit" />);
+      const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Select an item', 'Red']);
+    });
+
+    it("keeps measuring React Aria's placeholder once a value is chosen", () => {
+      const one = [{ value: 'r', label: 'Red' }];
+      const { container, rerender } = render(<Select aria-label="Color" options={one} selectedKey={null} width="fit" />);
+      rerender(<Select aria-label="Color" options={one} selectedKey="r" width="fit" />);
+      const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Select an item', 'Red']);
+    });
+
     it('measures the children form off the row labels', () => {
       const { container } = render(
-        <Select label="Color" width="fit">
+        <Select label="Color" width="fit" placeholder="Pick">
           <SelectItem id="r">Red</SelectItem>
           <SelectItem id="v">Vermilion</SelectItem>
         </Select>,
       );
       const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
-      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Pick', 'Red', 'Vermilion']);
     });
 
     it('measures rows inside a fragment one by one', () => {
       const { container } = render(
-        <Select label="Color" width="fit">
+        <Select label="Color" width="fit" placeholder="Pick">
           <>
             <SelectItem id="r">Red</SelectItem>
             <SelectItem id="v">Vermilion</SelectItem>
@@ -191,7 +205,7 @@ describe('Select', () => {
         </Select>,
       );
       const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
-      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Pick', 'Red', 'Vermilion']);
     });
 
     it('keeps the hidden labels out of the trigger name', () => {
@@ -417,7 +431,7 @@ describe('Select sections', () => {
 
   it("sizes a width='fit' trigger against the options inside sections", () => {
     const { container } = render(
-      <Select label="Font" width="fit" options={[{ title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] }]} />,
+      <Select label="Font" width="fit" options={[{ title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] }]} defaultSelectedKey="inter" />,
     );
     const inOptions = container.querySelector('.' + s.sizer) as HTMLElement;
     expect(Array.from(inOptions.children).map((c) => c.textContent)).toEqual(['Inter']);
@@ -425,7 +439,7 @@ describe('Select sections', () => {
 
   it("sizes a width='fit' trigger against SelectItems inside a SelectSection", () => {
     const { container } = render(
-      <Select label="Font" width="fit">
+      <Select label="Font" width="fit" defaultSelectedKey="system">
         <SelectItem id="system">System</SelectItem>
         <SelectSection title="Serif">
           <SelectItem id="garamond">Garamond</SelectItem>

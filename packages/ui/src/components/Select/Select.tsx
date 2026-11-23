@@ -1,4 +1,4 @@
-import { createContext, useContext, useRef, useState, type ReactNode, type Ref } from 'react';
+import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useObjectRef } from 'react-aria';
 import {
   Select as RACSelect,
@@ -165,6 +165,9 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const pressRef = useRef<Press | null>(null);
   const { probe, pick } = useHeldPick(SelectStateContext, triggerRef);
   const [nudge, setNudge] = useState(NO_NUDGE);
+  // React Aria's own localized placeholder, read off the trigger, for a `width='fit'` sizer given none.
+  const [ownHint, setOwnHint] = useState<ReactNode>(undefined);
+  const keepsHint = width === 'fit' && placeholder === undefined && shownKey == null;
   const sized = useFieldSizeClass(size, className);
   const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: shows(label) });
 
@@ -200,10 +203,15 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
         >
           <SelectValue className={s.value}>
             {({ defaultChildren, isPlaceholder }) =>
-              isPlaceholder ? (placeholder ?? defaultChildren) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
+              isPlaceholder ? (
+                <>
+                  {placeholder ?? defaultChildren}
+                  {keepsHint && <Report value={defaultChildren} to={setOwnHint} />}
+                </>
+              ) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
             }
           </SelectValue>
-          {width === 'fit' && <FitSizer className={s.sizer} placeholder={placeholder} options={options} section={SelectSection}>{children}</FitSizer>}
+          {width === 'fit' && <FitSizer className={s.sizer} placeholder={placeholder ?? ownHint} options={options} section={SelectSection}>{children}</FitSizer>}
           {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
       </TriggerTooltip>
@@ -237,6 +245,12 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       )}
     </RACSelect>,
   );
+}
+
+/** Hands `value` up to a parent that cannot read it, before paint. */
+function Report<V>({ value, to }: { value: V; to: (v: V) => void }) {
+  useLayoutEffect(() => to(value), [value, to]);
+  return null;
 }
 
 /** The classes on a select's root, for its layout, variant and indicator. */
