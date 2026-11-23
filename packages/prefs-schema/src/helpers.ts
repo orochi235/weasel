@@ -26,7 +26,7 @@ export function prefDisplayBounds(
   p: PrefNumber,
 ): { min?: number; max?: number; step: number; endless?: Endless; stops?: readonly number[] } {
   const ends = p.endless === undefined ? {} : { endless: p.endless };
-  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: p.stops } : {}) };
+  if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: shownStops(p.stops, (v) => v, p.min, p.max) } : {}) };
   const { toDisplay, toDisplayExact, places } = resolvePrefUnit(p.unit);
   const backward = toDisplayExact(1) < toDisplayExact(0);
   const lo = p.min === undefined ? undefined : toDisplayExact(p.min);
@@ -39,8 +39,7 @@ export function prefDisplayBounds(
   const step = p.step === undefined ? 1 : displayStep(isPrefLinearUnit(p.unit) ? Math.abs(toDisplayExact(p.step) - toDisplayExact(0)) : nonlinearStep(p, p.step, toDisplayExact), places);
   const flip = { min: 'max', max: 'min', both: 'both' } as const;
   const endless = backward && p.endless !== undefined ? flip[p.endless] : p.endless;
-  const inside = (v: number): number => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, v));
-  const stops = p.stops?.map((stop) => inside(toDisplay(stop))).sort((a, b) => a - b);
+  const stops = p.stops && shownStops(p.stops, toDisplay, min, max);
   return {
     min,
     max,
@@ -48,6 +47,11 @@ export function prefDisplayBounds(
     ...(endless === undefined ? {} : { endless }),
     ...(stops ? { stops } : {}),
   };
+}
+
+/** `stops` converted by `toDisplay`, held to `min` and `max` and in ascending order. */
+function shownStops(stops: readonly number[], toDisplay: (stored: number) => number, min?: number, max?: number): number[] {
+  return stops.map((stop) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, toDisplay(stop)))).sort((a, b) => a - b);
 }
 
 /** A nonlinear unit's `step` has no one display size: it is measured at the leaf's `default`, else at an end, and

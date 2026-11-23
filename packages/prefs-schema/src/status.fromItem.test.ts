@@ -63,11 +63,12 @@ describe('applyPrefEntryConditions', () => {
     expect([...held.disabled]).toEqual([]);
   });
 
-  it('reads a field the entry does not hold as the item\'s default for it', () => {
+  it('reads an entry holding nothing as the item\'s default, and a field the entry omits as the field\'s default', () => {
     const withDefault = { ...phase, default: { mode: 'hold' } } as PrefLeaf;
-    expect(entryOf({}, ROOT, withDefault).item).toBe(withDefault);
     expect(entryOf(undefined, ROOT, withDefault).item).toBe(withDefault);
-    expect(fields(entryOf({}).item)).not.toContain('hold');
+    expect(fields(entryOf({}, ROOT, withDefault).item)).not.toContain('hold');
+    const holdByDefault = { ...phase, children: { ...(phase as PrefObject).children, mode: { ...mode, default: 'hold' } } } as PrefLeaf;
+    expect(fields(entryOf({}, ROOT, holdByDefault).item)).toContain('hold');
   });
 
   it('answers a condition that reads both the entry and the root', () => {

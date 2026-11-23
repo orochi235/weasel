@@ -10,7 +10,8 @@ import type { PrefBoolean, PrefEnum, PrefLeaf } from './schema';
 
 type Siblings = Record<string, unknown> | undefined;
 
-const variantOf = (value: unknown, tag: string): unknown =>
+/** The tag `value`, a union's value, holds at `tag`. */
+export const prefVariantField = (value: unknown, tag: string): unknown =>
   typeof value === 'object' && value !== null ? getOwn(value as Record<string, unknown>, tag) : undefined;
 
 /** What the control over `leaf` shows for `stored`: what its `encoding` reads it as, else `stored` itself.
@@ -36,7 +37,7 @@ export function prefShownReader(
     const stored = read(path, from);
     const found = from === 'item' ? item && prefLeavesHoldingIn(item, path) : prefLeavesHolding(prefSchemaHolding(schema, path, over), path);
     if (found === undefined || found === UNSEEN) return stored;
-    const held = found.find((each) => (each.variants ?? []).every((v) => variantOf(read(v.at, from), v.tag) === v.key));
+    const held = found.find((each) => (each.variants ?? []).every((v) => prefVariantField(read(v.at, from), v.tag) === v.key));
     if (held === undefined) return stored;
     const object = held.within === undefined ? undefined : read(held.within, from);
     return prefDecodedValue(held.leaf, stored, typeof object === 'object' && object !== null ? (object as Siblings) : undefined);

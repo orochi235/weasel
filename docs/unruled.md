@@ -3958,3 +3958,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): forge's capture endpoint refuses a box past 16384 device pixels on either side
   (`box × dpr`, Chromium's largest texture) with a 400, so a story taller than 5461 CSS pixels cannot be captured
   at dpr 3. Clamping the box and capturing part of the story was the alternative.
+## Audit round seventy-six (2026-11-22): prefs-schema
+
+- 2026-11-22 (the fixer's call): a condition reads a field an object leaf, or a list's or a map's entry, holds
+  without as a form draws it: the default of the field's own leaf, and absent where no leaf describes it, as `repair`
+  keeps it. The object's own `default` answers only while nothing at all is held. Reading the field from the object's
+  `default`, as before, was the alternative, and showed rows for a value the form drew otherwise.
