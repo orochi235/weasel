@@ -62,10 +62,15 @@ interface BusState {
  * `writeParam`, so `rampMs` survives instead of being overwritten by the
  * recomputation that follows it.
  */
-/** Throws unless `names` holds at least one bus. */
+/** Throws unless `names` holds at least one bus and no name twice. */
 export function checkBusNames(names: readonly string[]): void {
   if (names.length === 0) {
     throw new Error('@weasel-js/audio: an engine needs at least one bus');
+  }
+  const seen = new Set<string>();
+  for (const name of names) {
+    if (seen.has(name)) throw new Error(`@weasel-js/audio: bus "${name}" is named twice`);
+    seen.add(name);
   }
 }
 

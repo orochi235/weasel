@@ -3851,3 +3851,7 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `planeFloor` throws a `RangeError` for a `floorTiles` under 2 (or not a number), and
   so does a tiled layer given `floorTiles: 1`: no level holds a box straddling a tile edge in one tile a side. There is
   no override. Keeping 1 and documenting the bound as `max(floorTiles, 2)` was the alternative.
+## Audit round seventy-three (2026-11-22): audio
+
+- 2026-11-22 (the fixer's call): `createAudioEngine` and `createBusGraph` throw on a bus name given twice in `buses`,
+  before anything is made. Keeping the first and ignoring the repeat was the alternative.
