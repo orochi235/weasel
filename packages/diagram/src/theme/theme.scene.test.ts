@@ -86,3 +86,24 @@ describe('applying a theme over a locked node', () => {
     expect(scene.doc.get(DIAGRAM_THEME_KEY)).toEqual(expect.objectContaining({ id: expect.any(String) }));
   });
 });
+
+describe('a stroke color set by hand on a shape or connector drawn with none', () => {
+  const strokeOf = (scene: ReturnType<typeof themedScene>, id: string) => (scene.get(id as never)!.data as { stroke?: unknown }).stroke;
+  const unstroked = (ids: string[]) => {
+    const scene = themedScene();
+    for (const id of ids) {
+      const { stroke: _, ...data } = scene.get(id as never)!.data as Record<string, unknown>;
+      scene.update(id as never, { data });
+    }
+    return scene;
+  };
+
+  it('takes the outline the next theme apply would give it', () => {
+    const scene = unstroked(['c', AB]);
+    setDiagramColor(scene, ['c', AB], 'stroke', '#ff0000', { theme: blueprint! });
+    const set = [strokeOf(scene, 'c'), strokeOf(scene, AB)];
+    applyDiagramTheme(scene, blueprint!);
+    expect([strokeOf(scene, 'c'), strokeOf(scene, AB)]).toEqual(set);
+    expect((set[0] as { width?: unknown }).width).toBeTypeOf('number');
+  });
+});

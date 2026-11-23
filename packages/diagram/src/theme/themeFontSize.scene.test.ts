@@ -51,3 +51,13 @@ describe('a theme font size change', () => {
     expect(scene.get('c/1' as never)!.data).not.toHaveProperty('unclampedFontSize');
   });
 });
+
+describe('a text size set by hand', () => {
+  it.each([0, -2, Number.NaN, Number.POSITIVE_INFINITY])('throws on %s and writes nothing', (size) => {
+    const scene = themedScene();
+    const before = sizeOf(scene, 'c/1');
+    expect(() => setDiagramFontSize(scene, ['c'], size)).toThrow(RangeError);
+    expect(sizeOf(scene, 'c/1')).toBe(before);
+    expect(diagramStyleOf(scene.get('c' as never)!)!.ownFont).toEqual([]);
+  });
+});

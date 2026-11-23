@@ -3916,3 +3916,13 @@ Calls the lanes made without a ruling:
   `Deployment_Node`, a `[system]`, `[container]`, or `[enterprise]` one keeping its type, and now warns that such a
   boundary comes back a deployment node, since a page cannot tell `System_Boundary` from a deployment node typed
   `system`. Writing the fixed boundary macro for those types was the alternative, and loses typed deployment nodes.
+
+## Audit round seventy-five (2026-11-22): diagram themes
+
+- 2026-11-22 (the fixer's call): `setThemeValue`, `addThemeRole` and `renameThemeRole` throw a `RangeError` when the
+  theme they return would fail a `diagramThemeErrors` check its input passed: a size that is not above 0, a string
+  that is not a color, an empty font family, or an empty role name. A document saving such a theme read back `night`.
+  Normalizing the value (clamping the size, trimming to a default name) was the alternative.
+- 2026-11-22 (the fixer's call): `setDiagramFontSize` throws a `RangeError` on a size that is not a finite number above
+  0, before it writes anything, holding a hand-set size to the bound a theme's font size has. Clamping it to 1, as a
+  theme step does, was the alternative.

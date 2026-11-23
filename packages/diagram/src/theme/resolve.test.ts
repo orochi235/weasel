@@ -42,6 +42,7 @@ describe('theme lookups by a name from data', () => {
 
   it.each([
     ['no roles', (t: Record<string, unknown>) => { t.roles = {}; }],
+    ['its roles key missing', (t: Record<string, unknown>) => { delete t.roles; }],
     ['a default role it lacks', (t: Record<string, unknown>) => { t.defaultRole = 'nope'; }],
     ['no edge', (t: Record<string, unknown>) => { delete t.edge; }],
     ['no font', (t: Record<string, unknown>) => { delete t.font; }],

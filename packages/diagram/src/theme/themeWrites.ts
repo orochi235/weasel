@@ -109,27 +109,31 @@ function paintBox(data: Data, look: Look): Data | null {
   const stroke = data.stroke === undefined ? undefined
     : restroked(data.stroke, look.own.has('stroke') ? undefined : look.style.stroke, outlineOf(look.style, look.kind), look.ownLine);
   const band = paintBand(data, look);
-  if (fill === undefined && stroke === undefined && band.headerFill === undefined) return null;
-  return { ...data, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}), ...band };
+  if (fill === undefined && stroke === undefined && band === undefined) return null;
+  const { headerFill, ...rest } = data;
+  const nextBand = band === undefined ? headerFill : band;
+  return { ...rest, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}), ...(nextBand != null ? { headerFill: nextBand } : {}) };
 }
 
 const isHeaderRow = (data: Data, owner: ThemedNode): boolean =>
   data.bodyRow === 0 && traitOf(owner.data)?.header !== undefined;
 
 /** The color a box's text row takes, or `undefined` to leave it: a header row's is drawn against
- *  its band, in the box's fill unless the theme names one, and is left once the author set either. */
+ *  its band, in the box's fill, the author's or the theme's, unless the theme names one; a `text` color never reaches it. */
 function rowColor(data: Data, owner: ThemedNode, look: Look): string | undefined {
   if (!isHeaderRow(data, owner)) return look.own.has('text') ? undefined : look.style.text;
   if (look.style.headerText !== undefined) return look.style.headerText;
-  return look.own.has('fill') || look.own.has('text') ? undefined : look.style.fill;
+  if (!look.own.has('fill')) return look.style.fill;
+  const own = (owner.data as Data).fill?.paint?.color;
+  return typeof own === 'string' ? own : undefined;
 }
 
-/** `data`'s header band in `look`'s, or `{}` when the band follows the stroke and should go on doing so. */
-function paintBand(data: Data, look: Look): { headerFill?: Paint } {
+/** `data`'s header band in `look`'s, `null` to drop a band color so the band follows the stroke,
+ *  or `undefined` when nothing changes. */
+function paintBand(data: Data, look: Look): Paint | null | undefined {
   const want = look.style.header;
-  if (want === undefined || traitOf(data)?.header === undefined) return {};
-  const headerFill = recolored(data.headerFill as Paint | undefined, want);
-  return headerFill === undefined ? {} : { headerFill };
+  if (want === undefined || traitOf(data)?.header === undefined) return data.headerFill === undefined ? undefined : null;
+  return recolored(data.headerFill as Paint | undefined, want);
 }
 
 /** The key on a text row's `data` holding the size a theme step took it to below 1, where it is
@@ -162,12 +166,18 @@ function paintTag(data: Data, theme: DiagramTheme, step: number): Data | null {
   return { ...(text ?? data), ...(background ? { background } : {}) };
 }
 
+/** The width and dash `theme` draws a shape's outline or a connector's line in, for `role`. */
+export function themeLine(theme: DiagramTheme, kind: 'shape' | 'connector', role?: string): { width: unknown; dash?: readonly number[] } {
+  if (kind === 'shape') return outlineOf(roleStyle(theme, role), 'body');
+  const { width, dash } = edgeStrokeOf(roleEdgeStyle(theme, role));
+  return { width, ...(dash ? { dash } : {}) };
+}
+
 /** A connector's own colors and line, and its label's color, under `theme`. */
 function edgeLook(trait: Trait, theme: DiagramTheme) {
   const style = roleEdgeStyle(theme, trait.style);
-  const { width, dash } = edgeStrokeOf(style);
   return {
-    stroke: style.stroke, label: style.label ?? style.stroke, line: { width, ...(dash ? { dash } : {}) },
+    stroke: style.stroke, label: style.label ?? style.stroke, line: themeLine(theme, 'connector', trait.style),
     own: ownOf(trait), ownLine: ownLineOf(trait), ownSize: ownsSize(trait),
   };
 }

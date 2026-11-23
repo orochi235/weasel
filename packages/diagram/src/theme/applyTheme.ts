@@ -7,7 +7,7 @@ import type { MeasureRowText } from '../body';
 import { relayoutBodies, type RelayoutScene } from '../bodyRelayout';
 import { redrawSequences } from '../sequence/commit';
 import { diagramThemeOf, roleStyle, themeDocValue } from './resolve';
-import { UNCLAMPED_FONT_SIZE, themeWrites, type ThemedScene } from './themeWrites';
+import { UNCLAMPED_FONT_SIZE, themeLine, themeWrites, type ThemedScene } from './themeWrites';
 import { DIAGRAM_THEME_KEY, type DiagramTheme, type FontField, type StyleField } from './types';
 
 type Paint = { paint?: Record<string, unknown> } & Record<string, unknown>;
@@ -114,6 +114,8 @@ export function setDiagramStyle(scene: AnyScene, ids: readonly string[], role: s
 }
 
 const painted = (paint: Paint | undefined, color: string): Paint => ({ ...paint, paint: { ...paint?.paint, color } });
+const strokeIn = ({ width, dash }: ReturnType<typeof themeLine>, color: string): Paint =>
+  ({ paint: { color }, width, ...(dash ? { dash: [...dash] } : {}) });
 
 /** The text nodes a shape's or connector's `text` color reaches: a shape's rows, a connector's labels. */
 function textNodesOf(scene: AnyScene, id: string, kind: DiagramStyleState['kind']): string[] {
@@ -165,7 +167,8 @@ export function diagramFontSizeOf(scene: AnyScene, id: string): number | undefin
  * Sets `field` to `color` on every shape and connector among `ids` — `text`
  * reaching a shape's rows and a connector's label — and records it in their
  * `ownStyle`, so a theme change leaves it. A fill reaches a header row's text unless the theme
- * names the role a `headerText`, as a shape built with that fill is drawn. One undo entry. A connector has no
+ * names the role a `headerText`, as a shape built with that fill is drawn. A stroke set on one drawn with none
+ * takes its role's width and dash. One undo entry. A connector has no
  * fill, and ignores one. A locked one, or locked text of one, is left as it is.
  */
 export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: StyleField, color: string, opts: DiagramStyleEditOptions = {}): void {
@@ -177,7 +180,8 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
       const data = scene.get(id as never)!.data as Data;
       const own = state.own.includes(field) ? state.own : [...state.own, field];
       const next = withTrait(data, { ...data.diagram, ownStyle: own });
-      if (field !== 'text') next[field] = painted(data[field], color);
+      if (field === 'stroke' && data.stroke === undefined) next.stroke = strokeIn(themeLine(theme, state.kind, state.role), color);
+      else if (field !== 'text') next[field] = painted(data[field], color);
       scene.update(id as never, { data: next });
       for (const t of colorTextNodesOf(scene, id, state, field, theme)) {
         if (scene.isLocked(t as never)) continue;
@@ -192,10 +196,12 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
  * Sets the text of every shape and connector among `ids` — a shape's rows, a
  * connector's label — to `size`, and records it in their `ownFont`, so a
  * theme's size change leaves it. One undo entry. A locked one, or locked text of one, is left as it is.
+ * Throws a `RangeError` on a size that is not a finite number above 0, as a theme's font size must be.
  */
 export function setDiagramFontSize(
   scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> & { measure?: MeasureRowText } = {},
 ): void {
+  if (!Number.isFinite(size) || !(size > 0)) throw new RangeError(`setDiagramFontSize: ${size} is not a text size`);
   scene.batch(opts.label ?? 'Set text size', () => {
     const writes = new Map<string, unknown>();
     for (const id of ids) {

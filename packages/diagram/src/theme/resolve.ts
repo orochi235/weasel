@@ -71,7 +71,7 @@ export function diagramThemeFrom(value: unknown, fallback: DiagramTheme = DIAGRA
     }
     return fallback;
   }
-  if (value !== null && typeof value === 'object' && 'roles' in value && isWholeTheme(value, fallback)) return value as DiagramTheme;
+  if (value !== null && typeof value === 'object' && isWholeTheme(value, fallback)) return value as DiagramTheme;
   return fallback;
 }
 

@@ -38,3 +38,30 @@ describe("a hand fill on a shape whose theme names its header's text color", () 
     expect(headerText(scene)).toBe('#123456');
   });
 });
+
+const red: DiagramTheme = { ...paper, id: 'red-band', name: 'Red band', roles: { ...paper.roles, default: { ...paper.roles.default!, header: '#ff0000' } } };
+const night = DIAGRAM_THEMES.night!;
+const bandOf = (scene: ReturnType<typeof sceneIn>) => (scene.get('h' as never)!.data as { headerFill?: { paint: { color: string } } }).headerFill;
+
+describe('a header through a change of theme', () => {
+  it('drops the band color when the new theme names none, so the band follows the stroke', () => {
+    const scene = sceneIn(red);
+    expect(bandOf(scene)?.paint.color).toBe('#ff0000');
+    applyDiagramTheme(scene, paper);
+    expect(bandOf(scene)).toBeUndefined();
+  });
+
+  it('keeps following the fill when only the text color was set by hand', () => {
+    const scene = sceneIn(night);
+    setDiagramColor(scene, ['h'], 'text', '#ff0000');
+    applyDiagramTheme(scene, paper);
+    expect(headerText(scene)).toBe(paper.roles.default!.fill);
+  });
+
+  it('comes back to a hand fill when the new theme names no header text color', () => {
+    const scene = sceneIn(white);
+    setDiagramColor(scene, ['h'], 'fill', '#123456');
+    applyDiagramTheme(scene, paper);
+    expect(headerText(scene)).toBe('#123456');
+  });
+});
