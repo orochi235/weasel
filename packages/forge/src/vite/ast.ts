@@ -4,6 +4,9 @@ import type * as t from '@babel/types';
 /** A program's top-level variable initializers and function declarations, by name. */
 export type Bindings = Map<string, t.Node>;
 
+/** A file's locals that are forge's `meta` or `story`, and which. */
+export type Wrappers = ReadonlyMap<string, 'meta' | 'story'>;
+
 export function parseFile(code: string, file: string): t.Program {
   const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
   return parse(code, { sourceType: 'module', plugins }).program;
@@ -143,7 +146,12 @@ export function exportedName(node: t.Identifier | t.StringLiteral): string {
 }
 
 /** The object literal `node` evaluates to, through casts, `meta(…)`/`story(…)` and top-level `const`s. */
-export function objectOf(node: t.Node | undefined, bindings: Bindings, wrappers: Set<string>, depth = 0): t.ObjectExpression | null {
+export function objectOf(
+  node: t.Node | undefined,
+  bindings: Bindings,
+  wrappers: { has(name: string): boolean },
+  depth = 0,
+): t.ObjectExpression | null {
   if (!node || depth > 16) return null;
   switch (node.type) {
     case 'ObjectExpression':

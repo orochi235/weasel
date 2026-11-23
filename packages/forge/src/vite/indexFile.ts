@@ -15,6 +15,7 @@ import {
   prop,
   stringLiteral,
   stringOf,
+  type Wrappers,
 } from './ast.ts';
 import { type Foreign, mayBeStory } from './nativeExports.ts';
 
@@ -27,7 +28,7 @@ export function indexFile(
   code: string,
   file: string,
   autoTitle: string,
-  wrappers: ReadonlySet<string> = new Set(),
+  wrappers: Wrappers = new Map(),
   foreign?: Foreign,
 ): IndexEntry[] {
   try {
@@ -50,7 +51,7 @@ export interface ForeignCallee {
  */
 export function foreignCallees(code: string, file: string): ForeignCallee[] {
   const program = parseFile(code, file);
-  const { bindings } = scan(program, new Set());
+  const { bindings } = scan(program, new Map());
   const imported = new Map<string, ForeignCallee>();
   const exported: (t.Node | null | undefined)[] = [];
   for (const stmt of program.body) {
@@ -76,23 +77,22 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
 }
 
 /** The program's top-level bindings, its locals that are forge's `meta` or `story`, and every name it imports. */
-export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string>; imports: Set<string> } {
-  const wrappers = new Set(extra);
+export function scan(program: t.Program, extra: Wrappers): { bindings: Bindings; wrappers: Map<string, 'meta' | 'story'>; imports: Set<string> } {
+  const wrappers = new Map(extra);
   const imports = new Set<string>();
   for (const stmt of program.body) {
     if (stmt.type === 'ImportDeclaration') for (const spec of stmt.specifiers) imports.add(spec.local.name);
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
-        if (spec.type === 'ImportSpecifier' && ['meta', 'story'].includes(exportedName(spec.imported))) {
-          wrappers.add(spec.local.name);
-        }
+        const name = spec.type === 'ImportSpecifier' ? exportedName(spec.imported) : undefined;
+        if (name === 'meta' || name === 'story') wrappers.set(spec.local.name, name);
       }
     }
   }
   return { bindings: bindingsOf(program), wrappers, imports };
 }
 
-export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>, foreign?: Foreign): IndexEntry[] {
+export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: Wrappers, foreign?: Foreign): IndexEntry[] {
   const { bindings, wrappers, imports } = scan(program, extra);
 
   let metaNode: t.Node | undefined;
@@ -190,7 +190,7 @@ function withAssigned(spec: t.ObjectExpression | null, props: readonly t.ObjectP
  * The reason `obj` isolates its story: `isolate` on a native meta or story, `parameters.forge.isolate` in CSF.
  * It must be a string literal, because the shell reads it without importing the module.
  */
-function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Set<string>, exportName: string): string | undefined {
+function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers, exportName: string): string | undefined {
   const parameters = objectOf(prop(obj, 'parameters'), bindings, wrappers);
   const forge = objectOf(prop(parameters, 'forge'), bindings, wrappers);
   const value = prop(obj, 'isolate') ?? prop(forge, 'isolate');
@@ -201,7 +201,7 @@ function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers:
 }
 
 /** A native story's `viewport`, when both sides are number literals. */
-function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Set<string>): StoryViewport | undefined {
+function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers): StoryViewport | undefined {
   const value = objectOf(prop(obj, 'viewport'), bindings, wrappers);
   const width = prop(value, 'width');
   const height = prop(value, 'height');

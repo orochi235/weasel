@@ -1,5 +1,5 @@
 import { getOwn, setOwn } from './ownKeys.ts';
-import { parseFile } from './ast.ts';
+import { parseFile, type Wrappers } from './ast.ts';
 import { indexProgram, scan } from './indexFile.ts';
 import { type Foreign, type ForeignStories, mayBeStory, mayCallStory, type Scope } from './nativeExports.ts';
 import type { Trace } from './trace.ts';
@@ -39,7 +39,7 @@ async function settled<T>(read: (foreign: Foreign) => T, ask: Ask): Promise<{ re
  */
 export async function foreignStories(
   file: string,
-  wrappers: ReadonlySet<string>,
+  wrappers: Wrappers,
   own: ReadonlyMap<string, 'meta' | 'story'>,
   trace: Trace,
   read: (file: string) => string,
@@ -64,7 +64,7 @@ export async function foreignStories(
     const local = key.slice(at.length + 1);
     let scope: Scope;
     try {
-      scope = scan(parseFile(read(at), at), new Set());
+      scope = scan(parseFile(read(at), at), new Map());
     } catch {
       return undefined;
     }

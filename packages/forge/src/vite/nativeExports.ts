@@ -1,6 +1,6 @@
 import type * as t from '@babel/types';
 import { getOwn } from './ownKeys.ts';
-import { type Bindings, isLiteralValue } from './ast.ts';
+import { type Bindings, isLiteralValue, type Wrappers } from './ast.ts';
 
 type Fn = t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration;
 
@@ -33,7 +33,7 @@ export const foreignFrom = (known: ForeignStories): Foreign => ({
 /** What a file is read against: its top-level bindings, its callees that are forge's, its imports, and what they are. */
 export interface Scope {
   bindings: Bindings;
-  wrappers: ReadonlySet<string>;
+  wrappers: Wrappers;
   imports: ReadonlySet<string>;
   foreign?: Foreign;
 }
@@ -117,7 +117,7 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
       if (callee.type === 'MemberExpression') return !isLiteralValue(callee.object, scope.bindings) && !isGlobal(callee.object, scope);
       if (isFn(callee)) return mayReturnStory(callee, scope, depth);
       if (callee.type !== 'Identifier') return !isLiteralValue(callee, scope.bindings);
-      if (scope.wrappers.has(callee.name)) return true;
+      if (scope.wrappers.has(callee.name)) return scope.wrappers.get(callee.name) === 'story';
       if (scope.bindings.has(callee.name)) return mayCallStory(scope.bindings.get(callee.name), scope, depth);
       return scope.foreign?.call(callee.name) ?? true;
     }

@@ -34,7 +34,7 @@ export { Other, table } from './other';
       call: (name: string) => ({ sized: true, rowsOf: false })[name],
       reexport: (name: string) => ({ Other: true, table: false })[name],
     };
-    expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => e.exportName)).toEqual(['Shared', 'Unknown', 'Small', 'Other']);
+    expect(indexFile(code, FILE, 'ui/Auto', new Map(), foreign).map((e) => e.exportName)).toEqual(['Shared', 'Unknown', 'Small', 'Other']);
   });
 
   it('keeps a native export that calls an import nothing decided, as it keeps the import itself', () => {
@@ -50,7 +50,7 @@ export { Taken };
 `;
     expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
     const foreign = { value: () => undefined, call: () => undefined, reexport: () => undefined };
-    expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
+    expect(indexFile(code, FILE, 'ui/Auto', new Map(), foreign).map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
   });
 
   it('follows a helper\'s returns into try, switch, loops and labeled blocks', () => {
@@ -73,6 +73,20 @@ export const Labeled = labeled();
 export const data = rows();
 `;
     expect(ids(code).map(([, name]) => name)).toEqual(['Tried', 'Caught', 'Finished', 'Switched', 'Looped', 'Labeled']);
+  });
+
+  it('leaves out of a native file a second meta, which the loader skips as no story', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+import { defineMeta, defineStory } from './helpers';
+export default meta({ title: 'ui/Slider' });
+export const Shared = meta({ title: 'ui/Base' });
+export const Helped = defineMeta({ title: 'ui/Other' });
+export const Basic = story({});
+export const Made = defineStory({});
+`;
+    const wrappers = new Map([['defineMeta', 'meta'], ['defineStory', 'story']] as const);
+    expect(indexFile(code, FILE, 'ui/Auto', wrappers).map((e) => e.exportName)).toEqual(['Basic', 'Made']);
   });
 
   it('reads a native export that picks between values, or copies one, by what it picks from', () => {
@@ -131,7 +145,7 @@ export const data = table();
 export const Basic = story({ render: () => null });
 `;
     const foreign = { value: () => undefined, call: (name: string) => (name === 'makeRows' ? false : undefined), reexport: () => undefined };
-    expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => [e.id, e.name])).toEqual([
+    expect(indexFile(code, FILE, 'ui/Auto', new Map(), foreign).map((e) => [e.id, e.name])).toEqual([
       ['ui-slider--small', 'Small'],
       ['ui-slider--named', 'Named'],
       ['ui-slider--basic', 'Basic'],
@@ -495,7 +509,7 @@ export const Plain = {};
       ['ui-auto--basic', 'Basic'],
       ['ui-auto--plain', 'Plain'],
     ]);
-    expect(indexFile(code, FILE, 'ui/Auto', new Set(['defineMeta', 'story'])).map((e) => [e.id, e.name, e.componentName])).toEqual([
+    expect(indexFile(code, FILE, 'ui/Auto', new Map([['defineMeta', 'meta'], ['story', 'story']] as const)).map((e) => [e.id, e.name, e.componentName])).toEqual([
       ['ui-thing--basic', 'The basic one', 'Thing'],
     ]);
   });
