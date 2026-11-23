@@ -57,7 +57,8 @@ const holds = new WeakMap<Element, number>();
 /**
  * Makes inert every element under `root` that does not hold `keep`, including one that joins later, until the
  * returned undo. Elements that were inert by some other hand are left as they were, and so are overlays
- * (`data-weasel-overlay`), which sit above the modal: a popover it opens, or a modal stacked on it.
+ * (`data-weasel-overlay`) that join later, which sit above the modal: a popover it opens, or a modal stacked on
+ * it. An overlay already open sits beneath the modal and goes inert with the rest.
  */
 export function inertOutside(root: Element, keep: Element): () => void {
   const made: Element[] = [];
