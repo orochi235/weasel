@@ -9,6 +9,8 @@ import { BAND, ringBoundsOf, rimTrackIn } from './rimTracks';
 import { textAt } from './textAlong';
 
 const THUMB_R = 6;
+/** The track is this share of the thumb's width. */
+const TRACK_W = THUMB_R * 2 * 0.6;
 const SAMPLES = 48;
 const LABEL_PX = 13;
 /** Oswald draws `×` at 0.7 the height of its `+`; this brings it level. */
@@ -59,8 +61,8 @@ export function createZoomTrack(id: string, host: ZoomTrackHost): Widget {
       // Everything here stands on whatever the canvas shows, so each mark is edged in the surface color.
       const halo = lensTone(t, '--wzl-surface');
       const out: DrawCommand[] = [
-        { kind: 'path', path: line, stroke: { ...stroke(halo, 4), cap: 'round' } },
-        { kind: 'path', path: line, stroke: { ...stroke(lensTone(t, '--wzl-fg-muted'), 2), cap: 'round' } },
+        { kind: 'path', path: line, stroke: { ...stroke(halo, TRACK_W + 2), cap: 'round' } },
+        { kind: 'path', path: line, stroke: { ...stroke(lensTone(t, '--wzl-fg-muted'), TRACK_W), cap: 'round' } },
       ];
       const at = nearestStopIndex(stops, host.factor());
       const labels = rimTrackIn(win.bounds, host.round, 'zoom', LABEL_GAP);
