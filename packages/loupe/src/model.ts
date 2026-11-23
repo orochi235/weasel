@@ -135,7 +135,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
   let mode: LoupeMode = opts.mode ?? 'vector';
   const clamp = (n: number): number =>
-    normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
+    normalizeZoom(clampTo(normalizeZoom(n), opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
 
   let factor = clamp(opts.factor ?? 8);
   const aim = createLoupeAim(surface, opts.aimMode ?? 'follow');
