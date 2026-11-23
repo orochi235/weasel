@@ -29,7 +29,16 @@ export const PATTERN_TILE_CACHE_LIMIT = 256;
 const ID_PREFIX = 'pattern:';
 
 /** Texture id → handle, least recently used first. */
-const cache = new Map<string, TextureHandle | null>();
+const cache = new Map<string, TextureHandle>();
+
+/** The ids that could not rasterize, oldest first, under the `OffscreenCanvas` they were tried with: one
+ *  installed since is tried again. Kept apart from `cache`, so a failure never takes a tile's place. */
+const failed = new Set<string>();
+let failedUnder: unknown;
+
+function canvasNow(): unknown {
+  return (globalThis as { OffscreenCanvas?: unknown }).OffscreenCanvas;
+}
 
 /** Stable across key order — specs arriving from JSON have no guaranteed
  *  field order, and two orderings must not rasterize two tiles. */
@@ -43,6 +52,7 @@ function specId(spec: TilePatternSpec): string {
 /** @internal Test helper — do not call from product code. */
 export function _resetPatternSpecCacheForTests(): void {
   cache.clear();
+  failed.clear();
 }
 
 /**
@@ -58,6 +68,10 @@ export function resolvePatternSpec(spec: TilePatternSpec): TextureHandle | null 
   if (hit !== undefined) {
     markUsed(id);
     return hit;
+  }
+  if (failed.has(id)) {
+    if (failedUnder === canvasNow()) return null;
+    failed.clear();
   }
   return build(id, tile);
 }
@@ -76,8 +90,15 @@ function build(id: string, spec: TilePatternSpec): TextureHandle | null {
       draw: (oc) => drawTileShapes(oc, tileGeometry(spec)),
     })
     : null;
-  const handle = bitmap ? registerTextureAs(id, bitmap) : null;
   cache.delete(id);
+  if (!bitmap) {
+    failed.delete(id);
+    failed.add(id);
+    failedUnder = canvasNow();
+    if (failed.size > PATTERN_TILE_CACHE_LIMIT) failed.delete(failed.values().next().value!);
+    return null;
+  }
+  const handle = registerTextureAs(id, bitmap);
   cache.set(id, handle);
   while (cache.size > PATTERN_TILE_CACHE_LIMIT) evict(cache.keys().next().value!);
   return handle;
