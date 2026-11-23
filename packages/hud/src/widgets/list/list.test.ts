@@ -184,6 +184,18 @@ describe('list widget', () => {
       expect(l.scrollTop).toBe(0);
     });
 
+    it('hovers the row under a still pointer after the wheel scrolls', () => {
+      const at = { x: 10, y: 5, native: null };
+      const wheel = { type: 'wheel' as const, ...at, deltaX: 0, deltaY: pitch, native: null };
+      const hovered = make();
+      hovered.onPointer({ type: 'hovermove', ...at });
+      hovered.onPointer(wheel);
+      const fresh = make();
+      fresh.onPointer(wheel);
+      fresh.onPointer({ type: 'hovermove', ...at });
+      expect(hovered.draw(ctx)).toEqual(fresh.draw(ctx));
+    });
+
     it('scrolls by the wheel, within its rows, and claims the wheel only while it can scroll', () => {
       const l = make();
       expect(l.claims).toContain('wheel');

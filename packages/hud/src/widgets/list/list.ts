@@ -181,7 +181,10 @@ export function createList(opts: ListOptions): ListWidget {
     cursorAt() { return 'default'; },
     onPointer(evt: HudPointerEvent) {
       if (evt.type === 'wheel') {
-        if (holdScroll(scrollTop + evt.deltaY)) changed();
+        if (!holdScroll(scrollTop + evt.deltaY)) return;
+        // The rows moved under a still pointer, so the hover follows the point, as `:hover` does.
+        nav.pointer({ type: 'hovermove', x: evt.x, y: evt.y, native: evt.native }, rowAt);
+        changed();
         return;
       }
       if (nav.pointer(evt, rowAt)) changed();
