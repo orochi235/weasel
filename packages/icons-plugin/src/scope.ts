@@ -100,6 +100,7 @@ const OPAQUE = new Set([
   'TSTypeParameterInstantiation',
   'TSClassImplements',
   'TSIndexSignature',
+  'JSXClosingElement',
 ]);
 /** Keys holding a bare type, or a name that is no reference, under a node that is otherwise read. */
 const NON_VALUE_KEYS: Record<string, ReadonlySet<string>> = {
@@ -107,7 +108,16 @@ const NON_VALUE_KEYS: Record<string, ReadonlySet<string>> = {
   TSSatisfiesExpression: new Set(['typeAnnotation']),
   TSTypeAssertion: new Set(['typeAnnotation']),
   TSEnumMember: new Set(['id']),
+  JSXAttribute: new Set(['name']),
 };
+
+/** The value a JSX element name reads, if any: the root of a member name, or an identifier that is not an intrinsic tag. */
+function jsxReference(name: Node): Node | undefined {
+  let n = name;
+  while (n.type === 'JSXMemberExpression') n = n.object as Node;
+  if (n.type !== 'JSXIdentifier') return undefined;
+  return n === name && /^[a-z]|-/.test(n.name as string) ? undefined : n;
+}
 const LABELED = new Set(['LabeledStatement', 'BreakStatement', 'ContinueStatement']);
 const one = (key: string): ReadonlySet<string> => new Set([key]);
 
@@ -175,6 +185,11 @@ export function unshadowedUses(
         break;
       case 'TSModuleDeclaration':
         return children(node, hidden, one('id'));
+      case 'JSXOpeningElement': {
+        const ref = jsxReference(node.name as Node);
+        if (ref && resolves(ref.name as string)) onOther(ref);
+        return children(node, hidden, one('name'));
+      }
       case 'BlockStatement':
       case 'StaticBlock':
       case 'TSModuleBlock': {

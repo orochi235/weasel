@@ -116,6 +116,17 @@ describe('rewriteIconCalls on imports it cannot follow', () => {
     expect(code).toContain(`/* @icon */ 'core:y'`);
   });
 
+  it('warns on icon named as a JSX element, but not on an intrinsic element or attribute of that name', () => {
+    const jsx = (body: string) => {
+      const warnings: string[] = [];
+      rewriteIconCalls(`import { icon as Icon } from './icons.gen';\n${body}\n`, 'j.tsx', ns, (m) => warnings.push(m));
+      return warnings.join('\n');
+    };
+    expect(jsx(`const a = <Icon name="x" />;`)).toMatch(/used other than as a direct call in 1 place/);
+    expect(jsx(`const a = <Icon.Part></Icon.Part>;`)).toMatch(/used other than as a direct call in 1 place/);
+    expect(jsx(`const a = <icon Icon="x" />;`)).toBe('');
+  });
+
   it('rewrites a call through a non-null assertion or parentheses', () => {
     const src = `import { icon } from './icons.gen';\nconst a = icon!('bang'), b = (icon)('paren');\n`;
     expect(collectIconRefs(rewriteIconCalls(src, 'n.ts', ns)!.code, 'n.ts').sort()).toEqual(['core:bang', 'core:paren']);
