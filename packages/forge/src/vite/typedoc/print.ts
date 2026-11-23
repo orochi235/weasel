@@ -4,8 +4,9 @@ import type { TdComment, TdIndex, TdPart, TdReflection, TdType, TypedocHref } fr
 export function typeText(type: TdType | undefined): string {
   if (!type) return 'unknown';
   switch (type.type) {
-    case 'intrinsic':
     case 'inferred':
+      return `infer ${type.name ?? 'unknown'}${type.constraint ? ` extends ${typeText(type.constraint)}` : ''}`;
+    case 'intrinsic':
     case 'unknown':
       return type.name ?? 'unknown';
     case 'literal':

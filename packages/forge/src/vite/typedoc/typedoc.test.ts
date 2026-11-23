@@ -167,4 +167,19 @@ describe('typeText', () => {
     expect(typeText({ type: 'indexedAccess', objectType: union, indexType: { type: 'literal', value: 'k' } })).toBe("(A | B)['k']");
     expect(typeText({ type: 'union', types: [obj, nul] })).toBe('{ x: A } | null');
   });
+
+  it('prints an inferred type with its infer, and its constraint', () => {
+    const t: TdType = { type: 'reference', name: 'T' };
+    const u: TdType = { type: 'reference', name: 'U' };
+    const never: TdType = { type: 'intrinsic', name: 'never' };
+    const arrayOf = (arg: TdType): TdType => ({ type: 'reference', name: 'Array', typeArguments: [arg] });
+    const infer: TdType = { type: 'inferred', name: 'U' };
+    expect(typeText({ type: 'conditional', checkType: t, extendsType: arrayOf(infer), trueType: u, falseType: never })).toBe(
+      'T extends Array<infer U> ? U : never',
+    );
+    const bounded: TdType = { type: 'inferred', name: 'U', constraint: { type: 'intrinsic', name: 'string' } };
+    expect(typeText({ type: 'conditional', checkType: t, extendsType: arrayOf(bounded), trueType: u, falseType: never })).toBe(
+      'T extends Array<infer U extends string> ? U : never',
+    );
+  });
 });

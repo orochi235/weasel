@@ -58,6 +58,8 @@ export interface TdType {
   parameter?: string;
   parameterType?: TdType;
   templateType?: TdType;
+  /** An `infer`'s `extends` constraint. */
+  constraint?: TdType;
 }
 
 export interface TdReflection {
