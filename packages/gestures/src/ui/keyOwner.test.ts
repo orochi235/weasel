@@ -55,6 +55,14 @@ describe('focusedControlOwnsKey', () => {
     expect(focusedControlOwnsKey(keyOn(el('<button></button>'), 'x'))).toBe(false);
   });
 
+  it('gives Space and Enter to the inputs that open a picker or submit on them', () => {
+    for (const type of ['file', 'color', 'image']) {
+      for (const key of [' ', 'Enter']) {
+        expect(focusedControlOwnsKey(keyOn(el(`<input type="${type}">`), key)), `${key} on ${type}`).toBe(true);
+      }
+    }
+  });
+
   it('gives a select its type-ahead and its navigation keys', () => {
     expect(focusedControlOwnsKey(keyOn(select(), 'x'))).toBe(true);
     expect(focusedControlOwnsKey(keyOn(select(), 'X', { shiftKey: true }))).toBe(true);

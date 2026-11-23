@@ -29,7 +29,8 @@ export function isEditableTarget(target: EventTarget | null): boolean {
 
 const ACTIVATED_BY_KEY = [
   'button', 'a[href]', 'summary', 'select',
-  'input[type="button"]', 'input[type="submit"]', 'input[type="reset"]',
+  'input[type="button"]', 'input[type="submit"]', 'input[type="reset"]', 'input[type="image"]',
+  'input[type="file"]', 'input[type="color"]',
   'input[type="checkbox"]', 'input[type="radio"]',
   '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="switch"]', '[role="radio"]',
   '[role="menuitem"]', '[role="menuitemcheckbox"]', '[role="menuitemradio"]', '[role="tab"]', '[role="option"]',
