@@ -17,7 +17,7 @@ const fmt = (v: number) => v.toFixed(2).padStart(7);
 const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
 
 const labeled = (e: AvoidEdge): AvoidEdge =>
-  ({ ...e, label: { id: `${e.id}/label`, placement: { at: 'mid', offset: 9 }, size: { width: 40, height: 12 } } });
+  ({ ...e, labels: [{ id: `${e.id}/label`, placement: { at: 'mid', offset: 9 }, size: { width: 40, height: 12 } }] });
 
 /** `input` with each edge holding the route `routes` gave it. */
 function stored(input: AvoidInput, routes: AvoidRoutes): AvoidInput {
@@ -43,7 +43,7 @@ function placementInput(): PlaceLabelsInput {
   const base = layout(1, 200, 300);
   const input = stored(base, createAvoidRouter().update(base));
   const routes = input.edges.map((e) => ({ id: e.id, points: fullRoute(e) as Vec2[] }));
-  const labels: PlaceLabel[] = input.edges.map((e) => ({ id: e.label!.id, edge: e.id, placement: e.label!.placement, size: e.label!.size }));
+  const labels: PlaceLabel[] = input.edges.map((e) => { const label = e.labels![0]!; return { id: label.id, edge: e.id, placement: label.placement, size: label.size }; });
   return { shapes: input.obstacles.map((o) => ({ id: o.id, box: o.box })), routes, labels };
 }
 

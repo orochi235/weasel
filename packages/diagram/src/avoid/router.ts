@@ -17,7 +17,8 @@ import { AVOID_DEFAULTS, type AvoidEdge, type AvoidInput, type AvoidObstacle, ty
 /** How one {@link AvoidRouter.update} runs. */
 export interface AvoidUpdateOptions {
   /** A drag frame: route against the committed obstacles without replacing
-   *  them, with no crossing penalty and no nudging. */
+   *  them, with no crossing penalty and no nudging. With nothing committed
+   *  yet, every connector routes against `input`'s obstacles. */
   preview?: boolean;
   /** Milliseconds a preview may spend. The connectors it does not reach keep
    *  the route the last preview since {@link AvoidRouter.beginPreview} gave
@@ -42,8 +43,7 @@ export interface AvoidRouter {
    *  budget does not reach keeps a route only from this run's frames. */
   beginPreview(): void;
   /** Drop what the router holds for connectors `ids`, so the next update
-   *  reroutes them: for routes the host did not store, such as a locked
-   *  connector's. */
+   *  reroutes them: for routes the host did not store. */
   forget(ids: Iterable<string>): void;
 }
 
@@ -120,8 +120,14 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
 
   function preview(input: AvoidInput, budgetMs: number): AvoidRoutes {
     const start = now();
-    if (drag === null) indexForDrag({ obstacles: [...committed.values()], edges: input.edges });
-    return previewFrame(drag!.frame(input.obstacles), (id) => edgeIn(input.edges, id), previews, opts, () => now() - start > budgetMs);
+    const spent = () => now() - start > budgetMs;
+    if (drag === null) {
+      const index = new ObstacleIndex([...input.obstacles, ...labelObstacles(input.edges, routeOf)], opts.clearance, opts.labelClearance);
+      const byId = new Map(input.edges.map((e) => [e.id, e]));
+      const frame = { index, dirty: [...byId.keys()], limit: limitOf(input, opts.margin) };
+      return previewFrame(frame, (id) => byId.get(id), previews, opts, spent);
+    }
+    return previewFrame(drag.frame(input.obstacles), (id) => edgeIn(input.edges, id), previews, opts, spent);
   }
 
   /** Route `dirty` around `obstacles`, which hold `input`'s labels as they stand, and commit. */
@@ -172,10 +178,11 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     },
     update(input, updateOpts = {}) {
       if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
+      for (const e of input.edges) if (e.locked === true) for (const map of [keys, raw, shown, pathless]) map.delete(e.id);
       const obstacles = [...input.obstacles, ...labelObstacles(input.edges, routeOf)];
       const changed = changedObstacles(committed, obstacles, (o) => inflatedBox(o, opts.clearance, opts.labelClearance));
       // The route before nudging too, which a nudge spreads a clean connector from.
-      const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless);
+      const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless).filter((e) => e.locked !== true);
       forget(input);
       return commit(input, dirty, obstacles);
     },
@@ -205,7 +212,7 @@ function previewFrame(
       continue;
     }
     const edge = edgeOf(id);
-    if (edge === undefined) continue;
+    if (edge === undefined || edge.locked === true) continue;
     const full = routeEdge(edge, { index: frame.index, options, limit: frame.limit });
     const route = full === null ? null : full.slice(1, -1);
     previews.set(id, route);
@@ -226,10 +233,13 @@ function routeDirty(dirty: readonly AvoidEdge[], ctx: EdgeRouteContext & { cross
     const full = routeEdge(edge, ctx);
     fresh.set(edge.id, full);
     if (full !== null) ctx.crossings.add(edge.id, full);
-    if (edge.label !== undefined) {
-      const label = labelObstacle(edge, full ?? fullRoute(edge));
-      if (label === null) ctx.index.delete(edge.label.id);
-      else ctx.index.replace(label);
+    if (edge.labels !== undefined && edge.labels.length > 0) {
+      const line = full ?? fullRoute(unrouted(edge));
+      for (const label of edge.labels) {
+        const o = labelObstacle(edge.id, label, line);
+        if (o === null) ctx.index.delete(label.id);
+        else ctx.index.replace(o);
+      }
       moves++;
     }
     if (full === null) failedAt.set(edge, moves);
@@ -257,17 +267,22 @@ function bundleOf(
     for (let i = 1; i + 2 < full.length; i++) clean.edgesMeeting(segmentBox(full[i]!, full[i + 1]!), mates);
   }
   for (const e of edges) {
-    if (mates.has(e.id) && !fresh.has(e.id)) bundle.set(e.id, { points: rawOf(e), waypoints: e.waypoints ?? [] });
+    if (mates.has(e.id) && !fresh.has(e.id) && e.locked !== true) bundle.set(e.id, { points: rawOf(e), waypoints: e.waypoints ?? [] });
   }
   return bundle;
+}
+
+/** `edge` holding no route, as it falls back once none is found. */
+function unrouted(edge: AvoidEdge): AvoidEdge {
+  const { route: _r, ...rest } = edge;
+  return rest;
 }
 
 /** `edge` holding the route `routes` gave it, when they gave it one. */
 function withRoute(edge: AvoidEdge, routes: AvoidRoutes): AvoidEdge {
   const route = routes.get(edge.id);
   if (route === undefined) return edge;
-  const { route: _r, ...rest } = edge;
-  return route === null ? rest : { ...rest, route };
+  return route === null ? unrouted(edge) : { ...unrouted(edge), route };
 }
 
 /** A segment's box, its thickness zero. */

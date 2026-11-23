@@ -32,9 +32,12 @@ export interface AvoidEdge {
   waypoints?: readonly Vec2[];
   /** The route it holds now: the bends between its ends. */
   route?: readonly Vec2[];
-  /** Its label, which every other connector routes around. The router
-   *  stations it on this connector's route as `labelCenter` does. */
-  label?: AvoidLabel;
+  /** Whether it keeps the route it holds: never rerouted or nudged, and
+   *  routed around as it stands. Once unlocked, the next update reroutes it. */
+  locked?: boolean;
+  /** Its labels, which every other connector routes around. The router
+   *  stations each on this connector's route as `labelCenter` does. */
+  labels?: readonly AvoidLabel[];
 }
 
 /** A connector's label as the router reads it: where along the route it

@@ -62,15 +62,15 @@ function obstaclesOf(specs: readonly DiagramSpec[], world: ReadonlyMap<string, R
   return out;
 }
 
-/** Each edge's label spec, by the edge it labels. */
-function labelsOf(specs: readonly DiagramSpec[]): Map<string, AvoidLabel> {
-  const out = new Map<string, AvoidLabel>();
+/** Each edge's label specs, by the edge they label. */
+function labelsOf(specs: readonly DiagramSpec[]): Map<string, AvoidLabel[]> {
+  const out = new Map<string, AvoidLabel[]>();
   for (const spec of specs) {
     const label = diagramLabelOf(spec);
     const owner = Array.isArray(spec.dependsOn) ? spec.dependsOn[0] as string | undefined : undefined;
-    if (label === null || owner === undefined || out.has(owner)) continue;
+    if (label === null || owner === undefined) continue;
     const { width, height } = spec.pose as RectPose;
-    out.set(owner, { id: spec.id as string, placement: label, size: { width, height } });
+    out.set(owner, [...(out.get(owner) ?? []), { id: spec.id as string, placement: label, size: { width, height } }]);
   }
   return out;
 }
@@ -99,7 +99,13 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
     const edges: AvoidEdge[] = [];
     for (const spec of specs) {
       const edge = diagramEdgeOf(spec);
-      if (edge === null || edge.offPage !== undefined) continue;
+      if (edge === null) continue;
+      if (edge.offPage !== undefined) {
+        for (const { id } of labels.get(spec.id as string) ?? []) {
+          obstacles.push({ id, kind: 'label', edge: spec.id as string, box: world.get(id) ?? (byId.get(id)!.pose as RectPose) });
+        }
+        continue;
+      }
       const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
       const [a, b] = ends;
       if (a === undefined || b === undefined) continue;
@@ -110,14 +116,17 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
         const pose = world.get(n.id) ?? (s.pose as RectPose);
         return facing(port === undefined ? portsOf(n, pose) : portSitesOf(n, pose, port));
       };
+      const from = portsAt(a, edge.from.port);
+      const to = portsAt(b, edge.to.port);
+      if (from.length === 0 || to.length === 0) continue;
       const route = held.get(spec.id as string);
       edges.push({
         id: spec.id as string,
-        from: { node: a.id as string, ports: portsAt(a, edge.from.port) },
-        to: { node: b.id as string, ports: portsAt(b, edge.to.port) },
+        from: { node: a.id as string, ports: from },
+        to: { node: b.id as string, ports: to },
         ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints } : {}),
         ...(route != null ? { route } : {}),
-        ...(labels.has(spec.id as string) ? { label: labels.get(spec.id as string)! } : {}),
+        ...(labels.has(spec.id as string) ? { labels: labels.get(spec.id as string)! } : {}),
       });
     }
     if (edges.length === 0) return [...specs];

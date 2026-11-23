@@ -7,6 +7,7 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import { unionRects } from '@weasel-js/geom';
+import { finiteBox } from './grid';
 import { inflatedBox, ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
 import { type AvoidInput, type AvoidObstacle, type Box } from './types';
@@ -81,7 +82,7 @@ export class DragIndex {
       for (const e of this.attached.get(id) ?? []) first.add(e);
       this.segments.edgesMeeting(inflatedBox(this.committed.get(id)!, this.clearance, this.labelClearance), meeting);
       this.segments.edgesMeeting(inflatedBox(o, this.clearance, this.labelClearance), meeting);
-      limit = unionRects([limit, o.box])!;
+      if (finiteBox(o.box)) limit = unionRects([limit, o.box])!;
     }
     return { index: this.index, dirty: [...first, ...[...meeting].filter((e) => !first.has(e))], limit };
   }

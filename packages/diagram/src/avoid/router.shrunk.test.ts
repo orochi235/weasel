@@ -18,7 +18,7 @@ function stored(input: AvoidInput, routes: AvoidRoutes): AvoidInput {
   };
 }
 
-const label = (id: string) => ({ label: { id: `${id}/label`, placement: { at: 'mid' as const, offset: 9 }, size: { width: 40, height: 14 } } });
+const label = (id: string) => ({ labels: [{ id: `${id}/label`, placement: { at: 'mid' as const, offset: 9 }, size: { width: 40, height: 14 } }] });
 
 /** Whether `full` comes within the default clearance, 10, of `box` past its first and last segments. */
 const grazes = (full: readonly Vec2[], box: AvoidObstacle['box']) =>

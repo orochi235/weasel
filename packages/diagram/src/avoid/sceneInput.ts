@@ -1,11 +1,11 @@
 /**
  * A diagram scene as the avoid router reads it: every participant, container,
  * pool, cluster box, and header as an obstacle, and every `avoid` connector not
- * split across pages, with the ports each end may use and its label. A split
- * connector's label, on its first stub, is an obstacle of its own.
+ * split across pages, with the ports each end may use and its labels. A split
+ * connector's labels, on its stubs, are obstacles of their own.
  */
 import {
-  worldPoses,
+  documentPose,
   AUTO_POSE_DESCRIPTOR,
   type PoseDescriptor,
   type Scene,
@@ -18,6 +18,7 @@ import { diagramClusterOf } from '../clusterBox';
 import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf, type PortsOptions } from '../ports';
 import { diagramNodeOf } from '../trait';
+import { worldWith } from '../worldWith';
 import type { Port } from '../types';
 import type { AvoidEdge, AvoidInput, AvoidLabel, AvoidObstacle, AvoidPort } from './types';
 
@@ -49,23 +50,24 @@ function members(scene: AnyScene, node: SceneNode, into: Set<string>): Set<strin
 
 /**
  * What the router reads off `scene`: its obstacles and its `avoid` connectors,
- * each node at the pose `poseOf` gives it, else the one the document holds.
+ * each node where it draws once `frame`'s stored poses, a transform frame's,
+ * are written in place of the document's.
  */
 export function avoidSceneInput<TPose>(
   scene: Scene<unknown, string, TPose>,
   opts: AvoidSceneOptions<TPose> = {},
-  poseOf?: (id: string) => TPose | undefined,
+  frame: ReadonlyMap<string, TPose> = new Map(),
 ): AvoidInput {
   const sc = scene as unknown as AnyScene;
   const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
   const key = opts.routerKey ?? 'avoid';
   const poses = new Map<string, TPose>();
-  const stored = worldPoses(sc, 'document');
+  const world = worldWith(sc, frame, (node) => documentPose(sc, node));
   const pose = (node: SceneNode): TPose => {
     let p = poses.get(node.id);
     if (p === undefined) {
-      p = poseOf?.(node.id) ?? (stored(node.id) as TPose);
+      p = world(node.id) as TPose;
       poses.set(node.id, p);
     }
     return p;
@@ -73,8 +75,8 @@ export function avoidSceneInput<TPose>(
 
   const obstacles: AvoidObstacle[] = [];
   const edgeNodes: SceneNode[] = [];
-  const labels = new Map<string, AvoidLabel>();
-  const labelNodes = new Map<string, SceneNode>();
+  const labels = new Map<string, AvoidLabel[]>();
+  const labelNodes = new Map<string, SceneNode[]>();
   const split: string[] = [];
   for (const node of sc.renderOrderNodes()) {
     const edge = diagramEdgeOf(node);
@@ -87,9 +89,9 @@ export function avoidSceneInput<TPose>(
     if (label !== null) {
       const owner = Array.isArray(node.dependsOn) ? node.dependsOn[0] : undefined;
       const { width, height } = poseDescriptor.getBounds(node.pose as TPose);
-      if (owner !== undefined && !labels.has(owner)) {
-        labels.set(owner, { id: node.id, placement: label, size: { width, height } });
-        labelNodes.set(owner, node);
+      if (owner !== undefined) {
+        labels.set(owner, [...(labels.get(owner) ?? []), { id: node.id, placement: label, size: { width, height } }]);
+        labelNodes.set(owner, [...(labelNodes.get(owner) ?? []), node]);
       }
       continue;
     }
@@ -107,8 +109,7 @@ export function avoidSceneInput<TPose>(
   }
 
   for (const id of split) {
-    const node = labelNodes.get(id);
-    if (node !== undefined) obstacles.push({ id: node.id, kind: 'label', edge: id, box: poseDescriptor.getBounds(pose(node)) });
+    for (const node of labelNodes.get(id) ?? []) obstacles.push({ id: node.id, kind: 'label', edge: id, box: poseDescriptor.getBounds(pose(node)) });
   }
 
   const edges: AvoidEdge[] = [];
@@ -131,7 +132,8 @@ export function avoidSceneInput<TPose>(
       to: { node: b.id, ports: to },
       ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints as Vec2[] } : {}),
       ...(edge.route !== undefined ? { route: edge.route } : {}),
-      ...(labels.has(node.id) ? { label: labels.get(node.id)! } : {}),
+      ...(sc.isLocked(node.id as never) ? { locked: true } : {}),
+      ...(labels.has(node.id) ? { labels: labels.get(node.id)! } : {}),
     });
   }
   return { obstacles, edges };

@@ -5,10 +5,17 @@
  */
 import { composeWorldPose, definesFrame, type AnyScene } from '@weasel-js/core';
 
-/** `(id) => where it draws` with `frame`'s poses in place of the stored ones. */
-export function worldWith(sc: AnyScene, frame: ReadonlyMap<string, unknown> = new Map()): (id: string) => unknown {
+type AnyNode = NonNullable<ReturnType<AnyScene['get']>>;
+
+/** `(id) => where it draws` with `frame`'s poses in place of the ones `read`
+ *  takes off each node, by default the stored pose. */
+export function worldWith(
+  sc: AnyScene,
+  frame: ReadonlyMap<string, unknown> = new Map(),
+  read: (node: AnyNode) => unknown = (node) => node.pose,
+): (id: string) => unknown {
   const poses = {
-    getPose: (id: string) => (frame.has(id) ? frame.get(id) : sc.get(id as never)!.pose),
+    getPose: (id: string) => (frame.has(id) ? frame.get(id) : read(sc.get(id as never)!)),
     getParent: (id: string) => (sc.get(id as never)?.parent ?? null) as string | null,
     definesFrame: (id: string) => {
       const n = sc.get(id as never);

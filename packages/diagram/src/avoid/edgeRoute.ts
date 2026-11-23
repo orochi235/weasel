@@ -4,7 +4,7 @@
  */
 import type { Vec2 } from '@weasel-js/core/math';
 import { simplifyStops } from '../polyline';
-import { searchWindow, within } from './grid';
+import { finiteBox, searchWindow, within } from './grid';
 import type { ObstacleIndex } from './obstacles';
 import { ENCLOSED, searchLeg, type LegResult, type LegSource, type LegTarget } from './search';
 import type { SegmentIndex } from './segments';
@@ -27,9 +27,6 @@ function exitOf(port: AvoidPort, clearance: number): Vec2 {
   const k = (clearance + 1) / len;
   return { x: port.point.x + port.normal.x * k, y: port.point.y + port.normal.y * k };
 }
-
-const finiteBox = (b: Box): boolean =>
-  Number.isFinite(b.x) && Number.isFinite(b.y) && Number.isFinite(b.x + b.width) && Number.isFinite(b.y + b.height);
 
 const reversed = (v: Vec2): Vec2 => ({ x: -v.x, y: -v.y });
 
