@@ -72,9 +72,12 @@ export class SpatialHash<T> {
     const [i0, j0, i1, j1] = range;
     for (let i = i0; i <= i1; i++) {
       for (let j = j0; j <= j1; j++) {
-        const list = this.cells.get(SpatialHash.key(i, j));
+        const k = SpatialHash.key(i, j);
+        const list = this.cells.get(k);
         const at = list?.findIndex((f) => f.item === item) ?? -1;
-        if (at >= 0) list!.splice(at, 1);
+        if (at < 0) continue;
+        if (list!.length === 1) this.cells.delete(k);
+        else list!.splice(at, 1);
       }
     }
   }
