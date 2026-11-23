@@ -186,3 +186,16 @@ it('looks again when the host under it is resized, with no window resize to say 
     vi.unstubAllGlobals();
   }
 });
+
+it('withdraws the request a cell stood under when a comparison turns on or off under the same handle', () => {
+  const lenses = createLiveLenses();
+  const { handle: h } = attach(100, null, undefined, lenses);
+  expect(lenses.forTrial('t1').map((r) => r.lensId)).toEqual(['a']);
+  h.update(request(100, { kind: 'opposite-mode' }));
+  expect(lenses.forTrial('t1').map((r) => r.lensId)).toEqual(['a~compared']);
+  h.update(request(100, null));
+  expect(lenses.forTrial('t1').map((r) => r.lensId)).toEqual(['a']);
+  h.detach();
+  handle = null;
+  expect(lenses.forTrial('t1')).toEqual([]);
+});

@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { createCaptureClient } from './captureClient';
 import { payload } from './pixels.fixture';
 
@@ -15,4 +15,18 @@ it("takes a 503's reason as its status", async () => {
   const client = createCaptureClient('/', answering(503, JSON.stringify({ reason: 'install playwright' })));
   await expect(client.take(payload('s'))).resolves.toBeNull();
   expect(client.status()).toBe('install playwright');
+});
+
+it('reports itself available again once a capture after a 503 succeeds', async () => {
+  vi.stubGlobal('createImageBitmap', async () => ({}) as ImageBitmap);
+  let down = true;
+  const send = (async () =>
+    down ? new Response(JSON.stringify({ reason: 'restarting' }), { status: 503 }) : new Response(new Blob(['png']))) as typeof fetch;
+  const client = createCaptureClient('/', send);
+  await client.take(payload('s'));
+  expect(client.status()).toBe('restarting');
+  down = false;
+  await expect(client.take(payload('s'))).resolves.not.toBeNull();
+  expect(client.status()).toBe(true);
+  vi.unstubAllGlobals();
 });

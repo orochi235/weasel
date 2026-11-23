@@ -35,7 +35,6 @@ describe('capturePayload', () => {
     // Anything JSON would change on the way, not only a top-level Map.
     expect(capturePayload({ ...input, state: { at: new Date(0) } })).toEqual({ unavailable: STATE_UNSENDABLE });
     expect(capturePayload({ ...input, state: { n: Number.NaN } })).toEqual({ unavailable: STATE_UNSENDABLE });
-    expect(capturePayload({ ...input, state: { gone: undefined } })).toEqual({ unavailable: STATE_UNSENDABLE });
     expect(capturePayload({ ...input, state: { big: 1n } })).toEqual({ unavailable: STATE_UNSENDABLE });
     // JSON writes a hole as null.
     expect(capturePayload({ ...input, state: { items: [1, , 3] } })).toEqual({ unavailable: STATE_UNSENDABLE });
@@ -47,6 +46,13 @@ describe('capturePayload', () => {
       unavailable: CONFIG_UNSENDABLE,
     });
     expect(CONFIG_UNSENDABLE).toBe("this story's config cannot be sent to a capture");
+  });
+
+  it('sends a state with undefined entries without them, and a story with no state', () => {
+    const got = capturePayload({ ...input, state: { hovered: undefined, at: { x: 1, y: undefined } } });
+    expect(got).toMatchObject({ state: { at: { x: 1 } } });
+    expect(Object.keys((got as { state: object }).state)).toEqual(['at']);
+    expect(capturePayload({ ...input, state: undefined })).toMatchObject({ story: input.entry.id, state: undefined });
   });
 
   it('sends a config whose unset args are undefined, without them', () => {

@@ -24,6 +24,9 @@ export interface CompareChoice {
   /** Its variant's key. An option is keyed by its index, never its value: two values can print alike, and a dot in a
    *  path or a value would let two rows' keys meet. */
   key: string;
+  /** The submenu it sits in: one per global, one for DPR, and one per arg path, apart however they are labeled. */
+  groupKey: string;
+  /** That submenu's label. */
   group: string;
   label: string;
   compare: ForgeComparison;
@@ -45,6 +48,7 @@ function argChoices(shape: Readonly<Record<string, ConfigEntry>>, at: string): C
     return options.map((o, i): CompareChoice => ({
       action: COMPARE_WITH_ID,
       key: `arg.${path}.${i}`,
+      groupKey: `arg:${path}`,
       group: `Arg ${path}`,
       label: o.label,
       compare: { kind: 'custom', args: { [path]: o.value } } as const,
@@ -59,6 +63,7 @@ export function compareChoices(declarations: GlobalDeclarations, schema: ConfigS
     declaration.options.map((o, i): CompareChoice => ({
       action: COMPARE_WITH_ID,
       key: `global.${key}.${i}`,
+      groupKey: `global:${key}`,
       group: declaration.label,
       label: o.label,
       compare: { kind: 'custom', globals: { [key]: o.value } } as const,
@@ -67,6 +72,7 @@ export function compareChoices(declarations: GlobalDeclarations, schema: ConfigS
   const dprs = DPRS.map((dpr): CompareChoice => ({
     action: COMPARE_DPR_ID,
     key: `dpr.${dpr}`,
+    groupKey: 'dpr',
     group: 'DPR',
     label: `${dpr}×`,
     compare: { kind: 'custom', dpr } as const,
@@ -76,14 +82,14 @@ export function compareChoices(declarations: GlobalDeclarations, schema: ConfigS
 
 /** The compare menu: a submenu per global, DPR, and arg, each row naming one variant of `COMPARE_WITH_ID`. */
 export function compareMenuDef(choices: readonly CompareChoice[]): MenuDef {
-  const groups = new Map<string, Record<string, PrefLeaf>>();
+  const groups = new Map<string, { label: string; rows: Record<string, PrefLeaf> }>();
   for (const choice of choices) {
-    const rows = groups.get(choice.group) ?? {};
-    rows[`c${Object.keys(rows).length}`] = pref.action(`${choice.action}:${choice.key}`);
-    groups.set(choice.group, rows);
+    let group = groups.get(choice.groupKey);
+    if (!group) groups.set(choice.groupKey, (group = { label: choice.group, rows: {} }));
+    group.rows[`c${Object.keys(group.rows).length}`] = pref.action(`${choice.action}:${choice.key}`);
   }
   const submenus: Record<string, PrefGroup> = {};
-  [...groups].forEach(([label, rows], n) => {
+  [...groups.values()].forEach(({ label, rows }, n) => {
     submenus[`g${n}`] = pref.group(label, rows, { as: 'menu' });
   });
   return { id: COMPARE_MENU_ID, menu: pref.group('', submenus) };

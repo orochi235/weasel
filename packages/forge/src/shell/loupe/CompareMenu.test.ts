@@ -107,6 +107,24 @@ describe('the compare menu', () => {
     ]);
   });
 
+  it('gives two globals that share a label a submenu each, and keeps a global labeled DPR apart from DPR', () => {
+    const declarations: GlobalDeclarations = {
+      ...DECLARATIONS,
+      tone: { label: 'Theme', default: 'warm', options: [{ value: 'warm', label: 'Warm' }] },
+      density: { label: 'DPR', default: 'lo', options: [{ value: 'lo', label: 'Low' }] },
+    };
+    const groups = Object.values(compareMenuDef(compareChoices(declarations, null)).menu.children) as {
+      name: string;
+      children: Record<string, unknown>;
+    }[];
+    expect(groups.map((g) => [g.name, Object.keys(g.children).length])).toEqual([
+      ['Theme', 2],
+      ['Theme', 1],
+      ['DPR', 1],
+      ['DPR', 3],
+    ]);
+  });
+
   it('keeps the DPR rows on a lens showing no Pixels, disabled because a DPR changes only Pixels', () => {
     const { api, lensId } = createSettledLensApi();
     const [, onLive] = compareActions(api, requestFor(lensId, false));

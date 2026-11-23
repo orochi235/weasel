@@ -138,7 +138,12 @@ export function createLiveSource(
       measure();
       return {
         update(next) {
+          const was = liveCellId(request.lensId, request.conditions);
           request = next;
+          if (posted !== null && liveCellId(next.lensId, next.conditions) !== was) {
+            lenses.set(was, null);
+            posted = null;
+          }
           measure();
         },
         detach() {
