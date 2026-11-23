@@ -50,5 +50,20 @@ export function isProbeRequest(m: unknown): m is ProbeRequest {
     && typeof (m as ProbeRequest).tabId === 'number';
 }
 
+/** What the popup asks the background: probe the tab and show the answer on its badge, then send it back. */
+export interface RefreshRequest {
+  weaselDevtools: 'refresh';
+  tabId: number;
+}
+
+export function refreshRequest(tabId: number): RefreshRequest {
+  return { weaselDevtools: 'refresh', tabId };
+}
+
+export function isRefreshRequest(m: unknown): m is RefreshRequest {
+  return typeof m === 'object' && m !== null && (m as RefreshRequest).weaselDevtools === 'refresh'
+    && typeof (m as RefreshRequest).tabId === 'number';
+}
+
 export const PORT_PAGE = 'weasel-devtools-page';
 export const PORT_PANEL = 'weasel-devtools-panel';
