@@ -99,13 +99,18 @@ describe('normalAxisAt and projectOntoAxis', () => {
 
 describe('wheelWeight', () => {
   it('moves a tenth per notch, up on scroll up, inside zero to three', () => {
-    expect(wheelWeight(1, 100)).toBe(0.9);
-    expect(wheelWeight(1, -100)).toBe(1.1);
-    expect(wheelWeight(3, -1)).toBe(3);
-    expect(wheelWeight(0, 1)).toBe(0);
+    expect(wheelWeight(1, 100)).toEqual({ w: 0.9, carry: 0 });
+    expect(wheelWeight(1, -100)).toEqual({ w: 1.1, carry: 0 });
+    expect(wheelWeight(3, -100).w).toBe(3);
+    expect(wheelWeight(0, 100).w).toBe(0);
+  });
+
+  it('follows how far the wheel turned, carrying what falls short of a notch', () => {
+    expect(wheelWeight(1, -4)).toEqual({ w: 1, carry: -4 });
+    expect(wheelWeight(1, -250)).toEqual({ w: 1.2, carry: -50 });
   });
 
   it('leaves the weight alone for a wheel event with no vertical part', () => {
-    expect(wheelWeight(1, 0)).toBe(1);
+    expect(wheelWeight(1, 0)).toEqual({ w: 1, carry: 0 });
   });
 });

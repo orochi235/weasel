@@ -56,4 +56,20 @@ describe("the spline editor's drag", () => {
     expect(label()).toHaveTextContent('(0.25, 30.0) w1.0');
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
+
+  it('takes a burst of scrolls over one dot as one undo step', async () => {
+    await renderSettled(<Lab instruments={SPLINE} />, { wrapper: withIcons });
+    const host = document.querySelector('svg[viewBox="-8 -80 90 90"]')!.parentElement!;
+    const label = () => screen.queryByText(/^\(0\.25, /);
+    const at = polarPoint('octant', 0.25, 30);
+    for (let k = 0; k < 3; k++) {
+      act(() => {
+        host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: at.x, clientY: at.y, deltaY: -100 }));
+      });
+    }
+    expect(label()).toHaveTextContent('(0.25, 30.0) w1.3');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(label()).toHaveTextContent('(0.25, 30.0) w1.0');
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
 });

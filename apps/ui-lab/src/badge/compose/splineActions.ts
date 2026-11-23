@@ -139,6 +139,8 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
     },
   });
 
+  // The turn short of a notch, kept for the next event over the same dot.
+  let wheel = { idx: -1, carry: 0 };
   const weigh: Action = defineAction({
     id: 'badge-spline.weigh',
     label: 'Change anchor weight',
@@ -153,7 +155,9 @@ export function splineEditorActions(input: { readonly current: SplineEditorInput
         // A sideways scroll has no weight change to make, so it passes on rather than writing an empty step.
         if (idx < 0 || deltaY === 0) return 'pass';
         const anchor = now.anchors[idx]!;
-        now.commit(idx, { ...anchor, w: wheelWeight(anchor.w, deltaY) });
+        const next = wheelWeight(anchor.w, deltaY + (wheel.idx === idx ? wheel.carry : 0));
+        wheel = { idx, carry: next.carry };
+        if (next.w !== anchor.w) now.commit(idx, { ...anchor, w: next.w });
         return undefined;
       },
     },

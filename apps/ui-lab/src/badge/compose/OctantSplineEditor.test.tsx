@@ -91,9 +91,20 @@ describe('the spline curve editor', () => {
     const { host, onAnchorChange } = mount();
     const mid = polarPoint('octant', 0.5, 30);
     act(() => {
-      host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, deltaY: -1 }));
+      host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, deltaY: -100 }));
     });
     expect(onAnchorChange).toHaveBeenCalledWith(1, { s: 0.5, r: 30, w: 1.1 });
+  });
+
+  it('weighs a trackpad scroll by how far it turned, not by how many events it sent', () => {
+    const { host, onAnchorChange } = mount();
+    const mid = polarPoint('octant', 0.5, 30);
+    act(() => {
+      for (let k = 0; k < 25; k++) {
+        host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, deltaY: -4 }));
+      }
+    });
+    expect(onAnchorChange.mock.calls).toEqual([[1, { s: 0.5, r: 30, w: 1.1 }]]);
   });
 
   it('inserts an anchor where an Alt-click lands', () => {

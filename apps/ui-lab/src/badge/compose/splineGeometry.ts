@@ -95,8 +95,16 @@ export function normalAxisAt(samples: readonly Point[], point: Point): Axis {
   return { nx: (flip * -ty) / length, ny: (flip * tx) / length, ox: origin.x, oy: origin.y };
 }
 
-/** An anchor's weight after one wheel notch: scrolling up adds a tenth, and a sideways scroll changes nothing. */
-export function wheelWeight(w: number, deltaY: number): number {
-  if (deltaY === 0) return w;
-  return clamp(Math.round((w + (deltaY > 0 ? -0.1 : 0.1)) * 10) / 10, 0, 3);
+/** The wheel's `deltaY` for one mouse-wheel notch, which moves a weight a tenth. */
+const WHEEL_NOTCH = 100;
+
+/**
+ * An anchor's weight after the wheel turned `scrolled` (this event's `deltaY` plus the last one's `carry`): a tenth
+ * per notch, up on scroll up, inside zero to three. `carry` is the turn short of a whole notch, for the next event.
+ */
+export function wheelWeight(w: number, scrolled: number): { w: number; carry: number } {
+  const notches = Math.trunc(scrolled / WHEEL_NOTCH);
+  const carry = scrolled - notches * WHEEL_NOTCH;
+  if (notches === 0) return { w, carry };
+  return { w: clamp(Math.round((w - notches / 10) * 10) / 10, 0, 3), carry };
 }
