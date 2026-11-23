@@ -25,6 +25,10 @@ export function searchWindow(points: readonly Vec2[], margin: number): Box {
 }
 
 /** Whether `inner` lies within `outer`. */
+/** Whether every edge of `b` is a finite coordinate. */
+export const finiteBox = (b: Box): boolean =>
+  Number.isFinite(b.x) && Number.isFinite(b.y) && Number.isFinite(b.x + b.width) && Number.isFinite(b.y + b.height);
+
 export const within = (inner: Box, outer: Box): boolean =>
   inner.x >= outer.x && inner.y >= outer.y
   && inner.x + inner.width <= outer.x + outer.width && inner.y + inner.height <= outer.y + outer.height;
