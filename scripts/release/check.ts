@@ -13,12 +13,15 @@ const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.chang
 const files = existsSync(DIR) ? readdirSync(DIR).filter(isChangesetFile).sort() : [];
 
 let failed = 0;
+let warned = 0;
 for (const file of files) {
-  const problems = lintChangeset(readFileSync(join(DIR, file), 'utf8'));
-  if (problems.length === 0) continue;
-  failed++;
+  const { errors, warnings } = lintChangeset(readFileSync(join(DIR, file), 'utf8'));
+  if (errors.length === 0 && warnings.length === 0) continue;
+  if (errors.length > 0) failed++;
+  else warned++;
   console.error(`.changeset/${file}`);
-  for (const problem of problems) console.error(`    ${problem}`);
+  for (const error of errors) console.error(`    ${error}`);
+  for (const warning of warnings) console.error(`    warning: ${warning}`);
 }
 
 if (failed > 0) {
@@ -33,4 +36,4 @@ Tags: breaking, deprecates, api, new, behavior, data, visual, perf, fix, interna
 The rules: docs/releasing.md, "Writing a changeset".`);
   process.exit(1);
 }
-console.log(`[changesets] OK — ${files.length} changeset(s).`);
+console.log(`[changesets] OK — ${files.length} changeset(s)${warned > 0 ? `, ${warned} with warnings` : ''}.`);

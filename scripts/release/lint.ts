@@ -7,8 +7,19 @@ export const TITLE_LIMIT = 140;
 /** Longest the whole prose of an entry tagged only `fix` (and `visual`) may run. */
 export const FIX_LIMIT = 700;
 
-/** What is wrong with one changeset file, one line per problem; empty when nothing is. */
-export function lintChangeset(text: string): string[] {
+/** What one changeset file breaks (`errors`, which fail the check) and what it should tighten (`warnings`), a line each. */
+export interface ChangesetLint {
+  readonly errors: string[];
+  readonly warnings: string[];
+}
+
+/** What is wrong with one changeset file; both lists empty when nothing is. */
+export function lintChangeset(text: string): ChangesetLint {
+  const warnings: string[] = [];
+  return { errors: changesetErrors(text, warnings), warnings };
+}
+
+function changesetErrors(text: string, warnings: string[]): string[] {
   let summary: string;
   let releases: { type: string }[];
   try {
@@ -26,7 +37,7 @@ export function lintChangeset(text: string): string[] {
   const [title, rest] = splitSummary(marker.body);
   const plain = title.replace(/`/g, '');
   if (plain.length > TITLE_LIMIT) {
-    problems.push(`the title runs ${plain.length} characters; keep it under ${TITLE_LIMIT}`);
+    warnings.push(`the title runs ${plain.length} characters; keep it under ${TITLE_LIMIT}`);
   }
   if (isGrabBag(plain)) {
     problems.push('the title lists several changes; write one changeset per change');

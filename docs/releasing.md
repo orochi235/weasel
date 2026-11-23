@@ -42,7 +42,7 @@ entry's title; everything after it folds away until clicked.
   and the trim tool") is three entries forced into one, and the check refuses
   one that opens "Fixes to" or strings three things together after "Fix".
 - **The title says what a consumer sees change**, in their words, under 140
-  characters: "The pencil draws a stroke that starts over a shape", not "Fix
+  characters (the check warns past that): "The pencil draws a stroke that starts over a shape", not "Fix
   the pencil binding's hit gate". Name the API only when the API is the change.
 - **Leave out how it used to fail.** "Before, …" belongs in the commit
   message. A fix needs one sentence of what now happens, and a second only when

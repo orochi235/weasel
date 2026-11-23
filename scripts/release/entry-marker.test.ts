@@ -52,23 +52,31 @@ describe('groupOf', () => {
 
 const changeset = (body: string) => `---\n"@weasel-js/core": patch\n---\n\n${body}\n`;
 
+const errorsOf = (text: string) => lintChangeset(text).errors;
+
 describe('lintChangeset', () => {
   it('passes a short tagged fix', () => {
-    expect(lintChangeset(changeset('The pencil draws over a shape.\n\n<!-- entry: fix -->'))).toEqual([]);
+    expect(lintChangeset(changeset('The pencil draws over a shape.\n\n<!-- entry: fix -->'))).toEqual({ errors: [], warnings: [] });
   });
 
-  it('refuses a long title, a grab bag, a bodiless breaking change and a long fix', () => {
-    expect(lintChangeset(changeset(`${'word '.repeat(40)}end.\n\n<!-- entry: new -->`))[0]).toMatch(/title runs/);
-    expect(lintChangeset(changeset('Fixes to A and B.\n\n<!-- entry: fix -->'))).toEqual([
+  it('warns of a long title without refusing it', () => {
+    expect(lintChangeset(changeset(`${'word '.repeat(40)}end.\n\n<!-- entry: fix -->`))).toEqual({
+      errors: [],
+      warnings: ['the title runs 204 characters; keep it under 140'],
+    });
+  });
+
+  it('refuses a grab bag, a bodiless breaking change and a long fix', () => {
+    expect(errorsOf(changeset('Fixes to A and B.\n\n<!-- entry: fix -->'))).toEqual([
       'the title lists several changes; write one changeset per change',
     ]);
-    expect(lintChangeset(changeset('Removes `foo`.\n\n<!-- entry: breaking -->'))[0]).toMatch(/needs a body/);
-    expect(lintChangeset(changeset(`Short.\n\n${'x '.repeat(400)}\n\n<!-- entry: fix -->`))[0]).toMatch(/a fix runs/);
+    expect(errorsOf(changeset('Removes `foo`.\n\n<!-- entry: breaking -->'))[0]).toMatch(/needs a body/);
+    expect(errorsOf(changeset(`Short.\n\n${'x '.repeat(400)}\n\n<!-- entry: fix -->`))[0]).toMatch(/a fix runs/);
   });
 
   it('refuses a level below what its tags make the change', () => {
     const at = (level: string, tags: string) =>
-      lintChangeset(`---\n"@weasel-js/core": ${level}\n---\n\nA thing.\n\nWhat to change.\n\n<!-- entry: ${tags} -->\n`);
+      errorsOf(`---\n"@weasel-js/core": ${level}\n---\n\nA thing.\n\nWhat to change.\n\n<!-- entry: ${tags} -->\n`);
     expect(at('patch', 'api')).toEqual([
       'its tags (api) make it a `minor` change, but it says `patch`; write the level semver gives it',
     ]);
@@ -79,11 +87,11 @@ describe('lintChangeset', () => {
   });
 
   it('reads the highest level a changeset releases any package at', () => {
-    expect(lintChangeset('---\n"a": patch\n"b": minor\n---\n\nA thing.\n\n<!-- entry: api -->\n')).toEqual([]);
+    expect(errorsOf('---\n"a": patch\n"b": minor\n---\n\nA thing.\n\n<!-- entry: api -->\n')).toEqual([]);
   });
 
   it('refuses a marker that opens the body', () => {
-    expect(lintChangeset(changeset('<!-- entry: fix -->\n\nProse.'))).toContain(
+    expect(errorsOf(changeset('<!-- entry: fix -->\n\nProse.'))).toContain(
       'the entry marker opens the body; move it to the end',
     );
   });
