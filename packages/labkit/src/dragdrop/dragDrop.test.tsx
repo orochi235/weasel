@@ -128,6 +128,40 @@ describe('DragDrop integration', () => {
     expect(latest.items[0]?.id).toBe('a');
   });
 
+  it('lands on a state update made since the last render rather than overwriting it', async () => {
+    let latest: DropState = { items: [] };
+    let store: { getState: () => unknown } | undefined;
+    function StoreProbe() {
+      store = useContext(LabStoreContext)?.store;
+      return null;
+    }
+    await renderSettled(
+      <Lab instruments={[testInstrument]}>
+        <StateProbe onState={(s) => (latest = s)} />
+        <StoreProbe />
+      </Lab>,
+      { wrapper: withIcons },
+    );
+    const palette = screen.getByRole('button', { name: 'Item A' });
+    await act(async () => {
+      pointerDown(palette, 0, 0);
+    });
+    await act(async () => {
+      const s = store?.getState() as {
+        trials: { id: string }[];
+        updateTrialState: (id: string, next: (prev: DropState) => DropState) => void;
+      };
+      s.updateTrialState(s.trials[0]!.id, (prev) => ({
+        items: [...prev.items, { id: 'queued', x: 0, y: 0 }],
+      }));
+      document.dispatchEvent(
+        new PointerEvent('pointerup', { pointerId: 1, bubbles: true, clientX: 250, clientY: 250 }),
+      );
+    });
+
+    expect(latest.items.map((i) => i.id)).toEqual(['queued', 'a']);
+  });
+
   it('drop outside the canvas leaves state unchanged', async () => {
     let latest: DropState = { items: [] };
     await renderLab((s) => {

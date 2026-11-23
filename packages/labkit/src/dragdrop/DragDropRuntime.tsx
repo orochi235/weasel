@@ -126,7 +126,7 @@ export function useDragDrop<TS, TC>({
         if (live.capability.onDragOver?.(world, item, live.state, live.config)?.ok === false)
           return;
         live.emit('canvas.itemAdded');
-        live.setState(live.capability.onDrop(world, item, live.state, live.config));
+        live.setState((prev) => live.capability.onDrop(world, item, prev, live.config));
       },
     }),
     [frameLoop, liveRef, update],
