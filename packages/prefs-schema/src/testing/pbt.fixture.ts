@@ -125,7 +125,7 @@ const objectOf = (fields: Record<string, PrefLeaf>): PrefObject => ({
   default: own(Object.entries(fields).filter(([, f]) => f.default !== undefined).map(([k, f]) => [k, f.default])),
 });
 
-/** A leaf of any value-holding built-in kind but `paint`, nested `depth` deep at most. */
+/** A leaf of any value-holding built-in kind, nested `depth` deep at most. */
 export function leaf(depth = 2): fc.Arbitrary<PrefLeaf> {
   if (depth <= 0) return scalarLeaf;
   const inner = leaf(depth - 1);

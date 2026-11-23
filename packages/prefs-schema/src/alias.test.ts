@@ -17,3 +17,13 @@ describe('prefAliasedLeaf', () => {
     expect(prefAliasedLeaf(alias({ short: ['G'] }), grid).short).toEqual(['G']);
   });
 });
+
+describe('prefAliasedLeaf and the access letter', () => {
+  const lettered = { ...grid, access: 'G' } as PrefLeaf;
+
+  it('keeps the target’s letter under the target’s name, and drops it under a name of the alias’s own', () => {
+    expect(prefAliasedLeaf(alias(), lettered).access).toBe('G');
+    expect(prefAliasedLeaf(alias({ name: 'Show lattice' }), lettered).access).toBeUndefined();
+    expect(prefAliasedLeaf(alias({ name: 'Show lattice', access: 'L' }), lettered).access).toBe('L');
+  });
+});

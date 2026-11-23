@@ -61,3 +61,35 @@ describe('a split leaf whose selector is split by it', () => {
     expect(read('b')).toBe(4);
   });
 });
+
+describe('an entry of a list or a map read by its path from the root', () => {
+  const row = {
+    kind: 'object', name: 'Phase', description: '', default: {}, children: { hold: { kind: 'boolean', name: 'Hold', description: '', default: true } as PrefLeaf },
+  } as PrefObject;
+  const list = (item: PrefLeaf): PrefLeaf => ({ kind: 'list', name: 'Phases', description: '', default: [], item }) as PrefLeaf;
+  const map = (item: PrefLeaf): PrefLeaf => ({ kind: 'map', name: 'M', description: '', default: {}, item }) as PrefLeaf;
+
+  it('reads a field the entry omits as the item field’s default, as reading it from the entry does', () => {
+    const root: PrefGroup = { name: '', children: { phases: list(row) } };
+    expect(prefReader(root, { phases: [{}] })('phases.0.hold')).toBe(true);
+    expect(prefJudge(root, () => undefined, { item: row, value: {} })({ from: 'item', path: 'hold' }, 'showIf')).toBe(true);
+  });
+
+  it('reads an entry holding null as the item holding nothing, as reading it from the entry does', () => {
+    const root: PrefGroup = { name: '', children: { m: map(num('N')) } };
+    expect(prefReader(root, { m: { k: null } })('m.k')).toBe(5);
+    expect(prefJudge(root, () => undefined, { item: num('N'), value: null })({ from: 'item', path: '', is: 5 }, 'showIf')).toBe(true);
+  });
+
+  it('reads an entry holding nothing as the item’s auto value where it starts auto, from the root and from the entry', () => {
+    const item = num('N', { auto: { on: true, value: 9 } } as Partial<PrefLeaf>);
+    const root: PrefGroup = { name: '', children: { m: map(item) } };
+    expect(prefReader(root, { m: { k: null } })('m.k')).toBe(9);
+    expect(prefJudge(root, () => undefined, { item, value: undefined })({ from: 'item', path: '', is: 9 }, 'showIf')).toBe(true);
+  });
+
+  it('reads no entry where the list holds none', () => {
+    const root: PrefGroup = { name: '', children: { phases: list(row) } };
+    expect(prefReader(root, { phases: [] })('phases.0.hold')).toBeUndefined();
+  });
+});

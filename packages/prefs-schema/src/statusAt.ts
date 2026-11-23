@@ -52,22 +52,56 @@ export interface PrefOwner {
   /** The path of the list's or the map's entry the owner sits in (`'phases.2'`), under which a condition that reads
    *  the entry (`from: 'item'`) names its paths. Unset outside an entry, or where it has no one path. */
   entry?: string;
+  /** An owner whose `enableIf` reads a field inside this owner's leaf, and so spares that leaf only on the way to the
+   *  field: everything else in it stays disabled by that owner's condition. */
+  switchOf?: PrefOwner;
+}
+
+/** An owner, with `entry` and `switchOf` set only where they are given. */
+export function prefOwner(node: PrefOwner['node'], status: PrefStatus, above: PrefStatus, entry?: string, switchOf?: PrefOwner): PrefOwner {
+  return { node, status, above, ...(entry === undefined ? {} : { entry }), ...(switchOf === undefined ? {} : { switchOf }) };
+}
+
+/** Whether `owner`'s `enableIf` reads the value at `path`: `'at'` that value, `'inside'` a field of it. */
+function switchReads({ node, entry }: PrefOwner, path: string): 'at' | 'inside' | undefined {
+  if (node.enableIf === undefined) return undefined;
+  const paths = prefConditionPaths(node.enableIf);
+  if (entry !== undefined) paths.push(...prefConditionPaths(node.enableIf, 'item').map((p) => `${entry}.${p}`));
+  if (paths.includes(path)) return 'at';
+  return paths.some((p) => p.startsWith(`${path}.`)) ? 'inside' : undefined;
+}
+
+/** Whether `owner` disables what is in it by its own `enableIf`, and so has a switch to spare. */
+const disablesOwn = ({ node, status, above }: PrefOwner): boolean => !status.enabled && above.enabled && node.enableIf !== undefined;
+
+/**
+ * The owner whose switch is a field inside the leaf at `path`, directly in `owner`, which is to be the `switchOf` of
+ * that leaf's own owner: `owner`, or the one `owner` carries, where its condition reads a field of that leaf.
+ */
+export function prefSwitchOf(owner: PrefOwner, path: string): PrefOwner | undefined {
+  if (owner.switchOf !== undefined && switchReads(owner.switchOf, path) === 'inside') return owner.switchOf;
+  return disablesOwn(owner) && switchReads(owner, path) === 'inside' ? owner : undefined;
 }
 
 /**
  * The status a leaf at `path` directly in `owner` sits in: the owner's, except
- * that the owner's own `enableIf` does not disable a leaf it reads. That leaf
- * is the owner's switch, and disabled by its own condition it could never be
- * turned back on. A test that reads the entry reads the leaf at its path
- * under `owner.entry`.
+ * that the owner's own `enableIf` does not disable a leaf it reads, or one
+ * holding a field it reads. That leaf is the owner's switch, or the way to it,
+ * and disabled by its own condition it could never be turned back on. A test
+ * that reads the entry reads the leaf at its path under `owner.entry`. Inside
+ * a leaf spared only on the way to its switch (`owner.switchOf`), everything
+ * but the way stays disabled.
  */
 export function prefStatusIn(owner: PrefOwner, path: string, holds: PrefConditionJudge): PrefStatus {
-  const { node, status, above, entry } = owner;
-  if (status.enabled || !above.enabled || node.enableIf === undefined) return status;
-  const reads = prefConditionPaths(node.enableIf).includes(path)
-    || (entry !== undefined && prefConditionPaths(node.enableIf, 'item').some((p) => `${entry}.${p}` === path));
-  if (!reads) return status;
-  return prefStatusUnder(above, { showIf: node.showIf }, holds);
+  const own = sparedIn(owner, path, holds);
+  const { switchOf } = owner;
+  if (switchOf === undefined || !own.enabled || switchReads(switchOf, path) !== undefined) return own;
+  return { shown: own.shown, enabled: false };
+}
+
+function sparedIn(owner: PrefOwner, path: string, holds: PrefConditionJudge): PrefStatus {
+  if (!disablesOwn(owner) || switchReads(owner, path) === undefined) return owner.status;
+  return prefStatusUnder(owner.above, { showIf: owner.node.showIf }, holds);
 }
 
 const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
@@ -104,7 +138,7 @@ function statusMatching(
 ): PrefStatus | undefined {
   for (const [key, child] of Object.entries(held)) {
     if (!isPrefLeaf(child)) {
-      const found = statusMatching(child.members, prefix, rest, { node: child, status: prefStatusUnder(owner.status, child, holds), above: owner.status }, holds, narrow, exact);
+      const found = statusMatching(child.members, prefix, rest, prefOwner(child, prefStatusUnder(owner.status, child, holds), owner.status, owner.entry, owner.switchOf), holds, narrow, exact);
       if (found) return found;
       continue;
     }
@@ -112,7 +146,8 @@ function statusMatching(
     const path = under(prefix, key);
     const sits = prefStatusIn(owner, path, holds);
     const status = narrow(child, prefStatusUnder(sits, child, holds));
-    return rest === key ? status : statusInside(child, path, rest.slice(key.length + 1), { node: child, status, above: sits }, holds, narrow);
+    const inner = prefOwner(child, status, sits, owner.entry, prefSwitchOf(owner, path));
+    return rest === key ? status : statusInside(child, path, rest.slice(key.length + 1), inner, holds, narrow);
   }
   return undefined;
 }
@@ -153,7 +188,7 @@ function statusAt(schema: PrefGroup | PrefSection, path: string, holds: PrefCond
     const at = steps.slice(0, i + 1).join('.');
     const sits = isPrefLeaf(child) ? prefStatusIn(owner, at, holds) : owner.status;
     const status = prefStatusUnder(sits, child, holds);
-    owner = { node: child, status: isPrefLeaf(child) ? narrow(child, status) : status, above: sits };
+    owner = prefOwner(child, isPrefLeaf(child) ? narrow(child, status) : status, sits, undefined, isPrefLeaf(child) ? prefSwitchOf(owner, at) : undefined);
     if (isPrefLeaf(child)) return i === steps.length - 1 ? owner.status : statusInside(child, at, steps.slice(i + 1).join('.'), owner, holds, narrow);
     node = child;
   }

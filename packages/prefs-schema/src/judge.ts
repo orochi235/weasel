@@ -6,6 +6,8 @@ import { isPrefLeaf, isPrefSection, prefHoldsValue, prefSectionLeaves, prefValue
 import { prefLeavesHoldingIn, prefSchemaHolding, UNSEEN, UNSEEN_LEAF } from './holding';
 import { prefObjectBase } from './object';
 import { prefValueAbsent } from './leafValue';
+import type { PrefList } from './list';
+import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
 import { setOwn } from '@weasel-js/registry';
 import { isPrefScope, prefScopeValue } from './scope';
@@ -31,11 +33,11 @@ export interface PrefEntry {
   value: unknown;
 }
 
-/** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of the item's
- *  default, a field read as {@link fieldValue} reads it. */
+/** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of what the item
+ *  holds unset, a field read as {@link fieldValue} reads it. */
 function entryValue({ item, value }: PrefEntry, path: string): unknown {
-  if (path === '') return prefValueAbsent(item, value) ? item.default : value;
-  return fieldValue(item, prefValueAbsent(item, value) ? item.default : value, path);
+  const held = prefValueAbsent(item, value) ? unsetValue(item) : value;
+  return path === '' ? held : fieldValue(item, held, path);
 }
 
 /**
@@ -122,6 +124,7 @@ function leafHolding(schema: PrefGroup | PrefSection, path: string): [key: strin
  * the leaf describing it, and absent where none does. An object leaf's scalar is read as the object it lifts to.
  */
 function fieldValue(leaf: PrefLeaf, value: unknown, rest: string): unknown {
+  if (leaf.kind === 'list' || leaf.kind === 'map') return entryAt(leaf as Partial<PrefList | PrefMap>, value, rest);
   const held = leaf.kind === 'object' ? prefObjectBase(leaf as PrefObject, value) : value;
   const field = prefValueAt(held, rest);
   if (field !== undefined) return field;
@@ -129,6 +132,14 @@ function fieldValue(leaf: PrefLeaf, value: unknown, rest: string): unknown {
   if (found === undefined || found === UNSEEN) return undefined;
   const describes = found.find((each) => (each.variants ?? []).every((v) => prefVariantField(v.at === '' ? held : prefValueAt(held, v.at), v.tag) === v.key));
   return describes === undefined || describes.leaf === UNSEEN_LEAF ? undefined : unsetValue(describes.leaf);
+}
+
+/** What the entry `rest` begins with holds at the rest of it, as {@link entryValue} reads it; absent where there is no such entry. */
+function entryAt({ item }: Partial<PrefList | PrefMap>, value: unknown, rest: string): unknown {
+  const dot = rest.indexOf('.');
+  const key = dot < 0 ? rest : rest.slice(0, dot);
+  if (item === undefined || typeof value !== 'object' || value === null || !Object.hasOwn(value, key)) return prefValueAt(value, rest);
+  return entryValue({ item, value: (value as Record<string, unknown>)[key] }, dot < 0 ? '' : rest.slice(dot + 1));
 }
 
 /** What `leaf`, holding `held`, reads as: with nothing held, what it holds unset; a split value, the option `read` selects. */

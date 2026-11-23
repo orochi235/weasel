@@ -122,3 +122,22 @@ describe("an item's own showIf and the switch its enableIf spares", () => {
     expect(prefStatusAt(schema, 'rows.0.on', holds).shown).toBe(true);
   });
 });
+
+describe('a switch that is a field of an object leaf', () => {
+  const opts = {
+    kind: 'object', name: 'Options', description: '', default: {}, children: { on: bool('On'), size: num('Size') },
+  } as PrefLeaf;
+  const schema: PrefGroup = {
+    name: '',
+    children: { feature: { name: 'Feature', enableIf: { path: 'feature.opts.on' }, children: { opts, other: num('Other') } } },
+  };
+  const holds = over({ feature: { opts: { on: false } } });
+
+  it('stays live, with the object leading to it, while the rest of the group is disabled', () => {
+    const { disabled } = applyPrefConditions(schema, holds);
+    expect([...disabled].sort()).toEqual(['feature', 'feature.opts.size', 'feature.other']);
+    expect(prefStatusAt(schema, 'feature.opts.on', holds).enabled).toBe(true);
+    expect(prefStatusAt(schema, 'feature.opts', holds).enabled).toBe(true);
+    expect(prefStatusAt(schema, 'feature.opts.size', holds).enabled).toBe(false);
+  });
+});
