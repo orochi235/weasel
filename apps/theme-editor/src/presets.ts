@@ -137,6 +137,7 @@ export const liveHistory: LabHistoryStore<LabState> = {
     }
     return liveHistoryStore.load();
   },
+  read: stateOf,
 };
 
 /** Store the lab's state; resolves whether the browser took it, which a private window or a full quota refuses, as it

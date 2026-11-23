@@ -133,6 +133,11 @@ describe('the live history', () => {
     expect(getItem.mock.calls.map(([k]) => k)).not.toContain(historyKeys[0]);
   });
 
+  it("fills a saved step's state from the defaults, as loading the live state does", () => {
+    const { minDistance: _gone, ...older } = INITIAL.c;
+    expect(liveHistory.read!({ ...INITIAL, c: older })).toEqual(INITIAL);
+  });
+
   it('moves a history kept under the live state key out from under it', () => {
     const saved = { state: INITIAL, history: { version: 1, undoStack: [], redoStack: [] } };
     localStorage.setItem('weasel.theme-editor.live.history', JSON.stringify(saved));

@@ -20,12 +20,12 @@ function stateSwap<T>(holder: Holder<T>, { before, after }: SwapArgs<T>, label: 
 const sameJson = (a: unknown, b: unknown) => deepEqual(a, b, { undefinedAsAbsent: true });
 
 /** How many undo steps take `saved` back to `state`; null when none does. */
-function stepsBackTo<T>(saved: SavedLabHistory<T>, state: T): number | null {
-  if (sameJson(saved.state, state)) return 0;
+function stepsBackTo<T>(saved: SavedLabHistory<T>, state: T, read: (stored: unknown) => T): number | null {
+  if (sameJson(read(saved.state), state)) return 0;
   const stack = saved.history.undoStack;
   for (let n = 1; n <= stack.length; n += 1) {
     const first = stack[stack.length - n]!.forwardOps[0];
-    if (first?.name === SWAP_OP && sameJson((first.args as SwapArgs<T>).before, state)) return n;
+    if (first?.name === SWAP_OP && sameJson(read((first.args as SwapArgs<T>).before), state)) return n;
   }
   return null;
 }
@@ -54,17 +54,22 @@ export function useLabHistory<T>(initial: T, store?: LabHistoryStore<T>): LabHis
   const holder = useRef<Holder<T>>({ value: initial });
   const kept = useRef(store);
   const history = useMemo(() => {
+    const read = kept.current?.read?.bind(kept.current) ?? ((stored: unknown) => stored as T);
     const created = createHistory(holder.current, {
       // Long enough that a drag reads as one gesture, short enough that two
       // deliberate edits stay separate.
       coalesceWindowMs: 500,
       historyLimit: HISTORY_LIMIT,
-      rebuildOp: (name, args, { entry }) => (name === SWAP_OP ? stateSwap(holder.current, args as SwapArgs<T>, entry.label) : null),
+      rebuildOp: (name, args, { entry }) => {
+        if (name !== SWAP_OP) return null;
+        const { before, after } = args as SwapArgs<T>;
+        return stateSwap(holder.current, { before: read(before), after: read(after) }, entry.label);
+      },
     });
     // One saved past the state this opens on (a draft the caller would not keep) steps back to it, leaving the later
     // steps to redo. One that never passed through it would step from values that are not on screen, and is dropped.
     const saved = kept.current?.load();
-    const back = saved ? stepsBackTo(saved, holder.current.value) : null;
+    const back = saved ? stepsBackTo(saved, holder.current.value, read) : null;
     if (saved && back !== null) {
       // A strict restore that cannot rebuild a step leaves the history empty, as no save would.
       try {
