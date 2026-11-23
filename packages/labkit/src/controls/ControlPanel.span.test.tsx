@@ -74,3 +74,33 @@ describe('<ControlPanel> groups drawn whole-width', () => {
     }
   });
 });
+
+describe('<ControlPanel> a pair holding a segmented choice', () => {
+  it.each([
+    ['toggle', f.enum('a', ['a', 'b']).toggle()],
+    ['radio', f.enum('a', ['a', 'b']).radio()],
+  ])('takes the whole row for a %s, as the row of its own would', (_name, choice) => {
+    const paired = resolveConfigSchema(
+      f.schema({ mode: choice.label('Mode').pair({ with: 'n', label: 'Both' }), n: f.number(1) }),
+      [],
+    );
+    const { container } = render(
+      <ControlPanel schema={paired} config={{ mode: 'a', n: 1 }} setConfig={vi.fn()} />,
+    );
+    expect(container.querySelector('.lk-pair-cell')?.closest(`.${spanClass}`)).not.toBeNull();
+  });
+
+  it('keeps half the row for a select', () => {
+    const paired = resolveConfigSchema(
+      f.schema({
+        mode: f.enum('a', ['a', 'b']).label('Mode').pair({ with: 'n', label: 'Both' }),
+        n: f.number(1),
+      }),
+      [],
+    );
+    const { container } = render(
+      <ControlPanel schema={paired} config={{ mode: 'a', n: 1 }} setConfig={vi.fn()} />,
+    );
+    expect(container.querySelector('.lk-pair-cell')?.closest(`.${spanClass}`)).toBeNull();
+  });
+});

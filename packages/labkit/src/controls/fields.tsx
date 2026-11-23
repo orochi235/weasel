@@ -17,6 +17,7 @@ import {
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { configValueAt, isRecord } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
+import { type ControlPack, spansGrid } from './controlPack';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
@@ -115,6 +116,14 @@ export function labField(given: PrefLeaf, input: LabFieldInput): PropertyControl
         settles,
       )
     : settled;
+}
+
+/** Whether a pair holding `leaf` takes the whole row under `pack`, as `leaf`'s own row would ({@link spansGrid}),
+ *  for the control its {@link BareControl} draws: a number there is always a typed input. */
+export function bareSpans(leaf: PrefLeaf, pack: ControlPack): boolean {
+  const field = labField(leaf, { value: undefined, write: unwritten, fields: [] });
+  if (field === null) return false;
+  return spansGrid(field.kind === 'number' ? { ...field, control: 'input' } : field, pack);
 }
 
 /** A leaf's control without the row chrome a whole row of its own would
