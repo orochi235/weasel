@@ -30,7 +30,6 @@ const ALLOWED = new Map<string, string>([
   ['packages/forge/src/vite/watchProbe.ts', 'an unref\'d Node timer, which `after` cannot give; its wait is the probe\'s own constant or a test\'s'],
   ['packages/labkit/src/loupe/lens/GridCanvas.tsx', '`useCaptureDelay` answers 0 or LENS_REST_MS'],
   ['packages/labkit/src/loupe/lens/LensSlot.tsx', '`useCaptureDelay` answers 0 or LENS_REST_MS'],
-  ['packages/labkit/src/trial/watch3d.ts', 'the wait is an entry of the RETRIES_MS table'],
   ['apps/devtools-extension/src/background/badge.ts', 'the wait is an entry of the BADGE_DELAYS table'],
 ]);
 
