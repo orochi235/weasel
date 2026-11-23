@@ -11,6 +11,8 @@ export interface TokenLayerProps {
   readonly layer: LayerId;
   readonly draft: ThemeDefinition;
   readonly result: DeriveResult;
+  /** The draft with what it extends, where its steps are read. */
+  readonly merged: ThemeDefinition;
   /** The selection `result` was derived at; an edit to a value that varies by axis writes only its branch here. */
   readonly selection: AxisChoice;
   /** Tokens click-to-inspect jumped to; the first is scrolled into view. */
@@ -19,9 +21,9 @@ export interface TokenLayerProps {
 }
 
 /** Seeds, Components and Pins, edited by token type through weasel-ui's `TokenPanel`. */
-export function TokenLayer({ layer, draft, result, selection, highlight, onChange }: TokenLayerProps) {
+export function TokenLayer({ layer, draft, result, merged, selection, highlight, onChange }: TokenLayerProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const entries = layerEntries(layer, draft, result, selection);
+  const entries = layerEntries(layer, draft, result, selection, merged);
   const label = LAYERS.find((l) => l.id === layer)!.label;
 
   useEffect(() => {

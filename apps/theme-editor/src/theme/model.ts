@@ -35,11 +35,12 @@ export interface Counts {
 
 type Mutable<T> = { -readonly [K in keyof T]: T[K] };
 
-/** Tokens the definition's own entries produce, in definition order. What it inherits is not its own. */
-export function ownTokenNames(def: ThemeDefinition): string[] {
+/** Tokens the definition's own entries produce, in definition order, with steps read in `merged`, the definition with
+ *  what it extends. What it inherits is not its own. */
+export function ownTokenNames(def: ThemeDefinition, merged: ThemeDefinition): string[] {
   const names = new Set<string>();
   for (const layer of [def.ramps, def.scales]) {
-    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of declaredSteps(entry)) names.add(`${name}-${step}`);
+    for (const [name, entry] of Object.entries(layer ?? {})) for (const step of declaredSteps(entry, merged)) names.add(`${name}-${step}`);
   }
   for (const layer of [def.semantics, def.components, def.pins]) for (const name of Object.keys(layer ?? {})) names.add(name);
   return [...names];
@@ -50,7 +51,7 @@ export const pinApplies = (result: DeriveResult, name: string): boolean =>
   getOwn(result.provenance, name)?.pinned === true || getOwn(result.provenance, name)?.layer === 'pins';
 
 /** Each own token counts once, under the layer that produced it; the Pins row counts the pins that apply, and how many override a generator. */
-export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts {
+export function countTokens(def: ThemeDefinition, result: DeriveResult, merged: ThemeDefinition): Counts {
   const zero = () => ({ count: 0, pinned: 0 });
   const layers: Record<LayerId, Mutable<LayerCount>> = {
     seeds: { count: Object.keys(def.seeds ?? {}).length, pinned: 0 },
@@ -62,7 +63,7 @@ export function countTokens(def: ThemeDefinition, result: DeriveResult): Counts 
   };
   let overridden = 0;
   let total = 0;
-  for (const name of ownTokenNames(def)) {
+  for (const name of ownTokenNames(def, merged)) {
     const p = getOwn(result.provenance, name);
     if (!p) continue;
     total += 1;

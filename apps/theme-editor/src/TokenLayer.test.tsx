@@ -1,6 +1,6 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
 import type { ThemeDefinition } from '@weasel-js/theme';
-import { derive } from '@weasel-js/theme/engine';
+import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LayerId } from './theme/model';
 import { lookupOf } from './theme/fixtures';
@@ -22,6 +22,7 @@ function renderLayer(layer: LayerId, def: ThemeDefinition = tiny, highlight: rea
       layer={layer}
       draft={def}
       result={derive(def, { mode: 'dark' }, lookup)}
+      merged={mergeChain(def, lookup)}
       selection={{ mode: 'dark' }}
       highlight={highlight}
       onChange={onChange}

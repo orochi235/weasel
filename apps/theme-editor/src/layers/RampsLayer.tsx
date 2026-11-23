@@ -106,17 +106,17 @@ function LightnessParams({ name, entry, draft, lookup, onChange, readOnly }: Edi
 
 const GATE_DEFAULTS: Readonly<Record<string, unknown>> = { ...DEFAULT_CONSTRAINTS };
 
-function GatesEditor({ name, entry, draft, lookup, onChange, readOnly, infeasible }: EditorProps<CategoricalRampDef> & { readonly infeasible: boolean }) {
+function GatesEditor({ name, entry, draft, merged, lookup, onChange, readOnly, infeasible }: EditorProps<CategoricalRampDef> & { readonly merged: ThemeDefinition; readonly infeasible: boolean }) {
   // A gate written as a variation by axis or a reference is shown as written, never overwritten by a slider.
   const { c, held } = useMemo(() => {
     const entries = isByAxis(entry.gates) ? [] : Object.entries(entry.gates ?? {});
     const plain = (key: string, v: unknown) => !isByAxis(v) && typeof v === typeof getOwn(GATE_DEFAULTS, key) && !/^\{.*\}$/.test(String(v));
     const gates = Object.fromEntries(entries.filter(([k, v]) => plain(k, v)));
     return {
-      c: { ...DEFAULT_CONSTRAINTS, ...gates, count: declaredSteps(entry).length, anchors: entry.anchors ?? [] } as Constraints,
+      c: { ...DEFAULT_CONSTRAINTS, ...gates, count: declaredSteps(entry, merged).length, anchors: entry.anchors ?? [] } as Constraints,
       held: Object.fromEntries(entries.filter(([k, v]) => !plain(k, v))),
     };
-  }, [entry]);
+  }, [entry, merged]);
   // Only to explain which gates are unmet; derive has already run the generator. With a gate held, `c` is not what it ran.
   const explain = infeasible && !readOnly && Object.keys(held).length === 0;
   const palette = useMemo(() => (explain ? generate(c) : null), [c, explain]);
@@ -186,7 +186,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
   return (
     <div ref={ref} className={styles.ramps}>
       {ramps.map(([name, entry]) => {
-        const view = rampView(name, entry, derived.primary.result, derived.primary.resolved);
+        const view = rampView(name, entry, derived.primary.result, derived.primary.resolved, derived.merged);
         const lit = (token: string) => highlight.includes(token);
         const issues = issuesOf(name);
         const authored = view.steps.some((s) => getOwn(derived.primary.result.provenance, s.token)?.layer === 'pins');
@@ -296,7 +296,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
             </div>
             {entry.kind === 'lightness' && <LightnessParams name={name} entry={entry} draft={draft} lookup={lookup} onChange={onChange} readOnly={!own} />}
             {entry.kind === 'categorical' && editingGates === name && (
-              <GatesEditor name={name} entry={entry} draft={draft} lookup={lookup} onChange={onChange} readOnly={!own} infeasible={infeasible} />
+              <GatesEditor name={name} entry={entry} draft={draft} merged={derived.merged} lookup={lookup} onChange={onChange} readOnly={!own} infeasible={infeasible} />
             )}
           </section>
         );

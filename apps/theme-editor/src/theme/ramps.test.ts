@@ -2,11 +2,12 @@ import { derive, type LightnessRampDef } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { deriveDraft } from './draft';
 import { lookupOf, weasel } from './fixtures';
+import { countTokens } from './model';
 import { rampView, readParam, writeParam } from './ramps';
 
 describe('rampView', () => {
   const d = deriveDraft(weasel, lookupOf(), {});
-  const gray = rampView('gray', d.merged.ramps!.gray, d.primary.result, d.primary.resolved);
+  const gray = rampView('gray', d.merged.ramps!.gray, d.primary.result, d.primary.resolved, d.merged);
 
   it('lists each step with its final color, and the generated one under a pin', () => {
     expect(gray.steps.map((s) => s.step)).toEqual(['50', '100', '200', '300', '400', '500', '600', '700', '800', '900']);
@@ -18,6 +19,16 @@ describe('rampView', () => {
     expect(gray.dL).toHaveLength(9);
     expect(gray.spread).toBeCloseTo(3.609, 2);
     expect(gray.generatedSpread).toBeCloseTo(1.753, 2);
+  });
+});
+
+describe('rampView of a step a seed names', () => {
+  it('lists it, as derive does', () => {
+    const gray = weasel.ramps!.gray as LightnessRampDef;
+    const def = { ...weasel, seeds: { ...weasel.seeds, mid: '450' }, ramps: { ...weasel.ramps, gray: { ...gray, steps: [...(gray.steps as string[]), '{seeds.mid}'] } } };
+    const d = deriveDraft(def, lookupOf(), {});
+    expect(rampView('gray', d.merged.ramps!.gray, d.primary.result, d.primary.resolved, d.merged).steps.map((s) => s.step)).toContain('450');
+    expect(countTokens(def, d.primary.result, d.merged).total).toBe(countTokens(weasel, deriveDraft(weasel, lookupOf(), {}).primary.result, weasel).total + 1);
   });
 });
 

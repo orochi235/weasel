@@ -1,5 +1,5 @@
 import { getOwn } from '@weasel-js/registry';
-import { isByAxis, type ResolvedTheme } from '@weasel-js/theme';
+import { isByAxis, type ResolvedTheme, type ThemeDefinition } from '@weasel-js/theme';
 import { declaredSteps, toLch, type DeriveResult, type LightnessRampDef, type RampDef } from '@weasel-js/theme/engine';
 import { maxOf, minOf } from '@weasel-js/geom';
 
@@ -36,9 +36,9 @@ function spreadOf(ds: readonly number[]): number | null {
   return usable.length < 2 ? null : maxOf(usable) / minOf(usable);
 }
 
-export function rampView(name: string, entry: RampDef, result: DeriveResult, resolved: ResolvedTheme): RampView {
+export function rampView(name: string, entry: RampDef, result: DeriveResult, resolved: ResolvedTheme, merged: ThemeDefinition): RampView {
   const final = resolved as Readonly<Record<string, string>>;
-  const steps = declaredSteps(entry).flatMap((step): StepView[] => {
+  const steps = declaredSteps(entry, merged).flatMap((step): StepView[] => {
     const token = `${name}-${step}`;
     const derived = getOwn(result.tokens, token);
     if (!derived) return [];
