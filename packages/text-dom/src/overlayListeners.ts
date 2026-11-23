@@ -50,6 +50,8 @@ export function listenToOverlay(
   };
   const onBlur = (e: FocusEvent) => {
     const next = e.relatedTarget;
+    // The window losing focus blurs the overlay too, and hands focus back to it on return.
+    if (next === null && !overlay.ownerDocument.hasFocus()) return;
     if (isChrome(optsRef.current, next)) return;
     commit();
   };
