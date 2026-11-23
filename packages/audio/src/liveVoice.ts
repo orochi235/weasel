@@ -74,6 +74,8 @@ export interface LiveVoice {
   out: VoiceOut | null;
   /** A booked voice's cancel, until it starts. */
   unbook: (() => void) | null;
+  /** Drops its start from the scheduler's queue, until it starts. */
+  unqueue: (() => void) | null;
   /** A booked voice's start, run ahead of the scheduler once the audio clock
    *  has passed its time: the processor is already playing it. */
   catchUp: (() => void) | null;

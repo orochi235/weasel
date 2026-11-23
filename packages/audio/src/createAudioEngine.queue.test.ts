@@ -41,6 +41,16 @@ describe('createAudioEngine queue hygiene', () => {
     expect(queue.pending()).toBe(0);
   });
 
+  it('takes a voice stopped before its time out of the queue', async () => {
+    const { engine, queue } = harness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    engine.play(sound, { when: 600_000 }).stop();
+    engine.playNote({ pitch: 220, when: 600_000 }).stop();
+    engine.playNoise({ noise: 'white', when: 600_000 }).stop();
+    expect(queue.pending()).toBe(0);
+  });
+
   it('refuses a time that is not finite rather than queueing what can never come due', async () => {
     const { engine, queue } = harness();
     await engine.unlock();

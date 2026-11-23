@@ -40,8 +40,8 @@ export interface Scheduler {
    *  covers it and the scheduler is running, at the end of the current task,
    *  in time order with everything else then due. `reportLate: false` keeps
    *  it from `onLate`, for a callback whose work no longer depends on when it
-   *  runs. */
-  schedule(when: number, fire: (when: number) => void, key?: string, opts?: { reportLate?: boolean }): void;
+   *  runs. Returns a cancel that drops this event alone while it is queued. */
+  schedule(when: number, fire: (when: number) => void, key?: string, opts?: { reportLate?: boolean }): () => void;
   /** Drop queued events with this key. A pass takes its whole batch out of the
    *  queue before firing any of it, so a callback cannot cancel a sibling that
    *  came due alongside it. */
@@ -130,11 +130,16 @@ export function createScheduler(opts: SchedulerOptions): Scheduler {
     schedule(when, fire, key, entryOpts) {
       if (!Number.isFinite(when)) throw new RangeError(`@weasel-js/audio: a time to schedule at is finite, not ${when}`);
       const waited = when > opts.now() + lookahead;
-      queue.push({ when, fire, key, waited: waited && entryOpts?.reportLate !== false });
+      const entry: Entry = { when, fire, key, waited: waited && entryOpts?.reportLate !== false };
+      queue.push(entry);
       if (running && !flushQueued && !waited) {
         flushQueued = true;
         queueMicrotask(flush);
       }
+      return () => {
+        const at = queue.indexOf(entry);
+        if (at >= 0) queue.splice(at, 1);
+      };
     },
     cancelKey(key) {
       queue = queue.filter((e) => e.key !== key);
