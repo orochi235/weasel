@@ -150,4 +150,16 @@ describe('fixedSeat', () => {
       }
     },
   );
+
+  it("seats in the element's own document, and leaves out the scroll of that document's root", () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<i id="from"></i>';
+    const root = doc.documentElement;
+    root.style.transform = 'translate(1px, 0)';
+    root.getBoundingClientRect = () => DOMRect.fromRect({ x: 5, y: -30 });
+    Object.defineProperty(root, 'scrollTop', { value: 30 });
+    expect(fixedSeat(doc.getElementById('from'))).toEqual({ host: doc.body, left: 5, top: -30, scale: { x: 1, y: 1 } });
+  });
 });
