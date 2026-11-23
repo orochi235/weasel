@@ -186,6 +186,18 @@ describe('renderNoise', () => {
     expect(rms(renderNoise({ ...white, gain: 0.5, duration: 2000 }, RATE))).toBeCloseTo(0.125, 3);
   });
 
+  it('renders finite samples when its rate and detune overflow a tune', () => {
+    for (const tune of [{ detune: 1.3e6 }, { detune: -1.3e6 }, { rate: 1e308, detune: 1200 }]) {
+      const out = renderNoise({ ...white, duration: 20, ...tune }, RATE, () => 0);
+      expect(out.every(Number.isFinite)).toBe(true);
+    }
+    const voice = createNoiseKernel({ noise: 'white', envelope: FLAT }, RATE, () => 0);
+    voice.retune(1, 1.3e6);
+    const out = new Float32Array(64);
+    voice.render(out);
+    expect(out.every(Number.isFinite)).toBe(true);
+  });
+
   it('starts where the random source says', () => {
     const a = renderNoise(white, RATE, () => 0);
     const b = renderNoise(white, RATE, () => 0.5);
