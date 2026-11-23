@@ -166,6 +166,18 @@ describe('writing a Mermaid class diagram', () => {
     expect(warnings).toContain('Mermaid notes join one class; their other connectors were dropped.');
   });
 
+  it('warns that note and namespace colors, and a note\'s namespace, were dropped', () => {
+    const { text, warnings } = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a', lines: ['a'] }, { id: 'n', outline: 'note', lines: ['hi'], colors: { fill: '#ff0000' } }], edges: [],
+      containers: [{ id: 'ns', role: 'container', label: 'ns', members: ['a', 'n'], colors: { fill: '#00ff00' } }],
+    } }] });
+    expect(text).not.toContain('style');
+    expect(warnings).toEqual(expect.arrayContaining([
+      'Mermaid class diagrams style only classes; note and namespace colors were dropped.',
+      'Mermaid class notes stand outside namespaces; notes in one were written at the top level.',
+    ]));
+  });
+
   it('keeps a backslash and the n after it in a note line', () => {
     const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', lines: ['C:\\new', 'two'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.lines).toEqual(['C:\\new', 'two']);

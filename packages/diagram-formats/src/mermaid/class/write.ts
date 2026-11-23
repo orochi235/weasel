@@ -99,6 +99,7 @@ class ClassWriter {
   cluster(c: Cluster, indent: string): void {
     this.lines.push(`${indent}namespace ${this.id(c.id)} {`);
     for (const id of c.nodes) this.node(this.out.byId.get(id)!, `${indent}  `);
+    if (c.nodes.some((id) => this.notes.has(id))) this.out.warnings.add('Mermaid class notes stand outside namespaces; notes in one were written at the top level.');
     for (const child of c.clusters) this.cluster(child, `${indent}  `);
     this.lines.push(`${indent}}`);
     if (c.label !== undefined && c.label !== this.id(c.id)) this.out.warnings.add('Mermaid names a namespace by its id; container titles were dropped.');
@@ -135,6 +136,10 @@ class ClassWriter {
     for (const n of this.out.page.data.nodes) {
       const props = n.colors !== undefined && !this.notes.has(n.id) ? styleProps(n.colors) : '';
       if (props !== '') this.lines.push(`  style ${this.id(n.id)} ${props}`);
+    }
+    const unstyled = [...this.out.page.data.nodes.filter((n) => this.notes.has(n.id)), ...(this.out.page.data.containers ?? [])];
+    if (unstyled.some((d) => d.colors !== undefined && styleProps(d.colors) !== '')) {
+      this.out.warnings.add('Mermaid class diagrams style only classes; note and namespace colors were dropped.');
     }
   }
 }
