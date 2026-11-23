@@ -106,8 +106,9 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
         }
         continue;
       }
-      const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
-      const [a, b] = ends;
+      const ends = spec.dependsOn;
+      if (!Array.isArray(ends) || ends.length !== 2) continue;
+      const [a, b] = ends.map((id) => byId.get(id as string));
       if (a === undefined || b === undefined) continue;
       // A self-loop is routed only between two named ports, as `avoidSceneInput` routes one.
       if (a === b && (edge.from.port === undefined || edge.to.port === undefined)) continue;
