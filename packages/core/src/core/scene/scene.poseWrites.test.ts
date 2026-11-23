@@ -116,6 +116,27 @@ describe('Scene.onPoseWrite', () => {
     expect(seen).toEqual([[expect.objectContaining({ id: A, from: at(0), to: at(6) })]]);
   });
 
+  it('reports a node removed and put back within one change from its stored pose, not its override', () => {
+    const { scene, seen, removed } = setup();
+    scene.overrides.set(A, { pose: at(3) });
+    scene.batch('swap', () => {
+      scene.remove(A);
+      scene.add({ id: A, kind: 'mark', layer: 'l', pose: at(0), data: null });
+    });
+    expect(removed).toEqual([]);
+    expect(seen).toEqual([]);
+  });
+
+  it('reports a node moved, removed, and put back within one change from the pose it had before the change', () => {
+    const { scene, seen } = setup();
+    scene.batch('swap', () => {
+      scene.setPose(A, at(4));
+      scene.remove(A);
+      scene.add({ id: A, kind: 'mark', layer: 'l', pose: at(6), data: null });
+    });
+    expect(seen).toEqual([[expect.objectContaining({ id: A, from: at(0), to: at(6) })]]);
+  });
+
   it('leaves out a descendant the change both added and removed', () => {
     const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
     const g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });

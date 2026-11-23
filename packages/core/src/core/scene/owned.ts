@@ -43,16 +43,18 @@ function isPlain(value: object): boolean {
   return proto === Object.prototype || proto === null;
 }
 
+/** Values whose whole subtree this module has frozen. `Object.isFrozen` is not enough to stop at: a caller's
+ *  `Object.freeze` is shallow. */
+const frozenDeep = new WeakSet<object>();
+
 function freezePlain(value: unknown): void {
-  if (typeof value !== 'object' || value === null || Object.isFrozen(value)) return;
-  if (Array.isArray(value)) {
-    Object.freeze(value);
-    for (const item of value) freezePlain(item);
-    return;
-  }
-  if (!isPlain(value)) return;
+  if (typeof value !== 'object' || value === null || frozenDeep.has(value)) return;
+  const array = Array.isArray(value);
+  if (!array && !isPlain(value)) return;
+  frozenDeep.add(value);
   Object.freeze(value);
-  for (const key of Object.keys(value)) freezePlain((value as Record<string, unknown>)[key]);
+  if (array) for (const item of value) freezePlain(item);
+  else for (const key of Object.keys(value)) freezePlain((value as Record<string, unknown>)[key]);
 }
 
 const sharedSnapshots = new WeakMap<object, { whole: () => unknown; node: (id: string) => unknown }>();

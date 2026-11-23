@@ -144,7 +144,7 @@ export function createPoseWriteLog<TPose, TNode = unknown>(env: PoseWriteEnv<TPo
     }
   }
 
-  const seeOff = (roots: readonly Parented[], nodes: readonly Parented[], reverted: boolean): () => void =>
+  const seeOff = (roots: readonly Parented[], nodes: readonly (Posed<TPose> & Parented)[], reverted: boolean): () => void =>
     collecting() ? removals.seeOff(roots, nodes, stamp(reverted), pending) : NOTHING;
 
   function around<T>(fn: () => T, enter: () => void, leave: () => void): T {

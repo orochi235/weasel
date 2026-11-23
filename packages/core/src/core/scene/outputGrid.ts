@@ -58,7 +58,7 @@ function applied<TData, TPose>(
 
 /** The edit pass a scene with a quantize rule installs: `stored` over every
  *  node an edit added, posed or changed the data of, and over every node when
- *  the edit set the grid. Clearing the grid changes nothing. */
+ *  the edit set the grid, less the locked ones. Clearing the grid changes nothing. */
 export function quantizePass<TData, TPose>(
   scene: Scene<TData, string, TPose>,
   rule: QuantizeRule<TData, TPose>,
@@ -72,7 +72,7 @@ export function quantizePass<TData, TPose>(
     const ops: Op[] = [];
     for (const id of ids) {
       const node = scene.get(id);
-      if (!node) continue;
+      if (!node || scene.isLocked(id)) continue;
       const next = storedOf(rule, node, grid);
       if (!next) continue;
       if (next.pose !== node.pose) ops.push(createSetPoseOp({ id, from: node.pose, to: next.pose, coalesceKey: `quantize:${id}` }));
