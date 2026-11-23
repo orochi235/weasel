@@ -1,5 +1,5 @@
 /** The styling commands an edit takes from shortcuts and chrome: a patch over the selection, or a toggle of one flag. */
-import { useCallback } from 'react';
+import { useCallback, useRef } from 'react';
 import {
   applyStyleToRange, clearScriptOverRange, rangeWeight, setFlagOverRange, styleAtRange, styleHasFlag, unboldPatch,
   type FlagKey, type RangeStyle, type RunStylePatch, type TextStyle,
@@ -44,8 +44,6 @@ export function patchForToggle(
 /** What the styling commands read and write of the edit they style. */
 export interface SelectionStylingHost {
   readonly overlayRef: { readonly current: HTMLDivElement | null };
-  /** Focuses the overlay as its scroller does, keeping a clipped box's scroll. */
-  readonly focusRef: { readonly current: (() => void) | null };
   readonly editingIdRef: { readonly current: string | null };
   readonly optsRef: { readonly current: Pick<UseTextEditOptions, 'setStyle' | 'onChange'> };
   readonly historyRef: { readonly current: OverlayHistory | null };
@@ -64,9 +62,11 @@ export interface SelectionStylingHost {
 /** `applyStyleToSelection` and `toggleStyle` for the edit `host` describes. */
 export function useSelectionStyling(host: SelectionStylingHost) {
   const {
-    overlayRef, focusRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
+    overlayRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
     pendingRef, armPending, selectionRef, publishRange,
   } = host;
+  // The open overlay scroller's `focus`, which keeps a clipped box's scroll.
+  const focusRef = useRef<(() => void) | null>(null);
   const applyStyle = useCallback(function applyStyle(patch: RunStylePatch) {
     const overlay = overlayRef.current;
     if (!overlay) return;
@@ -135,7 +135,7 @@ export function useSelectionStyling(host: SelectionStylingHost) {
     // when the patch came from chrome the selection is in that control.
     publishRange(overlay, range);
     sendDraft(overlay);
-  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef, baseRef, overlayRef, focusRef]);
+  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef, baseRef, overlayRef]);
 
   /** `applyStyle`, as one step of the edit's undo. */
   const applyStyleToSelection = useCallback((patch: RunStylePatch) => {
@@ -161,5 +161,5 @@ export function useSelectionStyling(host: SelectionStylingHost) {
     applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
   }, [applyStyleToSelection, editingIdRef, styleOf, pendingRef, selectionRef, overlayRef]);
 
-  return { applyStyleToSelection, toggleStyle };
+  return { applyStyleToSelection, toggleStyle, focusRef };
 }

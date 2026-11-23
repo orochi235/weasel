@@ -39,7 +39,6 @@ export function useTextEdit(
   // `TextStyle`, and is called from event handlers rather than from render.
   const editingIdRef = useLatest(editingId);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const focusRef = useRef<(() => void) | null>(null);
   const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode, placeRef } = useHeldNodeStyle(optsRef);
   const follow = useOverlayFollow();
   const initialCaretRef = useRef<number | 'all' | 'end'>('all');
@@ -81,11 +80,10 @@ export function useTextEdit(
     if (id !== null && draft) optsRef.current.onInput?.(id, draft);
   }, [editingIdRef, optsRef, nodeStyleRef]);
 
-  const { applyStyleToSelection, toggleStyle } = useSelectionStyling({
-    overlayRef, focusRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
+  const { applyStyleToSelection, toggleStyle, focusRef } = useSelectionStyling({
+    overlayRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
     pendingRef, armPending, selectionRef, publishRange,
   });
-
 
   useEffect(() => {
     const { container, getText, getStyle, getPaint } = optsRef.current;
@@ -137,14 +135,13 @@ export function useTextEdit(
       placeRef.current = () => {};
       opened.remove();
       overlayRef.current = null;
-      focusRef.current = null;
       historyRef.current = null;
       holdNodeStyle(null);
       clearSelection();
     };
   }, [editingId, opts.container, optsRef, takeCarry, stashCarry, commit, cancelEdit, syncSelection, clearSelection,
       follow, toggleStyle, dropPending, armPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
-      selectionRef, baseRef, nodeStyleRef, placeRef]);
+      selectionRef, baseRef, nodeStyleRef, placeRef, focusRef]);
 
   return {
     editingId, startEdit, cancelEdit, commitEdit: commit, isEditing, nodeStyle,
