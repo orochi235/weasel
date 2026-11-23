@@ -45,9 +45,10 @@ export function prefAliasName(alias: PrefAlias, target?: PrefLeaf): string {
 }
 
 /** A leaf drawn through an alias: the target, under the alias's own name, description, access letter and short forms
- *  where it gives them. A name of its own drops the target's short forms and access letter, both made from its name. */
+ *  where it gives them. A name of its own drops the target's short forms and access letter, both made from its name.
+ *  Where it sits is the alias's alone: the target's `pair` and `heading` name its own place, never the alias's. */
 export function prefAliasedLeaf(alias: PrefAlias, target: PrefLeaf): PrefLeaf {
-  const { short: _short, access: _access, ...rest } = target;
+  const { short: _short, access: _access, pair: _pair, heading: _heading, ...rest } = target;
   const own = alias.name !== '';
   const short = alias.short ?? (own ? undefined : target.short);
   const access = alias.access || (own ? undefined : target.access);
@@ -57,6 +58,8 @@ export function prefAliasedLeaf(alias: PrefAlias, target: PrefLeaf): PrefLeaf {
     name: prefAliasName(alias, target),
     description: alias.description === '' ? target.description : alias.description,
     ...(access ? { access } : {}),
+    ...(alias.pair ? { pair: alias.pair } : {}),
+    ...(alias.heading ? { heading: alias.heading } : {}),
     ...(alias.tags ? { tags: [...(target.tags ?? []), ...alias.tags] } : {}),
   };
 }

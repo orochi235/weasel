@@ -27,3 +27,16 @@ describe('prefAliasedLeaf and the access letter', () => {
     expect(prefAliasedLeaf(alias({ name: 'Show lattice', access: 'L' }), lettered).access).toBe('L');
   });
 });
+
+describe('prefAliasedLeaf and where the leaf sits', () => {
+  const placed = { ...grid, pair: { with: 'view.y' }, heading: true } as PrefLeaf;
+
+  it('drops the target’s pair and heading, which name the target’s place, and takes the alias’s own', () => {
+    const drawn = prefAliasedLeaf(alias(), placed);
+    expect(drawn.pair).toBeUndefined();
+    expect(drawn.heading).toBeUndefined();
+    const own = prefAliasedLeaf(alias({ pair: { with: 'quick.y' }, heading: true }), placed);
+    expect(own.pair).toEqual({ with: 'quick.y' });
+    expect(own.heading).toBe(true);
+  });
+});
