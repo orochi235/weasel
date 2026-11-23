@@ -43,6 +43,9 @@ export function isDataForkFont(bytes: ArrayBuffer): boolean {
 /** A count the map stores less one, where an empty list reads as 0xffff. */
 const storedCount = (stored: number): number => (stored + 1) & 0xffff;
 
+const overlapping = (): Error =>
+  new Error('Datafork TrueType (.dfont) is damaged: two of its sfnt resources overlap.');
+
 const truncated = (): Error =>
   new Error('Datafork TrueType (.dfont) is truncated: a resource runs past the end of its segment.');
 
@@ -64,7 +67,9 @@ export function sfntResources(bytes: ArrayBuffer): ArrayBuffer[] {
   if (!inMap(typeList, 2)) return [];
   const typeCount = storedCount(view.getUint16(typeList));
 
-  const out: ArrayBuffer[] = [];
+  // Resources are copied only once none overlap, so a map naming one resource many times cannot copy more than the file.
+  const seen = new Set<number>();
+  const ranges: [start: number, end: number][] = [];
   for (let t = 0; t < typeCount; t++) {
     const entry = typeList + 2 + t * TYPE_ENTRY_BYTES;
     if (!inMap(entry, TYPE_ENTRY_BYTES)) throw truncated();
@@ -77,11 +82,15 @@ export function sfntResources(bytes: ArrayBuffer): ArrayBuffer[] {
       // A three-byte offset, behind the one-byte attributes it shares a word with.
       const offset = view.getUint32(ref + 4) & 0xffffff;
       if (offset + 4 > dataLength) throw truncated();
+      if (seen.has(offset)) throw overlapping();
+      seen.add(offset);
       const start = dataOffset + offset + 4;
       const length = view.getUint32(start - 4);
       if (offset + 4 + length > dataLength) throw truncated();
-      out.push(bytes.slice(start, start + length));
+      ranges.push([start, start + length]);
     }
   }
-  return out;
+  const placed = [...ranges].sort((a, b) => a[0] - b[0]);
+  for (let i = 1; i < placed.length; i++) if (placed[i]![0] < placed[i - 1]![1]) throw overlapping();
+  return ranges.map(([start, end]) => bytes.slice(start, end));
 }
