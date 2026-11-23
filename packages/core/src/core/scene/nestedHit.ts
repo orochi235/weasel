@@ -52,12 +52,12 @@ export function createNestedHitTester<TNode extends { id: string }, TPose>(
 
   const ancestorChain = (id: string): string[] => {
     const chain: string[] = [];
-    let cur: string | null = id;
-    while (cur !== null) {
-      chain.unshift(cur);
-      cur = adapter.getParent(cur);
+    const seen = new Set<string>();
+    for (let cur: string | null = id; cur !== null && !seen.has(cur); cur = adapter.getParent(cur)) {
+      seen.add(cur);
+      chain.push(cur);
     }
-    return chain;
+    return chain.reverse();
   };
 
   const hitLeaf = ({ x: wx, y: wy }: WorldPoint): string | null => {

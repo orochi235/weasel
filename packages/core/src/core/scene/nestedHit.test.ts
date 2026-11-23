@@ -111,4 +111,19 @@ describe('createNestedHitTester', () => {
     expect(t.pickOutermost({ x: 20, y: 15 })).toBe('box');
   });
 
+  it('stops the ancestor climb at a parent cycle', () => {
+    const parents: Record<string, string> = { a: 'b', b: 'a' };
+    const pose = { x: 0, y: 0, width: 10, height: 10 };
+    const t = createNestedHitTester(
+      {
+        getNode: (id) => ({ id }),
+        getNodes: () => [{ id: 'a' }],
+        getPose: () => pose,
+        getParent: (id) => parents[id] ?? null,
+      },
+      { composePose: (_parent, child) => child },
+    );
+    expect(t.pickBest({ x: 5, y: 5 }, true, [])).toBe('a');
+    expect(t.pickOutermost({ x: 5, y: 5 })).toBe('b');
+  });
 });
