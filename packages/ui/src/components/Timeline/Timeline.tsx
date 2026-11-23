@@ -98,7 +98,7 @@ export function Timeline(props: TimelineProps): ReactElement {
       dropSegment();
       return;
     }
-    if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses) return;
+    if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses || !onTimeline(e)) return;
     const marked = markedKey(e.target as Element, rows);
     const target = marked === undefined ? selection : marked;
     if (target && deletable(target, rows)) {
@@ -178,6 +178,10 @@ export function Timeline(props: TimelineProps): ReactElement {
 }
 
 const ignore = (): void => {};
+
+/** A press on the root or the lanes, not on the transport, the Graph switch, or the inspector beside them. */
+const onTimeline = (e: ReactKeyboardEvent): boolean =>
+  e.target === e.currentTarget || Boolean((e.target as Element).closest?.('[data-lane-key]'));
 
 /**
  * A lane's edits as edits to the whole track list: live ones through `onInput`, and finished ones through `onChange`,

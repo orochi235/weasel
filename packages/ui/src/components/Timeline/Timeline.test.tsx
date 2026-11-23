@@ -647,3 +647,25 @@ describe('Timeline', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('Timeline Delete away from the lanes', () => {
+  it('deletes no key for a Delete or Backspace on the transport, the Graph switch, or the key editor', () => {
+    const onChange = vi.fn();
+    renderWithIcons(
+      <Timeline
+        {...base} tracks={tracks()} onChange={onChange}
+        transport={{ playing: false, loop: false, rate: 1, onPlayingChange: () => {}, onLoopChange: () => {}, onRateChange: () => {} }}
+        renderKeyEditor={() => <button type="button" data-testid="swatch">swatch</button>}
+      />,
+    );
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    onChange.mockClear();
+    fireEvent.keyDown(screen.getByRole('switch', { name: 'Graph mode' }), { key: 'Delete' });
+    fireEvent.keyDown(screen.getByTestId('swatch'), { key: 'Backspace' });
+    fireEvent.keyDown(screen.getByRole('button', { name: /play/i }), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+});
