@@ -119,12 +119,10 @@ export interface PickingView {
 }
 
 /**
- * Narrow adapter for marquee selection. Transient: no checkpoint, no
- * history — `applyOps(ops)` is called with no label.
- *
- * All fields are **optional**. `useSelectTool` only wires the default marquee
- * behavior when `hitTestArea`, `getSelection`, `setSelection`, and `applyOps`
- * are all present on the adapter; otherwise empty-space drags do nothing.
+ * Narrow adapter for area selection, which `<SceneCanvas>`'s adapter implements over its scene.
+ * `useSelectTool`'s marquee does not read it: `areaSelectAction` reads the `areaSelect` dep, which
+ * `useAreaSelectDepSource` builds from the scene and the selection, so these methods neither turn
+ * the marquee on nor change what it picks. All fields are optional.
  */
 export interface AreaSelectAdapter {
   /** Returns ids of nodes intersecting the world-space rect, as the view the

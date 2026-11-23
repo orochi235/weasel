@@ -1,7 +1,7 @@
 /**
  * Property tests for `stableStringify`: for anything `JSON.stringify` writes, it writes the same JSON with every
  * object's keys sorted, so key order never matters, and the bare word `undefined` where JSON writes nothing; what JSON throws on
- * it writes as a tag instead.
+ * or writes as `null` it writes as a tag instead.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -35,7 +35,7 @@ const key = fc.oneof(fc.string({ maxLength: 4 }), fc.constantFrom('__proto__', '
 const exotic: fc.Arbitrary<unknown> = fc.letrec((tie) => ({
   value: fc.oneof(
     { depthSize: 'small', withCrossShrink: true },
-    fc.oneof(fc.integer(), fc.double(), fc.string({ maxLength: 4 }), fc.boolean(), fc.constant(null)),
+    fc.oneof(fc.integer(), fc.double({ noNaN: true, noDefaultInfinity: true }), fc.string({ maxLength: 4 }), fc.boolean(), fc.constant(null)),
     fc.constantFrom(undefined, () => 1, Symbol('s')),
     fc.integer({ min: -1e12, max: 1e12 }).map((t) => new Date(t)),
     fc.oneof(fc.integer().map((n) => Object(n)), fc.string({ maxLength: 3 }).map((s) => Object(s)), fc.boolean().map((b) => Object(b))),

@@ -152,4 +152,21 @@ describe('usePointerStylus', () => {
       now.mockRestore();
     }
   });
+
+  it('listens on an element of another window, and on an SVG element', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const popout = frame.contentDocument!.createElement('div');
+    frame.contentDocument!.body.appendChild(popout);
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    document.body.appendChild(svg);
+    for (const el of [popout, svg]) {
+      const { result, unmount } = renderHook(() => usePointerStylus(el, { maxFps: Infinity }));
+      act(() => { dispatchMove(el, { pointerType: 'pen', pressure: 0.4 }); });
+      expect(result.current.pressure).toBeCloseTo(0.4);
+      unmount();
+    }
+    frame.remove();
+    svg.remove();
+  });
 });

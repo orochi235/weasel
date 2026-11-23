@@ -89,4 +89,66 @@ describe('a streamed scene', () => {
     expect(scene.get(id)?.pose).toEqual({ x: 0, y: 0, width: 12, height: 12 });
     stream.dispose();
   });
+
+  /** A source whose cell 0/0 answers `specs`, and every other cell nothing. */
+  const oneCell = (specs: () => AddNodeSpec<Data, 'main', RectPose>[]): SceneSource<Data, 'main', RectPose> => ({
+    cellSize: CELL,
+    load: async (cell) => (cell.x === 0 && cell.y === 0 ? specs() : []),
+  });
+  const box = { x: 0, y: 0, width: 12, height: 12 };
+  const fill = { fill: { paint: { kind: 'solid', color: 'red' } } };
+  const settle = async (stream: ReturnType<typeof streamScene>, x: number) => {
+    for (let k = 0; k < 20; k++) {
+      stream.update({ x, y: x, scale: { x: 1, y: 1 } }, DIMS);
+      await flush();
+    }
+  };
+
+  it('keeps a streamed group past its cell\'s drop when an edited node sits under it', async () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const stream = streamScene(scene, oneCell(() => [
+      { id: asNodeId('p'), kind: 'group', layer: 'main', pose: box, data: fill },
+      { id: asNodeId('c'), kind: 'mark', layer: 'main', parent: asNodeId('p'), pose: box, data: fill },
+      { id: asNodeId('d'), kind: 'mark', layer: 'main', pose: box, data: fill },
+    ]), { maxCells: 1, margin: 0 });
+    await settle(stream, 0);
+    scene.setPose(asNodeId('c'), { ...box, x: 5 });
+    const added = scene.add({ id: asNodeId('u'), kind: 'mark', layer: 'main', pose: box, data: fill, dependsOn: [asNodeId('d')] });
+    await settle(stream, 50_000);
+    expect(scene.get(asNodeId('c'))?.pose).toEqual({ ...box, x: 5 });
+    expect(scene.get(asNodeId('p'))).toBeDefined();
+    expect(scene.get(asNodeId('d'))).toBeDefined();
+    expect(scene.get(added)).toBeDefined();
+    expect(stream.stats().nodes).toBe(0);
+    scene.undo();
+    scene.undo();
+    expect(scene.get(asNodeId('c'))?.pose).toEqual(box);
+    stream.dispose();
+  });
+
+  it('keeps the group an edited node was removed from, so undoing the removal finds it', async () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const stream = streamScene(scene, oneCell(() => [
+      { id: asNodeId('p'), kind: 'group', layer: 'main', pose: box, data: fill },
+      { id: asNodeId('c'), kind: 'mark', layer: 'main', parent: asNodeId('p'), pose: box, data: fill },
+    ]), { maxCells: 1, margin: 0 });
+    await settle(stream, 0);
+    scene.remove(asNodeId('c'));
+    await settle(stream, 50_000);
+    expect(() => scene.undo()).not.toThrow();
+    expect(scene.get(asNodeId('c'))?.parent).toBe(asNodeId('p'));
+    stream.dispose();
+  });
+
+  it('takes back what a cell added before its load threw', async () => {
+    const scene = createScene<Data, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const errors: unknown[] = [];
+    const twice = { id: asNodeId('x'), kind: 'mark' as const, layer: 'main' as const, pose: box, data: fill };
+    const stream = streamScene(scene, oneCell(() => [twice, twice]), { maxCells: 1, margin: 0, onError: (_c, e) => errors.push(e) });
+    await settle(stream, 0);
+    expect(errors.length).toBeGreaterThan(0);
+    expect(scene.get(asNodeId('x'))).toBeUndefined();
+    expect(scene.canUndo()).toBe(false);
+    stream.dispose();
+  });
 });
