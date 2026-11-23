@@ -295,3 +295,34 @@ describe('TilePyramid finer stand-ins', () => {
     expect(coarse.fading).toBe(true);
   });
 });
+
+describe('TilePyramid deferred bakes', () => {
+  it('marks a tile stale when an edit meets it while its bake is still out', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
+    });
+    const one: TileBudget = { ms: Infinity, tiles: 1, clock: () => 0 };
+    const v = view(10, 10, 1, 100, 100);
+    let ready = false;
+    const first = pyramid.run(v, 0, () => (ready ? 1 : null), one);
+    expect(first.pending).toBeGreaterThan(0);
+    const key = pyramid.cache.get(scheme.idOf({ z: 1, x: 0, y: 0 }));
+    expect(key).toBeUndefined();
+    pyramid.dirty([20, 20, 30, 30]);
+    ready = true;
+    pyramid.run(v, 16, () => 1, one);
+    expect(pyramid.cache.get(scheme.idOf({ z: 1, x: 0, y: 0 }))?.stale).toBe(true);
+  });
+
+  it('keeps a deferred bake fresh when no edit meets it', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
+    });
+    const one: TileBudget = { ms: Infinity, tiles: 1, clock: () => 0 };
+    const v = view(10, 10, 1, 100, 100);
+    pyramid.run(v, 0, () => null, one);
+    pyramid.dirty([5000, 5000, 5010, 5010]);
+    pyramid.run(v, 16, () => 1, one);
+    expect(pyramid.cache.get(scheme.idOf({ z: 1, x: 0, y: 0 }))?.stale).toBe(false);
+  });
+});
