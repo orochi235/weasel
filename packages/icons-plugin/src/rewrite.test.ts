@@ -265,6 +265,7 @@ describe('rewriteIconCalls on a local that shadows the import', () => {
       `namespace B { export function icon(s: string) { return s; } icon('exported'); }`,
       `namespace C { if (x) { var icon = id; } icon('var'); }`,
       `namespace D.E { let icon = id; icon('dotted'); }`,
+      `namespace F { declare function icon(n: string): string; export const a = icon('ambient'); }`,
       `icon('outside');`,
     ].join('\n');
     expect(refs(src)).toEqual(['core:outside']);
