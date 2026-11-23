@@ -3,7 +3,7 @@ import type { DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { arrowHead } from '../common/styles';
-import { titleLines } from '../common/lines';
+import { ACC_WORDS, titleLines } from '../common/lines';
 import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import type { ArchSide } from './parse';
 import { ICON_OUTLINES, SIDE_PORTS } from './read';
@@ -25,7 +25,7 @@ class ArchWriter {
   readonly clusters = new Map<string, Cluster>();
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true, reserved: ACC_WORDS });
     const visit = (c: Cluster, parent: string | undefined) => {
       this.clusters.set(c.id, c);
       if (parent !== undefined) this.parent.set(c.id, parent);
