@@ -37,10 +37,16 @@ export function tileMeets<K>(scheme: TileScheme<K, unknown>, key: K, box: TileBo
   const pad = padTexels / scheme.texelsPerUnit(key);
   const grown = new Float64Array(2 * dim);
   for (let i = 0; i < dim; i++) {
-    grown[i] = box[i]! - pad;
-    grown[dim + i] = box[dim + i]! + pad;
+    grown[i] = grow(box[i]!, -pad);
+    grown[dim + i] = grow(box[dim + i]!, pad);
   }
   return boxesMeet(grown, scheme.boundsOf(key), dim);
+}
+
+/** `v + d`, at least one ulp past `v` when `d` is not zero: far from the origin a texel's pad rounds away. */
+function grow(v: number, d: number): number {
+  const g = v + d;
+  return g !== v || d === 0 ? g : v + Math.sign(d) * Math.abs(v) * Number.EPSILON;
 }
 
 /** The least a cache's count bound falls to, whatever its working set. */
