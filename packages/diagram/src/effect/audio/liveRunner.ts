@@ -58,21 +58,43 @@ const sameErrors = (a: Readonly<Record<string, string>>, b: Readonly<Record<stri
   return keys.length === Object.keys(b).length && keys.every((k) => Object.hasOwn(b, k) && a[k] === b[k]);
 };
 
-/** Applies the param writes together; when that throws, one by one, so the rest land and each failing stage is named. */
-function applySets(graph: AudioGraph, sets: readonly GraphPatch[], failures: Record<string, string>): void {
-  if (sets.length === 0) return;
+type SetPatch = Extract<GraphPatch, { kind: 'set' }>;
+
+/** Applies the param writes together; when that throws, one by one, so the rest land and each failing stage is named.
+ *  Returns the writes that failed. */
+function applySets(graph: AudioGraph, sets: readonly SetPatch[], failures: Record<string, string>): SetPatch[] {
+  if (sets.length === 0) return [];
   try {
     graph.apply(sets);
+    return [];
   } catch (err) {
     console.warn(`@weasel-js/diagram: audio graph edit failed: ${messageOf(err)}`);
-    for (const p of sets) {
-      try {
-        graph.apply([p]);
-      } catch (one) {
-        if (p.kind === 'set') setOwn(failures, p.id, messageOf(one));
-      }
-    }
   }
+  return sets.filter((p) => {
+    try {
+      graph.apply([p]);
+      return false;
+    } catch (one) {
+      setOwn(failures, p.id, messageOf(one));
+      return true;
+    }
+  });
+}
+
+/** `next` with each failed write's level put back to what `from` holds, so the next diff sends it again. */
+function unset(from: LivePlan, next: LivePlan, failed: readonly SetPatch[]): LivePlan {
+  if (failed.length === 0) return next;
+  const nodes = { ...next.nodes };
+  for (const p of failed) {
+    const node = getOwn(nodes, p.id)!;
+    const levels: Record<string, number> = { ...node.levels };
+    const was = getOwn(from.nodes, p.id)?.levels;
+    const held = was === undefined ? undefined : getOwn(was, p.param);
+    if (held === undefined) delete levels[p.param];
+    else setOwn(levels, p.param, held);
+    setOwn(nodes, p.id, { ...node, levels });
+  }
+  return { ...next, nodes };
 }
 
 /** `plan` without the nodes in `drop`, the edges touching them, and the edges `cut` names by `edgeKey`. */
@@ -119,28 +141,33 @@ function buildablePlan(
 
 /**
  * Applies the structural patches, and whether they landed: a batch the graph refuses changes nothing,
- * and one that passes its check lands though a source in it fails to start.
+ * and one that passes its check lands though a source in it fails to start. `broken` is the stage
+ * named by a batch that landed and threw, with its message.
  */
-function applyStructure(graph: AudioGraph, structural: readonly GraphPatch[], errors: Record<string, string>): boolean {
-  if (structural.length === 0) return true;
+function applyStructure(
+  graph: AudioGraph, structural: readonly GraphPatch[], errors: Record<string, string>,
+): { landed: boolean; broken?: [string, string] } {
+  if (structural.length === 0) return { landed: true };
   const fail = (err: unknown) => {
     const message = messageOf(err);
     const id = failingStage(structural, message);
     if (id !== undefined) setOwn(errors, id, message);
     console.warn(`@weasel-js/diagram: audio graph edit failed: ${message}`);
+    return id === undefined ? undefined : [id, message] as [string, string];
   };
   try {
     graph.check(structural);
   } catch (err) {
     fail(err);
-    return false;
+    return { landed: false };
   }
   try {
     graph.apply(structural);
   } catch (err) {
-    fail(err);
+    const broken = fail(err);
+    return broken === undefined ? { landed: true } : { landed: true, broken };
   }
-  return true;
+  return { landed: true };
 }
 
 /** A runner over `opts.pipeline` holding a fresh graph on `opts.engine`, not playing. */
@@ -174,6 +201,8 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
 
   /** The input ports of each node in the graph, from the def it was built with. */
   const ports = new Map<string, ReadonlySet<string>>();
+  /** Stages a landed structural edit left broken, by message, until a later one naming them lands. */
+  const broken = new Map<string, string>();
 
   /** Brings the graph from `from` to the plan `pipeline` and `sources` now give. Structure goes first
    *  in its own apply; a throw from the sets means structure landed. */
@@ -183,16 +212,22 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     const { next, defs } = buildablePlan(from, planned, (n) => getOwn(nodes, n.type)!.build(engine.context, n.settings, n.levels), ports, merged);
     const patches = diffPlans(from, next, (id) => defs.get(id)!);
     const structural = patches.filter((p) => p.kind !== 'set');
-    const landed = applyStructure(graph, structural, merged);
-    const adopted = landed ? next : from;
-    const sets = landed ? patches.filter((p) => p.kind === 'set') : [];
-    applySets(graph, sets, merged);
+    const applied = applyStructure(graph, structural, merged);
+    const { landed } = applied;
+    if (landed) {
+      for (const id of structural.flatMap(idsOf)) broken.delete(id);
+      for (const id of broken.keys()) if (!Object.hasOwn(next.nodes, id)) broken.delete(id);
+      if (applied.broken) broken.set(...applied.broken);
+    }
+    for (const [id, message] of broken) if (!Object.hasOwn(merged, id)) setOwn(merged, id, message);
+    const sets = landed ? patches.filter((p): p is SetPatch => p.kind === 'set') : [];
+    const adopted = landed ? unset(from, next, applySets(graph, sets, merged)) : from;
     plan = adopted;
-    if (adopted === next) {
+    if (landed) {
       for (const id of ports.keys()) if (!Object.hasOwn(next.nodes, id)) ports.delete(id);
       for (const [id, def] of defs) ports.set(id, new Set(Object.keys(def.inputs)));
     }
-    const removed = adopted === next ? structural.flatMap((p) => (p.kind === 'remove' ? [p.id] : [])) : [];
+    const removed = landed ? structural.flatMap((p) => (p.kind === 'remove' ? [p.id] : [])) : [];
     previews.follow(graph, removed, Object.keys(adopted.nodes));
     publishErrors(merged);
   };
@@ -241,6 +276,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
       transport.drop();
       graph.dispose();
       graph = engine.graph(bus);
+      broken.clear();
       previews.restart();
       sync(EMPTY_PLAN);
       set({ playing: false });

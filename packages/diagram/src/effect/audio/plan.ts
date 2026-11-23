@@ -4,7 +4,7 @@ import { uniqueStages } from '../draw';
 import { runOrder } from '../runner/order';
 import { paramValues } from '../runner/params';
 import type { EffectPipeline, EffectStage } from '../types';
-import type { AudioSources, AudioStageNode, AudioStageNodes } from './nodes';
+import { givenNumber, type AudioSources, type AudioStageNode, type AudioStageNodes } from './nodes';
 
 /** A node the plan builds: its stage type, its discrete settings and its numeric levels. */
 export interface PlanNode {
@@ -33,18 +33,10 @@ const OUTPUT_TYPE = 'audio.output';
 export const edgeKey = (e: PlanEdge): string =>
   JSON.stringify([e.from, 'output' in e.to ? null : [e.to.node, e.to.port]]);
 
-/** A level given as a number, or as text that is one; anything else given fails the stage. */
-function givenLevel(id: string, given: unknown): number | undefined {
-  if (given === undefined || typeof given === 'number') return given;
-  const n = typeof given === 'string' && given.trim() !== '' ? Number(given) : NaN;
-  if (!Number.isFinite(n)) throw new Error(`${id} is not a number: ${JSON.stringify(given)}`);
-  return n;
-}
-
 function levelsOf(entry: AudioStageNode, params: Readonly<Record<string, unknown>>): Record<string, number> {
   const out: Record<string, number> = {};
   for (const id of entry.levels) {
-    const given = givenLevel(id, getOwn(params, id));
+    const given = givenNumber(id, getOwn(params, id));
     const v = given ?? (entry.levelDefaults && getOwn(entry.levelDefaults, id));
     if (typeof v === 'number') setOwn(out, id, v);
   }

@@ -25,7 +25,7 @@ export interface BranchOptions {
   style?: NodeStyle;
   /** The colors of a `bar`'s bands and a `crossover`'s curves, lowest
    *  first, repeating. Default a palette of four, or for a bypassed stage
-   *  `style.stroke` for every band. */
+   *  `style.stroke` for every band; an empty list is taken as left out. */
   tints?: readonly string[];
 }
 /** Draws one decision stage, with a port for each of its inputs and outputs. */
@@ -109,7 +109,7 @@ export const styleOf = (stage: EffectStage, options: BranchOptions | undefined):
 
 /** The colors a symbol draws its bands in, lowest first. */
 export const tintsOf = (stage: EffectStage, options: BranchOptions | undefined): readonly string[] =>
-  options?.tints ?? (stage.bypassed === true ? [styleOf(stage, options).stroke] : BAND_TINTS);
+  (options?.tints?.length ? options.tints : undefined) ?? (stage.bypassed === true ? [styleOf(stage, options).stroke] : BAND_TINTS);
 
 /** Whether the stage has a sound split to band. */
 export const canBand = (stage: EffectStage): stage is EffectStage & { split: NonNullable<EffectStage['split']> } =>

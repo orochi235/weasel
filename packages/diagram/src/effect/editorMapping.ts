@@ -38,6 +38,25 @@ export interface EditorScene extends EffectLookResult {
 const endsKey = (from: EffectWire['from'], to: EffectWire['to']) => JSON.stringify([from.stage, from.port, to.stage, to.port]);
 const edgeEnds = (e: DataEdge) => endsKey({ stage: e.from, port: untapped(e.fromPort ?? '') }, { stage: e.to, port: e.toPort ?? '' });
 
+/** Each edge's wire: the wire of its own id when that wire has its ends, else the next wire with its ends not
+ *  yet taken, so two wires with the same ends map to two edges. */
+function edgeWires(edges: readonly DataEdge[], wires: readonly { key: string; id: string }[]): Map<string, string> {
+  const byEnds = new Map<string, string[]>();
+  for (const w of wires) byEnds.set(w.key, [...(byEnds.get(w.key) ?? []), w.id]);
+  const out = new Map<string, string>();
+  const taken = new Set<string>();
+  const claim = (e: DataEdge, id: string) => { out.set(edgeIdOf(e), id); taken.add(id); };
+  for (const e of edges) {
+    if (e.id !== undefined && byEnds.get(edgeEnds(e))?.includes(e.id)) claim(e, e.id);
+  }
+  for (const e of edges) {
+    if (out.has(edgeIdOf(e))) continue;
+    const id = byEnds.get(edgeEnds(e))?.find((w) => !taken.has(w));
+    if (id !== undefined) claim(e, id);
+  }
+  return out;
+}
+
 /** The look's drawing of the doc's pipeline. Under `nodeGraph` every placed
  *  stage is pinned at its place, so layered layout places only the stages
  *  that have none, and each cluster is a container, at its `clusterBoxes` box or
@@ -53,15 +72,7 @@ export function editorScene<L extends EditorLook = 'nodeGraph'>(
   const stages = new Set(doc.pipeline.stages.map((s) => s.id));
   const clusters = new Set((doc.pipeline.clusters ?? []).map((g) => g.id));
   const ids = ensureWireIds(doc).pipeline.wires.map((w) => w.id!);
-  const byEnds = new Map<string, string>();
-  for (const d of drawableWires(doc.pipeline)) {
-    const key = endsKey(d.wire.from, d.wire.to);
-    if (!byEnds.has(key)) byEnds.set(key, ids[d.index]!);
-  }
-  const wires = new Map(drawn.data.edges.flatMap((e) => {
-    const id = byEnds.get(edgeEnds(e));
-    return id === undefined ? [] : [[edgeIdOf(e), id] as const];
-  }));
+  const wires = edgeWires(drawn.data.edges, drawableWires(doc.pipeline).map((d) => ({ key: endsKey(d.wire.from, d.wire.to), id: ids[d.index]! })));
   // Only `nodeGraph` draws hand-set routes; `rack` and `lanes` route their own wires.
   const routes = look === 'nodeGraph' ? doc.routes : undefined;
   const { labels } = doc;

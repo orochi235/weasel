@@ -22,6 +22,17 @@ export interface AudioStageNode {
 /** The graph node of each stage type, by `type`. */
 export type AudioStageNodes = Readonly<Record<string, AudioStageNode>>;
 
+/** A number given as one, or as text that is one; anything else given throws, failing the stage. */
+export function givenNumber(id: string, given: unknown): number | undefined {
+  if (given === undefined || typeof given === 'number') return given;
+  const n = typeof given === 'string' && given.trim() !== '' ? Number(given) : NaN;
+  if (!Number.isFinite(n)) throw new Error(`${id} is not a number: ${JSON.stringify(given)}`);
+  return n;
+}
+
+/** How a setting is read from its param value: checked as is, or parsed as a number. */
+type SettingRead = ((value: never) => void) | 'number';
+
 /** The value `type`'s param `id` starts at. */
 const defaultOf = (type: string, id: string): unknown =>
   AUDIO_STAGE_TYPES.find((t) => t.type === type)?.params?.find((p) => p.id === id)?.control?.value;
@@ -38,13 +49,14 @@ const levelDefaultsOf = (type: string, levels: readonly string[]): Record<string
  * takes the settings with the levels as one options bag.
  */
 const node = (
-  type: string, settingIds: Readonly<Record<string, ((value: never) => void) | null>>, levels: readonly string[],
+  type: string, settingIds: Readonly<Record<string, SettingRead>>, levels: readonly string[],
   make: (ctx: BaseAudioContext, opts: never) => GraphNodeDef,
 ): AudioStageNode => ({
   settings: (params) => Object.fromEntries(Object.entries(settingIds).flatMap(([id, check]) => {
-    const value = getOwn(params, id) ?? defaultOf(type, id);
+    const given = getOwn(params, id) ?? defaultOf(type, id);
+    const value = check === 'number' ? givenNumber(id, given) : given;
     if (value === undefined) return [];
-    check?.(value as never);
+    if (typeof check === 'function') check(value as never);
     return [[id, value]];
   })),
   levels,
@@ -68,7 +80,7 @@ export const audioStageNodes: AudioStageNodes = {
   'audio.pan': node('audio.pan', {}, ['pan'], createPanNode),
   'audio.filter': node('audio.filter', { type: checkFilterType }, ['frequency', 'Q'], createFilterNode),
   'audio.delay': node('audio.delay', {}, ['time', 'feedback', 'mix'], createDelayNode),
-  'audio.reverb': node('audio.reverb', { seconds: null }, ['mix'], createReverbNode),
+  'audio.reverb': node('audio.reverb', { seconds: 'number' }, ['mix'], createReverbNode),
   'audio.compressor': node('audio.compressor', {}, ['threshold', 'ratio'], createCompressorNode),
   'audio.mix': {
     settings: () => ({}),
