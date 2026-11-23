@@ -67,13 +67,17 @@ export function writeRunsPreservingSelection(
  *
  * Two things are left holding focus deliberately: a text entry in the chrome
  * (the user is still typing a font size) and anything inside an open dialog,
- * which is where a color picker's live `onChange` fires from.
+ * which is where a color picker's live `onChange` fires from. `focus` is the
+ * overlay scroller's, which keeps a clipped box's scroll through the focus.
  */
-export function restoreOverlayFocus(overlay: HTMLElement, range: TextEditSelection): void {
+export function restoreOverlayFocus(
+  overlay: HTMLElement, range: TextEditSelection, focus: (() => void) | null = null,
+): void {
   const active = document.activeElement;
   if (active === overlay || overlay.contains(active)) return;
   if (isEditableTarget(active) || (active instanceof Element && active.closest('[role="dialog"]') !== null)) return;
-  overlay.focus({ preventScroll: true });
+  if (focus) focus();
+  else overlay.focus({ preventScroll: true });
   selectOffsets(overlay, range.start, range.end);
 }
 

@@ -80,11 +80,10 @@ export function useTextEdit(
     if (id !== null && draft) optsRef.current.onInput?.(id, draft);
   }, [editingIdRef, optsRef, nodeStyleRef]);
 
-  const { applyStyleToSelection, toggleStyle } = useSelectionStyling({
+  const { applyStyleToSelection, toggleStyle, focusRef } = useSelectionStyling({
     overlayRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
     pendingRef, armPending, selectionRef, publishRange,
   });
-
 
   useEffect(() => {
     const { container, getText, getStyle, getPaint } = optsRef.current;
@@ -101,6 +100,7 @@ export function useTextEdit(
     const { overlay, boxes, draft, place } = opened;
     draftRef.current = draft;
     overlayRef.current = overlay;
+    focusRef.current = boxes.scroller.focus;
     placeRef.current = place;
     // Publish now rather than on the `selectionchange` task — a control mounted
     // alongside the editor would otherwise render one frame with no selection.
@@ -141,7 +141,7 @@ export function useTextEdit(
     };
   }, [editingId, opts.container, optsRef, takeCarry, stashCarry, commit, cancelEdit, syncSelection, clearSelection,
       follow, toggleStyle, dropPending, armPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
-      selectionRef, baseRef, nodeStyleRef, placeRef]);
+      selectionRef, baseRef, nodeStyleRef, placeRef, focusRef]);
 
   return {
     editingId, startEdit, cancelEdit, commitEdit: commit, isEditing, nodeStyle,

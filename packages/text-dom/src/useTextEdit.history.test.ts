@@ -66,14 +66,14 @@ describe('useTextEdit — undo inside the edit', () => {
   });
 
   it('puts back the node style a flag rewrite held, so the commit writes none', () => {
-    const { h, hook, el } = open('abcd', { fontStyle: 'italic' });
+    const { h, hook, el } = open('abcd', { underline: true });
     h.opts.setStyle = () => {};
     selectChars(el, 1, 3);
-    act(() => hook.result.current.applyStyleToSelection({ italic: false }));
+    act(() => hook.result.current.applyStyleToSelection({ underline: false }));
     expect(hook.result.current.nodeStyle).not.toBeNull();
     undo(el);
     expect(hook.result.current.nodeStyle).toBeNull();
-    expect(el.style.fontStyle).toBe('italic');
+    expect(el.style.textDecoration).toBe('underline');
     let written: unknown = 'nothing';
     h.opts.onChange = (_id, edit) => { written = edit; };
     act(() => hook.result.current.commitEdit());

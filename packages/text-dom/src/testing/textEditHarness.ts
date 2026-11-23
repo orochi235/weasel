@@ -36,7 +36,8 @@ export function appendChar(overlay: HTMLElement, ch: string): void {
 }
 
 export function makeRichHarness(initial: Record<string, { text: string; runs?: StyledRun[] }>) {
-  const data = { ...initial };
+  // No prototype, so an id such as `__proto__` or `constructor` is an entry like any other.
+  const data: Record<string, { text: string; runs?: StyledRun[] }> = Object.assign(Object.create(null), initial);
   const container = document.createElement('div');
   document.body.appendChild(container);
   const textCommits: Array<{ id: string; text: string }> = [];

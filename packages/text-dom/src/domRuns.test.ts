@@ -707,6 +707,14 @@ describe('hard line breaks in the overlay', () => {
     expect(domToRuns(parent)).toEqual([{ text: TEXT }]);
   });
 
+  it('breaks once at a CRLF split across two runs', () => {
+    const runs = [{ text: 'a\r', bold: true }, { text: '\nb' }];
+    runsToDom(runs, parent);
+    expect(parent.querySelectorAll('[data-break]')).toHaveLength(0);
+    expect(parent.textContent).toBe('a\r\nb');
+    expect(domToRuns(parent)).toEqual(runs);
+  });
+
   it('keeps one DOM character per source character, so caret offsets carry over', () => {
     runsToDom([{ text: TEXT }], parent);
     const at = TEXT.indexOf('c');
@@ -779,6 +787,18 @@ describe('domRuns — small caps', () => {
     parent.style.fontVariant = 'small-caps';
     parent.style.textTransform = 'capitalize';
     expect(normalizeSmallCaps(parent)).toBe(false);
+  });
+
+  it('breaks once at a CRLF split across runs when it rewrites a run into pieces', () => {
+    parent.style.fontVariant = 'small-caps';
+    for (const text of ['a\r', '\nb']) {
+      const run = document.createElement('span');
+      run.setAttribute('data-run', '');
+      run.textContent = text;
+      parent.appendChild(run);
+    }
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(parent.querySelectorAll('[data-break]')).toHaveLength(0);
   });
 
   it('counts overlay text outside a run span in the word a run continues', () => {

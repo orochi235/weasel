@@ -1,6 +1,7 @@
 /** The overlay one edit opens: built, seeded with the node's text, mounted, placed over the node, and focused. */
 import type { ResolvedTextStyle, StyledRun } from '@weasel-js/text';
 import { timerScheduler } from '@weasel-js/ui-input';
+import { domToRuns } from './domRuns';
 import { seedDraft, type EditDraft } from './overlayDraft';
 import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import { mountOverlayBoxes, placeOverlay, type OverlayBoxes } from './overlayPlace';
@@ -56,7 +57,7 @@ export function openEditOverlay(
   const draft = node.carried ? node.carried.draft : seedDraft(overlay, node.text, node.runs, style);
   if (node.carried) overlay.append(node.carried.content);
   applyOverlayStyle(overlay, style);
-  const hold = holdFor > 0 ? holdForFaces(style, node.runs ?? []) : null;
+  const hold = holdFor > 0 ? holdForFaces(style, node.carried ? domToRuns(overlay) : node.runs ?? []) : null;
   if (hold) overlay.style.opacity = '0';
   const styleEl = installSelectionStyle(overlayClass, style);
   const boxes = mountOverlayBoxes(container, overlay);
