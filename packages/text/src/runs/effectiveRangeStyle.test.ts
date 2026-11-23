@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { MIXED } from './rangeStyle';
+import { MIXED, styleAtRange } from './rangeStyle';
+import { runsToPlainText, type StyledRun } from '../runs';
+import type { TextStyle } from '../textStyle';
 import { effectiveRangeStyle } from './effectiveRangeStyle';
 
 describe('effectiveRangeStyle', () => {
@@ -122,5 +124,42 @@ describe('effectiveRangeStyle — an upright run in italic text', () => {
     expect(effectiveRangeStyle({ italic: false }, { fontStyle: 'italic' }).italic).toBe(false);
     expect(effectiveRangeStyle({}, { fontStyle: 'italic' }).italic).toBe(true);
     expect(effectiveRangeStyle({ italic: MIXED }, { fontStyle: 'italic' }).italic).toBe(MIXED);
+  });
+});
+
+describe('effectiveRangeStyle over styleAtRange given the node', () => {
+  const read = (runs: StyledRun[], style: TextStyle) =>
+    effectiveRangeStyle(styleAtRange(runs, 0, runsToPlainText(runs).length, { style }), style);
+
+  it('reads italic as on where every run renders italic', () => {
+    expect(read([{ text: 'ab' }, { text: 'cd', italic: true }], { fontStyle: 'italic' }).italic).toBe(true);
+  });
+
+  it('reads italic as off where every run renders upright', () => {
+    expect(read([{ text: 'ab' }, { text: 'cd', italic: false }], {}).italic).toBe(false);
+  });
+
+  it('still reads italic as mixed where a run is set upright under an italic node', () => {
+    expect(read([{ text: 'ab' }, { text: 'cd', italic: false }], { fontStyle: 'italic' }).italic).toBe(MIXED);
+  });
+
+  it('reads an override equal to the node value as that value', () => {
+    const s = read([{ text: 'ab' }, { text: 'cd', fontFamily: 'Inter', fontSize: 24 }], { fontFamily: 'Inter', fontSize: 24 });
+    expect(s.fontFamily).toBe('Inter');
+    expect(s.fontSize).toBe(24);
+  });
+
+  it('reads an override equal to the default as that value when the node sets none', () => {
+    expect(read([{ text: 'ab' }, { text: 'cd', fontSize: 16 }], {}).fontSize).toBe(16);
+  });
+
+  it('reads a run weight equal to the node weight as that weight', () => {
+    const s = read([{ text: 'ab' }, { text: 'cd', fontWeight: 700 }], { fontWeight: 700 });
+    expect(s.fontWeight).toBe(700);
+    expect(s.bold).toBe(true);
+  });
+
+  it('still reads a differing override as mixed', () => {
+    expect(read([{ text: 'ab' }, { text: 'cd', fontFamily: 'Mono' }], { fontFamily: 'Inter' }).fontFamily).toBe(MIXED);
   });
 });
