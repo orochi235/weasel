@@ -109,8 +109,10 @@ function paintBox(data: Data, look: Look): Data | null {
   const stroke = data.stroke === undefined ? undefined
     : restroked(data.stroke, look.own.has('stroke') ? undefined : look.style.stroke, outlineOf(look.style, look.kind), look.ownLine);
   const band = paintBand(data, look);
-  if (fill === undefined && stroke === undefined && band.headerFill === undefined) return null;
-  return { ...data, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}), ...band };
+  if (fill === undefined && stroke === undefined && band === undefined) return null;
+  const { headerFill, ...rest } = data;
+  const nextBand = band === undefined ? headerFill : band;
+  return { ...rest, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}), ...(nextBand != null ? { headerFill: nextBand } : {}) };
 }
 
 const isHeaderRow = (data: Data, owner: ThemedNode): boolean =>
@@ -124,12 +126,12 @@ function rowColor(data: Data, owner: ThemedNode, look: Look): string | undefined
   return look.own.has('fill') || look.own.has('text') ? undefined : look.style.fill;
 }
 
-/** `data`'s header band in `look`'s, or `{}` when the band follows the stroke and should go on doing so. */
-function paintBand(data: Data, look: Look): { headerFill?: Paint } {
+/** `data`'s header band in `look`'s, `null` to drop a band color so the band follows the stroke,
+ *  or `undefined` when nothing changes. */
+function paintBand(data: Data, look: Look): Paint | null | undefined {
   const want = look.style.header;
-  if (want === undefined || traitOf(data)?.header === undefined) return {};
-  const headerFill = recolored(data.headerFill as Paint | undefined, want);
-  return headerFill === undefined ? {} : { headerFill };
+  if (want === undefined || traitOf(data)?.header === undefined) return data.headerFill === undefined ? undefined : null;
+  return recolored(data.headerFill as Paint | undefined, want);
 }
 
 /** The key on a text row's `data` holding the size a theme step took it to below 1, where it is
