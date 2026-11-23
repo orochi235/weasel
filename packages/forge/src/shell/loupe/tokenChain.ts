@@ -249,6 +249,27 @@ function revisionOf(doc: Document): number {
   return r.n;
 }
 
+let lastId = 0;
+const idOf = createPart((_o: object) => ++lastId);
+
+/** Which sheets apply, and each one's rules as objects at its ends and as a count: what a CSSOM edit (`insertRule`,
+ *  `deleteRule`, `replace`, a sheet adopted, disabled or swapped) changes without touching the DOM. */
+function sheetShape(doc: Document): string {
+  let out = '';
+  for (const sheet of sheetsOf(doc)) {
+    let rules: CSSRuleList | null = null;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      // A cross-origin sheet's rules cannot be read, and so cannot change what the chain reads.
+    }
+    const first = rules?.[0];
+    const last = rules?.[rules.length - 1];
+    out += `${idOf(sheet)}:${rules?.length ?? -1}:${first ? idOf(first) : 0}:${last ? idOf(last) : 0},`;
+  }
+  return out;
+}
+
 /** Every attribute of `el` and its ancestors: what a selector can read from the element's own context. */
 function ancestry(el: Element): string {
   let out = '';
@@ -267,11 +288,12 @@ const chains = createPart((_el: Element) => new Map<string, { key: string; chain
  * `var()`. A forge override is a rule like any other. User-agent styles are not modeled: where the user agent sets
  * an element's own color, as for a link or a button, an inherited property's chain is that of the nearest ancestor
  * an author rule declares it on, and empty when none does. Reused while the element's computed value, its and its
- * ancestors' attributes, and the document's stylesheets stand as they were.
+ * ancestors' attributes, and the document's stylesheets stand as they were; an edit to one rule's declarations in
+ * place goes unseen.
  */
 export function tokenChain(at: ColorAt): readonly ChainLink[] {
   const doc = at.element.ownerDocument;
-  const key = `${at.value}|${revisionOf(doc)}|${doc.styleSheets.length}|${doc.adoptedStyleSheets?.length ?? 0}|${ancestry(at.element)}`;
+  const key = `${at.value}|${revisionOf(doc)}|${sheetShape(doc)}|${ancestry(at.element)}`;
   const byProperty = chains(at.element);
   const held = byProperty.get(at.property);
   if (held?.key === key) return held.chain;

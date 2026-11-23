@@ -77,3 +77,22 @@ it('walks again when a style element in the body is rewritten', async () => {
   sheet.textContent = '.x { color: blue; }';
   expect(tokenChain(at)[0]?.declared).toBe('var(--wzl-link)');
 });
+
+it('walks again when a sheet is edited through the CSSOM, with no DOM change and the same color', () => {
+  const style = document.head.appendChild(document.createElement('style'));
+  style.textContent = '.x { color: var(--wzl-accent) }';
+  const sheet = style.sheet as CSSStyleSheet;
+  document.body.innerHTML = '<p class="x">Hi</p>';
+  const p = document.querySelector('.x') as HTMLElement;
+  vi.mocked(cssRulesOf).mockImplementation((s) => s.cssRules);
+  const at = { element: p, property: 'color', value: 'rgb(0, 0, 255)' } as const;
+  expect(tokenChain(at)[0]?.declared).toBe('var(--wzl-accent)');
+  sheet.insertRule('.x { color: var(--wzl-link) }', 1);
+  expect(tokenChain(at)[0]?.declared).toBe('var(--wzl-link)');
+  sheet.deleteRule(1);
+  expect(tokenChain(at)[0]?.declared).toBe('var(--wzl-accent)');
+  // As `replaceSync` does: every rule new, as many as before.
+  sheet.deleteRule(0);
+  sheet.insertRule('.x { color: var(--wzl-ink) }', 0);
+  expect(tokenChain(at)[0]?.declared).toBe('var(--wzl-ink)');
+});
