@@ -105,9 +105,11 @@ describe("synthVoices: 'worklet'", () => {
     const pans = posted('pan');
     expect((pans[1] as { value: number }).value).toBeGreaterThan(0);
     const levels = posted('level') as { value: number; end: number }[];
-    expect(levels[0]).toEqual({ kind: 'level', id: 1, value: 0.25, end: ctx.currentTime + 0.1 });
+    // An explicit pan drops the position's distance gain.
+    expect(levels[0]).toEqual({ kind: 'level', id: 1, value: 1, end: 0 });
+    expect(levels[1]).toEqual({ kind: 'level', id: 1, value: 0.25, end: ctx.currentTime + 0.1 });
     // Moving keeps the ramp running to the same end.
-    expect(levels[1].end).toBeCloseTo(ctx.currentTime + 0.1, 9);
+    expect(levels[2].end).toBeCloseTo(ctx.currentTime + 0.1, 9);
   });
 
   it('reports no lateness for a worklet voice whose pass came late, as it was not', async () => {

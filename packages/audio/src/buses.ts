@@ -52,16 +52,6 @@ interface BusState {
   written: number;
 }
 
-/**
- * The mix graph: one `GainNode` per named bus, all routed to a master that
- * routes to the destination.
- *
- * Gain, mute and solo are three inputs to one output value rather than three
- * things that write the node directly — otherwise unmuting restores the wrong
- * value whenever a solo changed it in between. All three write through
- * `writeParam`, so `rampMs` survives instead of being overwritten by the
- * recomputation that follows it.
- */
 /** Throws unless `names` holds at least one bus and no name twice. */
 export function checkBusNames(names: readonly string[]): void {
   if (names.length === 0) {
@@ -74,6 +64,16 @@ export function checkBusNames(names: readonly string[]): void {
   }
 }
 
+/**
+ * The mix graph: one `GainNode` per named bus, all routed to a master that
+ * routes to the destination.
+ *
+ * Gain, mute and solo are three inputs to one output value rather than three
+ * things that write the node directly — otherwise unmuting restores the wrong
+ * value whenever a solo changed it in between. All three write through
+ * `writeParam`, so `rampMs` survives instead of being overwritten by the
+ * recomputation that follows it.
+ */
 export function createBusGraph(
   ctx: AudioContext,
   names: string[],

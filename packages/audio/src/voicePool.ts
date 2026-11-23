@@ -36,6 +36,13 @@ export interface VoicePool {
   active(): number;
 }
 
+/** Throws unless `limit` is 1 or more. */
+export function checkVoiceLimit(limit: number): void {
+  if (!(limit >= 1)) {
+    throw new RangeError(`@weasel-js/audio: voice pool limit must be at least 1, got ${limit}`);
+  }
+}
+
 /**
  * Slot bookkeeping for concurrent voices, with a steal policy for when the
  * limit is reached.
@@ -45,12 +52,6 @@ export interface VoicePool {
  * `AudioBufferSourceNode` per play, because a source node is single-use by
  * specification and cannot be restarted once stopped.
  */
-export function checkVoiceLimit(limit: number): void {
-  if (!(limit >= 1)) {
-    throw new RangeError(`@weasel-js/audio: voice pool limit must be at least 1, got ${limit}`);
-  }
-}
-
 export function createVoicePool(opts: VoicePoolOptions): VoicePool {
   checkVoiceLimit(opts.limit);
   const steal = opts.steal ?? 'oldest';
