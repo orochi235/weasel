@@ -62,7 +62,8 @@ export function installSelectionStyle(
   if (color !== null) decls.push(`color: ${color};`);
   if (decls.length === 0) return null;
   const el = document.createElement('style');
-  el.textContent = `.${overlayClass}::selection { ${decls.join(' ')} }`;
+  // A run span's text takes its own `::selection`, not the overlay's, where highlights don't inherit.
+  el.textContent = `.${overlayClass}::selection, .${overlayClass} *::selection { ${decls.join(' ')} }`;
   document.head.appendChild(el);
   return el;
 }
