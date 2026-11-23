@@ -54,11 +54,12 @@ const fakeBrowser = (capture = vi.fn(async () => pngNumbered(1))) =>
   ({ capture, close: vi.fn(async () => {}) }) satisfies CaptureBrowser;
 
 describe('urlHost', () => {
-  it('writes a socket address as a URL host: IPv6 bracketed, its zone id escaped as RFC 6874 writes it, IPv4-mapped unwrapped', () => {
+  it('writes a socket address as a URL host: IPv6 bracketed, IPv4-mapped unwrapped, a zoned address as the loopback', () => {
     expect(urlHost('127.0.0.1')).toBe('127.0.0.1');
     expect(urlHost('::1')).toBe('[::1]');
     expect(urlHost('::ffff:10.0.0.5')).toBe('10.0.0.5');
-    expect(urlHost('fe80::1%en0')).toBe('[fe80::1%25en0]');
+    expect(urlHost('fe80::1%en0')).toBe('[::1]');
+    expect(new URL(`http://${urlHost('fe80::1%en0')}:5173/`).port).toBe('5173');
   });
 });
 

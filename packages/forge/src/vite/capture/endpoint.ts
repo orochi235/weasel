@@ -27,10 +27,14 @@ const sortedJson = (value: unknown): string =>
 
 const keyOf = (payload: CapturePayload) => createHash('sha1').update(sortedJson(payload)).digest('hex');
 
-/** A socket address as a URL's host: IPv6 bracketed with its zone id escaped (RFC 6874), IPv4-mapped unwrapped. */
+/**
+ * A socket address as a URL's host: IPv6 bracketed, IPv4-mapped unwrapped. An address with a zone id, which no WHATWG
+ * URL can hold, is the IPv6 loopback, since the capture's Chromium runs beside the server.
+ */
 export const urlHost = (address: string): string => {
+  if (address.includes('%')) return '[::1]';
   const v4 = address.replace(/^::ffff:(?=\d+\.\d+\.\d+\.\d+$)/, '');
-  return v4.includes(':') ? `[${v4.replace('%', '%25')}]` : v4;
+  return v4.includes(':') ? `[${v4}]` : v4;
 };
 
 /**
