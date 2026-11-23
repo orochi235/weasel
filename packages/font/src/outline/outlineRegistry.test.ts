@@ -134,6 +134,26 @@ describe('outline registry', () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
+  it('warns again when a face registered again fails again', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    for (const why of ['first', 'second']) {
+      registerFontOutlines('Broken', {}, () => Promise.reject(new Error(why)), { parser: stubParser });
+      await loadFontOutlines('Broken');
+    }
+    expect(warn.mock.calls.map((c) => String(c[0]).includes('second'))).toEqual([false, true]);
+  });
+
+  it('warns again when a face registered again fails a glyph', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const parser: OutlineParser = () => ({ ...stubFace, glyphD: () => { throw new Error('bad glyf entry'); } });
+    for (let i = 0; i < 2; i++) {
+      registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser });
+      await loadFontOutlines('Fake');
+      glyphOutline('Fake', 400, 'normal', 65);
+    }
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
   it('reads a URL source through fetch', async () => {
     const bytes = new ArrayBuffer(8);
     vi.stubGlobal('fetch', vi.fn(async () => ({

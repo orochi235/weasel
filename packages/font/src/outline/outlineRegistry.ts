@@ -88,6 +88,8 @@ interface FaceSlot extends OutlineFaceInfo {
   /** The source's bytes while a read is in hand, so DOM text asking first and the canvas share one read. Dropped when
    *  the load settles, which hands DOM text its bytes itself, and when the read fails. */
   read: Promise<ArrayBuffer> | null;
+  /** Whether a glyph this face failed to produce has been reported: glyph lookup runs every frame. */
+  glyphWarned: boolean;
 }
 
 const slots = createReflectable<FaceSlot>({ name: 'font outlines' });
@@ -133,6 +135,7 @@ export function registerFontOutlines(
     glyphs: new Map(),
     load: null,
     read: null,
+    glyphWarned: false,
   };
   slots.set(key, slot);
   // Layouts cache which tier each run resolved to and poll `glyphGeneration()`
@@ -209,10 +212,11 @@ export function glyphOutline(
     d = raw === null ? null : closeContours(raw);
   } catch (err) {
     // A parser that throws on one glyph should cost that glyph, not the face.
-    warnOnce(`glyph|${slotKey(family, weight, style)}`,
+    if (!slot.glyphWarned) console.warn(
       `weasel: outline face "${family}" (${weight}/${style}) could not produce a glyph ` +
       `for U+${cp.toString(16).toUpperCase().padStart(4, '0')} — ` +
       `${err instanceof Error ? err.message : String(err)}. Falling back to the SDF tier.`);
+    slot.glyphWarned = true;
   }
   slot.glyphs.set(cp, d);
   return d;
@@ -286,7 +290,8 @@ async function runLoad(slot: FaceSlot): Promise<void> {
     // A layout that found this face still loading deferred its judgment on
     // the family; wake it so it can make one.
     notifyGlyphReady();
-    warnOnce(`load|${slotKey(slot.family, slot.weight, slot.style)}`,
+    // A slot loads once, so this warns once per registration.
+    console.warn(
       `weasel registerFontOutlines("${slot.family}" ${slot.weight}/${slot.style}): ` +
       `${err instanceof Error ? err.message : String(err)}. Text in this face draws from its ` +
       `atlas or canvas face if it has one, and is otherwise set as an unregistered family is.`);
@@ -366,18 +371,7 @@ async function readSource(source: OutlineSource): Promise<ArrayBuffer> {
 /** Bytes from any realm: an iframe's, or Node's beside jsdom's, fail `instanceof ArrayBuffer`. */
 const isArrayBuffer = (x: unknown): x is ArrayBuffer => Object.prototype.toString.call(x) === '[object ArrayBuffer]';
 
-// Loading and glyph lookup both run off the render loop, so an unguarded warn
-// would repeat every frame.
-const warned = new Set<string>();
-
-function warnOnce(key: string, message: string): void {
-  if (warned.has(key)) return;
-  warned.add(key);
-  console.warn(message);
-}
-
-/** @internal Test seam — registry and warn-once keys are module state. */
+/** @internal Test seam — the registry is module state. */
 export function _resetFontOutlinesForTests(): void {
   slots.clear();
-  warned.clear();
 }
