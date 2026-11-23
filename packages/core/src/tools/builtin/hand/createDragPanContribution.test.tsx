@@ -93,6 +93,11 @@ describe('createDragPanContribution', () => {
     const v = dragOnce([createDragPanContribution({ axis: 'x' })]);
     expect([v.x, v.y]).toEqual([-30, 0]);
   });
+
+  it('pans with a modifier held, as the hand tool does', () => {
+    const { view } = drag([createDragPanContribution()], { features: [], shift: true });
+    expect([view.x, view.y]).toEqual([-30, -20]);
+  });
 });
 
 describe('middle-button drag', () => {
