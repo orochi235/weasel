@@ -72,10 +72,13 @@ function invalidateVariants(server: ViteDevServer): void {
  */
 function watchTables(server: ViteDevServer, add: (table: IconTable) => boolean): void {
   const reread = (file: string) => {
-    if (basename(file) !== TABLE || !readdirSync(dirname(file)).some((n) => GEN_FILE.test(n))) return;
+    if (basename(file) !== TABLE) return;
     try {
+      if (!readdirSync(dirname(file)).some((n) => GEN_FILE.test(n))) return;
       if (add(JSON.parse(readFileSync(file, 'utf8')) as IconTable)) invalidateVariants(server);
     } catch (error) {
+      // Removed before the event was handled, as a clean step or a branch switch does.
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
       server.config.logger.warn(`weasel-icons: ${file} was not read: ${(error as Error).message}`);
     }
   };

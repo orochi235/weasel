@@ -182,6 +182,25 @@ describe('weaselIcons in dev', () => {
       await server.close();
     }
   });
+
+  it('passes over a table change whose directory is already gone', async () => {
+    const server = await createServer({
+      root,
+      logLevel: 'silent',
+      configFile: false,
+      appType: 'custom',
+      server: { middlewareMode: true, hmr: false, ws: false },
+      optimizeDeps: { noDiscovery: true, include: [] },
+      resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+      plugins: [weaselIcons.vite({ mode: 'app' })],
+    });
+    try {
+      const gone = join(tmpdir(), 'weasel-icons-gone', String(Date.now()), 'icons.table.json');
+      expect(() => server.watcher.emit('change', gone)).not.toThrow();
+    } finally {
+      await server.close();
+    }
+  });
 });
 
 describe('weaselIcons in dev, as tables change', () => {
