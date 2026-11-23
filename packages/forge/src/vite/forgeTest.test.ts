@@ -25,6 +25,12 @@ export const Named = story({ name: 'With "quotes"', render: () => null });
 `;
 
 describe('forgeTest', () => {
+  it('runs a story file outside the vite root that the story globs name, as forge indexes it', async () => {
+    const file = '/packages/ui/src/Counter.stories.tsx';
+    const code = await transformer({ stories: ['../packages/*/src/**/*.stories.tsx'] })(source, file);
+    expect(code?.match(/__forge_test\(/g)).toHaveLength(2);
+  });
+
   it('appends one test per indexed story, calling runStory on the module itself', async () => {
     const file = `${ROOT}/apps/x/Counter.stories.tsx`;
     const code = await transformer({ stories: ['apps/**/*.stories.tsx'] })(source, file);

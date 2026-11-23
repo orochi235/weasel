@@ -1,9 +1,9 @@
-import { relative, resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
 import type { Plugin } from 'vite';
 import { indexStoryResolved } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
-import { storyGlobOf } from './storyGlob.ts';
+import { isStoryFile } from './storyGlob.ts';
 
 /** Options for the `forgeTest` vite plugin. */
 export interface ForgeTestOptions {
@@ -24,12 +24,7 @@ const TIMEOUT_MS = 15_000;
 export function forgeTest(options: ForgeTestOptions): Plugin[] {
   let root = process.cwd();
 
-  const matches = (id: string): boolean => {
-    if (id.startsWith('\0') || id.includes('?')) return false;
-    const path = relative(root, id).split(sep).join('/');
-    if (path.startsWith('../') || path.split('/').includes('node_modules')) return false;
-    return storyGlobOf(path, options.stories) !== undefined;
-  };
+  const matches = (id: string): boolean => !id.startsWith('\0') && !id.includes('?') && isStoryFile(root, id, options.stories);
 
   return [
     ...(options.storybookShims === false ? [] : [storybookShims()]),

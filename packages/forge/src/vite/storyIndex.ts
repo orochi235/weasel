@@ -1,12 +1,12 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
-import { basename, relative, resolve, sep } from 'node:path';
+import { basename, resolve } from 'node:path';
 import type { Logger } from 'vite';
 import { byComponent } from '../story/indexPages.ts';
 import type { IndexEntry } from '../story/types.ts';
 import type { ResolveImport } from './componentGraph.ts';
 import { foreignCallees } from './indexFile.ts';
 import { indexStory } from './indexStory.ts';
-import { storyGlobOf } from './storyGlob.ts';
+import { isStoryFile } from './storyGlob.ts';
 import { warnShared } from './titleReport.ts';
 import { createWrapperResolver, sameResolution, type WrapperResolution } from './wrappers.ts';
 
@@ -57,10 +57,7 @@ export function createStoryIndex(options: StoryIndexOptions): StoryIndex {
     );
     return [...new Set(files)];
   };
-  const matches = (file: string): boolean => {
-    const path = relative(root(), file).split(sep).join('/');
-    return !path.split('/').includes('node_modules') && storyGlobOf(path, stories) !== undefined;
-  };
+  const matches = (file: string): boolean => isStoryFile(root(), file, stories);
   const read = (file: string) =>
     indexStory(readFileSync(file, 'utf8'), file, { root: root(), stories }, wrappersOf.get(file));
   /** A file that fails to parse stays in the map with no entries, so an edit that fixes it re-indexes it. */
