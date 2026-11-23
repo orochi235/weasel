@@ -91,8 +91,9 @@ function bufferStarter(
 ): Starter {
   return {
     ready() {
-      if (sounds.buffer(sound)) return true;
-      warn.unknownSound(sound.id);
+      // A misspelled `loadAll` key hands over `undefined`.
+      if (sound != null && sounds.buffer(sound)) return true;
+      warn.unknownSound(String(sound?.id ?? sound));
       return false;
     },
     start(voice, when) {

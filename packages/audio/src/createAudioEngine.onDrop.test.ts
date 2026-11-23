@@ -26,6 +26,19 @@ function callbacks() {
 describe('a voice that never played', () => {
   afterEach(() => { vi.restoreAllMocks(); });
 
+  it('reports `unready` and holds nothing for a missing sound handle', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { engine, tick } = engineHarness();
+    await engine.unlock();
+    const cb = callbacks();
+    const voice = engine.play(undefined as never, cb);
+    tick();
+    await endOfTask();
+    expect(cb.onDrop.mock.calls).toEqual([['unready']]);
+    expect(voice.isPlaying()).toBe(false);
+    expect(warn).toHaveBeenCalled();
+  });
+
   it('reports `locked` when the context is not running', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { engine } = engineHarness();
