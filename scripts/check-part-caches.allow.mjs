@@ -62,6 +62,7 @@ export const PART_CACHE_ALLOWED = new Map([
   // ui, labkit, forge, prefs, routing
   ['packages/forge/src/shell/revealTrial.ts', 'replaced with a new timer and deleted when it fires'],
   ['packages/forge/src/timeline/moves.ts', 'set to a speed the caller gives, and read with a fallback'],
+  ['packages/forge/src/vite/warnOnce.ts', 'a part, but plugin source loads before @weasel-js/registry is built, so it cannot import createPart'],
   ['packages/labkit/src/config/compound.ts', 'set when a leaf is built from its node, and read without being made'],
   ['packages/labkit/src/lab/openLab.ts', 'read without being made'],
   ['packages/labkit/src/state/ownUndo.ts', 'read without being made'],
