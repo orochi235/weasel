@@ -3,13 +3,18 @@ import { createFakeAudioContext } from '@weasel-js/audio/testing/fakeAudioContex
 import { act, cleanup, renderHook, waitFor } from '@testing-library/react';
 import { StrictMode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import type { EffectPipeline } from '../types';
+import type { EffectPipeline, EffectRun } from '../types';
 import type { AudioPreview } from './scope';
 import type { LiveAudioRunner } from './liveRunner';
 import { audioStageNodes, type AudioSources, type AudioStageNode } from './nodes';
 import { AUDIO_STAGE_TYPES } from './stageTypes';
 import { useFollowAudioRunner } from './useFollowAudioRunner';
 import { useLiveAudioRunner } from './useLiveAudioRunner';
+
+vi.mock('./scope', () => ({
+  drawScope: () => ({ close: vi.fn() }),
+  drawSpectrum: () => ({ close: vi.fn() }),
+}));
 
 const OSC = AUDIO_STAGE_TYPES.find((t) => t.type === 'audio.oscillator')!;
 const PIPELINE: EffectPipeline = {
@@ -116,6 +121,27 @@ describe('useLiveAudioRunner', () => {
     expect(dispose).toHaveBeenCalledOnce();
     expect(result.current.runner).not.toBeNull();
   });
+  it('closes a replaced runner\'s previews only once a render shows the new runner\'s run', async () => {
+    type Bitmap = { close: ReturnType<typeof vi.fn> };
+    const outOf = (run: EffectRun | undefined) => run?.stages.osc?.previews?.out as unknown as Bitmap | undefined;
+    const seen: { runner: LiveAudioRunner | null; closed: boolean }[] = [];
+    let old: Bitmap | undefined;
+    const { result, rerender } = renderHook(({ engine }: { engine: AudioEngine }) => {
+      const handle = useLiveAudioRunner({ engine, pipeline: PIPELINE, previews: 'scope' });
+      if (old !== undefined) seen.push({ runner: handle.runner, closed: old.close.mock.calls.length > 0 });
+      return handle;
+    }, { initialProps: { engine: fakeEngine() } });
+    await waitFor(() => expect(result.current.runner).not.toBeNull());
+    const first = result.current.runner!;
+    act(() => first.frame());
+    old = outOf(result.current.run)!;
+    expect(old).toBeDefined();
+    rerender({ engine: fakeEngine() });
+    await waitFor(() => expect(result.current.runner).not.toBe(first));
+    expect(seen.find((s) => s.runner !== first)!.closed).toBe(false);
+    expect(old.close).toHaveBeenCalledOnce();
+  });
+
   it('keeps its runner across renders that rebuild equivalent nodes, and remakes it when they change', async () => {
     const engine = fakeEngine();
     const mine: AudioStageNode = { settings: () => ({}), levels: [], build: audioStageNodes['audio.oscillator']!.build };

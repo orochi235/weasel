@@ -18,7 +18,8 @@ export interface LivePreviews {
   /** Notes a run the runner published, so `drawn` can tell which came before it. */
   track(run: EffectRun): void;
   drawn(run: EffectRun | undefined): void;
-  /** Closes every bitmap still held and disposes the taps. */
+  /** Disposes the taps and closes every bitmap held but the newest run's, which a render may still show:
+   *  `drawn` closes those once one no longer does. */
   dispose(): void;
 }
 
@@ -38,6 +39,14 @@ export function createLivePreviews(): LivePreviews {
   const disposeTaps = () => {
     for (const t of taps.values()) t.dispose();
     taps = new Map();
+  };
+
+  const drawn = (run: EffectRun | undefined) => {
+    const at = run === undefined ? published.length : published.indexOf(run);
+    if (at <= 0) return;
+    const keep = new Set(run === undefined ? [] : previewsOf(run));
+    closeBitmaps(published.slice(0, at).flatMap(previewsOf).filter((b) => !keep.has(b)));
+    published = published.slice(at);
   };
 
   return {
@@ -69,17 +78,10 @@ export function createLivePreviews(): LivePreviews {
     track(run) {
       published.push(run);
     },
-    drawn(run) {
-      const at = run === undefined ? published.length : published.indexOf(run);
-      if (at <= 0) return;
-      const keep = new Set(run === undefined ? [] : previewsOf(run));
-      closeBitmaps(published.slice(0, at).flatMap(previewsOf).filter((b) => !keep.has(b)));
-      published = published.slice(at);
-    },
+    drawn,
     dispose() {
       disposeTaps();
-      closeBitmaps(published.flatMap(previewsOf));
-      published = [];
+      drawn(published.at(-1));
     },
   };
 }

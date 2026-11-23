@@ -104,7 +104,7 @@ describe('live runner previews', () => {
     expect(graphs[1]!.taps.map((t) => t.id)).toEqual(['a']);
   });
 
-  it('closes the bitmaps of runs before the drawn one, and every held one on dispose', () => {
+  it('closes the bitmaps of runs before the drawn one, and on dispose every held one but the newest run\'s, until a render drops it', () => {
     const { runner } = setup();
     runner.setPreviews('scope');
     runner.frame();
@@ -120,6 +120,8 @@ describe('live runner previews', () => {
     expect(bitmap(third).close).not.toHaveBeenCalled();
     runner.dispose();
     expect(bitmap(second).close).toHaveBeenCalledOnce();
+    expect(bitmap(third).close).not.toHaveBeenCalled();
+    runner.drawn(undefined);
     expect(bitmap(third).close).toHaveBeenCalledOnce();
   });
 

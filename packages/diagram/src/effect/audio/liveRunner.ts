@@ -39,7 +39,8 @@ export interface LiveAudioRunner {
   /** A fresh graph holding the current plan, not playing: files start again from 0. */
   reset(): void;
   subscribe(listener: () => void): () => void;
-  /** Disposes the graph; the runner does nothing after. The engine is the caller's. */
+  /** Disposes the graph; the runner does nothing after but `drawn`, which closes the bitmaps of the run it
+   *  last published once a render no longer shows it. The engine is the caller's. */
   dispose(): void;
 }
 
