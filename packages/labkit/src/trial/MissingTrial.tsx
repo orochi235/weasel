@@ -7,12 +7,12 @@ import { useLabCommands } from '../lab/LabContext';
  */
 export function MissingTrial({
   id,
-  isLastTrial = false,
+  closeBlocked,
   children,
 }: {
   id: string;
-  /** Whether this is the lab's only trial, which Close keeps, so the button is disabled. */
-  isLastTrial?: boolean;
+  /** Why Close is disabled, where it is: the lab's only trial, or one the lab holds no record of. */
+  closeBlocked?: string;
   children: string;
 }) {
   const lab = useLabCommands();
@@ -22,8 +22,8 @@ export function MissingTrial({
       <Button
         {...CLOSE_BUTTON_PROPS}
         aria-label="Close trial"
-        disabled={isLastTrial}
-        disabledReason="It is the last trial"
+        disabled={closeBlocked !== undefined}
+        disabledReason={closeBlocked}
         onClick={() => lab.closeTrial(id)}
       />
     </div>
