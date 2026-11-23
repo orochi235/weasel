@@ -202,6 +202,41 @@ describe('createLiveAudioRunner', () => {
     expect(warn).toHaveBeenCalledTimes(1);
   });
 
+  it('sends a failed write again on the next edit, and blames its stage until one lands', () => {
+    const { runner, graph } = setup();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    runner.setPipeline(withGain(440));
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'set' && p.id === 'gain') ? new Error('@weasel-js/audio: node "gain" has no param "gain"') : undefined);
+    const halved = (frequency: number): EffectPipeline => {
+      const base = withGain(frequency);
+      return { ...base, stages: base.stages.map((s) => (s.id === 'gain' ? stage('gain', 'audio.gain', { gain: 0.5 }) : s)) };
+    };
+    runner.setPipeline(halved(220));
+    expect(runner.state.run?.stages.gain?.error).toMatch(/no param/);
+    const before = graph.applies.length;
+    runner.setPipeline(halved(330));
+    expect(graph.applies.slice(before).flat()).toContainEqual({ kind: 'set', id: 'gain', param: 'gain', value: 0.5 });
+    expect(runner.state.run?.stages.gain?.error).toMatch(/no param/);
+    graph.failWhen = undefined;
+    runner.setPipeline(halved(330));
+    expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'gain', param: 'gain', value: 0.5 }]);
+    expect(runner.state.run?.stages.gain?.error).toBeUndefined();
+  });
+
+  it('blames a stage a landed edit left broken until a later edit naming it lands', () => {
+    const { runner, graph } = setup();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    graph.landOnFail = true;
+    graph.failWhen = (ps) => (ps.some((p) => p.kind === 'add' && p.id === 'gain') ? new Error('node "gain" failed to start') : undefined);
+    runner.setPipeline(withGain(440));
+    expect(runner.state.run?.stages.gain?.error).toBe('node "gain" failed to start');
+    graph.failWhen = undefined;
+    runner.setPipeline(withGain(220));
+    expect(runner.state.run?.stages.gain?.error).toBe('node "gain" failed to start');
+    runner.setPipeline(osc(220));
+    expect(runner.state.run?.stages.gain?.error).toBeUndefined();
+  });
+
   it('leaves out a node whose build throws, names its stage, and keeps following the rest', () => {
     const { runner, graph } = setup();
     const withReverb = (frequency: number): EffectPipeline => ({
