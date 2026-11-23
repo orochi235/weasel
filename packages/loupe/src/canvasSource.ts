@@ -74,9 +74,9 @@ export interface CanvasSource {
   subscribeFrame(fn: () => void): () => void;
 }
 
-/** A frame read this many times with no capture behind it means the drawing
- *  code is not calling `capture()`. About two seconds of lens frames. */
-const MISSED_FRAMES_BEFORE_WARNING = 120;
+/** Frames read for this long with no capture behind them mean the drawing code is not calling `capture()`. Timed
+ *  rather than counted, since a lens and an eyedropper's hover may both read every frame. */
+const MISSED_MS_BEFORE_WARNING = 2000;
 
 function isWebGL(ctx: SourceContext): ctx is WebGLRenderingContext | WebGL2RenderingContext {
   return 'drawArrays' in ctx;
@@ -122,7 +122,7 @@ export function createCanvasSource(
   let readers = 0;
   let snapshot: SourceCanvas | null = null;
   let current = false;
-  let missed = 0;
+  let missedSince: number | null = null;
   let warned = false;
   let unheldWarned = false;
   let probe: Ctx2D | null = null;
@@ -140,7 +140,7 @@ export function createCanvasSource(
       if (readers === 0) return;
       const { width, height } = canvas;
       if (width === 0 || height === 0) {
-        missed = 0;
+        missedSince = null;
         // The canvas shows nothing now; the last copy is of a picture that has gone.
         if (current) {
           current = false;
@@ -158,7 +158,7 @@ export function createCanvasSource(
       ctx.globalCompositeOperation = 'copy';
       ctx.drawImage(canvas, 0, 0);
       current = true;
-      missed = 0;
+      missedSince = null;
       frames.emit();
     },
 
@@ -176,7 +176,9 @@ export function createCanvasSource(
         }
         return null;
       }
-      if (!warned && ++missed >= MISSED_FRAMES_BEFORE_WARNING) {
+      const now = performance.now();
+      missedSince ??= now;
+      if (!warned && now - missedSince >= MISSED_MS_BEFORE_WARNING) {
         warned = true;
         console.warn(
           '[weasel loupe] A WebGL canvas without preserveDrawingBuffer is being read, ' +
@@ -209,6 +211,7 @@ export function createCanvasSource(
       if (readers === 1 && captured) {
         // Whatever was copied before the last reader left may be long stale.
         current = false;
+        missedSince = null;
         options.requestRedraw?.();
       }
       let held = true;

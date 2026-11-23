@@ -136,12 +136,30 @@ describe('createCanvasSource', () => {
     expect(fn).toHaveBeenCalledTimes(1);
   });
 
-  it('warns once when a captured source is read and never captured', () => {
+  it('warns once when a captured source is read for two seconds and never captured', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(1000);
     const s = createCanvasSource(gl(false));
     s.retain();
     for (let i = 0; i < 500; i++) s.frame();
+    expect(warn).not.toHaveBeenCalled();
+    clock.mockReturnValue(3000);
+    for (let i = 0; i < 5; i++) s.frame();
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('starts the missed-capture wait over when a capture lands', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const clock = vi.spyOn(performance, 'now').mockReturnValue(0);
+    const s = createCanvasSource(gl(false));
+    s.retain();
+    s.frame();
+    clock.mockReturnValue(1500);
+    s.capture();
+    s.retain()();
+    clock.mockReturnValue(2500);
+    s.frame();
+    expect(warn).not.toHaveBeenCalled();
   });
 
   it('answers no frame once its last reader lets go, and drops the copy', () => {
