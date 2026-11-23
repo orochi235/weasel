@@ -11,7 +11,7 @@ import { pastDragThreshold } from '../ui/dragThreshold';
 import { composeClick, type ClickMemory, type ClickObserver, type ReleaseOutcome } from './click';
 import { createLongPressHold, type HeldPress, type RecognizerClock } from './longPressHold';
 import {
-  createMultiTouchEpisode, multiTouchGeometry, type MultiTouchEpisode, type MultiTouchGeometry, type Point,
+  createMultiTouchEpisode, multiTouchGeometry, type EpisodeFinger, type MultiTouchEpisode, type MultiTouchGeometry, type Point,
 } from './multiTouch';
 import { longPressEvents, type PressFacts } from './pressFacts';
 import {
@@ -89,6 +89,7 @@ interface Held {
    *  forwarded, spent by a long-press, or claimed by multitouch. */
   buffered: InputEvent | null;
   down: PressFacts;
+  pressedAt: number;
   /** A finger, the only pointer a multitouch gesture counts. */
   touch: boolean;
   /** Set on a pointer that armed a long-press, for as long as it is held. */
@@ -117,6 +118,10 @@ const fingersOf = (held: ReadonlyMap<number, Held>): Map<number, Held> => new Ma
 
 const positionsOf = (held: ReadonlyMap<number, Held>): Map<number, Point> =>
   new Map([...held].map(([id, p]) => [id, p.pos]));
+
+/** The hand as a multitouch episode reads it, before its presses are spent. */
+const episodeFingers = (hand: ReadonlyMap<number, Held>): Map<number, EpisodeFinger> =>
+  new Map([...hand].map(([id, p]) => [id, { pos: p.pos, pressedAt: p.pressedAt, fresh: p.buffered !== null }]));
 
 /** The held pointers' geometry, with the centroid in surface space. */
 function heldGeometry(held: ReadonlyMap<number, Held>, toSurface: (client: Point) => Point): MultiTouchGeometry {
@@ -207,8 +212,8 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
   const claimForMultiTouch = (s: PointerSample): void => {
     const hand = fingers();
     for (const id of hand.keys()) hold.cancel(id);
+    touches.join(episodeFingers(hand));
     spendPresses(hand, clicks);
-    touches.join(positionsOf(hand), happenedAt(s));
     sink.dispatch(multiTouchEvent(hand.size, s, geometry()));
   };
 
@@ -219,7 +224,8 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       const ev = pointerDownEvent(s);
       const button = s.pointerButton ?? 'primary';
       const rec: Held = {
-        pos: { x: s.clientX, y: s.clientY }, buffered: ev, down: pressFactsOf(s), touch: s.pointerType === 'touch', button,
+        pos: { x: s.clientX, y: s.clientY }, buffered: ev, down: pressFactsOf(s), pressedAt: happenedAt(s),
+        touch: s.pointerType === 'touch', button,
       };
       held.set(s.pointerId, rec);
       if (button !== 'primary') return;
