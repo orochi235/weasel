@@ -47,7 +47,7 @@ export interface UsePointerStylusOptions {
  * `maxFps: Infinity` to get every sample.
  */
 export function usePointerStylus(
-  target?: RefObject<HTMLElement | null> | HTMLElement | null,
+  target?: RefObject<Element | null> | Element | null,
   options: UsePointerStylusOptions = {},
 ): PointerStylusState {
   const { maxFps = 60, stylusOnly = false } = options;
@@ -62,7 +62,8 @@ export function usePointerStylus(
   const bound = useRef<{ el: EventTarget; off: () => void } | null>(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps -- binds listeners, sets no state itself; runs per commit by design
   useEffect(() => {
-    const el: EventTarget | null = target == null ? window : target instanceof HTMLElement ? target : target.current;
+    // A ref by its shape: `instanceof` misses an element from another window, such as a popout's.
+    const el: EventTarget | null = target == null ? window : 'current' in target ? target.current : target;
     if (bound.current?.el === el) return;
     bound.current?.off();
     bound.current = el ? { el, off: listen(el, setState, lastCommit, optsRef) } : null;
