@@ -42,6 +42,9 @@ function balanced(text: string): boolean {
   return depth === 0 && !/[~[{"]|<(?!\w)|>(?=\w)/.test(text);
 }
 
+/** A body line the reader takes as an annotation rather than a member. */
+const ANNOTATION = /^<<\s*.+?\s*>>$/s;
+
 /** The ids the reader takes for a class and a namespace, less any holding `--`, which reads as a line. */
 const CLASS_ID = /^(?!.*--)[\w-]+$/;
 const NAMESPACE_ID = /^(?!.*--)[\w.-]+$/;
@@ -80,8 +83,8 @@ class ClassWriter {
       : generic !== null && generic[1] === id && balanced(generic[2]!) ? `${id}~${generic[2]!.replace(/[<>]/g, '~')}~`
         : `${id}["${spelled(name)}"]`;
     const members = [...attributes, ...methods].map((m) => oneLine(m, 'class diagram member', (w) => this.out.warnings.add(w)).trim());
-    const kept = members.filter((m) => m !== '}' && readsAsStatement(m));
-    if (kept.length < members.length) this.out.warnings.add('Mermaid class members are lines of text; blank ones, and ones it reads as comments or a closing brace, were dropped.');
+    const kept = members.filter((m) => m !== '}' && readsAsStatement(m) && !ANNOTATION.test(m));
+    if (kept.length < members.length) this.out.warnings.add('Mermaid class members are lines of text; blank ones, and ones it reads as comments, a closing brace, or an annotation, were dropped.');
     const body = [...annotations.map((a) => `<<${a}>>`), ...kept];
     if (body.length === 0) {
       this.lines.push(`${indent}class ${head}`);

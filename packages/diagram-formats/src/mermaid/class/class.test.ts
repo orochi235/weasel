@@ -180,4 +180,10 @@ describe('writing a class box Mermaid would read back otherwise', () => {
     }
   });
 
+  it('drops a member row Mermaid reads as an annotation, with a warning', () => {
+    const { text, warnings } = writeClassDiagram(boxed([{ kind: 'label', text: 'Foo' }, { kind: 'divider' }, { kind: 'label', text: '<<x>>' }, { kind: 'label', text: 'y' }]));
+    expect(classParts(onlyPage(readClassDiagram(text).document).data.nodes[0]!).annotations).toEqual([]);
+    expect(warnings).toContain('Mermaid class members are lines of text; blank ones, and ones it reads as comments, a closing brace, or an annotation, were dropped.');
+  });
+
 });
