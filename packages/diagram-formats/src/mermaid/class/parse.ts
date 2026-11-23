@@ -35,7 +35,7 @@ export interface ClassDiagram {
 const ID = String.raw`([\w-]+)(?:~[^\s"]*?~)?`;
 const CLASS = /^class\s+([\w-]+)(?:~([^[{"]*?)~)?(?:\s*\[\s*"([^"]*)"\s*\])?(?::::([\w-]+))?\s*(\{.*)?$/s;
 const RELATION = new RegExp(
-  `^${ID}(?:\\s+"([^"]*)")?\\s*(<\\||\\*|o|<)?(--|\\.\\.)(\\|>|\\*|o|>)?\\s*(?:"([^"]*)"\\s*)?${ID}(?:\\s*:\\s*(.*))?$`, 's',
+  `^${ID}(?:\\s+"([^"]*)")?\\s*(<\\||\\*|o|<)?(--|\\.\\.)(\\|>|\\*|o(?![\\w-])|>)?\\s*(?:"([^"]*)"\\s*)?${ID}(?:\\s*:\\s*(.*))?$`, 's',
 );
 type HeadToken = '<|' | '|>' | '*' | 'o' | '<' | '>';
 const HEADS: Readonly<Record<HeadToken, ClassHead>> = { '<|': 'triangle', '|>': 'triangle', '*': 'diamond', o: 'hollow-diamond', '<': 'arrow', '>': 'arrow' };

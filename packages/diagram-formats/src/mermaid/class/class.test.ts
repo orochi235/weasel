@@ -51,6 +51,13 @@ describe('reading a Mermaid class diagram', () => {
     expect(edge('classDiagram\nA --|> B', 'A', 'B').colors).toEqual({ markerEnd: 'triangle-hollow' });
   });
 
+  it('reads an o right after a relation\'s line as the start of the id it begins, not as a head', () => {
+    expect(edge('classDiagram\na --obj', 'a', 'obj').colors).toEqual({ markerEnd: null });
+    expect(edge('classDiagram\na ..obj', 'a', 'obj').colors).toEqual({ dash: [4, 4], markerEnd: null });
+    expect(edge('classDiagram\na --o b', 'a', 'b').colors).toEqual({ markerEnd: 'diamond-hollow' });
+    expect(edge('classDiagram\na --o"1" b', 'a', 'b').colors).toEqual({ markerEnd: 'diamond-hollow' });
+  });
+
   it('reads namespaces as containers, notes as note shapes, and styles as colors', () => {
     const p = page(SHOP);
     expect(p.data.containers).toEqual([{ id: 'billing', role: 'container', label: 'billing', members: ['Invoice', 'Payment'] }]);
