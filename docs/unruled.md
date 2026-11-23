@@ -3981,3 +3981,9 @@ Calls the lanes made without a ruling:
   (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
   spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
   sent the title to the file's auto title in the common case, where the spread carries no title.
+
+## Audit round seventy-eight (2026-11-23): renderer, part two
+
+- 2026-11-23 (the fixer's call): text with no pose maps a `'bounds'` paint onto a box at its `x` and `y`, as wide as
+  its `width`, else a finite `maxWidth`, else its laid-out text, and as tall as its `height`, else its laid-out text.
+  Placing such a paint at the text's origin with no size, as `'local'`, was the alternative.
