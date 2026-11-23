@@ -26,10 +26,13 @@ export function layerEntries(layer: LayerId, def: ThemeDefinition, result: Deriv
       return [{ name: `seeds.${name}`, type: inferTokenType(seedText(leaf)), group: 'seeds', value: seedText(leaf) }];
     });
   }
+  // Components come from the whole chain, as the Ramps layer's ramps do, so an inherited one inspect jumps to is listed.
   const names =
     layer === 'pins'
       ? Object.keys(def.pins ?? {}).filter((n) => pinApplies(result, n))
-      : ownTokenNames(def, merged).filter((n) => getOwn(result.provenance, n)?.layer === layer);
+      : (layer === 'components' ? Object.keys(merged.components ?? {}) : ownTokenNames(def, merged)).filter(
+          (n) => getOwn(result.provenance, n)?.layer === layer,
+        );
   return names.flatMap((name) => {
     const token = getOwn(result.tokens, name);
     if (!token) return [];
