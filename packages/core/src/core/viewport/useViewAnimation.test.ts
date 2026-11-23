@@ -199,6 +199,22 @@ describe('useViewAnimation', () => {
     expect(current()).toEqual(HOME);
   });
 
+  it('animateToBounds into a viewport with no area moves nothing and calls onDone', () => {
+    const clock = makeClock();
+    const { channel, current } = makeChannel(HOME);
+    const { result } = mount(channel, clock);
+    const onDone = vi.fn();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    let fitted = false;
+    act(() => {
+      fitted = result.current.animateToBounds({ x: 0, y: 0, width: 200, height: 100 }, { width: 0, height: 300 }, { onDone });
+    });
+    warn.mockRestore();
+    expect(fitted).toBe(true);
+    expect(onDone).toHaveBeenCalledTimes(1);
+    expect(current()).toEqual(HOME);
+  });
+
   it('does not strand a second runner sharing one animator', () => {
     const clock = makeClock();
     const a = makeChannel(HOME);
