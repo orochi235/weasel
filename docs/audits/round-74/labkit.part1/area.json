@@ -1,0 +1,92 @@
+{
+ "id": "labkit.part1",
+ "commit": "eb825dfd75133fc3ebe9452e9de8157d96ee73d3",
+ "date": "2026-11-22",
+ "files": [
+  "packages/labkit/src/actionParamSchema.ts",
+  "packages/labkit/src/dragdrop/DragDropRuntime.tsx",
+  "packages/labkit/src/dragdrop/DragGhost.less",
+  "packages/labkit/src/dragdrop/DragGhost.tsx",
+  "packages/labkit/src/dragdrop/Palette.less",
+  "packages/labkit/src/dragdrop/Palette.tsx",
+  "packages/labkit/src/dragdrop/feedbackLayer.ts",
+  "packages/labkit/src/dragdrop/index.ts",
+  "packages/labkit/src/fontCascade.fixtures.tsx",
+  "packages/labkit/src/frames.stories.less",
+  "packages/labkit/src/icons.gen.ts",
+  "packages/labkit/src/index.ts",
+  "packages/labkit/src/instrument/defineInstrument.ts",
+  "packages/labkit/src/instrument/serializers.ts",
+  "packages/labkit/src/instrument/types.ts",
+  "packages/labkit/src/instrument/undo.ts",
+  "packages/labkit/src/job/index.ts",
+  "packages/labkit/src/job/types.ts",
+  "packages/labkit/src/job/useJob.ts",
+  "packages/labkit/src/kitSettings.ts",
+  "packages/labkit/src/layers/index.ts",
+  "packages/labkit/src/lightbox/Lightbox.less",
+  "packages/labkit/src/lightbox/Lightbox.tsx",
+  "packages/labkit/src/lightbox/LightboxContext.ts",
+  "packages/labkit/src/lightbox/LightboxLayers.tsx",
+  "packages/labkit/src/lightbox/index.ts",
+  "packages/labkit/src/lightbox/modal.ts",
+  "packages/labkit/src/lightbox/useLightboxModal.ts",
+  "packages/labkit/src/lightbox/useLightboxState.ts",
+  "packages/labkit/src/overview/OverviewMarks.tsx",
+  "packages/labkit/src/overview/TrialOverview.less",
+  "packages/labkit/src/overview/TrialOverview.stories.tsx"
+ ],
+ "a": 1,
+ "b": 2,
+ "m": 1,
+ "distinct": 2,
+ "chapman": 2,
+ "unfound": 0,
+ "read": {
+  "A": 32,
+  "B": 32
+ },
+ "newCode": {
+  "since": 73,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 73,
+  "chapman": 14.545454545454547,
+  "unfound": 4.848484848484849
+ },
+ "patches": 2,
+ "verify": {
+  "ok": true,
+  "files": 9,
+  "testFiles": {
+   "failed": 0,
+   "passed": 465,
+   "total": 465
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 2,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2,
+   "B": 8.5,
+   "match": 0.1,
+   "fix": 14.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 841111,
+  "costUsd": 2.55
+ },
+ "fixCommits": [
+  "48281a6a2ca81bbc02bdcbb3bbc588cac630c760",
+  "800d08c3436f1d4cce84055c5ae5f3fc880016de"
+ ]
+}

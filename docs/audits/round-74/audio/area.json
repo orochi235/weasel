@@ -1,0 +1,114 @@
+{
+ "id": "audio",
+ "commit": "eb825dfd75133fc3ebe9452e9de8157d96ee73d3",
+ "date": "2026-11-22",
+ "files": [
+  "packages/audio/src/analyser.ts",
+  "packages/audio/src/audioTime.ts",
+  "packages/audio/src/biquad.ts",
+  "packages/audio/src/buses.ts",
+  "packages/audio/src/createAudioEngine.ts",
+  "packages/audio/src/effects.ts",
+  "packages/audio/src/envelope.ts",
+  "packages/audio/src/impulse.ts",
+  "packages/audio/src/index.ts",
+  "packages/audio/src/insertPlan.ts",
+  "packages/audio/src/insertPump.ts",
+  "packages/audio/src/insertRoute.ts",
+  "packages/audio/src/insertSlot.ts",
+  "packages/audio/src/inserts.ts",
+  "packages/audio/src/lerp.ts",
+  "packages/audio/src/liveVoice.ts",
+  "packages/audio/src/oscillator.ts",
+  "packages/audio/src/param.ts",
+  "packages/audio/src/patchCheck.ts",
+  "packages/audio/src/patternLoad.ts",
+  "packages/audio/src/patternPlayer.ts",
+  "packages/audio/src/pbt.fixture.ts",
+  "packages/audio/src/periodicWave.ts",
+  "packages/audio/src/pitch.ts",
+  "packages/audio/src/resumeWatch.ts",
+  "packages/audio/src/scheduler.ts",
+  "packages/audio/src/score.ts",
+  "packages/audio/src/scoreBar.ts",
+  "packages/audio/src/scoreMood.ts",
+  "packages/audio/src/soundCache.ts",
+  "packages/audio/src/spatialize.ts",
+  "packages/audio/src/streamStarter.ts",
+  "packages/audio/src/synthStarters.ts",
+  "packages/audio/src/synthVoice.ts",
+  "packages/audio/src/tickTimer.ts",
+  "packages/audio/src/types.ts",
+  "packages/audio/src/voiceChains.ts",
+  "packages/audio/src/voiceDrops.ts",
+  "packages/audio/src/voiceKernel.ts",
+  "packages/audio/src/voicePool.ts",
+  "packages/audio/src/voices.ts",
+  "packages/audio/src/worklet/loadVoiceProcessor.ts",
+  "packages/audio/src/worklet/protocol.ts",
+  "packages/audio/src/worklet/voiceMixer.ts",
+  "packages/audio/src/worklet/voiceProcessor.gen.ts",
+  "packages/audio/src/worklet/voiceProcessor.ts",
+  "packages/audio/src/worklet/workletVoices.ts"
+ ],
+ "a": 5,
+ "b": 6,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 13,
+ "unfound": 4,
+ "read": {
+  "A": 47,
+  "B": 47
+ },
+ "newCode": {
+  "since": 73,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 73,
+  "chapman": 23,
+  "unfound": 10
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 28,
+  "testFiles": {
+   "failed": 0,
+   "passed": 135,
+   "total": 135
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5,
+   "B": 8.8,
+   "match": 0.2,
+   "fix": 20.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1782445,
+  "costUsd": 5.51
+ },
+ "fixCommits": [
+  "46741b9652bd0cf54f1a6e26ff4c62f6ea830888",
+  "7bd7e5c1aea15f8eb368abf1b0eded348160dd03",
+  "20d4a2ae0f25e0b332310136e24f130308026adf",
+  "e7f64bc547b33d36a4bf30c719c3f60072006298",
+  "c8e226466b75ad004392bebeb8687b04bdc6ddeb",
+  "3df9ccba6d64db19d798cfef62aa39d8dbc08e91",
+  "2925ec36738d1ced7479986e613e5a9c522be020",
+  "53a9524a5b50fbe0f2716d7cf5252c3b1be109ca",
+  "e1a1403681fdf3e3fddbce18fb0ba5bc404cd0ad"
+ ]
+}

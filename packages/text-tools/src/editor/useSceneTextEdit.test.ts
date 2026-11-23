@@ -567,18 +567,18 @@ describe('useSceneTextEdit — one undo step per edit', () => {
     document.body.innerHTML = '';
   });
 
-  const ITALIC = {
+  const UNDERLINED = {
     id: 'a', x: 0, y: 0, width: 200, height: 40,
     text: 'one two',
-    style: { fontSize: 16, fontStyle: 'italic' as const },
-    runs: [{ text: 'one two' }] as { text: string; italic?: boolean; bold?: boolean }[],
+    style: { fontSize: 16, underline: true },
+    runs: [{ text: 'one two' }] as { text: string; underline?: boolean; bold?: boolean }[],
   };
 
   function mount(escape?: 'cancel' | 'commit') {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const hook = renderHook(() => {
-      const scene = useScene({ items: [ITALIC] });
+      const scene = useScene({ items: [UNDERLINED] });
       return { scene, edit: useSceneTextEdit(scene, container, { escape }) };
     });
     act(() => hook.result.current.edit.startEdit('a'));
@@ -605,17 +605,17 @@ describe('useSceneTextEdit — one undo step per edit', () => {
 
   it('undoes text, runs, and a rewritten node style together', async () => {
     const { hook, overlay } = mount();
-    await press(overlay, 'i', [4, 7]);
+    await press(overlay, 'u', [4, 7]);
     act(() => hook.result.current.edit.commitEdit());
     const { scene } = hook.result.current;
     const after = scene.get(asNodeId('a'))!.data;
-    expect(after.style).toEqual({ fontSize: 16, fontStyle: 'normal' });
-    expect(after.runs).toEqual([{ text: 'one ', italic: true }, { text: 'two' }]);
+    expect(after.style).toEqual({ fontSize: 16 });
+    expect(after.runs).toEqual([{ text: 'one ', underline: true }, { text: 'two' }]);
 
     act(() => { scene.undo(); });
     const back = hook.result.current.scene.get(asNodeId('a'))!.data;
-    expect(back.style).toEqual(ITALIC.style);
-    expect(back.runs).toEqual(ITALIC.runs);
+    expect(back.style).toEqual(UNDERLINED.style);
+    expect(back.runs).toEqual(UNDERLINED.runs);
     expect(hook.result.current.scene.canUndo()).toBe(false);
   });
 
@@ -630,17 +630,17 @@ describe('useSceneTextEdit — one undo step per edit', () => {
     act(() => { scene.undo(); });
     const back = hook.result.current.scene.get(asNodeId('a'))!.data;
     expect(back.text).toBe('one two');
-    expect(back.runs).toEqual(ITALIC.runs);
+    expect(back.runs).toEqual(UNDERLINED.runs);
     expect(hook.result.current.scene.canUndo()).toBe(false);
   });
 
   it('leaves the node alone when Escape cancels after a node flag was lowered', async () => {
     const { hook, overlay } = mount('cancel');
-    await press(overlay, 'i', [4, 7]);
+    await press(overlay, 'u', [4, 7]);
     await press(overlay, 'Escape');
     const { scene, edit } = hook.result.current;
     expect(edit.editingId).toBeNull();
-    expect(scene.get(asNodeId('a'))!.data.style).toEqual(ITALIC.style);
+    expect(scene.get(asNodeId('a'))!.data.style).toEqual(UNDERLINED.style);
     expect(scene.canUndo()).toBe(false);
   });
 });

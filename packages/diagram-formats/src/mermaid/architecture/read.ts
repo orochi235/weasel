@@ -95,13 +95,19 @@ class ArchReader {
 }
 
 /** Reads a Mermaid architecture diagram into a one-page document of `notation` `'architecture'`. Throws, naming the
- *  line, on text that is not one, on a name no group holds, or on a name given twice. */
+ *  line, on text that is not one, on a name no group holds, on a name given twice, or on a group inside itself. */
 export function readArchitecture(text: string): ImportResult {
   const { source, stmts } = parseArchitecture(text);
   const r = new ArchReader();
   r.read(stmts);
   for (const s of stmts) {
     if (s.kind !== 'edge' && s.in !== undefined && !r.groups.has(s.in)) throw lineError('Mermaid', s.line, `no group is named "${s.in}"`);
+  }
+  for (const s of stmts) {
+    if (s.kind !== 'group') continue;
+    for (let up = s.in; up !== undefined; up = r.parent.get(up)) {
+      if (up === s.id) throw lineError('Mermaid', s.line, `group "${s.id}" would hold itself`);
+    }
   }
   const containers: DataContainer[] = [...r.groups].map(([id, title]) => {
     const members = r.order.filter((m) => r.parent.get(m) === id);

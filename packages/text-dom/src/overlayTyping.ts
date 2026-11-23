@@ -121,17 +121,18 @@ export function typingHandlers(overlay: HTMLElement, host: TypingHost): {
     const caret = sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
     if (caret && namesItsRange(ie, caret)) return;
 
-    // A browser types into the text node holding the caret, which is the run `runStyleAt` names. Anywhere else
-    // it would pick a span of its own, so the character is written through the runs: under an armed style, and at
-    // a caret between two run spans or in an overlay with no text yet, where it takes the run before it, as the
-    // caret's `rangeStyle` reports. Rebuilt from the runs rather than spliced into the DOM: `insertNode` inside a
+    // A browser types into the text node holding the caret, which is the run `runStyleAt` names unless the caret
+    // opens that node after earlier text. Anywhere else it would pick a span of its own, so the character is written
+    // through the runs: under an armed style, and at a caret between two run spans, at the start of a later run's
+    // text, or in an overlay with no text yet, where it takes the run before it, as the caret's `rangeStyle` reports. Rebuilt from the runs rather than spliced into the DOM: `insertNode` inside a
     // run span nests a new span within it, and `domToRuns` reads styling down the ancestor chain.
     const pending = host.pending();
     const armed = Object.keys(pending).length > 0;
-    if (!armed && (!caret || !caret.collapsed || caret.startContainer.nodeType === Node.TEXT_NODE)) return;
-    if (!armed && !overlay.contains(caret!.startContainer)) return;
+    if (!armed && (!caret || !caret.collapsed || !overlay.contains(caret.startContainer))) return;
+    const inText = !armed && caret!.startContainer.nodeType === Node.TEXT_NODE;
+    if (inText && caret!.startOffset > 0) return;
     const at = readSelectionOffsets(overlay) ?? host.lastRange();
-    if (!at || at.start !== at.end) return;
+    if (!at || at.start !== at.end || (inText && at.start === 0)) return;
     ie.preventDefault();
     const runs = domToRuns(overlay);
     const next = replaceRunRange(runs, at.start, at.start, styledForRange([{ text: ie.data }], runs, at, pending));

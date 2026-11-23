@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   3,
+   1
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "a": [
+  "A sound handle from one engine plays a different engine's sound instead of being dropped",
+  "A non-looping pattern player's `stop()` does nothing once its last step has passed, leaving its voices sounding",
+  "`engine.stream` stops the earlier stream even when the new one is then dropped as it starts",
+  "An insert crossfade interrupted by an OS `interrupted` state is cut short instead of waiting",
+  "The voice kernel's noise-loop cache is keyed by sample rate and never evicted"
+ ],
+ "b": [
+  "afterRamp's cancel does not cancel when it is armed while the context is suspended",
+  "afterRamp ends a ramp at once when the context is 'interrupted' rather than 'suspended'",
+  "setTempo from a scheduler callback in the same batch as the player's next step doubles the step chain",
+  "A sound handle that is undefined/null leaks a live voice instead of dropping it",
+  "A fractional voiceLimit admits one voice more than the limit",
+  "The kernel's noise-loop cache grows without bound across sample rates"
+ ]
+}

@@ -196,13 +196,15 @@ export interface LayerCapability {
 
 /** Declares that an instrument accepts items dragged from a palette: what the
  *  palette offers, what a drop does to the state, and — optionally — live
- *  feedback during the drag and the ability to drag existing items back out. */
+ *  feedback during the drag. */
 export interface DragDropCapability<TS = unknown, TC = unknown> {
   palette: PaletteItem[] | ((state: TS, config: TC) => PaletteItem[]);
   onDrop: (worldPos: Point, item: PaletteItem, state: TS, config: TC) => TS;
   /** Whether a drop here would be accepted, drawn as the drag's feedback ring. Asked again at the release:
    *  an answer of `ok: false` there drops nothing, so `onDrop` need not repeat the check. */
   onDragOver?: (worldPos: Point, item: PaletteItem, state: TS, config: TC) => DragFeedback | null;
+  /** Not called yet: a trial whose instrument declares it warns in development, and a press on a placed item
+   *  does nothing. */
   pickUp?: (hit: HitResult, state: TS, config: TC) => { item: PaletteItem; state: TS } | null;
 }
 

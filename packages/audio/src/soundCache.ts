@@ -12,6 +12,9 @@ export interface SoundCache {
   buffer(handle: SoundHandle): AudioBuffer | null;
 }
 
+// Shared by every cache, so a handle names one buffer on the page and another engine's cache never answers it.
+let counter = 0;
+
 /** Create a cache that decodes through `ctx`. `load` fetches with `fetchFn`,
  *  returns the existing handle for a url already loaded, and shares one fetch
  *  between concurrent loads of it; a failed load is not cached. */
@@ -19,7 +22,6 @@ export function createSoundCache(
   ctx: AudioContext,
   fetchFn: typeof fetch = fetch,
 ): SoundCache {
-  let counter = 0;
   const buffers = new Map<string, AudioBuffer>();
   const byUrl = new Map<string, SoundHandle>();
   // In-flight loads, so two concurrent `load` calls for one url share a fetch.

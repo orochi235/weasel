@@ -47,25 +47,29 @@ export function atAudioTime(
   };
 }
 
-/** {@link atAudioTime} for the end of a ramp, except that a suspension waits for the resume rather than ending it:
- *  cut mid-ramp, what the ramp leads into carries on from halfway once the clock runs again, the click it avoids. */
+/** {@link atAudioTime} for the end of a ramp, except that a stopped clock (suspended, or interrupted by the OS) waits for
+ *  it to run again rather than ending it: cut mid-ramp, what the ramp leads into carries on from halfway once the clock
+ *  runs again, the click it avoids. Only a close ends the wait early. */
 export function afterRamp(ctx: BaseAudioContext, timers: Timers, at: number, cb: () => void): () => void {
-  let cancel: () => void = () => {};
+  const stopped = (): boolean => ctx.state !== 'running' && ctx.state !== 'closed';
+  let stopTimer: () => void = () => {};
   const onState = (): void => {
-    if (ctx.state === 'suspended') return;
+    if (stopped()) return;
     ctx.removeEventListener('statechange', onState);
     arm();
   };
   const arm = (): void => {
-    cancel = atAudioTime(ctx, timers, at, () => {
-      if (ctx.state !== 'suspended' || ctx.currentTime >= at) {
+    stopTimer = atAudioTime(ctx, timers, at, () => {
+      if (!stopped() || ctx.currentTime >= at) {
         cb();
         return;
       }
       ctx.addEventListener('statechange', onState);
-      cancel = () => { ctx.removeEventListener('statechange', onState); };
     });
   };
   arm();
-  return () => { cancel(); };
+  return () => {
+    stopTimer();
+    ctx.removeEventListener('statechange', onState);
+  };
 }

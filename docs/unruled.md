@@ -414,6 +414,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-22 (the fixer's call, audit round 70): a paint action is disabled with `Locked` while any node it would
   paint, named by `ids` or selected, is locked, and its run writes nothing, after the 2026-11-09 ruling for Ungroup,
   Delete, and Cut. It does not paint the unlocked nodes and skip the locked ones.
+- 2026-11-22 (the fixer's call, audit round 74): the quantize pass leaves a locked node's stored pose and data as
+  they are, as diagram's passes leave a locked connector's route: a grid change snaps every other node and no longer
+  throws, and a write made inside `scene.unlocked` is not snapped either. The node snaps on its next edit once unlocked.
 - 2026-11-22 (the fixer's call, audit round 70): Group is disabled with `Locked` while a member, the container it
   would land in, or a node it would move as a follower is locked, as Ungroup is. It used to throw from the scene.
 - Ruled 2026-11-10 (my call, overnight sweep): a reorder that would shift a locked node's place in the stack
@@ -3887,3 +3890,29 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a lightbox opened inside another, sharing its `<LightboxLayers>`, leaves a shared
   `below` layer where the outer one put it and raises a shared `above` layer over itself, then back over the outer
   one when it closes. Giving the inner lightbox no shared layers at all was the alternative.
+## Audit round seventy-four (2026-11-22): labkit.part1
+
+- 2026-11-22 (the fixer's call): a trial whose instrument declares `dragDrop.pickUp`, which labkit never calls,
+  warns once per instrument in development. There is no override, since the warning goes once the option is wired
+  or removed (the open `pickUp` entry in `docs/TODO.md`). Leaving it silent was the alternative.
+## Audit round seventy-four (2026-11-22): ui components, part two
+
+- 2026-11-22 (the fixer's call): a color pick on a `mixed` or `unset` `ColorField` with `alpha` emits `#rrggbb` until
+  its opacity slider moves, and a property color field with its alpha held apart reports no alpha for it, so each
+  target keeps its own opacity. There is no override. Composing the pick with a fully opaque alpha, as before, was the
+  alternative.
+
+## Audit round seventy-four (2026-11-22): audio
+
+- 2026-11-22 (the fixer's call): `createAudioEngine`'s `voiceLimit` and `createVoicePool`'s `limit` throw a
+  `RangeError` on a number that is not whole, `Infinity` included, as they already did on one below 1. Flooring a
+  fractional limit was the alternative.
+## Audit round seventy-four (2026-11-22): Mermaid diagrams, part one
+
+- 2026-11-22 (the fixer's call): a Mermaid block diagram throws, naming the line, on a group id given twice or also
+  given to a block, as the architecture reader does for a name given twice. There is no override. Merging the second
+  into the first was the alternative.
+- 2026-11-22 (the fixer's call): the Mermaid C4 writer still writes every boundary on a deployment page as
+  `Deployment_Node`, a `[system]`, `[container]`, or `[enterprise]` one keeping its type, and now warns that such a
+  boundary comes back a deployment node, since a page cannot tell `System_Boundary` from a deployment node typed
+  `system`. Writing the fixed boundary macro for those types was the alternative, and loses typed deployment nodes.

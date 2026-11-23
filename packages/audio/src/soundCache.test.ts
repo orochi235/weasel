@@ -15,6 +15,15 @@ describe('createSoundCache', () => {
     expect(typeof h.id).toBe('string');
   });
 
+  it('answers no handle another cache made', () => {
+    const ctx = createFakeAudioContext();
+    const a = createSoundCache(ctx as never, okFetch());
+    const b = createSoundCache(ctx as never, okFetch());
+    const handle = a.register(ctx.createBuffer(1, 8, 48000) as never);
+    b.register(ctx.createBuffer(1, 8, 48000) as never);
+    expect(b.buffer(handle)).toBeNull();
+  });
+
   it('returns the same handle for a repeat load', async () => {
     const ctx = createFakeAudioContext();
     const fetchFn = okFetch();

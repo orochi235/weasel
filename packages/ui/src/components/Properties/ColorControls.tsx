@@ -42,7 +42,9 @@ export function ColorControl(p: PropertyColorFieldProps) {
       const next = splitAlpha(hex);
       // Read back at the track's percent, which is all a hex byte can hold of it.
       const a = Math.round(next.alpha * 100) / 100;
-      const differs = { rgb: next.rgb !== split.rgb, alpha: a !== Math.round(alpha * 100) / 100 };
+      // A `#rrggbb` from the field leaves the opacity alone: it is a pick on a mixed or unset color.
+      const kept = /^#[0-9a-f]{6}$/i.test(hex);
+      const differs = { rgb: next.rgb !== split.rgb, alpha: !kept && a !== Math.round(alpha * 100) / 100 };
       const gesture = { rgb: moved.current.rgb || differs.rgb, alpha: moved.current.alpha || differs.alpha };
       moved.current = settles ? { rgb: false, alpha: false } : gesture;
       const half = settles ? gesture : differs;

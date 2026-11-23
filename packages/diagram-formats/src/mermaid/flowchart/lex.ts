@@ -294,7 +294,7 @@ class MermaidLexer {
     }
     for (; k < text.length && text[k] !== '\n'; k++) {
       closer.lastIndex = k;
-      if (closer.test(text) && /\s/.test(text[k] ?? '')) break;
+      if (closer.test(text)) break;
     }
     if (k >= text.length || text[k] === '\n') throw fail(this.line, `a link's text after "${body}" is never closed`);
     const label = text.slice(this.i, k).trim();

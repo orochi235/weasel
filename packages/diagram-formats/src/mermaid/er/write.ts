@@ -13,7 +13,7 @@ const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT'
 
 /** Each crow's-foot marker as the left and the right end of a relationship. */
 const ENDS: Readonly<Record<string, readonly [string, string]>> = {
-  'crow-zero-one': ['|o', 'o|'], 'crow-one': ['||', '||'], 'crow-zero-many': ['}o', 'o{'], 'crow-one-many': ['}|', '|{'], 'crow-many': ['}|', '|{'],
+  'crow-zero-one': ['|o', 'o|'], 'crow-one': ['||', '||'], 'crow-zero-many': ['}o', 'o{'], 'crow-one-many': ['}|', '|{'],
 };
 
 /** An entity's name and attribute lines. A row past the name with no field is written as it reads, and dropped, with a
@@ -32,7 +32,12 @@ function entityParts(out: GraphOut, node: DataNode): { name: string; attributes:
 }
 
 function end(out: GraphOut, marker: MarkerRef | null | undefined, side: 0 | 1): string {
-  const known = marker === null || marker === undefined ? undefined : getOwn(ENDS, typeof marker === 'string' ? marker : marker.key);
+  const key = marker === null || marker === undefined ? undefined : typeof marker === 'string' ? marker : marker.key;
+  if (key === 'crow-many') {
+    out.warnings.add('Mermaid ER relationships have no many end without a minimum; it was written as zero or more.');
+    return ENDS['crow-zero-many']![side];
+  }
+  const known = key === undefined ? undefined : getOwn(ENDS, key);
   if (known === undefined) out.warnings.add('Mermaid ER relationships end in crow\'s feet; other ends were written as exactly one.');
   return (known ?? ENDS['crow-one']!)[side];
 }

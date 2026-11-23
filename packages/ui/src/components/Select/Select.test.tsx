@@ -94,6 +94,13 @@ describe('Select', () => {
     expect(green).not.toHaveTextContent('Cool');
   });
 
+  it("measures the selected row's label apart from its description", () => {
+    render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red', description: 'Warm' }]} defaultSelectedKey="r" />);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /Red/ })); });
+    const label = screen.getByRole('option', { name: 'Red' }).querySelector(`.${s.optionLabel}`);
+    expect(label).toHaveTextContent(/^Red$/);
+  });
+
   it("keeps the chosen option's description out of the trigger", () => {
     render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red', description: 'Warm' }]} defaultSelectedKey="r" />);
     const trigger = screen.getByRole('button', { name: /Red/ });
@@ -170,20 +177,34 @@ describe('Select', () => {
       ]);
     });
 
+    it("measures React Aria's own placeholder when given none", () => {
+      const { container } = render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red' }]} width="fit" />);
+      const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Select an item', 'Red']);
+    });
+
+    it("keeps measuring React Aria's placeholder once a value is chosen", () => {
+      const one = [{ value: 'r', label: 'Red' }];
+      const { container, rerender } = render(<Select aria-label="Color" options={one} selectedKey={null} width="fit" />);
+      rerender(<Select aria-label="Color" options={one} selectedKey="r" width="fit" />);
+      const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Select an item', 'Red']);
+    });
+
     it('measures the children form off the row labels', () => {
       const { container } = render(
-        <Select label="Color" width="fit">
+        <Select label="Color" width="fit" placeholder="Pick">
           <SelectItem id="r">Red</SelectItem>
           <SelectItem id="v">Vermilion</SelectItem>
         </Select>,
       );
       const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
-      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Pick', 'Red', 'Vermilion']);
     });
 
     it('measures rows inside a fragment one by one', () => {
       const { container } = render(
-        <Select label="Color" width="fit">
+        <Select label="Color" width="fit" placeholder="Pick">
           <>
             <SelectItem id="r">Red</SelectItem>
             <SelectItem id="v">Vermilion</SelectItem>
@@ -191,7 +212,7 @@ describe('Select', () => {
         </Select>,
       );
       const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
-      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Red', 'Vermilion']);
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Pick', 'Red', 'Vermilion']);
     });
 
     it('keeps the hidden labels out of the trigger name', () => {
@@ -315,6 +336,37 @@ describe('Select', () => {
       }
     });
 
+    it('keeps the first release in a list opened from the keyboard just after a click on the trigger', () => {
+      render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      for (let i = 0; i < 2; i++) {
+        act(() => { press(trigger, { clientX: 20, clientY: 10 }); });
+        fireEvent(document, createEvent.pointerUp(document, { clientX: 20, clientY: 10 }));
+      }
+      act(() => { fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' }); });
+      expect(screen.queryByRole('listbox')).toBeNull();
+      act(() => { fireEvent.keyDown(trigger, { key: 'ArrowDown' }); });
+      expect(screen.getByRole('listbox')).toBeTruthy();
+      const up = createEvent.pointerUp(document, { clientX: 21, clientY: 11 });
+      fireEvent(document, up);
+      expect(up.defaultPrevented).toBe(false);
+    });
+
+    it('keeps every release after the opening one when the gesture settings change while open', () => {
+      const at = (dragPx: number) => (
+        <KitSettingsProvider value={{ gestures: { dragPx } }}><Select label="Color" options={OPTIONS} defaultSelectedKey="g" /></KitSettingsProvider>
+      );
+      const { rerender } = render(at(4));
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      press(trigger, { clientX: 20, clientY: 10 });
+      act(() => { fireEvent.click(trigger); });
+      fireEvent(document, createEvent.pointerUp(document, { clientX: 21, clientY: 11 }));
+      rerender(at(30));
+      const second = createEvent.pointerUp(document, { clientX: 21, clientY: 11 });
+      fireEvent(document, second);
+      expect(second.defaultPrevented).toBe(false);
+    });
+
     it('keeps a release that travelled — a drag onto a row is a choice', () => {
       render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
       const trigger = screen.getByRole('button', { name: /Color/ });
@@ -417,7 +469,7 @@ describe('Select sections', () => {
 
   it("sizes a width='fit' trigger against the options inside sections", () => {
     const { container } = render(
-      <Select label="Font" width="fit" options={[{ title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] }]} />,
+      <Select label="Font" width="fit" options={[{ title: 'Sans', options: [{ value: 'inter', label: 'Inter' }] }]} defaultSelectedKey="inter" />,
     );
     const inOptions = container.querySelector('.' + s.sizer) as HTMLElement;
     expect(Array.from(inOptions.children).map((c) => c.textContent)).toEqual(['Inter']);
@@ -425,7 +477,7 @@ describe('Select sections', () => {
 
   it("sizes a width='fit' trigger against SelectItems inside a SelectSection", () => {
     const { container } = render(
-      <Select label="Font" width="fit">
+      <Select label="Font" width="fit" defaultSelectedKey="system">
         <SelectItem id="system">System</SelectItem>
         <SelectSection title="Serif">
           <SelectItem id="garamond">Garamond</SelectItem>

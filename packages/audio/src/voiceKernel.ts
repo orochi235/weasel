@@ -147,16 +147,22 @@ export function createNoteKernel(note: KernelNote, sampleRate: number): VoiceKer
   });
 }
 
+/** How many noise loops the kernel keeps, by color and sample rate, the most recently used first. */
+export const NOISE_LOOP_CACHE = 8;
+
 const loops = new Map<string, Float32Array>();
 
-/** The loop `noiseBuffer` gives a context at this rate, made once per color and rate. */
-function noiseLoop(color: NoiseColor, sampleRate: number): Float32Array {
+/** The loop `noiseBuffer` gives a context at this rate, shared by every kernel of that color and rate. */
+export function noiseLoop(color: NoiseColor, sampleRate: number): Float32Array {
   const key = `${color}:${sampleRate}`;
   let loop = loops.get(key);
-  if (!loop) {
+  if (loop) {
+    loops.delete(key);
+  } else {
     loop = noiseSamples(color, Math.round(sampleRate * NOISE_SECONDS));
-    loops.set(key, loop);
+    if (loops.size >= NOISE_LOOP_CACHE) loops.delete(loops.keys().next().value!);
   }
+  loops.set(key, loop);
   return loop;
 }
 

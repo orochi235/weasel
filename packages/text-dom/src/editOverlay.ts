@@ -5,7 +5,7 @@ import { seedDraft, type EditDraft } from './overlayDraft';
 import { holdForFaces, installSelectionStyle, openingRange } from './overlayOpen';
 import { mountOverlayBoxes, placeOverlay, type OverlayBoxes } from './overlayPlace';
 import { applyOverlayStyle } from './overlayStyle';
-import type { TextEditClipRect, TextEditScreenPose } from './textEditTypes';
+import type { TextEditClipRect, TextEditScreenPose, TextEditSelection } from './textEditTypes';
 
 let OVERLAY_SEQ = 0;
 
@@ -14,6 +14,9 @@ export interface EditedNode {
   readonly text: string;
   readonly runs: readonly StyledRun[] | undefined;
   readonly style: ResolvedTextStyle;
+  /** An edit already open in another container: its overlay's content and its draft, which the new overlay takes
+   *  over in place of the node's text. */
+  readonly carried?: { readonly content: DocumentFragment; readonly draft: EditDraft };
 }
 
 /** Where the node is on screen now, and the style the edit holds it in, read each time the overlay is placed. */
@@ -42,7 +45,7 @@ export function openEditOverlay(
   node: EditedNode,
   frame: EditedFrame,
   holdFor: number,
-  caret: number | 'all' | 'end',
+  caret: number | 'all' | 'end' | TextEditSelection,
 ): EditOverlay {
   const { style } = node;
   const overlay = document.createElement('div');
@@ -50,7 +53,8 @@ export function openEditOverlay(
   overlay.classList.add(overlayClass);
   overlay.setAttribute('contenteditable', 'true');
   overlay.spellcheck = false;
-  const draft = seedDraft(overlay, node.text, node.runs, style);
+  const draft = node.carried ? node.carried.draft : seedDraft(overlay, node.text, node.runs, style);
+  if (node.carried) overlay.append(node.carried.content);
   applyOverlayStyle(overlay, style);
   const hold = holdFor > 0 ? holdForFaces(style, node.runs ?? []) : null;
   if (hold) overlay.style.opacity = '0';

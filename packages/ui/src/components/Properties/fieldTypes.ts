@@ -189,7 +189,8 @@ export interface PropertyColorFieldProps extends PropertyFieldBase {
   /**
    * Offer an opacity track. `true` keeps the alpha in `value` as `#rrggbbaa`;
    * a number is the 0..1 alpha held apart from it, reported through
-   * `onAlphaChange` / `onAlphaInput`.
+   * `onAlphaChange` / `onAlphaInput`. A color pick on a `mixed` or `unset` field
+   * reports `#rrggbb` and no alpha, so each target keeps its own opacity.
    */
   alpha?: boolean | number;
   /** The alpha's own `onChange` and `onInput`, where `alpha` is a number. */

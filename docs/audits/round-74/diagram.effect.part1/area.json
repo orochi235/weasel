@@ -1,0 +1,94 @@
+{
+ "id": "diagram.effect.part1",
+ "commit": "eb825dfd75133fc3ebe9452e9de8157d96ee73d3",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram/src/effect/EffectChart.tsx",
+  "packages/diagram/src/effect/EffectEditor.tsx",
+  "packages/diagram/src/effect/audio/livePreviews.ts",
+  "packages/diagram/src/effect/audio/liveRunner.ts",
+  "packages/diagram/src/effect/audio/nodes.ts",
+  "packages/diagram/src/effect/audio/patches.ts",
+  "packages/diagram/src/effect/audio/plan.ts",
+  "packages/diagram/src/effect/audio/scope.ts",
+  "packages/diagram/src/effect/audio/stageTypes.ts",
+  "packages/diagram/src/effect/audio/useFollowAudioRunner.ts",
+  "packages/diagram/src/effect/audio/useLiveAudioRunner.ts",
+  "packages/diagram/src/effect/chainEdit.ts",
+  "packages/diagram/src/effect/check.ts",
+  "packages/diagram/src/effect/clusterEdit.ts",
+  "packages/diagram/src/effect/clusterHandlers.ts",
+  "packages/diagram/src/effect/clusterOrder.ts",
+  "packages/diagram/src/effect/clusterTitle.tsx",
+  "packages/diagram/src/effect/compact.ts",
+  "packages/diagram/src/effect/docShape.ts",
+  "packages/diagram/src/effect/draw.ts",
+  "packages/diagram/src/effect/edit.ts",
+  "packages/diagram/src/effect/editorHandlers.ts",
+  "packages/diagram/src/effect/editorMapping.ts",
+  "packages/diagram/src/effect/editorPicks.ts",
+  "packages/diagram/src/effect/editorReorder.ts",
+  "packages/diagram/src/effect/glyphs.ts",
+  "packages/diagram/src/effect/image/evaluators.ts",
+  "packages/diagram/src/effect/image/stageTypes.ts",
+  "packages/diagram/src/effect/image/testCard.ts",
+  "packages/diagram/src/effect/image/valueKinds.ts",
+  "packages/diagram/src/effect/lab/EffectLab.stories.module.css"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 8,
+ "unfound": 4,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "newCode": {
+  "since": 73,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 73,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 16,
+  "testFiles": {
+   "failed": 0,
+   "passed": 104,
+   "total": 104
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3,
+   "B": 7,
+   "match": 0.1,
+   "fix": 15.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1228621,
+  "costUsd": 3.8
+ },
+ "fixCommits": [
+  "874ce92efb0be3772398513cbae547ecd6602afd",
+  "b8346882831da1ad3c37a7ad65846249badf4237",
+  "bbfe423a44fe8c63b163d799a57b7f22ba8e39ee",
+  "6f855610949593e67074a62c2c726c0665eebe42",
+  "31c0c112534bebce7cb47b8b9363cfe5e5cbb5e3"
+ ]
+}

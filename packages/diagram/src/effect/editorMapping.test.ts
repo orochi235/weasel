@@ -55,6 +55,15 @@ describe('editorScene', () => {
     expect(data.edges[1]!.waypoints).toEqual([{ x: 300, y: 10 }]);
   });
 
+  it('maps two wires with the same ends to their own edges', () => {
+    const same = { from: { stage: 'src', port: 'out' }, to: { stage: 'blur', port: 'image' } };
+    const twice: EffectDoc = { ...doc, pipeline: { ...doc.pipeline, wires: [{ id: 'w1', ...same }, { id: 'w2', ...same }] } };
+    for (const look of ['nodeGraph', 'rack'] as const) {
+      const { data, wireOf } = editorScene(twice, look);
+      expect(data.edges.map((e) => wireOf(edgeIdOf(e)))).toEqual(['w1', 'w2']);
+    }
+  });
+
   it('maps a stage node to its stage and nothing else', () => {
     const { stageOf } = editorScene(doc);
     expect(stageOf('blur')).toBe('blur');

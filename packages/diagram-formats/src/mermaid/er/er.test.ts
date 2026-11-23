@@ -126,3 +126,13 @@ describe('writing connector parts Mermaid ER diagrams hold no place for', () => 
     expect(warnings).toEqual(expect.arrayContaining(['Mermaid ER diagrams have no labels at a connector\'s ends; they were dropped.', 'Mermaid ER diagram connectors hold no line colors, label colors, or widths; they were dropped.']));
   });
 });
+
+describe('writing a many end with no minimum', () => {
+  it('writes it as zero or more, with a warning', () => {
+    const p = page('erDiagram\n  a ||--o{ b : has');
+    const edges = p.data.edges.map((e) => ({ ...e, colors: { ...e.colors, markerStart: 'crow-many', markerEnd: 'crow-many' } }));
+    const { text, warnings } = writeErDiagram({ pages: [{ ...p, data: { ...p.data, edges } }] });
+    expect(text).toContain('a }o--o{ b : "has"');
+    expect(warnings).toContain('Mermaid ER relationships have no many end without a minimum; it was written as zero or more.');
+  });
+});

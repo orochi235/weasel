@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "A live runner's apply-time failures are shown once, then erased by the next unrelated edit while the stage stays broken",
+  "`typeColors` gives every type `undefined` as its color when the theme's `series` is empty"
+ ],
+ "b": [
+  "Two wires with the same ends map to one wire id, so editing the second edits the first",
+  "A numeric audio setting given as text is passed through unparsed, while a level given as text is parsed"
+ ]
+}

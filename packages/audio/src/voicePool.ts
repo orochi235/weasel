@@ -36,10 +36,10 @@ export interface VoicePool {
   active(): number;
 }
 
-/** Throws unless `limit` is 1 or more. */
+/** Throws unless `limit` is a whole number, 1 or more. */
 export function checkVoiceLimit(limit: number): void {
-  if (!(limit >= 1)) {
-    throw new RangeError(`@weasel-js/audio: voice pool limit must be at least 1, got ${limit}`);
+  if (!(Number.isInteger(limit) && limit >= 1)) {
+    throw new RangeError(`@weasel-js/audio: voice pool limit must be a whole number, at least 1, got ${limit}`);
   }
 }
 

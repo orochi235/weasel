@@ -1,0 +1,98 @@
+{
+ "id": "text-dom",
+ "commit": "eb825dfd75133fc3ebe9452e9de8157d96ee73d3",
+ "date": "2026-11-22",
+ "files": [
+  "packages/text-dom/src/armedStyle.ts",
+  "packages/text-dom/src/domOffsets.ts",
+  "packages/text-dom/src/domRuns.ts",
+  "packages/text-dom/src/editOverlay.ts",
+  "packages/text-dom/src/editSession.ts",
+  "packages/text-dom/src/heldNodeStyle.ts",
+  "packages/text-dom/src/index.ts",
+  "packages/text-dom/src/overlayBaseline.ts",
+  "packages/text-dom/src/overlayDirection.ts",
+  "packages/text-dom/src/overlayDraft.ts",
+  "packages/text-dom/src/overlayEdits.ts",
+  "packages/text-dom/src/overlayFollow.ts",
+  "packages/text-dom/src/overlayFrame.ts",
+  "packages/text-dom/src/overlayHistory.ts",
+  "packages/text-dom/src/overlayListeners.ts",
+  "packages/text-dom/src/overlayOpen.ts",
+  "packages/text-dom/src/overlayPlace.ts",
+  "packages/text-dom/src/overlayScroll.ts",
+  "packages/text-dom/src/overlaySeed.ts",
+  "packages/text-dom/src/overlaySelection.ts",
+  "packages/text-dom/src/overlayStyle.ts",
+  "packages/text-dom/src/overlayTyping.ts",
+  "packages/text-dom/src/pasteRuns.ts",
+  "packages/text-dom/src/pbt.fixture.ts",
+  "packages/text-dom/src/publishedRange.ts",
+  "packages/text-dom/src/runSplice.ts",
+  "packages/text-dom/src/runStyle.ts",
+  "packages/text-dom/src/selectionStyling.ts",
+  "packages/text-dom/src/styleShortcuts.ts",
+  "packages/text-dom/src/testing/baselineDrop.ts",
+  "packages/text-dom/src/testing/overlayDirection.ts",
+  "packages/text-dom/src/testing/overlayReady.ts",
+  "packages/text-dom/src/testing/textEditHarness.ts",
+  "packages/text-dom/src/textEditTypes.ts",
+  "packages/text-dom/src/useTextEdit.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 19,
+ "unfound": 12,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 7,
+  "findings": 2
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 13,
+  "unfound": 4
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 33,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3468,
+   "total": 3468
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.9,
+   "B": 9.8,
+   "match": 0.2,
+   "fix": 31.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2040649,
+  "costUsd": 5.91
+ },
+ "fixCommits": [
+  "7abc02761c8093f496304d4f0c90e4bc82503db1",
+  "df28c0e401bbf1340f07ee5e583863cd360e22bb",
+  "9ee4d274e5f49327518c38b6fb9dbf5a04c7d8c8",
+  "5f3a60f89f71d4a27051b99dcb8319c0ec0aae8e",
+  "5ac0cd0c3bb21a5c8647cfcbbb14f17b346ae603"
+ ]
+}

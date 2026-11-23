@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { createNoiseKernel, createNoteKernel, renderNoise, renderNote } from './voiceKernel';
+import {
+  createNoiseKernel, createNoteKernel, NOISE_LOOP_CACHE, noiseLoop, renderNoise, renderNote,
+} from './voiceKernel';
 import { bandPower, centroid, peaks, powerSpectrum, rms } from './testing/spectrum';
 
 const RATE = 48000;
@@ -205,6 +207,15 @@ describe('renderNoise', () => {
       renderNoise({ ...white, noise: 'brown', rate }, RATE, () => 0), RATE,
     ));
     expect(at(4)).toBeGreaterThan(at(1) * 1.5);
+  });
+});
+
+describe('noiseLoop', () => {
+  it('keeps a loop per color and rate, up to its cap', () => {
+    const first = noiseLoop('white', 8000);
+    expect(noiseLoop('white', 8000)).toBe(first);
+    for (let i = 1; i <= NOISE_LOOP_CACHE; i++) noiseLoop('white', 8000 + i);
+    expect(noiseLoop('white', 8000)).not.toBe(first);
   });
 });
 

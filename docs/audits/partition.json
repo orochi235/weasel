@@ -6174,6 +6174,7 @@
    "packages/text-dom/src/heldNodeStyle.ts",
    "packages/text-dom/src/index.ts",
    "packages/text-dom/src/overlayBaseline.ts",
+   "packages/text-dom/src/overlayCarry.ts",
    "packages/text-dom/src/overlayDirection.ts",
    "packages/text-dom/src/overlayDraft.ts",
    "packages/text-dom/src/overlayEdits.ts",
@@ -7148,7 +7149,8 @@
    "packages/ui/src/components/Select/alignOverTrigger.tsx",
    "packages/ui/src/components/Select/index.ts",
    "packages/ui/src/components/Select/listbox.module.css",
-   "packages/ui/src/components/Select/optionLabels.tsx"
+   "packages/ui/src/components/Select/optionLabels.tsx",
+   "packages/ui/src/components/Select/selectItem.tsx"
   ]
  },
  {

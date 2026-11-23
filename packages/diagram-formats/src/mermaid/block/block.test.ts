@@ -81,6 +81,18 @@ describe('reading a Mermaid block diagram', () => {
     expect(() => parseBlockDiagram('block-beta\n  end')).toThrow('Mermaid, line 2: "end" closes no block');
   });
 
+  it('gives `classDef default` to blocks but not to groups, as a flowchart gives it to nodes but not subgraphs', () => {
+    const read = page('block-beta\n  block:g\n    a\n  end\n  classDef default fill:#ff0000');
+    expect(read.data.nodes[0]!.colors).toEqual({ fill: '#ff0000' });
+    expect(read.data.containers![0]!.colors).toBeUndefined();
+  });
+
+  it('refuses a group id given twice, or given to a block', () => {
+    expect(() => readBlockDiagram('block-beta\n  block:g\n    a\n  end\n  block:g\n    b\n  end')).toThrow('Mermaid, line 5: "g" already names a group');
+    expect(() => readBlockDiagram('block-beta\n  g\n  block:g\n    a\n  end')).toThrow('Mermaid, line 2: "g" already names a group');
+    expect(() => readBlockDiagram('block-beta\n  block:g\n    a\n  end\n  g')).toThrow('Mermaid, line 5: "g" already names a group');
+  });
+
   it('gives an anonymous group an id no block holds', () => {
     const read = readBlockDiagram('block-beta\n  block-1\n  block\n    a\n  end');
     expect(onlyPage(read.document).data.containers!.map((c) => c.id)).toEqual(['block-2']);
@@ -118,6 +130,16 @@ describe('writing a Mermaid block diagram', () => {
     const text = writeBlockDiagram({ pages: [first] }).text;
     expect(sortedPage(page(text))).toEqual(sortedPage(first));
     expect(writeBlockDiagram({ pages: [page(text)] }).text).toBe(text);
+  });
+
+  it('writes grid counts as whole numbers its reader reads', () => {
+    const base = page('block-beta\n  block:g\n    a\n  end\n  b');
+    const grid = { columns: 2.5, clusterColumns: { g: 1.6 }, spans: { b: 2.5 }, skips: { b: 1.4, g: 0.2 } };
+    const { text, warnings } = writeBlockDiagram({ pages: [{ ...base, layout: { name: 'grid', options: { grid } } }] });
+    expect(text).toContain('block-beta\n  columns 3\n  block:g\n    columns 2\n    a\n  end\n  space\n  b:3\n');
+    expect(page(text).layout).toMatchObject({ options: { grid: { columns: 3, clusterColumns: { g: 2 }, spans: { b: 3 }, skips: { b: 1 } } } });
+    expect(warnings).toContain('Mermaid block column counts are whole numbers; others were rounded.');
+    expect(warnings).toContain('Mermaid block spaces are whole numbers from 1; others were dropped.');
   });
 
   it('writes columns, spans, spaces, groups, and links', () => {

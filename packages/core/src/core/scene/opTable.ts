@@ -28,7 +28,7 @@ export interface OpTableEnv {
 }
 
 export interface OpTable {
-  /** Every kind registered, by name; a kind registered again replaces the handler before. */
+  /** Every kind registered, by name. */
   handlers: Reflection<RegisteredOp<unknown>>;
   /** Register `handler` for `kind`. The handler already registered again is no change; a different one throws
    *  {@link ExtensionConflictError} unless `replace` is passed, as for hot reload. */

@@ -130,6 +130,7 @@ describe('branch symbols', () => {
     const bypassed = colors(branchNode({ ...bands, bypassed: true }, P, 'bar'));
     expect(bypassed.has('#dbe7f2')).toBe(false);
     expect([...colors(branchNode(bands, P, 'bar', { style: ink, tints: ['#abcdef'] }))].sort()).toEqual(['#123456', '#abcdef']);
+    expect(colors(branchNode(bands, P, 'bar', { style: ink, tints: [] }))).toEqual(colors(branchNode(bands, P, 'bar', { style: ink })));
   });
 
   it('stacks a bar\'s bands lowest at the bottom, with a tick and its value at each cut', () => {

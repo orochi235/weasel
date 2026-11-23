@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { dataEdgeStyle, diagramThemeFrom, type DataNode } from '@weasel-js/diagram';
+import { dataEdgeStyle, diagramThemeFrom, type DataNode, type DiagramData } from '@weasel-js/diagram';
 import { laidOutPage } from '../../pageLayout';
 import { onlyPage, sortedPage } from '../../testing/samePage';
 import { parseC4 } from './parse';
@@ -191,10 +191,41 @@ describe('C4 style macros naming nothing', () => {
   });
 });
 
+describe('C4 colors', () => {
+  const one = (data: Omit<DiagramData, 'edges'> & { edges?: DiagramData['edges'] }) => ({
+    pages: [{ kind: 'graph' as const, id: 'p', width: 100, height: 100, notation: 'c4-context', data: { edges: [], ...data } }],
+  });
+
+  it('write as hex, as every other Mermaid kind writes them', () => {
+    const { text } = writeC4(one({
+      nodes: [{ id: 'a', lines: ['A'], colors: { fill: 'rgb(255, 0, 0)', stroke: '#ABC' } }, { id: 'b', lines: ['B'] }],
+      edges: [{ from: 'a', to: 'b', colors: { stroke: 'rgb(0, 0, 255)' } }],
+    }));
+    expect(text).toContain('UpdateElementStyle(a, $bgColor="#ff0000", $borderColor="#aabbcc")');
+    expect(text).toContain('UpdateRelStyle(a, b, $lineColor="#0000ff")');
+  });
+
+  it('warn of a border width or dash they cannot hold', () => {
+    const { text, warnings } = writeC4(one({
+      nodes: [{ id: 'a', lines: ['A'], colors: { strokeWidth: 3 } }],
+      containers: [{ id: 'g', role: 'container', label: 'G', colors: { dash: [4, 4] } }],
+    }));
+    expect(text).not.toContain('UpdateElementStyle');
+    expect(warnings).toContain('Mermaid C4 elements and boundaries have no border width or dash; they were dropped.');
+  });
+});
+
 describe('C4 deployment nodes', () => {
   it('write back as deployment nodes whatever their type, so a "container" node stays one', () => {
     const { document } = readC4('C4Deployment\n  Deployment_Node(d, "Web", "container") {\n    Container(c, "App")\n  }');
     expect(writeC4(document).text).toContain('Deployment_Node(d, "Web", "container") {');
+  });
+
+  it('warn that a system boundary is written as one', () => {
+    const { document } = readC4('C4Deployment\n  System_Boundary(s, "Sys") {\n    System(a, "A")\n  }');
+    const { text, warnings } = writeC4(document);
+    expect(text).toContain('Deployment_Node(s, "Sys", "system") {');
+    expect(warnings.some((w) => w.startsWith('Mermaid C4 deployment diagrams write every boundary as a deployment node'))).toBe(true);
   });
 });
 

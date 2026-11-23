@@ -11,14 +11,14 @@ export interface RemovalLog<TPose, TNode> {
   /** Read what removing `roots` and their descendants among `nodes` takes off
    *  screen, before the removal runs; the returned call records it once it
    *  has. A node `pending` holds as added by this change is dropped from it
-   *  and goes unreported. */
+   *  and goes unreported. Each node's `pose` is the one it stores. */
   seeOff(
     roots: readonly Parented[],
-    nodes: readonly Parented[],
+    nodes: readonly (Parented & { pose: TPose })[],
     how: Pick<PoseRemoval<TPose, TNode>, 'origin' | 'label'>,
     pending: Map<NodeId, PoseWrite<TPose>>,
   ): () => void;
-  /** Forget `id`'s removal — it is back — and answer where it was shown. */
+  /** Forget `id`'s removal — it is back — and answer the pose it stored before this change. */
   takeBack(id: NodeId): TPose | undefined;
   /** The removals since the last drain, a child removed with its parent
    *  carried beneath it. */
@@ -34,6 +34,8 @@ interface Gone<TPose, TNode> {
   parent: NodeId | null;
   node: TNode;
   pose: TPose;
+  /** The pose it stored before this change, override left out. */
+  before: TPose;
   children: Gone<TPose, TNode>[];
   up: Gone<TPose, TNode> | undefined;
   how: Pick<PoseRemoval<TPose, TNode>, 'origin' | 'label'>;
@@ -58,7 +60,9 @@ export function createRemovalLog<TPose, TNode>(
   return {
     seeOff(removedRoots, nodes, how, pending) {
       const under = new Map<NodeId | null, Parented[]>();
+      const stored = new Map<NodeId, TPose>();
       for (const n of nodes) {
+        stored.set(n.id, n.pose);
         const list = under.get(n.parent);
         if (list) list.push(n);
         else under.set(n.parent, [n]);
@@ -66,7 +70,8 @@ export function createRemovalLog<TPose, TNode>(
       const see = (n: Parented): Gone<TPose, TNode> | null => {
         const s = shown(n.id);
         if (!s) return null;
-        const g: Gone<TPose, TNode> = { id: n.id, parent: n.parent, node: s.node, pose: s.pose, children: [], up: undefined, how };
+        const before = pending.get(n.id)?.from ?? stored.get(n.id) ?? s.pose;
+        const g: Gone<TPose, TNode> = { id: n.id, parent: n.parent, node: s.node, pose: s.pose, before, children: [], up: undefined, how };
         for (const c of under.get(n.id) ?? []) {
           const child = see(c);
           if (child) g.children.push(child);
@@ -104,7 +109,7 @@ export function createRemovalLog<TPose, TNode>(
       else roots.delete(id);
       // What it took along and is not back yet is still removed, now from it.
       for (const c of g.children) asRoot(c);
-      return g.pose;
+      return g.before;
     },
     drain() {
       if (roots.size === 0) return [];

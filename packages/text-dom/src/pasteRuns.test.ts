@@ -46,6 +46,13 @@ describe('htmlToRuns', () => {
     expect(htmlToRuns('<div style="white-space-collapse: preserve">a  b</div>')).toEqual([{ text: 'a  b' }]);
   });
 
+  it('collapses spaces but keeps line breaks under pre-line and preserve-breaks', () => {
+    expect(htmlToRuns('<div style="white-space: pre-line">a \t  b  \n  c</div>')).toEqual([{ text: 'a b\nc' }]);
+    expect(htmlToRuns('<div style="white-space-collapse: preserve-breaks">a   b\nc</div>')).toEqual([{ text: 'a b\nc' }]);
+    expect(htmlToRuns('<div style="white-space-collapse: preserve-spaces">a  b\nc</div>')).toEqual([{ text: 'a  b c' }]);
+    expect(htmlToRuns('<pre style="white-space: normal">a   b</pre>')).toEqual([{ text: 'a b' }]);
+  });
+
   it('reads a break as a line of its own and a block as one line, however deep', () => {
     expect(htmlToRuns('a<br>b')).toEqual([{ text: 'a\nb' }]);
     expect(htmlToRuns('<p>a</p><p><br></p><p>b</p>')).toEqual([{ text: 'a\n\nb' }]);

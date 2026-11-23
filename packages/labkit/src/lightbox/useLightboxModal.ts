@@ -1,6 +1,9 @@
 import { useLatest } from '@weasel-js/core';
+import { createPart } from '@weasel-js/registry';
 import { type RefObject, useEffect, useLayoutEffect, useRef } from 'react';
+import type { SurfaceScope } from '../surface/measureTiles';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
+import type { SurfaceHandle } from '../surface/useTiledSurface';
 import { useLightboxLayers } from './LightboxLayers';
 import { inertOutside, liftStack } from './modal';
 
@@ -8,6 +11,20 @@ import { inertOutside, liftStack } from './modal';
  *  open inside another, every one hears the key on the document, and the outer
  *  one, listening longest, would hear it first. */
 const openOrder: object[] = [];
+
+/** The scopes open lightboxes set on each surface, oldest first. A surface has one scope slot, so closing a
+ *  lightbox hands it to the newest one still open rather than clearing it. */
+const scopesOf = createPart((_surface: SurfaceHandle): SurfaceScope[] => []);
+
+function pushScope(surface: SurfaceHandle, scope: SurfaceScope): () => void {
+  const scopes = scopesOf(surface);
+  scopes.push(scope);
+  surface.scope(scope);
+  return () => {
+    scopes.splice(scopes.indexOf(scope), 1);
+    surface.scope(scopes.at(-1) ?? null);
+  };
+}
 
 /**
  * While `expanded`, make the root a modal: lift it and the `<LightboxLayers>` around it into the top layer,
@@ -40,11 +57,11 @@ export function useLightboxModal(
     const release = inertOutside(stack);
     // A shared buffer lifted with this one must stop painting every other tile
     // over it. A tile inside a lifted layer came along too, so it stays.
-    surface?.scope(stack);
+    const unscope = surface ? pushScope(surface, stack) : undefined;
     if (focused instanceof HTMLElement && focused !== document.activeElement && focused.isConnected)
       focused.focus({ preventScroll: true });
     return () => {
-      surface?.scope(null);
+      unscope?.();
       release();
       unlift();
     };
