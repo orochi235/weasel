@@ -3,6 +3,7 @@ import { createScene, type RectPose, type Scene } from '@weasel-js/core';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import type { DiagramEdge } from '../edgeTrait';
 import { installAvoidRouting } from './install';
+import { avoidSceneInput } from './sceneInput';
 
 type AvoidScene = Scene<unknown, 'main', RectPose>;
 
@@ -22,10 +23,11 @@ describe('avoid routing a locked connector', () => {
         dependsOn: ['a', 'b'], derivePath: EDGE_DERIVE_PATH,
       }] as never,
     });
-    installAvoidRouting(scene);
+    const routing = installAvoidRouting(scene);
     scene.setLocked('ab' as never, true);
     scene.add(box('wall', 200, -100, 60, 260) as never);
     expect(routeOf(scene)).toEqual([]);
+    expect(routing.router.update(avoidSceneInput(scene)).has('ab')).toBe(false);
     scene.setLocked('ab' as never, false);
     scene.add(box('far', 3000, 3000) as never);
     expect(routeOf(scene)!.length).toBeGreaterThan(0);

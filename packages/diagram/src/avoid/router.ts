@@ -42,8 +42,7 @@ export interface AvoidRouter {
    *  budget does not reach keeps a route only from this run's frames. */
   beginPreview(): void;
   /** Drop what the router holds for connectors `ids`, so the next update
-   *  reroutes them: for routes the host did not store, such as a locked
-   *  connector's. */
+   *  reroutes them: for routes the host did not store. */
   forget(ids: Iterable<string>): void;
 }
 
@@ -172,10 +171,11 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
     },
     update(input, updateOpts = {}) {
       if (updateOpts.preview === true) return preview(input, updateOpts.budgetMs ?? Infinity);
+      for (const e of input.edges) if (e.locked === true) for (const map of [keys, raw, shown, pathless]) map.delete(e.id);
       const obstacles = [...input.obstacles, ...labelObstacles(input.edges, routeOf)];
       const changed = changedObstacles(committed, obstacles, (o) => inflatedBox(o, opts.clearance, opts.labelClearance));
       // The route before nudging too, which a nudge spreads a clean connector from.
-      const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless);
+      const dirty = dirtyEdges(input.edges, keys, changed, (e) => [routeOf(e), rawOf(e)], pathless).filter((e) => e.locked !== true);
       forget(input);
       return commit(input, dirty, obstacles);
     },
@@ -205,7 +205,7 @@ function previewFrame(
       continue;
     }
     const edge = edgeOf(id);
-    if (edge === undefined) continue;
+    if (edge === undefined || edge.locked === true) continue;
     const full = routeEdge(edge, { index: frame.index, options, limit: frame.limit });
     const route = full === null ? null : full.slice(1, -1);
     previews.set(id, route);
@@ -260,7 +260,7 @@ function bundleOf(
     for (let i = 1; i + 2 < full.length; i++) clean.edgesMeeting(segmentBox(full[i]!, full[i + 1]!), mates);
   }
   for (const e of edges) {
-    if (mates.has(e.id) && !fresh.has(e.id)) bundle.set(e.id, { points: rawOf(e), waypoints: e.waypoints ?? [] });
+    if (mates.has(e.id) && !fresh.has(e.id) && e.locked !== true) bundle.set(e.id, { points: rawOf(e), waypoints: e.waypoints ?? [] });
   }
   return bundle;
 }

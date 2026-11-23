@@ -140,8 +140,6 @@ export function installAvoidRouting<TPose>(
   const dispose = scene.addEditPass((summary) => {
     if (!touched(summary)) return null;
     const routes = router.update(avoidSceneInput(scene, opts));
-    // A locked connector keeps the route it holds; the router forgets the one it made, so it reroutes once unlocked.
-    router.forget([...routes.keys()].filter((id) => sc.isLocked(id as never)));
     const ops = routeDataOps(sc, routes);
     return ops.length === 0 ? null : ops;
   }, { order: DIAGRAM_PASS_ORDER.avoid });

@@ -130,6 +130,7 @@ export function avoidSceneInput<TPose>(
       to: { node: b.id, ports: to },
       ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints as Vec2[] } : {}),
       ...(edge.route !== undefined ? { route: edge.route } : {}),
+      ...(sc.isLocked(node.id as never) ? { locked: true } : {}),
       ...(labels.has(node.id) ? { labels: labels.get(node.id)! } : {}),
     });
   }

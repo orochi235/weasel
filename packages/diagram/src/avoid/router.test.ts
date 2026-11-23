@@ -219,3 +219,15 @@ describe('createAvoidRouter', () => {
     expect(routes.get('flat')).toEqual([]);
   });
 });
+
+describe('a locked connector', () => {
+  it('is never rerouted, and the others route around the route it holds', () => {
+    const wall = rectShape('wall', 200, -100, 60, 260);
+    const held = { ...edgeBetween('held', shapes.a, shapes.b, 'e', 'w'), route: [], locked: true };
+    const input = scene([shapes.a, shapes.b, wall], [held]);
+    const router = createAvoidRouter();
+    expect(router.update(input).has('held')).toBe(false);
+    expect(router.update(input).has('held')).toBe(false);
+    expect(router.update(input, { preview: true }).has('held')).toBe(false);
+  });
+});
