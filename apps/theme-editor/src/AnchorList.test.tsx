@@ -29,6 +29,22 @@ describe('<AnchorList>', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['white', { name: 'white', hue: 87.3, lightness: 1 }, '87.3', '1'],
+    ['dark', { name: 'dark', hue: 359.6, lightness: 0.2 }, '359.6', '0.2'],
+  ])('shows a %s pinned color as it is, and leaves it so when its fields are tabbed through', async (_, anchor, hue, lightness) => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    renderWithIcons(<AnchorList anchors={[anchor]} onChange={onChange} />);
+    const field = (part: string) => screen.getByRole('textbox', { name: new RegExp(`${anchor.name} ${part}`) });
+    expect(field('hue')).toHaveValue(hue);
+    expect(field('lightness')).toHaveValue(lightness);
+    await user.click(field('hue'));
+    await user.tab();
+    await user.tab();
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('unpins an anchor', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();

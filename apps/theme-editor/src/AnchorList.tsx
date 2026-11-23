@@ -53,7 +53,7 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
             hideSteppers
             aria-label={`${a.name} hue`}
             minValue={0}
-            maxValue={359}
+            maxValue={360}
             value={a.hue}
             onChange={(v) => setNumber(i, 'hue', v)}
           />
@@ -64,8 +64,8 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
             width="fit"
             hideSteppers
             aria-label={`${a.name} lightness`}
-            minValue={0.3}
-            maxValue={0.97}
+            minValue={0}
+            maxValue={1}
             step={0.01}
             value={a.lightness}
             onChange={(v) => setNumber(i, 'lightness', v)}
