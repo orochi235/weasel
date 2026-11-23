@@ -26,6 +26,12 @@ describe('generateTokens', () => {
     expect(result.files['themes.ts']).toContain('export type TokenName = never;');
   });
 
+  it('refuses two definitions of one name, naming it', () => {
+    const a: ThemeDefinition = { name: 'ocean', extends: weasel.name };
+    const result = generateTokens([weasel, a, { ...a }]);
+    expect(result).toEqual({ ok: false, problems: ['2 themes are named "ocean"; each theme needs a name of its own'] });
+  });
+
   it('refuses a definition with derive issues and names each one', () => {
     const probe = { ramp: 'gray', contrast: { min: 30, against: ['surface'] } };
     const result = generateTokens([{ ...weasel, semantics: { ...weasel.semantics, probe } }]);
