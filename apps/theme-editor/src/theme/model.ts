@@ -1,4 +1,4 @@
-import { getOwn } from '@weasel-js/registry';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { isByAxis, parseTokenValue, type AxisChoice, type PinValue, type Theme, type ThemeDefinition, type TokenValue, type Varying } from '@weasel-js/theme';
 import {
   bakeChain,
@@ -142,7 +142,7 @@ export function clearAt<T>(v: Varying<T> | undefined, selection: AxisChoice): Va
   const rest: Record<string, unknown> = { ...v };
   const inner = clearAt(getOwn(v, key) as Varying<T> | undefined, selection);
   if (inner === undefined) delete rest[key];
-  else rest[key] = inner;
+  else setOwn(rest, key, inner);
   return Object.keys(rest).some((k) => k !== 'by') ? (rest as Varying<T>) : undefined;
 }
 
