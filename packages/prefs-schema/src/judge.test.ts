@@ -50,3 +50,14 @@ describe('prefJudge', () => {
     expect(holds({ from: 'item', path: '', is: 5 }, 'showIf')).toBe(true);
   });
 });
+
+describe('a split leaf whose selector is split by it', () => {
+  it('reads the cycle as no selection rather than recursing', () => {
+    const scoped = { $by: 'b', $in: {}, $else: 3 };
+    const a = num('A', { scopes: [{ selector: 'b' }], defaultScope: scoped });
+    const b = num('B', { scopes: [{ selector: 'a' }], defaultScope: { $by: 'a', $in: {}, $else: 4 } });
+    const read = prefReader({ name: '', children: { a, b } }, {});
+    expect(read('a')).toBe(3);
+    expect(read('b')).toBe(4);
+  });
+});

@@ -76,7 +76,18 @@ export function deferEntryConditions(holds: PrefConditionJudge): PrefConditionJu
  */
 export function prefReader(schema: PrefGroup | PrefSection, values: unknown, over?: PrefGroup | PrefSection): (path: string) => unknown {
   const beyond = over && prefReader(over, values);
+  // A selector split by the leaf it selects for reads as nothing held while that leaf is being read.
+  const reading = new Set<string>();
   const read = (path: string): unknown => {
+    if (reading.has(path)) return undefined;
+    reading.add(path);
+    try {
+      return readAt(path);
+    } finally {
+      reading.delete(path);
+    }
+  };
+  const readAt = (path: string): unknown => {
     if (beyond && prefSchemaHolding(schema, path, over) === over) return beyond(path);
     const found = leafHolding(schema, path);
     if (found === undefined) return prefValueAt(values, path);
