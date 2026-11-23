@@ -35,7 +35,7 @@ export type MermaidStmt =
   | { kind: 'classDef'; names: string[]; props: StyleProps; line: number }
   | { kind: 'class'; ids: string[]; className: string; line: number }
   | { kind: 'style'; id: string; props: StyleProps; line: number }
-  | { kind: 'linkStyle'; indexes: number[] | 'default'; props: StyleProps; line: number }
+  | { kind: 'linkStyle'; indexes: number[] | 'default'; props: StyleProps; curve?: string; line: number }
   | { kind: 'acc'; of: 'title' | 'descr'; text: string; line: number }
   | { kind: 'other'; keyword: string; line: number };
 
@@ -73,7 +73,9 @@ function statementOf(keyword: string, rest: string, line: number): MermaidStmt {
     const parts = first.split(',');
     if (first !== 'default' && parts.some((p) => !/^\d+$/.test(p))) throw lineError('Mermaid', line, `"${first}" is not a list of link numbers`);
     const indexes = first === 'default' ? 'default' : parts.map(Number);
-    return { kind: 'linkStyle', indexes, props: propsOf(remainder), line };
+    const curve = /^interpolate\s+(\S+)\s*/.exec(remainder);
+    const props = propsOf(curve === null ? remainder : remainder.slice(curve[0].length));
+    return { kind: 'linkStyle', indexes, props, ...(curve !== null ? { curve: curve[1]! } : {}), line };
   }
   return { kind: 'other', keyword, line };
 }

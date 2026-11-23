@@ -151,3 +151,11 @@ describe('reading Mermaid', () => {
     expect(readFlowchart('flowchart XY\n  A --> B').warnings).toContain('Mermaid flowchart directions it does not know were read as top to bottom: XY.');
   });
 });
+
+describe('reading a linkStyle curve', () => {
+  it('keeps the styles after "interpolate <curve>", and warns that the curve was dropped', () => {
+    const { document, warnings } = readFlowchart('flowchart TD\nA-->B\nlinkStyle 0 interpolate basis stroke:#f00,stroke-width:4px');
+    expect(asGraph(document.pages[0]!).data.edges[0]!.colors).toMatchObject({ stroke: '#f00' });
+    expect(warnings).toEqual(['Mermaid link curves (linkStyle … interpolate) were dropped.']);
+  });
+});
