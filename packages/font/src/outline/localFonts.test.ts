@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { canQueryLocalFonts, enableLocalFontOutlines, parseFontStyle } from './localFonts';
-import { glyphOutline, listFontOutlines, outlineCssSource, _resetFontOutlinesForTests } from './outlineRegistry';
+import { glyphOutline, listFontOutlines, outlineCssSource, registerFontOutlines, _resetFontOutlinesForTests } from './outlineRegistry';
 
 function fontData(family: string, style: string) {
   return {
@@ -131,6 +131,17 @@ describe('enableLocalFontOutlines', () => {
     await enableLocalFontOutlines();
     expect(outlineCssSource('Futura', 600, 'italic')).toMatchObject({ src: 'local("Futura-DemiOblique")' });
     expect(outlineCssSource('Futura', 100, 'normal')).toMatchObject({ src: 'local("Futura-UltraThin")' });
+  });
+
+  it('keeps a face the app registered for the same variant unless asked to replace it', async () => {
+    vi.stubGlobal('queryLocalFonts', vi.fn(async () => [fontData('Inter', 'Regular'), fontData('Inter', 'Bold')]));
+    registerFontOutlines('Inter', {}, 'https://example.com/inter.ttf');
+    expect(await enableLocalFontOutlines()).toMatchObject({ faces: 1, kept: 1 });
+    expect(outlineCssSource('Inter', 400, 'normal')).toMatchObject({ url: 'url("https://example.com/inter.ttf")' });
+    // A face the last call registered is its own to replace.
+    expect(await enableLocalFontOutlines()).toMatchObject({ faces: 1, kept: 1 });
+    expect(await enableLocalFontOutlines({ replace: true })).toMatchObject({ faces: 2, kept: 0 });
+    expect(outlineCssSource('Inter', 400, 'normal')).toMatchObject({ src: 'local("Inter-Regular")' });
   });
 
   it('honors a family filter', async () => {

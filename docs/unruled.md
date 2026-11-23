@@ -758,6 +758,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-23 (font, audit round 78, the fixer's call): the default outline parser refuses a `CFF ` or `CFF2` table
   whose header names a major version other than 1 or 2, rather than letting opentype.js read a version 0 as CFF 1
   unchecked; a `CFF2` table with a version 1 header gets the CFF 1 check.
+- 2026-11-23 (font, audit round 78, the fixer's call): `enableLocalFontOutlines` keeps an outline face the app
+  registered for the same variant rather than replacing it with the installed copy, and reports how many it kept;
+  `replace: true` restores replacing. A face an earlier call registered is always replaced.
 - 2026-11-20 (font, audit round 47): `parseBmFont` refuses an atlas with a glyph on any page but 0, naming it, since
   `registerFont` takes one atlas image per face and the renderer samples that one for every glyph. Whether the
   registry should take a URL per page instead is open.
