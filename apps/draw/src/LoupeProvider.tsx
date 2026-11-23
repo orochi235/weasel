@@ -2,6 +2,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import {
   type Action,
   ActionDisabledReason,
+  BETWEEN_GESTURES,
   type RenderLayer,
   type SceneCanvasApi,
   useAction,
@@ -24,6 +25,8 @@ function reportCopyRefused(hex: string): void {
 
 /** The action that copies the hex under the loupe. */
 export const LOUPE_COPY_ACTION = 'draw.loupe.copy';
+/** The action that shows or hides the loupe. */
+export const LOUPE_TOGGLE_ACTION = 'draw.loupe.toggle';
 
 interface LoupeState extends LoupeSettings {
   /** Hex under the aim point. Null until the pointer has moved over the canvas with the loupe showing. */
@@ -91,6 +94,17 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
   }), [colorRef]);
   useAction(copy);
 
+  const visibleRef = useLatest(visible);
+  const toggle = useMemo((): Action => ({
+    id: LOUPE_TOGGLE_ACTION,
+    label: 'Loupe',
+    // F2, as labkit's quick lens takes it.
+    defaultBinding: [{ spec: { kind: 'key', key: 'F2', phase: BETWEEN_GESTURES }, opts: { id: `${LOUPE_TOGGLE_ACTION}.key` } }],
+    active: () => visibleRef.current,
+    invoker: { timing: 'immediate', run: () => setVisible(!visibleRef.current) },
+  }), [visibleRef, setVisible]);
+  useAction(toggle);
+
   const state = useMemo((): LoupeState => ({ ...settings, color, setVisible }), [settings, color, setVisible]);
 
   return (
@@ -116,6 +130,8 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
     onColorChange: onColor,
     onPick: pickColor,
     onClose: () => state.setVisible(false),
+    onModeChange: (mode) => drawPrefs().set('loupe.mode', mode),
+    onFactorChange: (factor) => drawPrefs().set('loupe.factor', factor),
   });
   return null;
 }

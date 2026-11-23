@@ -75,6 +75,8 @@ export interface WindowOptions {
  */
 export interface WindowWidget extends Widget {
   readonly contentRect: WidgetBounds;
+  /** True while a press is moving the window. A change asks for a redraw, so a painter may read it. */
+  readonly moving: boolean;
   setBounds(b: WidgetBounds): void;
   setHidden(hidden: boolean): void;
   setTitle(title: string): void;
@@ -143,6 +145,7 @@ export function createWindow(opts: WindowOptions): WindowWidget {
     get hidden() { return hidden; },
     get disposed() { return disposed; },
     shape: round ? 'round' : 'rect',
+    get moving() { return drag.moving; },
     get contentRect() { return layout.contentRect(bounds); },
     cursorAt(x, y) { const z = asDrag(zoneOf(x, y)); return z ? cursorForZone(z) : 'default'; },
     content: opts.content,
@@ -188,7 +191,12 @@ export function createWindow(opts: WindowOptions): WindowWidget {
       return passing && !hidden && zoneOf(px, py) === 'content';
     },
 
-    onPointer(evt: HudPointerEvent): void { drag.pointer(evt); },
+    onPointer(evt: HudPointerEvent): void {
+      const was = drag.moving;
+      drag.pointer(evt);
+      // Only the content reads it, and that draws every frame; the frame's deps stay put.
+      if (drag.moving !== was) opts.onChange?.();
+    },
 
     dispose() {
       if (disposed) return;

@@ -22,6 +22,10 @@ export interface LoupeEvents {
   onPick?(hex: string): void;
   /** The lens was closed from its own chrome. */
   onClose(): void;
+  /** The lens's own switch changed its mode. Write it back to whatever `settings.mode` is read from. */
+  onModeChange?(mode: LoupeMode): void;
+  /** The lens's own zoom changed its factor. Write it back to whatever `settings.factor` is read from. */
+  onFactorChange?(factor: number): void;
 }
 
 /** A loupe over `ref`'s canvas, kept to `settings`. Mount only once `ref` is populated: `createLoupe` reads it in a
@@ -76,6 +80,8 @@ export function useLoupe(
       onColorChange: (hex) => eventsRef.current.onColorChange(hex),
       onPick: (hex) => eventsRef.current.onPick?.(hex),
       onClose: () => eventsRef.current.onClose(),
+      onModeChange: (m) => eventsRef.current.onModeChange?.(m),
+      onFactorChange: (f) => eventsRef.current.onFactorChange?.(f),
     });
     loupe.window.setHidden(!visible);
     handle.current = loupe;

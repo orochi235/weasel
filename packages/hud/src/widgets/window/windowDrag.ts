@@ -36,6 +36,8 @@ export interface WindowDragHost {
 /** A window's press, drag and release: moving or resizing it, closing it, or clicking its interior. */
 export interface WindowDrag {
   pointer(evt: HudPointerEvent): void;
+  /** True while a press is moving the window: dragging its titlebar, or its interior where that moves it. */
+  readonly moving: boolean;
   /** Ends any drag in flight. */
   end(): void;
 }
@@ -48,6 +50,7 @@ export function createWindowDrag(host: WindowDragHost): WindowDrag {
   let pressMoved = false;
 
   return {
+    get moving() { return dragZone === 'title' && pressMoved; },
     end() { dragZone = null; pressZone = null; },
     pointer(evt) {
       switch (evt.type) {

@@ -10,6 +10,7 @@ import { lensAimInput } from './aimInput';
 import { createPixelReadback } from './pixelReadback';
 import { createVectorLens } from './vectorLens';
 import { registerLoupe } from './loupeRoutes';
+import { addLoupeControls } from './lensControls';
 import type { Rect } from '@weasel-js/geom';
 import { solidFill } from '@weasel-js/paint';
 
@@ -46,6 +47,14 @@ export interface LoupeBaseOptions {
    * titled window; prefer the round lens unless the lens must carry a title or be closed from its own chrome.
    */
   shape?: WindowShapeKind;
+  /** Draw a Vector | Pixel switch across the top of the lens and a zoom along its bottom. Default `true`. */
+  controls?: boolean;
+  /** The factors the zoom stops at, ascending. Default `LOUPE_FACTOR_STOPS`, 1× to 64× in doublings. */
+  zoomStops?: readonly number[];
+  /** Called when the lens's own switch changes its mode. */
+  onModeChange?: (mode: LoupeMode) => void;
+  /** Called when the lens's own zoom changes its factor. */
+  onFactorChange?: (factor: number) => void;
   /** Where the lens starts. A round lens takes the smaller side and stays square. */
   bounds?: WidgetBounds;
   title?: string;
@@ -155,11 +164,35 @@ export interface LoupeHandle {
   dispose(): void;
 }
 
+/** How opaque the magnified picture is while the lens is being moved. */
+const MOVING_ALPHA = 0.35;
+
 /** Where a lens of each shape starts when told nothing. */
 const DEFAULT_BOUNDS: Record<WindowShapeKind, WidgetBounds> = {
   round: { x: 24, y: 24, width: 200, height: 200 },
   rect: { x: 24, y: 24, width: 220, height: 200 },
 };
+
+/** The HUD window a lens lives in: titled or bare, round or not, its interior claimed for picking or passed through. */
+function lensWindow(
+  opts: LoupeOptions, interactive: boolean, content: (ctx: HudContentCtx) => DrawCommand[],
+  resized: () => void, pick: (p: { x: number; y: number }) => void,
+): WindowWidget {
+  const shape = opts.shape ?? 'round';
+  const b = opts.bounds ?? DEFAULT_BOUNDS[shape];
+  return opts.hud.window({
+    id: `weasel-loupe-${++loupeCount}`,
+    x: b.x, y: b.y, width: b.width, height: b.height,
+    title: opts.title ?? 'Loupe',
+    shape,
+    titlebar: opts.titlebar,
+    content,
+    interior: interactive ? 'pass' : 'claim',
+    onResize: resized,
+    ...(interactive ? {} : { onContentClick: pick }),
+    ...(opts.onClose ? { onClose: opts.onClose } : {}),
+  });
+}
 
 /** Numbers each loupe, so its window and lens view take ids of their own. */
 let loupeCount = 0;
@@ -178,7 +211,6 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   let disposed = false;
 
   const shape = opts.shape ?? 'round';
-  const b = opts.bounds ?? DEFAULT_BOUNDS[shape];
 
   const watch = createContentWatch(opts.contentVersion ?? host?.getPaintedVersion);
   let refreshAsked = false;
@@ -186,7 +218,9 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const content = (ctx: HudContentCtx): DrawCommand[] => {
     watch.drew(ctx.view);
     colors.drew(ctx);
-    return model.mode === 'vector' ? vector.draw(ctx) : pixels.draw(ctx, backdrop(ctx));
+    const picture = model.mode === 'vector' ? vector.draw(ctx) : pixels.draw(ctx, backdrop(ctx));
+    // See-through while it moves, so what it is being moved over shows.
+    return win.moving ? [{ kind: 'group', alpha: MOVING_ALPHA, children: picture }] : picture;
   };
 
   const backdropColor = (ctx: HudContentCtx): string =>
@@ -209,18 +243,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     layers: () => (model.mode === 'vector' && vector.aimedView()?.id == null ? opts.source ?? null : null),
   });
 
-  const win = hud.window({
-    id: `weasel-loupe-${++loupeCount}`,
-    x: b.x, y: b.y, width: b.width, height: b.height,
-    title: opts.title ?? 'Loupe',
-    shape,
-    titlebar: opts.titlebar,
-    content,
-    interior: interactive ? 'pass' : 'claim',
-    onResize: () => { scheduleRefresh(); },
-    ...(interactive ? {} : { onContentClick: (p: { x: number; y: number }) => { model.pick(p); } }),
-    ...(opts.onClose ? { onClose: opts.onClose } : {}),
-  });
+  const win = lensWindow(opts, interactive, content, scheduleRefresh, (p) => { model.pick(p); });
 
   const surface = createLensSurface(win, colors.sample, () => { scheduleRefresh(); requestRedraw(); }, hud.subscribeFrame);
 
@@ -259,8 +282,11 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     holds: (p) => interactive && surface.covers(p),
   }));
 
+  const removeControls = opts.controls === false ? () => {} : addLoupeControls(opts, win, model, shape === 'round');
+
   const teardown = () => {
     disposed = true;
+    removeControls();
     unsubscribeFrame();
     unregister();
     vector.remove();

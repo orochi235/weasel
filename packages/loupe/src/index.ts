@@ -5,6 +5,7 @@ export type {
   LoupeModelOptions,
   LoupeSurface,
 } from './model';
+export { LOUPE_FACTOR_MAX, LOUPE_FACTOR_MIN, LOUPE_FACTOR_STOPS, nearestStopIndex } from './zoomStops';
 export { createEyedropperModel } from './eyedropper';
 export type { EyedropperModel, EyedropperModelOptions } from './eyedropper';
 export { loupeExtent, loupeInnerView, loupeSourcePoint, placeBand } from './geometry';

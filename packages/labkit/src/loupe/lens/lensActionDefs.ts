@@ -6,6 +6,7 @@
  * Free of React so the actions can be tested without a DOM.
  */
 
+import { LOUPE_FACTOR_MAX, LOUPE_FACTOR_MIN, LOUPE_FACTOR_STOPS } from '@weasel-js/loupe';
 import {
   type Action,
   ActionDisabledReason,
@@ -127,14 +128,10 @@ export const LENS_KEYS: Partial<Record<LensActionId, string>> = {
 export const LOUPE_LEADER: KeySpec & { code: string } = { ...key('Alt+L'), code: 'KeyL' };
 
 const DPR_CYCLE: readonly (readonly number[])[] = [[1], [2], [1, 2]];
-/** The least and greatest factor a lens zooms to. */
-export const FACTOR_MIN = 1;
-export const FACTOR_MAX = 64;
-/** The factors the zoom keys step through, and the rim's zoom stops at: every power of two between the two. */
-export const FACTOR_STOPS: readonly number[] = Array.from(
-  { length: Math.log2(FACTOR_MAX / FACTOR_MIN) + 1 },
-  (_, i) => FACTOR_MIN * 2 ** i,
-);
+/** The least and greatest factor a lens zooms to, and the factors the zoom keys and the rim's zoom stop at. */
+export const FACTOR_MIN = LOUPE_FACTOR_MIN;
+export const FACTOR_MAX = LOUPE_FACTOR_MAX;
+export const FACTOR_STOPS = LOUPE_FACTOR_STOPS;
 
 /** The DPR set after `dprs`: 1× → 2× → 1×|2× → 1×. */
 function nextDprs(dprs: readonly number[]): readonly number[] {
