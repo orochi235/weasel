@@ -20,6 +20,12 @@ describe('generateTokens', () => {
     for (const file of ['tokens.css', 'themes.ts', 'manifest.ts'] as const) expect(result.files[file]).toBe(committed(file));
   });
 
+  it('types TokenName as never when no theme has a token', () => {
+    const result = generateTokens([{ name: 'bare', axes: { mode: { default: 'dark', values: { dark: {} } } } }]);
+    if (!result.ok) throw new Error(result.problems.join('\n'));
+    expect(result.files['themes.ts']).toContain('export type TokenName = never;');
+  });
+
   it('refuses a definition with derive issues and names each one', () => {
     const probe = { ramp: 'gray', contrast: { min: 30, against: ['surface'] } };
     const result = generateTokens([{ ...weasel, semantics: { ...weasel.semantics, probe } }]);
