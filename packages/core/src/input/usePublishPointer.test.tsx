@@ -29,6 +29,22 @@ function moveAt(el: Element | Document, clientX: number, clientY: number, button
 }
 
 describe('usePublishPointer', () => {
+  it('clears its pointer when its surface unmounts under it', () => {
+    const store = createPointerStore();
+    const r = render(<PointerContextProvider store={store}><Surface viewId="a" /></PointerContextProvider>);
+    moveAt(r.getByTestId('a'), 20, 40);
+    r.rerender(<PointerContextProvider store={store}>{null}</PointerContextProvider>);
+    expect(store.get()).toBeNull();
+  });
+
+  it("leaves another view's pointer when its surface unmounts", () => {
+    const { store, b } = mount();
+    moveAt(b, 20, 40);
+    const r2 = render(<PointerContextProvider store={store}><Surface viewId="c" /></PointerContextProvider>);
+    r2.unmount();
+    expect(store.get()?.viewId).toBe('b');
+  });
+
   it('publishes the located point and clears on a free leave', () => {
     const { store, a } = mount();
     moveAt(a, 20, 40);

@@ -18,6 +18,7 @@ export {
   createPathAnchorAffordances,
   PATH_ANCHOR_CHROME_ID,
   type AnchorState,
+  type AnchorStateBase,
   type AnchorScratch,
   type PathAnchorAffordanceOptions,
 } from './pathAnchors';

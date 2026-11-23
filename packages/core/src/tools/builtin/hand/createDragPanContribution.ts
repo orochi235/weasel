@@ -14,17 +14,17 @@ function panEntry(id: string, button: 'primary' | 'middle', params: DragPanParam
     id,
     eligibility: { always: true },
     bindings: [{
-      spec: button === 'middle' ? { kind: 'drag', button, mods: ANY_MODS } : { kind: 'drag' },
+      spec: { kind: 'drag', ...(button === 'middle' ? { button } : {}), mods: ANY_MODS },
       actionId: 'viewport.dragPan',
       opts: { id: `${id}.drag`, ...(Object.keys(params).length > 0 ? { params: { ...params } } : {}) },
     }],
   };
 }
 
-/** An always-live entry that pans the view on a drag no tool claims. No preset
- *  installs it: the hand tool pans, space-held or chosen, and a canvas that
- *  should pan on a plain drag — a viewer, a map — adds this to its ambient
- *  list. `params` are `viewport.dragPan`'s, as the hand tool passes them. */
+/** An always-live entry that pans the view on a drag no tool claims, with any
+ *  modifier held. No preset installs it: the hand tool pans, space-held or
+ *  chosen, and a canvas that should pan on a plain drag — a viewer, a map —
+ *  adds this to its ambient list. `params` are `viewport.dragPan`'s, as the hand tool passes them. */
 export function createDragPanContribution(params: DragPanParams = {}): Contribution {
   return panEntry(DRAG_PAN_ID, 'primary', params);
 }

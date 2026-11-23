@@ -10,7 +10,7 @@ export function makeMatchMedia(matches: Record<string, boolean>) {
   const listeners = new Map<string, Set<(e: { matches: boolean }) => void>>();
   const state = { ...matches };
   const mm = (query: string) => ({
-    matches: state[query] ?? false,
+    get matches() { return state[query] ?? false; },
     media: query,
     addEventListener: (_: string, cb: (e: { matches: boolean }) => void) => {
       if (!listeners.has(query)) listeners.set(query, new Set());

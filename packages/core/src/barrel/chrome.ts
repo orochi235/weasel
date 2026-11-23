@@ -61,6 +61,7 @@ export {
   type AffordanceRegionHit,
   type AnchorScratch,
   type AnchorState,
+  type AnchorStateBase,
   type CommonAffordanceScratch,
   type CustomPaintContext,
   type LayerHit,

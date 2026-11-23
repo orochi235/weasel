@@ -18,7 +18,8 @@ export type LocatePointer = (
  * it leaves, so a drag that runs off the edge still reports where it is until
  * it is released. A pointer that leaves with nothing held, or is released
  * or canceled outside (off the window included), clears the store, unless
- * another view has published since. No-op with no provider in scope.
+ * another view has published since, and so does the element unmounting or
+ * being swapped. No-op with no provider in scope.
  *
  * `locate` is read on each event, so it need not be stable. The ref is read
  * after every render, so an element that mounts later or is swapped is followed.
@@ -78,6 +79,7 @@ export function usePublishPointer(
       document.removeEventListener('pointermove', onDocMove);
       unheld();
       held.release();
+      clear();
     };
   }, [store, locateRef]);
 }

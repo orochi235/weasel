@@ -12,16 +12,27 @@ import { ANCHOR_HIT_BASE_PX } from 'core/device/targets';
  * Live anchor-editing state. The thunk that returns it is called on every
  * pointer event, so it must be cheap (O(1) field reads).
  */
-export interface AnchorState {
+export type AnchorState = AnchorStateBase & (
+  | {
+    /** The committed pose and data of a node, which extensions' parts read. */
+    getNode?(id: string): { pose: unknown; data: unknown } | null;
+    extensions?: undefined;
+  }
+  | {
+    /** The committed pose and data of a node, which extensions' parts read. */
+    getNode(id: string): { pose: unknown; data: unknown } | null;
+    /** The path-edit extensions whose parts are pressed, in order. */
+    extensions?: readonly PathEditExtension[];
+  }
+);
+
+/** The fields every `AnchorState` carries, whether or not it names extensions. */
+export interface AnchorStateBase {
   /** Id of the path currently in anchor-edit mode, or `null`. Control handles
    *  are only hittable on the path that is being edited. */
   editingId: string | null;
   /** Current editable path for a node id. Non-polygon values are ignored. */
   getPose(id: string): unknown;
-  /** The committed pose and data of a node, which extensions' parts read. */
-  getNode?(id: string): { pose: unknown; data: unknown } | null;
-  /** The path-edit extensions whose parts are pressed, in order. */
-  extensions?: readonly PathEditExtension[];
   /** The path whose outline counts as a segment press, when it is not
    *  `getPose`'s: a path drawn from a form, edited through the form's edit
    *  path. */
@@ -186,6 +197,7 @@ function extensionParts(
   hitRadius: number,
   cursor: CursorSpec,
 ): Affordance {
+  let warned = false;
   return {
     id: PATH_ANCHOR_CHROME_ID,
     regions() {
@@ -193,8 +205,15 @@ function extensionParts(
       const editingId = anchorState?.editingId ?? null;
       const extensions = anchorState?.extensions?.filter((e) => e.parts) ?? [];
       if (editingId === null || extensions.length === 0) return [];
+      if (!anchorState!.getNode) {
+        if (!warned) {
+          warned = true;
+          console.warn('createPathAnchorAffordances: AnchorState has extensions with parts but no getNode, so no part is offered.');
+        }
+        return [];
+      }
       const pose = anchorState!.getPose(editingId);
-      const node = anchorState!.getNode?.(editingId);
+      const node = anchorState!.getNode(editingId);
       if (!node || !pose || (pose as { kind?: string }).kind !== 'polygon') return [];
       const target = {
         id: editingId, node, path: pose as PolygonPath, anchors: pathToAnchors(pose as PolygonPath) as AnchorSet,
