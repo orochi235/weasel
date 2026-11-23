@@ -90,7 +90,8 @@ function createOutlineFace(
     advanceOf(cp: number): number | null {
       const index = font.charToGlyphIndex(String.fromCodePoint(cp));
       if (!index) return null;
-      return (font.glyphs.get(index).advanceWidth ?? 0) / upem;
+      const advance = advanceWidthOf(font, index);
+      return advance === null ? null : advance / upem;
     },
     ...(isSfnt(sfnt) ? { embedding: () => embeddingOf(font, sfnt, ascender, faceMetrics?.descent ?? 0) } : {}),
     kernOf(left: number, right: number): number {
@@ -113,6 +114,16 @@ function createOutlineFace(
       return d.length > 0 ? d : null;
     },
   };
+}
+
+/** A glyph's advance in font units, or `null` when reading it throws: a CFF glyph's advance comes from parsing its
+ *  charstring, and a damaged one costs that glyph alone, as it does for `glyphD`. */
+function advanceWidthOf(font: import('opentype.js').Font, index: number): number | null {
+  try {
+    return font.glyphs.get(index).advanceWidth ?? 0;
+  } catch {
+    return null;
+  }
 }
 
 /** opentype.js 2's `toPathData`, which the 1.x typings declare as taking only a precision. */
@@ -176,7 +187,7 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent
     glyphIndexOf(cp) {
       return font.charToGlyphIndex(String.fromCodePoint(cp)) || null;
     },
-    advanceOfGlyph: (gid) => font.glyphs.get(gid).advanceWidth ?? 0,
+    advanceOfGlyph: (gid) => advanceWidthOf(font, gid) ?? 0,
     ascent: finiteOr(font.ascender, ascent * font.unitsPerEm),
     descent: finiteOr(font.descender, -descent * font.unitsPerEm),
     capHeight: t.os2?.sCapHeight || finiteOr(font.ascender, ascent * font.unitsPerEm),
