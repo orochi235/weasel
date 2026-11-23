@@ -166,12 +166,18 @@ function paintTag(data: Data, theme: DiagramTheme, step: number): Data | null {
   return { ...(text ?? data), ...(background ? { background } : {}) };
 }
 
+/** The width and dash `theme` draws a shape's outline or a connector's line in, for `role`. */
+export function themeLine(theme: DiagramTheme, kind: 'shape' | 'connector', role?: string): { width: unknown; dash?: readonly number[] } {
+  if (kind === 'shape') return outlineOf(roleStyle(theme, role), 'body');
+  const { width, dash } = edgeStrokeOf(roleEdgeStyle(theme, role));
+  return { width, ...(dash ? { dash } : {}) };
+}
+
 /** A connector's own colors and line, and its label's color, under `theme`. */
 function edgeLook(trait: Trait, theme: DiagramTheme) {
   const style = roleEdgeStyle(theme, trait.style);
-  const { width, dash } = edgeStrokeOf(style);
   return {
-    stroke: style.stroke, label: style.label ?? style.stroke, line: { width, ...(dash ? { dash } : {}) },
+    stroke: style.stroke, label: style.label ?? style.stroke, line: themeLine(theme, 'connector', trait.style),
     own: ownOf(trait), ownLine: ownLineOf(trait), ownSize: ownsSize(trait),
   };
 }
