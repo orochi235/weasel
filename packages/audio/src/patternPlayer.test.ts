@@ -121,6 +121,18 @@ describe('createPatternPlayer', () => {
     expect(player.tempo()).toBe(60);
   });
 
+  it('keeps one step sequence when a tempo is set from a booking that fires beside its next step', async () => {
+    const { engine, run } = await harness();
+    const seen: number[] = [];
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 16, onStep: (_step, when) => seen.push(when),
+    });
+    player.start(0);
+    engine.schedule(125, () => player.setTempo(60));
+    await run(900);
+    expect(seen).toEqual([0, 250, 500, 750, 1000]);
+  });
+
   it('starts a tempo set from inside onStep with the step after, on one sequence', async () => {
     const { engine, run } = await harness();
     const seen: number[] = [];

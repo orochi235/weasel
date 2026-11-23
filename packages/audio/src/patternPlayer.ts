@@ -1,3 +1,4 @@
+import { createLatest } from '@weasel-js/registry';
 import type { AudioEngine } from './createAudioEngine';
 import type { SoundHandle } from './soundCache';
 import type { NoiseOptions, NoteOptions, PlayOptions, VoiceHandle } from './types';
@@ -117,8 +118,8 @@ function eventsByStep(events: readonly PatternEvent[]): Map<number, PatternEvent
   return byStep;
 }
 
-/** Play every event of the step at `when` into `voices`, each on its own: the first that throws is returned, not
- *  thrown, so one bad event costs neither the rest of its step nor the step after it. */
+/** Play every event of the step at `when` into `voices`, less those that have ended, each on its own: the first
+ *  that throws is returned, not thrown, so one bad event costs neither the rest of its step nor the step after it. */
 function playStep(
   engine: AudioEngine,
   events: readonly PatternEvent[],
@@ -128,6 +129,7 @@ function playStep(
   stepMs: number,
   voices: Set<VoiceHandle>,
 ): { err: unknown } | null {
+  for (const v of voices) if (!v.isPlaying()) voices.delete(v);
   let failure: { err: unknown } | null = null;
   for (const e of events) {
     try {
@@ -152,6 +154,11 @@ function playEvent(engine: AudioEngine, e: PatternEvent, at: number, detune: num
   }
   const { step: _s, length: steps = 1, ...note } = e;
   return engine.playNote({ ...note, detune, when: at, duration: steps * stepMs });
+}
+
+/** The steps a step fired `behind` ms late slept through: none unless it is more than a step late. */
+function missedSteps(behind: number, ms: number): number {
+  return behind > ms ? Math.ceil(behind / ms) : 0;
 }
 
 /**
@@ -195,17 +202,18 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
 
   const stepMs = (): number => 60_000 / bpm / stepsPerBeat;
 
-  const book = (): void => { engine.schedule(nextAt, fire, key); };
+  // A step a later booking replaced plays nothing: `cancelKey` cannot reach one the scheduler's running pass has taken.
+  const bookings = createLatest();
+  const book = (): void => {
+    const mine = bookings.take();
+    engine.schedule(nextAt, (scheduled) => { if (mine()) fire(scheduled); }, key);
+  };
 
   const fire = (scheduled: number): void => {
     if (!running) return;
-    let when = scheduled;
-    const behind = engine.now() - when;
-    if (behind > stepMs()) {
-      const skip = Math.ceil(behind / stepMs());
-      count += skip;
-      when += skip * stepMs();
-    }
+    const skip = missedSteps(engine.now() - scheduled, stepMs());
+    count += skip;
+    const when = scheduled + skip * stepMs();
     if (!loop && count >= length) {
       running = false;
       return;
@@ -227,7 +235,6 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       if (failure) throw failure.err;
       return;
     }
-    for (const v of voices) if (!v.isPlaying()) voices.delete(v);
     const played = playStep(engine, byStep.get(step) ?? [], step, when, drift, stepMs(), voices);
     failure ??= played;
     // Read before `onStep`: a tempo set there starts with the next step, and
