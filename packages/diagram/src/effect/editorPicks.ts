@@ -41,6 +41,9 @@ export function useEditorPicks(built: EditorScene, given: Given) {
   const wire = edge === null || built.wireOf(edge) === undefined ? null : edge;
   const controlled = given.selected !== undefined || given.selectedCluster !== undefined;
   const live = (id: string | null) => (id !== null && isPart(built, id) ? id : null);
-  const shown = controlled ? live(shownStage) ?? live(shownCluster) ?? wire : undefined;
+  const part = controlled ? live(shownStage) ?? live(shownCluster) : null;
+  // A controlled selection moving onto a part replaces the wire pick, so it can't resurface once that selection clears.
+  if (part !== null && edge !== null) setEdge(null);
+  const shown = controlled ? part ?? wire : undefined;
   return { pick, unpick, shown };
 }

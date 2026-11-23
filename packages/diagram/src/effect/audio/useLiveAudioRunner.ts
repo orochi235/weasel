@@ -43,7 +43,7 @@ export function useLiveAudioRunner(opts: UseLiveAudioRunnerOptions): LiveAudioRu
     };
   }, [engine, bus, nodes, latest]);
   const state = useFollowAudioRunner(runner, { ...opts, ...(nodes !== undefined ? { nodes } : {}) });
-  useEffect(() => { if (runner !== null) closeRetired(retired.current); }, [runner, state.run]);
+  useEffect(() => { if (runner !== null) closeRetired(retired.current, runner); }, [runner, state.run]);
   useEffect(() => {
     const held = retired.current;
     return () => closeRetired(held);
@@ -51,9 +51,12 @@ export function useLiveAudioRunner(opts: UseLiveAudioRunnerOptions): LiveAudioRu
   return { ...state, runner };
 }
 
-/** Closes the bitmaps a retired runner's last run held, now a render shows another runner's. */
-function closeRetired(retired: LiveAudioRunner[]): void {
-  for (const r of retired.splice(0)) r.drawn(undefined);
+/** Closes the bitmaps each retired runner's last run held, but `shown`'s, which the render just committed still shows. */
+function closeRetired(retired: LiveAudioRunner[], shown?: LiveAudioRunner): void {
+  for (const r of retired.splice(0)) {
+    if (r === shown) retired.push(r);
+    else r.drawn(undefined);
+  }
 }
 
 function sameNodes(a: AudioStageNodes | undefined, b: AudioStageNodes | undefined): boolean {
