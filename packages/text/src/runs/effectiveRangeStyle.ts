@@ -5,7 +5,7 @@ import { styleHasFlag } from './flagRange';
 import { MIXED } from './rangeStyle';
 import type { Mixed, RangeStyle } from './rangeStyle';
 
-const FLAGS = ['italic', 'underline', 'strikethrough', 'overline'] as const;
+const FLAGS = ['underline', 'strikethrough', 'overline'] as const;
 
 /**
  * The weight a range renders at, and whether that reads as bold, resolved as
@@ -43,7 +43,8 @@ const OVERRIDES = [
  * and `paint`, as the canvas resolves runs. `null` reads the node alone.
  *
  * Flags are additive — a run can turn one on, never off — so a node flag
- * makes the flag `true` across the range, `MIXED` runs included. Every other
+ * makes the flag `true` across the range, `MIXED` runs included. `italic`
+ * is the run's where the range sets it, since a run's `false` is upright. Every other
  * key is the run's value where the range sets one, otherwise the node's.
  * The node level is resolved first, so the result has a value for every
  * key but the run-only ones, for `fill` unless the node is unfilled, and
@@ -75,6 +76,7 @@ export function effectiveRangeStyle(
     const run = range?.[key];
     out[key] = on || run === undefined ? on : run;
   }
+  out.italic = range?.italic ?? styleHasFlag(node, 'italic');
   if (range === null) return out;
   for (const key of OVERRIDES) {
     if (range[key] !== undefined) (out as Record<string, unknown>)[key] = range[key];

@@ -8,14 +8,15 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
 import {
-  effectiveRangeStyle, resolveTextStyle, type RangeStyle, type RunStylePatch, type TextStyle,
+  effectiveRangeStyle, resolveTextStyle, type RangeStyle, type ResolvedTextStyle, type RunStylePatch, type TextStyle,
 } from '@weasel-js/text';
 import { armedOver, usePendingStyle } from './armedStyle';
-import { openEditOverlay } from './editOverlay';
+import { openEditOverlay, type EditedFrame } from './editOverlay';
 import { useEditingId } from './editSession';
 import { useHeldNodeStyle } from './heldNodeStyle';
 import { writeEdit, type EditDraft } from './overlayDraft';
 import { createOverlayEdits } from './overlayEdits';
+import { useEditCarry } from './overlayCarry';
 import { overlayTop } from './overlayFrame';
 import { useOverlayFollow } from './overlayFollow';
 import type { OverlayHistory } from './overlayHistory';
@@ -83,22 +84,20 @@ export function useTextEdit(
     pendingRef, armPending, selectionRef, publishRange,
   });
 
-  useEffect(() => {
-    if (editingId == null) return;
-    const { container, getText, getStyle, getPaint } = optsRef.current;
-    if (!container) return;
-    holdNodeStyle(null);
+  const { takeCarry, stashCarry } = useEditCarry({ editingIdRef, optsRef, selectionRef, nodeStyleRef });
 
-    const style = resolveTextStyle(getStyle(editingId), getPaint?.(editingId));
+  useEffect(() => {
+    const { container, getText, getStyle, getPaint } = optsRef.current;
+    const carried = takeCarry(editingId, container != null);
+    if (editingId == null || !container) return;
+    holdNodeStyle(carried?.held ?? null);
+
+    const style = resolveTextStyle(carried?.held ?? getStyle(editingId), getPaint?.(editingId));
     baseRef.current = style;
-    const node = { text: getText(editingId), runs: optsRef.current.getRuns?.(editingId), style };
-    const frame = {
-      pose: () => optsRef.current.getScreenPose(editingId),
-      clip: () => optsRef.current.getClipRect?.() ?? null,
-      style: () => baseRef.current,
-    };
+    const node = { text: getText(editingId), runs: optsRef.current.getRuns?.(editingId), style, carried: carried ?? undefined };
+    const frame = editedFrame(optsRef, editingId, baseRef);
     const holdFor = optsRef.current.fontHold ?? TEXT_EDIT_FONT_HOLD;
-    const opened = openEditOverlay(container, node, frame, holdFor, initialCaretRef.current);
+    const opened = openEditOverlay(container, node, frame, holdFor, carried?.selection ?? initialCaretRef.current);
     const { overlay, boxes, draft, place } = opened;
     draftRef.current = draft;
     overlayRef.current = overlay;
@@ -129,6 +128,7 @@ export function useTextEdit(
     const stopFollowing = follow(place);
 
     return () => {
+      stashCarry(editingId, container, overlay, draft);
       stopFollowing();
       stopListening();
       placeRef.current = () => {};
@@ -138,7 +138,7 @@ export function useTextEdit(
       holdNodeStyle(null);
       clearSelection();
     };
-  }, [editingId, opts.container, optsRef, commit, cancelEdit, syncSelection, clearSelection,
+  }, [editingId, opts.container, optsRef, takeCarry, stashCarry, commit, cancelEdit, syncSelection, clearSelection,
       follow, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
       selectionRef, baseRef, nodeStyleRef, placeRef]);
 
@@ -146,6 +146,19 @@ export function useTextEdit(
     editingId, startEdit, cancelEdit, commitEdit: commit, isEditing, nodeStyle,
     selection, rangeStyle, pendingStyle, applyStyleToSelection, toggleStyle,
     effectiveStyle: shownStyle(opts, editingId, nodeStyle, rangeStyle, pendingStyle),
+  };
+}
+
+/** Where the node `id` is on screen now, and the style the edit holds it in, read through the latest options. */
+function editedFrame(
+  optsRef: { readonly current: Pick<UseTextEditOptions, 'getScreenPose' | 'getClipRect'> },
+  id: string,
+  baseRef: { readonly current: ResolvedTextStyle },
+): EditedFrame {
+  return {
+    pose: () => optsRef.current.getScreenPose(id),
+    clip: () => optsRef.current.getClipRect?.() ?? null,
+    style: () => baseRef.current,
   };
 }
 

@@ -92,9 +92,10 @@ export const runsArb = (chars: readonly string[] = CHARS): fc.Arbitrary<StyledRu
 /** One code unit of text and the styling it carries. */
 export interface Unit { ch: string; style: RunStylePatch }
 
-const FLAGS = new Set(['bold', 'italic', 'underline', 'strikethrough', 'overline']);
+const FLAGS = new Set(['bold', 'underline', 'strikethrough', 'overline']);
 
-/** `style` with flags stored only when on and nothing stored as `undefined`: the one form runs keep. */
+/** `style` with flags stored only when on and nothing stored as `undefined`: the one form runs keep. `italic` keeps
+ *  `false`, which is upright under italic text. */
 export function canonical(style: RunStylePatch): RunStylePatch {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(style)) {
@@ -131,7 +132,7 @@ export function patched(style: RunStylePatch, patch: RunStylePatch): RunStylePat
   if ('bold' in patch && !('fontWeight' in patch)) delete out.fontWeight;
   if (patch.fontWeight !== undefined && !('bold' in patch)) delete out.bold;
   for (const [k, v] of Object.entries(patch)) {
-    if (v === undefined || v === false) delete out[k];
+    if (v === undefined || (v === false && FLAGS.has(k))) delete out[k];
     else out[k] = v;
   }
   return canonical(out as RunStylePatch);

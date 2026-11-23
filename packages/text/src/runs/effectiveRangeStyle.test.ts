@@ -116,3 +116,11 @@ describe('effectiveRangeStyle', () => {
     expect(effectiveRangeStyle({ script: 'sub' }, { script: 'super' }).script).toBe('sub');
   });
 });
+
+describe('effectiveRangeStyle — an upright run in italic text', () => {
+  it('reads the run upright, and the node italic where the range leaves it', () => {
+    expect(effectiveRangeStyle({ italic: false }, { fontStyle: 'italic' }).italic).toBe(false);
+    expect(effectiveRangeStyle({}, { fontStyle: 'italic' }).italic).toBe(true);
+    expect(effectiveRangeStyle({ italic: MIXED }, { fontStyle: 'italic' }).italic).toBe(MIXED);
+  });
+});

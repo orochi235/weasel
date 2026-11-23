@@ -1,7 +1,7 @@
 /** The styling commands an edit takes from shortcuts and chrome: a patch over the selection, or a toggle of one flag. */
 import { useCallback } from 'react';
 import {
-  applyStyleToRange, rangeWeight, setFlagOverRange, styleAtRange, styleHasFlag, unboldPatch,
+  applyStyleToRange, clearScriptOverRange, rangeWeight, setFlagOverRange, styleAtRange, styleHasFlag, unboldPatch,
   type FlagKey, type RangeStyle, type RunStylePatch, type TextStyle,
 } from '@weasel-js/text';
 import { armedOver, armPatch } from './armedStyle';
@@ -25,7 +25,14 @@ export function patchForToggle(
   nodeStyle: TextStyle,
 ): RunStylePatch {
   if (toggle === 'super' || toggle === 'sub') {
-    return { script: current.script === toggle ? undefined : toggle };
+    const shown = current.script === undefined ? nodeStyle.script : current.script;
+    return { script: shown === toggle ? undefined : toggle };
+  }
+  if (toggle === 'italic') {
+    // A run's own `italic` (`false` included) wins over the node's; `undefined` leaves the node's showing.
+    const node = styleHasFlag(nodeStyle, 'italic');
+    const on = current.italic === undefined ? node : current.italic === true;
+    return { italic: !on === node ? undefined : !on };
   }
   const on = toggle === 'bold'
     ? rangeWeight(current, nodeStyle).bold === true
@@ -84,22 +91,28 @@ export function useSelectionStyling(host: SelectionStylingHost) {
           && patch[key] === false
           && styleHasFlag(styleOf(id) ?? {}, key))
       : undefined;
-    if (unsetFlag !== undefined && id !== null) {
-      const r = setFlagOverRange(runs, styleOf(id) ?? {}, range.start, range.end, unsetFlag, false);
+    // A script the node sets is taken off the same way: a run has no value for "no script".
+    const unsetScript = id !== null && canWriteStyle && Object.hasOwn(patch, 'script') && patch.script === undefined
+      && styleOf(id)?.script !== undefined;
+    if ((unsetFlag !== undefined || unsetScript) && id !== null) {
+      const key = unsetFlag ?? 'script';
+      const r = unsetFlag !== undefined
+        ? setFlagOverRange(runs, styleOf(id) ?? {}, range.start, range.end, unsetFlag, false)
+        : clearScriptOverRange(runs, styleOf(id) ?? {}, range.start, range.end);
       const resolved = restyleNode(overlay, id, r.style);
       writeRunsPreservingSelection(overlay, r.runs, range.start, range.end, resolved);
       publishRange(overlay, range);
-      // The rewrite raised the flag on every existing run, so a caret sitting
-      // at the end of one is now *inside* a flagged span and the next
-      // character would be absorbed by it. Arming the `false` makes
-      // `beforeinput` open a fresh span instead.
+      // The rewrite raised the key on every existing run, so a caret sitting
+      // at the end of one is now *inside* that span and the next character
+      // would be absorbed by it. Arming the key off makes `beforeinput` open
+      // a fresh span instead.
       if (range.start === range.end) {
-        armPending({ ...pendingRef.current, [unsetFlag]: false }, range.start);
+        armPending({ ...pendingRef.current, [key]: unsetFlag !== undefined ? false : undefined }, range.start);
       }
       restoreOverlayFocus(overlay, range);
       // Whatever else the patch carried still applies on its own terms.
       const rest = { ...patch };
-      delete rest[unsetFlag];
+      delete rest[key];
       if (Object.keys(rest).length > 0) applyStyle(rest);
       sendDraft(overlay);
       return;

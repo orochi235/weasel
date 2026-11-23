@@ -157,7 +157,7 @@ describe('useTextEdit — range styling surface', () => {
     // Distinguishable from "no caret at all" (null). The styling reported is
     // the run the caret sits in — what the next typed character inherits.
     expect(result.current.rangeStyle).toEqual({
-      bold: false, italic: false, underline: false, strikethrough: false, overline: false,
+      bold: false, underline: false, strikethrough: false, overline: false,
     });
   });
 
@@ -172,7 +172,7 @@ describe('useTextEdit — range styling surface', () => {
     // into, so bold wins over the italic run starting there.
     await placeCaretAndSettle(overlay, 2);
     expect(result.current.rangeStyle?.bold).toBe(true);
-    expect(result.current.rangeStyle?.italic).toBe(false);
+    expect(result.current.rangeStyle?.italic).toBeUndefined();
     // At offset 0 there is nothing to the left, so it reads rightward.
     await placeCaretAndSettle(overlay, 0);
     expect(result.current.rangeStyle?.bold).toBe(true);

@@ -7,13 +7,14 @@ import { useCallback, useRef, useState } from 'react';
 import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { applyStyleToRange, type RangeStyle, type RunStylePatch } from '@weasel-js/text';
 
-const FLAGS: ReadonlySet<string> = new Set(['bold', 'italic', 'underline', 'strikethrough', 'overline']);
+/** Flags whose `false` is no override. Not `italic`, whose `false` is upright under italic text. */
+const FLAGS: ReadonlySet<string> = new Set(['bold', 'underline', 'strikethrough', 'overline']);
 
 /** `style` with `armed` laid over it, as the next character takes them. */
 export function withArmed(style: RunStylePatch, armed: RunStylePatch): RunStylePatch {
   const out: Record<string, unknown> = { ...style };
   for (const [key, value] of Object.entries(armed)) {
-    if (value === undefined || value === false) delete out[key];
+    if (value === undefined || (value === false && FLAGS.has(key))) delete out[key];
     else setOwn(out, key, value);
   }
   return out as RunStylePatch;

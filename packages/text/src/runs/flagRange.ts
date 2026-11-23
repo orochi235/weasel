@@ -2,17 +2,15 @@
  * Turning a run-level flag **off** inside a node that sets it.
  *
  * Run flags are additive over the node's `TextStyle` — a run turns `bold` /
- * `italic` / `underline` / `strikethrough` on, never off (see the contract at
- * the top of `rangeStyle.ts`). This resolves it by rewriting rather than by
+ * `underline` / `strikethrough` / `overline` on, never off (see the contract
+ * at the top of `rangeStyle.ts`). This resolves it by rewriting rather than by
  * widening the model: clear the flag on the node, and set it on every run
  * *outside* the range. The rendered result is identical, with `StyledRun`
  * unchanged.
  *
- * The alternative was a tri-state run flag (`true` / `false` / inherit). It
- * cannot cover `italic`: that is a boolean on a run but `fontStyle` on the
- * node, so a run's `false` has no node-level boolean to override.
- *
- * `bold` needs neither: a run carries a numeric `fontWeight`, which overrides
+ * `italic` needs no rewrite: a run's `italic: false` sets it upright under
+ * italic text, so lowering it writes that over the range alone. `bold`
+ * needs no rewrite either: a run carries a numeric `fontWeight`, which overrides
  * the node's outright, so lowering bold writes a regular weight over the
  * range and leaves the node and the rest of the text alone.
  */
@@ -51,10 +49,9 @@ export function unboldPatch(style: TextStyle): RunStylePatch {
 }
 
 /** The node style with `key` cleared. */
-function clearNodeFlag(style: TextStyle, key: Exclude<FlagKey, 'bold'>): TextStyle {
+function clearNodeFlag(style: TextStyle, key: Exclude<FlagKey, 'bold' | 'italic'>): TextStyle {
   const next = { ...style };
   switch (key) {
-    case 'italic': next.fontStyle = 'normal'; break;
     case 'underline': delete next.underline; break;
     case 'strikethrough': delete next.strikethrough; break;
     case 'overline': delete next.overline; break;
@@ -68,8 +65,9 @@ function clearNodeFlag(style: TextStyle, key: Exclude<FlagKey, 'bold'>): TextSty
  * Turning a flag **on**, or off in a node that doesn't set it, is the ordinary
  * additive write and leaves `style` alone. Turning it off in a node that *does*
  * set it takes the rewrite: the node flag is cleared and the flag is written
- * onto the complement of the range. Bold is the exception, written as a
- * weight over the range alone (see {@link unboldPatch}).
+ * onto the complement of the range. Bold and italic are the exceptions,
+ * written over the range alone: a regular weight (see {@link unboldPatch}),
+ * and `italic: false`.
  *
  * `runs` is normalized on every path, so the complement collapses back to one
  * run when the range is empty and the whole array coalesces as usual.
@@ -89,6 +87,7 @@ export function setFlagOverRange(
   if (key === 'bold') {
     return { runs: applyStyleToRange(runs, start, end, unboldPatch(style)), style };
   }
+  if (key === 'italic') return { runs: applyStyleToRange(runs, start, end, { italic: false }), style };
 
   const total = runs.reduce((n, r) => n + r.text.length, 0);
   const lo = Math.max(0, start);
@@ -101,4 +100,20 @@ export function setFlagOverRange(
   if (lo < hi) next = applyStyleToRange(next, lo, hi, { [key]: false });
 
   return { runs: next, style: clearNodeFlag(style, key) };
+}
+
+/**
+ * Take `script` off `[start, end)` in text whose node sets one. A run has no value for "no script", so this takes the
+ * rewrite: the node's script is cleared and set on every run outside the range that carries none of its own.
+ */
+export function clearScriptOverRange(
+  runs: readonly StyledRun[],
+  style: TextStyle,
+  start: number,
+  end: number,
+): SetFlagResult {
+  const { script, ...rest } = style;
+  if (script === undefined) return { runs: applyStyleToRange(runs, start, end, { script: undefined }), style };
+  const raised = runs.map((run) => (run.script === undefined ? { ...run, script } : { ...run }));
+  return { runs: applyStyleToRange(raised, start, end, { script: undefined }), style: rest };
 }

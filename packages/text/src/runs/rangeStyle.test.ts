@@ -78,7 +78,6 @@ describe('styleAtRange', () => {
   it('reads a range that covers exactly one whole run', () => {
     expect(styleAtRange(runs, 6, 11)).toEqual({
       bold: true,
-      italic: false,
       underline: false,
       strikethrough: false,
       overline: false,
@@ -402,5 +401,23 @@ describe('fontVariantCaps over a range', () => {
     expect(out).toEqual([{ text: 'a' }, { text: 'b', fontVariantCaps: 'small-caps' }, { text: 'c' }]);
     expect(styleAtRange(out, 0, 2).fontVariantCaps).toBe(MIXED);
     expect(hasStyledRun([{ text: 'a', fontVariantCaps: 'small-caps' }])).toBe(true);
+  });
+});
+
+describe('an upright italic: false', () => {
+  const upright: StyledRun[] = [{ text: 'ab', italic: false }, { text: 'cd' }];
+
+  it('is written, and kept apart from a run that inherits', () => {
+    expect(applyStyleToRange([{ text: 'abcd' }], 0, 2, { italic: false })).toEqual(upright);
+  });
+
+  it('reads as itself, and as MIXED beside a run that inherits', () => {
+    expect(styleAtRange(upright, 0, 2).italic).toBe(false);
+    expect(styleAtRange(upright, 2, 4).italic).toBeUndefined();
+    expect(styleAtRange(upright, 0, 4).italic).toBe(MIXED);
+  });
+
+  it('counts as styling of its own', () => {
+    expect(hasStyledRun(upright)).toBe(true);
   });
 });
