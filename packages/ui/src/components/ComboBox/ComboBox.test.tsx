@@ -325,4 +325,15 @@ describe('ComboBox async surface', () => {
     expect(await screen.findByText("Couldn't load parts")).toBeTruthy();
     expect(screen.queryByText('No parts')).toBeNull();
   });
+
+  it('shows the error row above stale options when a load fails and the last rows stay', async () => {
+    const user = userEvent.setup();
+    render(<ComboBox label="Part" options={OPTIONS} filter="none" loadError={new Error('offline')} errorLabel="Couldn't load parts" />);
+
+    await user.tab();
+    await user.keyboard('{ArrowDown}');
+    await screen.findByRole('listbox');
+    expect(screen.getAllByRole('option')).toHaveLength(3);
+    expect(screen.getByRole('alert').textContent).toBe("Couldn't load parts");
+  });
 });

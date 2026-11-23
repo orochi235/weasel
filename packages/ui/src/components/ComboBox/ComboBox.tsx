@@ -70,7 +70,7 @@ export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<
   filter?: ComboBoxFilter;
   /** Marks the options as out of date while the next set is being fetched. */
   loading?: boolean;
-  /** A failed load, shown as `errorLabel` rather than as an empty corpus. */
+  /** A failed load, shown as `errorLabel` above whatever options are left, and in place of `emptyLabel`. */
   loadError?: unknown | null;
   /**
    * Fires when the user commits — Enter on the highlighted option, a click on
@@ -165,15 +165,10 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       <FieldFoot description={description} errorMessage={errorMessage} />
       {ready && provide(
         <Popover className={s.popover} data-weasel-overlay="">
+          {loadError !== null && <div className={s.error} role="alert">{errorLabel}</div>}
           <RACListBox
             className={listbox.list}
-            renderEmptyState={() =>
-              loadError !== null ? (
-                <div className={s.error} role="alert">{errorLabel}</div>
-              ) : (
-                <div className={s.empty}>{emptyLabel}</div>
-              )
-            }
+            renderEmptyState={() => (loadError !== null ? null : <div className={s.empty}>{emptyLabel}</div>)}
           >
             {options !== undefined
               ? options.map((o) => (
