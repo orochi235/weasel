@@ -54,3 +54,15 @@ test.each([
     root.remove();
   }
 });
+
+test('a dialog overlay starts its entry transparent, so it fades in', () => {
+  const root = themedRoot();
+  try {
+    renderWithIcons(<Dialog open isEntering title="Compose">Body</Dialog>, { container: root });
+    const overlay = document.querySelector<HTMLElement>('[data-weasel-overlay][data-entering]')!;
+    expect(getComputedStyle(overlay).opacity).toBe('0');
+  } finally {
+    cleanup();
+    root.remove();
+  }
+});

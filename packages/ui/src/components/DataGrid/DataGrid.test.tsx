@@ -80,6 +80,11 @@ describe('DataGrid sorting', () => {
     expect(screen.queryByRole('button', { name: /Name/ })).toBeNull();
     expect(screen.getByRole('columnheader')).not.toHaveAttribute('aria-sort');
   });
+
+  it('gives a non-sortable column that the grid is sorted by its aria-sort', () => {
+    render(<DataGrid<Row> rows={ROWS} columns={[{ id: 'count', header: 'Count', sortable: false }]} defaultSort={{ columnId: 'count', direction: 'desc' }} />);
+    expect(screen.getByRole('columnheader')).toHaveAttribute('aria-sort', 'descending');
+  });
 });
 
 describe('DataGrid reorder', () => {

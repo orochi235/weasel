@@ -27,7 +27,7 @@ export function DataGridHead<Row>({ columns, sort, onSort, dragEnabled, detailEn
             <th
               key={col.id}
               className={[col.className, col.numeric && s.numeric, active && s.sortActive].filter(Boolean).join(' ') || undefined}
-              aria-sort={sortable ? (active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : 'none') : undefined}
+              aria-sort={active ? (sort.direction === 'asc' ? 'ascending' : 'descending') : sortable ? 'none' : undefined}
             >
               {sortable ? (
                 <button type="button" className={s.sortButton} {...hold.button(false)} onClick={() => onSort(col.id)}>

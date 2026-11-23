@@ -22,7 +22,8 @@ export interface ColorFieldProps extends HoldProps {
   /** No color is held, and whatever paints comes from a fallback: drawn as `mixed` is, without saying the
    *  values disagree, so an opacity edit cannot write the placeholder back as a color. */
   unset?: boolean;
-  /** Show the opacity slider; emitted values are `#rrggbbaa`. */
+  /** Show the opacity slider; emitted values are `#rrggbbaa`. A color pick on a `mixed` or `unset` field emits
+   *  `#rrggbb` until the slider moves: the opacity is each target's own, and the consumer keeps it. */
   alpha?: boolean;
   /** Draw the opacity slider inert, for a consumer that drops alpha. */
   alphaDisabled?: boolean;
@@ -81,6 +82,7 @@ export function ColorField(props: ColorFieldProps) {
   // compose against (rgb6 is the placeholder black), so keep it disabled
   // until the first color edit lands.
   const alphaLocked = (mixed || unset) && picked === null;
+  const pickRgb = (rgb: string): string => ((mixed || unset) && alphaDraft === null ? rgb : compose(rgb, visibleAlpha));
 
   const recordApplied = useRecordApplied();
   const apply = (next: string) => onChange(next) ?? next;
@@ -104,12 +106,12 @@ export function ColorField(props: ColorFieldProps) {
           aria-label={props['aria-label'] ?? 'Color'}
           onInput={(rgb) => {
             setPicked(rgb);
-            onInput?.(compose(rgb, visibleAlpha));
+            onInput?.(pickRgb(rgb));
           }}
           onChange={(rgb) => {
             setPicked(null);
             setAlphaDraft(null);
-            return apply(compose(rgb, visibleAlpha));
+            return apply(pickRgb(rgb));
           }}
           onCancel={() => {
             setPicked(null);

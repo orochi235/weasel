@@ -70,7 +70,10 @@ export type ComboBoxProps<T extends OptionKey = string> = Omit<RACComboBoxProps<
   filter?: ComboBoxFilter;
   /** Marks the options as out of date while the next set is being fetched. */
   loading?: boolean;
-  /** A failed load, shown as `errorLabel` above whatever options are left, and in place of `emptyLabel`. */
+  /**
+   * A failed load, shown as `errorLabel` above whatever options are left, and in place of `emptyLabel`. While it is
+   * set the popover stays open on an empty collection, whatever the `filter`.
+   */
   loadError?: unknown | null;
   /**
    * Fires when the user commits — Enter on the highlighted option, a click on
@@ -139,7 +142,7 @@ export function ComboBox<T extends OptionKey = string>(props: ComboBoxProps<T>) 
       // 'contains' leaves this unset so React Aria uses its own locale-aware
       // match rather than a reimplementation of it.
       defaultFilter={filter === 'none' ? admitEverything : filter === 'contains' ? undefined : filter}
-      allowsEmptyCollection={rest.allowsEmptyCollection ?? filter === 'none'}
+      allowsEmptyCollection={rest.allowsEmptyCollection ?? (filter === 'none' || loadError !== null)}
       selectedKey={selectedKey}
       defaultSelectedKey={defaultSelectedKey}
       onSelectionChange={(k) => {
