@@ -84,7 +84,9 @@ export function useTextEdit(
     pendingRef, armPending, selectionRef, publishRange,
   });
 
-  const { takeCarry, stashCarry } = useEditCarry({ editingIdRef, optsRef, selectionRef, nodeStyleRef });
+  const { takeCarry, stashCarry } = useEditCarry({
+    editingIdRef, optsRef, selectionRef, nodeStyleRef, pendingRef, pendingAtRef,
+  });
 
   useEffect(() => {
     const { container, getText, getStyle, getPaint } = optsRef.current;
@@ -117,9 +119,10 @@ export function useTextEdit(
         place();
         boxes.scroller.reveal();
       },
-      dropPending, publishRange, sendDraft,
+      dropPending, publishRange, sendDraft, steps: carried?.steps,
     });
     historyRef.current = history;
+    if (carried?.armed) armPending(carried.armed.patch, carried.armed.at);
 
     const stopListening = listenToOverlay(overlay, boxes.scroll, {
       optsRef, commit, cancel: cancelEdit, history, toggleStyle, typing, syncSelection,
@@ -128,7 +131,7 @@ export function useTextEdit(
     const stopFollowing = follow(place);
 
     return () => {
-      stashCarry(editingId, container, overlay, draft);
+      stashCarry(editingId, container, overlay, draft, history);
       stopFollowing();
       stopListening();
       placeRef.current = () => {};
@@ -139,7 +142,7 @@ export function useTextEdit(
       clearSelection();
     };
   }, [editingId, opts.container, optsRef, takeCarry, stashCarry, commit, cancelEdit, syncSelection, clearSelection,
-      follow, toggleStyle, dropPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
+      follow, toggleStyle, dropPending, armPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
       selectionRef, baseRef, nodeStyleRef, placeRef]);
 
   return {

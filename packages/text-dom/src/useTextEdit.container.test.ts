@@ -3,7 +3,10 @@ import { act, renderHook } from '@testing-library/react';
 import type { TextStyle } from '@weasel-js/text';
 import { useTextEdit } from './useTextEdit';
 import { readSelectionOffsets } from './overlaySelection';
-import { appendChar, getOverlay, makeRichHarness, pressKey, selectChars } from './testing/textEditHarness';
+import { domToRuns } from './domRuns';
+import {
+  appendChar, dispatchBeforeInput, getOverlay, makeRichHarness, placeCaretAtChar, pressKey, selectChars,
+} from './testing/textEditHarness';
 
 describe('useTextEdit — a container that changes mid-edit', () => {
   it('moves the open edit to the new container with what was typed, its selection, and its node style', () => {
@@ -38,6 +41,31 @@ describe('useTextEdit — a container that changes mid-edit', () => {
     act(() => result.current.commitEdit());
     expect(setStyle).toHaveBeenCalledWith('a', { fontSize: 16 });
     expect(h.runCommits[0].runs).toEqual([{ text: 'one ', underline: true }, { text: 'two!' }]);
+    next.remove();
+  });
+
+  it('moves the open edit with its undo history and the style armed at its caret', () => {
+    const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'ab' }] } });
+    const next = document.createElement('div');
+    document.body.appendChild(next);
+    const { result, rerender } = renderHook(
+      ({ container }: { container: HTMLElement }) => useTextEdit({ ...h.opts, container }),
+      { initialProps: { container: h.container } },
+    );
+    act(() => result.current.startEdit('a', { caret: 'end' }));
+    const first = getOverlay(h.container)!;
+    placeCaretAtChar(first, 2);
+    act(() => { dispatchBeforeInput(first, 'c'); });
+    act(() => { pressKey(first, 'b', { meta: true }); });
+
+    rerender({ container: next });
+    const moved = getOverlay(next)!;
+    expect(result.current.pendingStyle).toEqual({ bold: true });
+    act(() => { dispatchBeforeInput(moved, 'X'); });
+    expect(domToRuns(moved)).toEqual([{ text: 'abc' }, { text: 'X', bold: true }]);
+    act(() => { pressKey(moved, 'z', { ctrl: true }); });
+    act(() => { pressKey(moved, 'z', { ctrl: true }); });
+    expect(domToRuns(moved)).toEqual([{ text: 'ab' }]);
     next.remove();
   });
 
