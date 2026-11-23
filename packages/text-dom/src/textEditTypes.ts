@@ -195,8 +195,8 @@ export interface UseTextEditOptions {
   onStart?: (id: string) => void;
   /**
    * Called as the edit of `id` closes, however it does: a commit, a cancel,
-   * a click away, or another edit opening over it. A commit has been written
-   * by then. Not called when the hook unmounts with an edit open.
+   * a click away, or another edit opening over it, which commits it. A commit
+   * has been written by then. Not called when the hook unmounts with an edit open.
    */
   onEnd?: (id: string) => void;
   /**

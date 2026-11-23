@@ -95,7 +95,7 @@ describe('useTextEdit ignores a blur its own onEnd causes', () => {
   });
 });
 
-it('writes nothing for an edit another startEdit closes, when onEnd moves focus', () => {
+it('commits an edit another startEdit closes once, when onEnd moves focus', () => {
   const h = makeHarness({ a: 'hi', b: 'yo' });
   const canvas = document.createElement('button');
   document.body.appendChild(canvas);
@@ -104,7 +104,9 @@ it('writes nothing for an edit another startEdit closes, when onEnd moves focus'
   act(() => result.current.startEdit('a'));
   getOverlay(h.container)!.textContent = 'hello';
   act(() => result.current.startEdit('b'));
-  expect(h.commits).toEqual([]);
+  expect(h.commits).toEqual([{ id: 'a', text: 'hello' }]);
+  expect(result.current.editingId).toBe('b');
+  expect(getOverlay(h.container)!.textContent).toBe('yo');
 });
 
 it('the test harness knows no node named for an Object.prototype key', () => {

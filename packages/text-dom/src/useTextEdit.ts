@@ -72,9 +72,12 @@ export function useTextEdit(
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
-    if (editingIdRef.current !== id) draftRef.current = null;
+    if (editingIdRef.current !== id) {
+      if (editingIdRef.current !== null) commit();
+      draftRef.current = null;
+    }
     setEditingId(id);
-  }, [setEditingId, editingIdRef]);
+  }, [setEditingId, editingIdRef, commit]);
 
   const isEditing = useCallback((id: string) => editingId === id, [editingId]);
 

@@ -3916,3 +3916,9 @@ Calls the lanes made without a ruling:
   `Deployment_Node`, a `[system]`, `[container]`, or `[enterprise]` one keeping its type, and now warns that such a
   boundary comes back a deployment node, since a page cannot tell `System_Boundary` from a deployment node typed
   `system`. Writing the fixed boundary macro for those types was the alternative, and loses typed deployment nodes.
+
+## Audit round seventy-five (2026-11-22): text-dom
+
+- 2026-11-22 (the fixer's call): `useTextEdit`'s `startEdit` on another node while an edit is open commits the open
+  edit before opening the next, as a click away does, rather than dropping what was typed. There is no override; a
+  host that means to discard calls `cancelEdit()` first.
