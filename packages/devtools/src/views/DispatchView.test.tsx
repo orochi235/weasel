@@ -107,4 +107,24 @@ describe('<DispatchView>', () => {
     expect(screen.getAllByText('once-action')).toHaveLength(1);
     expect((screen.getByRole('switch', { name: 'coords' }) as HTMLInputElement).checked).toBe(false);
   });
+
+  it('opens no record of a new client because a record of the old one with its seq was open', async () => {
+    const serve = (fired: string) => {
+      const ring: unknown[] = [{ ...bareDragSelect, fired }];
+      return fakePage((async (_root: string, m: { cursor: number }) => ({
+        entries: ring.slice(m.cursor), cursor: ring.length, live: null,
+      })) as () => Promise<unknown>);
+    };
+    const first = serve('first-action');
+    const view = renderWithIcons(<DispatchView client={first.client} rootId="r" />);
+    await act(async () => { for (const l of first.listeners) l('r', ['trace']); });
+    expect(await screen.findByText('first-action')).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: /details/ }));
+    expect(screen.getByRole('button', { name: /details/ })).toHaveAttribute('aria-expanded', 'true');
+    const second = serve('second-action');
+    view.rerender(<DispatchView client={second.client} rootId="r" />);
+    await act(async () => { for (const l of second.listeners) l('r', ['trace']); await new Promise((r) => setTimeout(r, 0)); });
+    expect(await screen.findByText('second-action')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /details/ })).toHaveAttribute('aria-expanded', 'false');
+  });
 });

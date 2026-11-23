@@ -31,8 +31,11 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
   const [now, setNow] = useState(() => Date.now());
   // A new follower reads its ring from the start, with the stack off, so what the last one delivered goes.
   const [following, setFollowing] = useState(follower);
+  // Keys the table, whose expanded rows are named by seqs a new follower starts over from 0.
+  const [generation, setGeneration] = useState(0);
   if (following !== follower) {
     setFollowing(follower);
+    setGeneration((g) => g + 1);
     setSteps([]);
     setPosition(null);
     setHistoryEntries(null);
@@ -100,7 +103,7 @@ export function HistoryView({ client, rootId }: DevtoolsViewProps): ReactElement
             )}
           </section>
         )}
-        <HistoryTable steps={steps} now={now} />
+        <HistoryTable key={generation} steps={steps} now={now} />
       </div>
     </div>
   );
