@@ -270,9 +270,9 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       book();
     },
     stop() {
-      if (!running) return;
+      // A pass that does not loop stops booking on its own, and may still leave voices sounding.
+      if (running) engine.cancelKey(key);
       running = false;
-      engine.cancelKey(key);
       for (const v of voices) v.release();
       voices.clear();
     },

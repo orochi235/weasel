@@ -213,6 +213,19 @@ describe('createPatternPlayer', () => {
     expect(starts()).toEqual([0]);
   });
 
+  it('releases what is still sounding on stop after a pass that does not loop has ended', async () => {
+    const { ctx, engine, run } = await harness();
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 1, loop: false,
+      events: [{ step: 0, length: 16, pitch: 220, envelope: { release: 20 } }],
+    });
+    player.start(0);
+    await run(300);
+    expect(player.isPlaying()).toBe(false);
+    player.stop();
+    expect(ctx._oscillators[0].stopped.at(-1)).toBeCloseTo(0.32, 9);
+  });
+
   it('swaps its events from the next step', async () => {
     const { engine, run, ctx } = await harness();
     const player = createPatternPlayer(engine, {
