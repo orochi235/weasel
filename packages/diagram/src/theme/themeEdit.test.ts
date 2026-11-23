@@ -108,3 +108,15 @@ describe('roles named like Object.prototype members', () => {
     expect(setThemeValue(theme, ['roles', 'accent', 'fill'], '#f00').roles.accent!.fill).toBe('#f00');
   });
 });
+
+describe('an edit the theme checker would refuse', () => {
+  const fork = forkTheme(paper);
+  it('throws rather than make a theme a document would read back as another', () => {
+    expect(() => setThemeValue(fork, ['font', 'size'], 0)).toThrow(RangeError);
+    expect(() => setThemeValue(fork, ['font', 'size'], Number.NaN)).toThrow(RangeError);
+    expect(() => setThemeValue(fork, ['roles', 'default', 'fill'], 'notacolor')).toThrow(RangeError);
+    expect(() => setThemeValue(fork, ['font', 'family'], '')).toThrow(RangeError);
+    expect(() => addThemeRole(fork, '')).toThrow(RangeError);
+    expect(() => renameThemeRole(fork, 'accent', '')).toThrow(RangeError);
+  });
+});

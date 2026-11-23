@@ -5,6 +5,7 @@
 import { DIAGRAM_THEMES } from './themes';
 import { DIAGRAM_ROLES, defaultRoleStyle, type DiagramTheme } from './types';
 import { getOwn } from '@weasel-js/registry';
+import { diagramThemeErrors } from './themeFile';
 
 /** Where one value sits in a {@link DiagramTheme}. */
 export type ThemePath =
@@ -64,12 +65,23 @@ function assertSettable(theme: DiagramTheme, path: ThemePath): void {
   });
 }
 
+/** `next`, unless it fails a check `theme` passes (`diagramThemeErrors`), which throws a `RangeError`:
+ *  a document saving it would read back another theme. */
+function checked(edit: string, theme: DiagramTheme, next: DiagramTheme): DiagramTheme {
+  const errors = diagramThemeErrors(next);
+  if (errors.length === 0) return next;
+  const had = new Set(diagramThemeErrors(theme));
+  const added = errors.filter((e) => !had.has(e));
+  if (added.length > 0) throw new RangeError(`${edit}: theme '${theme.id}' would not check (${added.slice(0, 3).join('; ')})`);
+  return next;
+}
+
 /** `theme` with `value` at `path`; everything else shared with it. Throws a `RangeError` on a path
- *  through a role, a lane body or a series color the theme lacks, past appending one series color:
- *  {@link addThemeRole} makes a role. */
+ *  through a role, a lane body or a series color the theme lacks, past appending one series color
+ *  ({@link addThemeRole} makes a role), and on a value the theme checker refuses. */
 export function setThemeValue(theme: DiagramTheme, path: ThemePath, value: string | number): DiagramTheme {
   assertSettable(theme, path);
-  return setIn(theme, path, value) as DiagramTheme;
+  return checked('setThemeValue', theme, setIn(theme, path, value) as DiagramTheme);
 }
 
 /** Every role `theme` styles with the name a picker shows: the shipped roles first, in their order,
@@ -83,20 +95,20 @@ export function themeRoles(theme: DiagramTheme): { id: string; label: string }[]
 
 const slug = (label: string): string => label.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'role';
 
-/** `theme` with a role named `label`, in the default role's colors, and the id it was given. */
+/** `theme` with a role named `label`, in the default role's colors, and the id it was given. Throws
+ *  a `RangeError` on an empty label. */
 export function addThemeRole(theme: DiagramTheme, label: string): { theme: DiagramTheme; id: string } {
   const base = slug(label);
   let id = base;
   for (let n = 2; Object.hasOwn(theme.roles, id); n++) id = `${base}-${n}`;
-  return {
-    theme: { ...theme, roles: { ...theme.roles, [id]: { ...defaultRoleStyle(theme) } }, roleLabels: { ...theme.roleLabels, [id]: label } },
-    id,
-  };
+  const next = { ...theme, roles: { ...theme.roles, [id]: { ...defaultRoleStyle(theme) } }, roleLabels: { ...theme.roleLabels, [id]: label } };
+  return { theme: checked('addThemeRole', theme, next), id };
 }
 
-/** `theme` with role `id` shown as `label`. The id, which shapes name the role by, stays. */
+/** `theme` with role `id` shown as `label`. The id, which shapes name the role by, stays. Throws a
+ *  `RangeError` on an empty label. */
 export const renameThemeRole = (theme: DiagramTheme, id: string, label: string): DiagramTheme =>
-  (Object.hasOwn(theme.roles, id) ? { ...theme, roleLabels: { ...theme.roleLabels, [id]: label } } : theme);
+  (Object.hasOwn(theme.roles, id) ? checked('renameThemeRole', theme, { ...theme, roleLabels: { ...theme.roleLabels, [id]: label } }) : theme);
 
 /** `theme` without role `id`; its shapes fall to the default role when the theme is next applied.
  *  The default role stays: `theme` comes back unchanged. */
