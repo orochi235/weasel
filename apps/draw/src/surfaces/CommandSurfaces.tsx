@@ -1,3 +1,4 @@
+import type { PrefOrder } from '@weasel-js/prefs';
 import { BarGroup } from '@weasel-js/ui/components/Bar';
 import { PrefsBar } from '@weasel-js/ui/components/PrefsBar';
 import { useContextMenu } from '@weasel-js/ui/components/Menu';
@@ -27,15 +28,16 @@ export function CommandSlot({ id, ...look }: CommandBarLook & { id: string }) {
   const { asset, surface, order } = binding;
   if (surface === 'menu') return <SchemaMenu asset={asset} order={order} />;
   if (surface !== 'bar') return null;
-  return <CommandBarSurface asset={asset} look={look} />;
+  return <CommandBarSurface asset={asset} order={order} look={look} />;
 }
 
-function CommandBarSurface({ asset, look }: { asset: SurfaceAsset; look: CommandBarLook }) {
+function CommandBarSurface({ asset, order, look }: { asset: SurfaceAsset; order: PrefOrder | undefined; look: CommandBarLook }) {
   const openSwitch = useContextMenu(switchMenuId(asset.id));
   const { values, onChange } = useAssetBinding(asset);
   const bar = (
     <PrefsBar
       schema={asset.schema} values={values} onChange={onChange} renderers={asset.renderers?.bar}
+      {...(order ? { order } : {})}
       {...(look.label !== undefined ? { label: look.label } : {})}
       {...(look.segmented ? { framed: 'segmented' as const } : {})}
     />
