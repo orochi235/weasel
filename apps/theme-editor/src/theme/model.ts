@@ -134,13 +134,16 @@ export function writeAt<T>(v: Varying<T> | undefined, selection: AxisChoice, lea
   return { ...v, [key]: writeAt(getOwn(v, key) as Varying<T> | undefined, selection, leaf) } as Varying<T>;
 }
 
-/** `v` without its leaf at `selection`; every other branch of a `by` stays. Undefined when nothing is left. */
+/** `v` without its leaf at `selection`; every other branch of a `by` stays. Undefined when nothing is left, and `v`
+ *  itself when it holds no leaf there. */
 export function clearAt<T>(v: Varying<T> | undefined, selection: AxisChoice): Varying<T> | undefined {
   if (!isByAxis(v)) return undefined;
   const key = branchOf(v, selection);
   if (!Object.hasOwn(v, key)) return v;
+  const branch = getOwn(v, key) as Varying<T> | undefined;
+  const inner = clearAt(branch, selection);
+  if (inner === branch) return v;
   const rest: Record<string, unknown> = { ...v };
-  const inner = clearAt(getOwn(v, key) as Varying<T> | undefined, selection);
   if (inner === undefined) delete rest[key];
   else setOwn(rest, key, inner);
   return Object.keys(rest).some((k) => k !== 'by') ? (rest as Varying<T>) : undefined;

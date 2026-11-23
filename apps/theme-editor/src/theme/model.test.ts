@@ -115,4 +115,10 @@ describe('writeAt and clearAt', () => {
     expect(clearAt(byDensity, { density: 'compact' })).toEqual({ by: 'density', comfy: 6 });
     expect(clearAt({ by: 'density', comfy: 6 }, { density: 'comfy' })).toBeUndefined();
   });
+
+  it('clear nothing, returning the variation itself, where it holds no leaf at the selection', () => {
+    const nested = { by: 'mode', dark: { by: 'density', compact: 4 } };
+    expect(clearAt(nested, { mode: 'dark', density: 'comfy' })).toBe(nested);
+    expect(clearAt(nested, { mode: 'light', density: 'compact' })).toBe(nested);
+  });
 });
