@@ -24,10 +24,10 @@ afterEach(() => {
   document.body.replaceChildren();
 });
 
-const LAB: LabConditions = { labValues: {}, mode: 'light', declarations: {}, modeGlobal: 'mode' };
+const LAB: { current: LabConditions } = { current: { labValues: {}, mode: 'light', declarations: {}, modeGlobal: 'mode' } };
 
 function Probe({ onSource, onTrials }: { onSource: (s: PixelsSource | null) => void; onTrials: (t: CaptureTrials) => void }) {
-  const source = usePixelsSource({ current: LAB });
+  const source = usePixelsSource(LAB);
   const capture = useContext(LoupeCaptureContext);
   useLayoutEffect(() => {
     onSource(source);
@@ -77,4 +77,22 @@ it('keeps the trial published and its last image up while a knob change is recap
   expect(shown(slot)).toBe(true);
   expect(slot.textContent).toBe('');
   handle.detach();
+});
+
+it('builds the Pixels source from the capture context as it is now, not as it first was', () => {
+  const got: { source: PixelsSource | null } = { source: null };
+  const tree = (captureBase: string | undefined) => (
+    <LoupeProvider captureBase={captureBase}>
+      <Probe onSource={(s) => (got.source = s)} onTrials={() => {}} />
+    </LoupeProvider>
+  );
+  const { rerender } = render(tree(undefined));
+  expect(got.source).toBeNull();
+  rerender(tree('/'));
+  expect(got.source).not.toBeNull();
+  const first = got.source;
+  rerender(tree('/'));
+  expect(got.source).toBe(first);
+  rerender(tree('/other/'));
+  expect(got.source).not.toBe(first);
 });
