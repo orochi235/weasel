@@ -157,6 +157,15 @@ describe('writing a Mermaid class diagram', () => {
     expect(text).toContain('  note "remember"');
   });
 
+  it('writes a note joined only to another note on its own, with a warning, not as a note for it', () => {
+    const { text, warnings } = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a', outline: 'note', lines: ['one'] }, { id: 'b', outline: 'note', lines: ['two'] }], edges: [{ from: 'a', to: 'b' }],
+    } }] });
+    expect(text).toContain('  note "one"\n  note "two"\n');
+    expect(page(text).data.nodes.every((n) => n.outline === 'note')).toBe(true);
+    expect(warnings).toContain('Mermaid notes join one class; their other connectors were dropped.');
+  });
+
   it('keeps a backslash and the n after it in a note line', () => {
     const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', lines: ['C:\\new', 'two'] }], edges: [] } }] }).text;
     expect(page(text).data.nodes[0]!.lines).toEqual(['C:\\new', 'two']);

@@ -64,7 +64,8 @@ class ClassWriter {
     for (const n of out.page.data.nodes) {
       if (n.outline !== 'note') continue;
       const own = out.edges.filter((e) => e.from === n.id || e.to === n.id);
-      const target = own.length === 1 && own[0]!.from === n.id && out.byId.has(own[0]!.to) ? own[0]! : null;
+      const to = own.length === 1 && own[0]!.from === n.id ? out.byId.get(own[0]!.to) : undefined;
+      const target = to !== undefined && to.outline !== 'note' ? own[0]! : null;
       if (own.length > (target !== null ? 1 : 0)) out.warnings.add('Mermaid notes join one class; their other connectors were dropped.');
       this.notes.set(n.id, target);
     }
