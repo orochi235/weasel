@@ -3981,3 +3981,9 @@ Calls the lanes made without a ruling:
   (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
   spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
   sent the title to the file's auto title in the common case, where the spread carries no title.
+## Audit round seventy-eight (2026-11-23): tiles
+
+- 2026-11-23 (the fixer's call): the plane scheme's `levelFor` (and `planeFloor`'s level) stops at the deepest level
+  where every tile index near the view is an exact integer, and its `keysMeeting` throws a `RangeError` for a box
+  whose indices are not. There is no override. Answering a level past `maxLevel`, so the layer draws live, was the
+  alternative; a pyramid does draw live at a level that is not finite.
