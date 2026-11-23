@@ -96,6 +96,13 @@ describe('window widget', () => {
       }
     });
 
+    it('strokes the ring inside the bounds, as a DOM border sits', () => {
+      const r = ring(createWindow(opts).draw(ctx)) as unknown as { path: Record<string, number>; stroke: { width: number } };
+      const half = r.stroke.width / 2;
+      expect(half).toBeGreaterThan(0);
+      expect(r.path).toMatchObject({ x: 100 + half, y: 100 + half, width: 200 - r.stroke.width, height: 150 - r.stroke.width });
+    });
+
     it('drops the ring where a stance sets no border width, and dashes it where it says dashed', () => {
       expect(ring(createWindow({ ...opts, stance: 'clarify' }).draw(ctx))).toBeUndefined();
       expect(ring(createWindow({ ...opts, stance: 'debug' }).draw(ctx))?.stroke.dash?.length).toBeGreaterThan(0);
