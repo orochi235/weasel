@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A tile that arrives already stale is left out of the frame's `stale` list",
+  "An ancestor stand-in that is still fading in is drawn at full alpha, and the frame does not report `fading`",
+  "Dirty padding rounds away far from the origin, so a tile touching an edit's edge is not marked stale"
+ ],
+ "b": [
+  "A tile that arrives already stale is drawn but reported neither in `stale` nor in `pending`, so the frame loop can stop with outdated content on screen"
+ ]
+}

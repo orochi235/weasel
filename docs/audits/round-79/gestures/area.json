@@ -1,0 +1,106 @@
+{
+ "id": "gestures",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "packages/gestures/src/grammar/canonicalModifiers.ts",
+  "packages/gestures/src/grammar/describeRoute.ts",
+  "packages/gestures/src/grammar/gestures.ts",
+  "packages/gestures/src/grammar/keyRouteGrammar.ts",
+  "packages/gestures/src/grammar/routeGrammar.ts",
+  "packages/gestures/src/grammar/routeToSpec.ts",
+  "packages/gestures/src/grammar/specKinds.ts",
+  "packages/gestures/src/index.ts",
+  "packages/gestures/src/longPress/pressRing.ts",
+  "packages/gestures/src/longPress/pressState.ts",
+  "packages/gestures/src/pbt.fixture.ts",
+  "packages/gestures/src/recognizer/click.ts",
+  "packages/gestures/src/recognizer/longPressHold.ts",
+  "packages/gestures/src/recognizer/multiTouch.ts",
+  "packages/gestures/src/recognizer/pointerRecognizer.ts",
+  "packages/gestures/src/recognizer/pressFacts.ts",
+  "packages/gestures/src/recognizer/recognizerModel.fixture.ts",
+  "packages/gestures/src/recognizer/samples.ts",
+  "packages/gestures/src/recognizer/thresholds.ts",
+  "packages/gestures/src/ui/bodyClassification.ts",
+  "packages/gestures/src/ui/clientScale.ts",
+  "packages/gestures/src/ui/controlTarget.ts",
+  "packages/gestures/src/ui/dragThreshold.ts",
+  "packages/gestures/src/ui/fixedSeat.ts",
+  "packages/gestures/src/ui/formatShortcut.ts",
+  "packages/gestures/src/ui/heldPointers.ts",
+  "packages/gestures/src/ui/historyKey.ts",
+  "packages/gestures/src/ui/ingestTypes.ts",
+  "packages/gestures/src/ui/inputEvent.ts",
+  "packages/gestures/src/ui/keyLegendFromCode.ts",
+  "packages/gestures/src/ui/keyLegendsFromMods.ts",
+  "packages/gestures/src/ui/keyLegendsFromShortcut.ts",
+  "packages/gestures/src/ui/keyLetter.ts",
+  "packages/gestures/src/ui/keyOwner.ts",
+  "packages/gestures/src/ui/keySugar.ts",
+  "packages/gestures/src/ui/match.ts",
+  "packages/gestures/src/ui/matchTarget.ts",
+  "packages/gestures/src/ui/phase.ts",
+  "packages/gestures/src/ui/platform.ts",
+  "packages/gestures/src/ui/pressButton.ts",
+  "packages/gestures/src/ui/spec.ts",
+  "packages/gestures/src/ui/specificity.ts",
+  "packages/gestures/src/ui/stylus.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 43,
+  "B": 43
+ },
+ "newCode": {
+  "since": 78,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 78,
+  "chapman": 20,
+  "unfound": 10
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 14,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3716,
+   "total": 3716
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.3,
+   "B": 8.3,
+   "match": 0.1,
+   "fix": 15
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1238743,
+  "costUsd": 4.06
+ },
+ "fixCommits": [
+  "2a8d1e7399e54d3a0302075e1eec579334c54411",
+  "093b3c00a543e4b7462a81b813e2bbb36783f162",
+  "b7365969a19d708b400befd113ceb12ff275b512",
+  "34c975fde57f8923252a9fe402dc3c4711b642cc",
+  "0e5217add3399dc47eb67eb9c2738168e508dd87"
+ ]
+}

@@ -1,0 +1,87 @@
+{
+ "id": "labkit.trial.part1",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "packages/labkit/src/trial/FloatSidebar.tsx",
+  "packages/labkit/src/trial/MissingTrial.tsx",
+  "packages/labkit/src/trial/Trial.less",
+  "packages/labkit/src/trial/Trial.stories.tsx",
+  "packages/labkit/src/trial/Trial.tsx",
+  "packages/labkit/src/trial/TrialBody.tsx",
+  "packages/labkit/src/trial/TrialChrome.tsx",
+  "packages/labkit/src/trial/TrialContexts.tsx",
+  "packages/labkit/src/trial/TrialDragContext.ts",
+  "packages/labkit/src/trial/TrialLayerList.tsx",
+  "packages/labkit/src/trial/TrialScope.tsx",
+  "packages/labkit/src/trial/TrialTheme.tsx",
+  "packages/labkit/src/trial/TrialTitleBar.tsx",
+  "packages/labkit/src/trial/UndockedSections.tsx",
+  "packages/labkit/src/trial/homeView.ts",
+  "packages/labkit/src/trial/index.ts",
+  "packages/labkit/src/trial/loupeSwitch.ts",
+  "packages/labkit/src/trial/renderContext.ts",
+  "packages/labkit/src/trial/trialConfigChange.ts",
+  "packages/labkit/src/trial/trialContent.tsx",
+  "packages/labkit/src/trial/trialEdit.ts",
+  "packages/labkit/src/trial/trialEditOp.ts",
+  "packages/labkit/src/trial/trialHistory.ts",
+  "packages/labkit/src/trial/trialHistoryOf.ts",
+  "packages/labkit/src/trial/trialOps.ts",
+  "packages/labkit/src/trial/trialTitle.ts",
+  "packages/labkit/src/trial/trialUndo.ts"
+ ],
+ "a": 1,
+ "b": 2,
+ "m": 1,
+ "distinct": 2,
+ "chapman": 2,
+ "unfound": 0,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "newCode": {
+  "since": 51,
+  "changedFiles": 9,
+  "findings": 2
+ },
+ "previous": {
+  "round": 51,
+  "chapman": 10.7,
+  "unfound": 2.7
+ },
+ "patches": 2,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 485,
+   "total": 485
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.3,
+   "B": 1.3,
+   "match": 0.2,
+   "fix": 12.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 966139,
+  "costUsd": 2.81
+ },
+ "fixCommits": [
+  "5c392e82b7a2b8d08245ba6e17cfa47198cd2308",
+  "90d5ae14a243381c5b951f887c5593abeb051952"
+ ]
+}

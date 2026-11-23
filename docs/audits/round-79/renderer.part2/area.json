@@ -1,0 +1,103 @@
+{
+ "id": "renderer.part2",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "packages/renderer/src/paintKinds.ts",
+  "packages/renderer/src/paintResources.ts",
+  "packages/renderer/src/paintScratch.ts",
+  "packages/renderer/src/paintToLocalUnits.ts",
+  "packages/renderer/src/paintedBounds.ts",
+  "packages/renderer/src/patterns-builtin.ts",
+  "packages/renderer/src/patterns/commandPaint.ts",
+  "packages/renderer/src/patterns/imagePatternId.ts",
+  "packages/renderer/src/patterns/index.ts",
+  "packages/renderer/src/patterns/patterns-builtin.ts",
+  "packages/renderer/src/patterns/rasterizeTile.ts",
+  "packages/renderer/src/patterns/resolveImage.ts",
+  "packages/renderer/src/patterns/resolveSpec.ts",
+  "packages/renderer/src/patterns/test-utils/fakeOffscreenCanvas.ts",
+  "packages/renderer/src/patterns/tileGeometry.ts",
+  "packages/renderer/src/pbt.fixture.ts",
+  "packages/renderer/src/readPixels.ts",
+  "packages/renderer/src/rendererParts.ts",
+  "packages/renderer/src/rendererTypes.ts",
+  "packages/renderer/src/retain/RetainedSurfaces.ts",
+  "packages/renderer/src/retain/TileTextures.ts",
+  "packages/renderer/src/retain/bakeTile.ts",
+  "packages/renderer/src/retain/contentBounds.ts",
+  "packages/renderer/src/retain/movesWithView.ts",
+  "packages/renderer/src/retain/retainedKey.ts",
+  "packages/renderer/src/retain/tileCull.ts",
+  "packages/renderer/src/spriteSheet.ts",
+  "packages/renderer/src/state/GroupState.ts",
+  "packages/renderer/src/state/colorMatrix.ts",
+  "packages/renderer/src/strokeLengths.ts",
+  "packages/renderer/src/targetRect.ts",
+  "packages/renderer/src/test-seams.ts",
+  "packages/renderer/src/textBounds.ts",
+  "packages/renderer/src/textCommand.ts",
+  "packages/renderer/src/textLayout.ts",
+  "packages/renderer/src/textures/registerTexture.ts",
+  "packages/renderer/src/warmPrograms.ts",
+  "packages/renderer/src/warnOnce.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 8,
+ "unfound": 4,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 78,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 78,
+  "chapman": 39,
+  "unfound": 24
+ },
+ "patches": 5,
+ "verify": {
+  "ok": false,
+  "why": "timed out",
+  "timedOut": true,
+  "files": 9,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2587,
+   "total": 2587
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.7,
+   "B": 6.4,
+   "match": 0.1,
+   "fix": 30.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 913484,
+  "costUsd": 3.98
+ },
+ "fixCommits": [
+  "413aef211af55b6b2df0e78d3194a18a95098548",
+  "d1274f293df517b00dc6b8ccd639441810e6723e",
+  "abf8b53989359544060b000c9eae33c983b3e231",
+  "2eac2528422762e9db47c1cb438ee31e28bfc5f9",
+  "0e292c9eaa07408e267b912a71032d1e527ada70"
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "usePublishPointer leaves its view's pointer in the store on teardown",
+  "extensionParts drops every path-edit extension part when `AnchorState.getNode` is not supplied",
+  "createDragPanContribution's plain-drag pan refuses any modified drag, unlike the middle-drag entry and the hand tool",
+  "makeMatchMedia's MediaQueryList snapshots `matches` at creation, so a held list reads stale after `fire()`"
+ ],
+ "b": [
+  "usePublishPointer leaves the store holding a pointer over a view that has unmounted"
+ ]
+}

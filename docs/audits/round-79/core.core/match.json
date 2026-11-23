@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "useSceneStream disposes its memoized stream in a StrictMode effect replay, leaving a dead stream for the component's life",
+  "usePointerStylus treats an element from another window (a popout) as a ref and listens to nothing",
+  "stableStringify writes NaN, Infinity, -Infinity and null as the same string, contradicting its \"one string only when equal\" contract",
+  "AreaSelectAdapter's doc says useSelectTool's marquee needs four adapter methods; the marquee runs through the `areaSelect` dep built from the scene",
+  "shapeKinds' header says the module imports nothing at runtime; it imports `getOwn` at runtime"
+ ],
+ "b": [
+  "useSceneStream disposes its stream in an effect cleanup but builds it in useMemo, so a remounted effect keeps a disposed stream",
+  "Dropping a cell removes adopted nodes that sit under, or derive from, a streamed node",
+  "A cell load that throws partway through `scene.add` leaves the nodes it already added in the scene, untracked by the stream",
+  "usePointerStylus treats an element from another window as a ref and listens to nothing"
+ ]
+}

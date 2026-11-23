@@ -1,0 +1,67 @@
+{
+ "id": "tiles",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "packages/tiles/src/cache.ts",
+  "packages/tiles/src/index.ts",
+  "packages/tiles/src/pyramid.ts",
+  "packages/tiles/src/scheme.ts",
+  "packages/tiles/src/stream.ts"
+ ],
+ "a": 3,
+ "b": 1,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 5,
+  "B": 5
+ },
+ "newCode": {
+  "since": 78,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 78,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 7,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2493,
+   "total": 2493
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.9,
+   "B": 1.7,
+   "match": 0.1,
+   "fix": 12
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 625382,
+  "costUsd": 2
+ },
+ "fixCommits": [
+  "0d511a02cd74a05320b57bb7e5b2ca3e1fba991d",
+  "fa1ae4df4be223e65ccdf82069964eeb65b1dfa8",
+  "6141d2bac01a2ac0412c98fef4419cefa44bbb42",
+  "84222fa35726e204ed43c0722ad0da081b9d6449"
+ ]
+}

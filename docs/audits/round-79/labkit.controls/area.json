@@ -1,0 +1,101 @@
+{
+ "id": "labkit.controls",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "packages/labkit/src/controls/AutoControls.stories.tsx",
+  "packages/labkit/src/controls/ControlBar.tsx",
+  "packages/labkit/src/controls/ControlMatrix.less",
+  "packages/labkit/src/controls/ControlMatrix.stories.less",
+  "packages/labkit/src/controls/ControlMatrix.stories.tsx",
+  "packages/labkit/src/controls/ControlMatrix.tsx",
+  "packages/labkit/src/controls/ControlPanel.less",
+  "packages/labkit/src/controls/ControlPanel.stories.tsx",
+  "packages/labkit/src/controls/ControlPanel.tsx",
+  "packages/labkit/src/controls/ControlPanelHeading.stories.tsx",
+  "packages/labkit/src/controls/ControlPanelMotif.stories.tsx",
+  "packages/labkit/src/controls/ControlRow.tsx",
+  "packages/labkit/src/controls/CurveRow.tsx",
+  "packages/labkit/src/controls/DraftDialogRow.tsx",
+  "packages/labkit/src/controls/MatrixCell.tsx",
+  "packages/labkit/src/controls/MatrixEditor.tsx",
+  "packages/labkit/src/controls/MatrixHeads.tsx",
+  "packages/labkit/src/controls/MatrixPopover.tsx",
+  "packages/labkit/src/controls/MatrixRow.tsx",
+  "packages/labkit/src/controls/MatrixSlot.tsx",
+  "packages/labkit/src/controls/PanelEditing.stories.tsx",
+  "packages/labkit/src/controls/ResetGroup.tsx",
+  "packages/labkit/src/controls/boundAction.ts",
+  "packages/labkit/src/controls/controlPack.ts",
+  "packages/labkit/src/controls/fieldChoices.ts",
+  "packages/labkit/src/controls/fields.tsx",
+  "packages/labkit/src/controls/inDialog.tsx",
+  "packages/labkit/src/controls/index.ts",
+  "packages/labkit/src/controls/labSource.ts",
+  "packages/labkit/src/controls/matrixTarget.ts",
+  "packages/labkit/src/controls/panelHeadings.tsx",
+  "packages/labkit/src/controls/panelNode.tsx",
+  "packages/labkit/src/controls/panelPaths.ts",
+  "packages/labkit/src/controls/panelRows.tsx",
+  "packages/labkit/src/controls/rowAuto.ts",
+  "packages/labkit/src/controls/rows.tsx"
+ ],
+ "a": 6,
+ "b": 7,
+ "m": 5,
+ "distinct": 8,
+ "chapman": 8.3,
+ "unfound": 0.3,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "newCode": {
+  "since": 50,
+  "changedFiles": 9,
+  "findings": 8
+ },
+ "previous": {
+  "round": 50,
+  "chapman": 10.2,
+  "unfound": 1.2
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 32,
+  "testFiles": {
+   "failed": 0,
+   "passed": 522,
+   "total": 522
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.2,
+   "B": 2.8,
+   "match": 0.2,
+   "fix": 42.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 2958167,
+  "costUsd": 7.9
+ },
+ "fixCommits": [
+  "1ec3f7ba9a4fccc7096fe0a649f245f0d3a37019",
+  "947643732f90650c5dab31b475bca98e3b7f2976",
+  "9285a9d7e7fa690bba8831964f4755d0271a0855",
+  "cbea1f52b35fc1bc9b32cbc0cfa659e214b519eb",
+  "ac85974c85fab41e2d2955ea5b5b47b5fbd5cfd6",
+  "d149af4b580d5ccf454708420ce46515e85f824e",
+  "f234eb04258dfd8a7c11e8a402fa0ad6dc976acb"
+ ]
+}

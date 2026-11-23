@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A NaN factor escapes `minFactor`: the model clamps before it normalizes",
+  "`onDispose` fires on an explicit `dispose()` too, though the docs limit it to the surface reporting the lens gone",
+  "A surface with `worldAt` but no `pointFor` reports its pin's content-space point as a surface point",
+  "`sampleNow` throws on a promise but leaves that promise unhandled",
+  "The missed-capture warning counts every `frame()` call, not every lens frame",
+  "A failed probe context makes `pixel()` build a new 1×1 canvas on every call",
+  "`nearestStopIndex` answers index 0 for an empty stop list",
+  "The `near` test helper's doc names an `abs` tolerance it does not take"
+ ],
+ "b": [
+  "A non-finite factor lands below `minFactor`: the model's clamp normalizes after bounding",
+  "`holdPin` samples and redraws a hidden lens, where every other aim entry point refuses while hidden",
+  "`CanvasSource.pixel` throws on a tainted canvas instead of answering `null`"
+ ]
+}

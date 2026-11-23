@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "Export Selection drops the PNG scale for a format that declares no `options`, where Export Page passes it",
+  "The loupe binding writes any value to `loupe.mode` unchecked",
+  "`RegistryEnumControl` shows the string \"undefined\" for a pref with no value"
+ ],
+ "b": [
+  "Loupe toggle and copy actions are frozen objects whose `active`/`enabled` change with no registry notice",
+  "The theme's UI font is taken as its first stack entry, unparsed, and enrolled as a canvas font",
+  "HMR re-evaluation of main.tsx re-registers exports and fonts and reopens the session, dropping the disposers",
+  "Export Page's filename embeds the user's page name unsanitized"
+ ]
+}

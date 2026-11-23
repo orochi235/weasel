@@ -1,0 +1,41 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   5
+  ],
+  [
+   5,
+   6
+  ]
+ ],
+ "a": [
+  "A canceled drafted edit never puts the drafts back: labField passes no `cancel` to `withDrafts`",
+  "An uncontrolled panel pins an auto row on its first draft, so Escape leaves it pinned",
+  "Rows decode an encoded leaf without its siblings, while the panel's source decodes with them",
+  "A pair's \"needs the whole row\" check misses segmented toggles and any enum whose control is not declared",
+  "The matrix popover keeps its captured cell after the cell's row or target changes",
+  "inDialog's `update` reads the render's draft, so two updates in one event lose the first"
+ ],
+ "b": [
+  "An encoded leaf holding nothing is handed its decoded default as though it were the stored value",
+  "labkit's fields never pass `siblings`, so an encoding that reads or writes against its object gets `undefined`",
+  "Escape on a drafted number/slider/text edit never puts the drafts back",
+  "With the panel keeping its own auto set, a draft pins the row, and Escape leaves it pinned at the stale value",
+  "One section declaring `collapsed` makes every section and group in the panel foldable",
+  "A paired row holding a segmented `.toggle()` enum does not take the whole row",
+  "inDialog's `update` reads the render's draft, so two updates in one event lose the first"
+ ]
+}

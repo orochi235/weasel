@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "Editing a token whose own pin varies by an axis the theme does not declare throws out of the change handler",
+  "\"Copy as tokens\" copies a JSON fragment, not a token document",
+  "A stored palette state's `count` is accepted at any finite value",
+  "When storage refuses a draft history, the theme is still recorded as holding one, and it takes another theme's slot"
+ ],
+ "b": [
+  "Editing a list-valued literal or pin as text turns the list into a string, where PinRepair keeps it a list",
+  "TokenReference stays a text field for good once Edit is clicked",
+  "unmetGates gives the hue gap 0.01° of slack while every other gate is checked exactly"
+ ]
+}

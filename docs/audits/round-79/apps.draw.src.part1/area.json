@@ -1,0 +1,102 @@
+{
+ "id": "apps.draw.src.part1",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "apps/draw/src/ActiveSwatches.tsx",
+  "apps/draw/src/App.tsx",
+  "apps/draw/src/CommandBar.stories.tsx",
+  "apps/draw/src/CommandBar.tsx",
+  "apps/draw/src/Editor.tsx",
+  "apps/draw/src/EditorStatusBar.tsx",
+  "apps/draw/src/LayersPanel.tsx",
+  "apps/draw/src/LoupeProvider.tsx",
+  "apps/draw/src/RightSidebar.tsx",
+  "apps/draw/src/Toolbar.tsx",
+  "apps/draw/src/Workspace.tsx",
+  "apps/draw/src/adapterPublishers.tsx",
+  "apps/draw/src/app.css",
+  "apps/draw/src/appCommands/actions.tsx",
+  "apps/draw/src/appCommands/depSchemaAugmentation.ts",
+  "apps/draw/src/appCommands/index.ts",
+  "apps/draw/src/booleansAdapter.ts",
+  "apps/draw/src/colorMode.tsx",
+  "apps/draw/src/constraintKeys.ts",
+  "apps/draw/src/docBackground.ts",
+  "apps/draw/src/docPersistence.ts",
+  "apps/draw/src/documentUnits.ts",
+  "apps/draw/src/drawDocument.ts",
+  "apps/draw/src/drawFeatures.ts",
+  "apps/draw/src/drawPrefsDialog.tsx",
+  "apps/draw/src/exportPage.ts",
+  "apps/draw/src/fileCommands.ts",
+  "apps/draw/src/fileNotices.ts",
+  "apps/draw/src/firstRunNotice.ts",
+  "apps/draw/src/fonts.ts",
+  "apps/draw/src/icons.gen.ts",
+  "apps/draw/src/icons.table.ts",
+  "apps/draw/src/loupePrefs.ts",
+  "apps/draw/src/main.tsx",
+  "apps/draw/src/menuBar.ts",
+  "apps/draw/src/menus.ts",
+  "apps/draw/src/newShapePaint.ts",
+  "apps/draw/src/nodeKinds.ts"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 19,
+ "unfound": 12,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 63,
+  "changedFiles": 11,
+  "findings": 4
+ },
+ "previous": {
+  "round": 63,
+  "chapman": 9,
+  "unfound": 3
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 14,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3748,
+   "total": 3748
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.3,
+   "B": 1.5,
+   "match": 0.2,
+   "fix": 25.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1458654,
+  "costUsd": 4.06
+ },
+ "fixCommits": [
+  "a33a511394106c6a25268b4c0c050d7fa13d4559",
+  "9979b347df48510915fbc1b03993f3cb064638ef",
+  "1bb2a7bbca79d53d7cc063e2dbdbc3ce3debf82f",
+  "48f180a9da33b13901f988feba928538291535ff",
+  "b33bfcea4afea358d4819dc18fd5a32c2e4f2b52",
+  "a6b92400c022fec7944b8d1fe98533c15c83ed1b"
+ ]
+}

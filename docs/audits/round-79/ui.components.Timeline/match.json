@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "A consumer echoing `onInput` makes a dragged key snap to its own last preview, so it sticks",
+  "A stale key pin survives the selection going null, so a controlled re-selection of the same key is dropped at once"
+ ],
+ "b": [
+  "Graph-mode lanes ignore the hold's tab order and focus attributes",
+  "A dragged key snaps to its own live position when the consumer echoes `onInput`",
+  "During an echoed dope drag the selection index points at a neighboring key",
+  "A disabled timeline still changes its segment selection on an empty press or Escape"
+ ]
+}

@@ -1,0 +1,16 @@
+{
+ "pairs": [],
+ "a": [
+  "patternVoicePeaks hangs when any event's span is infinite",
+  "A node synth voice released before it sounds is silent, where the worklet voice plays a release blip",
+  "`loadAll` returns a record with a prototype, so a misspelled key finds an `Object.prototype` member",
+  "The timer-delay ceiling is defined twice",
+  "A misplaced doc comment: `checkSteal` carries `checkVoiceLimit`'s doc",
+  "A misplaced doc comment: `checkEventSteps` carries `eventsByStep`'s doc"
+ ],
+ "b": [
+  "A worklet or offline noise voice whose rate × 2^(detune/1200) overflows renders NaN into its bus",
+  "`PatternPlayer.setDetune` (and `opts.detune`) accepts a non-finite number, and every later step then throws",
+  "A voice stopped before its `when` stays in the scheduler queue until that time"
+ ]
+}

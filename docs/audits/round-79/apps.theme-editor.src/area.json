@@ -1,0 +1,115 @@
+{
+ "id": "apps.theme-editor.src",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "apps/theme-editor/src/AnchorList.tsx",
+  "apps/theme-editor/src/App.tsx",
+  "apps/theme-editor/src/HistorySlot.tsx",
+  "apps/theme-editor/src/LayerRail.tsx",
+  "apps/theme-editor/src/PaletteLab.module.css",
+  "apps/theme-editor/src/PaletteLab.tsx",
+  "apps/theme-editor/src/PalettePreview.tsx",
+  "apps/theme-editor/src/PinIcon.tsx",
+  "apps/theme-editor/src/PinRepair.tsx",
+  "apps/theme-editor/src/PresetBar.tsx",
+  "apps/theme-editor/src/SwatchPanel.tsx",
+  "apps/theme-editor/src/ThemeEditor.module.css",
+  "apps/theme-editor/src/ThemeEditor.tsx",
+  "apps/theme-editor/src/ThemePrefs.module.css",
+  "apps/theme-editor/src/ThemePrefs.tsx",
+  "apps/theme-editor/src/ThemePreview.tsx",
+  "apps/theme-editor/src/ThemeWorkbench.tsx",
+  "apps/theme-editor/src/TokenLayer.tsx",
+  "apps/theme-editor/src/TokenReference.tsx",
+  "apps/theme-editor/src/app.css",
+  "apps/theme-editor/src/historyStorage.ts",
+  "apps/theme-editor/src/icons.gen.ts",
+  "apps/theme-editor/src/labTestSetup.ts",
+  "apps/theme-editor/src/layers/RampsLayer.tsx",
+  "apps/theme-editor/src/layers/ScalesLayer.tsx",
+  "apps/theme-editor/src/layers/SemanticDrawer.tsx",
+  "apps/theme-editor/src/layers/SemanticsLayer.tsx",
+  "apps/theme-editor/src/main.tsx",
+  "apps/theme-editor/src/palette/ConstraintsPanel.tsx",
+  "apps/theme-editor/src/palette/copicColors.ts",
+  "apps/theme-editor/src/palette/crayons.ts",
+  "apps/theme-editor/src/palette/legoColors.ts",
+  "apps/theme-editor/src/palette/unmetGates.ts",
+  "apps/theme-editor/src/presets.ts",
+  "apps/theme-editor/src/theme/api.ts",
+  "apps/theme-editor/src/theme/draft.ts",
+  "apps/theme-editor/src/theme/draftStorage.ts",
+  "apps/theme-editor/src/theme/entries.ts",
+  "apps/theme-editor/src/theme/exportFiles.ts",
+  "apps/theme-editor/src/theme/fixtures.ts",
+  "apps/theme-editor/src/theme/inspect.ts",
+  "apps/theme-editor/src/theme/issues.ts",
+  "apps/theme-editor/src/theme/model.ts",
+  "apps/theme-editor/src/theme/ramps.ts",
+  "apps/theme-editor/src/theme/scales.ts",
+  "apps/theme-editor/src/theme/semantics.ts",
+  "apps/theme-editor/src/theme/starter.ts",
+  "apps/theme-editor/src/useFlash.ts",
+  "apps/theme-editor/src/useLabHistory.ts",
+  "apps/theme-editor/src/usePrefsHistory.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 19,
+ "unfound": 12,
+ "read": {
+  "A": 50,
+  "B": 50
+ },
+ "newCode": {
+  "since": 78,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 78,
+  "chapman": 19,
+  "unfound": 12
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 32,
+   "total": 32
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.1,
+   "B": 7.4,
+   "match": 0.1,
+   "fix": 19
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1740028,
+  "costUsd": 5.18
+ },
+ "fixCommits": [
+  "d656ca405ffc0a2753fa7aa87b793f041cfc5dce",
+  "cf110a5cb3914ead5ec844dac15da1f6d0e8e027",
+  "4cd1c81415a7269ca41d57e66b0a7ff85b6416be",
+  "d75d78dbadff0b6e30a6f5f0755be5337b40cdf3",
+  "d6d3a23c530207a5b1b76fe3aac2b2e7b3b0c0cf",
+  "85afff19d1bc081ebbf230e7022634c7cf0d9a2e",
+  "016cca54d2881695eb56951a0a70da21334d8240"
+ ]
+}

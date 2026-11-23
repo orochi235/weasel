@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "A native story file that imports forge as a namespace is indexed as CSF",
+  "Component reach counts a shadowing local or parameter as a use of a same-named component",
+  "moduleInfo drops `export enum`, `export * as ns from` and destructured `export const`, which ast.bindingsOf reads",
+  "A duplicate story id within one file is reported as two files and told to retitle one",
+  "watchRecovery's `read` map keeps an entry for every load whose transform never runs"
+ ],
+ "b": [
+  "Story ids are built from the raw export name, so they disagree with Storybook's for any camelCase export, and a meta's `id` is ignored",
+  "`tags`, `includeStories`/`excludeStories` and `viewport`'s sides are read only when written inline, unlike every other meta field",
+  "An SSH host alias of the common `github.com-<account>` form is taken as a GitHub Enterprise host, so the issues panel errors instead of listing"
+ ]
+}

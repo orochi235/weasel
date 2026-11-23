@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "A panel the relay replaces reconnects at once and replaces its replacement, forever",
+  "After a panel is replaced, the relay's errors for the old panel's requests reject the new panel's requests",
+  "Requests the page never answers stay in both request tables until the session ends",
+  "probeFrame reads the page's `kitVersion` outside its try, so a broken hook fails the frame's probe"
+ ],
+ "b": [
+  "The popup writes the badge outside the background's per-tab latest gate, so a stale probe can overwrite a newer one",
+  "The panel transport reconnects immediately and forever when the background drops its port at once",
+  "The popup's title shows the first frame's kit version when frames run different weasel versions"
+ ]
+}

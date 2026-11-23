@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "Library mode exempts a minified IIFE from the stripped-annotation refusal under esbuild only; vite, rollup and rolldown still fail it",
+  "guardEsbuild refuses an IIFE build that leaves `format` unset",
+  "Whether a package's declared table enters an app build depends on the file extension of the modules that came from it",
+  "Dev and build disagree on which tables a package with a `weaselIcons` field but no built table provides",
+  "The module-level export check warns on `export { type icon }`, which the import-side checks skip"
+ ],
+ "b": [
+  "esbuild library guard refuses a minified bundle whose format defaults to IIFE",
+  "A `declare function` in a namespace does not shadow the imported `icon`"
+ ]
+}

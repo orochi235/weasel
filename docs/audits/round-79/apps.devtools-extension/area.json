@@ -1,0 +1,92 @@
+{
+ "id": "apps.devtools-extension",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "apps/devtools-extension/manifest.ts",
+  "apps/devtools-extension/scripts/build.ts",
+  "apps/devtools-extension/scripts/gen-icons.ts",
+  "apps/devtools-extension/scripts/safari.ts",
+  "apps/devtools-extension/scripts/zip.ts",
+  "apps/devtools-extension/src/background/badge.ts",
+  "apps/devtools-extension/src/background/frames.ts",
+  "apps/devtools-extension/src/background/main.ts",
+  "apps/devtools-extension/src/background/relay.ts",
+  "apps/devtools-extension/src/background/wake.ts",
+  "apps/devtools-extension/src/browserApi.ts",
+  "apps/devtools-extension/src/content/bridge.ts",
+  "apps/devtools-extension/src/content/main.ts",
+  "apps/devtools-extension/src/content/start.ts",
+  "apps/devtools-extension/src/devtools/main.ts",
+  "apps/devtools-extension/src/envelope.ts",
+  "apps/devtools-extension/src/hookPresence.ts",
+  "apps/devtools-extension/src/panel/PanelHost.tsx",
+  "apps/devtools-extension/src/panel/main.tsx",
+  "apps/devtools-extension/src/panel/panel.css",
+  "apps/devtools-extension/src/panel/panel.module.css",
+  "apps/devtools-extension/src/panel/portTransport.ts",
+  "apps/devtools-extension/src/popup/main.ts",
+  "apps/devtools-extension/src/popup/popup.css",
+  "apps/devtools-extension/src/popup/status.ts",
+  "apps/devtools-extension/src/tabWeasel.ts",
+  "apps/devtools-extension/src/testing/fakePorts.ts",
+  "apps/devtools-extension/vite.config.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "newCode": {
+  "since": 33,
+  "changedFiles": 13,
+  "findings": 7
+ },
+ "previous": {
+  "round": 33,
+  "chapman": 8,
+  "unfound": 1
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 12,
+   "total": 12
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.4,
+   "B": 3.7,
+   "match": 0.1,
+   "fix": 26.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1232531,
+  "costUsd": 3.71
+ },
+ "fixCommits": [
+  "b270d7a75e9132dd5904babe0c0f1b7210d9aea0",
+  "47470def798c59b2f0b595f4b37c8c81d63b369c",
+  "1bc198bfb2a8fd0b30c0c7f641fb2df1d34a8acd",
+  "121e1a8bb44e0dd0aa045bf0b81ee7aab2cec057",
+  "9f5127ac3abd5526e4331ee0147e938235a62129",
+  "c4c3c7dcb397fb21cecd4d05e6cc9b52ffc8270f"
+ ]
+}

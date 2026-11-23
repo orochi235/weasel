@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "A `.dfont` resource map can demand billions of slices: `sfntResources` bounds no work by the input",
+  "A collection member whose directory repeats one large table makes `extractFont` allocate the sum of every repeat",
+  "An empty `postscriptName` counts as absent for `cssSrc` but as a name for the parser"
+ ],
+ "b": [
+  "A CFF table whose header byte reads 2 skips every structural check, so the parser hang `checkCff` exists for is still reachable",
+  "`advanceOf` lets a CFF charstring parse throw into layout, unguarded, while `glyphD` for the same glyph is caught"
+ ]
+}

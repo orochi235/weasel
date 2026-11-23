@@ -1,0 +1,101 @@
+{
+ "id": "core",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "packages/core/src/WeaselProvider.tsx",
+  "packages/core/src/affordances/annulusPaint.ts",
+  "packages/core/src/affordances/composeAffordanceLayer.ts",
+  "packages/core/src/affordances/hitAffordanceRegions.ts",
+  "packages/core/src/affordances/index.ts",
+  "packages/core/src/affordances/pathAnchors.ts",
+  "packages/core/src/affordances/types.ts",
+  "packages/core/src/icons.gen.ts",
+  "packages/core/src/icons.table.ts",
+  "packages/core/src/index.ts",
+  "packages/core/src/input/keyState.ts",
+  "packages/core/src/input/useElementEffect.ts",
+  "packages/core/src/input/useKeyModifiers.ts",
+  "packages/core/src/input/useKeyState.ts",
+  "packages/core/src/input/usePublishPointer.ts",
+  "packages/core/src/kitSettings.ts",
+  "packages/core/src/kitSettingsSchema.ts",
+  "packages/core/src/layout/index.ts",
+  "packages/core/src/layout/types.ts",
+  "packages/core/src/test-hook/createTestHook.ts",
+  "packages/core/src/test-hook/install.ts",
+  "packages/core/src/test-hook/types.ts",
+  "packages/core/src/test-hook/useTestHook.ts",
+  "packages/core/src/testing/BareCanvas.tsx",
+  "packages/core/src/testing/canvas.ts",
+  "packages/core/src/testing/canvasPixels.ts",
+  "packages/core/src/testing/matchMedia.ts",
+  "packages/core/src/tools/builtin/hand/createDragPanContribution.ts",
+  "packages/core/src/tools/builtin/hand/index.ts",
+  "packages/core/src/tools/builtin/hand/useHandTool.ts",
+  "packages/core/src/tools/builtin/index.ts",
+  "packages/core/src/tools/builtin/marquee.ts",
+  "packages/core/src/tools/builtin/throughChrome.ts",
+  "packages/core/src/tools/index.ts",
+  "packages/core/src/tools/overlayBinding.ts",
+  "packages/core/src/tools/useKeybindings.ts",
+  "packages/core/src/version.ts"
+ ],
+ "a": 4,
+ "b": 1,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 4,
+ "unfound": 0,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "newCode": {
+  "since": 38,
+  "changedFiles": 11,
+  "findings": 3
+ },
+ "previous": {
+  "round": 38,
+  "chapman": 12.3,
+  "unfound": 3.3
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 16,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2532,
+   "total": 2532
+  },
+  "gui": true,
+  "repairs": 1,
+  "capstone": true
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.8,
+   "B": 2.6,
+   "match": 0.2,
+   "fix": 9.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 891193,
+  "costUsd": 2.79
+ },
+ "fixCommits": [
+  "47357a40c1c148e33229a77696f8bb28cfdb2a87",
+  "c75b9b3c96d70b735c8370c852b3f3a3f901645f",
+  "092c361df816b2d8497326c85471468e83969dd2",
+  "fc0406844e5c860809d921051283175a5205ae9d",
+  "279f6abb0ea545f4c8d38c2521f6104d5e1afcb0"
+ ]
+}

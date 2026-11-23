@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "formatShortcut drops an optional Shift on the key but still draws it on each leader step",
+  "fixedSeat checks the element's own document for the root in one place and the global `document` in two others",
+  "Target checks use the global `Element`/`HTMLInputElement` classes, so events from another realm are never recognized as editable or as controls"
+ ],
+ "b": [
+  "specificity ignores a wheel/pinch direction and a drag button, so a narrower binding loses to an earlier catch-all",
+  "specificity counts a wildcard MIME glob as a typed filter",
+  "fixedSeat's will-change test matches longhands that create no containing block",
+  "fixedSeat uses the global document, not the element's own"
+ ]
+}

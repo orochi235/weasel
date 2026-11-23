@@ -1,0 +1,75 @@
+{
+ "id": "icons-plugin",
+ "commit": "7436a32b38e97519cf2953cd719c972e72a0be83",
+ "date": "2026-11-23",
+ "files": [
+  "packages/icons-plugin/src/annotate.ts",
+  "packages/icons-plugin/src/bundlers.ts",
+  "packages/icons-plugin/src/catalog.ts",
+  "packages/icons-plugin/src/collect.ts",
+  "packages/icons-plugin/src/index.ts",
+  "packages/icons-plugin/src/parse.ts",
+  "packages/icons-plugin/src/pbt.fixture.ts",
+  "packages/icons-plugin/src/rewrite.ts",
+  "packages/icons-plugin/src/scope.ts",
+  "packages/icons-plugin/src/tables.ts",
+  "packages/icons-plugin/src/virtual.ts",
+  "packages/icons-plugin/src/walk.ts"
+ ],
+ "a": 5,
+ "b": 2,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 78,
+  "changedFiles": 1,
+  "findings": 4
+ },
+ "previous": {
+  "round": 78,
+  "chapman": 11.3,
+  "unfound": 2.3
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 6157,
+   "total": 6157
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.2,
+   "B": 7.9,
+   "match": 0.1,
+   "fix": 14.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1041430,
+  "costUsd": 3.36
+ },
+ "fixCommits": [
+  "6276a0d09b428408c01c2d700a8e1c0a97800d58",
+  "0429b7ef73833a578f988af24863b5a702f1c623",
+  "eaefcc8261fcd86f82046a020d5b47caa922b249",
+  "d55e0fe69fbf2f4a9b64837d887cba8b09bc5c57",
+  "034d43ac2fd2824a056d50faeff1bf2528d12397"
+ ]
+}

@@ -1,0 +1,15 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A \"Trial not found\" placeholder offers an enabled Close that does nothing"
+ ],
+ "b": [
+  "\"Trial not found\" placeholder offers a Close that can never close it",
+  "Reset keeps the trial's mark history, while clone strips it"
+ ]
+}

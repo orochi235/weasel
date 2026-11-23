@@ -3415,7 +3415,7 @@
   ]
  },
  {
-  "id": "forge.vite",
+  "id": "forge.vite.part1",
   "files": [
    "packages/forge/src/vite/apiTable.ts",
    "packages/forge/src/vite/ast.ts",
@@ -3435,13 +3435,19 @@
    "packages/forge/src/vite/folderTitles.ts",
    "packages/forge/src/vite/foreignStories.ts",
    "packages/forge/src/vite/forgeTest.ts",
+   "packages/forge/src/vite/freeNames.ts",
    "packages/forge/src/vite/history.ts",
    "packages/forge/src/vite/html.ts",
    "packages/forge/src/vite/index.ts",
    "packages/forge/src/vite/indexFile.ts",
    "packages/forge/src/vite/indexStory.ts",
    "packages/forge/src/vite/isolateReport.ts",
-   "packages/forge/src/vite/issues/answer.ts",
+   "packages/forge/src/vite/issues/answer.ts"
+  ]
+ },
+ {
+  "id": "forge.vite.part2",
+  "files": [
    "packages/forge/src/vite/issues/endpoint.ts",
    "packages/forge/src/vite/moduleInfo.ts",
    "packages/forge/src/vite/nativeExports.ts",
@@ -3764,6 +3770,7 @@
    "packages/gestures/src/ui/bodyClassification.ts",
    "packages/gestures/src/ui/clientScale.ts",
    "packages/gestures/src/ui/controlTarget.ts",
+   "packages/gestures/src/ui/domNode.ts",
    "packages/gestures/src/ui/dragThreshold.ts",
    "packages/gestures/src/ui/fixedSeat.ts",
    "packages/gestures/src/ui/formatShortcut.ts",
@@ -4250,6 +4257,7 @@
   "id": "labkit.controls",
   "files": [
    "packages/labkit/src/controls/AutoControls.stories.tsx",
+   "packages/labkit/src/controls/CompoundRow.tsx",
    "packages/labkit/src/controls/ControlBar.tsx",
    "packages/labkit/src/controls/ControlMatrix.less",
    "packages/labkit/src/controls/ControlMatrix.stories.less",
@@ -4279,6 +4287,7 @@
    "packages/labkit/src/controls/index.ts",
    "packages/labkit/src/controls/labSource.ts",
    "packages/labkit/src/controls/matrixTarget.ts",
+   "packages/labkit/src/controls/panelAuto.ts",
    "packages/labkit/src/controls/panelHeadings.tsx",
    "packages/labkit/src/controls/panelNode.tsx",
    "packages/labkit/src/controls/panelPaths.ts",

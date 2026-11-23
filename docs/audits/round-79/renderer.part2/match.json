@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "A tile that failed for want of an OffscreenCanvas is never retried once another spec fails under the new canvas",
+  "movesWithView's memo goes stale when a text command is refilled in place, though textBounds tracks exactly that"
+ ],
+ "b": [
+  "A loader uncovered by disposing the one that displaced it mid-load never loads its kind",
+  "Two kinds declaring one program id: the later one silently takes it, and disposing it deletes the program the other draws with"
+ ]
+}
