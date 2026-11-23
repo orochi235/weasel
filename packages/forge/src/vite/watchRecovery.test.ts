@@ -126,3 +126,49 @@ describe('watchRecovery', () => {
     expect(warnings).toHaveLength(1);
   });
 });
+
+describe('watchRecovery stamps', () => {
+  type Hook = (this: unknown, ...args: unknown[]) => void;
+  const hook = (h: unknown) => (typeof h === 'function' ? h : (h as { handler: unknown }).handler) as Hook;
+
+  /** The plugin's hooks driven by hand, so a load can go without its transform. */
+  function drive() {
+    const root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-stamps-')));
+    cleanups.push(async () => rmSync(root, { recursive: true, force: true }));
+    const file = join(root, 'part.ts');
+    writeFileSync(file, 'export const part = 0;\n');
+    const plugin = watchRecovery({ quietMs: Infinity });
+    const warnings: string[] = [];
+    let middleware: Hook = () => {};
+    hook(plugin.configResolved).call(undefined, { server: { watch: {} }, plugins: [plugin], cacheDir: join(root, '.cache') });
+    hook(plugin.configureServer).call(undefined, {
+      watcher: { on() {}, emit() {} },
+      middlewares: { use: (fn: Hook) => void (middleware = fn) },
+      config: { base: '/', root, logger: { warn: (msg: string) => void warnings.push(msg) } },
+      environments: { client: { moduleGraph: { onFileChange() {} } } },
+    });
+    const env = (id: string) => ({
+      environment: { name: 'client', mode: 'dev', moduleGraph: { getModuleById: () => ({ file, url: `/${id.slice(root.length + 1)}` }) } },
+    });
+    return {
+      file,
+      load: (id: string) => hook(plugin.load).call(env(id), id),
+      transform: (id: string) => hook(plugin.transform).call(env(id), '', id),
+      request: () => middleware({ url: '/part.ts' }, {}, () => {}),
+      warnings,
+    };
+  }
+
+  it('drops a read whose transform never came once a minute has passed', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    cleanups.push(async () => void vi.useRealTimers());
+    const { file, load, transform, request, warnings } = drive();
+    load(file);
+    vi.setSystemTime(Date.now() + 61_000);
+    load(`${file}?other`);
+    transform(file);
+    edit(file, 'export const part = 1;\n');
+    request();
+    expect(warnings).toEqual([]);
+  });
+});
