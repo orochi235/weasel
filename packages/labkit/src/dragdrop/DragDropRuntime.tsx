@@ -220,8 +220,11 @@ export interface DragOverlayProps {
   drag: DragState | null;
 }
 
-/** The ghost for `drag`, or nothing when no drag is live. */
+/** The ghost for `drag`, with `onDragOver`'s reason for refusing a drop there, or nothing when no drag is live. */
 export function DragOverlay({ drag }: DragOverlayProps) {
   if (!drag) return null;
-  return <DragGhost item={drag.item} screenPos={drag.screenPos} from={drag.from} />;
+  const refused = drag.feedback?.ok === false ? drag.feedback.reason : undefined;
+  return (
+    <DragGhost item={drag.item} screenPos={drag.screenPos} from={drag.from} reason={refused} />
+  );
 }

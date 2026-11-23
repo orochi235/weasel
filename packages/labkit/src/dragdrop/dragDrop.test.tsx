@@ -335,6 +335,30 @@ describe('DragDrop across trials and buttons', () => {
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
   });
 
+  it('shows why onDragOver refuses the drop beside the ghost', async () => {
+    const refusing = defineInstrument<DropState, Record<string, never>>({
+      ...testInstrument,
+      name: 'Refusing',
+      dragDrop: {
+        ...(testInstrument.dragDrop as NonNullable<typeof testInstrument.dragDrop>),
+        onDragOver: (world) =>
+          world.x > 200 ? { ok: false, reason: 'Slot occupied' } : { ok: true },
+      },
+    });
+    await renderLab(undefined, refusing);
+    await act(async () => {
+      pointerDown(screen.getByRole('button', { name: 'Item A' }), 0, 0);
+    });
+    const settle = () => act(() => new Promise((r) => setTimeout(r, 50)));
+    await pointerMove(250, 250);
+    await settle();
+    expect(document.querySelector('.lk-drag-ghost')?.textContent).toBe('Item A');
+    await pointerMove(450, 250);
+    await settle();
+    expect(document.querySelector('.lk-drag-ghost__reason')?.textContent).toBe('Slot occupied');
+    await pointerUp(450, 250);
+  });
+
   it.each([
     ['middle', 1, 4],
     ['secondary', 2, 2],
