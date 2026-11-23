@@ -110,11 +110,14 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
         const pose = world.get(n.id) ?? (s.pose as RectPose);
         return facing(port === undefined ? portsOf(n, pose) : portSitesOf(n, pose, port));
       };
+      const from = portsAt(a, edge.from.port);
+      const to = portsAt(b, edge.to.port);
+      if (from.length === 0 || to.length === 0) continue;
       const route = held.get(spec.id as string);
       edges.push({
         id: spec.id as string,
-        from: { node: a.id as string, ports: portsAt(a, edge.from.port) },
-        to: { node: b.id as string, ports: portsAt(b, edge.to.port) },
+        from: { node: a.id as string, ports: from },
+        to: { node: b.id as string, ports: to },
         ...(edge.waypoints !== undefined && edge.waypoints.length > 0 ? { waypoints: edge.waypoints } : {}),
         ...(route != null ? { route } : {}),
         ...(labels.has(spec.id as string) ? { label: labels.get(spec.id as string)! } : {}),

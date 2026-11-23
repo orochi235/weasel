@@ -180,4 +180,12 @@ describe('createSpecRouter', () => {
     });
     expect(enters).toBe(false);
   });
+
+  it('leaves alone an edge whose end offers no facing port, as the scene router does', () => {
+    seen.length = 0;
+    const odd = { from: 'a', to: 'b', fromPort: 'nowhere' };
+    const specs = createSpecRouter()(diagramScene({ ...DATA, edges: [odd, { from: 'c', to: 'd' }] }, { layout: 'none' }));
+    expect(edgeOf(specs, edgeIdOf(odd)).router).not.toBe('avoid');
+    expect(seen.flatMap((i) => i.edges.map((e) => e.id))).not.toContain(edgeIdOf(odd));
+  });
 });
