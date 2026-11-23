@@ -237,6 +237,13 @@ describe('resetTrial', () => {
     expect(reset[0]).not.toHaveProperty('undo');
   });
 
+  it('keeps the marks but not their undo history', () => {
+    const arr = addTrial([], instruments, 'Counter');
+    head(arr).annotations = { version: 1, scenes: { a: {} }, history: { undoable: [] } };
+    const reset = resetTrial(arr, head(arr).id, instruments);
+    expect(reset[0]?.annotations).toEqual({ version: 1, scenes: { a: {} } });
+  });
+
   it('does not mutate input', () => {
     const arr = addTrial([], instruments, 'Counter');
     head(arr).config = { step: 99 } as CounterConfig;

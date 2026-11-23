@@ -1,13 +1,15 @@
 /**
  * Reset starts a trial's undo afresh, on a history its instrument handed over
- * as much as on the trial's own snapshots.
+ * as much as on the trial's own snapshots and its marks.
  */
-import { fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { createHistory } from '@weasel-js/core';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { useAnnotations } from '../annotations/AnnotationsContext';
+import type { AnnotationStorage, AnnotationsApi } from '../annotations/types';
 import { f } from '../config/builder';
 import { defineInstrument } from '../instrument/defineInstrument';
 import { Lab } from '../lab/Lab';
@@ -72,5 +74,46 @@ describe('Reset on a trial whose instrument keeps its own history', () => {
     expect(grid()).toBeChecked();
     fireEvent.click(undo());
     expect(grid()).toBeChecked();
+  });
+});
+
+describe('Reset on a trial with marks', () => {
+  beforeAll(() => {
+    HTMLCanvasElement.prototype.getContext = vi.fn(
+      () => null,
+    ) as unknown as HTMLCanvasElement['getContext'];
+  });
+
+  let api: AnnotationsApi | null = null;
+  function Pane() {
+    api = useAnnotations();
+    return null;
+  }
+  const marking = (storage?: AnnotationStorage) =>
+    defineInstrument({
+      name: 'Marking',
+      config: f.schema({}),
+      initialState: () => ({}),
+      render: () => <Pane />,
+      annotations: {
+        targets: () => [
+          { id: 'pane', ref: { current: null }, content: { width: 200, height: 100 } },
+        ],
+        ...(storage ? { storage } : {}),
+      },
+    });
+
+  it.each([
+    ['in the trial record', undefined],
+    ['in storage of its own', { load: () => Promise.resolve(null), save: () => {} }],
+  ])('keeps the marks kept %s, with nothing left to undo', async (_where, storage) => {
+    await renderSettled(<Lab instruments={[marking(storage)]} />, { wrapper: withIcons });
+    act(() => {
+      api?.add({ target: 'pane', kind: 'rect', frac: { x: 0.2, y: 0.3, width: 0.1, height: 0.1 } });
+    });
+    expect(undo()).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Reset trial' }));
+    expect(api?.query()).toHaveLength(1);
+    expect(undo()).toBeDisabled();
   });
 });

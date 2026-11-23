@@ -166,6 +166,15 @@ describe('save/load/delete snapshots', () => {
     expect(s.getState().trials[0]?.config).toEqual({ x: 1 });
   });
 
+  it('loadSnapshot keeps the marks but not their undo history', () => {
+    const s = makeStore();
+    s.getState().addTrial({ id: 'w1', instrumentName: 'T', config: {}, state: {}, view: VIEW });
+    s.getState().saveSnapshot('w1', 'snap1');
+    s.getState().updateTrialAnnotations('w1', { version: 1, scenes: { a: {} }, history: {} });
+    s.getState().loadSnapshot(s.getState().savedSnapshots[0]?.id ?? '', 'w1');
+    expect(s.getState().trials[0]?.annotations).toEqual({ version: 1, scenes: { a: {} } });
+  });
+
   it('loadSnapshot restores the auto paths the trial had when saved', () => {
     const s = makeStore();
     s.getState().addTrial({
