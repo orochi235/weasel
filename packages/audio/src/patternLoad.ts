@@ -74,5 +74,6 @@ export function patternVoicePeaks(
     }
     peaks.push([bus, peak]);
   }
-  return Object.fromEntries(peaks);
+  // Null-prototype: a lookup for a bus the pattern does not use reads undefined, never an `Object.prototype` member.
+  return Object.assign(Object.create(null) as Record<string, number>, Object.fromEntries(peaks));
 }
