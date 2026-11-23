@@ -193,6 +193,41 @@ describe('useJob', () => {
     expect(seenByRun[1]).toEqual({ items: [] });
   });
 
+  it('runs `begin` once, on the state with every pending update applied, and hands `run` that result', async () => {
+    const seenByRun: State[] = [];
+    const begin = vi.fn((state: State) => ({ items: [...state.items, -1] }));
+    const cap: JobCapability<State, Config, number> = {
+      ...capability(),
+      run: ({ config, state, signal }) => {
+        seenByRun.push(state);
+        return counter(config.n, signal);
+      },
+      begin,
+    };
+    const seen: { handle: JobHandle | null; state: State; set: ((s: State) => void) | null } = {
+      handle: null,
+      state: { items: [] },
+      set: null,
+    };
+    function Editing() {
+      const [state, setState] = useState<State>({ items: [] });
+      const job = useJob({ capability: cap, config: { n: 1 }, state, setState });
+      seen.handle = job;
+      seen.state = state;
+      seen.set = setState;
+      return null;
+    }
+    render(<Editing />);
+    act(() => {
+      seen.set?.({ items: [7] });
+      seen.handle?.start();
+    });
+    await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    expect(begin).toHaveBeenCalledTimes(1);
+    expect(seenByRun).toEqual([{ items: [7, -1] }]);
+    expect(seen.state.items).toEqual([7, -1, 0]);
+  });
+
   it('aborts on unmount', async () => {
     const aborted = vi.fn();
     const watching: JobCapability<State, Config, number> = {

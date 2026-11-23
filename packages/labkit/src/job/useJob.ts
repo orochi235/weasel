@@ -4,6 +4,7 @@ import {
   type SetStateAction,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
 } from 'react';
@@ -77,6 +78,32 @@ async function drive<TS, TC, TItem>(
 }
 
 /**
+ * Applies `begin` through `setState` and launches the run on what it made, so `run` sees the state its items fold
+ * into. A `useState` setter may run the updater only at its next render: then this returns the retry to call after
+ * it, which reports whether it is done. A run no longer `live` launches nothing.
+ */
+function beginThenLaunch<TS>(
+  begin: (prev: TS) => TS,
+  setState: (next: (prev: TS) => TS) => void,
+  launch: (state: TS) => void,
+  live: () => boolean,
+): (() => boolean) | null {
+  const began: { state?: TS; done: boolean } = { done: false };
+  setState((prev) => {
+    began.state = begin(prev);
+    began.done = true;
+    return began.state;
+  });
+  const tryLaunch = (): boolean => {
+    if (!live()) return true;
+    if (!began.done) return false;
+    launch(began.state as TS);
+    return true;
+  };
+  return tryLaunch() ? null : tryLaunch;
+}
+
+/**
  * Drive a `JobCapability` and report its progress. `start` cancels any run in
  * flight and begins again; results from a superseded or canceled run are
  * dropped. A `key` change element-wise starts it again: with `auto` always, on
@@ -98,6 +125,8 @@ export function useJob<TS, TC, TItem>({
   const abort = useRef<AbortController | null>(null);
   /** Whether a run was started and not canceled since: what a job without `auto` re-runs on a `key` change. */
   const ran = useRef(false);
+  /** A started run still waiting on its `begin` updater to have run. */
+  const pendingLaunch = useRef<(() => boolean) | null>(null);
 
   // Read through refs: `run` is called once per run and must see the values as of
   // that moment rather than re-subscribing on every render.
@@ -124,18 +153,30 @@ export function useJob<TS, TC, TItem>({
     setProgress({ ...IDLE, status: 'running' });
     const begin = capRef.current.begin;
     const startConfig = configRef.current;
-    if (begin) setStateRef.current((prev) => begin(prev, startConfig));
-    // `run` sees the state its items fold into: what `begin` makes of it.
-    const startState = begin ? begin(stateRef.current, startConfig) : stateRef.current;
-
-    void drive(
-      () => capRef.current,
-      { config: startConfig, state: startState, signal: controller.signal },
+    const launch = (startState: TS): void =>
+      void drive(
+        () => capRef.current,
+        { config: startConfig, state: startState, signal: controller.signal },
+        () => token.current === mine,
+        (fold) => setStateRef.current(fold),
+        setProgress,
+      );
+    pendingLaunch.current = null;
+    if (!begin) {
+      launch(stateRef.current);
+      return;
+    }
+    pendingLaunch.current = beginThenLaunch(
+      (prev) => begin(prev, startConfig),
+      setStateRef.current,
+      launch,
       () => token.current === mine,
-      (fold) => setStateRef.current(fold),
-      setProgress,
     );
   }, [capRef, configRef, setStateRef, stateRef]);
+
+  useLayoutEffect(() => {
+    if (pendingLaunch.current?.()) pendingLaunch.current = null;
+  });
 
   // Re-run when the declared key changes. `auto` covers the first mount too.
   const lastKey = useRef<readonly unknown[] | null>(null);
