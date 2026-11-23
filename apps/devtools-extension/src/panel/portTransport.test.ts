@@ -1,8 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { portPair, type FakePort } from '../testing/fakePorts';
 import { DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/devtools/protocol';
-import { PORT_PANEL } from '../envelope';
-import { createPortTransport } from './portTransport';
+import { PORT_PANEL, REPLACED } from '../envelope';
+import { RETRY_MAX_MS, RETRY_MS, createPortTransport } from './portTransport';
 
 const yo = { type: 'yo', protocol: PROTOCOL } as const;
 const sup = { type: 'sup', protocol: PROTOCOL, kitVersion: '1', roots: [] } as const;
@@ -66,6 +66,24 @@ describe('the panel’s port transport', () => {
     expect(backgrounds[1]!.received.at(-1)).toMatchObject({ requestId: 3 });
   });
 
+  it('stops waiting on a request about a root the page says went, which the page never answers', () => {
+    const { transport, backgrounds } = setup();
+    const heard: unknown[] = [];
+    transport.onMessage((m) => heard.push(m));
+    transport.send(yo);
+    const ask = (requestId: number, rootId: string) => transport.send({ type: 'get-state', protocol: PROTOCOL, requestId, rootId });
+    ask(1, 'root-1');
+    ask(2, 'root-2');
+    ask(3, 'root-3');
+    backgrounds[0]!.postMessage({ type: 'root-removed', protocol: PROTOCOL, rootId: 'root-1' });
+    backgrounds[0]!.postMessage({ ...sup, roots: [{ id: 'root-3', label: 'root-3', dimension: '2d' }] });
+    heard.length = 0;
+    backgrounds[0]!.disconnect();
+    expect(heard).toEqual([
+      { type: 'error', protocol: PROTOCOL, requestId: 3, message: 'weasel devtools: the connection to the page restarted' },
+    ]);
+  });
+
   it('settles no later client’s request with a late answer to an earlier one', () => {
     const { transport, backgrounds } = setup();
     const heard: unknown[] = [];
@@ -108,5 +126,56 @@ describe('the panel’s port transport', () => {
     expect(backgrounds[0]!.closed).toBe(true);
     transport.send(yo);
     expect(backgrounds).toHaveLength(1);
+  });
+
+  it('goes for good when the background says another panel took its place, and says so', () => {
+    const { transport, backgrounds } = setup();
+    const heard: unknown[] = [];
+    transport.onMessage((m) => heard.push(m));
+    transport.send(yo);
+    transport.send({ type: 'get-state', protocol: PROTOCOL, requestId: 2, rootId: 'root-1' });
+    backgrounds[0]!.postMessage(REPLACED);
+    const message = 'weasel devtools: another devtools panel connected to this tab in place of this one';
+    expect(heard).toEqual([
+      { type: 'error', protocol: PROTOCOL, requestId: 2, message },
+      { type: 'error', protocol: PROTOCOL, requestId: null, message },
+    ]);
+    expect(backgrounds[0]!.closed).toBe(true);
+    transport.send(yo);
+    expect(backgrounds).toHaveLength(1);
+  });
+
+  it('waits longer each time before calling back a background that hangs up before saying anything', () => {
+    vi.useFakeTimers();
+    try {
+      const backgrounds: FakePort[] = [];
+      createPortTransport(9, (name) => {
+        const [local, remote] = portPair(name);
+        backgrounds.push(remote);
+        setTimeout(() => remote.disconnect(), 0);
+        return local;
+      });
+      const opened = (ms: number) => {
+        vi.advanceTimersByTime(ms);
+        return backgrounds.length;
+      };
+      expect(opened(10)).toBe(2);
+      expect(opened(RETRY_MS)).toBe(3);
+      expect(opened(RETRY_MS)).toBe(3);
+      expect(opened(2 * RETRY_MS)).toBe(4);
+      const capped = opened(RETRY_MAX_MS * 10);
+      expect(opened(RETRY_MAX_MS * 10) - capped).toBeLessThanOrEqual(10);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('calls straight back a background that went after carrying something', () => {
+    const { backgrounds } = setup();
+    for (let i = 0; i < 4; i++) {
+      backgrounds[i]!.postMessage(sup);
+      backgrounds[i]!.disconnect();
+    }
+    expect(backgrounds).toHaveLength(5);
   });
 });

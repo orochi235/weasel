@@ -80,4 +80,19 @@ describe('watchBadges', () => {
     expect(refresh).toHaveBeenCalledTimes(1);
     expect(current!()).toBe(false);
   });
+
+  it('gates a probe asked for from outside with the tab’s own, so whichever started last writes the badge', async () => {
+    const { api, update } = fakeApi();
+    const currents: (() => boolean)[] = [];
+    const badges = watchBadges(api, async (_tabId, current) => {
+      currents.push(current);
+      return null;
+    });
+    await badges.probe(4);
+    update(4, 'complete');
+    vi.advanceTimersByTime(0);
+    expect(currents.map((c) => c())).toEqual([false, true]);
+    await badges.probe(4);
+    expect(currents.map((c) => c())).toEqual([false, false, true]);
+  });
 });

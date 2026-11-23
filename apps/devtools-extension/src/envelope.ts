@@ -21,6 +21,13 @@ export function isPanelHello(m: unknown): m is PanelHello {
   return typeof m === 'object' && m !== null && typeof (m as PanelHello).inspect === 'number';
 }
 
+/** What the background sends a panel that another panel for its tab took the place of: it should go, and not come back. */
+export const REPLACED = { weaselDevtools: 'replaced' } as const;
+
+export function isReplaced(m: unknown): boolean {
+  return typeof m === 'object' && m !== null && (m as typeof REPLACED).weaselDevtools === 'replaced';
+}
+
 /** What the background sends a tab's content scripts to make them connect. */
 export const CONNECT_REQUEST = { weaselDevtools: 'connect' } as const;
 
@@ -48,6 +55,21 @@ export function probeRequest(tabId: number): ProbeRequest {
 export function isProbeRequest(m: unknown): m is ProbeRequest {
   return typeof m === 'object' && m !== null && (m as ProbeRequest).weaselDevtools === 'probe'
     && typeof (m as ProbeRequest).tabId === 'number';
+}
+
+/** What the popup asks the background: probe the tab and show the answer on its badge, then send it back. */
+export interface RefreshRequest {
+  weaselDevtools: 'refresh';
+  tabId: number;
+}
+
+export function refreshRequest(tabId: number): RefreshRequest {
+  return { weaselDevtools: 'refresh', tabId };
+}
+
+export function isRefreshRequest(m: unknown): m is RefreshRequest {
+  return typeof m === 'object' && m !== null && (m as RefreshRequest).weaselDevtools === 'refresh'
+    && typeof (m as RefreshRequest).tabId === 'number';
 }
 
 export const PORT_PAGE = 'weasel-devtools-page';

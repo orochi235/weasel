@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { portPair, type FakePort } from '../testing/fakePorts';
 import { DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/devtools/protocol';
-import { PORT_PAGE, PORT_PANEL } from '../envelope';
+import { PORT_PAGE, PORT_PANEL, REPLACED } from '../envelope';
 import { createRelay } from './relay';
 
 const P = PROTOCOL;
@@ -201,6 +201,49 @@ describe('the background relay', () => {
       { type: 'error', protocol: P, requestId: 1, message: 'weasel devtools: frame 0 went before it answered' },
       { type: 'root-removed', protocol: P, rootId: 'root-1' },
     ]);
+  });
+
+  it('tells a panel another took its place for the tab, and stops hearing it', () => {
+    const { page, panel } = setup();
+    const content = page(1);
+    const first = panel(1);
+    const second = panel(1);
+    expect(first.received).toEqual([REPLACED]);
+    first.postMessage(yo);
+    expect(content.received).toEqual([]);
+    first.disconnect();
+    second.postMessage(yo);
+    expect(content.received).toEqual([yo]);
+    expect(content.closed).toBe(false);
+  });
+
+  it('stops waiting on a request about a root the page says went, which the page never answers', () => {
+    const { page, panel } = setup();
+    const p = panel(1);
+    const top = page(1);
+    p.postMessage(yo);
+    top.postMessage(sup(root('root-1'), root('root-2')));
+    const ask = (requestId: number, rootId: string) => p.postMessage({ type: 'get-state', protocol: P, requestId, rootId });
+    ask(1, 'root-1');
+    ask(2, 'root-2');
+    top.postMessage({ type: 'root-removed', protocol: P, rootId: 'root-1' });
+    top.postMessage(sup());
+    const before = p.received.length;
+    top.disconnect();
+    expect(p.received.slice(before).filter((m) => (m as { type: string }).type === 'error')).toEqual([]);
+  });
+
+  it('sends a panel that replaced another no answer for the requests the other asked', () => {
+    const { page, panel } = setup();
+    const first = panel(1);
+    const top = page(1);
+    first.postMessage(yo);
+    top.postMessage(sup(root('root-1')));
+    first.postMessage({ type: 'get-state', protocol: P, requestId: 5, rootId: 'root-1' });
+    const second = panel(1);
+    const before = second.received.length;
+    top.disconnect();
+    expect(second.received.slice(before).filter((m) => (m as { type: string }).type === 'error')).toEqual([]);
   });
 
   it('answers a request for a frame that is not there with an error', () => {
