@@ -224,8 +224,11 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
           + `(${defaultName === null ? 'which names none' : `"${defaultName}"`}), and the outline parser draws only that one`);
       }
     }
-    // opentype.js reads `CFF ` whenever the font lacks a glyf and loca pair, whatever its signature says.
-    const cff = tableOf(single, 'glyf') && tableOf(single, 'loca') ? null : tableOf(single, 'CFF ');
+    // opentype.js reads `CFF `, else `CFF2`, whenever the font lacks a glyf and loca pair, whatever its signature
+    // says, and reads either by the version its header names.
+    const cff = tableOf(single, 'glyf') && tableOf(single, 'loca')
+      ? null
+      : tableOf(single, 'CFF ') ?? tableOf(single, 'CFF2');
     if (cff) checkCff(cff);
     const cmap = tableOf(single, 'cmap');
     if (cmap) checkCmap(cmap);

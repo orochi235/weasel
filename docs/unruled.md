@@ -755,6 +755,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   name more code points than the format maps (65,536 for format 4, 1,114,112 for 12 and 13), overlaps included. A CFF
   glyph whose outline holds a non-finite coordinate is refused as one glyph, which the registry warns of and serves
   from the SDF tier. A TrueType glyph's path data now keeps the line back to its contour's start before the `Z`.
+- 2026-11-23 (font, audit round 78, the fixer's call): the default outline parser refuses a `CFF ` or `CFF2` table
+  whose header names a major version other than 1 or 2, rather than letting opentype.js read a version 0 as CFF 1
+  unchecked; a `CFF2` table with a version 1 header gets the CFF 1 check.
 - 2026-11-20 (font, audit round 47): `parseBmFont` refuses an atlas with a glyph on any page but 0, naming it, since
   `registerFont` takes one atlas image per face and the renderer samples that one for every glyph. Whether the
   registry should take a URL per page instead is open.

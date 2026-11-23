@@ -35,4 +35,10 @@ describe('checkCff', () => {
     const view = cidCff([139 + 3, 139 + 42, 18, 139, 139, 19]);
     expect(() => checkCff(view)).toThrow(/Private DICT Subrs holds 0 0/);
   });
+
+  it('refuses a header naming a version other than 1 or 2, which opentype.js would read as CFF 1 unchecked', () => {
+    const view = cidCff([139, 139, 18]);
+    view.setUint8(0, 0);
+    expect(() => checkCff(view)).toThrow(/names version 0/);
+  });
 });
