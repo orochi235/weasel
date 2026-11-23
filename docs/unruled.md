@@ -3851,3 +3851,11 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `planeFloor` throws a `RangeError` for a `floorTiles` under 2 (or not a number), and
   so does a tiled layer given `floorTiles: 1`: no level holds a box straddling a tile edge in one tile a side. There is
   no override. Keeping 1 and documenting the bound as `max(floorTiles, 2)` was the alternative.
+## Audit round seventy-three (2026-11-22): labkit.part1
+
+- 2026-11-22 (the fixer's call): a palette item activated from the keyboard (Enter or Space, a click with `detail`
+  0) drops at the world point under the center of the canvas view, through the same `onDragOver` check, event and
+  `onDrop` as a release there. There is no override. A keyboard-moved placement cursor was the alternative.
+- 2026-11-22 (the fixer's call): a lightbox opened inside another, sharing its `<LightboxLayers>`, leaves a shared
+  `below` layer where the outer one put it and raises a shared `above` layer over itself, then back over the outer
+  one when it closes. Giving the inner lightbox no shared layers at all was the alternative.
