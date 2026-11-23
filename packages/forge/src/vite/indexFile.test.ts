@@ -308,6 +308,20 @@ export const Shown = {};
     expect(ids(code)).toEqual([['ui-tag--shown', 'Shown']]);
   });
 
+  it('honors includeStories and excludeStories held in top-level consts', () => {
+    const code = `
+const HIDDEN = ['helper'];
+const SHOWN = /^Sh/;
+export default { title: 'ui/Tag', excludeStories: HIDDEN, includeStories: SHOWN };
+export const Shown = {};
+export const helper = {};
+export const Other = {};
+`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.exportName)).toEqual(['Shown']);
+    const named = `const NAME = 'Other';\nexport default { title: 'ui/Tag', excludeStories: [NAME] };\nexport const Shown = {};\nexport const Other = {};\n`;
+    expect(indexFile(named, FILE, 'ui/Auto').map((e) => e.exportName)).toEqual(['Shown']);
+  });
+
   it('honors a regex excludeStories', () => {
     const code = `
 export default { title: 'ui/Tag', excludeStories: /.*Data$/ };
@@ -391,8 +405,10 @@ export const Literal = story({ viewport: { width: 320, height: 200 }, render: ()
 export const Bound = story({ viewport: size, render: () => null });
 export const Computed = story({ viewport: { width: 2 * 160, height: 200 }, render: () => null });
 export const None = story({ render: () => null });
+const W = 320;
+export const Sides = story({ viewport: { width: W, height: 400 as number }, render: () => null });
 `;
-      expect(viewports(code)).toEqual([{ width: 320, height: 200 }, { width: 1, height: 2 }, undefined, undefined]);
+      expect(viewports(code)).toEqual([{ width: 320, height: 200 }, { width: 1, height: 2 }, undefined, undefined, { width: 320, height: 400 }]);
     });
 
     it('reads no viewport off a CSF story, whose viewport comes from its parameters and globals', () => {
@@ -461,6 +477,15 @@ export { Base as Primary };
       expect(isolates(code)).toEqual(['assigned reason']);
     });
 
+    it('reads a reason held in a top-level const', () => {
+      const code = `
+const REASON = 'shared reason';
+export default { title: 'ui/Button' };
+export const Basic = { parameters: { forge: { isolate: REASON } } };
+`;
+      expect(isolates(code)).toEqual(['shared reason']);
+    });
+
     it('refuses a value that is not a string literal, naming the file and export', () => {
       const code = `
 export default { title: 'ui/Button' };
@@ -515,6 +540,16 @@ export const AllPermutations = { tags: ['gallery', '!b'] };
 `;
       expect(tags(code)).toEqual([['a', 'b'], ['a', 'gallery']]);
       expect(tags(`export default { title: 'ui/Route' };\nexport const A = { tags: ['gallery'] };\n`)).toEqual([['gallery']]);
+    });
+
+    it('reads tags held in top-level consts, as it reads a title', () => {
+      const code = `
+const TAGS = ['gallery', '!test'];
+const LAB = 'lab';
+export default { title: 'ui/All', tags: TAGS };
+export const A = { tags: [LAB, 'test'] as const };
+`;
+      expect(tags(code)).toEqual([['gallery', 'lab', 'test']]);
     });
 
     it('reads only string literals, and leaves the key off a meta with none', () => {

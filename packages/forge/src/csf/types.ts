@@ -53,7 +53,7 @@ export interface CsfShared<T> {
   render?: (args: ArgsOf<T>, context: CsfStoryContext) => ReactNode;
   play?: (context: CsfPlayContext) => void | Promise<void>;
   /** A story carries its meta's tags and its own; `'!tag'` drops one. `'gallery'` marks a catalog or showcase, and
-   *  on a meta, a whole file of them. Read from the source, so each must be a string literal. */
+   *  on a meta, a whole file of them. Read from the source, so each must be a string literal, inline or in a top-level `const`. */
   tags?: string[];
 }
 

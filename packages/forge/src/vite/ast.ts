@@ -126,8 +126,8 @@ export function stringLiteral(node: t.Node): string | undefined {
   return undefined;
 }
 
-/** The string `node` is written as: a literal, through casts and top-level `const`s. */
-export function stringOf(node: t.Node | undefined, bindings: Bindings, depth = 0): string | undefined {
+/** The expression `node` stands for, through casts and top-level `const`s. */
+export function valueOf(node: t.Node | undefined, bindings: Bindings, depth = 0): t.Node | undefined {
   if (!node || depth > 16) return undefined;
   switch (node.type) {
     case 'TSSatisfiesExpression':
@@ -135,12 +135,18 @@ export function stringOf(node: t.Node | undefined, bindings: Bindings, depth = 0
     case 'TSTypeAssertion':
     case 'TSNonNullExpression':
     case 'ParenthesizedExpression':
-      return stringOf(node.expression, bindings, depth + 1);
+      return valueOf(node.expression, bindings, depth + 1);
     case 'Identifier':
-      return stringOf(bindings.get(node.name), bindings, depth + 1);
+      return valueOf(bindings.get(node.name), bindings, depth + 1);
     default:
-      return stringLiteral(node);
+      return node;
   }
+}
+
+/** The string `node` is written as: a literal, through casts and top-level `const`s. */
+export function stringOf(node: t.Node | undefined, bindings: Bindings): string | undefined {
+  const value = valueOf(node, bindings);
+  return value && stringLiteral(value);
 }
 
 export function isDefaultExport(stmt: t.Statement): boolean {

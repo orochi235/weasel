@@ -35,7 +35,7 @@ export interface MetaSpec {
   /** The component's own index page, in place of the generated one. A CSF file sets `parameters.forge.index`. */
   index?: IndexRender;
   /** As CSF's meta `tags`; `'gallery'` marks a catalog or showcase rather than one component, and `'lab'` a whole
-   *  screen for exercising one rather than a specimen of it. Read from the source, so each must be a string literal. */
+   *  screen for exercising one rather than a specimen of it. Read from the source, so each must be a string literal, inline or in a top-level `const`. */
   tags?: readonly string[];
   /** Gives every story in the file a playhead and a transport, unless the story declares its own. */
   timeline?: TimelineSpec | ((config: Record<string, unknown>) => TimelineSpec);
@@ -93,7 +93,7 @@ export interface StorySpec<C = Record<string, never>, S = undefined> {
   /** Renders this story in its own frame document, for a reason the value states. The default is the workshop document. */
   isolate?: string;
   play?: (ctx: PlayContext<C>) => void | Promise<void>;
-  /** Added to the meta's `tags`; `'!tag'` drops one. Read from the source, so each must be a string literal. */
+  /** Added to the meta's `tags`; `'!tag'` drops one. Read from the source, so each must be a string literal, inline or in a top-level `const`. */
   tags?: readonly string[];
   /** Gives the story a playhead, which it reads with `usePlayhead` or `useTimeline`, and its trial a transport. A
    *  function is handed the trial's config, for a span that follows a control. */
