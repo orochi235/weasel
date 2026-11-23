@@ -5,7 +5,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { PropertyField, PropertyGroup, PropertyPanel } from '@weasel-js/ui/components/Properties';
 import { useEffect, useMemo, useRef } from 'react';
 import styles from '../ThemeEditor.module.css';
-import type { DerivedDraft } from '../theme/draft';
+import { draftChain, type DerivedDraft } from '../theme/draft';
 import { issuesAt } from '../theme/issues';
 import { setScale } from '../theme/model';
 import { scaleTable } from '../theme/scales';
@@ -153,7 +153,8 @@ export function ScalesLayer({ draft, derived, lookup, highlight, onChange }: Sca
   useEffect(() => {
     ref.current?.querySelector('[data-highlight]')?.scrollIntoView?.({ block: 'nearest' });
   }, [highlight]);
-  const scales = Object.entries(derived.merged.scales ?? {});
+  const chain = useMemo(() => draftChain(draft, lookup, derived), [draft, lookup, derived]);
+  const scales = Object.entries(chain.scales ?? {});
   if (scales.length === 0) return <p className={styles.empty}>{draft.name} has no scales.</p>;
   const allIssues = derived.views.flatMap((v) => v.result.issues);
   const issuesOf = (name: string) => issuesAt(allIssues, 'scales', name);

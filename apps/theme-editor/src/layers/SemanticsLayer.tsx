@@ -1,10 +1,10 @@
 import { getOwn } from '@weasel-js/registry';
 import type { ThemeDefinition } from '@weasel-js/theme';
-import { declaredSteps, mergeChain, type Lookup } from '@weasel-js/theme/engine';
+import { declaredSteps, type Lookup } from '@weasel-js/theme/engine';
 import { Button } from '@weasel-js/ui/components/Button';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from '../ThemeEditor.module.css';
-import type { DerivedDraft } from '../theme/draft';
+import { draftChain, type DerivedDraft } from '../theme/draft';
 import { issuesAt } from '../theme/issues';
 import { removePin, setSemantic } from '../theme/model';
 import { semanticRows, type SemanticRowView } from '../theme/semantics';
@@ -30,13 +30,7 @@ export function SemanticsLayer({ draft, derived, lookup, highlight, onChange }: 
     [derived],
   );
   // The drawer edits the draft itself, which may not derive yet; `derived` can be an older version.
-  const chain = useMemo(() => {
-    try {
-      return mergeChain(draft, lookup);
-    } catch {
-      return derived.merged;
-    }
-  }, [draft, lookup, derived]);
+  const chain = useMemo(() => draftChain(draft, lookup, derived), [draft, lookup, derived]);
   const [selected, setSelected] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {

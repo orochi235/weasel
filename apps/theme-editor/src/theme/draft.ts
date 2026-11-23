@@ -34,3 +34,14 @@ export function deriveDraft(def: ThemeDefinition, lookup: Lookup, axisValues: Ax
   const primary = views.find((v) => v.mode === axes.mode?.default) ?? views[0];
   return { definition: def, merged, axes, theme, views, primary };
 }
+
+/** The draft with what it extends, which an editor reads its parameters from; `derived.merged` when the draft
+ *  cannot be merged, since `derived` may be an older version that still derives. */
+export function draftChain(draft: ThemeDefinition, lookup: Lookup, derived: DerivedDraft): ThemeDefinition {
+  if (draft === derived.definition) return derived.merged;
+  try {
+    return mergeChain(draft, lookup);
+  } catch {
+    return derived.merged;
+  }
+}

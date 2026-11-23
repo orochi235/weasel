@@ -19,7 +19,7 @@ import { PinIcon } from '../PinIcon';
 import styles from '../ThemeEditor.module.css';
 import { ConstraintsPanel, type SetConstraint } from '../palette/ConstraintsPanel';
 import { unmetGates } from '../palette/unmetGates';
-import type { DerivedDraft, ModeView } from '../theme/draft';
+import { draftChain, type DerivedDraft, type ModeView } from '../theme/draft';
 import { issuesAt } from '../theme/issues';
 import { adoptGenerated, removePin, setPin, setRamp } from '../theme/model';
 import { rampView, readParam, writeParam, type StepView } from '../theme/ramps';
@@ -162,7 +162,8 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
     ref.current?.querySelector('[data-highlight]')?.scrollIntoView?.({ block: 'nearest' });
   }, [highlight]);
 
-  const ramps = Object.entries(derived.merged.ramps ?? {});
+  const chain = useMemo(() => draftChain(draft, lookup, derived), [draft, lookup, derived]);
+  const ramps = Object.entries(chain.ramps ?? {});
   if (ramps.length === 0) return <p className={styles.empty}>{draft.name} has no ramps.</p>;
 
   const adopt = (ramp: string) => onChange(adoptGenerated(draft, lookup, ramp), `adopt:${ramp}`, `adopt generated ${ramp}`);
@@ -186,7 +187,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
   return (
     <div ref={ref} className={styles.ramps}>
       {ramps.map(([name, entry]) => {
-        const view = rampView(name, entry, derived.primary.result, derived.primary.resolved, derived.merged);
+        const view = rampView(name, entry, derived.primary.result, derived.primary.resolved, chain);
         const lit = (token: string) => highlight.includes(token);
         const issues = issuesOf(name);
         const authored = view.steps.some((s) => getOwn(derived.primary.result.provenance, s.token)?.layer === 'pins');
@@ -296,7 +297,7 @@ export function RampsLayer({ draft, derived, lookup, highlight, focused, onFocus
             </div>
             {entry.kind === 'lightness' && <LightnessParams name={name} entry={entry} draft={draft} lookup={lookup} onChange={onChange} readOnly={!own} />}
             {entry.kind === 'categorical' && editingGates === name && (
-              <GatesEditor name={name} entry={entry} draft={draft} merged={derived.merged} lookup={lookup} onChange={onChange} readOnly={!own} infeasible={infeasible} />
+              <GatesEditor name={name} entry={entry} draft={draft} merged={chain} lookup={lookup} onChange={onChange} readOnly={!own} infeasible={infeasible} />
             )}
           </section>
         );
