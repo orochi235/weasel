@@ -1,15 +1,16 @@
 import { textCommandFromRuns } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { ellipsePath, type TrackShape } from '@weasel-js/geom';
+import { ellipsePath, polylineFromPoints, type TrackShape } from '@weasel-js/geom';
 import { nearestStopIndex } from '@weasel-js/loupe';
 import { solidFill } from '@weasel-js/paint';
 import type { HudDrawCtx, HudPointerEvent, Widget } from '../widget';
 import type { WindowWidget } from '../widgets/window/window';
 import { lensTone } from './lensTone';
 import { textWidth } from '../menu/textWidth';
-import { BAND, bandPath, outwardOf, ringBoundsOf, rimTrackIn } from './rimTracks';
+import { BAND, outwardOf, ringBoundsOf, rimTrackIn } from './rimTracks';
 
 const THUMB_R = 6;
+const SAMPLES = 48;
 const LABEL_PX = 9;
 /** Px from the track's centerline to a stop's label, outward past the band. */
 const LABEL_GAP = BAND / 2 + 8;
@@ -53,10 +54,8 @@ export function createZoomTrack(id: string, host: ZoomTrackHost): Widget {
       const t = ctx.tokens;
       const shape = track();
       const stroke = (color: string, width: number) => ({ paint: { kind: 'solid' as const, color }, width });
-      const out: DrawCommand[] = [{
-        kind: 'path', path: bandPath(shape, 0, 1, 48),
-        fill: solidFill(lensTone(t, '--wzl-surface-raised')), stroke: stroke(lensTone(t, '--wzl-border'), 1),
-      }];
+      const line = polylineFromPoints(Array.from({ length: SAMPLES + 1 }, (_, i) => shape.at(i / SAMPLES).point));
+      const out: DrawCommand[] = [{ kind: 'path', path: line, stroke: { ...stroke(lensTone(t, '--wzl-fg-muted'), 2), cap: 'round' } }];
       const at = nearestStopIndex(stops, host.factor());
       const away = outwardOf(host.round) * LABEL_GAP;
       const font = { fontFamily: ctx.defaultFont, fontSize: LABEL_PX };

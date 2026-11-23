@@ -1,4 +1,3 @@
-import { textCommandFromRuns } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { LoupeMode } from '@weasel-js/loupe';
 import { solidFill } from '@weasel-js/paint';
@@ -8,7 +7,9 @@ import { textWidth } from '../menu/textWidth';
 import { lensTone } from './lensTone';
 import { iconCommands, type GlyphSource } from '../glyph';
 import type { IconSpec } from '@weasel-js/icons';
-import { BAND, bandPath, outwardOf, ringBoundsOf, rimTrackIn } from './rimTracks';
+import { BAND, bandPath, ringBoundsOf, rimTrackIn } from './rimTracks';
+import { runAlong, textAlong } from './textAlong';
+import { mat3 } from '@weasel-js/geom';
 
 const SEGMENTS: readonly { mode: LoupeMode; label: string }[] = [
   { mode: 'vector', label: 'Vector' },
@@ -18,8 +19,8 @@ const SEGMENTS: readonly { mode: LoupeMode; label: string }[] = [
 const PAD = 0.015;
 const LABEL_PX = 10;
 const ICON_PX = 12;
-/** Px from the track's centerline to a caption's nearest point, outward past the band. */
-const CAPTION_GAP = BAND / 2 + 4;
+/** Px between a segment's icon and its caption. */
+const ICON_GAP = 3;
 
 /** What the switch reads of its lens, and tells it. */
 export interface ModeSwitchHost {
@@ -58,35 +59,32 @@ export function createModeSwitch(id: string, host: ModeSwitchHost): Widget {
       const t = ctx.tokens;
       const shape = track();
       const share = 1 / SEGMENTS.length;
-      const font = { fontFamily: ctx.defaultFont, fontSize: LABEL_PX };
       return SEGMENTS.flatMap((s, i): DrawCommand[] => {
         const on = host.mode() === s.mode;
         const fill = held === i || on ? '--wzl-surface-pressed' : hovered === i ? '--wzl-surface-hover' : '--wzl-surface-raised';
-        const { point: mid, normal } = shape.at(share * (i + 0.5));
+        const mid = share * (i + 0.5);
         const color = lensTone(t, on ? '--wzl-accent-fg' : '--wzl-fg');
-        const spec = host.modeIcons?.[s.mode];
-        const placed = spec && host.icons
-          ? iconCommands(host.icons, spec, { x: mid.x - ICON_PX / 2, y: mid.y - ICON_PX / 2, size: ICON_PX, color })
-          : [];
-        // With an icon in the band, the caption sits outside it, as the zoom's stop labels do.
-        const away = placed.length > 0 ? outwardOf(host.round) * CAPTION_GAP : 0;
-        const w = textWidth(s.label, LABEL_PX, ctx.defaultFont);
-        const cx = mid.x + normal.x * away, cy = mid.y + normal.y * away;
-        // Pushed out by half its own box along the normal, so its nearest side, not its middle, keeps the gap.
-        const left = cx - w / 2 + ((normal.x * w) / 2) * Math.sign(away);
-        const top = cy - LABEL_PX / 2 + ((normal.y * LABEL_PX) / 2) * Math.sign(away);
-        return [
-          {
-            kind: 'path', path: bandPath(shape, share * i + PAD, share * (i + 1) - PAD),
-            fill: solidFill(lensTone(t, fill)),
-            stroke: { paint: { kind: 'solid', color: lensTone(t, '--wzl-border') }, width: 1 },
-          },
-          ...placed,
-          textCommandFromRuns(
-            left, top, [{ text: s.label, fill: solidFill(color) }],
-            font, undefined, LABEL_PX, 'center',
-          ),
-        ];
+        const spec = host.icons ? host.modeIcons?.[s.mode] : undefined;
+        const lead = spec ? ICON_PX + ICON_GAP : 0;
+        const text = { text: s.label, fontFamily: ctx.defaultFont, fontSize: LABEL_PX, color, lead };
+        const out: DrawCommand[] = [{
+          kind: 'path', path: bandPath(shape, share * i + PAD, share * (i + 1) - PAD),
+          fill: solidFill(lensTone(t, fill)),
+          stroke: { paint: { kind: 'solid', color: lensTone(t, '--wzl-border') }, width: 1 },
+        }];
+        if (spec) {
+          // The icon leads the caption along the arc, turned to the track's heading where it stands.
+          const run = runAlong(shape, mid, lead + textWidth(s.label, LABEL_PX, ctx.defaultFont));
+          const { point, tangent } = shape.at(run.at(ICON_PX / 2));
+          const turn = Math.atan2(tangent.y, tangent.x) + (run.flip ? Math.PI : 0);
+          const cos = Math.cos(turn), sin = Math.sin(turn);
+          out.push({
+            kind: 'group', transform: mat3.fromAffine([cos, sin, -sin, cos, point.x, point.y]),
+            children: iconCommands(host.icons!, spec, { x: -ICON_PX / 2, y: -ICON_PX / 2, size: ICON_PX, color }),
+          });
+        }
+        out.push(...textAlong(shape, mid, text));
+        return out;
       });
     },
     hitTest: (x, y) => host.shown() && !win.hidden && segmentAt(x, y) >= 0,
