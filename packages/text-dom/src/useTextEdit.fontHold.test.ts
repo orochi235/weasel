@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
-import { getOverlay, makeHarness, makeRichHarness } from './testing/textEditHarness';
+import { getOverlay, makeHarness, makeRichHarness, selectChars } from './testing/textEditHarness';
 
 // A face that never finishes loading, so only the hold decides when the overlay shows.
 const cssFontFamilyLoading = vi.hoisted(() => vi.fn((_family: string, _weight?: number, _style?: string) => new Promise<void>(() => {})));
@@ -53,5 +53,21 @@ describe('useTextEdit fontHold', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('waits, on an edit moved to another container, on the faces of what the edit holds', () => {
+    const h = makeRichHarness({ a: { text: 'abc', runs: [{ text: 'abc' }] } });
+    const next = document.createElement('div');
+    document.body.appendChild(next);
+    const { result, rerender } = renderHook(
+      ({ container }: { container: HTMLElement }) => useTextEdit({ ...h.opts, container }),
+      { initialProps: { container: h.container } },
+    );
+    act(() => result.current.startEdit('a'));
+    selectChars(getOverlay(h.container)!, 1, 2);
+    act(() => result.current.applyStyleToSelection({ fontFamily: 'Carried' }));
+    cssFontFamilyLoading.mockClear();
+    rerender({ container: next });
+    expect(cssFontFamilyLoading.mock.calls.map(([family]) => family)).toContain('Carried');
   });
 });
