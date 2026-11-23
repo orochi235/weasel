@@ -54,6 +54,9 @@ export interface AffordanceHit {
   strength?: 'exclusive' | 'shared';
   /** Which gestures an exclusive claim bars. Omitted bars all of them. */
   claimedKinds?: readonly ClaimableGesture[];
+  /** UI floating over the canvas, a HUD, rather than chrome on its document: a binding targeting
+   *  `THROUGH_CHROME` (the hand, the eyedropper) does not reach through it, so it takes the press under any tool. */
+  floats?: boolean;
   /** World-space fixed/pivot point. For resize: opposite corner. For rotate: pivot. */
   fixedPoint?: { x: number; y: number };
   /** Which nodes this affordance belongs to. */

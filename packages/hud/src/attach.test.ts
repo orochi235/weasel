@@ -399,6 +399,14 @@ describe('attachHud claims', () => {
     expect(hitAt(api)?.claimedKinds).toEqual(DEFAULT_WIDGET_CLAIMS);
   });
 
+  it('the layer hit floats over the canvas, so a tool reaching through chrome does not reach through it', () => {
+    const hud = createHud();
+    const api = makeApi();
+    attachHud(api, hud);
+    hud.add(widgetAt('plain'));
+    expect(hitAt(api)?.floats).toBe(true);
+  });
+
   it('a widget that claims the pointer reports a pointer cursor by default', () => {
     const hud = createHud();
     const api = makeApi();

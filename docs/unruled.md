@@ -1769,7 +1769,9 @@ Calls the round made:
 - gestures' `CONTROL_SELECTOR` has no `radio`, `tab`, `menuitemcheckbox`, `menuitemradio` or `slider` role. Widening it
   changes press ownership in `ItemList`, `Tree` and the reorder lists. Left as is; nothing breaks today.
 - The eyedropper and the hand tool target `THROUGH_CHROME`, so they sample and pan through exclusive chrome claims
-  (measurements, selection handles). The hand always pans (Mike, 2026-11-08).
+  (measurements, selection handles). The hand always pans (Mike, 2026-11-08), except from UI floating over the
+  canvas: the HUD, the loupe and its ring take their presses under any tool, and show their own cursor (Mike,
+  2026-11-22). A layer hit says it floats with `floats: true`, and `THROUGH_CHROME` declines it.
 - `check:size` covers `packages/*/src` only, where `check:frame-loops` covers `apps/` too. Left as is.
 - `stripComments` (`scripts/lib/cssBlocks.ts`) skips strings; a regex literal holding a quote reads the rest of its
   line as a string, which can only raise a false alarm. weaselchart's audio Play rejection stays console-only.

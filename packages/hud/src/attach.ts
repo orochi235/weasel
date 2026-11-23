@@ -124,11 +124,12 @@ function bindHud(api: CanvasExtensionApi, hud: Hud, options: AttachHudOptions): 
       // Report WHICH widget was hit and stop there. `<SceneCanvas>` folds this
       // into its `affordanceAt` thunk, so the hit reaches actions as an
       // `AffordanceHit` of kind `layer:weasel-hud` carrying this payload.
-      // Exclusive: hud chrome floats over the scene, so a press on it is not a
-      // press on whatever sits underneath.
+      // Exclusive and floating: hud chrome floats over the scene, so a press on it is not a press on whatever sits
+      // underneath, even for a tool that reaches through the document's chrome.
       return {
         initialScratch: { widget: hit, hud },
         strength: 'exclusive',
+        floats: true,
         claimedKinds: claimsOf(hit),
         ...(cursor !== undefined ? { cursor } : {}),
       } satisfies LayerHit<HudHitPayload>;

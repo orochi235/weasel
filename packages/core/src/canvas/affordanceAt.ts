@@ -201,6 +201,7 @@ export function layerAffordance(layerId: string, claim: LayerHit): AffordanceHit
     owner: layerId,
     strength: claim.strength ?? 'shared',
     ...(claim.claimedKinds !== undefined ? { claimedKinds: claim.claimedKinds } : {}),
+    ...(claim.floats ? { floats: true } : {}),
     ...(claim.cursor !== undefined ? { cursor: claim.cursor } : {}),
     ...(claim.initialScratch !== undefined ? { payload: claim.initialScratch } : {}),
   };
