@@ -254,20 +254,25 @@ function setLength(
   span.setAttribute(pxAttr, String(v.px));
 }
 
-/** `el`'s text as `domToRuns` reads it: each break stand-in restored, and a `<br>` as a line feed. */
-function sourceText(el: Element): string {
+/** `el`'s text as `domToRuns` reads it: each break stand-in restored, a `<br>` as a line feed, and a
+ *  block after any text, `before` included, opening with one. */
+function sourceText(el: Element, before = ''): string {
   let out = '';
   for (const n of el.childNodes) {
     if (n.nodeType === Node.TEXT_NODE) out += (n as Text).data;
     else if (n instanceof Element && n.tagName === 'BR') out += '\n';
-    else if (n instanceof Element) out += n.hasAttribute(BREAK_ATTR) ? restoreBreak(n) : sourceText(n);
+    else if (n instanceof Element && n.hasAttribute(BREAK_ATTR)) out += restoreBreak(n);
+    else if (n instanceof Element) {
+      if (BLOCK_TAGS.has(n.tagName) && before.length + out.length > 0) out += '\n';
+      out += sourceText(n, before + out);
+    }
   }
   return out;
 }
 
 /** Whether `span`'s children are the pieces `writeSmallCaps` would write. */
 function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string | undefined, before: string): boolean {
-  const want = smallCapsPieces(sourceText(span), transform, lang, before);
+  const want = smallCapsPieces(sourceText(span, before), transform, lang, before);
   const have: Array<{ text: string; small: boolean }> = [];
   for (const n of span.childNodes) {
     let small: boolean;
@@ -305,7 +310,7 @@ export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = D
     const lang = el.hasAttribute('lang') ? el.lang || undefined : inherited;
     const own = el === parent ? state : styleStateFromElement(el, state);
     if (el.hasAttribute('data-run')) {
-      const text = sourceText(el);
+      const text = sourceText(el, before);
       const face = resolveRunFace(toRun(text, own), base);
       if (v === 'small-caps' && !hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
         if (!piecesMatch(el, t, lang, before)) { writeSmallCaps(el, text, t, lang, before); changed = true; }
@@ -322,7 +327,10 @@ export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = D
       if (n.nodeType === Node.TEXT_NODE) before += (n as Text).data;
       else if (n instanceof HTMLElement && n.tagName === 'BR') before += '\n';
       else if (n instanceof HTMLElement && n.hasAttribute(BREAK_ATTR)) before += restoreBreak(n);
-      else if (n instanceof HTMLElement) visit(n, v, t, lang, own);
+      else if (n instanceof HTMLElement) {
+        if (BLOCK_TAGS.has(n.tagName) && before.length > 0) before += '\n';
+        visit(n, v, t, lang, own);
+      }
     }
   };
   visit(parent, 'normal', 'none', undefined, EMPTY_STYLE);

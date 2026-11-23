@@ -15,7 +15,7 @@ describe('installSelectionStyle', () => {
       selectionColor: 'rgb(0 0 0) } body { background: url(x)',
     });
     const el = installSelectionStyle('edit-1', style);
-    expect(el?.textContent).toBe('.edit-1::selection { background: #ff0; }');
+    expect(el?.textContent).toBe('.edit-1::selection, .edit-1 *::selection { background: #ff0; }');
     expect(document.head.textContent).not.toContain('body');
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/selectionColor .* is not a CSS color/));
   });

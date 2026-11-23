@@ -116,12 +116,13 @@ export interface UseTextEditOptions {
    */
   getPaint?: (id: string) => TextPaint | undefined;
   /**
-   * Write style back for `id`. Optional; needed only to turn a flag **off**
-   * inside a node whose own `TextStyle` sets it. Run flags are additive, so
-   * that edit is expressed by lowering the node flag and raising it on the
-   * runs outside the selection — which needs somewhere to put the new node
-   * style. Without this or `onChange`, such a toggle is declined and nothing
-   * changes. See `flagRange` in `@weasel-js/text`.
+   * Write style back for `id`. Optional; needed only to turn underline,
+   * strikethrough or overline **off** inside a node whose own `TextStyle` sets
+   * it. Those run flags are additive, so that edit is expressed by lowering the
+   * node flag and raising it on the runs outside the selection — which needs
+   * somewhere to put the new node style. Without this or `onChange`, such a
+   * toggle is declined and nothing changes. Bold and italic need neither: a run
+   * says "regular" or "upright" itself. See `flagRange` in `@weasel-js/text`.
    *
    * Called when the edit commits, never during it: the session holds the
    * rewritten style until then (see `UseTextEditReturn.nodeStyle`), so a
@@ -288,9 +289,10 @@ export interface UseTextEditReturn {
    * what gets typed next rather than on text the user didn't select.
    *
    * Lowering a flag the *node* sets is neither of those — a run cannot say
-   * "not italic" — so it rewrites instead: the node flag is cleared and raised
-   * on every run outside the range. Bold is spared that: a run's own
-   * `fontWeight` can say "regular", so it is written over the range.
+   * "not underlined" — so it rewrites instead: the node flag is cleared and raised
+   * on every run outside the range. Bold and italic are spared that: a run's own
+   * `fontWeight` can say "regular" and its `italic: false` "upright", so each is
+   * written over the range.
    *
    * The caret survives, so a second style can be applied without
    * re-selecting, and `rangeStyle` reflects the write before this returns.

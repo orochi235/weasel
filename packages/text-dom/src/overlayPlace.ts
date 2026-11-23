@@ -66,7 +66,8 @@ export function placeOverlay(
   style: ResolvedTextStyle,
 ): void {
   if (!pose) {
-    el.style.display = 'none';
+    // Clipped away rather than `display: none`, which would take focus and the caret from the edit.
+    Object.assign(boxes.clip.style, { overflow: 'clip', width: '0', height: '0' });
     // The box keeps its size, and so its scroll offset, for when the node comes back.
     boxes.scroll.style.pointerEvents = 'none';
     return;
@@ -79,7 +80,6 @@ export function placeOverlay(
   c.top = `${clip?.y ?? 0}px`;
   c.width = `${clip?.width ?? 0}px`;
   c.height = `${clip?.height ?? 0}px`;
-  el.style.display = '';
   const type = typeset(el, style, pose);
   const origin = { x: clip?.x ?? 0, y: clip?.y ?? 0 };
   if (pose.clip) placeScrolled(el, boxes.scroll, pose, pose.clip, origin, style, type, boxes.scroller);

@@ -12,9 +12,21 @@ it('lets presses through a clipping node\'s scroll box once its pose goes null',
   placeOverlay(overlay, boxes, pose, null, style);
   expect(boxes.scroll.style.pointerEvents).toBe('auto');
   placeOverlay(overlay, boxes, null, null, style);
-  expect(overlay.style.display).toBe('none');
   expect(boxes.scroll.style.pointerEvents).toBe('none');
   placeOverlay(overlay, boxes, pose, null, style);
   expect(boxes.scroll.style.pointerEvents).toBe('auto');
+  boxes.remove();
+});
+
+it('hides the overlay with its pose gone by clipping it, which keeps it rendered and so focused', () => {
+  const container = document.createElement('div');
+  document.body.appendChild(container);
+  const overlay = document.createElement('div');
+  const boxes = mountOverlayBoxes(container, overlay);
+  const style = resolveTextStyle({ fontSize: 16 });
+  placeOverlay(overlay, boxes, { x: 0, y: 0, width: 200, height: 40, fontSize: 16 }, null, style);
+  placeOverlay(overlay, boxes, null, null, style);
+  expect(overlay.style.display).not.toBe('none');
+  expect(boxes.clip.style).toMatchObject({ overflow: 'clip', width: '0px', height: '0px' });
   boxes.remove();
 });
