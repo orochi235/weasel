@@ -51,14 +51,11 @@ export type SelectIndicator = 'chevron' | 'underline' | 'none';
 /** Where a {@link Select}'s list opens relative to its trigger. */
 export type SelectPopup = 'over' | 'below';
 
-/** React Aria's props a {@link Select} replaces with its own, dropped at run time too. */
-type ReplacedProps = 'value' | 'defaultValue' | 'onChange' | 'selectionMode' | 'isDisabled' | 'isOpen' | 'isInvalid' | 'isRequired';
-
 /**
  * Props for {@link Select}, on top of React Aria's `Select` props, with the
  * selection key narrowed to the option value type.
  */
-export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | ReplacedProps> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
+export type SelectProps<T extends OptionKey = string> = Omit<RACSelectProps<object>, 'children' | 'className' | 'selectedKey' | 'defaultSelectedKey' | 'onSelectionChange' | 'value' | 'defaultValue' | 'onChange' | 'selectionMode' | 'isDisabled' | 'isOpen' | 'isInvalid' | 'isRequired'> & FieldSlotProps & FieldStateProps & HoldProps & ControlSizeProps & {
   /** Whether the list is open, controlled; pairs with `defaultOpen` and `onOpenChange`. */
   open?: boolean;
   placeholder?: string;
@@ -156,7 +153,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const {
     value: _value, defaultValue: _defaultValue, onChange: _onChange, selectionMode: _mode,
     isDisabled: _disabled, isOpen: _open, isInvalid: _invalid, isRequired: _required, ...rest
-  } = given as typeof given & Partial<Pick<RACSelectProps<object>, ReplacedProps>>;
+  } = given as typeof given & Partial<RACSelectProps<object>>;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   // Uncontrolled, the key is held here rather than by React Aria, whose closed trigger changes it from the keyboard
