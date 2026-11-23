@@ -3,7 +3,7 @@
  * (the tile, or a coarser one held above it and any finer ones held below), and which tiles to bake
  * in what order under a budget. The payload and how it is baked are the caller's.
  */
-import { TileCache, type HeldTile, type TileCacheOptions } from './cache';
+import { DEFAULT_MIN_TILE_COUNT, TileCache, tileMeets, type HeldTile, type TileCacheOptions } from './cache';
 import type { TileBox, TileScheme, WantedTile } from './scheme';
 
 /** One quad of a frame: draw `tile`'s payload over `at`'s bounds, sampling `source` of it, at `alpha`. */
@@ -47,7 +47,7 @@ export interface TilePyramidOptions<K, V, P> extends TileCacheOptions<P> {
   /** The tiles always held, never evicted, so something can always stand in: the content at a level
    *  where it fits a few tiles a side. */
   floor(): readonly K[];
-  /** Past this level the content draws live. */
+  /** Past this level the content draws live, as it does at a level that is not finite. */
   maxLevel?: number;
   /** Fade a tile in over its stand-in for this long. Default 160. */
   fadeMs?: number;
@@ -64,6 +64,8 @@ export class TilePyramid<K, V, P> {
   readonly cache: TileCache<K, P>;
   private frameNo = 0;
   private level: number | undefined;
+  /** Bakes that answered null and may yet arrive, with the last frame an edit met each (or -1). */
+  private readonly inFlight = new Map<string, { key: K; askedAt: number; dirtiedAt: number }>();
 
   constructor(private readonly opts: TilePyramidOptions<K, V, P>) {
     this.cache = new TileCache(opts.scheme as TileScheme<K, unknown>, opts);
@@ -75,10 +77,14 @@ export class TilePyramid<K, V, P> {
 
   /** Mark held tiles meeting `box` stale. */
   dirty(box: TileBox, padTexels = 1): number {
+    for (const b of this.inFlight.values()) {
+      if (tileMeets(this.opts.scheme as TileScheme<K, unknown>, b.key, box, padTexels)) b.dirtiedAt = this.frameNo;
+    }
     return this.cache.dirty(box, this.frameNo, padTexels);
   }
 
   dirtyAll(): void {
+    for (const b of this.inFlight.values()) b.dirtiedAt = this.frameNo;
     this.cache.dirtyAll(this.frameNo);
   }
 
@@ -88,7 +94,7 @@ export class TilePyramid<K, V, P> {
     const frame = ++this.frameNo;
     let level = scheme.levelFor(view, this.level);
     const maxLevel = this.opts.maxLevel ?? Infinity;
-    if (level > maxLevel) {
+    if (!Number.isFinite(level) || level > maxLevel) {
       this.level = level;
       return { level, draws: [], live: true, baked: 0, pending: 0, fading: false, stale: [] };
     }
@@ -102,7 +108,7 @@ export class TilePyramid<K, V, P> {
     while (per !== undefined && (2 * n + floor.length) * per > this.cache.maxBytes && level > -64) {
       const coarser = scheme.wanted(view, level - 1);
       const m = shown(coarser);
-      if (m >= n) break;
+      if (m === 0 || m >= n) break;
       level--;
       wanted = coarser;
       n = m;
@@ -122,21 +128,54 @@ export class TilePyramid<K, V, P> {
       if (baked > 0 && (baked >= budget.tiles || budget.clock() - start >= budget.ms)) break;
       const payload = bake(key);
       baked++;
-      if (payload !== null) this.cache.put(key, payload, frame, now);
-      else unfinished++;
+      if (payload !== null) this.arrive(key, payload, frame, now);
+      else {
+        unfinished++;
+        this.defer(key, frame);
+      }
     }
     const pending = order.length - baked + unfinished + waiting;
 
     const floorLevel = Math.min(...floor.map((k) => scheme.levelOf(k)));
     const { draws, fading, stale } = this.drawsFor(onScreen, frame, now, floorLevel);
-    this.cache.trim(frame, onScreen.length + ring.length + floor.length);
+    const workingSet = onScreen.length + ring.length + floor.length;
+    this.cache.trim(frame, workingSet);
+    this.trimInFlight(Math.max(2 * workingSet, this.opts.minCount ?? DEFAULT_MIN_TILE_COUNT));
     return { level, draws, live: false, baked, pending, fading, stale };
   }
 
   /** Free every tile. */
   clear(): void {
     this.cache.clear();
+    this.inFlight.clear();
     this.level = undefined;
+  }
+
+  private defer(key: K, frame: number): void {
+    const id = this.opts.scheme.idOf(key);
+    const b = this.inFlight.get(id);
+    if (b) b.askedAt = frame;
+    else this.inFlight.set(id, { key, askedAt: frame, dirtiedAt: -1 });
+  }
+
+  /** Hold a baked payload, stale if an edit met the tile while its bake was out. */
+  private arrive(key: K, payload: P, frame: number, now: number): void {
+    const id = this.opts.scheme.idOf(key);
+    const tile = this.cache.put(key, payload, frame, now);
+    const b = this.inFlight.get(id);
+    if (b === undefined) return;
+    this.inFlight.delete(id);
+    if (b.dirtiedAt >= 0) {
+      tile.stale = true;
+      tile.dirtiedAt = b.dirtiedAt;
+    }
+  }
+
+  /** Forget the bakes asked for longest ago past `max`. */
+  private trimInFlight(max: number): void {
+    if (this.inFlight.size <= max) return;
+    const old = [...this.inFlight].sort((a, b) => a[1].askedAt - b[1].askedAt);
+    for (const [id] of old.slice(0, this.inFlight.size - max)) this.inFlight.delete(id);
   }
 
   private needs(key: K, frame: number): 'missing' | 'stale' | 'waiting' | null {
@@ -186,9 +225,10 @@ export class TilePyramid<K, V, P> {
       if (t.stale && t.drawnAt !== frame) stale.push(t.key);
       t.drawnAt = frame;
     };
+    const fadeOf = (t: HeldTile<K, P>): number => (fadeMs > 0 ? Math.min(1, Math.max(0, (now - t.bornAt) / fadeMs)) : 1);
     for (const at of onScreen) {
       const t = this.cache.get(scheme.idOf(at));
-      const alpha = t === undefined ? 0 : fadeMs > 0 ? Math.min(1, Math.max(0, (now - t.bornAt) / fadeMs)) : 1;
+      const alpha = t === undefined ? 0 : fadeOf(t);
       if (t !== undefined && alpha >= 1) {
         mark(t);
         own.push({ at, tile: t, source: whole(), alpha: 1 });
@@ -202,7 +242,9 @@ export class TilePyramid<K, V, P> {
       }
       this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
-        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: 1 });
+        const a = fadeOf(child);
+        if (a < 1) fading = true;
+        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: a });
       });
       if (t !== undefined) {
         mark(t);

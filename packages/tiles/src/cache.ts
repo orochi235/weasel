@@ -31,6 +31,18 @@ export interface TileCacheOptions<P> {
   minCount?: number;
 }
 
+/** Whether `key`'s tile meets `box` grown by `padTexels` at the tile's own level. */
+export function tileMeets<K>(scheme: TileScheme<K, unknown>, key: K, box: TileBox, padTexels: number): boolean {
+  const dim = scheme.dim;
+  const pad = padTexels / scheme.texelsPerUnit(key);
+  const grown = new Float64Array(2 * dim);
+  for (let i = 0; i < dim; i++) {
+    grown[i] = box[i]! - pad;
+    grown[dim + i] = box[dim + i]! + pad;
+  }
+  return boxesMeet(grown, scheme.boundsOf(key), dim);
+}
+
 /** The least a cache's count bound falls to, whatever its working set. */
 export const DEFAULT_MIN_TILE_COUNT = 128;
 
@@ -90,16 +102,9 @@ export class TileCache<K, P> {
   /** Mark every held tile meeting `box` stale in `frame`, `box` grown by `padTexels` at each tile's
    *  own level. Answers how many it marked. */
   dirty(box: TileBox, frame: number, padTexels = 1): number {
-    const dim = this.scheme.dim;
     let n = 0;
-    const grown = new Float64Array(2 * dim);
     for (const tile of this.held.values()) {
-      const pad = padTexels / this.scheme.texelsPerUnit(tile.key);
-      for (let i = 0; i < dim; i++) {
-        grown[i] = box[i]! - pad;
-        grown[dim + i] = box[dim + i]! + pad;
-      }
-      if (boxesMeet(grown, this.scheme.boundsOf(tile.key), dim)) {
+      if (tileMeets(this.scheme, tile.key, box, padTexels)) {
         tile.stale = true;
         tile.dirtiedAt = frame;
         n++;

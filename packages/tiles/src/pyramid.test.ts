@@ -248,3 +248,81 @@ describe('TilePyramid fade over finer stand-ins', () => {
     expect(frame.draws.some((d) => d.tile.key.z === 2)).toBe(true);
   });
 });
+
+describe('TilePyramid levels a scheme cannot tile', () => {
+  it('draws live at a level that is not finite', () => {
+    const inf = { ...scheme, levelFor: () => Infinity };
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme: inf, bytesOf: () => 1, release: () => {}, floor: () => [],
+    });
+    const frame = pyramid.run(view(10, 10, 1), 0, () => 1, budget);
+    expect(frame.live).toBe(true);
+    expect(frame.draws).toHaveLength(0);
+  });
+});
+
+describe('TilePyramid byte-bound coarsening', () => {
+  it('keeps the coarsest level that has tiles, under a scheme with a top', () => {
+    const topped = {
+      ...scheme,
+      parentOf: (k: PlaneTileKey) => (k.z > 0 ? scheme.parentOf(k) : null),
+      wanted: (v: PlaneTileView, z: number) => (z < 0 ? [] : scheme.wanted(v, z)),
+      levelFor: () => 0,
+    };
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme: topped, maxBytes: TILE_BYTES, bytesPerTile: TILE_BYTES, fadeMs: 0,
+      bytesOf: () => TILE_BYTES, release: () => {}, floor: () => [],
+    });
+    const frame = pyramid.run(view(0, 0, 1), 0, () => 1, budget);
+    expect(frame.level).toBe(0);
+    expect(frame.draws.length).toBeGreaterThan(0);
+  });
+});
+
+describe('TilePyramid finer stand-ins', () => {
+  it('fade in as they would on their own, not at full alpha', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 160,
+    });
+    const all: TileBudget = { ms: Infinity, tiles: 1e4, clock: () => 0 };
+    const fine = pyramid.run(view(0, 0, 0.5), 0, () => 1, all);
+    expect(fine.level).toBe(0);
+    const coarse = pyramid.run(view(0, 0, 0.2), 16, () => null, all);
+    expect(coarse.level).toBe(-1);
+    const stand = coarse.draws.filter((d) => d.tile.key.z === 0);
+    expect(stand.length).toBeGreaterThan(0);
+    for (const d of stand) expect(d.alpha).toBeCloseTo(0.1);
+    expect(coarse.fading).toBe(true);
+  });
+});
+
+describe('TilePyramid deferred bakes', () => {
+  it('marks a tile stale when an edit meets it while its bake is still out', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
+    });
+    const one: TileBudget = { ms: Infinity, tiles: 1, clock: () => 0 };
+    const v = view(10, 10, 1, 100, 100);
+    let ready = false;
+    const first = pyramid.run(v, 0, () => (ready ? 1 : null), one);
+    expect(first.pending).toBeGreaterThan(0);
+    const key = pyramid.cache.get(scheme.idOf({ z: 1, x: 0, y: 0 }));
+    expect(key).toBeUndefined();
+    pyramid.dirty([20, 20, 30, 30]);
+    ready = true;
+    pyramid.run(v, 16, () => 1, one);
+    expect(pyramid.cache.get(scheme.idOf({ z: 1, x: 0, y: 0 }))?.stale).toBe(true);
+  });
+
+  it('keeps a deferred bake fresh when no edit meets it', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
+    });
+    const one: TileBudget = { ms: Infinity, tiles: 1, clock: () => 0 };
+    const v = view(10, 10, 1, 100, 100);
+    pyramid.run(v, 0, () => null, one);
+    pyramid.dirty([5000, 5000, 5010, 5010]);
+    pyramid.run(v, 16, () => 1, one);
+    expect(pyramid.cache.get(scheme.idOf({ z: 1, x: 0, y: 0 }))?.stale).toBe(false);
+  });
+});
