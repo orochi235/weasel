@@ -4074,3 +4074,5 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): `createLoupeModel` throws a `TypeError` on a `LoupeSurface` that implements one of
   `worldAt` and `pointFor` without the other. Treating such a surface as implementing neither, so a pin holds its
   surface point, was the alternative.
+- 2026-11-23 (the fixer's call): loupe's `nearestStopIndex` throws a `RangeError` on an empty list of stops. Answering
+  `-1`, as `indexOf` does for nothing found, was the alternative.
