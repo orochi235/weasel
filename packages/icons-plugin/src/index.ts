@@ -109,18 +109,16 @@ function liveModules(ctx: object): Set<string> | undefined {
 
 type Ctx = UnpluginBuildContext & UnpluginContext;
 
-/** Reads a module another plugin compiles to JS, such as a single-file component, once that is done. */
-function compiledPlugin<R>(transform: (this: Ctx, code: string, id: string) => R, forget: (id: string) => void) {
+/**
+ * Reads a module another plugin compiles to JS, such as a single-file component, once that is done,
+ * as the main plugin reads a source module: one naming no icon still brings its package's table.
+ */
+function compiledPlugin<R>(transform: (this: Ctx, code: string, id: string) => R) {
   return {
     name: 'weasel-icons:compiled',
     enforce: 'post' as const,
     transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
-    transform(this: Ctx, code: string, id: string) {
-      if (code.includes('icons.gen') || code.includes('@icon')) return transform.call(this, code, id);
-      // A watch rebuild of a module that named icons before must not keep its old refs.
-      forget(id);
-      return null;
-    },
+    transform,
   };
 }
 
@@ -161,11 +159,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
   function generateBundle(this: object, _: unknown, bundle: Record<string, { type: string; code?: string }>) {
     const stripped = app ? undefined : library.stripped(bundle);
     if (stripped) fail(this, stripped);
-  }
-
-  function forget(id: string) {
-    if (!app) library.record(id, []);
-    else if (!dev) catalog.forget(id);
   }
 
   async function transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
@@ -243,6 +236,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
       rollup: { renderChunk: lastRenderChunk, generateBundle },
       rolldown: { renderChunk: lastRenderChunk, generateBundle },
     },
-    compiledPlugin(transform, forget),
+    compiledPlugin(transform),
   ];
 });

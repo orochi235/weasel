@@ -105,6 +105,15 @@ describe('weaselIcons app mode', () => {
     expect(entry).not.toContain('fx-dot-body');
   });
 
+  it("takes in the table of a package whose compiled modules name no icon, as for its source ones", async () => {
+    const sfc: Plugin = {
+      name: 'fake-sfc',
+      transform: (code, id) => (id.endsWith('.sfc') ? code.replace(/<\/?script>/g, '') : null),
+    };
+    const { variant } = await bundle({}, { entry: 'plain.ts', before: [sfc] });
+    expect(variant('all')).toContain('lib-star-body');
+  });
+
   it('forgets the previous build when one plugin builds again, as under --watch', async () => {
     const plugin = weaselIcons.vite({ mode: 'app' });
     const entryOf = async (entry: string) => {
