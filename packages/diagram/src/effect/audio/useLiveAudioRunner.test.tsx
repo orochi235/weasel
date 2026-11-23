@@ -142,6 +142,29 @@ describe('useLiveAudioRunner', () => {
     expect(old.close).toHaveBeenCalledOnce();
   });
 
+  it('keeps a replaced runner\'s previews open while the render that replaces it still shows them', async () => {
+    type Bitmap = { close: ReturnType<typeof vi.fn> };
+    const outOf = (run: EffectRun | undefined) => run?.stages.osc?.previews?.out as unknown as Bitmap | undefined;
+    const seen: { runner: LiveAudioRunner | null; closed: boolean }[] = [];
+    let last: Bitmap | undefined;
+    const { result, rerender } = renderHook(({ engine }: { engine: AudioEngine }) => {
+      const handle = useLiveAudioRunner({ engine, pipeline: PIPELINE, previews: 'scope' });
+      if (last !== undefined) seen.push({ runner: handle.runner, closed: last.close.mock.calls.length > 0 });
+      return handle;
+    }, { initialProps: { engine: fakeEngine() } });
+    await waitFor(() => expect(result.current.runner).not.toBeNull());
+    const first = result.current.runner!;
+    act(() => first.frame());
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    first.frame();
+    last = outOf(first.state.run)!;
+    expect(last).not.toBe(outOf(result.current.run));
+    act(() => rerender({ engine: fakeEngine() }));
+    await waitFor(() => expect(result.current.runner).not.toBe(first));
+    expect(seen.find((s) => s.runner !== first)!.closed).toBe(false);
+    expect(last.close).toHaveBeenCalledOnce();
+  });
+
   it('keeps its runner across renders that rebuild equivalent nodes, and remakes it when they change', async () => {
     const engine = fakeEngine();
     const mine: AudioStageNode = { settings: () => ({}), levels: [], build: audioStageNodes['audio.oscillator']!.build };
