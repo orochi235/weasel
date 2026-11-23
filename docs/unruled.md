@@ -4068,3 +4068,9 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): text with no pose maps a `'bounds'` paint onto a box at its `x` and `y`, as wide as
   its `width`, else a finite `maxWidth`, else its laid-out text, and as tall as its `height`, else its laid-out text.
   Placing such a paint at the text's origin with no size, as `'local'`, was the alternative.
+
+## Audit round seventy-nine (2026-11-23): loupe
+
+- 2026-11-23 (the fixer's call): `createLoupeModel` throws a `TypeError` on a `LoupeSurface` that implements one of
+  `worldAt` and `pointFor` without the other. Treating such a surface as implementing neither, so a pin holds its
+  surface point, was the alternative.

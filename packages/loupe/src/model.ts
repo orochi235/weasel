@@ -51,7 +51,8 @@ export interface LoupeSurface {
   /**
    * The content point under surface point `p`, in whatever space the content lives in (a canvas's world). A pinned
    * aim is held as one, so it stays on what it was put on while the surface's camera pans and zooms. Implement it
-   * with {@link pointFor}; with neither, a pin holds its surface point.
+   * with {@link pointFor} or not at all: `createLoupeModel` throws on a surface with only one. With neither, a pin
+   * holds its surface point.
    */
   worldAt?(p: LoupePoint): LoupePoint;
   /** Where content point `w` stands on the surface now: the inverse of {@link worldAt}. */

@@ -21,6 +21,12 @@ export interface LoupeAim {
 /** An aim over `surface`, starting at its origin. A pin is held as the content point `surface.worldAt` gives, so it
  *  stays on what it was put on as the surface's camera moves; a surface that cannot say holds its surface point. */
 export function createLoupeAim(surface: LoupeSurface, mode: LoupeAimMode): LoupeAim {
+  if ((surface.worldAt === undefined) !== (surface.pointFor === undefined)) {
+    throw new TypeError(
+      '[weasel loupe] A loupe surface implements worldAt and pointFor together or neither: a pin held through one ' +
+        'and read back without the other mixes content points with surface points.',
+    );
+  }
   let followed: LoupePoint = { x: 0, y: 0 };
   const held = (p: LoupePoint) => surface.worldAt?.(p) ?? p;
   let pinned: LoupePoint | null = mode === 'pinned' ? held(followed) : null;
