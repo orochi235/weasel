@@ -104,6 +104,23 @@ function liveModules(ctx: object): Set<string> | undefined {
   return new Set(ctx.getModuleIds() as Iterable<string>);
 }
 
+type Ctx = UnpluginBuildContext & UnpluginContext;
+
+/** Reads a module another plugin compiles to JS, such as a single-file component, once that is done. */
+function compiledPlugin<R>(transform: (this: Ctx, code: string, id: string) => R, forget: (id: string) => void) {
+  return {
+    name: 'weasel-icons:compiled',
+    enforce: 'post' as const,
+    transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
+    transform(this: Ctx, code: string, id: string) {
+      if (code.includes('icons.gen') || code.includes('@icon')) return transform.call(this, code, id);
+      // A watch rebuild of a module that named icons before must not keep its old refs.
+      forget(id);
+      return null;
+    },
+  };
+}
+
 /**
  * Rewrites each `icon('x')` imported from a generated `icons.gen` into an annotated, qualified
  * literal. In `app` mode it also emits `virtual:weasel-icons`, holding only the glyphs the build
@@ -183,18 +200,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
     return out ? { code: out.code, map: out.map } : null;
   }
 
-  // A module another plugin compiles to JS, such as a single-file component, is read once that is done.
-  const compiled = {
-    name: 'weasel-icons:compiled',
-    enforce: 'post' as const,
-    transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
-    transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
-      if (code.includes('icons.gen') || code.includes('@icon')) return transform.call(this, code, id);
-      // A watch rebuild of a module that named icons before must not keep its old refs.
-      forget(id);
-      return null;
-    },
-  };
 
   return [
     {
@@ -235,6 +240,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
       rollup: { renderChunk: lastRenderChunk, generateBundle },
       rolldown: { renderChunk: lastRenderChunk, generateBundle },
     },
-    compiled,
+    compiledPlugin(transform, forget),
   ];
 });
