@@ -12,7 +12,7 @@ export interface PatternVoicePeaksOptions {
   bus?: string;
   /** The engine's `lookahead` in ms. Default 100. */
   lookahead?: number;
-  /** How long a buffer hit sounds, in ms. Default: one step. */
+  /** How long a buffer hit sounds, in ms, finite and 0 or more. Default: one step. */
   hitMs?: (hit: PatternHit) => number;
 }
 
@@ -23,7 +23,8 @@ export interface PatternVoicePeaksOptions {
  *
  * A note or a noise holds its voice through its gate and its envelope's
  * release. With `loop`, what rings past the end of a pass is counted against
- * the start of the next.
+ * the start of the next. Throws a `RangeError` on an event that sounds for a time
+ * that is not finite: a note or noise whose `length` or release is not, or a hit `hitMs` gives one.
  */
 export function patternVoicePeaks(
   events: readonly PatternEvent[],
@@ -46,6 +47,9 @@ export function patternVoicePeaks(
     const sounds = 'sound' in e
       ? (opts.hitMs?.(e) ?? stepMs)
       : (e.length ?? 1) * stepMs + resolveEnvelope(e.envelope).release;
+    if (!(sounds >= 0 && sounds < Infinity)) {
+      throw new RangeError(`@weasel-js/audio: an event at step ${e.step} sounds for a finite number of ms, 0 or more, not ${sounds}`);
+    }
     const at = e.step * stepMs;
     return { bus: e.bus ?? opts.bus ?? 'sfx', from: at - lead, until: at + sounds };
   });

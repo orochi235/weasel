@@ -4068,3 +4068,9 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): text with no pose maps a `'bounds'` paint onto a box at its `x` and `y`, as wide as
   its `width`, else a finite `maxWidth`, else its laid-out text, and as tall as its `height`, else its laid-out text.
   Placing such a paint at the text's origin with no size, as `'local'`, was the alternative.
+
+## Audit round seventy-nine (2026-11-23): audio
+
+- 2026-11-23 (the fixer's call): `patternVoicePeaks` throws `RangeError` on an event that sounds for a time that is
+  not finite and 0 or more, including a `hitMs` answer of `Infinity` for a looping hit. Counting such a voice as
+  held from its start through every pass was the alternative.
