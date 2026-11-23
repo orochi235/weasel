@@ -90,11 +90,14 @@ type PluginBuild = Parameters<NonNullable<NonNullable<UnpluginOptions['esbuild']
 
 const MINIFIED = 'esbuild drops the @icon annotation that library mode leaves on each icon ref when it minifies whitespace; set minifyWhitespace to false, or leave minify unset';
 
-/** esbuild has no hook to annotate its output again, so library mode refuses to minify it away. */
+/**
+ * esbuild has no hook to annotate its output again, so library mode refuses to minify it away. An
+ * IIFE is a finished script no bundler reads again, so its annotations have no reader to lose.
+ */
 function guardEsbuild(build: PluginBuild): void {
   build.onStart(() => {
-    const { minify, minifyWhitespace = minify } = build.initialOptions;
-    return minifyWhitespace ? { errors: [{ text: MINIFIED }] } : undefined;
+    const { minify, minifyWhitespace = minify, format } = build.initialOptions;
+    return minifyWhitespace && format !== 'iife' ? { errors: [{ text: MINIFIED }] } : undefined;
   });
 }
 

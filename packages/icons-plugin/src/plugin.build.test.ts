@@ -278,4 +278,18 @@ describe('weaselIcons library mode', () => {
       ).rejects.toThrow(/@icon annotation.*minify/s);
     }
   });
+
+  it('lets an esbuild IIFE build minify, since nothing bundles it again', async () => {
+    const out = await esbuild({
+      entryPoints: [`${root}/src/widget.ts`],
+      bundle: true,
+      write: false,
+      format: 'iife',
+      logLevel: 'silent',
+      external: ['@weasel-js/icons'],
+      plugins: [weaselIcons.esbuild({ mode: 'library' })],
+      minify: true,
+    });
+    expect(out.outputFiles[0]!.text).toContain('fx:ring');
+  });
 });
