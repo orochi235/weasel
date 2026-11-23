@@ -154,6 +154,17 @@ describe('outline registry', () => {
     expect(warn).toHaveBeenCalledTimes(2);
   });
 
+  it('remembers a bounded number of glyphs, however many it is asked for', async () => {
+    const glyphD = vi.fn((cp: number) => `M${cp} 0Z`);
+    registerFontOutlines('Fake', {}, new ArrayBuffer(4), { parser: () => ({ ...stubFace, glyphD }) });
+    await loadFontOutlines('Fake');
+    for (let cp = 0; cp < 20_000; cp++) glyphOutline('Fake', 400, 'normal', cp);
+    glyphD.mockClear();
+    glyphOutline('Fake', 400, 'normal', 0);
+    glyphOutline('Fake', 400, 'normal', 19_999);
+    expect(glyphD.mock.calls).toEqual([[0]]);
+  });
+
   it('reads a URL source through fetch', async () => {
     const bytes = new ArrayBuffer(8);
     vi.stubGlobal('fetch', vi.fn(async () => ({

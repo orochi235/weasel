@@ -92,6 +92,9 @@ interface FaceSlot extends OutlineFaceInfo {
   glyphWarned: boolean;
 }
 
+/** How many glyphs a face remembers before it forgets its oldest: a CJK face's paths run to kilobytes each. */
+const GLYPH_MEMO_LIMIT = 8192;
+
 const slots = createReflectable<FaceSlot>({ name: 'font outlines' });
 
 /** Every registered outline face, keyed `family|weight|style`. */
@@ -218,6 +221,7 @@ export function glyphOutline(
       `${err instanceof Error ? err.message : String(err)}. Falling back to the SDF tier.`);
     slot.glyphWarned = true;
   }
+  if (slot.glyphs.size >= GLYPH_MEMO_LIMIT) slot.glyphs.delete(slot.glyphs.keys().next().value!);
   slot.glyphs.set(cp, d);
   return d;
 }
