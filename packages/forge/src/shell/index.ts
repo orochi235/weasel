@@ -26,3 +26,4 @@ export type { Revision } from './loupe/captureContext';
 export type { ForgeComparison } from './loupe/conditions';
 export type { ForgeCompareParams } from '../actionParamSchema';
 export type { StoryHosts } from './storyHosts';
+export type { StoryLoader } from '../story/load';
