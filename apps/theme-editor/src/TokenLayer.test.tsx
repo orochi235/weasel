@@ -55,6 +55,13 @@ describe('<TokenLayer>', () => {
     expect(nextDef(onChange).pins?.line).toEqual({ value: '{fg-muted}', type: 'color', alpha: 0.1 });
   });
 
+  it('keeps a pin\'s description and scope when its value is edited', () => {
+    const pins = { 'brand-ink': { value: '#123456', type: 'color', description: 'ink', scope: ['density'] } };
+    const onChange = renderLayer('pins', { ...tiny, pins } as ThemeDefinition);
+    fireEvent.change(screen.getByRole('textbox', { name: 'brand-ink value' }), { target: { value: '#abcdef' } });
+    expect(nextDef(onChange).pins?.['brand-ink']).toEqual({ value: '#abcdef', type: 'color', description: 'ink', scope: ['density'] });
+  });
+
   it('keeps a number pin a number when it is edited', () => {
     const def = { ...tiny, pins: { 'dim-x': { value: 0.5, type: 'number' } } } as ThemeDefinition;
     const onChange = renderLayer('pins', def);
