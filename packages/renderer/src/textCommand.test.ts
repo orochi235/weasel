@@ -172,3 +172,18 @@ describe('text with no pose', () => {
     expect(runs[0].fill.paint).toBe(hatch);
   });
 });
+
+describe('a run stroke whose paint cannot resolve', () => {
+  // No OffscreenCanvas here, so no tile rasterizes.
+  const unresolvable = { paint: { kind: 'hatch' as const, color: '#0a0' }, width: 2 };
+
+  it('is dropped from a pose\'s runs, as a path drops one', () => {
+    const cmd = textCommandFromPose({ x: 0, y: 0, width: 10, height: 10, text: 'x', stroke: unresolvable });
+    expect(cmd.runs[0].stroke).toBeUndefined();
+  });
+
+  it('is dropped from text with no pose', () => {
+    const cmd = textCommandFromRuns(0, 0, [{ text: 'x', stroke: unresolvable }]) as TextDrawCommand;
+    expect(cmd.runs[0].stroke).toBeUndefined();
+  });
+});

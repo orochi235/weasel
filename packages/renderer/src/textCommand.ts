@@ -23,7 +23,7 @@ import type { StyledRun } from '@weasel-js/text';
 import type { TextVerticalAlign, ResolvedRun, ResolvedTextStyle } from '@weasel-js/text';
 import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import type { Rect } from '@weasel-js/geom';
-import { commandFill, commandPaint } from './patterns/commandPaint';
+import { commandFill, commandStroke } from './patterns/commandPaint';
 import { resolvePaintPattern } from './patterns/resolveSpec';
 import { noteTextRefill } from './textBounds';
 
@@ -149,8 +149,7 @@ function runsInPoseFrame(runs: ResolvedRun[], box: Rect): ResolvedRun[] {
   if (runs.every((r) => isSolid(r.fill?.paint) && isSolid(r.stroke?.paint))) return runs;
   return runs.map((r) => {
     const fill = r.fill && commandFill(r.fill, box);
-    const paint = r.stroke?.paint && commandPaint(r.stroke.paint, box);
-    return { ...r, fill, stroke: r.stroke && { ...r.stroke, paint: paint || undefined } };
+    return { ...r, fill, stroke: r.stroke && (commandStroke(r.stroke, box) ?? undefined) };
   });
 }
 
@@ -166,7 +165,7 @@ function withPatternsResolved(runs: ResolvedRun[]): ResolvedRun[] {
     const stroke = r.stroke?.paint;
     if (r.stroke && stroke && !isSolidPaint(stroke)) {
       const paint = resolvePaintPattern(stroke);
-      if (paint !== stroke) r.stroke = { ...r.stroke, paint: paint ?? undefined };
+      if (paint !== stroke) r.stroke = paint ? { ...r.stroke, paint } : undefined;
     }
   }
   return runs;
