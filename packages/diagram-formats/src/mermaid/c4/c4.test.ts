@@ -159,3 +159,10 @@ describe('writing a Mermaid C4 diagram', () => {
     }
   });
 });
+
+describe('readC4 on a repeated alias', () => {
+  it('throws, naming the line, on an alias an element or a boundary already names', () => {
+    expect(() => readC4('C4Context\n  System(a, "A")\n  System_Boundary(b, "B") {\n    System(a, "A2")\n  }')).toThrow(/line 4.*"a" already names/);
+    expect(() => readC4('C4Context\n  Boundary(b, "B") {\n  }\n  Boundary(b, "C") {\n  }')).toThrow(/line 4.*"b" already names/);
+  });
+});

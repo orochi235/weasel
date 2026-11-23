@@ -47,6 +47,12 @@ class C4Reader {
     for (const key of Object.keys(args.named)) this.warnings.list('Mermaid C4 arguments a diagram does not hold were dropped', `$${key}`);
   }
 
+  claim(alias: string, line: number): void {
+    if (this.nodes.has(alias) || this.containers.some((c) => c.id === alias)) {
+      throw lineError('Mermaid', line, `"${alias}" already names an element or boundary`);
+    }
+  }
+
   walk(stmts: readonly C4Stmt[], members: string[]): void {
     for (const s of stmts) {
       if (s.kind === 'title') {
@@ -57,6 +63,7 @@ class C4Reader {
       const kind = kindOfMacro(s.macro);
       if (kind !== null) {
         if (alias === undefined) throw lineError('Mermaid', s.line, `${s.macro} needs an alias`);
+        this.claim(alias, s.line);
         const tech = hasTechnology(kind) ? rest[1] : undefined;
         const description = hasTechnology(kind) ? rest[2] : rest[1];
         this.extras(s.args, hasTechnology(kind) ? 4 : 3);
@@ -77,6 +84,7 @@ class C4Reader {
   boundary(s: Extract<C4Stmt, { kind: 'call' }>, members: string[]): void {
     const [alias, title, type] = s.args.positional;
     if (alias === undefined) throw lineError('Mermaid', s.line, `${s.macro} needs an alias`);
+    this.claim(alias, s.line);
     const fixed = getOwn(BOUNDARY_TYPES, s.macro);
     if (s.macro === 'Node_L' || s.macro === 'Node_R') this.warnings.add('Mermaid C4 deployment node sides were dropped.');
     this.extras(s.args, fixed !== null ? 2 : 3);
