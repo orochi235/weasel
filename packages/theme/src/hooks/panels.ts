@@ -9,6 +9,12 @@ export const PANEL_HOOKS: readonly TokenHook[] = [
     description: 'Least width of a value cell in a `values="figures"` DetailList.',
   },
   {
+    name: 'dock-gap',
+    type: 'dimension',
+    value: 'var(--wzl-space-2)',
+    description: 'Space between the bars in a ToolbarDock row; a dock’s className sets it to space them differently.',
+  },
+  {
     name: 'params-label-align',
     type: 'string',
     value: 'start',

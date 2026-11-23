@@ -1,5 +1,6 @@
-/** The least and greatest factor a lens's zoom control reaches. */
+/** The least factor a lens's zoom control reaches. */
 export const LOUPE_FACTOR_MIN = 1;
+/** The greatest factor a lens's zoom control reaches. */
 export const LOUPE_FACTOR_MAX = 64;
 /** The factors a lens's zoom control stops at, and its zoom keys step through: every power of two between the two. */
 export const LOUPE_FACTOR_STOPS: readonly number[] = Array.from(

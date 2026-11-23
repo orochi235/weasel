@@ -6,7 +6,6 @@
  * Free of React so the actions can be tested without a DOM.
  */
 
-import { LOUPE_FACTOR_MAX, LOUPE_FACTOR_MIN, LOUPE_FACTOR_STOPS } from '@weasel-js/loupe';
 import {
   type Action,
   ActionDisabledReason,
@@ -18,6 +17,7 @@ import {
   type Op,
 } from '@weasel-js/core';
 import * as coreOps from '@weasel-js/core/ops';
+import { LOUPE_FACTOR_MAX, LOUPE_FACTOR_MIN, LOUPE_FACTOR_STOPS } from '@weasel-js/loupe';
 import { deepEqual, sameList } from '@weasel-js/registry';
 import type { Contribution, GestureBinding } from '@weasel-js/routing';
 import { ANY_MODS, defineAction } from '@weasel-js/routing';
