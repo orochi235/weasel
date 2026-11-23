@@ -62,6 +62,9 @@ class C4Writer {
     const [title, type] = [m[1]!, m[2]];
     const fixed = type !== undefined && !this.deployment ? BY_TYPE.get(type) : undefined;
     const macro = fixed ?? (this.deployment ? 'Deployment_Node' : 'Boundary');
+    if (this.deployment && type !== undefined && BY_TYPE.has(type)) {
+      this.out.warnings.add('Mermaid C4 deployment diagrams write every boundary as a deployment node; a system, container, or enterprise boundary comes back as a deployment node of that type.');
+    }
     this.lines.push(`${indent}${macro}(${args([this.id(c.id), title, ...(fixed === undefined ? [type] : [])])}) {`);
     for (const id of c.nodes) this.element(this.out.byId.get(id)!, `${indent}  `);
     for (const k of c.clusters) this.boundary(k, `${indent}  `);

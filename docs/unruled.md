@@ -3890,3 +3890,7 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a Mermaid block diagram throws, naming the line, on a group id given twice or also
   given to a block, as the architecture reader does for a name given twice. There is no override. Merging the second
   into the first was the alternative.
+- 2026-11-22 (the fixer's call): the Mermaid C4 writer still writes every boundary on a deployment page as
+  `Deployment_Node`, a `[system]`, `[container]`, or `[enterprise]` one keeping its type, and now warns that such a
+  boundary comes back a deployment node, since a page cannot tell `System_Boundary` from a deployment node typed
+  `system`. Writing the fixed boundary macro for those types was the alternative, and loses typed deployment nodes.

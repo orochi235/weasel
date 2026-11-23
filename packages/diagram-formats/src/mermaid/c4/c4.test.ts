@@ -220,6 +220,13 @@ describe('C4 deployment nodes', () => {
     const { document } = readC4('C4Deployment\n  Deployment_Node(d, "Web", "container") {\n    Container(c, "App")\n  }');
     expect(writeC4(document).text).toContain('Deployment_Node(d, "Web", "container") {');
   });
+
+  it('warn that a system boundary is written as one', () => {
+    const { document } = readC4('C4Deployment\n  System_Boundary(s, "Sys") {\n    System(a, "A")\n  }');
+    const { text, warnings } = writeC4(document);
+    expect(text).toContain('Deployment_Node(s, "Sys", "system") {');
+    expect(warnings.some((w) => w.startsWith('Mermaid C4 deployment diagrams write every boundary as a deployment node'))).toBe(true);
+  });
 });
 
 describe('writing connector parts Mermaid C4 diagrams hold no place for', () => {
