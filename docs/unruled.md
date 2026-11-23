@@ -3855,3 +3855,6 @@ Calls the lanes made without a ruling:
 
 - 2026-11-22 (the fixer's call): `createAudioEngine` and `createBusGraph` throw on a bus name given twice in `buses`,
   before anything is made. Keeping the first and ignoring the repeat was the alternative.
+- 2026-11-22 (the fixer's call): a pattern player's (and so a score's) `start()` on a disposed engine leaves it stopped
+  and does not throw, as `play()` on one drops rather than throws; `isPlaying()` reads false once the engine is disposed.
+  The engine gained `disposed()` for it. Throwing from `start()` was the alternative.

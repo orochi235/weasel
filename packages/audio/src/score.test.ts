@@ -141,3 +141,14 @@ describe('createScore', () => {
     expect(() => score.setMood({ valence: Number.POSITIVE_INFINITY, tension: 0, urgency: 0 })).not.toThrow();
   });
 });
+
+describe('createScore on a disposed engine', () => {
+  it('is not playing once the engine is disposed', async () => {
+    const { engine, run } = await engineHarness();
+    const score = createScore(engine, { mood: home('dread') });
+    score.start(0);
+    await run(100);
+    engine.dispose();
+    expect(score.isPlaying()).toBe(false);
+  });
+});

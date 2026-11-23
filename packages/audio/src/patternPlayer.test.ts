@@ -325,3 +325,22 @@ describe('createPatternPlayer', () => {
     expect(starts()).toEqual([0, 1125, 1625]);
   });
 });
+
+describe('createPatternPlayer on a disposed engine', () => {
+  it('is not playing once the engine it runs on is disposed', async () => {
+    const { engine, run } = await harness();
+    const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });
+    player.start(0);
+    await run(200);
+    engine.dispose();
+    expect(player.isPlaying()).toBe(false);
+  });
+
+  it('does not start on an engine already disposed', async () => {
+    const { engine } = await harness();
+    engine.dispose();
+    const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });
+    player.start(0);
+    expect(player.isPlaying()).toBe(false);
+  });
+});

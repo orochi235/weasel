@@ -254,6 +254,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       if (running) return;
       const at = when ?? engine.now();
       if (!Number.isFinite(at)) throw new RangeError(`@weasel-js/audio: a pattern starts at a finite time, not ${at}`);
+      if (engine.disposed()) return;
       running = true;
       run += 1;
       count = 0;
@@ -268,7 +269,8 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       for (const v of voices) v.release();
       voices.clear();
     },
-    isPlaying: () => running,
+    // A disposed engine fires nothing it had booked, so a player running on one is silent for good.
+    isPlaying: () => running && !engine.disposed(),
     tempo: () => bpm,
     setTempo(next) {
       checkTempo(next);

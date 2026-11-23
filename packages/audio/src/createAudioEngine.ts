@@ -80,6 +80,8 @@ export interface AudioEngine {
   graph(bus?: string): AudioGraph;
   /** Throws a `RangeError` on a point or option that is not finite. */
   setListener(p: SpatialPoint, opts?: SpatialOptions): void;
+  /** True once `dispose()` has run: nothing booked on the engine will fire. */
+  disposed(): boolean;
   dispose(): void;
 }
 
@@ -296,6 +298,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       if (o) spatialOpts = o;
       voices.respatialize();
     },
+    disposed: () => disposed,
     dispose() {
       if (disposed) return;
       disposed = true;
