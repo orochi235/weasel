@@ -4,8 +4,7 @@
 import { createPart, setOwn } from '@weasel-js/registry';
 import { isPrefCondition, prefConditionInGroup } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
-
-const CONDITIONS = ['showIf', 'enableIf', 'activeIf'] as const;
+import { PREF_CONDITION_FIELDS } from './judge';
 
 type Node = Record<string, unknown>;
 
@@ -39,7 +38,7 @@ function resolveNode(node: Node, group: string, path: string): Node {
     setOwn(out, key, value);
   };
   const readIn = isGroup(node) ? path : group;
-  for (const key of CONDITIONS) {
+  for (const key of PREF_CONDITION_FIELDS) {
     const condition = node[key];
     // A malformed condition is left as it is, for checkPrefConditions to report.
     if (!isPrefCondition(condition)) continue;
