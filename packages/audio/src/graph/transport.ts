@@ -1,4 +1,4 @@
-import { atAudioTime, type Timers } from '../audioTime';
+import { afterRamp, type Timers } from '../audioTime';
 import { writeParam } from '../param';
 import { startAll, stopWrapper, type NodeWrapper } from './wrapper';
 
@@ -31,7 +31,7 @@ export function createTransport(deps: TransportDeps) {
     const ms = deps.fade();
     writeParam(ctx, output.gain, value, ms);
     let pending = true;
-    const c = atAudioTime(ctx, timers, ctx.currentTime + ms / 1000, () => {
+    const c = afterRamp(ctx, timers, ctx.currentTime + ms / 1000, () => {
       pending = false;
       cancel = null;
       then();
