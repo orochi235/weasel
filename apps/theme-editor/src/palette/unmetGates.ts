@@ -17,6 +17,11 @@ export function gateVerdict(c: Constraints, stats: Stats, gate: 'minContrast' | 
  * bound — and past about twenty colors more than one usually does.
  */
 export function unmetGates(c: Constraints, stats: Stats): string[] {
+  // The generator drops anchors past `count` and never searches, so no gate is to blame.
+  const over = c.anchors.length - c.count;
+  if (over > 0) {
+    return [`${c.anchors.length} colors are pinned for ${c.count}: add ${over} more ${over === 1 ? 'color' : 'colors'} or unpin ${over}`];
+  }
   const out: string[] = [];
   const floor = floorDegrees(c);
   if (floor > 0 && stats.minHueGap < floor - 0.01) {
