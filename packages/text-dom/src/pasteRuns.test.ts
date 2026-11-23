@@ -68,6 +68,15 @@ describe('htmlToRuns', () => {
     expect(htmlToRuns('<table><tr><td></td><td> </td><td>c</td></tr></table>')).toEqual([{ text: '\t\tc' }]);
   });
 
+  it('sets a cell whose text sits in a block after a tab, on its row\'s line', () => {
+    const row = (a: string, b: string): string => `<tr><td><p>${a}</p></td><td><p>${b}</p></td></tr>`;
+    expect(htmlToRuns(`<table>${row('a', 'b')}${row('c', 'd')}</table>`)).toEqual([{ text: 'a\tb\nc\td' }]);
+    expect(htmlToRuns('<table><tr><td><p>a</p></td><td>b</td></tr></table>')).toEqual([{ text: 'a\tb' }]);
+    expect(htmlToRuns('<table><tr><td><p>a</p><p>b</p></td><td><div>c</div></td></tr></table>'))
+      .toEqual([{ text: 'a\nb\tc' }]);
+    expect(htmlToRuns('<table><tr><td><p>a</p></td><td></td></tr><tr><td>c</td></tr></table>')).toEqual([{ text: 'a\nc' }]);
+  });
+
   it('keeps the rules and the scripts, and reads a heavy weight as bold', () => {
     expect(htmlToRuns(
       '<u>u</u><s>s</s><span style="text-decoration: overline">o</span><sup>2</sup><sub>3</sub><span style="font-weight: 600">w</span>',

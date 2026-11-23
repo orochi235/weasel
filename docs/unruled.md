@@ -3937,3 +3937,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `useDecayLoop`'s `start` ends a coast at once, calling `onEnd`, when its velocity is
   `NaN` or infinite, where `friction` and `minSpeed` throw: the velocity is measured at a release, and a release
   never throws. Throwing a `RangeError` as for the options was the alternative.
+## Audit round seventy-five (2026-11-22): text-dom
+
+- 2026-11-22 (the fixer's call): `useTextEdit`'s `startEdit` on another node while an edit is open commits the open
+  edit before opening the next, as a click away does, rather than dropping what was typed. There is no override; a
+  host that means to discard calls `cancelEdit()` first.

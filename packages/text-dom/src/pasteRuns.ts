@@ -74,6 +74,9 @@ export function htmlToRuns(html: string): StyledRun[] {
   /** Whether the current line has text on it, and whether that text ends in a collapsed space. */
   let onLine = false;
   let spaced = false;
+  /** Whether the current table row has written text, and the cell opened since text was last written. */
+  let rowWritten = false;
+  let freshCell: HTMLElement | null = null;
 
   const write = (text: string, style: StyleState): void => {
     const lead = (gap.line && runs.length > 0 ? '\n' : '') + '\t'.repeat(gap.tabs);
@@ -81,6 +84,8 @@ export function htmlToRuns(html: string): StyledRun[] {
     gap = { line: false, tabs: 0 };
     onLine = true;
     spaced = false;
+    rowWritten = true;
+    freshCell = null;
   };
   /** A collapsed space that turned out to end its line draws nothing. */
   const trimSpace = (): void => {
@@ -88,8 +93,10 @@ export function htmlToRuns(html: string): StyledRun[] {
     if (spaced && last) last.text = last.text.slice(0, -1);
     spaced = false;
   };
-  const boundary = (): void => {
+  const boundary = (node: HTMLElement): void => {
     trimSpace();
+    // A block opening a cell starts no line: the cell's tab already set it apart.
+    if (freshCell !== null && freshCell.contains(node)) return;
     gap = { line: gap.line || onLine, tabs: 0 };
     onLine = false;
   };
@@ -106,6 +113,16 @@ export function htmlToRuns(html: string): StyledRun[] {
       if (i > 0 && onLine && !spaced && gap.tabs === 0) { write(' ', style); spaced = true; }
       if (word.length > 0) write(word, style);
     });
+  };
+
+  /** A row's first cell starts its line; a later one follows the cells before it, after a tab, even where a
+   *  block of theirs closed. */
+  const openCell = (cell: HTMLElement): void => {
+    if (cell.previousElementSibling === null) { rowWritten = false; return; }
+    trimSpace();
+    if (rowWritten) { gap.line = false; onLine = true; }
+    gap.tabs += 1;
+    freshCell = cell;
   };
 
   const visit = (node: Node, style: StyleState, mode: SpaceMode): void => {
@@ -130,12 +147,12 @@ export function htmlToRuns(html: string): StyledRun[] {
       return;
     }
     const block = BLOCKS.has(node.tagName);
-    if (block) boundary();
-    if (CELLS.has(node.tagName) && node.previousElementSibling !== null) { trimSpace(); gap.tabs += 1; }
+    if (block) boundary(node);
+    if (CELLS.has(node.tagName)) openCell(node);
     const next = styleStateFromElement(node, style);
     const childMode = spaceMode(node, mode);
     for (const child of node.childNodes) visit(child, next, childMode);
-    if (block) boundary();
+    if (block) boundary(node);
   };
   visit(body, EMPTY_STYLE, 'collapse');
   trimSpace();

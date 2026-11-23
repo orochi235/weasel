@@ -4,7 +4,7 @@
  */
 import type { TextStyle } from '@weasel-js/text';
 import { domToRuns, type OverlayRunBase } from './domRuns';
-import { overlayHistory, type OverlayHistory, type OverlayState } from './overlayHistory';
+import { overlayHistory, type HistorySteps, type OverlayHistory, type OverlayState } from './overlayHistory';
 import type { CaretHolder } from './overlaySeed';
 import { readSelectionOffsets, writeRunsPreservingSelection } from './overlaySelection';
 import { typingHandlers, type TypingHost } from './overlayTyping';
@@ -24,6 +24,8 @@ export interface OverlayEditsHost extends Pick<TypingHost, 'pending' | 'base' | 
   readonly dropPending: () => void;
   readonly publishRange: (overlay: HTMLElement, range: TextEditSelection) => void;
   readonly sendDraft: (overlay: HTMLElement) => void;
+  /** The steps of the edit's history in the overlay before this one, when it moved here from another. */
+  readonly steps?: HistorySteps;
 }
 
 /** `overlay`'s undo history, and the typing listeners that record every input in it. */
@@ -58,7 +60,7 @@ export function createOverlayEdits(
       written(at);
       edited();
     },
-  });
+  }, host.steps);
   const typing = typingHandlers(overlay, {
     pending: host.pending,
     base: host.base,

@@ -1,4 +1,4 @@
-import { describe, expect, it, beforeEach } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { useTextEdit } from './useTextEdit';
 import { getOverlay, makeRichHarness, selectChars, selectCharsAndSettle } from './testing/textEditHarness';
@@ -58,6 +58,21 @@ describe('useTextEdit — editing chrome', () => {
     act(() => result.current.startEdit('a'));
     act(() => blurTo(getOverlay(h.container)!, null));
     expect(result.current.editingId).toBeNull();
+  });
+
+  it('keeps the edit open through a blur the window losing focus causes', () => {
+    // Switching to another app or tab; the overlay gets focus back with the window.
+    const h = makeChromeHarness();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const hasFocus = vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    try {
+      act(() => blurTo(getOverlay(h.container)!, null));
+    } finally {
+      hasFocus.mockRestore();
+    }
+    expect(result.current.editingId).toBe('a');
+    expect(h.textCommits).toEqual([]);
   });
 
   it('commits on a pointerdown outside the overlay and outside chrome', () => {

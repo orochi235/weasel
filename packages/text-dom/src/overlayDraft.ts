@@ -81,9 +81,8 @@ export function seedDraft(
       // survives a Cmd-B that turned it off — or when the edit produced
       // styling. A plain-text edit of a plain-text node commits text alone.
       const read = domToRuns(el);
-      // Compared untrimmed: a seeded trailing newline reads back the same at
-      // both ends, where the trimmed form would differ from the node's text.
-      if (!style && JSON.stringify(read) === opened) return null;
+      // Compared less the holder an undo can add after a seeded trailing break; the overlay as it opened has none.
+      if (!style && JSON.stringify(holder.trim(read)) === opened) return null;
       return overlayDraft(read, holder, runs, style);
     },
   };

@@ -40,18 +40,26 @@ export interface OverlayHistory {
   seal(): void;
   undo(): void;
   redo(): void;
+  /** The steps to undo and redo, oldest first, for a history that goes on from them. */
+  steps(): HistorySteps;
+}
+
+/** A history's steps, which a later one can start from. */
+export interface HistorySteps {
+  readonly undos: readonly OverlayState[];
+  readonly redos: readonly OverlayState[];
 }
 
 /** Steps kept; the oldest go first. */
 const DEPTH = 200;
 
-/** A history reading the overlay through `read` and putting a step back through `write`. */
+/** A history reading the overlay through `read` and putting a step back through `write`, going on from `from`. */
 export function overlayHistory(host: {
   read: () => OverlayState | null;
   write: (state: OverlayState) => void;
-}): OverlayHistory {
-  const undos: OverlayState[] = [];
-  const redos: OverlayState[] = [];
+}, from?: HistorySteps): OverlayHistory {
+  const undos: OverlayState[] = [...(from?.undos ?? [])];
+  const redos: OverlayState[] = [...(from?.redos ?? [])];
   let pending: { kind: ChangeKind; state: OverlayState } | null = null;
   /** The last step's kind and the caret it left, which a change of that kind joins it from. */
   let open: { kind: ChangeKind; caret: TextEditSelection } | null = null;
@@ -90,6 +98,7 @@ export function overlayHistory(host: {
     },
     undo: () => step(undos, redos),
     redo: () => step(redos, undos),
+    steps: () => ({ undos: [...undos], redos: [...redos] }),
   };
 }
 

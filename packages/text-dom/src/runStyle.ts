@@ -19,11 +19,14 @@ export const ROTATE_ATTR = 'data-rotate';
 /** A run's `{ px }` font size or letter spacing, whose CSS divides by the zoom. */
 export const FONT_SIZE_PX_ATTR = 'data-font-size-px';
 export const LETTER_SPACING_PX_ATTR = 'data-letter-spacing-px';
+/** A world-unit `fontSize` and `letterSpacing` kept whole: Blink serializes an inline length to about six digits. */
+export const FONT_SIZE_ATTR = 'data-font-size';
+export const LETTER_SPACING_ATTR = 'data-letter-spacing';
 
 /** A run's `bold` beside its own `fontWeight`, which wins the CSS `font-weight` but must not lose the flag. */
 export const BOLD_ATTR = 'data-bold';
 
-/** A run's `fontScale` beside an absolute `fontSize`, which wins the CSS `font-size` but must not lose the scale. */
+/** A run's `fontScale` kept whole: beside an absolute `fontSize` it has no CSS, and a percentage keeps fewer digits. */
 export const FONT_SCALE_ATTR = 'data-font-scale';
 
 /** Significant digits a run's `fontScale` keeps through its CSS percentage, which drops the float noise of
@@ -39,6 +42,12 @@ export const fontScalePercent = (scale: number): string => `${settle(scale * 100
 function pxAttr(el: Element, attr: string): { px: number } | undefined {
   const px = parseFloat(el.getAttribute(attr) ?? '');
   return Number.isFinite(px) ? { px } : undefined;
+}
+
+/** The number `attr` holds on `el`, if it holds one. */
+function numberAttr(el: Element, attr: string): number | undefined {
+  const n = parseFloat(el.getAttribute(attr) ?? '');
+  return Number.isFinite(n) ? n : undefined;
 }
 
 const sameLength = (a: ScreenLength | undefined, b: ScreenLength | undefined): boolean =>
@@ -170,8 +179,8 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
       next.overline ||= td.includes('overline');
     }
     // A percentage is `fontScale`; any other unit is an absolute size.
-    const pxSize = pxAttr(el, FONT_SIZE_PX_ATTR);
-    if (pxSize) {
+    const pxSize = pxAttr(el, FONT_SIZE_PX_ATTR) ?? numberAttr(el, FONT_SIZE_ATTR);
+    if (pxSize !== undefined) {
       next.fontSize = pxSize;
     } else if (el.style.fontSize) {
       const size = parseFloat(el.style.fontSize);
@@ -212,8 +221,8 @@ export function styleStateFromElement(el: Element, parent: StyleState): StyleSta
       next.fillJson = undefined;
     }
     const ls = el.style.letterSpacing;
-    const pxSpacing = pxAttr(el, LETTER_SPACING_PX_ATTR);
-    if (pxSpacing) {
+    const pxSpacing = pxAttr(el, LETTER_SPACING_PX_ATTR) ?? numberAttr(el, LETTER_SPACING_ATTR);
+    if (pxSpacing !== undefined) {
       next.letterSpacing = pxSpacing;
     } else if (ls === 'normal') {
       next.letterSpacing = undefined;
