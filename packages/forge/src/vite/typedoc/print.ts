@@ -87,12 +87,15 @@ function reflectionText(declaration: TdReflection | undefined): string {
 
 /** A call signature, arrow style. */
 export function signatureText(signature: TdReflection): string {
-  const generics = signature.typeParameters?.length ? `<${signature.typeParameters.map((t) => t.name).join(', ')}>` : '';
+  const generics = signature.typeParameters?.length ? `<${signature.typeParameters.map(typeParameterText).join(', ')}>` : '';
   const params = (signature.parameters ?? []).map(
     (p) => `${p.flags?.isRest ? '...' : ''}${p.name}${p.flags?.isOptional ? '?' : ''}: ${typeText(p.type)}`,
   );
   return `${generics}(${params.join(', ')}) => ${typeText(signature.type)}`;
 }
+
+const typeParameterText = (t: TdReflection): string =>
+  `${t.name}${t.type ? ` extends ${typeText(t.type)}` : ''}${t.default ? ` = ${typeText(t.default)}` : ''}`;
 
 /** How a comment's `{@link}` targets become hrefs. */
 export interface Linker {

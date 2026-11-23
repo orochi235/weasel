@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ReadApi } from '../apiTable';
 import { readTypedoc, type TypedocHref, typedocSource, withTypedoc } from './index';
 import type { TdType } from './json';
-import { typeText } from './print';
+import { signatureText, typeText } from './print';
 
 const FIXTURE = join(import.meta.dirname, 'fixture.json');
 const project: unknown = JSON.parse(readFileSync(FIXTURE, 'utf8'));
@@ -178,6 +178,20 @@ describe('typeText', () => {
     expect(typeText(mapped({ readonlyModifier: '+' }))).toBe('{ readonly [K in keyof T]: T[K] }');
     const renamed: TdType = { type: 'templateLiteral', head: 'on', tail: [[k, '']] };
     expect(typeText(mapped({ nameType: renamed }))).toBe('{ [K in keyof T as `on${K}`]: T[K] }');
+  });
+
+  it("prints a signature's type parameters with their constraints and defaults", () => {
+    const t: TdType = { type: 'reference', name: 'T' };
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    const signature = {
+      id: 1,
+      kind: 4096,
+      name: 'pick',
+      typeParameters: [{ id: 2, kind: 131072, name: 'T', type: str, default: { type: 'literal', value: 'a' } }],
+      parameters: [{ id: 3, kind: 32768, name: 'key', type: t }],
+      type: t,
+    };
+    expect(signatureText(signature)).toBe("<T extends string = 'a'>(key: T) => T");
   });
 
   it('prints an inferred type with its infer, and its constraint', () => {

@@ -78,7 +78,10 @@ export interface TdReflection {
   signatures?: TdReflection[];
   parameters?: TdReflection[];
   typeParameters?: TdReflection[];
+  /** A type parameter's constraint is its `type`. */
   type?: TdType;
+  /** A type parameter's default. */
+  default?: TdType;
   inheritedFrom?: TdType;
 }
 
