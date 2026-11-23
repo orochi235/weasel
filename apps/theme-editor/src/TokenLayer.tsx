@@ -48,7 +48,7 @@ export function TokenLayer({ layer, draft, result, merged, selection, highlight,
     }
     if (value === null) {
       const rest = clearAt(getOwn(draft.pins ?? {}, name), selection);
-      onChange(rest === undefined ? removePin(draft, name) : setPin(draft, name, rest), `pin:${name}`, `Reset ${name}`);
+      onChange(rest === undefined ? removePin(draft, name) : setPin(draft, name, rest), `unpin:${name}`, `Reset ${name}`);
       return;
     }
     const token = getOwn(result.tokens, name);
