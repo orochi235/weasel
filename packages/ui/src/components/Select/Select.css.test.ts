@@ -25,4 +25,11 @@ describe('Select stylesheets', () => {
     expect(rule(listbox, '.note')).toContain('display: block');
   });
 
+  it("lets a bare select's padding and fill hooks reach its trigger", () => {
+    const bare = rule(sheet('Select.module.css'), '.bare .trigger');
+    expect(bare).toMatch(/padding: var\(--wzl-select-pad, 0\)/);
+    expect(bare).toMatch(/--_frame-bg: var\(--wzl-select-bg, transparent\)/);
+    expect(bare).not.toMatch(/^\s*(padding: 0|background: transparent);/m);
+  });
+
 });
