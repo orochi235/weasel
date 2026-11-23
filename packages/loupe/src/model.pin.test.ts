@@ -77,4 +77,18 @@ describe('loupe model: a pinned aim', () => {
     camera.pan = 10;
     expect(loupe.aim).toEqual({ x: 30, y: 40 });
   });
+
+  it('puts a pin back on the content it held, wherever the camera has moved it to', () => {
+    const { surface, camera } = pannedSurface();
+    const loupe = createLoupeModel({ surface });
+    loupe.pinAt({ x: 30, y: 40 });
+    const held = loupe.pin;
+    expect(held).toEqual({ x: 30, y: 40 });
+    loupe.pinAt({ x: 70, y: 70 });
+    camera.pan = 10;
+    loupe.holdPin(held!);
+    expect(loupe.aim).toEqual({ x: 20, y: 40 });
+    loupe.setAimMode('follow');
+    expect(loupe.pin).toBeNull();
+  });
 });

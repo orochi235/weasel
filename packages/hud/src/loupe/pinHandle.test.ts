@@ -22,6 +22,7 @@ function setup(shown = true) {
     aimMode: () => lens.mode, aim: () => lens.aim,
     pinAt: (p) => { lens.mode = 'pinned'; lens.aim = p; },
     setAimMode: (m) => { lens.mode = m; },
+    keepAim: () => { const was = { ...lens }; return () => Object.assign(lens, was); },
   });
   return { pin, lens, dock: pinDockIn(win.bounds, true) };
 }
@@ -95,6 +96,42 @@ describe('the loupe pin', () => {
     pin.onPointer(at('down', dock.x, dock.y));
     pin.onPointer(at('move', 400, 300));
     pin.onPointer({ type: 'cancel', native: null });
+    expect(lens.mode).toBe('follow');
+  });
+
+  it('keeps carrying the pin through a long press, a double click, or a context menu', () => {
+    const { pin, lens, dock } = setup();
+    pin.onPointer(at('down', dock.x, dock.y));
+    for (const type of ['longpress', 'doubleclick', 'contextmenu'] as const) pin.onPointer({ type, x: dock.x, y: dock.y, native: null });
+    pin.onPointer(at('move', 400, 300));
+    expect(lens).toEqual({ mode: 'pinned', aim: { x: 400, y: 300 } });
+    pin.onPointer(at('move', 100, 100));
+    pin.onPointer(at('up', 100, 100));
+    expect(lens.mode).toBe('follow');
+  });
+
+  it('redraws pressed as soon as the docked pin is pressed', () => {
+    const { pin, dock } = setup();
+    const before = pin.deps!(ctx);
+    pin.onPointer(at('down', dock.x, dock.y));
+    expect(pin.deps!(ctx)).not.toEqual(before);
+  });
+
+  it('takes the pin back when dropped on a rect lens’s dock, as on a round lens’s ring', () => {
+    const win = createWindow({ id: 'w', title: 'Loupe', ...B });
+    const lens = { mode: 'follow' as LoupeAimMode, aim: { x: 0, y: 0 } };
+    const pin = createPinHandle('p', {
+      win, round: false, shown: () => true,
+      aimMode: () => lens.mode, aim: () => lens.aim,
+      pinAt: (p) => { lens.mode = 'pinned'; lens.aim = p; },
+      setAimMode: (m) => { lens.mode = m; },
+      keepAim: () => () => {},
+    });
+    const dock = pinDockIn(win.bounds, false);
+    pin.onPointer(at('down', dock.x, dock.y));
+    pin.onPointer(at('move', 400, 300));
+    pin.onPointer(at('move', dock.x, dock.y));
+    pin.onPointer(at('up', dock.x, dock.y));
     expect(lens.mode).toBe('follow');
   });
 });

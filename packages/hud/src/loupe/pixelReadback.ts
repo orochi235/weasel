@@ -95,15 +95,19 @@ export function createPixelReadback(
       pending = true;
       // A region read back later also holds the color under the aim.
       const later = data instanceof Promise;
-      (later ? data.then((d) => createImageBitmap(d)) : createImageBitmap(data))
-        .then((bmp) => {
+      (later ? data.then((d) => createImageBitmap(d)) : createImageBitmap(data)).then(
+        (bmp) => {
           if (disposed) { bmp.close(); return; }
           drop();
           pixels = bmp;
           pending = false;
           settled(later);
-        })
-        .catch(() => { pending = false; settled(false); });
+        },
+        () => {
+          pending = false;
+          if (!disposed) settled(false);
+        },
+      );
     },
     dispose() {
       disposed = true;

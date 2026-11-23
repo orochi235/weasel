@@ -24,6 +24,8 @@ export interface LensControlsHost {
   aim(): { x: number; y: number };
   pinAt(p: { x: number; y: number }): void;
   setAimMode(mode: LoupeAimMode): void;
+  /** Puts the aim back as it is now, when called. */
+  keepAim(): () => void;
   icons?: GlyphSource;
   modeIcons?: Partial<Record<LoupeMode, IconSpec>>;
   pinIcon?: IconSpec;
@@ -33,6 +35,8 @@ export interface LensControlsHost {
 export interface LensControls {
   /** The pointer is at `p`, in the HUD's px. */
   pointerAt(p: { x: number; y: number }): void;
+  /** The pointer has left the HUD. */
+  leave(): void;
   remove(): void;
 }
 
@@ -54,6 +58,7 @@ export function addLensControls(host: LensControlsHost): LensControls {
     createZoomTrack(`${win.id}:zoom`, { win, round, shown, stops: host.stops, factor: host.factor, setFactor: redrawn(host.setFactor) }),
     createPinHandle(`${win.id}:pin`, {
       win, round, shown, aimMode: host.aimMode, aim: host.aim, pinAt: redrawn(host.pinAt), setAimMode: redrawn(host.setAimMode),
+      keepAim: () => redrawn(host.keepAim()),
       ...(host.icons ? { icons: host.icons } : {}), ...(host.pinIcon ? { pinIcon: host.pinIcon } : {}),
     }),
   ];
@@ -62,14 +67,17 @@ export function addLensControls(host: LensControlsHost): LensControls {
     w.onPointer = (evt) => { press(evt); host.requestRedraw(); };
     hud.add(w);
   }
+  const setNear = (next: boolean) => {
+    if (next === near) return;
+    near = next;
+    host.requestRedraw();
+  };
   return {
     pointerAt(p) {
       const r = ringBoundsOf(win.bounds);
-      const next = p.x >= r.x - NEAR && p.x <= r.x + r.width + NEAR && p.y >= r.y - NEAR && p.y <= r.y + r.height + NEAR;
-      if (next === near) return;
-      near = next;
-      host.requestRedraw();
+      setNear(p.x >= r.x - NEAR && p.x <= r.x + r.width + NEAR && p.y >= r.y - NEAR && p.y <= r.y + r.height + NEAR);
     },
+    leave: () => setNear(false),
     remove() { for (const w of widgets) hud.remove(w); },
   };
 }
@@ -88,6 +96,15 @@ export function addLoupeControls(
     aim: () => model.aim,
     pinAt: (p) => { const was = model.aimMode; model.pinAt(p); if (model.aimMode !== was) opts.onAimModeChange?.(model.aimMode); },
     setAimMode: (m) => { if (m === model.aimMode) return; model.setAimMode(m); opts.onAimModeChange?.(m); },
+    keepAim: () => {
+      const pin = model.pin;
+      return () => {
+        const was = model.aimMode;
+        if (pin) model.holdPin(pin);
+        else model.setAimMode('follow');
+        if (model.aimMode !== was) opts.onAimModeChange?.(model.aimMode);
+      };
+    },
     mode: () => model.mode,
     setMode: (m) => { if (m === model.mode) return; model.setMode(m); opts.onModeChange?.(m); },
     factor: () => model.factor,

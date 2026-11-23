@@ -99,6 +99,12 @@ export interface LoupeModel {
   setAimMode(mode: LoupeAimMode): void;
   /** Pin the aim at the content under surface point `p`. Ignored where `aimAt` would ignore it, the pin aside. */
   pinAt(p: LoupePoint): void;
+  /** The content point the pin holds, in the space `surface.worldAt` answers in (its surface point without one), or
+   *  `null` while the aim follows. Give it to {@link holdPin} to put the pin back where it was. */
+  readonly pin: LoupePoint | null;
+  /** Pin the aim at content point `c`, one {@link pin} gave, wherever the camera has since moved it to on the
+   *  surface. Ignored once the model is disposed. */
+  holdPin(c: LoupePoint): void;
   /** Sample what the lens shows at `p`, a point inside it, and report that to
    *  `onPick`. Omit `p` to pick at the aim point. Leaves the aim, and `color`,
    *  alone. */
@@ -180,6 +186,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     get aimMode() { return aim.mode; },
     get factor() { return factor; },
     get aim() { return aim.now(); },
+    get pin() { return aim.pinned; },
     get color() { return color; },
 
     setMode(next) {
@@ -211,6 +218,10 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
       if (refuses(p)) return;
       aim.pin(p);
       aimed();
+    },
+
+    holdPin(c) {
+      if (!disposed && !dead()) { aim.hold(c); aimed(); }
     },
 
     pick(p) {

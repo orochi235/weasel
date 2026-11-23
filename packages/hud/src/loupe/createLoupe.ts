@@ -313,6 +313,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const unregister = registerLoupe(hud, lensAimInput(input, {
     aimAt: (p) => model.aimAt(p),
     pointerAt: (p) => controls?.pointerAt(p),
+    leave: () => controls?.leave(),
     holds: (p) => interactive && surface.covers(p),
   }));
 

@@ -41,6 +41,8 @@ export function createZoomTrack(id: string, host: ZoomTrackHost): Widget {
     return near.distance <= BAND / 2 ? Math.round(near.f * (stops.length - 1)) : -1;
   };
   let dragging = false;
+  /** The factor before the drag in hand, put back if it is canceled. */
+  let was = host.factor();
   const setFromPointer = (x: number, y: number) => {
     const near = track().nearest({ x, y });
     host.setFactor(stops[Math.round(near.f * (stops.length - 1))]!);
@@ -86,10 +88,15 @@ export function createZoomTrack(id: string, host: ZoomTrackHost): Widget {
     hitTest: (x, y) => host.shown() && !win.hidden && stopAt(x, y) >= 0,
     cursorAt: (x, y) => (stopAt(x, y) >= 0 ? 'pointer' : 'default'),
     onPointer(evt: HudPointerEvent) {
-      if (!('x' in evt) || !Number.isFinite(evt.x) || !Number.isFinite(evt.y)) { dragging = false; return; }
-      if (evt.type === 'down') { dragging = true; setFromPointer(evt.x, evt.y); }
-      else if (evt.type === 'move' && dragging) setFromPointer(evt.x, evt.y);
-      else if (evt.type === 'up') dragging = false;
+      if (evt.type === 'cancel') {
+        if (dragging) host.setFactor(was);
+        dragging = false;
+        return;
+      }
+      if (evt.type !== 'down' && evt.type !== 'move' && evt.type !== 'up') return;
+      if (!Number.isFinite(evt.x) || !Number.isFinite(evt.y) || evt.type === 'up') { dragging = false; return; }
+      if (evt.type === 'down') { dragging = true; was = host.factor(); setFromPointer(evt.x, evt.y); }
+      else if (dragging) setFromPointer(evt.x, evt.y);
     },
   };
 }

@@ -24,6 +24,8 @@ export interface PinHandleHost {
   aim(): Point;
   pinAt(p: Point): void;
   setAimMode(mode: LoupeAimMode): void;
+  /** Puts the aim back as it is now, when called: on the content it is pinned to, wherever the camera moves that. */
+  keepAim(): () => void;
   icons?: GlyphSource;
   /** The pin's icon; without one (or `icons`) a plain needle is drawn. */
   pinIcon?: IconSpec;
@@ -44,8 +46,9 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
   const { win } = host;
   const dock = () => pinDockIn(win.bounds, host.round);
   const pinned = () => host.aimMode() === 'pinned';
-  /** The press in hand: what it grabbed, where it began, how the lens was aimed then, and where it is dragged. */
-  let press: { from: 'dock' | 'target'; start: Point; was: LoupeAimMode; wasAim: Point; at: Point | null } | null = null;
+  /** The press in hand: what it grabbed, where it began, how the lens was aimed then and how to put that back, and
+   *  where it is dragged. */
+  let press: { from: 'dock' | 'target'; start: Point; was: LoupeAimMode; restore: () => void; at: Point | null } | null = null;
   let hovered = false;
 
   const grabbable = (p: Point): 'dock' | 'target' | null => {
@@ -58,7 +61,9 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
   const overLens = (p: Point) => {
     const b = win.bounds;
     const c = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-    return host.round ? dist(p, c) <= b.width / 2 + BAND + 8 : win.hitTest(p.x, p.y);
+    const reach = BAND + 8;
+    if (host.round) return dist(p, c) <= b.width / 2 + reach;
+    return Math.abs(p.x - c.x) <= b.width / 2 + reach && Math.abs(p.y - c.y) <= b.height / 2 + reach;
   };
 
   const glyph = { ...(host.icons ? { icons: host.icons } : {}), ...(host.pinIcon ? { icon: host.pinIcon } : {}) };
@@ -79,7 +84,7 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
     dispose() {},
     deps: () => {
       const aim = host.aim();
-      return [host.shown(), host.aimMode(), aim.x, aim.y, press?.at?.x, press?.at?.y, hovered, win.bounds.x, win.bounds.y, win.bounds.width];
+      return [host.shown(), host.aimMode(), aim.x, aim.y, press?.from, press?.at?.x, press?.at?.y, hovered, win.bounds.x, win.bounds.y, win.bounds.width];
     },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       if (press?.at) {
@@ -98,7 +103,7 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
       if (evt.type === 'hoverleave') { hovered = false; return; }
       if (evt.type === 'down') {
         const from = p && grabbable(p);
-        press = from ? { from, start: p!, was: host.aimMode(), wasAim: host.aim(), at: null } : null;
+        press = from ? { from, start: p!, was: host.aimMode(), restore: host.keepAim(), at: null } : null;
         return;
       }
       if (!press) return;
@@ -108,14 +113,13 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
         if (!overLens(p)) host.pinAt(p);
         return;
       }
+      if (evt.type !== 'up' && evt.type !== 'cancel') return;
       const was = press;
       press = null;
       if (evt.type === 'cancel' || !p) {
-        if (was.was === 'follow') host.setAimMode('follow');
-        else host.pinAt(was.wasAim);
+        was.restore();
         return;
       }
-      if (evt.type !== 'up') return;
       if (!was.at) {
         // A click: the docked pin toggles; the target stays where it is.
         if (was.from === 'dock') host.setAimMode(was.was === 'pinned' ? 'follow' : 'pinned');
