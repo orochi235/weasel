@@ -17,8 +17,9 @@ export const FIXED_CHROME = {
 
 const item = ({ id, label }: ChromeItem): ChromeItem => ({ id, label });
 
-/** Everything the View menu toggles, in screen order: the toolbar dock's assets, the tools palette, the right
- *  sidebar's panels, then the status bar. The command row's assets are left out: their names are the menus'. */
+/** Everything the View menu toggles, in the screen order of each asset's default surface: the dock's bars and menus,
+ *  the tools palette, the sidebar's panels, then the status bar. An asset moved elsewhere keeps its place here. The
+ *  command row's assets are left out: their names are the menus'. */
 export const CHROME_ITEMS: readonly ChromeItem[] = [
   ...SURFACE_ASSETS.filter((a) => a.row !== 'command' && a.defaultSurface !== 'panel').map(item),
   FIXED_CHROME.tools,
