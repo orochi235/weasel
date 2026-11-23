@@ -2,6 +2,6 @@
 '@weasel-js/gestures': patch
 ---
 
-`routeToSpec` and `canonicalModifiers` treat a modifier set to `undefined` in a parsed route as absent, as `formatRoute` and `describeRoute` already do.
+`routeToSpec` and `canonicalModifiers` treat a parsed route's modifier set to `undefined` as absent, as `formatRoute` does.
 
 <!-- entry: fix -->
