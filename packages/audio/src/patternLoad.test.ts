@@ -105,4 +105,8 @@ describe('patternVoicePeaks on a step the player refuses', () => {
     expect(peaks.constructor).toBeUndefined();
     expect(peaks.toString).toBeUndefined();
   });
+
+  it('refuses a patternLength steps per beat that is not a whole number, 1 or more', () => {
+    for (const n of [0, 2.5, -4, Number.NaN]) expect(() => patternLength([{ step: 3, pitch: 220 }], n)).toThrow(RangeError);
+  });
 });

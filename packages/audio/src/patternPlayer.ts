@@ -84,8 +84,10 @@ export const checkSteps = (what: string, n: number): void => {
 };
 
 /** Steps in one pass of `events` when no length is given: through the last
- *  event, rounded up to a whole beat. */
+ *  event, rounded up to a whole beat. Throws a `RangeError` unless `stepsPerBeat`
+ *  is a whole number, 1 or more. */
 export function patternLength(events: readonly PatternEvent[], stepsPerBeat = 4): number {
+  checkSteps('steps per beat', stepsPerBeat);
   checkEventSteps(events);
   let last = -1;
   for (const e of events) last = Math.max(last, Math.floor(e.step));
