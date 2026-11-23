@@ -196,6 +196,25 @@ describe('DataGrid row hooks', () => {
     expect(onRowClick).not.toHaveBeenCalled();
   });
 
+  it('ignores clicks on a control known only by its ARIA role or tabindex', () => {
+    const onRowClick = vi.fn();
+    const columns = [{
+      id: 'name', header: 'Name',
+      render: (r: Row) => (
+        <>
+          <span role="switch" aria-checked="false" aria-label={`${r.name} on`} />
+          <span tabIndex={0} aria-label={`${r.name} widget`} />
+        </>
+      ),
+    }];
+    const { container } = render(<DataGrid<Row> rows={ROWS} columns={columns} onRowClick={onRowClick} />);
+    fireEvent.click(screen.getByRole('switch', { name: 'Alpha on' }));
+    fireEvent.click(screen.getByLabelText('Alpha widget'));
+    expect(onRowClick).not.toHaveBeenCalled();
+    fireEvent.click(container.querySelector('tbody td')!);
+    expect(onRowClick).toHaveBeenCalledTimes(1);
+  });
+
   it('leaves rows unfocusable without onRowClick', () => {
     const { container } = render(<DataGrid<Row> rows={ROWS} columns={COLUMNS} />);
     expect(container.querySelector('tbody tr')).not.toHaveAttribute('tabindex');

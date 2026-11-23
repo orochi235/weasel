@@ -57,7 +57,8 @@ export interface DataGridProps<Row extends { id: string }> extends HoldProps {
   /**
    * Activate a row. Makes each row focusable: a click anywhere in it, or
    * Enter/Space while it has focus, calls this. Clicks and keys landing on a
-   * control inside a cell (button, link, input, …) are left to that control.
+   * control inside a cell (a native control, an element with a widget role such
+   * as `switch` or `checkbox`, or one with a `tabindex`) are left to that control.
    */
   onRowClick?: (row: Row) => void;
   /**
