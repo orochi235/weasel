@@ -246,3 +246,39 @@ describe('useTextEdit — abandoned renders', () => {
     expect(h.commits).toEqual([{ id: 'a', text: 'hi!' }]);
   });
 });
+
+describe('useTextEdit — ending an edit and restarting it in one dispatch', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  it('opens a fresh overlay after a commit, so what is typed next is committed', () => {
+    const h = makeHarness({ a: 'ab' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    appendChar(getOverlay(h.container)!, 'c');
+    act(() => {
+      result.current.commitEdit();
+      result.current.startEdit('a');
+    });
+    expect(h.texts.a).toBe('abc');
+    const el = getOverlay(h.container)!;
+    expect(el.textContent).toBe('abc');
+    appendChar(el, 'd');
+    act(() => result.current.commitEdit());
+    expect(h.texts.a).toBe('abcd');
+  });
+
+  it('opens a fresh overlay from the node after a cancel, dropping the canceled text', () => {
+    const h = makeHarness({ a: 'ab' });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    appendChar(getOverlay(h.container)!, 'x');
+    act(() => {
+      result.current.cancelEdit();
+      result.current.startEdit('a');
+    });
+    expect(getOverlay(h.container)!.textContent).toBe('ab');
+    expect(result.current.editingId).toBe('a');
+  });
+});
