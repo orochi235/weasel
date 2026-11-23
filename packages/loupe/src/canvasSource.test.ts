@@ -223,6 +223,16 @@ describe('createCanvasSource', () => {
     expect([...s.pixel({ x: 10, y: 10 })!]).toEqual([10, 20, 30, 255]);
   });
 
+  it('answers null for a pixel it is not allowed to read, as from a tainted canvas', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const s = createCanvasSource(canvas());
+    s.pixel({ x: 1, y: 1 });
+    made[0]!.ctx.getImageData = () => { throw new DOMException('tainted', 'SecurityError'); };
+    expect(s.pixel({ x: 1, y: 1 })).toBeNull();
+    expect(s.pixel({ x: 1, y: 1 })).toBeNull();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('makes one probe canvas, even when it gets no context', () => {
     vi.spyOn(FakeOffscreen.prototype, 'getContext').mockReturnValue(null as unknown as FakeCtx);
     const s = createCanvasSource(canvas());

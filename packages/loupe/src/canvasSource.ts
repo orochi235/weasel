@@ -62,7 +62,7 @@ export interface CanvasSource {
    *  which includes whenever no reader holds it. */
   frame(): CanvasImageSource | null;
   /** RGBA of the backing-store pixel at `p` (device px, not CSS px), or
-   *  `null` off the canvas or while there is no frame. Read it through
+   *  `null` off the canvas, while there is no frame, or from a canvas tainted by another origin's image. Read it through
    *  {@link canvasPixelSource} to sample it at a surface point. */
   pixel(p: LoupePoint): Uint8ClampedArray | null;
   /** Start reading. While any reader holds the source, `capture` copies;
@@ -100,6 +100,32 @@ function context2d(canvas: SourceCanvas, willReadFrequently = false): Ctx2D | nu
   return canvas.getContext('2d', { willReadFrequently }) as Ctx2D | null;
 }
 
+/** Reads one pixel of a frame through a 1×1 canvas made on first use: `null` where there is no 2D context to read
+ *  through, or the frame is tainted by another origin's image. */
+function createProbe(): (frame: SourceCanvas, x: number, y: number) => Uint8ClampedArray | null {
+  let ctx: Ctx2D | null | undefined;
+  let taintWarned = false;
+  return (frame, x, y) => {
+    if (ctx === undefined) ctx = context2d(makeCanvas(1, 1), true);
+    if (!ctx) return null;
+    ctx.globalCompositeOperation = 'copy';
+    ctx.drawImage(frame, x, y, 1, 1, 0, 0, 1, 1);
+    try {
+      return ctx.getImageData(0, 0, 1, 1).data;
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'SecurityError')) throw e;
+      if (!taintWarned) {
+        taintWarned = true;
+        console.warn(
+          '[weasel loupe] A canvas source cannot read its canvas: it holds an image drawn from another origin ' +
+            'without CORS. Its pixels answer null.',
+        );
+      }
+      return null;
+    }
+  };
+}
+
 /**
  * Make a {@link CanvasSource} for a canvas, or for a context on one.
  *
@@ -125,7 +151,7 @@ export function createCanvasSource(
   let missedSince: number | null = null;
   let warned = false;
   let unheldWarned = false;
-  let probe: Ctx2D | null | undefined;
+  const probe = createProbe();
   const frames = createEmitter();
 
   const source: CanvasSource = {
@@ -196,11 +222,7 @@ export function createCanvasSource(
       const y = Math.floor(p.y);
       // The frame's own size: a capture taken before the canvas was resized is smaller or larger than it.
       if (!(x >= 0 && y >= 0 && x < frame.width && y < frame.height)) return null;
-      if (probe === undefined) probe = context2d(makeCanvas(1, 1), true);
-      if (!probe) return null;
-      probe.globalCompositeOperation = 'copy';
-      probe.drawImage(frame, x, y, 1, 1, 0, 0, 1, 1);
-      return probe.getImageData(0, 0, 1, 1).data;
+      return probe(frame, x, y);
     },
 
     retain() {
