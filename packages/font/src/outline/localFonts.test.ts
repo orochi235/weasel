@@ -82,6 +82,12 @@ describe('enableLocalFontOutlines', () => {
     expect(outlineCssSource('Odd', 400, 'normal')).toMatchObject({ src: 'local("Odd\\a Name\u0001\\"")' });
   });
 
+  it('hands DOM text the bytes of a face with no PostScript name, which local() cannot name', async () => {
+    vi.stubGlobal('queryLocalFonts', vi.fn(async () => [{ ...fontData('Odd', 'Regular'), postscriptName: '' }]));
+    await enableLocalFontOutlines();
+    expect(outlineCssSource('Odd', 400, 'normal')).toHaveProperty('bytes');
+  });
+
   it('registers a face per variant, without reading any blob', async () => {
     const georgia = fontData('Georgia', 'Regular');
     const blob = vi.spyOn(georgia, 'blob');

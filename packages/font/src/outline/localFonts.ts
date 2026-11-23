@@ -188,7 +188,7 @@ export async function enableLocalFontOutlines(
       parser: createOpenTypeParser(font.postscriptName),
       // The DOM already has every installed face; naming it avoids reading
       // the collection file a second time.
-      cssSrc: `local(${cssString(font.postscriptName)})`,
+      cssSrc: font.postscriptName ? `local(${cssString(font.postscriptName)})` : undefined,
     });
     registeredHere.add(outlineCssSource(font.family, variant.weight, variant.style)!.registration);
     families.add(font.family);
