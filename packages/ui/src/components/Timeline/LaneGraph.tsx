@@ -50,7 +50,8 @@ function valueRange(keys: readonly Keyframe<number>[]): [number, number] {
   const hi = maxOf(values);
   const span = hi - lo || 1;
   const pad = (span * V_INSET_PCT) / (100 - 2 * V_INSET_PCT);
-  return [lo - pad, lo + span + pad];
+  const mid = (lo + hi) / 2;
+  return [mid - span / 2 - pad, mid + span / 2 + pad];
 }
 
 /** A refused arrow step never reaches the layer, which would move the selection and focus to the key's new index. */

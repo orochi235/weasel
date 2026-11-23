@@ -304,6 +304,12 @@ describe('Lane in graph mode', () => {
     expect(second.y).toBeCloseTo(1.6);
   });
 
+  it('draws a flat track\'s keys across the middle of the lane', () => {
+    const flat = { ...sampled, keys: [{ t: 0, value: 5 }, { t: 500, value: 5 }] } as Track;
+    render(<Lane {...base} mode="graph" row={laneOf(flat)} />);
+    expect([...graphKeys()].map((k) => centerOf(k).y)).toEqual([10, 10]);
+  });
+
   it('selects a key on pointerdown', () => {
     const onSelectionChange = vi.fn();
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} onSelectionChange={onSelectionChange} />);
