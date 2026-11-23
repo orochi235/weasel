@@ -54,10 +54,12 @@ describe('a trial with nothing to mount', () => {
     expect(closeTrial).not.toHaveBeenCalled();
   });
 
-  it('closes a trial whose record is gone', async () => {
+  it('offers no working Close for a trial whose record is gone, since the lab holds nothing to close', async () => {
     const closeTrial = vi.fn();
     await renderTrial('missing', closeTrial);
-    fireEvent.click(screen.getByRole('button', { name: 'Close trial' }));
-    expect(closeTrial).toHaveBeenCalledWith('missing');
+    const close = screen.getByRole('button', { name: 'Close trial' });
+    expect(close.getAttribute('aria-disabled')).toBe('true');
+    fireEvent.click(close);
+    expect(closeTrial).not.toHaveBeenCalled();
   });
 });

@@ -1,4 +1,5 @@
 import { ownAt } from '../config/path';
+import { withoutUndo } from '../trial/trialOps';
 import { newId } from './helpers';
 import type { InstrumentHooks, SavedSnapshot, TrialRecord } from './types';
 
@@ -35,8 +36,7 @@ export function loadedFrom(
     ? reg.deserialize(snapshot.state, snapshot.config)
     : snapshot.state;
   // A loaded trial starts a fresh undo history, as a reset or cloned one does.
-  const { history: _history, undo: _undo, ...kept } = trial;
-  const loaded: TrialRecord = { ...kept, state, config: snapshot.config };
+  const loaded: TrialRecord = { ...withoutUndo(trial), state, config: snapshot.config };
   if (snapshot.clock) loaded.clock = { ...snapshot.clock };
   if (snapshot.auto === undefined) return loaded;
   delete loaded.auto;

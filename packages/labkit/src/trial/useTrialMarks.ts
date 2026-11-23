@@ -2,6 +2,7 @@ import { useLatest } from '@weasel-js/core';
 import { createEmitter, deepEqual } from '@weasel-js/registry';
 import { onLeave } from '@weasel-js/storage';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { withoutMarkHistory } from '../annotations/history';
 import { useRegisterTrialMarks } from '../annotations/labMarkStores';
 import { loadAnnotations } from '../annotations/store';
 import type {
@@ -9,12 +10,15 @@ import type {
   AnnotationsCapability,
   AnnotationTargetInfo,
 } from '../annotations/types';
+import { onTrialRestart } from '../state/trialRestarts';
 import type { TrialRecord } from '../state/types';
 
 type MarkStore = ReturnType<typeof loadAnnotations>;
 
 /** What `useTrialMarks` takes. */
 export interface TrialMarksOptions {
+  /** The lab store, whose restarts of this trial start its mark history afresh. */
+  lab: object;
   record: TrialRecord;
   /** The trial's resolved config, which `targets` and an export read. */
   config: unknown;
@@ -43,6 +47,7 @@ const sameMarks = (a: unknown, b: unknown): boolean => deepEqual(a, b, { undefin
  * tab's write, which this tab's next save would otherwise erase.
  */
 export function useTrialMarks({
+  lab,
   record,
   config,
   capability: annotationsCap,
@@ -115,10 +120,23 @@ export function useTrialMarks({
     [annotations],
   );
 
-  useSavedMarks(annotations, annotationsCap, (doc) => {
+  const keep = (doc: unknown): void => {
     saved.current = doc;
     save(record.id, doc);
+  };
+  useSavedMarks(annotations, annotationsCap, keep);
+
+  // Rebuilt from the live marks, not the record's, which can lag them by the save debounce.
+  const restart = useLatest((): void => {
+    const doc = withoutMarkHistory(annotations.toJSON());
+    if (annotationsCap?.storage) annotationsCap.storage.save(doc as never);
+    else keep(doc);
+    setHeld({ store: build(doc), from: ownsStorage ? record.annotations : doc });
   });
+  useEffect(
+    () => onTrialRestart(lab, record.id, () => restart.current()),
+    [lab, record.id, restart],
+  );
 
   // Only when the pair flips, which is rare: bumping React state on every
   // scene notification would re-render the trial on every frame of a drag,

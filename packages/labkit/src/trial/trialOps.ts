@@ -112,16 +112,22 @@ export function addTrial(
   return [...trials, record];
 }
 
+/** `record` with an empty undo history: neither its own steps nor its marks' are kept. */
+export function withoutUndo(record: TrialRecord): TrialRecord {
+  const { history: _history, undo: _undo, annotations, ...rest } = record;
+  return annotations === undefined
+    ? rest
+    : { ...rest, annotations: withoutMarkHistory(annotations) };
+}
+
 /** Insert a deep copy of a trial directly after it. The copy starts with
  *  an empty undo history — the original's is not shared. */
 export function cloneTrial(trials: TrialRecord[], id: string): TrialRecord[] {
   const sourceIdx = trials.findIndex((w) => w.id === id);
   const source = trials[sourceIdx];
   if (!source) return trials;
-  const { history: _history, undo: _undo, annotations, ...rest } = source;
   const clone: TrialRecord = {
-    ...rest,
-    ...(annotations !== undefined ? { annotations: withoutMarkHistory(annotations) } : {}),
+    ...withoutUndo(source),
     id: newId(),
     config: structuredClone(source.config),
     state: structuredClone(source.state),
@@ -157,7 +163,7 @@ export function resetTrial(
     current.configSeed as Record<string, unknown> | undefined,
     current.autoSeed,
   );
-  const { auto: _unpinnedNow, history: _history, undo: _undo, ...kept } = current;
+  const { auto: _unpinnedNow, ...kept } = withoutUndo(current);
   const reset: TrialRecord = {
     ...kept,
     config,

@@ -39,6 +39,7 @@ export function useTrialEdits({
   const updateTrialAnnotations = useStore(store, (s) => s.updateTrialAnnotations);
   const mounted = useMountedHistory();
   const { annotations, provided, moves } = useTrialMarks({
+    lab: store,
     record,
     config,
     capability: instrument.annotations,
