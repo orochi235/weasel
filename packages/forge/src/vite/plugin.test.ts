@@ -8,6 +8,7 @@ import { build, createLogger, createServer, type HotPayload, type InlineConfig, 
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { IndexEntry } from '../story/types';
 import { forge } from './plugin';
+import { watchProbe } from './watchProbe';
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
@@ -234,6 +235,15 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect(errors.join('\n')).toContain(join(dir, 'bad.stories.tsx'));
     writeFileSync(join(dir, 'bad.stories.tsx'), story('ui/Bad', 'Fixed'));
     await expect.poll(async () => indexOf(s), FOLLOWS).toContain('ui-bad--fixed');
+  });
+
+  it('leaves the watch probe to a watchProbe plugin beside it', async () => {
+    const probe = vi.fn(async () => true);
+    await start(
+      { 'a.stories.tsx': story('ui/A', 'First') },
+      { plugins: [forge({ stories: ['*.stories.tsx'] }), watchProbe({ probe })], server: { middlewareMode: true, watch: {} } },
+    );
+    await vi.waitFor(() => expect(probe).toHaveBeenCalledTimes(1));
   });
 
   it('warns once when two story files declare one story id', async () => {

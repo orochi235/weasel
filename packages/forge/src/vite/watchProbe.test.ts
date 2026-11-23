@@ -111,6 +111,14 @@ describe('warnWhenWatchIsSilent', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('probes a server once however many times it is asked', async () => {
+    const { server, warn } = serverWith(undefined);
+    const probe = vi.fn(async () => false);
+    await Promise.all([warnWhenWatchIsSilent(server, probe), warnWhenWatchIsSilent(server, probe)]);
+    expect(probe).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('does not probe a server that polls or does not watch', async () => {
     const probe = vi.fn(async () => false);
     for (const watch of [null, { usePolling: true }]) {

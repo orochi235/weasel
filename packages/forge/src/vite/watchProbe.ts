@@ -93,10 +93,16 @@ const RECOVERING =
   'once the watcher is quiet, each logged as it is served. ' +
   FSEVENTSD;
 
-/** Logs a warning when a dev server that relies on file events is getting none. */
+/** The plugin's name; forge leaves the probe to it when a server has one. */
+export const WATCH_PROBE = 'weasel-watch-probe';
+
+const probed = new WeakSet<ViteDevServer>();
+
+/** Logs a warning when a dev server that relies on file events is getting none. Probes each server once. */
 export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => Promise<boolean> = fileEventsArrive): Promise<void> {
   const { watch } = server.config.server;
-  if (watch === null || watch?.usePolling) return;
+  if (watch === null || watch?.usePolling || probed.has(server)) return;
+  probed.add(server);
   let arrived: boolean;
   try {
     arrived = await probe();
@@ -122,7 +128,7 @@ export interface WatchProbeOptions {
 /** A plugin giving any dev server the warning forge's own gives when the OS reports no file changes. */
 export function watchProbe({ probe }: WatchProbeOptions = {}): Plugin {
   return {
-    name: 'weasel-watch-probe',
+    name: WATCH_PROBE,
     apply: 'serve',
     configureServer(server) {
       void warnWhenWatchIsSilent(server, probe);
