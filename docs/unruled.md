@@ -650,8 +650,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   `verticalAlign` is `center`, since the half-leading moves that line within a top- or bottom-aligned box.
 - 2026-11-20 (my call, audit round 53): under `autoLength`, the `.lbx` writer rasterizes a shape or text box
   reaching past either end of the label, so it is cropped there as rasterized paint is, rather than let P-touch
-  grow the label for it. An `lbxObjectsCommand` past the end is still written whole, since it cannot be
-  rasterized; whether it should be skipped instead is unasked. A carried object under a transform that scales an
+  grow the label for it. An `lbxObjectsCommand` reaching past either end cannot be rasterized, so it is skipped
+  with a reason instead (audit round 76; it was written whole before, letting the label grow). A carried object under a transform that scales an
   axis to zero is dropped with no report, as paint there draws nothing.
 - 2026-11-22 (my call, audit round 69): the `.lbx` writer rasterizes a text box any of whose runs names a `lang`,
   even one whose forms match the face's defaults, since a `text:text` names no language and the writer cannot tell
