@@ -11,7 +11,7 @@ import { alongTrack } from '../../alongTrack';
 import { useFieldLocale } from '../../useFieldLocale';
 import { millisecondsText, secondsText } from '../Transport/timeText';
 
-/** One wheel notch's zoom factor. */
+/** Zoom per pixel of wheel travel, as an exponent: the window scales by `exp(px * ZOOM_STEP)`. */
 const ZOOM_STEP = 0.0015;
 
 /** Props for {@link TimeRuler}. */
