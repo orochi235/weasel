@@ -13,6 +13,7 @@ vi.mock('./router', async (original) => {
   };
 });
 
+import type { NodeId } from '@weasel-js/core';
 import type { DiagramEdge } from '../edgeTrait';
 import { diagramScene, edgeIdOf, type DiagramData, type DiagramSpec } from '../fromData';
 import { createSpecRouter } from './specRoutes';
@@ -124,6 +125,16 @@ describe('createSpecRouter', () => {
     const [first] = route;
     expect(first!.x).toBeGreaterThanOrEqual(110);
     expect(first!.y).toBeGreaterThanOrEqual(130);
+  });
+
+  it('leaves alone an edge depending on more than its two ends, as the scene router does', () => {
+    seen.length = 0;
+    const built = diagramScene(DATA, { layout: 'none' });
+    const specs = built.map((s) => (s.id === AB ? { ...s, dependsOn: [...(s.dependsOn as NodeId[]), 'c' as NodeId] } : s));
+    createSpecRouter()(specs);
+    const ids = seen.flatMap((i) => i.edges.map((e) => e.id));
+    expect(ids).not.toContain(AB);
+    expect(ids).toContain(CD);
   });
 
   it('leaves specs without edges as they are', () => {

@@ -48,6 +48,18 @@ export class SegmentIndex {
     for (const s of this.hash.query(box)) if (touches(s, box)) into.add(s.edge);
   }
 
+  /** The connectors with a segment on the line through the axis-aligned
+   *  segment `a`–`b` that overlaps it over some length. */
+  edgesAlong(a: Vec2, b: Vec2, into: Set<string>): void {
+    const horizontal = Math.abs(a.y - b.y) <= EPS;
+    const [c, lo, hi] = horizontal ? [a.y, Math.min(a.x, b.x), Math.max(a.x, b.x)] : [a.x, Math.min(a.y, b.y), Math.max(a.y, b.y)];
+    for (const s of this.hash.query({ x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: Math.abs(b.x - a.x), height: Math.abs(b.y - a.y) })) {
+      const [s0, s1, t0, t1] = horizontal ? [s.y0, s.y1, s.x0, s.x1] : [s.x0, s.x1, s.y0, s.y1];
+      if (Math.abs(s0 - c) > EPS || Math.abs(s1 - c) > EPS) continue;
+      if (Math.min(hi, Math.max(t0, t1)) - Math.max(lo, Math.min(t0, t1)) > EPS) into.add(s.edge);
+    }
+  }
+
   /** How many segments of connectors other than `self` the axis-aligned step
    *  from `(x0, y0)` to `(x1, y1)` crosses at right angles. A run the step
    *  meets at its lower end counts and one at its upper end does not, so two

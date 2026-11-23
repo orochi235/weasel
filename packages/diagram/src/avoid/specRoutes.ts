@@ -13,13 +13,9 @@ import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf } from '../ports';
 import { diagramNodeOf } from '../trait';
 import { specWorldPoses } from '../specWorld';
-import type { Port } from '../types';
 import { createAvoidRouter } from './router';
-import { headerIdOf } from './sceneInput';
-import type { AvoidEdge, AvoidLabel, AvoidObstacle, AvoidOptions, AvoidPort } from './types';
-
-const facing = (ports: readonly Port[]): AvoidPort[] =>
-  ports.flatMap((p) => (p.normal === null ? [] : [{ point: p.point, normal: p.normal }]));
+import { facingPorts, headerIdOf } from './sceneInput';
+import type { AvoidEdge, AvoidLabel, AvoidObstacle, AvoidOptions } from './types';
 
 /** The obstacles specs make, as `avoidSceneInput` reads a scene: a shape's box; a
  *  container's, pool's or cluster's box as a region holding what is inside it, and a
@@ -106,15 +102,16 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
         }
         continue;
       }
-      const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
-      const [a, b] = ends;
+      const ends = spec.dependsOn;
+      if (!Array.isArray(ends) || ends.length !== 2) continue;
+      const [a, b] = ends.map((id) => byId.get(id as string));
       if (a === undefined || b === undefined) continue;
       // A self-loop is routed only between two named ports, as `avoidSceneInput` routes one.
       if (a === b && (edge.from.port === undefined || edge.to.port === undefined)) continue;
       const portsAt = (s: DiagramSpec, port: string | undefined) => {
         const n = { id: s.id as string, kind: s.kind, data: s.data };
         const pose = world.get(n.id) ?? (s.pose as RectPose);
-        return facing(port === undefined ? portsOf(n, pose) : portSitesOf(n, pose, port));
+        return facingPorts(port === undefined ? portsOf(n, pose) : portSitesOf(n, pose, port));
       };
       const from = portsAt(a, edge.from.port);
       const to = portsAt(b, edge.to.port);

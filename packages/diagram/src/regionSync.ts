@@ -6,7 +6,7 @@ import { worldWith } from './worldWith';
 import type { RectPose, AnyScene } from '@weasel-js/core';
 import { lanesOf, poolAxisOf } from './containers/containerStencils';
 import { diagramContainerOf } from './containers/trait';
-import type { Rect } from '@weasel-js/geom';
+import { rectsEqual, type Rect } from '@weasel-js/geom';
 
 /**
  * A region edit, which `DiagramView` reports and does not keep: `box`, a
@@ -57,7 +57,6 @@ export function readRegions(scene: AnyScene): RegionStanding {
   return { regions, pools };
 }
 
-const sameBox = (a: Rect, b: Rect) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 const sameLanes = (a: readonly { id: string; size: number }[], b: readonly { id: string; size: number }[]) =>
   a.length === b.length && a.every((l, i) => l.id === b[i]!.id && l.size === b[i]!.size);
 
@@ -71,7 +70,7 @@ export function regionChanges(was: RegionStanding, now: RegionStanding): Contain
   const changed = new Set<string>();
   for (const [id, at] of now.regions) {
     const before = was.regions.get(id);
-    if (before !== undefined && (!sameBox(before.box, at.box) || before.parent !== at.parent)) changed.add(id);
+    if (before !== undefined && (!rectsEqual(before.box, at.box) || before.parent !== at.parent)) changed.add(id);
   }
   const carried = (id: string): boolean => {
     for (let p = now.regions.get(id)?.parent ?? null; p !== null; p = now.regions.get(p)?.parent ?? null) {

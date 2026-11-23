@@ -34,4 +34,14 @@ describe('SpatialHash', () => {
     hash.insert('b', { x: 5e8, y: 5e8, width: 5, height: 5 });
     expect(hash.query({ x: -1e9, y: -1e9, width: 1e9 + 10, height: 1e9 + 10 })).toEqual(['a']);
   });
+
+  it('keeps no cell an item was taken out of and nothing else holds', () => {
+    const hash = new SpatialHash<string>(10);
+    hash.insert('a', { x: 0, y: 0, width: 5, height: 5 });
+    for (let x = 0; x < 1000; x += 10) {
+      hash.remove('a', { x: x, y: 0, width: 5, height: 5 });
+      hash.insert('a', { x: x + 10, y: 0, width: 5, height: 5 });
+    }
+    expect((hash as unknown as { cells: Map<number, unknown> }).cells.size).toBe(1);
+  });
 });

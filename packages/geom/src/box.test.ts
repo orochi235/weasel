@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   boundsOfCoords, unionBox, boxContainsPoint, boxContainsBox, boxesIntersect, rectToContour,
-  rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, growRect, unionRects, type Box,
+  rectsEqual, rectsOverlap, rectsIntersect, rectContainsPoint, rectContainsPointHalfOpen, rectBetween, growRect, unionRects, type Box,
 } from './box';
 
 describe('box', () => {
@@ -94,6 +94,14 @@ describe('growRect', () => {
   });
   it('shrinks for a negative amount', () => {
     expect(growRect({ x: 10, y: 20, width: 30, height: 40 }, -5)).toEqual({ x: 15, y: 25, width: 20, height: 30 });
+  });
+});
+
+describe('rectsEqual', () => {
+  it('answers whether every coordinate matches', () => {
+    const r = { x: 1, y: 2, width: 3, height: 4 };
+    expect(rectsEqual(r, { ...r })).toBe(true);
+    expect(rectsEqual(r, { ...r, height: 5 })).toBe(false);
   });
 });
 
