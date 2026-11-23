@@ -17,7 +17,7 @@ export function popupStatus(tab: TabWeasel | null, mac: boolean): PopupStatus {
   const canvases = `${tab.roots} ${tab.roots === 1 ? 'canvas' : 'canvases'}`;
   const frames = tab.frames > 1 ? ` in ${tab.frames} frames` : '';
   return {
-    title: tab.kitVersion ? `weasel ${tab.kitVersion}` : 'weasel',
+    title: tab.kitVersions.length ? `weasel ${tab.kitVersions.join(', ')}` : 'weasel',
     lines: [
       `${canvases}${frames} on this page.`,
       `Open DevTools (${mac ? '⌥⌘I' : 'Ctrl+Shift+I'}) and pick the weasel tab.`,

@@ -7,7 +7,10 @@ export interface FrameWeasel {
   roots: number;
 }
 
-export interface TabWeasel extends FrameWeasel {
+export interface TabWeasel {
+  /** Each version the tab's frames report, once, in frame order; a frame that reports none adds nothing. */
+  kitVersions: string[];
+  roots: number;
   /** Frames with a hook. */
   frames: number;
 }
@@ -38,7 +41,7 @@ export function summarize(frames: readonly unknown[]): TabWeasel | null {
     typeof f === 'object' && f !== null && 'roots' in f && Number.isInteger(f.roots) && (f.roots as number) >= 0);
   if (found.length === 0) return null;
   return {
-    kitVersion: found[0]!.kitVersion,
+    kitVersions: [...new Set(found.map((f) => f.kitVersion).filter(Boolean))],
     roots: found.reduce((n, f) => n + f.roots, 0),
     frames: found.length,
   };
