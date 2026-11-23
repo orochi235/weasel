@@ -560,6 +560,34 @@ describe('Timeline', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('drops a selection on a row it folds away, and edits no key on a row not drawn', () => {
+    const onSelectionChange = vi.fn();
+    const renderKeyEditor = () => <span data-testid="key-editor" />;
+    const { rerender } = renderWithIcons(
+      <Timeline {...base} tracks={nestedTracks()} onSelectionChange={onSelectionChange} renderKeyEditor={renderKeyEditor} />,
+    );
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 0, clientY: 10 });
+    expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByTestId('key-editor')).not.toBeInTheDocument();
+    rerender(<Timeline {...base} tracks={nestedTracks()} selection={{ trackPath: [0, 0], keyIndex: 0 }} renderKeyEditor={renderKeyEditor} />);
+    expect(screen.queryByTestId('key-editor')).not.toBeInTheDocument();
+  });
+
+  it('drops a segment selection on a row it folds away', () => {
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} />);
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
+    expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+  });
+
   it('deletes nothing for Delete on a selected key the tracks no longer hold', () => {
     const onChange = vi.fn();
     const three = [
