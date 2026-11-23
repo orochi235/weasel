@@ -40,6 +40,7 @@ export function indexFile(
 
 /** An import that a story file's default export or a named export is a call to. */
 export interface ForeignCallee {
+  /** The callee as written: the import's local, or `ns.name` for a member of a namespace import. */
   local: string;
   spec: string;
   imported: string;
@@ -53,10 +54,12 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
   const program = parseFile(code, file);
   const { bindings } = scan(program, new Map());
   const imported = new Map<string, ForeignCallee>();
+  const namespaces = new Map<string, string>();
   const exported: (t.Node | null | undefined)[] = [];
   for (const stmt of program.body) {
     if (stmt.type === 'ImportDeclaration' && stmt.importKind !== 'type' && stmt.source.value !== '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
+        if (spec.type === 'ImportNamespaceSpecifier') namespaces.set(spec.local.name, stmt.source.value);
         if (spec.type === 'ImportNamespaceSpecifier' || (spec.type === 'ImportSpecifier' && spec.importKind === 'type')) continue;
         const name = spec.type === 'ImportDefaultSpecifier' ? 'default' : exportedName(spec.imported);
         imported.set(spec.local.name, { local: spec.local.name, spec: stmt.source.value, imported: name });
@@ -70,13 +73,16 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
   }
   const found = new Map<string, ForeignCallee>();
   for (const node of exported) {
-    const hit = imported.get(calleeOf(node ?? undefined, bindings) ?? '');
+    const callee = calleeOf(node ?? undefined, bindings) ?? '';
+    const [ns = '', member] = callee.split('.');
+    const from = member === undefined ? undefined : namespaces.get(ns);
+    const hit = from === undefined ? imported.get(callee) : { local: callee, spec: from, imported: member as string };
     if (hit) found.set(hit.local, hit);
   }
   return [...found.values()];
 }
 
-/** The program's top-level bindings, its locals that are forge's `meta` or `story`, and every name it imports. */
+/** The program's top-level bindings, its callees that are forge's `meta` or `story`, and every name it imports. */
 export function scan(program: t.Program, extra: Wrappers): { bindings: Bindings; wrappers: Map<string, 'meta' | 'story'>; imports: Set<string> } {
   const wrappers = new Map(extra);
   const imports = new Set<string>();
@@ -84,6 +90,10 @@ export function scan(program: t.Program, extra: Wrappers): { bindings: Bindings;
     if (stmt.type === 'ImportDeclaration') for (const spec of stmt.specifiers) imports.add(spec.local.name);
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
+        if (spec.type === 'ImportNamespaceSpecifier') {
+          wrappers.set(`${spec.local.name}.meta`, 'meta');
+          wrappers.set(`${spec.local.name}.story`, 'story');
+        }
         const name = spec.type === 'ImportSpecifier' ? exportedName(spec.imported) : undefined;
         if (name === 'meta' || name === 'story') wrappers.set(spec.local.name, name);
       }

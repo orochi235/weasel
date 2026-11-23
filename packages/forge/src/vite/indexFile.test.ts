@@ -6,6 +6,18 @@ const FILE = '/repo/packages/ui/src/Slider.stories.tsx';
 const ids = (code: string, file = FILE) => indexFile(code, file, 'ui/Auto').map((e) => [e.id, e.name]);
 
 describe('indexFile', () => {
+  it('reads a file importing forge as a namespace as native', () => {
+    const code = `
+import * as forge from '@weasel-js/forge';
+export default forge.meta({ title: 'ui/Slider' });
+export const helper = 3;
+export const A = forge.story({ name: 'Named', viewport: { width: 400, height: 300 }, render: () => null });
+`;
+    expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
+      { id: 'ui-slider--a', title: 'ui/Slider', name: 'Named', exportName: 'A', file: FILE, viewport: { width: 400, height: 300 } },
+    ]);
+  });
+
   it('indexes a native meta and its stories', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';
@@ -592,6 +604,14 @@ export const Plain = {};
     expect(foreignCallees(code, FILE)).toEqual([
       { local: 'defineMeta', spec: './forge-helpers', imported: 'meta' },
       { local: 'story', spec: './forge-helpers', imported: 'story' },
+    ]);
+  });
+
+  it('names a namespace import of a helper module by the member called', () => {
+    const ns = `import * as kit from './kit';\nexport default kit.meta({ title: 'ui/X' });\nexport const A = kit.story({});\n`;
+    expect(foreignCallees(ns, FILE)).toEqual([
+      { local: 'kit.meta', spec: './kit', imported: 'meta' },
+      { local: 'kit.story', spec: './kit', imported: 'story' },
     ]);
   });
 
