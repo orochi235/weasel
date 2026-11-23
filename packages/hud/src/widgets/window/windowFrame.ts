@@ -115,7 +115,7 @@ export function drawWindowFrame(
     const dash = dashForStrokeStyle(style, ringW);
     const ring: PathDrawCommand = {
       kind: 'path',
-      path: shape.round ? ellipsePath(insetBox(bounds, ringW / 2)) : { kind: 'rect', x, y, width: w, height: h },
+      path: shape.round ? ellipsePath(insetBox(bounds, ringW / 2)) : { kind: 'rect', ...insetBox(bounds, ringW / 2) },
       stroke: { paint: { kind: 'solid', color: look['border-color'] }, width: ringW, ...(dash ? { dash } : {}) },
     };
     out.push(ring);

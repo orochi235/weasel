@@ -3866,3 +3866,10 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a live audio level given as text, as a param with no `control` reads, plays as the
   number the text spells, and text that spells none (`"440 Hz"`, `"loud"`) fails the stage, naming the level. It had
   played at the stage type's default. Reading a leading number past a unit was the alternative.
+
+## Audit round seventy-three (2026-11-22): hud widgets
+
+- 2026-11-22 (the fixer's call): a HUD list's `setBounds` takes `height` as optional. A height given fixes the
+  list's height, as `height` does at creation, so it clips and scrolls; one left out has it follow its rows, so
+  `setBounds({ ...list.bounds, x })` now fixes the height it had. Ignoring `setBounds`'s height on a list made
+  without one, as before, was the alternative.

@@ -96,6 +96,13 @@ describe('window widget', () => {
       }
     });
 
+    it('strokes the ring inside the bounds, as a DOM border sits', () => {
+      const r = ring(createWindow(opts).draw(ctx)) as unknown as { path: Record<string, number>; stroke: { width: number } };
+      const half = r.stroke.width / 2;
+      expect(half).toBeGreaterThan(0);
+      expect(r.path).toMatchObject({ x: 100 + half, y: 100 + half, width: 200 - r.stroke.width, height: 150 - r.stroke.width });
+    });
+
     it('drops the ring where a stance sets no border width, and dashes it where it says dashed', () => {
       expect(ring(createWindow({ ...opts, stance: 'clarify' }).draw(ctx))).toBeUndefined();
       expect(ring(createWindow({ ...opts, stance: 'debug' }).draw(ctx))?.stroke.dash?.length).toBeGreaterThan(0);
@@ -370,6 +377,15 @@ describe('window widget stays on the host', () => {
     const win = createWindow(opts);
     win.setBounds({ x: 5000, y: 5000, width: 200, height: 150 });
     expect(win.bounds.x).toBe(5000);
+  });
+
+  it('leaves position alone after a draw at no area, then holds it at the first size with area', () => {
+    const win = createWindow(opts);
+    win.draw({ ...ctx, dims: { width: 0, height: 0 } });
+    win.setBounds({ x: 300, y: 200, width: 200, height: 150 });
+    expect(win.bounds.x).toBe(300);
+    win.draw(ctx);
+    expect(win.bounds).toEqual({ x: 300, y: 200, width: 200, height: 150 });
   });
 
   it('does not fight a resize drag that crosses the host edge', () => {

@@ -123,10 +123,10 @@ function modelOf(c: Config) {
         s.b = clamp(s, sized(cmd.b)); s.drag = null; s.press = null;
         return true;
       case 'draw': {
+        if (!(cmd.width > 0 && cmd.height > 0)) return false;
         const was = s.dims;
         s.dims = { width: cmd.width, height: cmd.height };
         if (was && was.width === cmd.width && was.height === cmd.height) return false;
-        if (!(cmd.width > 0 && cmd.height > 0)) return false;
         const held = clamp(s, s.b);
         if (same(held, s.b)) return false;
         s.b = held;

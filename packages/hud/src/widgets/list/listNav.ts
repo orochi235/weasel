@@ -11,14 +11,15 @@ import type { HudListRow } from './drawList';
 export interface ListNav {
   readonly active: number | null;
   readonly hover: number | null;
-  /** The active row shows its ring: the list holds focus, and the keyboard moved last. */
-  readonly ring: boolean;
+  /** Whether the active row shows its ring: the list holds focus, and the HUD shows focus or the keyboard moved last. */
+  ring(focusVisible: boolean): boolean;
   pointer(evt: HudPointerEvent, rowAt: (x: number, y: number) => number | null): boolean;
   /** `handled` false for a key that falls through to the canvas. */
   key(evt: HudKeyEvent): { handled: boolean; changed: boolean };
   focus(focused: boolean): boolean;
   /** The rows changed from `prev`: the active, hovered and pressed rows follow their row ids. A row gone leaves
-   *  the active row on the one now at its place (the last, past the end), and the hover and the press on none. */
+   *  the active row on the one now at its place (the last, past the end), and the hover and the press on none.
+   *  A focused list with no active row lands on its home row, as on focus. */
   rebase(prev: readonly HudListRow[]): void;
 }
 
@@ -43,7 +44,7 @@ export function createListNav(
   return {
     get active() { return active; },
     get hover() { return hover; },
-    get ring() { return focused && keyed; },
+    ring(focusVisible) { return focused && (keyed || focusVisible); },
     pointer(evt, rowAt) {
       switch (evt.type) {
         case 'down': {
@@ -109,6 +110,7 @@ export function createListNav(
       };
       const n = all.length;
       active = active === null ? null : follow(active) ?? (n ? Math.min(active, n - 1) : null);
+      if (focused && active === null) active = home();
       hover = follow(hover);
       pressRow = follow(pressRow);
     },

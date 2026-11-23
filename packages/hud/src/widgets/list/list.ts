@@ -45,7 +45,8 @@ export interface ListOptions {
  *  typeahead, and Enter or Space to activate. Focusable when it selects or activates. */
 export interface ListWidget extends Widget {
   setRows(rows: readonly HudListRow[]): void;
-  setBounds(b: WidgetBounds): void;
+  /** A height given fixes the list's height, as `height` does at creation; one left out has it follow its rows. */
+  setBounds(b: Omit<WidgetBounds, 'height'> & { height?: number }): void;
   setHidden(hidden: boolean): void;
   /** The row the keyboard is on. */
   readonly active: number | null;
@@ -74,6 +75,21 @@ function listTree(
   };
 }
 
+/** The rows laid out at `width`, measured against the last draw's theme, or the built-in one before any draw. */
+function measureList(
+  rows: readonly HudListRow[], opts: ListOptions, width: number, drawn: Pick<HudDrawCtx, 'tokens' | 'defaultFont'> | null,
+): RowListLayout & { height: number } {
+  const ctx = drawn ?? { tokens: (builtIn ??= resolveTheme(weaselTheme)), defaultFont: DEFAULT_FONT_FAMILY };
+  const m = measureRowList({ rows, empty: opts.empty }, fixedWidth(width), hudMeasureEnv(ctx, opts.fontFamily));
+  return { ...m.layout, height: m.height };
+}
+
+/** The scroll that brings `r` fully into a view `viewH` tall, moving as little as it can from `top`. */
+function scrollToShow(r: WidgetBounds, top: number, viewH: number): number {
+  if (r.y < top) return r.y;
+  return r.y + r.height > top + viewH ? r.y + r.height - viewH : top;
+}
+
 export function createList(opts: ListOptions): ListWidget {
   const rev = createRevision(opts.onChange);
   let subs = createEmitter();
@@ -83,22 +99,16 @@ export function createList(opts: ListOptions): ListWidget {
   let rows: readonly HudListRow[] = [];
   let lastCtx: Pick<HudDrawCtx, 'tokens' | 'defaultFont'> | null = null;
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height ?? 0 };
+  let fixedHeight = opts.height !== undefined;
   let scrollTop = 0;
   const nav = createListNav(() => rows, mode, (i) => opts.onActivate?.(rows[i]!.id, i));
 
   const changed = () => { rev.changed(); subs.emit(); };
   const assertLive = () => { if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.'); };
-  const measure = (): RowListLayout & { height: number } => {
-    const ctx = lastCtx ?? { tokens: (builtIn ??= resolveTheme(weaselTheme)), defaultFont: DEFAULT_FONT_FAMILY };
-    const m = measureRowList(
-      { rows, empty: opts.empty }, fixedWidth(bounds.width),
-      hudMeasureEnv(ctx, opts.fontFamily),
-    );
-    return { ...m.layout, height: m.height };
-  };
+  const measure = () => measureList(rows, opts, bounds.width, lastCtx);
   /** Follow the rows' height, when the caller gave none. True when it moved. */
   const fit = (): boolean => {
-    if (opts.height !== undefined) return false;
+    if (fixedHeight) return false;
     const h = measure().height;
     if (h === bounds.height) return false;
     bounds = { ...bounds, height: h };
@@ -115,9 +125,7 @@ export function createList(opts: ListOptions): ListWidget {
   /** Scroll the keyboard's row into view, as a focused DOM row scrolls itself. */
   const reveal = (): void => {
     const r = nav.active === null ? undefined : measure().rows[nav.active]?.rect;
-    if (!r) return;
-    if (r.y < scrollTop) holdScroll(r.y);
-    else if (r.y + r.height > scrollTop + bounds.height) holdScroll(r.y + r.height - bounds.height);
+    if (r) holdScroll(scrollToShow(r, scrollTop, bounds.height));
   };
   const setRowsInner = (next: readonly HudListRow[]) => {
     const prev = rows;
@@ -152,7 +160,11 @@ export function createList(opts: ListOptions): ListWidget {
     accessibleName: opts.accessibleName ?? opts.id,
     accessibleTree: tree,
     setRows(next) { assertLive(); setRowsInner(next); changed(); },
-    setBounds(b) { assertLive(); bounds = { ...b }; fit(); holdScroll(scrollTop); changed(); },
+    setBounds(b) {
+      assertLive(); fixedHeight = b.height !== undefined;
+      bounds = { x: b.x, y: b.y, width: b.width, height: b.height ?? bounds.height };
+      fit(); holdScroll(scrollTop); changed();
+    },
     setHidden(h) { assertLive(); hidden = h; changed(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       if (lastCtx?.tokens !== ctx.tokens || lastCtx.defaultFont !== ctx.defaultFont) {
@@ -162,7 +174,7 @@ export function createList(opts: ListOptions): ListWidget {
         if (holdScroll(scrollTop) || grew) changed();
       }
       return hudItemList.draw(
-        { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring, scrollTop },
+        { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring(ctx.focusVisible === true), scrollTop },
         { bounds, ctx, fontFamily: opts.fontFamily },
       );
     },
@@ -172,7 +184,10 @@ export function createList(opts: ListOptions): ListWidget {
     cursorAt() { return 'default'; },
     onPointer(evt: HudPointerEvent) {
       if (evt.type === 'wheel') {
-        if (holdScroll(scrollTop + evt.deltaY)) changed();
+        if (!holdScroll(scrollTop + evt.deltaY)) return;
+        // The rows moved under a still pointer, so the hover follows the point, as `:hover` does.
+        nav.pointer({ type: 'hovermove', x: evt.x, y: evt.y, native: evt.native }, rowAt);
+        changed();
         return;
       }
       if (nav.pointer(evt, rowAt)) changed();

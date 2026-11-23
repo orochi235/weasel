@@ -15,7 +15,7 @@ export function createLayerDraw(
   const cache = new WeakMap<Widget, CachedFrame>();
 
   return (data, view, dims): DrawCommand[] => {
-    const ctx = { dims, defaultFont, tokens: theme, color };
+    const ctx = { dims, defaultFont, tokens: theme, color, focusVisible: hud.focusVisible };
     const out: DrawCommand[] = [];
     // Pass 1: interiors. All content precedes all frames so one window's
     // content can never paint over another window's border.

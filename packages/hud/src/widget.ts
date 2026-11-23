@@ -22,6 +22,9 @@ export interface HudDrawCtx {
   /** A color source as a hex, resolved against the theme, tint list, and
    *  palette the hud was attached with; `undefined` for one nothing answers. */
   color(source: ColorSource): string | undefined;
+  /** Whether the HUD shows its focused widget's focus, as `:focus-visible` does: true after Tab, false after a
+   *  press. A widget that draws its own focus (`focusRing: false`) reads it. Absent means false. */
+  focusVisible?: boolean;
 }
 
 /** Input to a widget's optional `content` painter — the one place hud sees

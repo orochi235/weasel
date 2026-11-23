@@ -3,6 +3,8 @@ import { exactly, measureRowList } from '@weasel-js/ui-logic';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createList } from './list';
+import { createHud } from '../../hud';
+import { createLayerDraw } from '../../layerDraw';
 import { hudMeasureEnv } from '../../measureEnv';
 import { textWidth } from '../../menu/textWidth';
 import type { HudKeyEvent } from '../../widget';
@@ -26,6 +28,38 @@ describe('list widget', () => {
   it('is as tall as its rows, a pixel apart, when given no height', () => {
     const l = createList({ id: 'l', x: 10, y: 20, width: 200, rows });
     expect(l.bounds).toEqual({ x: 10, y: 20, width: 200, height: rowH * 3 + 2 });
+  });
+
+  it('keeps a height setBounds gives, and follows its rows again when setBounds leaves height out', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows });
+    l.setBounds({ x: 0, y: 0, width: 200, height: rowH });
+    expect(l.bounds.height).toBe(rowH);
+    l.setRows([...rows, { id: 'd', label: 'Date' }]);
+    expect(l.bounds.height).toBe(rowH);
+    l.setBounds({ x: 5, y: 0, width: 200 });
+    expect(l.bounds).toEqual({ x: 5, y: 0, width: 200, height: rowH * 4 + 3 });
+  });
+
+  it('lands a focused list on its home row when rows come back after going empty', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, selectionMode: 'single', onActivate: () => {} });
+    l.onFocusChange!(true);
+    l.setRows([]);
+    expect(l.active).toBeNull();
+    l.setRows(rows);
+    expect(l.active).toBe(1);
+  });
+
+  it('rings its active row when the HUD shows focus, as on Tab, and not after a press', () => {
+    const hud = createHud();
+    const l = hud.list({ id: 'l', x: 0, y: 0, width: 200, rows, selectionMode: 'single', onActivate: () => {} });
+    const draw = createLayerDraw(hud, { defaultFont: 'D', tokens, color: () => '#000000' });
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const rings = () => (draw(undefined, view, { ...ctx.dims, dpr: 1 }) as DrawCommand[]).filter((c) =>
+      c.kind === 'path' && c.stroke !== undefined && (c.stroke.paint as { color: string }).color === tokens['--wzl-focus-ring']).length;
+    hud.focus(l, { visible: true });
+    expect(rings()).toBe(1);
+    hud.focus(l, { visible: false });
+    expect(rings()).toBe(0);
   });
 
   it('draws each label, the selected row filled, and a swatch in its leading slot', () => {
@@ -172,6 +206,18 @@ describe('list widget', () => {
       expect(onActivate).toHaveBeenCalledWith('r7', 7);
       l.onKey!(key('Home'));
       expect(l.scrollTop).toBe(0);
+    });
+
+    it('hovers the row under a still pointer after the wheel scrolls', () => {
+      const at = { x: 10, y: 5, native: null };
+      const wheel = { type: 'wheel' as const, ...at, deltaX: 0, deltaY: pitch, native: null };
+      const hovered = make();
+      hovered.onPointer({ type: 'hovermove', ...at });
+      hovered.onPointer(wheel);
+      const fresh = make();
+      fresh.onPointer(wheel);
+      fresh.onPointer({ type: 'hovermove', ...at });
+      expect(hovered.draw(ctx)).toEqual(fresh.draw(ctx));
     });
 
     it('scrolls by the wheel, within its rows, and claims the wheel only while it can scroll', () => {
