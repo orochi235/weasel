@@ -36,6 +36,16 @@ describe('<SemanticDrawer>', () => {
     expect(onRule.mock.calls.at(-1)![0]).toEqual({ value: 0.6, type: 'number' });
   });
 
+  it('keeps an untyped number literal a number when its field is cleared', () => {
+    const { onRule, rerender } = renderDrawer({ value: 4 } as SemanticRule);
+    type('');
+    const cleared = onRule.mock.calls.at(-1)?.[0] ?? { value: 4 };
+    expect(cleared).toEqual({ value: 4 });
+    rerender(cleared);
+    type('8');
+    expect(onRule.mock.calls.at(-1)![0]).toEqual({ value: 8 });
+  });
+
   it('shows a cubic-bezier literal as CSS writes it and keeps it four numbers when edited', () => {
     const { onRule } = renderDrawer({ value: [0.32, 0, 0.67, 0], type: 'cubicBezier' } as SemanticRule);
     const field = screen.getByRole('textbox', { name: 'Value' });
