@@ -8,12 +8,19 @@ interface Node {
 
 type Scope = ReadonlySet<string>;
 
-const FUNCTIONS = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);
+const FUNCTIONS = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+  // Bodiless: an overload, a `declare function` and an abstract or overloaded method.
+  'TSDeclareFunction',
+  'TSEmptyBodyFunctionExpression',
+]);
 /** Nodes a `var` does not hoist out of. */
 const VAR_BARRIERS = new Set([...FUNCTIONS, 'ClassBody', 'StaticBlock', 'TSModuleDeclaration']);
 /** Bodies that are a `var` scope of their own, as a function body is. */
 const VAR_SCOPES = new Set(['StaticBlock', 'TSModuleBlock']);
-const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSEnumDeclaration', 'TSModuleDeclaration']);
+const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSEnumDeclaration', 'TSModuleDeclaration', 'TSImportEqualsDeclaration']);
 
 const isNode = (value: unknown): value is Node =>
   value !== null && typeof value === 'object' && typeof (value as { type?: unknown }).type === 'string';
@@ -91,7 +98,16 @@ const OPAQUE = new Set([
   'TSInterfaceDeclaration',
   'TSTypeParameterDeclaration',
   'TSTypeParameterInstantiation',
+  'TSClassImplements',
+  'TSIndexSignature',
 ]);
+/** Keys holding a bare type, or a name that is no reference, under a node that is otherwise read. */
+const NON_VALUE_KEYS: Record<string, ReadonlySet<string>> = {
+  TSAsExpression: new Set(['typeAnnotation']),
+  TSSatisfiesExpression: new Set(['typeAnnotation']),
+  TSTypeAssertion: new Set(['typeAnnotation']),
+  TSEnumMember: new Set(['id']),
+};
 const LABELED = new Set(['LabeledStatement', 'BreakStatement', 'ContinueStatement']);
 const one = (key: string): ReadonlySet<string> => new Set([key]);
 
@@ -184,6 +200,7 @@ export function unshadowedUses(
         if (isNode(node.id)) return children(node, scope(hidden, [node.id.name as string]));
         break;
     }
+    if (Object.hasOwn(NON_VALUE_KEYS, node.type)) return children(node, hidden, NON_VALUE_KEYS[node.type]);
     if (KEYED.has(node.type) && !node.computed) return children(node, hidden, one('key'));
     if (LABELED.has(node.type)) return children(node, hidden, one('label'));
     children(node, hidden);
