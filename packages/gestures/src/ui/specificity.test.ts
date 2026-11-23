@@ -115,3 +115,23 @@ describe('specificity (tuple shape)', () => {
     });
   });
 });
+
+describe("specificity ranks a kind's own filter", () => {
+  const above = (a: GestureSpec, b: GestureSpec) =>
+    expect(specificity(a)[3]).toBeGreaterThan(specificity(b)[3]);
+
+  it('a wheel or pinch direction outranks any direction', () => {
+    above({ kind: 'wheel', direction: 'up' }, { kind: 'wheel' });
+    above({ kind: 'wheel', direction: 'down' }, { kind: 'wheel', direction: '*' });
+    above({ kind: 'pinch', direction: 'in' }, { kind: 'pinch' });
+  });
+
+  it('a primary-button drag outranks a drag on any button', () => {
+    above({ kind: 'drag' }, { kind: 'drag', button: '*' });
+    above({ kind: 'drag', button: 'secondary' }, { kind: 'drag', button: '*' });
+  });
+
+  it('a hover with no button held outranks one that may have a button held', () => {
+    above({ kind: 'hover' }, { kind: 'hover', held: 'optional' });
+  });
+});

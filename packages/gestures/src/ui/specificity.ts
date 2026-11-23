@@ -83,6 +83,32 @@ function phaseRank(spec: PhaseSpec | undefined): number {
   return min;
 }
 
+/**
+ * Rank the filter a spec's own kind adds, on the same principle as `phaseRank`:
+ * 1 for the kind's default, 2 for a value narrowing it, 0 for one widening it.
+ *
+ *    2 — a `wheel` or `pinch` `direction`, or non-empty drop/carry/paste `types`
+ *    0 — a `drag` on `button: '*'` (the default is the primary button alone),
+ *        a `hover` with `held: 'optional'` (the default is no button held)
+ */
+function exactRank(spec: GestureSpec): number {
+  switch (spec.kind) {
+    case 'wheel':
+    case 'pinch':
+      return spec.direction !== undefined && spec.direction !== '*' ? 2 : 1;
+    case 'drop':
+    case 'carry':
+    case 'paste':
+      return spec.types !== undefined && spec.types.length > 0 ? 2 : 1;
+    case 'drag':
+      return spec.button === '*' ? 0 : 1;
+    case 'hover':
+      return spec.held === 'optional' ? 0 : 1;
+    default:
+      return 1;
+  }
+}
+
 /** CSS-style specificity tuple for a GestureSpec. Higher tuple wins under
  *  lexicographic compare. Dimensions, in order of precedence:
  *
@@ -91,8 +117,7 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  *                 `mod` read as the key it is for `apple` (default: this
  *                 platform), as the matcher reads it. `'optional'` does NOT count.
  *    [2] phase  — how much the spec's `phase` narrows; see `phaseRank`.
- *    [3] exact  — per-kind tiebreak: 2 for a drop/carry/paste spec with a
- *                 non-empty `types` MIME filter, else 1.
+ *    [3] exact  — how much the kind's own filter narrows; see `exactRank`.
  *
  *  Identical tuples fall back to registration order in the matcher's
  *  stable sort. */
@@ -104,11 +129,5 @@ export function specificity(
   const mods = ('mods' in spec ? spec.mods : undefined) as ModSpec | undefined;
   const m = modsCount(mods, apple);
   const p = phaseRank(('phase' in spec ? spec.phase : undefined) as PhaseSpec | undefined);
-  // A consumer's `types: ['text/csv']` binding should win over the kit's
-  // catch-all ingest binding.
-  const typed =
-    (spec.kind === 'drop' || spec.kind === 'carry' || spec.kind === 'paste') &&
-    spec.types !== undefined && spec.types.length > 0
-      ? 2 : 1;
-  return [t, m, p, typed];
+  return [t, m, p, exactRank(spec)];
 }
