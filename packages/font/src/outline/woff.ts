@@ -12,6 +12,7 @@ export const isWoff = (bytes: ArrayBuffer): boolean =>
   bytes.byteLength >= 4 && new DataView(bytes).getUint32(0) === 0x774f4646;
 
 const damaged = (what: string): Error => new Error(`the WOFF file is damaged: ${what}`);
+const wrongLength = (): Error => damaged('a table decompresses to a length other than its recorded one');
 
 /** The sfnt a WOFF 1 file wraps, its tables decompressed and laid out 4-byte aligned in directory order. */
 export async function sfntFromWoff(bytes: ArrayBuffer): Promise<ArrayBuffer> {
@@ -30,8 +31,8 @@ export async function sfntFromWoff(bytes: ArrayBuffer): Promise<ArrayBuffer> {
     const stored = compLength < origLength ? compLength : origLength;
     if (offset + stored > bytes.byteLength) throw damaged('a table runs past the end of the file');
     const raw = new Uint8Array(bytes, offset, stored);
-    const data = compLength < origLength ? await inflate(raw) : raw;
-    if (data.byteLength !== origLength) throw damaged('a table decompresses to a length other than its recorded one');
+    const data = compLength < origLength ? await inflate(raw, origLength) : raw;
+    if (data.byteLength !== origLength) throw wrongLength();
     tables.push({ tag: view.getUint32(at), checksum: view.getUint32(at + 16), data });
   }
 
@@ -59,23 +60,30 @@ export async function sfntFromWoff(bytes: ArrayBuffer): Promise<ArrayBuffer> {
   return out;
 }
 
-async function inflate(data: Uint8Array): Promise<Uint8Array> {
+/** `data` inflated, read no further than `limit` bytes: a small table can inflate without bound. */
+async function inflate(data: Uint8Array, limit: number): Promise<Uint8Array> {
+  let chunks: Uint8Array[];
+  let length = 0;
   try {
     const inflater = new DecompressionStream('deflate');
     const writer = inflater.writable.getWriter();
     void writer.write(data as Uint8Array<ArrayBuffer>).then(() => writer.close()).catch(() => {});
-    const chunks: Uint8Array[] = [];
-    let length = 0;
+    chunks = [];
     const reader = inflater.readable.getReader();
     for (let r = await reader.read(); !r.done; r = await reader.read()) {
-      chunks.push(r.value);
       length += r.value.byteLength;
+      if (length > limit) {
+        void reader.cancel().catch(() => {});
+        break;
+      }
+      chunks.push(r.value);
     }
-    const out = new Uint8Array(length);
-    let at = 0;
-    for (const c of chunks) { out.set(c, at); at += c.byteLength; }
-    return out;
   } catch (err) {
     throw damaged(`a table does not decompress (${err instanceof Error ? err.message : String(err)})`);
   }
+  if (length > limit) throw wrongLength();
+  const out = new Uint8Array(length);
+  let at = 0;
+  for (const c of chunks) { out.set(c, at); at += c.byteLength; }
+  return out;
 }
