@@ -2,7 +2,7 @@
 '@weasel-js/icons-plugin': patch
 ---
 
-`weaselIcons.esbuild({ mode: 'library' })` now fails a build that minifies whitespace, which strips every `@icon` annotation an app build reads, instead of shipping the library without them.
+`weaselIcons.esbuild({ mode: 'library' })` fails a build that minifies whitespace, which strips every `@icon` annotation.
 
 Set `minifyWhitespace: false` to keep minifying syntax and identifiers.
 
