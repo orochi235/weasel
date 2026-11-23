@@ -79,8 +79,10 @@ describe('generate', () => {
   });
 
   it('reports a palette that equalizing pushed below the contrast floor as infeasible', () => {
-    const { feasible, stats } = generate(withC({ count: 7, minContrast: 4.5, lightnessPull: 0, equalize: 1 }));
-    expect(stats.minContrast).toBeLessThan(4.5);
+    const at = (equalize: number) => generate(withC({ count: 7, minContrast: 4.52, lightnessPull: 0, equalize }));
+    expect(at(0).feasible).toBe(true);
+    const { feasible, stats } = at(1);
+    expect(stats.minContrast).toBeLessThan(4.52);
     expect(feasible).toBe(false);
   });
 

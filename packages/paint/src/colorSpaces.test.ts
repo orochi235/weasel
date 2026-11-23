@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray, hexToOklchDeg } from './colorSpaces';
+import { srgbU8ToOklab, oklabToSrgbU8, lerpColorArray, hexToOklchDeg, oklabToSrgbClipped, oklchToOklab, oklabToOklch, srgbFloatToOklab } from './colorSpaces';
 import { mixOklab, mixRgba, mixRgbaWeighted } from './mix';
 
 describe('srgbU8 ↔ Oklab', () => {
@@ -141,5 +141,19 @@ describe('hexToOklchDeg', () => {
 
   it('ignores the alpha byte of an eight-digit hex', () => {
     expect(hexToOklchDeg('#ff000080')).toEqual(hexToOklchDeg('#ff0000'));
+  });
+});
+
+describe('oklabToSrgbClipped', () => {
+  it('finds the hue’s chroma ceiling however far past it the request is', () => {
+    for (const [L, h] of [[0.5, 30], [0.7, 140], [0.4, 264], [0.9, 200]] as const) {
+      const chromaOf = (C: number) => {
+        const [r, g, b] = oklabToSrgbClipped(...oklchToOklab(L, C, (h * Math.PI) / 180));
+        return oklabToOklch(...srgbFloatToOklab(r, g, b))[1];
+      };
+      const ceiling = chromaOf(0.5);
+      expect(chromaOf(4), `L=${L} h=${h}`).toBeCloseTo(ceiling, 3);
+      expect(chromaOf(ceiling * 1.02), `L=${L} h=${h}`).toBeCloseTo(ceiling, 3);
+    }
   });
 });

@@ -87,14 +87,18 @@ function inGamut(rl: number, gl: number, bl: number): boolean {
  *  to `oklch(62.796% 0.25768 29.2339deg)`, which lands 5e-6 past the edge, and a 3% chroma cut there is visible. */
 const CLAMP_SLACK = 1e-4;
 
+/** How close to the gamut boundary {@link clipToGamut} lands, in OKLCh chroma: far under one sRGB byte. */
+const CLIP_TOLERANCE = 1e-6;
+
 function clipToGamut(L: number, A: number, B: number): [number, number, number] {
   let [rl, gl, bl] = oklabToLinearSrgb(L, A, B);
   if (inGamut(rl, gl, bl)) return [rl, gl, bl];
   if ([rl, gl, bl].every((c) => c >= -CLAMP_SLACK && c <= 1 + CLAMP_SLACK)) return [clamp01(rl), clamp01(gl), clamp01(bl)];
   let lo = 0;
   let hi = 1;
-  // 5 iterations → ~3% chroma precision; sufficient for u8 output.
-  for (let i = 0; i < 5; i++) {
+  // The tolerance is in chroma, not a share of the request: one far past the ceiling would land well short of it.
+  const span = Math.hypot(A, B);
+  for (let i = 0; i < 64 && (hi - lo) * span > CLIP_TOLERANCE; i++) {
     const t = (lo + hi) / 2;
     [rl, gl, bl] = oklabToLinearSrgb(L, A * t, B * t);
     if (inGamut(rl, gl, bl)) lo = t; else hi = t;
