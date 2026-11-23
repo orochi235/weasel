@@ -34,7 +34,7 @@ export function useTextEdit(
 ): UseTextEditReturn {
   const optsRef = useLatest(opts);
 
-  const [editingId, setEditingId] = useEditingId(optsRef);
+  const [editingId, setEditingId, liveIdRef, session] = useEditingId(optsRef);
   // `applyStyleToSelection` needs the node being edited to reach its
   // `TextStyle`, and is called from event handlers rather than from render.
   const editingIdRef = useLatest(editingId);
@@ -67,10 +67,10 @@ export function useTextEdit(
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
-    if (editingIdRef.current !== null && editingIdRef.current !== id) commit();
-    if (editingIdRef.current !== id) draftRef.current = null;
+    if (liveIdRef.current !== null && liveIdRef.current !== id) commit();
+    if (liveIdRef.current !== id) draftRef.current = null;
     setEditingId(id);
-  }, [setEditingId, editingIdRef, commit]);
+  }, [setEditingId, liveIdRef, commit]);
 
   const isEditing = useCallback((id: string) => editingId === id, [editingId]);
 
@@ -88,8 +88,8 @@ export function useTextEdit(
   useEffect(() => {
     const { container, getText, getStyle, getPaint } = optsRef.current;
     const carried = takeCarry(editingId, container != null);
+    holdNodeStyle(editingId == null ? null : carried?.held ?? null);
     if (editingId == null || !container) return;
-    holdNodeStyle(carried?.held ?? null);
 
     const style = resolveTextStyle(carried?.held ?? getStyle(editingId), getPaint?.(editingId));
     baseRef.current = style;
@@ -139,7 +139,7 @@ export function useTextEdit(
       holdNodeStyle(null);
       clearSelection();
     };
-  }, [editingId, opts.container, optsRef, takeCarry, stashCarry, commit, cancelEdit, syncSelection, clearSelection,
+  }, [editingId, session, opts.container, optsRef, takeCarry, stashCarry, commit, cancelEdit, syncSelection, clearSelection,
       follow, toggleStyle, dropPending, armPending, publishRange, holdNodeStyle, sendDraft, restyleNode, pendingRef,
       selectionRef, baseRef, nodeStyleRef, placeRef, focusRef]);
 

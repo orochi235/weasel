@@ -99,7 +99,7 @@ describe('useEditingId (stateful)', () => {
 describe('toggleForKey (property)', () => {
   const TABLE: Record<string, string> = { 'b/': 'bold', 'i/': 'italic', 'u/': 'underline', 'x/s': 'strikethrough', '=/s': 'super', '-/s': 'sub' };
   const UNSHIFT: Record<string, string> = { '+': '=', _: '-' };
-  it('answers the table, under Cmd or Ctrl only, matched on the unshifted key', () => {
+  it('answers the table, under Cmd or Ctrl without Alt, matched on the unshifted key', () => {
     const t = tally();
     fc.assert(fc.property(
       fc.constantFrom('b', 'B', 'i', 'u', 'x', 'X', 'c', 'v', 'z', '=', '+', '-', '_', 'Enter'),
@@ -107,7 +107,7 @@ describe('toggleForKey (property)', () => {
       (key, metaKey, ctrlKey, shiftKey, altKey) => {
         const got = toggleForKey(new KeyboardEvent('keydown', { key, metaKey, ctrlKey, shiftKey, altKey }));
         const raw = key.toLowerCase();
-        const want = metaKey || ctrlKey ? (TABLE[`${UNSHIFT[raw] ?? raw}/${shiftKey ? 's' : ''}`] ?? null) : null;
+        const want = (metaKey || ctrlKey) && !altKey ? (TABLE[`${UNSHIFT[raw] ?? raw}/${shiftKey ? 's' : ''}`] ?? null) : null;
         expect(got).toBe(want);
         if (got) t.count('toggle');
         if ((metaKey || ctrlKey) && !shiftKey && ['x', 'c', 'v', 'z'].includes(raw)) expect(got).toBeNull();

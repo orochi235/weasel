@@ -44,6 +44,29 @@ describe('useTextEdit — a container that changes mid-edit', () => {
     next.remove();
   });
 
+  it('reports the node style it holds while it waits with no container, and none once it ends', () => {
+    const styles: Record<string, TextStyle> = { a: { fontSize: 16, underline: true } };
+    const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
+    h.opts.getStyle = (id) => styles[id];
+    h.opts.setStyle = vi.fn((id: string, style: TextStyle) => { styles[id] = style; });
+    const { result, rerender } = renderHook(
+      ({ container }: { container: HTMLElement | null }) => useTextEdit({ ...h.opts, container }),
+      { initialProps: { container: h.container as HTMLElement | null } },
+    );
+    act(() => result.current.startEdit('a'));
+    const first = getOverlay(h.container)!;
+    selectChars(first, 4, 7);
+    act(() => { pressKey(first, 'u', { meta: true }); });
+
+    rerender({ container: null });
+    expect(result.current.editingId).toBe('a');
+    expect(result.current.nodeStyle).toEqual({ fontSize: 16 });
+    expect(result.current.effectiveStyle?.underline).toBeFalsy();
+
+    act(() => result.current.cancelEdit());
+    expect(result.current.nodeStyle).toBeNull();
+  });
+
   it('moves the open edit with its undo history and the style armed at its caret', () => {
     const h = makeRichHarness({ a: { text: 'ab', runs: [{ text: 'ab' }] } });
     const next = document.createElement('div');

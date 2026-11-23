@@ -31,9 +31,10 @@ const STYLE_SHORTCUTS: ReadonlyArray<{ key: string; shift: boolean; toggle: Styl
 const UNSHIFT: Readonly<Record<string, string>> = { '+': '=', _: '-' };
 
 /** The styling `e` toggles, or null when it isn't a styling shortcut. A Mac's
- *  Ctrl chords are its text editing ({@link textOwnsChord}), so there only Cmd styles. */
+ *  Ctrl chords are its text editing ({@link textOwnsChord}), so there only Cmd styles. No shortcut
+ *  holds Alt, and off a Mac Ctrl+Alt is AltGr typing a character. */
 export function toggleForKey(e: KeyboardEvent, apple?: boolean): StyleToggle | null {
-  if ((!e.metaKey && !e.ctrlKey) || textOwnsChord(e, apple)) return null;
+  if ((!e.metaKey && !e.ctrlKey) || e.altKey || textOwnsChord(e, apple)) return null;
   const unshifted = getOwn(UNSHIFT, e.key);
   const named = (key: string): boolean => unshifted === key || matchKeyEvent(e, key);
   return STYLE_SHORTCUTS.find((s) => s.shift === e.shiftKey && named(s.key))?.toggle ?? null;

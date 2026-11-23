@@ -38,6 +38,9 @@ export interface OverlayHistory {
   after(): void;
   /** The next change starts a step of its own. */
   seal(): void;
+  /** The selection stands at `at`, or outside the overlay at `null`: once the caret has left where the last step
+   *  put it, coming back does not join that step. */
+  moved(at: TextEditSelection | null): void;
   undo(): void;
   redo(): void;
   /** The steps to undo and redo, oldest first, for a history that goes on from them. */
@@ -95,6 +98,9 @@ export function overlayHistory(host: {
     },
     seal() {
       open = null;
+    },
+    moved(at) {
+      if (open && (!at || !caretAt(at, open.caret))) open = null;
     },
     undo: () => step(undos, redos),
     redo: () => step(redos, undos),

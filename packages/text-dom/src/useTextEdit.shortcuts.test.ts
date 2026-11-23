@@ -167,6 +167,21 @@ describe('useTextEdit — Cmd-B/I on range selection', () => {
     act(() => result.current.commitEdit());
     expect(h.runCommits[0].runs).toEqual([{ text: 'xyz', bold: true }]);
   });
+
+  it('AltGr (Ctrl+Alt off a Mac) typing Ź on the X key is left to the browser, not taken as strikethrough', () => {
+    const h = makeRichHarness({ a: { text: 'xyz', runs: [{ text: 'xyz' }] } });
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    selectChars(overlay, 0, 3);
+    const ev = new KeyboardEvent('keydown', {
+      key: 'Ź', code: 'KeyX', ctrlKey: true, altKey: true, shiftKey: true, bubbles: true, cancelable: true,
+    });
+    act(() => { overlay.dispatchEvent(ev); });
+    expect(ev.defaultPrevented).toBe(false);
+    act(() => result.current.commitEdit());
+    expect(h.runCommits[0]?.runs ?? [{ text: 'xyz' }]).toEqual([{ text: 'xyz' }]);
+  });
 });
 
 describe('useTextEdit — a Mac leaves its Ctrl text-editing shortcuts to the text', () => {

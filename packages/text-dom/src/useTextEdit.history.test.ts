@@ -10,7 +10,7 @@ import { useTextEdit } from './useTextEdit';
 import { domToRuns } from './domRuns';
 import { readSelectionOffsets } from './overlaySelection';
 import {
-  dispatchBeforeInput, getOverlay, makeRichHarness, placeCaretAtChar, pressKey, selectChars,
+  dispatchBeforeInput, getOverlay, makeRichHarness, placeCaretAndSettle, placeCaretAtChar, pressKey, selectChars,
 } from './testing/textEditHarness';
 
 /** Mod+Z and Shift+Mod+Z off an Apple platform, which jsdom is not. */
@@ -52,6 +52,31 @@ describe('useTextEdit — undo inside the edit', () => {
     undo(el);
     expect(domToRuns(el)).toEqual([{ text: 'ab' }]);
     expect(readSelectionOffsets(el)).toEqual({ start: 2, end: 2 });
+    act(() => hook.result.current.commitEdit());
+  });
+
+  it('starts a new step for typing after the caret leaves and comes back', async () => {
+    const { hook, el } = open('xy');
+    placeCaretAtChar(el, 1);
+    act(() => { dispatchBeforeInput(el, 'a'); dispatchBeforeInput(el, 'b'); });
+    await placeCaretAndSettle(el, 2);
+    await placeCaretAndSettle(el, 3);
+    act(() => { dispatchBeforeInput(el, 'c'); });
+    undo(el);
+    expect(domToRuns(el)).toEqual([{ text: 'xaby' }]);
+    undo(el);
+    expect(domToRuns(el)).toEqual([{ text: 'xy' }]);
+    act(() => hook.result.current.commitEdit());
+  });
+
+  it('keeps typing one step across the selectionchange each keystroke fires', async () => {
+    const { hook, el } = open('xy');
+    placeCaretAtChar(el, 1);
+    act(() => { dispatchBeforeInput(el, 'a'); });
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 0)); });
+    act(() => { dispatchBeforeInput(el, 'b'); });
+    undo(el);
+    expect(domToRuns(el)).toEqual([{ text: 'xy' }]);
     act(() => hook.result.current.commitEdit());
   });
 
