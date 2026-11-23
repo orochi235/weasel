@@ -239,6 +239,8 @@ test('the box that takes input follows every one of many moves in a row', async 
 const scroller: { current: HTMLDivElement | null } = { current: null };
 
 // The target is the scroller's own box; its marks live in the content it scrolls.
+// The scroll offset `targets` last answered, so a test can wait for the overlay to hear a scroll.
+let shownY = 0;
 const Scrolling = defineInstrument<Record<string, never>, Record<string, never>>({
   name: 'Scrolling',
   initialState: () => ({}),
@@ -255,6 +257,7 @@ const Scrolling = defineInstrument<Record<string, never>, Record<string, never>>
       const el = scroller.current;
       const width = el?.offsetWidth || 1;
       const height = el?.offsetHeight || 1;
+      shownY = el?.scrollTop ?? 0;
       return [
         {
           id: 'scroller',
@@ -284,6 +287,8 @@ test('a mark on scrolled content moves with it as its target scrolls', async () 
   await waitFor(() => expect(input.getBoundingClientRect().height).toBeCloseTo(box.height, 0));
 
   el.scrollTop = 30;
+  // The scroll reaches the overlay as an event and then a render, which two frames need not cover on a busy node.
+  await waitFor(() => expect(shownY).toBe(30));
   // Edges 40px and 140px down the box: 70px and 170px down the content.
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
   await drag(input, [box.left + 40, box.top + 40], [box.left + 200, box.top + 140]);
