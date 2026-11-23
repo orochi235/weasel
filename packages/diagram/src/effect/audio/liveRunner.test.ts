@@ -3,6 +3,7 @@ import { createFakeAudioContext } from '@weasel-js/audio/testing/fakeAudioContex
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EffectPipeline, EffectStage, EffectWire } from '../types';
 import { createLiveAudioRunner } from './liveRunner';
+import { audioStageNodes } from './nodes';
 import { AUDIO_STAGE_TYPES } from './stageTypes';
 
 const stage = (id: string, type: string, values: Record<string, unknown> = {}): EffectStage => {
@@ -152,6 +153,24 @@ describe('createLiveAudioRunner', () => {
     off();
     runner.pause();
     expect(l).toHaveBeenCalledTimes(1);
+  });
+
+  it('disposes the defs it built for a structural batch the graph refuses', () => {
+    const disposed: string[] = [];
+    const nodes = Object.fromEntries(Object.entries(audioStageNodes).map(([type, n]) => [type, {
+      ...n,
+      build: (...args: Parameters<typeof n.build>) => {
+        const def = n.build(...args);
+        return { ...def, dispose: () => { disposed.push(type); def.dispose?.(); } };
+      },
+    }]));
+    const graphs: FakeGraph[] = [];
+    const engine = { context: createFakeAudioContext(), unlock: async () => {}, graph: () => { const g = fakeGraph(); graphs.push(g); return g; } } as never as AudioEngine;
+    const runner = createLiveAudioRunner({ engine, pipeline: osc(), nodes });
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    graphs[0]!.failWhen = (ps) => (ps.some((p) => p.kind === 'add') ? new Error('refused') : undefined);
+    runner.setPipeline(withGain(220));
+    expect(disposed).toEqual(['audio.gain']);
   });
 
   it('keeps the previous plan when the structural apply throws, sends no sets, and warns once', () => {

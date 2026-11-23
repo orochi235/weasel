@@ -214,6 +214,7 @@ export function createLiveAudioRunner(opts: LiveAudioRunnerOptions): LiveAudioRu
     const structural = patches.filter((p) => p.kind !== 'set');
     const applied = applyStructure(graph, structural, merged);
     const { landed } = applied;
+    if (!landed) for (const def of defs.values()) def.dispose?.();
     if (landed) {
       for (const id of structural.flatMap(idsOf)) broken.delete(id);
       for (const id of broken.keys()) if (!Object.hasOwn(next.nodes, id)) broken.delete(id);
