@@ -16,7 +16,7 @@ const annotations = (out: string) => out.match(ANNOTATED)?.length ?? 0;
 const outDirs: string[] = [];
 afterAll(() => outDirs.forEach((d) => rmSync(d, { recursive: true, force: true })));
 
-async function viteLibrary(minify: boolean) {
+async function viteLibrary(minify: boolean, format: 'es' | 'iife' = 'es') {
   const out = await build({
     root: lib,
     logLevel: 'silent',
@@ -25,7 +25,7 @@ async function viteLibrary(minify: boolean) {
     build: {
       write: false,
       minify,
-      lib: { entry: `${lib}/src/index.ts`, formats: ['es'], fileName: 'index' },
+      lib: { entry: `${lib}/src/index.ts`, formats: [format], fileName: 'index', name: 'lib' },
       rollupOptions: { external: ['@weasel-js/icons'], output: { minify } },
     },
   });
@@ -59,6 +59,10 @@ describe('weaselIcons library mode', () => {
 
   it('fails a vite library build that strips every annotation', async () => {
     await expect(viteLibrary(true)).rejects.toThrow(/stripped the @icon annotation from lib:star/);
+  });
+
+  it('lets a vite IIFE library build minify, as under esbuild, since nothing bundles it again', async () => {
+    expect(await viteLibrary(true, 'iife')).toContain('lib:star');
   });
 });
 

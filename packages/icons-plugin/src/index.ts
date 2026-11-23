@@ -90,16 +90,18 @@ type PluginBuild = Parameters<NonNullable<NonNullable<UnpluginOptions['esbuild']
 
 const MINIFIED = 'esbuild drops the @icon annotation that library mode leaves on each icon ref when it minifies whitespace; set minifyWhitespace to false, or leave minify unset';
 
-/**
- * esbuild has no hook to annotate its output again, so library mode refuses to minify it away. An
- * IIFE is a finished script no bundler reads again, so its annotations have no reader to lose.
- */
+/** esbuild has no hook to annotate its output again, so library mode refuses to minify it away. */
 function guardEsbuild(build: PluginBuild): void {
   build.onStart(() => {
-    const { minify, minifyWhitespace = minify, format } = build.initialOptions;
-    return minifyWhitespace && format !== 'iife' ? { errors: [{ text: MINIFIED }] } : undefined;
+    const { minify, minifyWhitespace = minify, bundle, platform = 'browser' } = build.initialOptions;
+    // esbuild's documented default: a bundle for the browser is an IIFE.
+    const format = build.initialOptions.format ?? (bundle && platform === 'browser' ? 'iife' : undefined);
+    return minifyWhitespace && !finished(format) ? { errors: [{ text: MINIFIED }] } : undefined;
   });
 }
+
+/** An IIFE is a finished script no bundler reads again, so its annotations have no reader to lose. */
+const finished = (format: string | undefined) => format === 'iife';
 
 /** The ids of every module in the build, when the bundler's context can list them. */
 function liveModules(ctx: object): Set<string> | undefined {
@@ -156,8 +158,8 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
   // After the bundler's own renderChunk work, which drops plain comments. rolldown's output
   // minify, even its default dead-code pass, runs later still and drops them again.
   const lastRenderChunk = { order: 'post' as const, handler: renderChunk };
-  function generateBundle(this: object, _: unknown, bundle: Record<string, { type: string; code?: string }>) {
-    const stripped = app ? undefined : library.stripped(bundle);
+  function generateBundle(this: object, output: { format?: string }, bundle: Record<string, { type: string; code?: string }>) {
+    const stripped = app || finished(output.format) ? undefined : library.stripped(bundle);
     if (stripped) fail(this, stripped);
   }
 

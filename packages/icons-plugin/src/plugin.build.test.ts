@@ -288,17 +288,34 @@ describe('weaselIcons library mode', () => {
     }
   });
 
-  it('lets an esbuild IIFE build minify, since nothing bundles it again', async () => {
-    const out = await esbuild({
-      entryPoints: [`${root}/src/widget.ts`],
-      bundle: true,
-      write: false,
-      format: 'iife',
-      logLevel: 'silent',
-      external: ['@weasel-js/icons'],
-      plugins: [weaselIcons.esbuild({ mode: 'library' })],
-      minify: true,
-    });
-    expect(out.outputFiles[0]!.text).toContain('fx:ring');
+  it('lets an esbuild IIFE build minify, written out or by default, since nothing bundles it again', async () => {
+    for (const format of [{ format: 'iife' as const }, {}]) {
+      const out = await esbuild({
+        entryPoints: [`${root}/src/widget.ts`],
+        bundle: true,
+        write: false,
+        logLevel: 'silent',
+        external: ['@weasel-js/icons'],
+        plugins: [weaselIcons.esbuild({ mode: 'library' })],
+        minify: true,
+        ...format,
+      });
+      expect(out.outputFiles[0]!.text).toContain('fx:ring');
+    }
+  });
+
+  it('refuses a minified esbuild build whose format defaults to cjs or keeps each module', async () => {
+    for (const options of [{ bundle: true, platform: 'node' as const, external: ['@weasel-js/icons'] }, { bundle: false }]) {
+      await expect(
+        esbuild({
+          entryPoints: [`${root}/src/widget.ts`],
+          write: false,
+          logLevel: 'silent',
+          plugins: [weaselIcons.esbuild({ mode: 'library' })],
+          minify: true,
+          ...options,
+        }),
+      ).rejects.toThrow(/@icon annotation.*minify/s);
+    }
   });
 });

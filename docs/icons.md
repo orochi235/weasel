@@ -314,11 +314,11 @@ Under any other bundler unplugin supports, the plugin throws: when it is created
 and rspack when the compiler applies it.
 
 **Library mode.** `dist` ships the annotated literals and no `icon()` call. esbuild keeps the
-comment unless it minifies whitespace, which a library build under esbuild refuses unless its format is `iife`; rolldown drops plain comments, so the plugin records each module's refs and re-annotates
+comment unless it minifies whitespace, which a library build under esbuild refuses unless its format, written or esbuild's default, is `iife`; rolldown drops plain comments, so the plugin records each module's refs and re-annotates
 them in a `renderChunk` ordered `post`. rolldown's output minify, including its default dead-code
 pass, strips them again, so core's and ui's vite builds set both `build.minify` and
 `rolldownOptions.output.minify` to `false`. A library build fails when any chunk holds a ref its
-modules named as a literal with no annotation, in whichever chunk the literal lands.
+modules named as a literal with no annotation, in whichever chunk the literal lands, unless its format is `iife`, a finished script nothing bundles again.
 
 **App mode.** The plugin collects every `@icon` literal in every module the build transforms,
 `node_modules` included. It reads the table beside each `icons.gen` it meets and each package's
