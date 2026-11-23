@@ -36,7 +36,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
     0.95: 'view: the seam\'s nearest approach to the lens\'s right',
   },
   'packages/labkit/src/loupe/lens/lensActionDefs.ts': {
-    8: 'count: the most lenses a lab holds', 64: 'view: the lens\'s greatest magnification',
+    8: 'count: the most lenses a lab holds',
     0.5: 'view: a zoom-out step halves the magnification, chosen by the action',
     250: 'threshold: how short a press of the quick-lens key is a tap, which closes the lens',
   },
