@@ -32,4 +32,9 @@ describe('Select stylesheets', () => {
     expect(bare).not.toMatch(/^\s*(padding: 0|background: transparent);/m);
   });
 
+  it("lines a described row's label up with the edge an end or centered list sets its rows on", () => {
+    const select = sheet('Select.module.css');
+    expect(rule(select, ".popover[data-align='end'] .optionBody")).toContain('align-items: flex-end');
+    expect(rule(select, ".popover[data-align='center'] .optionBody")).toContain('align-items: center');
+  });
 });

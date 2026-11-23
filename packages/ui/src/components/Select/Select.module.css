@@ -161,6 +161,18 @@
   justify-content: center;
 }
 
+/* A described row's label is matched to the value by its own box, so that box keeps to its text's width, on the
+   same edge as the row. */
+.popover[data-align='end'] .optionBody {
+  align-items: flex-end;
+  text-align: end;
+}
+
+.popover[data-align='center'] .optionBody {
+  align-items: center;
+  text-align: center;
+}
+
 .check {
   width: 10px;
   height: 10px;
