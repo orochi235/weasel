@@ -2,6 +2,6 @@
 "@weasel-js/diagram": patch
 ---
 
-`setDiagramColor(…, 'stroke', …)` on a shape or connector drawn with no stroke gives it its role's width and dash, as applying the theme would, rather than a stroke with no width.
+A stroke color set by hand on a shape or connector drawn with none gives it its role's width and dash. That is the line applying the theme would give it.
 
 <!-- entry: fix visual -->
