@@ -407,15 +407,21 @@ export function SelectItem({ children, icon, className, textValue, description, 
       className={[s.option, className].filter(Boolean).join(' ')}
     >
       <CheckMark />
-      {/* A box around the label, not just text: landing the list over its
-          trigger means measuring where this row's label sits. */}
-      <span className={s.optionLabel}>
-        {/* A description slot needs a label slot beside it, or the row's name takes in the description too. */}
-        {note ? withIcon(icon, <Text slot="label">{children}</Text>) : withIcon(icon, children)}
-        {note && <OptionNote>{note}</OptionNote>}
-      </span>
+      {note ? (
+        <span className={s.optionBody}>
+          {/* A description slot needs a label slot beside it, or the row's name takes in the description too. */}
+          <OptionLabel>{withIcon(icon, <Text slot="label">{children}</Text>)}</OptionLabel>
+          <OptionNote>{note}</OptionNote>
+        </span>
+      ) : <OptionLabel>{withIcon(icon, children)}</OptionLabel>}
     </RACListBoxItem>
   );
+}
+
+/** A box around the label alone, not just text and not its note: landing the list over its trigger means
+ *  measuring where this row's label line sits. */
+function OptionLabel({ children }: { children: ReactNode }) {
+  return <span className={s.optionLabel}>{children}</span>;
 }
 
 function OptionNote({ children }: { children: string }) {

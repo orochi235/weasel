@@ -140,6 +140,16 @@
   color: var(--wzl-fg-subtle);
 }
 
+.optionBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.value .optionBody {
+  display: contents;
+}
+
 .optionLabel {
   min-width: 0;
   overflow: hidden;

@@ -94,6 +94,13 @@ describe('Select', () => {
     expect(green).not.toHaveTextContent('Cool');
   });
 
+  it("measures the selected row's label apart from its description", () => {
+    render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red', description: 'Warm' }]} defaultSelectedKey="r" />);
+    act(() => { fireEvent.click(screen.getByRole('button', { name: /Red/ })); });
+    const label = screen.getByRole('option', { name: 'Red' }).querySelector(`.${s.optionLabel}`);
+    expect(label).toHaveTextContent(/^Red$/);
+  });
+
   it("keeps the chosen option's description out of the trigger", () => {
     render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red', description: 'Warm' }]} defaultSelectedKey="r" />);
     const trigger = screen.getByRole('button', { name: /Red/ });
