@@ -1,15 +1,22 @@
+import { after, LONGEST_TIMER_MS } from '@weasel-js/registry';
+
 /** Runs in the worker. A message with `ms` books timer `id`; one without clears
- *  it. Each timer posts its id back once, when it elapses. */
+ *  it. Each timer posts its id back once, when it elapses, as `after` waits. */
 const WORKER_SOURCE = `const timers = new Map();
+const LONGEST = ${LONGEST_TIMER_MS};
 self.onmessage = (e) => {
   const id = e.data.id;
   clearTimeout(timers.get(id));
   timers.delete(id);
-  if (e.data.ms === undefined) return;
-  timers.set(id, setTimeout(() => {
-    timers.delete(id);
-    self.postMessage(id);
-  }, e.data.ms));
+  if (e.data.ms === undefined || e.data.ms === Infinity) return;
+  const wait = (left) => {
+    timers.set(id, setTimeout(() => {
+      if (left > LONGEST) return wait(left - LONGEST);
+      timers.delete(id);
+      self.postMessage(id);
+    }, Math.min(left, LONGEST)));
+  };
+  wait(e.data.ms);
 };
 `;
 
@@ -25,7 +32,7 @@ export interface TickTimer {
 interface Pending {
   cb: () => void;
   ms: number;
-  fallback?: ReturnType<typeof setTimeout>;
+  fallback?: () => void;
 }
 
 function spawn(): { worker: Worker; url: string } | null {
@@ -66,7 +73,7 @@ export function createTickTimer(): TickTimer {
     p.cb();
   };
   const arm = (id: number, p: Pending): void => {
-    p.fallback = setTimeout(() => fire(id), p.ms);
+    p.fallback = after(p.ms, () => fire(id));
   };
   const release = (): void => {
     if (!spawned) return;
@@ -99,13 +106,11 @@ export function createTickTimer(): TickTimer {
       const p = pending.get(id);
       if (!p) return;
       pending.delete(id);
-      if (p.fallback !== undefined) clearTimeout(p.fallback);
+      if (p.fallback !== undefined) p.fallback();
       else spawned?.worker.postMessage({ id });
     },
     dispose() {
-      for (const p of pending.values()) {
-        if (p.fallback !== undefined) clearTimeout(p.fallback);
-      }
+      for (const p of pending.values()) p.fallback?.();
       pending.clear();
       release();
     },

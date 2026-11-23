@@ -122,3 +122,22 @@ describe('createFader', () => {
     expect(to.connectedTo).toEqual([]);
   });
 });
+
+describe('createFader through a suspension', () => {
+  it('keeps a closing fader wired until its ramp has run out after the resume', () => {
+    const { ctx, fader, gain, from, runTimers } = harness();
+    fader.open(0);
+    const done = vi.fn();
+    fader.close(MS, done);
+    ctx._advance(MS / 2);
+    ctx._setState('suspended');
+    runTimers();
+    expect(done).not.toHaveBeenCalled();
+    expect(from.connectedTo).toContain(gain);
+    ctx._setState('running');
+    ctx._advance(MS);
+    runTimers();
+    expect(done).toHaveBeenCalledOnce();
+    expect(from.connectedTo).not.toContain(gain);
+  });
+});

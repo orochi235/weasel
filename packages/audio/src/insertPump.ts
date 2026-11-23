@@ -1,4 +1,4 @@
-import { atAudioTime, type Timers } from './audioTime';
+import { afterRamp, type Timers } from './audioTime';
 import type { Step } from './insertPlan';
 
 /** Runs an insert chain's steps one crossfade at a time. */
@@ -45,7 +45,7 @@ export function createInsertPump(
         continue;
       }
       busy = true;
-      cancel = atAudioTime(ctx, timers, ctx.currentTime + ms / 1000, () => {
+      cancel = afterRamp(ctx, timers, ctx.currentTime + ms / 1000, () => {
         cancel = null;
         busy = false;
         finish();

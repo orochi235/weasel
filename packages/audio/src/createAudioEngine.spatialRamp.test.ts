@@ -57,3 +57,16 @@ describe('a positional voice while the listener moves', () => {
     expect(gain.value).toBeCloseTo(0.5 / 500, 6);
   });
 });
+
+describe('setPan on a positional voice', () => {
+  it('drops the distance gain with the position', async () => {
+    const { engine, voice, panner, gain } = await positionalVoice();
+    engine.setListener({ x: 500, y: 0 });
+    expect(gain.value).toBeCloseTo(1 / 500, 6);
+    voice.setPan(0.25);
+    expect(gain.value).toBe(1);
+    expect(panner.pan.value).toBe(0.25);
+    voice.setGain(0.5);
+    expect(gain.value).toBe(0.5);
+  });
+});

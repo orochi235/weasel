@@ -84,7 +84,8 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
       // From the count, not the step: a stall can skip a bar's first or last steps, or whole bars.
       const bar = Math.floor(count / SCORE_BAR_STEPS);
       if (bar <= reported) return;
-      if (reported >= 0) {
+      // `start` wrote bar 0, which a stall may have skipped whole.
+      if (bar !== current.bar) {
         current = stateAt(bar, current);
         write(current);
       }

@@ -1,4 +1,4 @@
-import { atAudioTime, type Timers } from '../audioTime';
+import { afterRamp, atAudioTime, type Timers } from '../audioTime';
 import { initParam, writeParam } from '../param';
 
 export interface Fader {
@@ -70,7 +70,7 @@ export function createFader(
       stopOpening();
       const length = ctx.state === 'running' ? ms : 0;
       writeParam(ctx, gain.gain, 0, length);
-      cancel = atAudioTime(ctx, timers, ctx.currentTime + length / 1000, () => {
+      cancel = afterRamp(ctx, timers, ctx.currentTime + length / 1000, () => {
         cancel = null;
         cut();
         closed = true;

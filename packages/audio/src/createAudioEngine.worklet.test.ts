@@ -105,9 +105,11 @@ describe("synthVoices: 'worklet'", () => {
     const pans = posted('pan');
     expect((pans[1] as { value: number }).value).toBeGreaterThan(0);
     const levels = posted('level') as { value: number; end: number }[];
-    expect(levels[0]).toEqual({ kind: 'level', id: 1, value: 0.25, end: ctx.currentTime + 0.1 });
+    // An explicit pan drops the position's distance gain.
+    expect(levels[0]).toEqual({ kind: 'level', id: 1, value: 1, end: 0 });
+    expect(levels[1]).toEqual({ kind: 'level', id: 1, value: 0.25, end: ctx.currentTime + 0.1 });
     // Moving keeps the ramp running to the same end.
-    expect(levels[1].end).toBeCloseTo(ctx.currentTime + 0.1, 9);
+    expect(levels[2].end).toBeCloseTo(ctx.currentTime + 0.1, 9);
   });
 
   it('reports no lateness for a worklet voice whose pass came late, as it was not', async () => {
@@ -216,6 +218,23 @@ describe("synthVoices: 'worklet'", () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
+  it('reports stopAll of a voice started inside a stall as done, not dropped', async () => {
+    const { engine, node, onDone, onDrop, flush } = await startedInAStall();
+    engine.stopAll();
+    node()._ended(1);
+    await flush();
+    expect(onDrop).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it('reports dispose of a voice started inside a stall as done, not dropped', async () => {
+    const { engine, onDone, onDrop, flush } = await startedInAStall();
+    engine.dispose();
+    await flush();
+    expect(onDrop).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
   it('still cancels a voice released before its time', async () => {
     const { engine, ctx, posted, flush } = await harness();
     const onDrop = vi.fn();
@@ -271,5 +290,15 @@ describe("synthVoices: 'worklet'", () => {
     engine.dispose();
     expect(node().posted.slice(-2)).toEqual([{ kind: 'stop', id: 1, at: 0 }, { kind: 'dispose' }]);
     expect(node().disconnected).toBe(true);
+  });
+
+  it('reports a sounding voice done on dispose, though the processor can no longer answer', async () => {
+    const { engine, run, flush } = await harness();
+    const onDone = vi.fn();
+    engine.playNote({ pitch: 440, onDone });
+    await run(25);
+    engine.dispose();
+    await flush();
+    expect(onDone).toHaveBeenCalledOnce();
   });
 });

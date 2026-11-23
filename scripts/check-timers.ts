@@ -26,12 +26,10 @@ const ALLOWED = new Map<string, string>([
   ['packages/registry/src/after.ts', 'the wrapper itself: each timer it sets is capped at the limit'],
   ['packages/audio/src/audioTime.ts', 'the default timer pair: every delay `atAudioTime` asks it for is capped at the limit'],
   ['packages/audio/src/testing/renderEngine.ts', 'a test engine\'s timer pair: every delay `atAudioTime` asks it for is capped at the limit'],
-  ['packages/audio/src/tickTimer.ts', 'the scheduler\'s pass timer: its delays are the lookahead interval, a few ms'],
   ['packages/forge/src/vite/watchRecovery.ts', 'an unref\'d Node interval, started only for a `quietMs` one timer holds'],
   ['packages/forge/src/vite/watchProbe.ts', 'an unref\'d Node timer, which `after` cannot give; its wait is the probe\'s own constant or a test\'s'],
   ['packages/labkit/src/loupe/lens/GridCanvas.tsx', '`useCaptureDelay` answers 0 or LENS_REST_MS'],
   ['packages/labkit/src/loupe/lens/LensSlot.tsx', '`useCaptureDelay` answers 0 or LENS_REST_MS'],
-  ['packages/labkit/src/trial/watch3d.ts', 'the wait is an entry of the RETRIES_MS table'],
   ['apps/devtools-extension/src/background/badge.ts', 'the wait is an entry of the BADGE_DELAYS table'],
 ]);
 

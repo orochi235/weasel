@@ -160,3 +160,10 @@ describe('createBusGraph', () => {
     expect(() => graph.bus('nope')).toThrow(/nope/);
   });
 });
+
+describe('createBusGraph bus names', () => {
+  it('refuses a name given twice', () => {
+    const ctx = createFakeAudioContext();
+    expect(() => createBusGraph(ctx as never, ['sfx', 'music', 'sfx'])).toThrow(/"sfx" is named twice/);
+  });
+});

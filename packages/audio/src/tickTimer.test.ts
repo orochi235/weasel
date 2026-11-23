@@ -197,3 +197,43 @@ describe('the tick worker script', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+describe('createTickTimer delays past the timer limit', () => {
+  const LIMIT = 2 ** 31 - 1;
+  afterEach(() => { vi.useRealTimers(); });
+
+  it.each([Infinity, LIMIT * 2])('never fires a fallback timer early for %s', (ms) => {
+    vi.useFakeTimers();
+    const cb = vi.fn();
+    createTickTimer().setTimer(cb, ms);
+    vi.advanceTimersByTime(LIMIT + 1);
+    expect(cb).not.toHaveBeenCalled();
+    if (ms !== Infinity) {
+      vi.advanceTimersByTime(ms - LIMIT - 1);
+      expect(cb).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it.each([Infinity, LIMIT * 2])('never posts back early from the worker for %s', (ms) => {
+    const env = stubWorkerGlobals();
+    vi.useFakeTimers();
+    try {
+      createTickTimer();
+      const replies: unknown[] = [];
+      const self: { onmessage: ((e: { data: unknown }) => void) | null; postMessage(id: unknown): void } = {
+        onmessage: null,
+        postMessage: (id) => { replies.push(id); },
+      };
+      new Function('self', env.scripts[0])(self);
+      self.onmessage!({ data: { id: 1, ms } });
+      vi.advanceTimersByTime(LIMIT + 1);
+      expect(replies).toEqual([]);
+      if (ms !== Infinity) {
+        vi.advanceTimersByTime(ms - LIMIT - 1);
+        expect(replies).toEqual([1]);
+      }
+    } finally {
+      env.restore();
+    }
+  });
+});

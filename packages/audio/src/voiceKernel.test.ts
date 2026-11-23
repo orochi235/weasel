@@ -216,3 +216,11 @@ describe('createNoiseKernel', () => {
     expect(voice.render(new Float32Array(ms(30)))).toBe(false);
   });
 });
+
+describe('a kernel voice gain', () => {
+  it.each([Number.NaN, Infinity])('throws for %s, as playNote does', (gain) => {
+    expect(() => renderNote({ pitch: 'A4', duration: 100, gain }, 48000)).toThrow(RangeError);
+    expect(() => renderNoise({ noise: 'white', duration: 100, gain }, 48000)).toThrow(RangeError);
+    expect(() => createNoteKernel({ pitch: 'A4', gain }, 48000)).toThrow(RangeError);
+  });
+});

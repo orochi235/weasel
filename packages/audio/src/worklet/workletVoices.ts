@@ -147,6 +147,9 @@ export function createWorkletVoices(
         bus.node.port.postMessage({ kind: 'dispose' } satisfies ToProcessor);
         bus.node.port.onmessage = null;
         bus.node.disconnect();
+        // The processor's `ended` can no longer arrive, so every voice ends here.
+        for (const source of bus.sources.values()) source.end();
+        bus.sources.clear();
       }
       buses.clear();
     },

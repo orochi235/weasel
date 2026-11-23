@@ -76,6 +76,21 @@ describe('createScore', () => {
     expect(starts().slice(before)).toEqual([]);
   });
 
+  it('names the bar it is in when a stall skips the whole of bar 0', async () => {
+    const { ctx, engine, run } = await engineHarness();
+    const bars: [number, number][] = [];
+    const score = createScore(engine, {
+      mood: home('dread'),
+      onBar: (state, when) => bars.push([state.bar, Math.round(when)]),
+    });
+    score.start(0);
+    ctx._advance(4500);
+    await run(100);
+    expect(bars[0][0]).toBe(Math.floor(bars[0][1] / 4000));
+    expect(bars[0][0]).toBeGreaterThan(0);
+    expect(score.state().bar).toBe(bars[0][0]);
+  });
+
   it('starts a new cue from its first layer, and keeps building one it stays in', async () => {
     const { engine, run } = await engineHarness();
     const seen: [string, number][] = [];
@@ -124,5 +139,16 @@ describe('createScore', () => {
     expect(() => score.setMood(bad)).toThrow(RangeError);
     expect(score.mood()).toEqual(home('wonder'));
     expect(() => score.setMood({ valence: Number.POSITIVE_INFINITY, tension: 0, urgency: 0 })).not.toThrow();
+  });
+});
+
+describe('createScore on a disposed engine', () => {
+  it('is not playing once the engine is disposed', async () => {
+    const { engine, run } = await engineHarness();
+    const score = createScore(engine, { mood: home('dread') });
+    score.start(0);
+    await run(100);
+    engine.dispose();
+    expect(score.isPlaying()).toBe(false);
   });
 });

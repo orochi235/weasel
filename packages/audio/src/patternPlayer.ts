@@ -85,6 +85,7 @@ export const checkSteps = (what: string, n: number): void => {
 /** Steps in one pass of `events` when no length is given: through the last
  *  event, rounded up to a whole beat. */
 export function patternLength(events: readonly PatternEvent[], stepsPerBeat = 4): number {
+  checkEventSteps(events);
   let last = -1;
   for (const e of events) last = Math.max(last, Math.floor(e.step));
   return Math.max(1, Math.ceil((last + 1) / stepsPerBeat)) * stepsPerBeat;
@@ -97,10 +98,15 @@ export const checkTempo = (bpm: number): void => {
 };
 
 /** `events` under the step each starts in. Throws on an event whose step is not finite. */
-function eventsByStep(events: readonly PatternEvent[]): Map<number, PatternEvent[]> {
+/** Throws on an event whose step is not finite. */
+export function checkEventSteps(events: readonly PatternEvent[]): void {
   for (const e of events) {
     if (!Number.isFinite(e.step)) throw new RangeError(`@weasel-js/audio: a pattern event's step is finite, not ${e.step}`);
   }
+}
+
+function eventsByStep(events: readonly PatternEvent[]): Map<number, PatternEvent[]> {
+  checkEventSteps(events);
   const byStep = new Map<number, PatternEvent[]>();
   for (const e of events) {
     const step = Math.floor(e.step);
@@ -248,6 +254,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       if (running) return;
       const at = when ?? engine.now();
       if (!Number.isFinite(at)) throw new RangeError(`@weasel-js/audio: a pattern starts at a finite time, not ${at}`);
+      if (engine.disposed()) return;
       running = true;
       run += 1;
       count = 0;
@@ -262,7 +269,8 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       for (const v of voices) v.release();
       voices.clear();
     },
-    isPlaying: () => running,
+    // A disposed engine fires nothing it had booked, so a player running on one is silent for good.
+    isPlaying: () => running && !engine.disposed(),
     tempo: () => bpm,
     setTempo(next) {
       checkTempo(next);

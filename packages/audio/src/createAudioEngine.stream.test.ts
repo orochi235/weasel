@@ -78,6 +78,20 @@ describe('engine.stream', () => {
     expect(made.map((e) => [e.src, e.crossOrigin, e.paused])).toEqual([['/long.mp3', 'anonymous', false]]);
   });
 
+  it('opens no media element for a URL whose play is refused or dropped', async () => {
+    const made = vi.fn(() => createFakeMediaElement());
+    vi.stubGlobal('Audio', function Audio() { return made(); });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { ctx, engine } = await harness();
+    expect(() => engine.stream('/long.mp3', { gain: Number.NaN })).toThrow(RangeError);
+    await ctx.suspend();
+    expect(engine.stream('/long.mp3').isPlaying()).toBe(false);
+    engine.dispose();
+    expect(engine.stream('/long.mp3').isPlaying()).toBe(false);
+    expect(made).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
   it('reuses the one source node an element can have, stopping the earlier voice', async () => {
     const { engine, sources, tick } = await harness();
     const el = createFakeMediaElement();

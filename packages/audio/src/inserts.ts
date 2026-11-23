@@ -67,6 +67,9 @@ export interface OwnedInsertChain {
   dispose(): void;
 }
 
+// Across every chain: a slot's removal disposes its effect, which must not pull it out from under another chain.
+const used = new WeakSet<InsertEffect>();
+
 /**
  * Build an insert chain from `head` to `tail`, which start wired straight
  * through.
@@ -90,7 +93,6 @@ export function createInsertChain(
     setTimer: opts.setTimer ?? defaultTimers.setTimer,
     clearTimer: opts.clearTimer ?? defaultTimers.clearTimer,
   };
-  const used = new WeakSet<InsertEffect>();
   const order: Slot[] = [];
   let disposed = false;
 

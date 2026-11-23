@@ -1,6 +1,6 @@
 import { createAnalyserTap, type AnalyserTap, type AnalyserTapOptions } from './analyser';
 import { defaultTimers, type Timers } from './audioTime';
-import { createBusGraph, type BusHandle } from './buses';
+import { checkBusNames, createBusGraph, type BusHandle } from './buses';
 import { createAudioGraph, disposeNow } from './graph/createAudioGraph';
 import type { AudioGraph, AudioGraphOptions } from './graph/types';
 import type { Slots, Starter } from './liveVoice';
@@ -18,7 +18,7 @@ import type {
 } from './types';
 import { createChainPool } from './voiceChains';
 import { createDropWarnings, type DropWarnings } from './voiceDrops';
-import { createVoicePool } from './voicePool';
+import { checkVoiceLimit, createVoicePool } from './voicePool';
 import { createVoices } from './voices';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
@@ -80,6 +80,8 @@ export interface AudioEngine {
   graph(bus?: string): AudioGraph;
   /** Throws a `RangeError` on a point or option that is not finite. */
   setListener(p: SpatialPoint, opts?: SpatialOptions): void;
+  /** True once `dispose()` has run: nothing booked on the engine will fire. */
+  disposed(): boolean;
   dispose(): void;
 }
 
@@ -208,14 +210,13 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   // Before anything is made: the tick timer's worker and a context of the engine's own would leak.
   checkSchedulerTiming({ lookahead: opts.lookahead, interval: opts.tickInterval });
   checkSpan('insert fade', opts.insertFadeMs);
+  const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
+  checkBusNames(busNames);
+  checkVoiceLimit(opts.voiceLimit ?? 32);
   const ctx = opts.context ?? new AudioContext();
   // A context the engine made is a context the engine closes; a consumer's is
   // theirs to keep.
   const ownsContext = opts.context === undefined;
-  const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
-  if (busNames.length === 0) {
-    throw new Error('@weasel-js/audio: an engine needs at least one bus');
-  }
   const sounds = createSoundCache(ctx, opts.fetchFn);
   const { requireSlots, active } = busSlots(busNames, opts);
   const { now, tickTimer, timers, scheduler } = engineClock(ctx, opts);
@@ -297,6 +298,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       if (o) spatialOpts = o;
       voices.respatialize();
     },
+    disposed: () => disposed,
     dispose() {
       if (disposed) return;
       disposed = true;
