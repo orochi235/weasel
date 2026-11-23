@@ -38,6 +38,15 @@ describe('list widget', () => {
     expect(l.bounds).toEqual({ x: 5, y: 0, width: 200, height: rowH * 4 + 3 });
   });
 
+  it('lands a focused list on its home row when rows come back after going empty', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, selectionMode: 'single', onActivate: () => {} });
+    l.onFocusChange!(true);
+    l.setRows([]);
+    expect(l.active).toBeNull();
+    l.setRows(rows);
+    expect(l.active).toBe(1);
+  });
+
   it('draws each label, the selected row filled, and a swatch in its leading slot', () => {
     const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, selectionMode: 'single', onActivate: () => {} });
     const cmds = l.draw(ctx);

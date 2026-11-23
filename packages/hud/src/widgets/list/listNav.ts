@@ -18,7 +18,8 @@ export interface ListNav {
   key(evt: HudKeyEvent): { handled: boolean; changed: boolean };
   focus(focused: boolean): boolean;
   /** The rows changed from `prev`: the active, hovered and pressed rows follow their row ids. A row gone leaves
-   *  the active row on the one now at its place (the last, past the end), and the hover and the press on none. */
+   *  the active row on the one now at its place (the last, past the end), and the hover and the press on none.
+   *  A focused list with no active row lands on its home row, as on focus. */
   rebase(prev: readonly HudListRow[]): void;
 }
 
@@ -109,6 +110,7 @@ export function createListNav(
       };
       const n = all.length;
       active = active === null ? null : follow(active) ?? (n ? Math.min(active, n - 1) : null);
+      if (focused && active === null) active = home();
       hover = follow(hover);
       pressRow = follow(pressRow);
     },
