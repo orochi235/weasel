@@ -48,6 +48,9 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
     if (held && held.owner !== table.owner) {
       fail(ctx, `the icon namespace "${table.namespace}" is claimed by both ${held.owner} and ${table.owner}`);
     }
+    if (table.namespace === 'all' || table.namespace === USED) {
+      fail(ctx, `${table.owner}'s icon namespace "${table.namespace}" is reserved for a built-in variant of virtual:weasel-icons`);
+    }
     if (Object.hasOwn(variants, table.namespace)) {
       fail(ctx, `the custom icon variant "${table.namespace}" has the name of ${table.owner}'s icon namespace`);
     }
