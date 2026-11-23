@@ -48,3 +48,29 @@ describe('planeFloor far from the origin', () => {
     }
   });
 });
+
+describe('plane scheme levels deep past exact tile indices', () => {
+  const scheme = createPlaneScheme(512);
+
+  it('keeps the level where every tile index on screen is an exact integer', () => {
+    for (const [x, ppu] of [[1, 2 ** 62], [1e6, 2 ** 50], [10, Infinity]] as const) {
+      const box = [x, x, x + 800 / ppu, x + 600 / ppu];
+      const z = scheme.levelFor({ box, pxPerUnit: ppu }, undefined);
+      expect(Number.isFinite(z)).toBe(true);
+      const keys = scheme.wanted({ box, pxPerUnit: ppu }, z);
+      expect(keys.length).toBeGreaterThan(0);
+      for (const { key } of keys) expect(Number.isSafeInteger(key.x) && Number.isSafeInteger(key.y)).toBe(true);
+    }
+  });
+
+  it('throws rather than walking tile indices that are not exact integers', () => {
+    expect(() => scheme.keysMeeting([1, 1, 1.0000001, 1.0000001], 62)).toThrow(RangeError);
+    expect(() => scheme.keysMeeting([0, 0, Infinity, 1], 0)).toThrow(RangeError);
+  });
+
+  it('holds a line far past exact indices at its own span\'s level', () => {
+    const keys = planeFloor(scheme, 512, [1e18, 0, 1e18, 1]);
+    expect(keys.length).toBeGreaterThan(0);
+    expect(keys.length).toBeLessThanOrEqual(4);
+  });
+});
