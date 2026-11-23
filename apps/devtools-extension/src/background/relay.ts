@@ -14,8 +14,8 @@ interface Frame {
   port: PortLike;
   /** The frame's roots as the panel knows them, by scoped id. */
   roots: Map<string, DevtoolsRootInfo>;
-  /** The requests passed to the frame that it has not answered. */
-  asked: Set<number>;
+  /** The requests passed to the frame that it has not answered, to the scoped id of the root each asks about. */
+  asked: Map<number, string>;
 }
 
 interface Tab {
@@ -62,6 +62,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
     if (message.type === 'sup') {
       const before = frame.roots;
       frame.roots = new Map(message.roots.map((r) => [r.id, r]));
+      forget(frame);
       if (!t.greeted) {
         t.greeted = true;
         const roots = [...t.frames.values()].flatMap((f) => [...f.roots.values()]);
@@ -78,8 +79,16 @@ export function createRelay({ wake }: RelayOptions): Relay {
     }
     if ((message.type === 'result' || message.type === 'error') && message.requestId !== null) frame.asked.delete(message.requestId);
     if (message.type === 'root-added') frame.roots.set(message.root.id, message.root);
-    if (message.type === 'root-removed') frame.roots.delete(message.rootId);
+    if (message.type === 'root-removed') {
+      frame.roots.delete(message.rootId);
+      forget(frame);
+    }
     t.panel?.postMessage(message);
+  }
+
+  /** The page never answers a request about a root that went, so it stops waiting on those. */
+  function forget(frame: Frame): void {
+    for (const [requestId, rootId] of frame.asked) if (!frame.roots.has(rootId)) frame.asked.delete(requestId);
   }
 
   function fromPanel(t: Tab, tabId: number, message: PanelMessage): void {
@@ -98,7 +107,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
     const { frameId, rootId } = unscopeRootId(message.rootId);
     const frame = t.frames.get(frameId);
     if (frame) {
-      frame.asked.add(message.requestId);
+      frame.asked.set(message.requestId, message.rootId);
       frame.port.postMessage({ ...message, rootId });
     } else t.panel?.postMessage({
       type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId: message.requestId,
@@ -108,7 +117,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
 
   /** Tell the panel what went with a frame: an error for each request it never answered, then its roots. */
   function drop(t: Tab, frameId: number, frame: Frame): void {
-    for (const requestId of frame.asked) {
+    for (const requestId of frame.asked.keys()) {
       t.panel?.postMessage({
         type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId,
         message: `weasel devtools: frame ${frameId} went before it answered`,
@@ -132,7 +141,7 @@ export function createRelay({ wake }: RelayOptions): Relay {
       replaced.port.disconnect();
       drop(t, frameId, replaced);
     }
-    const frame: Frame = { port, roots: new Map(), asked: new Set() };
+    const frame: Frame = { port, roots: new Map(), asked: new Map() };
     t.frames.set(frameId, frame);
     port.onMessage.addListener((m) => { if (isPageMessage(m)) fromPage(t, frameId, frame, m); });
     port.onDisconnect.addListener(() => {

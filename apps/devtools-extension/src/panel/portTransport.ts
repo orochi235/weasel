@@ -21,23 +21,27 @@ export interface PortTransport extends PanelTransport {
 /** A transport to the page in tab `tabId`, over ports `connect` opens. */
 export function createPortTransport(tabId: number, connect: (name: string) => PortLike): PortTransport {
   const listeners = createEmitter<[m: PageMessage]>();
-  let yo: PanelMessage | null = null;
+  let yo: Extract<PanelMessage, { type: 'yo' }> | null = null;
   let closed = false;
   let port: PortLike | null = null;
   /**
    * The requests sent on the current port that it has not answered, by the id this transport gave
    * each, to the id its client did; a port that drops never will answer. A client numbers its
    * requests from 1, and each panel mount brings a new client, so the transport numbers them for
-   * its own lifetime: a late answer to an earlier client's request then settles nothing.
+   * its own lifetime: a late answer to an earlier client's request then settles nothing. Each keeps
+   * the root it asks about, since the page never answers a request about a root that went.
    */
-  const asked = new Map<number, number>();
+  const asked = new Map<number, { requestId: number; rootId: string }>();
   let nextId = 1;
   const answer = (requestId: number, message = 'weasel devtools: the connection to the page restarted'): void =>
     listeners.emit({ type: 'error', protocol: DEVTOOLS_PROTOCOL, requestId, message });
   const answerAll = (message?: string): void => {
     const lost = [...asked.values()];
     asked.clear();
-    for (const requestId of lost) answer(requestId, message);
+    for (const { requestId } of lost) answer(requestId, message);
+  };
+  const forget = (gone: (rootId: string) => boolean): void => {
+    for (const [id, { rootId }] of asked) if (gone(rootId)) asked.delete(id);
   };
   // Ports in a row that dropped before carrying anything: a background that hangs up at once is not one to call straight back.
   let quiet = 0;
@@ -74,11 +78,15 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
       if (isReplaced(message)) return replaced(p);
       if (!isPageMessage(message)) return;
       if ((message.type === 'result' || message.type === 'error') && message.requestId !== null) {
-        const requestId = asked.get(message.requestId);
-        if (requestId === undefined) return;
+        const request = asked.get(message.requestId);
+        if (!request) return;
         asked.delete(message.requestId);
-        listeners.emit({ ...message, requestId });
+        listeners.emit({ ...message, requestId: request.requestId });
         return;
+      }
+      if (message.session === undefined || message.session === yo?.session) {
+        if (message.type === 'root-removed') forget((rootId) => rootId === message.rootId);
+        if (message.type === 'sup') forget((rootId) => !message.roots.some((r) => r.id === rootId));
       }
       listeners.emit(message);
     });
@@ -109,7 +117,7 @@ export function createPortTransport(tabId: number, connect: (name: string) => Po
       }
       if (!('requestId' in message)) return p.postMessage(message);
       const id = nextId++;
-      asked.set(id, message.requestId);
+      asked.set(id, { requestId: message.requestId, rootId: message.rootId });
       p.postMessage({ ...message, requestId: id });
     },
     onMessage: listeners.subscribe,

@@ -66,6 +66,24 @@ describe('the panel’s port transport', () => {
     expect(backgrounds[1]!.received.at(-1)).toMatchObject({ requestId: 3 });
   });
 
+  it('stops waiting on a request about a root the page says went, which the page never answers', () => {
+    const { transport, backgrounds } = setup();
+    const heard: unknown[] = [];
+    transport.onMessage((m) => heard.push(m));
+    transport.send(yo);
+    const ask = (requestId: number, rootId: string) => transport.send({ type: 'get-state', protocol: PROTOCOL, requestId, rootId });
+    ask(1, 'root-1');
+    ask(2, 'root-2');
+    ask(3, 'root-3');
+    backgrounds[0]!.postMessage({ type: 'root-removed', protocol: PROTOCOL, rootId: 'root-1' });
+    backgrounds[0]!.postMessage({ ...sup, roots: [{ id: 'root-3', label: 'root-3', dimension: '2d' }] });
+    heard.length = 0;
+    backgrounds[0]!.disconnect();
+    expect(heard).toEqual([
+      { type: 'error', protocol: PROTOCOL, requestId: 3, message: 'weasel devtools: the connection to the page restarted' },
+    ]);
+  });
+
   it('settles no later client’s request with a late answer to an earlier one', () => {
     const { transport, backgrounds } = setup();
     const heard: unknown[] = [];

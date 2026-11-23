@@ -217,6 +217,22 @@ describe('the background relay', () => {
     expect(content.closed).toBe(false);
   });
 
+  it('stops waiting on a request about a root the page says went, which the page never answers', () => {
+    const { page, panel } = setup();
+    const p = panel(1);
+    const top = page(1);
+    p.postMessage(yo);
+    top.postMessage(sup(root('root-1'), root('root-2')));
+    const ask = (requestId: number, rootId: string) => p.postMessage({ type: 'get-state', protocol: P, requestId, rootId });
+    ask(1, 'root-1');
+    ask(2, 'root-2');
+    top.postMessage({ type: 'root-removed', protocol: P, rootId: 'root-1' });
+    top.postMessage(sup());
+    const before = p.received.length;
+    top.disconnect();
+    expect(p.received.slice(before).filter((m) => (m as { type: string }).type === 'error')).toEqual([]);
+  });
+
   it('sends a panel that replaced another no answer for the requests the other asked', () => {
     const { page, panel } = setup();
     const first = panel(1);
