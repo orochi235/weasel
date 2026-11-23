@@ -82,7 +82,8 @@ export interface EffectEditorApi {
    *  Under `nodeGraph` it first pins every stage where it shows, as a drag
    *  does. Returns the new cluster's id, or `null` for no ids. */
   cluster(ids: readonly string[]): string | null;
-  /** Dissolves a cluster, as `dissolveCluster` does, and reports it as 'Ungroup'. */
+  /** Dissolves a cluster, as `dissolveCluster` does, and reports it as 'Ungroup'.
+   *  Under `nodeGraph` it first pins every stage where it shows, as a drag does. */
   dissolveCluster(id: string): void;
   /** Opens the field a cluster's title is renamed in, over its title, or above
    *  its box where it has none; a double-click on the title does
@@ -165,8 +166,9 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
       return nextClusterId(d.pipeline);
     },
     dissolveCluster: (id) => {
-      const { doc: d, onChange: report } = now.current;
-      if (d.pipeline.clusters?.some((g) => g.id === id)) report(dissolveCluster(d, id), 'Ungroup');
+      const { doc: d, specs: shown, look: l, onChange: report } = now.current;
+      if (!d.pipeline.clusters?.some((g) => g.id === id)) return;
+      report(dissolveCluster(l === 'nodeGraph' ? pinShown(ensureWireIds(d), shown) : d, id), 'Ungroup');
     },
     renameCluster: (id) => setRenaming(id),
     visible: () => view.current?.visible() ?? null,

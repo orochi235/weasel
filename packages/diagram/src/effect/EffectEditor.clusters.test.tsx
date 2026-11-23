@@ -134,6 +134,13 @@ describe('EffectEditor clusters under nodeGraph', () => {
     expect(dissolved.clusterBoxes).toBeUndefined();
   });
 
+  it('pins the stages layout placed before it dissolves a cluster, as cluster does', () => {
+    const { onChange, api } = mount({ ...DOC, places: {}, clusterBoxes: {} });
+    act(() => api.current!.dissolveCluster('g'));
+    const [dissolved] = onChange.mock.calls[0]! as [EffectDoc, string];
+    expect(Object.keys(dissolved.places).sort()).toEqual(['a', 'b', 'c']);
+  });
+
   it('closes the rename field when its cluster leaves the doc, and keeps it shut for a new one of that id', () => {
     const api = createRef<EffectEditorApi>();
     const ui = (doc: EffectDoc) => <EffectEditor ref={api} doc={doc} onChange={vi.fn()} width={800} height={600} />;
