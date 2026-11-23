@@ -15,3 +15,20 @@ it('returns focus to the overlay without scrolling it or the page', () => {
   overlay.remove();
   chrome.remove();
 });
+
+it("focuses through the overlay's own focus path when given one", () => {
+  const overlay = document.createElement('div');
+  overlay.setAttribute('contenteditable', 'true');
+  overlay.textContent = 'abc';
+  const chrome = document.createElement('button');
+  document.body.append(overlay, chrome);
+  chrome.focus();
+  const bare = vi.spyOn(overlay, 'focus');
+  const focus = vi.fn(() => HTMLElement.prototype.focus.call(overlay));
+  restoreOverlayFocus(overlay, { start: 1, end: 2 }, focus);
+  expect(focus).toHaveBeenCalledOnce();
+  expect(bare).not.toHaveBeenCalled();
+  expect(document.activeElement).toBe(overlay);
+  overlay.remove();
+  chrome.remove();
+});

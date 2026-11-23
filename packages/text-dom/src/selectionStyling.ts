@@ -44,6 +44,8 @@ export function patchForToggle(
 /** What the styling commands read and write of the edit they style. */
 export interface SelectionStylingHost {
   readonly overlayRef: { readonly current: HTMLDivElement | null };
+  /** Focuses the overlay as its scroller does, keeping a clipped box's scroll. */
+  readonly focusRef: { readonly current: (() => void) | null };
   readonly editingIdRef: { readonly current: string | null };
   readonly optsRef: { readonly current: Pick<UseTextEditOptions, 'setStyle' | 'onChange'> };
   readonly historyRef: { readonly current: OverlayHistory | null };
@@ -62,7 +64,7 @@ export interface SelectionStylingHost {
 /** `applyStyleToSelection` and `toggleStyle` for the edit `host` describes. */
 export function useSelectionStyling(host: SelectionStylingHost) {
   const {
-    overlayRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
+    overlayRef, focusRef, editingIdRef, optsRef, historyRef, styleOf, restyleNode, baseRef, sendDraft,
     pendingRef, armPending, selectionRef, publishRange,
   } = host;
   const applyStyle = useCallback(function applyStyle(patch: RunStylePatch) {
@@ -109,7 +111,7 @@ export function useSelectionStyling(host: SelectionStylingHost) {
       if (range.start === range.end) {
         armPending({ ...pendingRef.current, [key]: unsetFlag !== undefined ? false : undefined }, range.start);
       }
-      restoreOverlayFocus(overlay, range);
+      restoreOverlayFocus(overlay, range, focusRef.current);
       // Whatever else the patch carried still applies on its own terms.
       const rest = { ...patch };
       delete rest[key];
@@ -122,18 +124,18 @@ export function useSelectionStyling(host: SelectionStylingHost) {
     // the next character instead of silently doing nothing.
     if (range.start === range.end) {
       armPending(armPatch(runStyleAt(runs, range.start), pendingRef.current, patch), range.start);
-      restoreOverlayFocus(overlay, range);
+      restoreOverlayFocus(overlay, range, focusRef.current);
       return;
     }
 
     const next = applyStyleToRange(runs, range.start, range.end, patch);
     writeRunsPreservingSelection(overlay, next, range.start, range.end, baseRef.current);
-    restoreOverlayFocus(overlay, range);
+    restoreOverlayFocus(overlay, range, focusRef.current);
     // Republish from the range we just styled, not from the DOM selection:
     // when the patch came from chrome the selection is in that control.
     publishRange(overlay, range);
     sendDraft(overlay);
-  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef, baseRef, overlayRef]);
+  }, [publishRange, armPending, editingIdRef, optsRef, styleOf, restyleNode, sendDraft, pendingRef, selectionRef, baseRef, overlayRef, focusRef]);
 
   /** `applyStyle`, as one step of the edit's undo. */
   const applyStyleToSelection = useCallback((patch: RunStylePatch) => {
