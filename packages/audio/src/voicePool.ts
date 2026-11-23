@@ -45,10 +45,14 @@ export interface VoicePool {
  * `AudioBufferSourceNode` per play, because a source node is single-use by
  * specification and cannot be restarted once stopped.
  */
-export function createVoicePool(opts: VoicePoolOptions): VoicePool {
-  if (!(opts.limit >= 1)) {
-    throw new RangeError(`@weasel-js/audio: voice pool limit must be at least 1, got ${opts.limit}`);
+export function checkVoiceLimit(limit: number): void {
+  if (!(limit >= 1)) {
+    throw new RangeError(`@weasel-js/audio: voice pool limit must be at least 1, got ${limit}`);
   }
+}
+
+export function createVoicePool(opts: VoicePoolOptions): VoicePool {
+  checkVoiceLimit(opts.limit);
   const steal = opts.steal ?? 'oldest';
   const live = new Map<number, VoiceRecord & { token: number }>();
   const free: number[] = [];

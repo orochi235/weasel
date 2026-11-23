@@ -62,11 +62,19 @@ interface BusState {
  * `writeParam`, so `rampMs` survives instead of being overwritten by the
  * recomputation that follows it.
  */
+/** Throws unless `names` holds at least one bus. */
+export function checkBusNames(names: readonly string[]): void {
+  if (names.length === 0) {
+    throw new Error('@weasel-js/audio: an engine needs at least one bus');
+  }
+}
+
 export function createBusGraph(
   ctx: AudioContext,
   names: string[],
   opts: BusGraphOptions = {},
 ): BusGraph {
+  checkBusNames(names);
   const master = ctx.createGain();
   master.connect(ctx.destination);
 

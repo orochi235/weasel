@@ -59,3 +59,18 @@ describe('engine.context', () => {
     expect(engine.context.state).toBe('suspended');
   });
 });
+
+describe('createAudioEngine refusing its options', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it.each([
+    ['an empty bus list', { buses: [] }],
+    ['a voice limit of 0', { voiceLimit: 0 }],
+    ['a NaN voice limit', { voiceLimit: Number.NaN }],
+  ])('makes no context of its own for %s', (_, bad) => {
+    const made = vi.fn(() => createFakeAudioContext());
+    vi.stubGlobal('AudioContext', function AudioContextStub() { return made(); });
+    expect(() => createAudioEngine({ ...bad, setTimer: () => 1, clearTimer: () => {} })).toThrow();
+    expect(made).not.toHaveBeenCalled();
+  });
+});
