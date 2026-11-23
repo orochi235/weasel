@@ -80,7 +80,7 @@ export interface EffectEditorApi {
   addStage(type: EffectStageType, client?: { x: number; y: number }): string;
   /** Puts stages and clusters in a new cluster, as `clusterStages` does, and reports it as 'Group'.
    *  Under `nodeGraph` it first pins every stage where it shows, as a drag
-   *  does. Returns the new cluster's id, or `null` for no ids. */
+   *  does. Returns the new cluster's id, or `null` when no id names a stage or cluster. */
   cluster(ids: readonly string[]): string | null;
   /** Dissolves a cluster, as `dissolveCluster` does, and reports it as 'Ungroup'.
    *  Under `nodeGraph` it first pins every stage where it shows, as a drag does. */
@@ -160,9 +160,10 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
     },
     cluster: (ids) => {
       const { doc: d, specs: shown, look: l, onChange: report } = now.current;
-      if (ids.length === 0) return null;
       const base = l === 'nodeGraph' ? pinShown(ensureWireIds(d), shown) : d;
-      report(clusterStages(base, ids), 'Group');
+      const next = clusterStages(base, ids);
+      if (next === base) return null;
+      report(next, 'Group');
       return nextClusterId(d.pipeline);
     },
     dissolveCluster: (id) => {

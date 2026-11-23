@@ -63,12 +63,13 @@ export function nextClusterId(p: EffectPipeline): string {
  * {@link nextClusterId}'s. It nests inside the cluster all of them share, where
  * the first of them was; otherwise it goes at the top level, taking them out
  * of the clusters they were in. One of `ids` inside another goes with it.
+ * An id naming no stage or cluster is left out; `doc` itself when none is left.
  */
 export function clusterStages(doc: EffectDoc, given: readonly string[], label?: string): EffectDoc {
-  if (given.length === 0) return doc;
-  const id = nextClusterId(doc.pipeline);
   const clusters = clustersOf(doc);
-  const ids = outermost(clusters, given);
+  const known = new Set([...doc.pipeline.stages.map((s) => s.id), ...clusters.map((g) => g.id)]);
+  const ids = outermost(clusters, given.filter((m) => known.has(m)));
+  const id = nextClusterId(doc.pipeline);
   if (ids.length === 0) return doc;
   const parents = new Set(ids.map((m) => parentOf(clusters, m)?.id));
   const shared = parents.size === 1 ? [...parents][0] : undefined;

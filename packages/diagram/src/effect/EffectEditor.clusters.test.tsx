@@ -133,6 +133,17 @@ describe('EffectEditor clusters under nodeGraph', () => {
     expect(dissolved.pipeline.clusters).toEqual([]);
     expect(dissolved.clusterBoxes).toBeUndefined();
   });
+  it('leaves ids that name nothing out of a new cluster, and makes none of only those', () => {
+    const { onChange, api } = mount();
+    let id: string | null = 'unset';
+    act(() => { id = api.current!.cluster(['nope']); });
+    expect(id).toBeNull();
+    expect(onChange).not.toHaveBeenCalled();
+    act(() => { id = api.current!.cluster(['nope', 'c']); });
+    expect(id).toBe('cluster');
+    expect((onChange.mock.calls[0]![0] as EffectDoc).pipeline.clusters!.at(-1)).toEqual({ id: 'cluster', members: ['c'] });
+  });
+
 
   it('pins the stages layout placed before it dissolves a cluster, as cluster does', () => {
     const { onChange, api } = mount({ ...DOC, places: {}, clusterBoxes: {} });
