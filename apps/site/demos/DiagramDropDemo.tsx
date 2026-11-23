@@ -3,7 +3,7 @@ import {
   DiagramView, diagramScene, dragItemProps,
   type CanConnect, type CanDropItem, type CanReparent, type DataEdge, type DataNode, type DiagramData, type ItemDrop, type NodeMove,
 } from '@weasel-js/diagram';
-import { FONT } from './diagram/shared';
+import { FONT, connected } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 import s from './DiagramDropDemo.module.css';
 
@@ -94,7 +94,7 @@ export function DiagramDropDemo() {
       <DemoStage width={640} height={380}>
         <DiagramView
           specs={specs} router="avoid" className="ckd-canvas" connectBodies
-          onConnect={(edge) => setSt((was) => ({ ...was, edges: [...was.edges, edge] }))} canConnect={canConnect}
+          onConnect={(edge) => setSt((was) => ({ ...was, edges: connected(was.edges, edge) }))} canConnect={canConnect}
           onMove={onMove} canReparent={canReparent}
           onReorder={({ parent, order }) => parent === 'row' && setSt((was) => ({ ...was, row: order }))}
           onDropItem={onDropItem} canDropItem={canDropItem}

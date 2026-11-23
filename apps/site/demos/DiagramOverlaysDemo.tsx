@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DiagramView, diagramScene, edgeIdOf, type DataEdge, type DataNode } from '@weasel-js/diagram';
 import { Button } from '@weasel-js/ui/components/Button';
 import { FONT } from './diagram/shared';
@@ -22,10 +22,37 @@ function wiresOf(edges: readonly DataEdge[], id: string): string {
   return n === 1 ? '1 wire' : `${n} wires`;
 }
 
+/** How long an edge's hover outlasts the pointer, long enough to reach the "+" on it. */
+const LINGER_MS = 250;
+
+/** The edge under the pointer, kept while the pointer is on its "+" (`stay`)
+ *  and for `LINGER_MS` after it leaves both, then cleared. */
+export function useEdgeHover() {
+  const [hovered, setHovered] = useState<string | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const stay = () => clearTimeout(timer.current);
+  const leave = () => {
+    stay();
+    timer.current = setTimeout(() => setHovered(null), LINGER_MS);
+  };
+  useEffect(() => () => clearTimeout(timer.current), []);
+  return {
+    hovered,
+    onHover: (id: string | null) => {
+      if (id === null) return leave();
+      stay();
+      setHovered(id);
+    },
+    stay,
+    leave,
+    clear: () => { stay(); setHovered(null); },
+  };
+}
+
 export function DiagramOverlaysDemo() {
   const [data, setData] = useState(START);
   const [picked, setPicked] = useState<string | null>(null);
-  const [hovered, setHovered] = useState<string | null>(null);
+  const { hovered, onHover, stay, leave, clear } = useEdgeHover();
   const specs = useMemo(() => diagramScene(data, { font: FONT, layoutOptions: { direction: 'right' } }), [data]);
   const edgeById = new Map(data.edges.map((e) => [edgeIdOf(e), e]));
   const hoveredEdge = hovered === null ? undefined : edgeById.get(hovered);
@@ -35,14 +62,16 @@ export function DiagramOverlaysDemo() {
     ...(hoveredEdge === undefined ? [] : [{
       target: hovered!,
       content: (
-        <Button
-          onClick={() => {
-            setData((d) => insertOn(d, hoveredEdge, `step ${d.nodes.length - 1}`));
-            setHovered(null);
-          }}
-        >
-          +
-        </Button>
+        <span onPointerEnter={stay} onPointerLeave={leave}>
+          <Button
+            onClick={() => {
+              setData((d) => insertOn(d, hoveredEdge, `step ${d.nodes.length - 1}`));
+              clear();
+            }}
+          >
+            +
+          </Button>
+        </span>
       ),
     }]),
     ...(node === undefined ? [] : [{
@@ -61,7 +90,7 @@ export function DiagramOverlaysDemo() {
         pickEdges
         selection={picked}
         onSelectionChange={(id) => setPicked(id !== null && data.nodes.some((n) => n.id === id) ? id : null)}
-        onHover={(id) => { if (id !== null) setHovered(id); }}
+        onHover={onHover}
         overlays={overlays}
       />
     </DemoStage>

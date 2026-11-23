@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { DiagramView, diagramScene, type DataEdge, type DataNode, type NodeMove } from '@weasel-js/diagram';
-import { FONT, PORTS, moved } from './diagram/shared';
+import { FONT, PORTS, connected, moved } from './diagram/shared';
 import { DemoStage } from './DemoStage';
 
 const W = 640, H = 360;
@@ -36,7 +36,7 @@ export function DiagramNodesDemo() {
         className="ckd-canvas"
         portOptions={PORTS}
         onMove={(moves: readonly NodeMove[]) => setNodes((ns) => moved(ns, moves))}
-        onConnect={(edge) => setEdges((es) => [...es, edge])}
+        onConnect={(edge) => setEdges((es) => connected(es, edge))}
       />
     </DemoStage>
   );
