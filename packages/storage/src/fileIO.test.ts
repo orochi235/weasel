@@ -24,6 +24,16 @@ describe('downloadBlob', () => {
     vi.runAllTimers();
     expect(revoke).toHaveBeenCalledWith('blob:x');
   });
+
+  it('saves a name holding a path separator or another character a file system refuses with a hyphen in its place', () => {
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:x');
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    const names: string[] = [];
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { names.push(this.download); });
+    downloadBlob(new Blob([]), 'art - Q3/Q4: draft?.png');
+    downloadBlob(new Blob([]), 'a\\b<c>|"d"*\u0007.svg');
+    expect(names).toEqual(['art - Q3-Q4- draft-.png', 'a-b-c---d---.svg']);
+  });
 });
 
 describe('pickFile', () => {

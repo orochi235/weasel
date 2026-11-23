@@ -1,9 +1,15 @@
-/** Trigger a browser download of `blob` as a file named `filename`. */
+const UNSAVABLE = /[\\/:*?"<>|\u0000-\u001f\u007f]/g;
+
+/**
+ * Trigger a browser download of `blob` as a file named `filename`, each character a file system would refuse
+ * (`/`, `\`, `:`, `*`, `?`, `"`, `<`, `>`, `|` and control characters) replaced by `-`, so every browser saves
+ * the same name.
+ */
 export function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename;
+  a.download = filename.replace(UNSAVABLE, '-');
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
