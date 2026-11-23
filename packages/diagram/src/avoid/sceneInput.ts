@@ -5,7 +5,7 @@
  * connector's labels, on its stubs, are obstacles of their own.
  */
 import {
-  worldPoses,
+  documentPose,
   AUTO_POSE_DESCRIPTOR,
   type PoseDescriptor,
   type Scene,
@@ -18,6 +18,7 @@ import { diagramClusterOf } from '../clusterBox';
 import { diagramLabelOf } from '../labelTrait';
 import { portSitesOf, portsOf, type PortsOptions } from '../ports';
 import { diagramNodeOf } from '../trait';
+import { worldWith } from '../worldWith';
 import type { Port } from '../types';
 import type { AvoidEdge, AvoidInput, AvoidLabel, AvoidObstacle, AvoidPort } from './types';
 
@@ -49,23 +50,24 @@ function members(scene: AnyScene, node: SceneNode, into: Set<string>): Set<strin
 
 /**
  * What the router reads off `scene`: its obstacles and its `avoid` connectors,
- * each node at the pose `poseOf` gives it, else the one the document holds.
+ * each node where it draws once `frame`'s stored poses, a transform frame's,
+ * are written in place of the document's.
  */
 export function avoidSceneInput<TPose>(
   scene: Scene<unknown, string, TPose>,
   opts: AvoidSceneOptions<TPose> = {},
-  poseOf?: (id: string) => TPose | undefined,
+  frame: ReadonlyMap<string, TPose> = new Map(),
 ): AvoidInput {
   const sc = scene as unknown as AnyScene;
   const poseDescriptor = opts.poseDescriptor ?? (AUTO_POSE_DESCRIPTOR as PoseDescriptor<TPose>);
   const portOpts: PortsOptions<TPose> = { poseDescriptor, ...(opts.read ? { read: opts.read } : {}) };
   const key = opts.routerKey ?? 'avoid';
   const poses = new Map<string, TPose>();
-  const stored = worldPoses(sc, 'document');
+  const world = worldWith(sc, frame, (node) => documentPose(sc, node));
   const pose = (node: SceneNode): TPose => {
     let p = poses.get(node.id);
     if (p === undefined) {
-      p = poseOf?.(node.id) ?? (stored(node.id) as TPose);
+      p = world(node.id) as TPose;
       poses.set(node.id, p);
     }
     return p;

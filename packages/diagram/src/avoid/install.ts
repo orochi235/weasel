@@ -106,7 +106,7 @@ function avoidFollower<TPose>(scene: Scene<unknown, string, TPose>, router: Avoi
     preview(frame, data) {
       if (frame.size === 0) return [];
       if (still(frame)) return last!.out;
-      const input = carried(data, avoidSceneInput(scene, opts, (id) => frame.get(id) as TPose | undefined));
+      const input = carried(data, avoidSceneInput(scene, opts, frame as ReadonlyMap<string, TPose>));
       const routes = router.update(input, { preview: true, budgetMs: opts.frameBudgetMs ?? 4 });
       const out: TransformPreviewNode[] = [];
       for (const [id, route] of routes) {

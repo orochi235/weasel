@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createScene, type RectPose, type Scene } from '@weasel-js/core';
+import { commitOps, createScene, scenePoseFrame, type ActionDeps, type NodeId, type PoseComposition, type RectPose, type Scene } from '@weasel-js/core';
+import { CONTAINER_STENCILS, containerBuild } from '../containers/containerStencils';
 import { EDGE_DERIVE_PATH, withDiagramRegistry } from '../edge';
 import { edgeLabelSpec, endLabelIdOf } from '../edgeLabel';
 import type { DiagramEdge } from '../edgeTrait';
@@ -29,5 +30,33 @@ describe('avoidSceneInput', () => {
     ]);
     const [edge] = avoidSceneInput(scene).edges;
     expect(edge!.labels?.map((l) => l.id)).toEqual(['ab/label', endLabelIdOf('ab', 'from')]);
+  });
+
+  /** A scene holding a container at (300, 200), shape `in` inside it at world (340, 260), and `out` at (0, 0). */
+  function nested() {
+    const scene = sceneOf([box('out', 0, 0)]);
+    const built = containerBuild(CONTAINER_STENCILS.find((s) => s.id === 'container')!, { x: 300, y: 200, width: 240, height: 160 }, {
+      layer: 'main', newId: () => 'box', composition: scene.composition as PoseComposition<RectPose>,
+    });
+    commitOps({ scene } as unknown as ActionDeps, built.ops, 'Insert');
+    const local = scenePoseFrame(scene as never).localUnder('box' as NodeId, { x: 340, y: 260, width: 100, height: 60 }) as RectPose;
+    scene.add({ ...box('in', local.x, local.y), parent: 'box' as NodeId } as never);
+    return scene;
+  }
+  const boxOf = (scene: AvoidScene, id: string, frame: Map<string, RectPose>) =>
+    avoidSceneInput(scene, {}, frame).obstacles.find((o) => o.id === id)!.box;
+
+  it('reads a drag frame’s pose for a nested shape in its parent’s frame, as stored', () => {
+    const scene = nested();
+    const stored = scene.get('in' as never)!.pose as RectPose;
+    const box = boxOf(scene, 'in', new Map([['in', { ...stored, y: stored.y + 50 }]]));
+    expect(box).toMatchObject({ x: 340, y: 310 });
+  });
+
+  it('moves what a dragged container holds with it', () => {
+    const scene = nested();
+    const stored = scene.get('box' as never)!.pose as RectPose;
+    const box = boxOf(scene, 'in', new Map([['box', { ...stored, x: stored.x + 100 }]]));
+    expect(box).toMatchObject({ x: 440, y: 260 });
   });
 });
