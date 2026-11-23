@@ -3,6 +3,7 @@ import { openPrefsSync, type PrefsStore } from '@weasel-js/prefs';
 import { pref, type PrefGroup } from '@weasel-js/prefs-schema';
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
+import { HISTORY_LIMIT } from './useLabHistory';
 import { usePrefsHistory } from './usePrefsHistory';
 
 const SCHEMA = {
@@ -23,5 +24,12 @@ describe('usePrefsHistory', () => {
     result.current.history.redo();
     expect(store.get('a' as never)).toBe(5);
     expect(store.get('b' as never)).toBe(9);
+  });
+
+  it('keeps as many steps as the lab pages do, dropping the oldest', () => {
+    const store = openPrefsSync(SCHEMA, { storage: createMemoryAdapter(), prefix: 'p.' }) as unknown as PrefsStore<PrefGroup>;
+    const { result } = renderHook(() => usePrefsHistory(store));
+    for (let i = 0; i < HISTORY_LIMIT + 10; i++) result.current.set(i % 2 ? 'a' : 'b', i + 10);
+    expect(result.current.history.serialize().undoStack).toHaveLength(HISTORY_LIMIT);
   });
 });
