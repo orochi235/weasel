@@ -162,6 +162,35 @@ describe('createBusGraph', () => {
 });
 
 describe('createBusGraph bus names', () => {
+  it('steps a bus to the value a ramp in flight is heading for', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx']);
+    const gain = (graph.node('sfx') as never as { gain: FakeParam }).gain;
+    graph.bus('sfx').setGain(0, 2000);
+    ctx._advance(500);
+    graph.bus('sfx').setGain(0);
+    expect(gain.cancels).toEqual([0, 0.5]);
+    expect(gain.holds.at(-1)).toEqual({ value: 0, at: 0.5 });
+    expect(gain.ramps).toHaveLength(1);
+  });
+
+  it('resumes a bus ramp to its own end when a mute or solo lets it be heard again', () => {
+    const ctx = createFakeAudioContext();
+    const graph = createBusGraph(ctx as never, ['sfx', 'music']);
+    const sfx = (graph.node('sfx') as never as { gain: FakeParam }).gain;
+    graph.bus('sfx').setGain(0.2, 3000);
+    ctx._advance(1000);
+    graph.bus('music').solo(true);
+    ctx._advance(500);
+    graph.bus('music').solo(false);
+    expect(sfx.ramps.at(-1)).toEqual({ value: 0.2, at: expect.closeTo(3, 9) });
+    graph.bus('sfx').mute(true);
+    ctx._advance(2000);
+    graph.bus('sfx').mute(false);
+    expect(sfx.ramps).toHaveLength(2);
+    expect(sfx.holds.at(-1)).toEqual({ value: 0.2, at: 3.5 });
+  });
+
   it('refuses a name given twice', () => {
     const ctx = createFakeAudioContext();
     expect(() => createBusGraph(ctx as never, ['sfx', 'music', 'sfx'])).toThrow(/"sfx" is named twice/);
