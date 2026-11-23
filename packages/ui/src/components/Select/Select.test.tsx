@@ -21,6 +21,16 @@ describe('Select', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
+  it('drops at run time every React Aria prop its types leave out', () => {
+    const stray = { isOpen: true, isDisabled: true, isInvalid: true, isRequired: true } as object;
+    render(<Select aria-label="Color" options={OPTIONS} {...stray} />);
+    expect(screen.queryByRole('listbox')).toBeNull();
+    const trigger = screen.getByRole('button');
+    expect(trigger.hasAttribute('disabled')).toBe(false);
+    expect(trigger.closest('[data-rac]')?.hasAttribute('data-invalid')).toBe(false);
+    expect(trigger.closest('[data-rac]')?.hasAttribute('data-required')).toBe(false);
+  });
+
   it('renders a button trigger labeled by the select', () => {
     render(<Select label="Color" options={OPTIONS} placeholder="—" />);
     const trigger = screen.getByRole('button', { name: /Color/ });
