@@ -131,13 +131,13 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
   const assigned = assignedProps(program);
 
   const meta = objectOf(metaNode, bindings, wrappers);
-  const title = stringOf(prop(meta, 'title'), bindings) ?? autoTitle;
-  const include = storyFilter(meta, 'includeStories');
-  const exclude = storyFilter(meta, 'excludeStories');
-  const componentNode = prop(meta, 'component');
+  const title = stringOf(prop(meta, 'title', bindings, wrappers), bindings) ?? autoTitle;
+  const include = storyFilter(meta, 'includeStories', bindings, wrappers);
+  const exclude = storyFilter(meta, 'excludeStories', bindings, wrappers);
+  const componentNode = prop(meta, 'component', bindings, wrappers);
   const componentName = componentNode?.type === 'Identifier' ? componentNode.name : undefined;
   const metaIsolate = isolateOf(meta, bindings, wrappers, 'default');
-  const metaTags = tagsOf(meta);
+  const metaTags = tagsOf(meta, bindings, wrappers);
   const native = wrappers.has(calleeOf(metaNode, bindings) ?? '');
 
   return exported
@@ -147,13 +147,16 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
     .map(({ name, local, node, doc, from }) => {
       const spec = withAssigned(objectOf(node, bindings, wrappers), from ? undefined : assigned.get(local));
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;
-      const tags = combineTags(metaTags, tagsOf(spec));
+      const tags = combineTags(metaTags, tagsOf(spec, bindings, wrappers));
       const viewport = native ? viewportOf(spec, bindings, wrappers) : undefined;
       return {
         id: storyId(title, name),
         title,
         // An empty name falls through, as the loader's does, so the tree and the trial name a story alike.
-        name: stringOf(prop(spec, 'name'), bindings) || stringOf(prop(spec, 'storyName'), bindings) || storyNameFromExport(name),
+        name:
+          stringOf(prop(spec, 'name', bindings, wrappers), bindings) ||
+          stringOf(prop(spec, 'storyName', bindings, wrappers), bindings) ||
+          storyNameFromExport(name),
         exportName: name,
         file,
         ...(doc === undefined ? {} : { description: doc }),
@@ -192,9 +195,9 @@ function withAssigned(spec: t.ObjectExpression | null, props: readonly t.ObjectP
  * It must be a string literal, because the shell reads it without importing the module.
  */
 function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers, exportName: string): string | undefined {
-  const parameters = objectOf(prop(obj, 'parameters'), bindings, wrappers);
-  const forge = objectOf(prop(parameters, 'forge'), bindings, wrappers);
-  const value = prop(obj, 'isolate') ?? prop(forge, 'isolate');
+  const parameters = objectOf(prop(obj, 'parameters', bindings, wrappers), bindings, wrappers);
+  const forge = objectOf(prop(parameters, 'forge', bindings, wrappers), bindings, wrappers);
+  const value = prop(obj, 'isolate', bindings, wrappers) ?? prop(forge, 'isolate', bindings, wrappers);
   if (value === undefined) return undefined;
   const literal = stringLiteral(value);
   if (literal === undefined) throw new Error(`${exportName}: isolate must be a string literal`);
@@ -203,17 +206,17 @@ function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers:
 
 /** A native story's `viewport`, when both sides are number literals. */
 function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers): StoryViewport | undefined {
-  const value = objectOf(prop(obj, 'viewport'), bindings, wrappers);
-  const width = prop(value, 'width');
-  const height = prop(value, 'height');
+  const value = objectOf(prop(obj, 'viewport', bindings, wrappers), bindings, wrappers);
+  const width = prop(value, 'width', bindings, wrappers);
+  const height = prop(value, 'height', bindings, wrappers);
   return width?.type === 'NumericLiteral' && height?.type === 'NumericLiteral'
     ? { width: width.value, height: height.value }
     : undefined;
 }
 
 /** `obj`'s `tags`: the string literals of an array literal. */
-function tagsOf(obj: t.ObjectExpression | null): string[] | undefined {
-  const value = prop(obj, 'tags');
+function tagsOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers): string[] | undefined {
+  const value = prop(obj, 'tags', bindings, wrappers);
   if (value?.type !== 'ArrayExpression') return undefined;
   return value.elements.flatMap((e) => (e ? (stringLiteral(e) ?? []) : []));
 }
@@ -230,8 +233,8 @@ function combineTags(meta: string[] | undefined, own: string[] | undefined): str
 }
 
 /** `includeStories`/`excludeStories` as a predicate, when written as a string array or a regex literal. */
-function storyFilter(obj: t.ObjectExpression | null, key: string): ((name: string) => boolean) | null {
-  const value = prop(obj, key);
+function storyFilter(obj: t.ObjectExpression | null, key: string, bindings: Bindings, wrappers: Wrappers): ((name: string) => boolean) | null {
+  const value = prop(obj, key, bindings, wrappers);
   if (value?.type === 'RegExpLiteral') {
     const re = new RegExp(value.pattern, value.flags.replace(/[gy]/g, ''));
     return (name) => re.test(name);

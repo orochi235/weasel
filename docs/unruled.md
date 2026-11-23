@@ -3964,3 +3964,9 @@ Calls the lanes made without a ruling:
   without as a form draws it: the default of the field's own leaf, and absent where no leaf describes it, as `repair`
   keeps it. The object's own `default` answers only while nothing at all is held. Reading the field from the object's
   `default`, as before, was the alternative, and showed rows for a value the form drew otherwise.
+## Audit round seventy-seven (2026-11-23): forge's vite plugin
+
+- 2026-11-23 (the fixer's call): forge's static indexer reads a meta or story key that a later spread may override
+  (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
+  spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
+  sent the title to the file's auto title in the common case, where the spread carries no title.

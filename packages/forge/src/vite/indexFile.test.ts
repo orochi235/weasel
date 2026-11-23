@@ -89,6 +89,15 @@ export const Made = defineStory({});
     expect(indexFile(code, FILE, 'ui/Auto', wrappers).map((e) => e.exportName)).toEqual(['Basic', 'Made']);
   });
 
+  it('reads a key a later spread may override from what the spread carries, and past a spread it cannot read', () => {
+    const titled = (head: string) =>
+      indexFile(`${head}\nexport const A = { name: 'Mine', ...base };\nconst base = { name: 'Base' };\n`, FILE, 'ui/Auto').map((e) => [e.title, e.name]);
+    expect(titled(`const shared = { title: 'ui/Shared' };\nexport default { title: 'ui/Own', ...shared };`)).toEqual([['ui/Shared', 'Base']]);
+    expect(titled(`const shared = { tags: [] };\nexport default { title: 'ui/Own', ...shared };`)).toEqual([['ui/Own', 'Base']]);
+    expect(titled(`import { shared } from './shared';\nexport default { title: 'ui/Own', ...shared };`)).toEqual([['ui/Own', 'Base']]);
+    expect(titled(`import { shared } from './shared';\nexport default { ...shared, title: 'ui/Own' };`)).toEqual([['ui/Own', 'Base']]);
+  });
+
   it('reads a native export that picks between values, or copies one, by what it picks from', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';

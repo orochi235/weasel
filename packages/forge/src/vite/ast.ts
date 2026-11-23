@@ -173,12 +173,39 @@ export function objectOf(
   }
 }
 
-/** The value `obj` holds at `key`: the last property naming it, as an object literal evaluates. */
-export function prop(obj: t.ObjectExpression | null, key: string): t.Node | undefined {
+const ABSENT = Symbol('absent');
+
+/**
+ * The value `obj` holds at `key`, as an object literal evaluates: the last property naming it, or what a spread after
+ * it carries, read through `bindings` and `wrappers`. A spread it cannot read is taken to set nothing.
+ */
+export function prop(
+  obj: t.ObjectExpression | null,
+  key: string,
+  bindings: Bindings = new Map(),
+  wrappers: { has(name: string): boolean } = new Set(),
+): t.Node | undefined {
+  const found = lookup(obj, key, bindings, wrappers, 0);
+  return found === ABSENT ? undefined : found;
+}
+
+function lookup(
+  obj: t.ObjectExpression | null,
+  key: string,
+  bindings: Bindings,
+  wrappers: { has(name: string): boolean },
+  depth: number,
+): t.Node | typeof ABSENT {
+  if (depth > 16) return ABSENT;
   for (const p of [...(obj?.properties ?? [])].reverse()) {
+    if (p.type === 'SpreadElement') {
+      const found = lookup(objectOf(p.argument, bindings, wrappers), key, bindings, wrappers, depth + 1);
+      if (found !== ABSENT) return found;
+      continue;
+    }
     if (p.type !== 'ObjectProperty' || p.computed) continue;
     const name = p.key.type === 'Identifier' ? p.key.name : p.key.type === 'StringLiteral' ? p.key.value : null;
     if (name === key) return p.value;
   }
-  return undefined;
+  return ABSENT;
 }
