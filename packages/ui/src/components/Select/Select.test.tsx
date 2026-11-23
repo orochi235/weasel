@@ -193,6 +193,13 @@ describe('Select', () => {
       expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Select an item', 'Red']);
     });
 
+    it("measures React Aria's placeholder for a key no option holds", () => {
+      const { container } = render(<Select aria-label="Color" options={[{ value: 'r', label: 'Red' }]} selectedKey="gone" width="fit" />);
+      expect(container.querySelector('.' + s.value)?.textContent).toBe('Select an item');
+      const sizer = container.querySelector('.' + s.sizer) as HTMLElement;
+      expect(Array.from(sizer.children).map((c) => c.textContent)).toEqual(['Select an item', 'Red']);
+    });
+
     it("keeps measuring React Aria's placeholder once a value is chosen", () => {
       const one = [{ value: 'r', label: 'Red' }];
       const { container, rerender } = render(<Select aria-label="Color" options={one} selectedKey={null} width="fit" />);
