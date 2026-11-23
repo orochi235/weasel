@@ -707,3 +707,23 @@ describe('Timeline keys held inside the duration', () => {
     expect(keyTimes(onChange)).toEqual([0, 1000]);
   });
 });
+
+describe('Timeline insert on an empty track', () => {
+  const colors = (): Track[] => ([{ kind: 'sampled', label: 'fill', keys: [], interpolate: (a: string) => a, onTick: () => {} }] as unknown as Track[]);
+
+  it('reports no edit for a double-click on an empty track it cannot seed', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={colors()} onChange={onChange} />);
+    fireEvent.doubleClick(screen.getByTestId('timeline-lane-track'), { clientX: 100 });
+    expect(onChange).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('seeds it through seedKey', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={colors()} onChange={onChange} seedKey={() => '#000'} />);
+    fireEvent.doubleClick(screen.getByTestId('timeline-lane-track'), { clientX: 100 });
+    expect(((onChange.mock.lastCall![0] as Track[])[0] as SampledTrack<string>).keys).toEqual([{ t: 200, value: '#000' }]);
+  });
+});

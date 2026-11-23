@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/animator';
 import { deleteKey, insertKey, moveKey, setKeyEasing, setKeyValue } from './keys';
 
@@ -85,6 +85,27 @@ describe('insertKey', () => {
   it('inserts into an empty track', () => {
     const r = insertKey([track([])], [0], 50);
     expect(times(r.tracks)).toEqual([50]);
+  });
+
+  it('seeds an empty track with a target from what the target shows', () => {
+    const tr = { kind: 'sampled', keys: [], target: { read: () => '#ff0000' } } as unknown as Track;
+    expect((insertKey([tr], [0], 50).tracks[0] as SampledTrack<string>).keys).toEqual([{ t: 50, value: '#ff0000' }]);
+  });
+
+  it('inserts nothing on an empty track it cannot seed, and warns', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const tr = { kind: 'sampled', label: 'fill', keys: [], interpolate: (a: string) => a } as unknown as Track;
+    const r = insertKey([tr], [0], 50);
+    expect(r.selection).toBeNull();
+    expect((r.tracks[0] as SampledTrack<string>).keys).toEqual([]);
+    expect(warn.mock.calls[0][0]).toContain('seedKey');
+    warn.mockRestore();
+  });
+
+  it('seeds an empty track through the seed it is given', () => {
+    const tr = { kind: 'sampled', keys: [], interpolate: (a: string) => a } as unknown as Track;
+    const r = insertKey([tr], [0], 50, () => 'red');
+    expect((r.tracks[0] as SampledTrack<string>).keys).toEqual([{ t: 50, value: 'red' }]);
   });
 });
 

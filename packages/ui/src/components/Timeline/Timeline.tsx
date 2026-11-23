@@ -9,12 +9,12 @@ import { Lane, type LaneHold, type LaneProps } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
 import { buildLanes, rowTimes, type LaneRow } from './lanes';
-import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
+import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySeed, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 import { useFolds, useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
 import { TimelineInspector } from './TimelineInspector';
 
-export type { KeySelection } from './keys';
+export type { KeySeed, KeySelection } from './keys';
 export type { TimeWindow } from './timeScale';
 
 /** What `renderKeyEditor` is handed for the selected keyframe. */
@@ -56,6 +56,10 @@ export interface TimelineProps extends HoldProps {
   selection?: KeySelection | null;
   onSelectionChange?: (sel: KeySelection | null) => void;
   renderKeyEditor?: (ctx: KeyEditorCtx) => ReactNode;
+  /** The value of a key double-clicked onto an empty sampled track, or `undefined` to insert none. Default: the
+   *  track's target's value, else 0 for a track with no `interpolate` or `interpolator`; one with either and no
+   *  target takes no key, with a warning. */
+  seedKey?: KeySeed;
 
   window?: TimeWindow;
   onWindowChange?: (w: TimeWindow) => void;
@@ -156,7 +160,7 @@ export function Timeline(props: TimelineProps): ReactElement {
               hold={laneHold}
               onExpandedChange={() => toggle(row.key)}
               onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}
-              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit })}
+              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit }, props.seedKey)}
               onCancel={props.onCancel}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
               onSelectSegment={(keyIndex) => selectSegment({ trackPath, keyIndex })}
@@ -192,7 +196,7 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   commit: (r: KeyEdit) => void;
-}): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
+}, seed?: KeySeed): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
   return {
     onKeyInput: (keyIndex, toMs) => report.onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks),
     onKeyRevert: () => report.onInput?.(tracks.slice()),
@@ -203,7 +207,10 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
     },
     onKeysInput: (keys) => report.onInput?.(setKeys(tracks, trackPath, keys)),
     onKeysChange: (keys) => report.onChange(setKeys(tracks, trackPath, keys)),
-    onInsert: (atMs) => report.commit(insertKey(tracks, trackPath, atMs)),
+    onInsert: (atMs) => {
+      const r = insertKey(tracks, trackPath, atMs, seed);
+      if (r.selection) report.commit(r);
+    },
   };
 }
 

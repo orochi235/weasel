@@ -1,5 +1,5 @@
 export { Timeline } from './Timeline';
-export type { KeyEditorCtx, KeySelection, TimelineProps, TimeWindow } from './Timeline';
+export type { KeyEditorCtx, KeySeed, KeySelection, TimelineProps, TimeWindow } from './Timeline';
 export { samePath } from './keys';
 export { TimeRuler } from './TimeRuler';
 export type { TimeRulerProps } from './TimeRuler';

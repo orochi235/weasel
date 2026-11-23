@@ -100,19 +100,38 @@ export function moveKey(
   return { tracks: tracks.slice(), selection: sel };
 }
 
+/** What a key inserted on an empty sampled track takes, or `undefined` to insert none. */
+export type KeySeed = (track: SampledTrack<unknown>, t: number) => unknown;
+
+/** An empty track's first key: what `seed` gives, else its target's value, else 0 for a track that lerps its keys as
+ *  numbers. One with its own `interpolate` or `interpolator` and no target has no value type to seed from. */
+function emptySeed(st: SampledTrack<unknown>, t: number, seed?: KeySeed): { value: unknown } | undefined {
+  if (seed) {
+    const value = seed(st, t);
+    return value === undefined ? undefined : { value };
+  }
+  if (st.target) return { value: st.target.read() };
+  if (!st.interpolate && !st.interpolator) return { value: 0 };
+  console.warn(`weasel: Timeline inserted no key on the empty track "${st.label ?? ''}", whose values it cannot guess. Pass \`seedKey\` to give one.`);
+  return undefined;
+}
+
 /** Insert a key at `atMs`, seeded with whatever the track already reads there,
  *  so inserting alone leaves a linear stretch's motion as it was. An eased
  *  stretch runs its easing again over each side of the new key, which takes
- *  the easing of the key after it. */
+ *  the easing of the key after it. An empty track seeds as `emptySeed` says; inserting none, the result's
+ *  `selection` is `null`. */
 export function insertKey(
-  tracks: readonly Track[], trackPath: readonly number[], atMs: number,
+  tracks: readonly Track[], trackPath: readonly number[], atMs: number, seed?: KeySeed,
 ): KeyEdit {
   const track = trackAtPath(tracks, trackPath);
   if (track?.kind !== 'sampled') return { tracks: tracks.slice(), selection: null };
 
   const st = track as SampledTrack<unknown>;
   const t = Math.max(0, atMs);
-  const value = st.keys.length === 0 ? 0 : sampleTrack(st, t);
+  const seeded = st.keys.length === 0 ? emptySeed(st, t, seed) : { value: sampleTrack(st, t) };
+  if (!seeded) return { tracks: tracks.slice(), selection: null };
+  const { value } = seeded;
   const keys = st.keys.slice();
   const at = keys.findIndex((k) => k.t > t);
   const keyIndex = at === -1 ? keys.length : at;

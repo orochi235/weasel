@@ -3981,3 +3981,9 @@ Calls the lanes made without a ruling:
   (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
   spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
   sent the title to the file's auto title in the common case, where the spread carries no title.
+## Audit round seventy-eight (2026-11-23): ui's Timeline
+
+- 2026-11-23 (the fixer's call): a key double-clicked onto an empty sampled track takes the track's target's value,
+  or 0 when the track has no `interpolate` or `interpolator`, and a track with either and no target takes no key and
+  warns, naming `seedKey`, the `Timeline` prop that seeds one. Seeding 0 whatever the track's values, as before, was
+  the alternative.
