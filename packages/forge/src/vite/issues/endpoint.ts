@@ -64,6 +64,9 @@ interface GhIssue {
   createdAt: string;
 }
 
+const isIssueList = (value: unknown): value is GhIssue[] =>
+  Array.isArray(value) && value.every((issue) => typeof issue === 'object' && issue !== null);
+
 const json = (res: ServerResponse, status: number, body: unknown) => {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json');
@@ -107,12 +110,13 @@ export function serveIssues(
       }
       return { status: 502, body: { ...context, error: result.failed } };
     }
-    let listed: GhIssue[];
+    let listed: unknown;
     try {
-      listed = JSON.parse(result.stdout) as GhIssue[];
+      listed = JSON.parse(result.stdout);
     } catch {
       return { status: 502, body: { ...context, error: 'gh answered something that is not JSON' } };
     }
+    if (!isIssueList(listed)) return { status: 502, body: { ...context, error: 'gh answered something that is not a list of issues' } };
     const issues = listed.map(({ number, title, url, createdAt }): ForgeIssue => ({ number, title, url, opened: createdAt }));
     return { status: 200, body: { ...context, issues } };
   };

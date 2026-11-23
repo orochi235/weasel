@@ -39,6 +39,19 @@ describe('createStoryIndex', () => {
     expect(update?.importablesChanged).toBe(true);
   });
 
+  it('drops the entries of a story file an edit leaves failing to parse, as one failing at startup has none', async () => {
+    const { index, errors } = indexIn({ 'a.stories.tsx': story('ui/A', 'First'), 'b.stories.tsx': story('ui/B', 'Second') });
+    expect(index.index().map((e) => e.id)).toEqual(['ui-a--first', 'ui-b--second']);
+
+    const broken = join(dir, 'b.stories.tsx');
+    writeFileSync(broken, 'export default {');
+    const update = await index.update(broken, 'change', resolveImport);
+    expect(errors).toHaveLength(1);
+    expect(update?.index.map((e) => e.id)).toEqual(['ui-a--first']);
+    expect(update?.importablesChanged).toBe(true);
+    expect(index.files().get(broken)).toEqual([]);
+  });
+
   it('skips a dangling symlink the story globs match', () => {
     const { index } = indexIn({ 'a.stories.tsx': story('ui/A', 'First') });
     symlinkSync(join(dir, 'gone.tsx'), join(dir, 'dangling.stories.tsx'));

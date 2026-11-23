@@ -10,7 +10,8 @@ export interface WatchRecoveryOptions {
   /**
    * How long the watcher must have reported nothing before the served files are checked for changes it missed,
    * and how often they are checked while it stays quiet, in milliseconds. Default 2000. Past what one timer holds,
-   * `Infinity` among them, the files are checked only as they are served.
+   * `Infinity` among them, the files are checked only as they are served. Throws a `RangeError` for a value that
+   * is not above 0.
    */
   quietMs?: number;
 }
@@ -37,6 +38,7 @@ const withoutQuery = (url: string) => url.replace(/[?#].*$/s, '');
  * Each recovery logs one line naming the file.
  */
 export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {}): Plugin {
+  if (!(quietMs > 0)) throw new RangeError(`watchRecovery: quietMs must be above 0, got ${quietMs}`);
   /** Each served file's modules, with the file's modification time when vite read it for that module. */
   const stamps = new Map<string, Map<string, number>>();
   const read = new Map<string, number>();

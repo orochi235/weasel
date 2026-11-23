@@ -3,11 +3,12 @@ import { existsSync, globSync, mkdirSync, mkdtempSync, readFileSync, realpathSyn
 import { createServer as createHttpServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import { build, createLogger, createServer, type HotPayload, type InlineConfig, type Plugin, type ViteDevServer } from 'vite';
 import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import type { IndexEntry } from '../story/types';
 import { forge } from './plugin';
+import { watchProbe } from './watchProbe';
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
@@ -202,7 +203,10 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
   const start = async (files: Record<string, string>, config: InlineConfig = {}) => {
     const dir = realpathSync(mkdtempSync(join(tmpdir(), 'forge-plugin-')));
     root = dir;
-    for (const [name, code] of Object.entries(files)) writeFileSync(join(dir, name), code);
+    for (const [name, code] of Object.entries(files)) {
+      mkdirSync(dirname(join(dir, name)), { recursive: true });
+      writeFileSync(join(dir, name), code);
+    }
     server = await createServer({
       root: dir,
       configFile: false,
@@ -234,6 +238,15 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect(errors.join('\n')).toContain(join(dir, 'bad.stories.tsx'));
     writeFileSync(join(dir, 'bad.stories.tsx'), story('ui/Bad', 'Fixed'));
     await expect.poll(async () => indexOf(s), FOLLOWS).toContain('ui-bad--fixed');
+  });
+
+  it('leaves the watch probe to a watchProbe plugin beside it', async () => {
+    const probe = vi.fn(async () => true);
+    await start(
+      { 'a.stories.tsx': story('ui/A', 'First') },
+      { plugins: [forge({ stories: ['*.stories.tsx'] }), watchProbe({ probe })], server: { middlewareMode: true, watch: {} } },
+    );
+    await vi.waitFor(() => expect(probe).toHaveBeenCalledTimes(1));
   });
 
   it('warns once when two story files declare one story id', async () => {
@@ -299,6 +312,21 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     expect(Object.keys(graph.default)).toEqual(['ui/Thing']);
     const importers = await s.transformRequest('virtual:forge/importers.js');
     expect(importers?.code).not.toContain(join(dir, 'hidden.stories.tsx'));
+  });
+
+  it('follows an import to the file that answers it once the file it resolved to is deleted', async () => {
+    const { dir, server: s } = await start({
+      'A.tsx': `import { B } from './B';\nexport const A = () => <B />;\n`,
+      'B.tsx': `export const B = () => null;\n`,
+      'B/index.tsx': `export const B = () => null;\n`,
+      'a.stories.tsx': `import { A } from './A';\nexport default { title: 'ui/A', component: A };\nexport const One = {};\n`,
+      'b.stories.tsx': `import { B } from './B/index';\nexport default { title: 'ui/B', component: B };\nexport const One = {};\n`,
+    });
+    const graph = async () =>
+      ((await s.ssrLoadModule('virtual:forge/deps.js')) as { default: Record<string, { uses: string[] }> }).default;
+    expect((await graph())['ui/A']?.uses).toEqual([]);
+    rmSync(join(dir, 'B.tsx'));
+    await expect.poll(async () => (await graph())['ui/A']?.uses, FOLLOWS).toEqual(['ui/B']);
   });
 
   it('serves the component graph from source, and pushes it again when a component file changes', async () => {

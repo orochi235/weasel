@@ -16,7 +16,7 @@ import { createStoryIndex } from './storyIndex.ts';
 import { storybookShims } from './storybookShims.ts';
 import { invalidateVirtual, MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { titleStandIn } from './componentOf.ts';
-import { warnWhenWatchIsSilent } from './watchProbe.ts';
+import { WATCH_PROBE, warnWhenWatchIsSilent } from './watchProbe.ts';
 import { watchRecovery } from './watchRecovery.ts';
 import { settledWatch } from './watchSettle.ts';
 import { messageOf } from '../messageOf.ts';
@@ -68,14 +68,14 @@ interface SourceWatch {
 /** Watches the story files and everything they import, reindexing a changed story and pushing new deps. */
 function watchSources(server: ViteDevServer, { files, componentGraph, reindex, redeps, logError }: SourceWatch): void {
   server.watcher.add([...files]);
-  void warnWhenWatchIsSilent(server);
+  if (!server.config.plugins.some((p) => p.name === WATCH_PROBE)) void warnWhenWatchIsSilent(server);
   for (const event of ['add', 'change', 'unlink'] as const) {
     server.watcher.on(event, (path) => {
       const file = resolve(path);
-      // A new file can answer an import that resolved to nothing before.
-      const added = event === 'add' && SCRIPT.test(file) && !file.split(sep).includes('node_modules');
-      if (added) componentGraph().reset();
-      const read = added || (event !== 'add' && componentGraph().invalidate(file));
+      // A file added or deleted can change what an import resolves to, from anywhere.
+      const moved = event !== 'change' && SCRIPT.test(file) && !file.split(sep).includes('node_modules');
+      const read = (event !== 'add' && componentGraph().invalidate(file)) || moved;
+      if (moved) componentGraph().reset();
       reindex(server, file, event).then((indexed) => {
         if (indexed || read) redeps(server);
       }, logError);

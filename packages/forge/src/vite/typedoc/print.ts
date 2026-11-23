@@ -4,8 +4,9 @@ import type { TdComment, TdIndex, TdPart, TdReflection, TdType, TypedocHref } fr
 export function typeText(type: TdType | undefined): string {
   if (!type) return 'unknown';
   switch (type.type) {
-    case 'intrinsic':
     case 'inferred':
+      return `infer ${type.name ?? 'unknown'}${type.constraint ? ` extends ${typeText(type.constraint)}` : ''}`;
+    case 'intrinsic':
     case 'unknown':
       return type.name ?? 'unknown';
     case 'literal':
@@ -38,8 +39,12 @@ export function typeText(type: TdType | undefined): string {
       return `\`${type.head ?? ''}${(type.tail ?? []).map(([t, text]) => `\${${typeText(t)}}${text}`).join('')}\``;
     case 'predicate':
       return `${type.asserts ? 'asserts ' : ''}${type.name}${type.targetType ? ` is ${typeText(type.targetType)}` : ''}`;
-    case 'mapped':
-      return `{ [${type.parameter} in ${typeText(type.parameterType)}]: ${typeText(type.templateType)} }`;
+    case 'mapped': {
+      const readonly = type.readonlyModifier === '+' ? 'readonly ' : type.readonlyModifier === '-' ? '-readonly ' : '';
+      const optional = type.optionalModifier === '+' ? '?' : type.optionalModifier === '-' ? '-?' : '';
+      const as = type.nameType ? ` as ${typeText(type.nameType)}` : '';
+      return `{ ${readonly}[${type.parameter} in ${typeText(type.parameterType)}${as}]${optional}: ${typeText(type.templateType)} }`;
+    }
     case 'reflection':
       return reflectionText(type.declaration);
     default:
@@ -76,18 +81,23 @@ function reflectionText(declaration: TdReflection | undefined): string {
   if (!declaration) return '{}';
   const [signature] = declaration.signatures ?? [];
   if (signature && isSignature(declaration)) return signatureText(signature);
-  const members = (declaration.children ?? []).map((c) => `${c.name}${c.flags?.isOptional ? '?' : ''}: ${typeText(c.type)}`);
+  const members = (declaration.children ?? []).map(
+    (c) => `${c.flags?.isReadonly ? 'readonly ' : ''}${c.name}${c.flags?.isOptional ? '?' : ''}: ${typeText(c.type)}`,
+  );
   return members.length ? `{ ${members.join('; ')} }` : '{}';
 }
 
 /** A call signature, arrow style. */
 export function signatureText(signature: TdReflection): string {
-  const generics = signature.typeParameters?.length ? `<${signature.typeParameters.map((t) => t.name).join(', ')}>` : '';
+  const generics = signature.typeParameters?.length ? `<${signature.typeParameters.map(typeParameterText).join(', ')}>` : '';
   const params = (signature.parameters ?? []).map(
     (p) => `${p.flags?.isRest ? '...' : ''}${p.name}${p.flags?.isOptional ? '?' : ''}: ${typeText(p.type)}`,
   );
   return `${generics}(${params.join(', ')}) => ${typeText(signature.type)}`;
 }
+
+const typeParameterText = (t: TdReflection): string =>
+  `${t.name}${t.type ? ` extends ${typeText(t.type)}` : ''}${t.default ? ` = ${typeText(t.default)}` : ''}`;
 
 /** How a comment's `{@link}` targets become hrefs. */
 export interface Linker {

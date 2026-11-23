@@ -136,6 +136,24 @@ export { Other } from './other.stories';
     ]);
   });
 
+  it("leaves out of a native file a local class or enum exported by name, and reads a destructured local's method as no global's", () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+import { load } from './load';
+export default meta({ title: 'ui/Slider' });
+class Harness {}
+enum Mode { A }
+const { make } = load();
+export { Harness, Mode };
+export const Made = make.story();
+export const Basic = story({ render: () => null });
+`;
+    expect(ids(code)).toEqual([
+      ['ui-slider--made', 'Made'],
+      ['ui-slider--basic', 'Basic'],
+    ]);
+  });
+
   it('leaves out of a native file an export that is a call to anything but story, which the loader skips', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';

@@ -1,12 +1,12 @@
 // @vitest-environment node
-import { copyFileSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ReadApi } from '../apiTable';
 import { readTypedoc, type TypedocHref, typedocSource, withTypedoc } from './index';
-import type { TdType } from './json';
-import { typeText } from './print';
+import type { TdReflection, TdType } from './json';
+import { signatureText, typeText } from './print';
 
 const FIXTURE = join(import.meta.dirname, 'fixture.json');
 const project: unknown = JSON.parse(readFileSync(FIXTURE, 'utf8'));
@@ -62,6 +62,67 @@ describe('readTypedoc', () => {
     expect(gauge.href).toBe('ref:@demo/ui/charts/Gauge');
     expect(gauge.props.get('value')).toEqual({ description: 'From 0 to 1.' });
     expect(gauge.members.size).toBe(0);
+  });
+});
+
+describe('readTypedoc in a project whose paths are relative to each package', () => {
+  let root = '';
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'forge-typedoc-packages-'));
+    for (const [dir, name] of [['ui', '@a/ui'], ['kit', '@b/kit']]) {
+      mkdirSync(join(root, dir, 'src'), { recursive: true });
+      writeFileSync(join(root, dir, 'package.json'), JSON.stringify({ name }));
+    }
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  const button = (id: number, description: string): TdReflection => ({
+    id,
+    name: 'Button',
+    variant: 'declaration',
+    kind: 64,
+    sources: [{ fileName: 'src/Button.tsx' }],
+    signatures: [
+      {
+        id: id + 1,
+        name: 'Button',
+        variant: 'signature',
+        kind: 4096,
+        parameters: [
+          {
+            id: id + 2,
+            name: 'props',
+            variant: 'param',
+            kind: 32768,
+            type: {
+              type: 'reflection',
+              declaration: {
+                id: id + 3,
+                name: '__type',
+                variant: 'declaration',
+                kind: 65536,
+                children: [{ id: id + 4, name: 'label', variant: 'declaration', kind: 1024, comment: { summary: [{ kind: 'text', text: description }] } }],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  });
+  const packages = (): TdReflection => ({
+    id: 0,
+    name: 'docs',
+    kind: 1,
+    children: [
+      { id: 10, name: '@a/ui', kind: 2, children: [button(11, 'The ui label.')] },
+      { id: 20, name: '@b/kit', kind: 2, children: [button(21, 'The kit label.')] },
+    ],
+  });
+
+  it("takes the component in the module named for the file's package, where two packages' paths share the suffix", () => {
+    const docs = readTypedoc(packages(), 0);
+    expect(docs.component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
+    expect(docs.component('Button', join(root, 'ui', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The ui label.');
   });
 });
 
@@ -166,5 +227,52 @@ describe('typeText', () => {
     expect(typeText({ type: 'typeOperator', operator: 'keyof', target: union })).toBe('keyof (A | B)');
     expect(typeText({ type: 'indexedAccess', objectType: union, indexType: { type: 'literal', value: 'k' } })).toBe("(A | B)['k']");
     expect(typeText({ type: 'union', types: [obj, nul] })).toBe('{ x: A } | null');
+  });
+
+  it('prints a mapped type with its modifiers and its as clause', () => {
+    const k: TdType = { type: 'reference', name: 'K' };
+    const keys: TdType = { type: 'typeOperator', operator: 'keyof', target: { type: 'reference', name: 'T' } };
+    const value: TdType = { type: 'indexedAccess', objectType: { type: 'reference', name: 'T' }, indexType: k };
+    const mapped = (extra: Partial<TdType>): TdType => ({ type: 'mapped', parameter: 'K', parameterType: keys, templateType: value, ...extra });
+    expect(typeText(mapped({ optionalModifier: '+' }))).toBe('{ [K in keyof T]?: T[K] }');
+    expect(typeText(mapped({ readonlyModifier: '-', optionalModifier: '-' }))).toBe('{ -readonly [K in keyof T]-?: T[K] }');
+    expect(typeText(mapped({ readonlyModifier: '+' }))).toBe('{ readonly [K in keyof T]: T[K] }');
+    const renamed: TdType = { type: 'templateLiteral', head: 'on', tail: [[k, '']] };
+    expect(typeText(mapped({ nameType: renamed }))).toBe('{ [K in keyof T as `on${K}`]: T[K] }');
+  });
+
+  it("prints a signature's type parameters with their constraints and defaults", () => {
+    const t: TdType = { type: 'reference', name: 'T' };
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    const signature = {
+      id: 1,
+      kind: 4096,
+      name: 'pick',
+      typeParameters: [{ id: 2, kind: 131072, name: 'T', type: str, default: { type: 'literal', value: 'a' } }],
+      parameters: [{ id: 3, kind: 32768, name: 'key', type: t }],
+      type: t,
+    };
+    expect(signatureText(signature)).toBe("<T extends string = 'a'>(key: T) => T");
+  });
+
+  it("prints an object type's readonly members as readonly", () => {
+    const a: TdType = { type: 'reference', name: 'A' };
+    const child = { id: 2, kind: 1024, name: 'x', type: a, flags: { isReadonly: true, isOptional: true } };
+    expect(typeText({ type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', children: [child] } })).toBe('{ readonly x?: A }');
+  });
+
+  it('prints an inferred type with its infer, and its constraint', () => {
+    const t: TdType = { type: 'reference', name: 'T' };
+    const u: TdType = { type: 'reference', name: 'U' };
+    const never: TdType = { type: 'intrinsic', name: 'never' };
+    const arrayOf = (arg: TdType): TdType => ({ type: 'reference', name: 'Array', typeArguments: [arg] });
+    const infer: TdType = { type: 'inferred', name: 'U' };
+    expect(typeText({ type: 'conditional', checkType: t, extendsType: arrayOf(infer), trueType: u, falseType: never })).toBe(
+      'T extends Array<infer U> ? U : never',
+    );
+    const bounded: TdType = { type: 'inferred', name: 'U', constraint: { type: 'intrinsic', name: 'string' } };
+    expect(typeText({ type: 'conditional', checkType: t, extendsType: arrayOf(bounded), trueType: u, falseType: never })).toBe(
+      'T extends Array<infer U extends string> ? U : never',
+    );
   });
 });

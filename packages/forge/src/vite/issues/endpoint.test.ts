@@ -62,6 +62,14 @@ describe('repoOf', () => {
 });
 
 describe('serveIssues', () => {
+  it('answers 502 with the checkout when gh prints JSON that is not a list of issues', async () => {
+    for (const stdout of ['{"message":"Not Found"}', 'null', '[null]']) {
+      const { status, body } = await get('/__forge/issues?component=Slider', answering({ stdout }));
+      expect(status).toBe(502);
+      expect(body).toMatchObject({ branch: 'slider-fix', commit: 'abc1234def', error: 'gh answered something that is not a list of issues' });
+    }
+  });
+
   it('lists the component’s open issues through gh, with the checkout’s repo, branch and commit', async () => {
     const gh = answering({
       stdout: JSON.stringify([{ number: 12, title: 'Thumb drifts', url: 'https://github.com/acme/widgets/issues/12', createdAt: '2026-10-20T12:00:00Z' }]),

@@ -58,6 +58,12 @@ export interface TdType {
   parameter?: string;
   parameterType?: TdType;
   templateType?: TdType;
+  readonlyModifier?: '+' | '-';
+  optionalModifier?: '+' | '-';
+  /** A mapped type's `as` clause. */
+  nameType?: TdType;
+  /** An `infer`'s `extends` constraint. */
+  constraint?: TdType;
 }
 
 export interface TdReflection {
@@ -72,7 +78,10 @@ export interface TdReflection {
   signatures?: TdReflection[];
   parameters?: TdReflection[];
   typeParameters?: TdReflection[];
+  /** A type parameter's constraint is its `type`. */
   type?: TdType;
+  /** A type parameter's default. */
+  default?: TdType;
   inheritedFrom?: TdType;
 }
 
