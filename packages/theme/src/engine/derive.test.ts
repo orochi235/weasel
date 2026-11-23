@@ -357,6 +357,12 @@ describe('derive', () => {
     expect(Object.keys(tokens)).toEqual(['sw-a', 'sw-b']);
   });
 
+  it('reports a second anchor naming a missing step as naming no step, not as already filled', () => {
+    const anchors = [{ name: 'brand', hue: 30, lightness: 0.7 }, { name: 'brand', hue: 200, lightness: 0.7 }];
+    const { issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
+    expect(issues).toContainEqual({ kind: 'invalid', path: 'ramps.sw.anchors.1.name', message: 'no step "brand" on this ramp; it fills a step no anchor names' });
+  });
+
   it('reports a categorical ramp with more anchors than steps', () => {
     const anchors = [10, 120, 240].map((hue, i) => ({ name: 'abc'[i], hue, lightness: 0.7 }));
     const { tokens, issues } = derive({ name: 'x', ramps: { sw: { kind: 'categorical', steps: ['a', 'b'], anchors } } });
