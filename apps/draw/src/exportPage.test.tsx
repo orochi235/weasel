@@ -1,6 +1,7 @@
 import { act, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addOnPages, documentOf, placedPagesOf } from '@weasel-js/core';
+import { addOnPages, asNodeId, documentOf, placedPagesOf } from '@weasel-js/core';
+import { solidFill } from '@weasel-js/paint';
 import { exportRegionsOf, registerExportFormat, type ExportFormat } from '@weasel-js/export';
 import { downloadBlob } from '@weasel-js/editor';
 import { defaultToastQueue, ToastRegion } from '@weasel-js/ui/components/Toast';
@@ -93,6 +94,19 @@ describe('exportSelectionFile', () => {
     await exportSelectionFile(scene, format, ['m'], DOC);
     expect(asked(format)).toEqual([{ x: 10, y: 10, width: 20, height: 10, name: 'Selection' }]);
     expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), 'art - Selection.one');
+  });
+
+  it('measures a screen-pixel stroke at the PNG scale unless the format lists options without it', async () => {
+    const { scene } = twoPages();
+    scene.update(asNodeId('m'), { data: { ...(scene.get(asNodeId('m'))!.data as object), stroke: { paint: solidFill('#000'), width: { px: 10 } } } as never });
+    const every = fake('every', false);
+    await exportSelectionFile(scene, every, ['m'], DOC);
+    // 10 output px at scale 2 is 5 world units: 2.5 past each edge.
+    expect(asked(every)).toEqual([{ x: 7.5, y: 7.5, width: 25, height: 15, name: 'Selection' }]);
+    const titled = fake('titled', false);
+    Object.assign(titled, { options: ['title'] });
+    await exportSelectionFile(scene, titled, ['m'], DOC);
+    expect(asked(titled)).toEqual([{ x: 5, y: 5, width: 30, height: 20, name: 'Selection' }]);
   });
 
   it('writes nothing when the selection draws nothing', async () => {

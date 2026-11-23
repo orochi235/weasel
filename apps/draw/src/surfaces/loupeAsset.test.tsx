@@ -1,10 +1,12 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, screen, within } from '@testing-library/react';
-import { ActionsProvider } from '@weasel-js/core';
+import { useSyncExternalStore, type ReactNode } from 'react';
+import { ActionsProvider, actionItems, useActionsRegistry } from '@weasel-js/core';
+import { useActionStates } from '@weasel-js/ui/components/ActionBar';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import type { LoupeEvents, LoupeSettings } from '@weasel-js/hud/react';
 import { CommandBar } from '../CommandBar';
-import { LoupeProvider } from '../LoupeProvider';
+import { LOUPE_COPY_ACTION, LOUPE_TOGGLE_ACTION, LoupeProvider, useLoupeBinding } from '../LoupeProvider';
 import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';
 import { StripDock } from './StripSurfaces';
@@ -38,10 +40,11 @@ beforeAll(() => {
   }
 });
 
-function App({ ready = true }: { ready?: boolean }) {
+function App({ ready = true, children }: { ready?: boolean; children?: ReactNode }) {
   return (
     <ActionsProvider>
       <LoupeProvider canvasRef={{ current: null }} ready={ready} source={[]}>
+        {children}
         <div data-testid="strip">
           <CommandBar />
           <StripDock />
@@ -53,6 +56,21 @@ function App({ ready = true }: { ready?: boolean }) {
       </LoupeProvider>
     </ActionsProvider>
   );
+}
+
+/** The toggle's and Copy's states as registry-drawn chrome reads them, written where the test can see them. */
+function ActionStates() {
+  const registry = useActionsRegistry()!;
+  const all = useSyncExternalStore(registry.subscribe, registry.list, registry.list);
+  const items = all.filter((a) => a.id === LOUPE_TOGGLE_ACTION || a.id === LOUPE_COPY_ACTION).flatMap(actionItems);
+  const states = useActionStates(items);
+  return <output data-testid="states">{items.map((item, i) => `${item.action.id}:${states[i]!.active}/${states[i]!.disabled}`).join(' ')}</output>;
+}
+
+/** Hands the test the binding the loupe asset's controls write through. */
+function Binding({ into }: { into: { onChange?: (path: string, value: unknown) => void } }) {
+  into.onChange = useLoupeBinding().onChange;
+  return null;
 }
 
 const strip = () => within(screen.getByTestId('strip'));
@@ -135,6 +153,24 @@ describe('the loupe asset', () => {
     act(() => { lens.events!.onColorChange('#336699'); });
     rerender(<App ready={false} />);
     expect(loupeBar().getByRole('button', { name: 'Copy' })).toHaveAttribute('aria-disabled', 'true');
+  });
+
+  it('tells registry-drawn chrome when the loupe shows and when it has a color to copy', () => {
+    renderWithIcons(<App><ActionStates /></App>);
+    const states = () => screen.getByTestId('states').textContent;
+    expect(states()).toBe(`${LOUPE_COPY_ACTION}:undefined/true ${LOUPE_TOGGLE_ACTION}:false/false`);
+    click(loupeBar().getByRole('switch', { name: 'Loupe' }));
+    act(() => { lens.events!.onColorChange('#336699'); });
+    expect(states()).toBe(`${LOUPE_COPY_ACTION}:undefined/false ${LOUPE_TOGGLE_ACTION}:true/false`);
+  });
+
+  it('stores only a mode the loupe has', () => {
+    const binding: { onChange?: (path: string, value: unknown) => void } = {};
+    renderWithIcons(<App><Binding into={binding} /></App>);
+    for (const bad of [undefined, '', 'raster']) act(() => { binding.onChange!('mode', bad); });
+    expect(drawPrefs().isSet('loupe.mode')).toBe(false);
+    act(() => { binding.onChange!('mode', 'pixel'); });
+    expect(drawPrefs().get('loupe.mode')).toBe('pixel');
   });
 
   it('turns its switch off when the lens is closed from its own chrome', () => {

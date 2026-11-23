@@ -49,7 +49,7 @@ export function RegistryEnumControl(ctx: LeafContext) {
   const pref = ctx.pref as WeaselDrawPrefRegistryEnum;
   return (
     <RegistrySelect
-      value={String(ctx.value)}
+      value={typeof ctx.value === 'string' ? ctx.value : pref.default}
       onChange={(v) => ctx.setValue(v)}
       source={pref.source}
       filter={pref.filter}

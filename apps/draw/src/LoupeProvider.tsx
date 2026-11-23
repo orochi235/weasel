@@ -13,7 +13,7 @@ import { copyText } from '@weasel-js/react';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
 import { useIconRegistry } from '@weasel-js/icons/react';
-import { registerCanvasFont } from '@weasel-js/font';
+import { isGenericFamily, registerCanvasFont } from '@weasel-js/font';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { pref } from '@weasel-js/prefs';
 import { icon } from './icons.gen';
@@ -91,10 +91,12 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
   }, []);
 
   const colorRef = useLatest(color);
+  const hasColor = color !== null;
+  // Rebuilt when `enabled` or `active` would answer otherwise: registry-drawn chrome re-reads them on a registration.
   const copy = useMemo((): Action => ({
     id: LOUPE_COPY_ACTION,
     label: 'Copy loupe color',
-    enabled: () => (colorRef.current ? true : ActionDisabledReason.NotApplicable),
+    enabled: () => (hasColor ? true : ActionDisabledReason.NotApplicable),
     invoker: {
       timing: 'immediate',
       run: () => {
@@ -102,18 +104,17 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
         if (hex) void copyText(hex).then((took) => { if (!took) reportCopyRefused(hex); });
       },
     },
-  }), [colorRef]);
+  }), [colorRef, hasColor]);
   useAction(copy);
 
-  const visibleRef = useLatest(visible);
   const toggle = useMemo((): Action => ({
     id: LOUPE_TOGGLE_ACTION,
     label: 'Loupe',
     // F2, as labkit's quick lens takes it.
     defaultBinding: [{ spec: { kind: 'key', key: 'F2', phase: BETWEEN_GESTURES }, opts: { id: `${LOUPE_TOGGLE_ACTION}.key` } }],
-    active: () => visibleRef.current,
-    invoker: { timing: 'immediate', run: () => setVisible(!visibleRef.current) },
-  }), [visibleRef, setVisible]);
+    active: () => visible,
+    invoker: { timing: 'immediate', run: () => setVisible(!visible) },
+  }), [visible, setVisible]);
   useAction(toggle);
 
   const state = useMemo((): LoupeState => ({ ...settings, color, setVisible }), [settings, color, setVisible]);
@@ -150,13 +151,41 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
 /** The theme's UI face, enrolled as a canvas font so the HUD can set its text in it; the baked `sans-serif` where
  *  the theme names none. */
 function useThemeUiFont(): string {
-  const stack = useThemeOptional()?.resolved['--wzl-font-ui'];
-  const family = stack?.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '') || 'sans-serif';
-  useEffect(() => (family === 'sans-serif' ? undefined : registerCanvasFont(family)), [family]);
+  const family = uiFontFamily(useThemeOptional()?.resolved['--wzl-font-ui']);
+  useEffect(() => (isGenericFamily(family) ? undefined : registerCanvasFont(family)), [family]);
   return family;
 }
 
+/** The first family of the CSS family list `stack`, unquoted; `sans-serif` for none, or for one a function such as
+ *  `var()` computes, which only a browser resolves. */
+export function uiFontFamily(stack: string | undefined): string {
+  const head = stack === undefined ? '' : firstListEntry(stack);
+  if (!head || /^[\w-]+\(/.test(head)) return 'sans-serif';
+  const quoted = /^(["'])(.*)\1$/.exec(head);
+  return quoted ? quoted[2]! : head.replace(/\s+/g, ' ');
+}
+
+/** `list` up to its first comma outside quotes and brackets, trimmed. */
+function firstListEntry(list: string): string {
+  let depth = 0;
+  let quote: string | null = null;
+  let i = 0;
+  for (; i < list.length; i++) {
+    const c = list[i]!;
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+    } else if (c === '"' || c === "'") quote = c;
+    else if (c === '(') depth++;
+    else if (c === ')') depth--;
+    else if (c === ',' && depth === 0) break;
+  }
+  return list.slice(0, i).trim();
+}
+
 const NO_LOUPE: SchemaBinding = {};
+
+const isLoupeMode = (value: unknown): value is LoupeMode => LOUPE_MODE.options.some((o) => o.value === value);
 
 /** The loupe asset's leaves bound to the loupe in scope: `on`, `mode`, `factor`, and `color`. Unbound outside a
  *  {@link LoupeProvider}. */
@@ -173,7 +202,7 @@ export function useLoupeBinding(): SchemaBinding {
       },
       onChange: (path, value) => {
         if (path === 'on') state.setVisible(value === true);
-        else if (path === 'mode') drawPrefs().set('loupe.mode', value as LoupeMode);
+        else if (path === 'mode' && isLoupeMode(value)) drawPrefs().set('loupe.mode', value);
         else if (path === 'factor' && typeof value === 'number') drawPrefs().set('loupe.factor', value);
       },
     };

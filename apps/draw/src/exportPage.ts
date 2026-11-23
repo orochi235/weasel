@@ -23,14 +23,16 @@ export function registerDrawExports(): () => void {
 
 const baseName = (doc: SavedDoc): string => (doc.filename.trim() || DEFAULT_FILENAME).replace(/\.svg$/i, '');
 
+/** Whether `format` reads option `key`: one that lists no options is taken to read them all. */
+const reads = (format: ExportFormat, key: string): boolean => !format.options || (format.options as readonly string[]).includes(key);
+
 /** Download what `write` makes as `name` in `format`, and toast what it left out or why it failed. */
 async function writeExport(
   format: ExportFormat, name: string, doc: SavedDoc, write: (opts: ExportOptions & Record<string, unknown>) => Promise<Blob>,
 ): Promise<void> {
   const warnings: string[] = [];
   try {
-    const reads: readonly string[] | undefined = format.options;
-    const own = Object.entries({ scale: PNG_SCALE, title: name }).filter(([key]) => !reads || reads.includes(key));
+    const own = Object.entries({ scale: PNG_SCALE, title: name }).filter(([key]) => reads(format, key));
     const blob = await write({
       background: doc.backgroundColor, onDiagnostic: (d) => warnings.push(d.message), ...Object.fromEntries(own),
     });
@@ -59,7 +61,6 @@ export function exportPagesFile(scene: DrawScene, format: ExportFormat, pages: r
 export function exportSelectionFile(scene: DrawScene, format: ExportFormat, ids: readonly string[], doc: SavedDoc): Promise<void> {
   const name = `${baseName(doc)} - Selection`;
   if (selectionRegion(scene, ids) === null) return Promise.resolve();
-  const reads: readonly string[] | undefined = format.options;
-  const regions = selectionRegionsSource(ids, { name: 'Selection', ...(reads?.includes('scale') ? { scale: PNG_SCALE } : {}) });
+  const regions = selectionRegionsSource(ids, { name: 'Selection', ...(reads(format, 'scale') ? { scale: PNG_SCALE } : {}) });
   return writeExport(format, name, doc, (opts) => exportRegions(scene, regions, format.id, opts));
 }
