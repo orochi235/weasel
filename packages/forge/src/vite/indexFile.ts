@@ -97,8 +97,8 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
 
   let metaNode: t.Node | undefined;
   let metaDoc: string | undefined;
-  // `from`: re-exported from another module, so there is no node to read here.
-  const exported: { name: string; node: t.Node | undefined; doc: string | undefined; from?: boolean }[] = [];
+  // `local`: the binding exported, which CSF2 assignments name. `from`: re-exported from another module, so there is no node to read here.
+  const exported: { name: string; local: string; node: t.Node | undefined; doc: string | undefined; from?: boolean }[] = [];
   for (const stmt of program.body) {
     if (stmt.type === 'ExportDefaultDeclaration') {
       metaNode = stmt.declaration;
@@ -109,21 +109,22 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
     const decl = stmt.declaration;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
-        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc });
+        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, local: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc });
       }
     } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
-      exported.push({ name: decl.id.name, node: decl, doc });
+      exported.push({ name: decl.id.name, local: decl.id.name, node: decl, doc });
     }
     for (const spec of stmt.specifiers) {
       if (spec.type !== 'ExportSpecifier' || spec.exportKind === 'type') continue;
       const name = exportedName(spec.exported);
-      const node = stmt.source ? undefined : bindings.get(exportedName(spec.local));
+      const local = exportedName(spec.local);
+      const node = stmt.source ? undefined : bindings.get(local);
       if (name === 'default') {
         metaNode = node;
         metaDoc ??= doc;
-      } else if (stmt.source) exported.push({ name, node, doc, from: true });
+      } else if (stmt.source) exported.push({ name, local, node, doc, from: true });
       // An import exported as it stands is read as the identifier it is, which is what `foreign` is asked about.
-      else exported.push({ name, node: node ?? (spec.local.type === 'Identifier' ? spec.local : undefined), doc });
+      else exported.push({ name, local, node: node ?? (spec.local.type === 'Identifier' ? spec.local : undefined), doc });
     }
   }
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
@@ -143,8 +144,8 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
     .filter((e) => !native || (e.from ? (foreign?.reexport(e.name) ?? true) : mayBeStory(e.node, { bindings, wrappers, imports, foreign })))
-    .map(({ name, node, doc }) => {
-      const spec = withAssigned(objectOf(node, bindings, wrappers), assigned.get(name));
+    .map(({ name, local, node, doc, from }) => {
+      const spec = withAssigned(objectOf(node, bindings, wrappers), from ? undefined : assigned.get(local));
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;
       const tags = combineTags(metaTags, tagsOf(spec));
       const viewport = native ? viewportOf(spec, bindings, wrappers) : undefined;
