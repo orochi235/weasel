@@ -49,3 +49,16 @@ describe('a field two variants of a union both hold', () => {
     expect([...entry({ type: 'linear', angle: 0, spin: true })]).toEqual(['fills.0.angle']);
   });
 });
+
+describe('a union in an entry that holds nothing', () => {
+  it('answers for the variant the item holds unset, read by the entry’s path from the root', () => {
+    const x = (extra: object) => ({ kind: 'number', name: 'X', description: '', default: 0, ...extra }) as PrefLeaf;
+    const fill = {
+      kind: 'union', name: 'Fill', description: '', tag: 'type', default: { type: 'b' },
+      variants: { a: { name: 'A', children: { x: x({ enableIf: { path: 'never' } }) } }, b: { name: 'B', children: { x: x({}) } } },
+    } as unknown as PrefLeaf;
+    const schema: PrefGroup = { name: '', children: { fills: { kind: 'list', name: 'Fills', description: '', default: [], item: fill } as PrefLeaf } };
+    const holds = prefJudge(schema, prefReader(schema, { fills: [null] }));
+    expect(prefStatusAt(schema, 'fills.0.x', holds).enabled).toBe(true);
+  });
+});
