@@ -9,4 +9,11 @@ describe('typeColors', () => {
     expect(color('toString')).toBe('#123456');
     expect(typeof color('constructor')).toBe('string');
   });
+
+  it('gives a type with no color given the untyped color when the series is empty', () => {
+    const pipeline: EffectPipeline = { stages: [{ id: 'a', title: 'a', outputs: [{ id: 'out', type: 'audio' }] }], wires: [] };
+    const color = typeColors(pipeline, {}, []);
+    expect(color('audio')).toBe(color(undefined));
+    expect(typeof color('audio')).toBe('string');
+  });
 });

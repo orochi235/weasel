@@ -62,7 +62,7 @@ export const PROBLEM_COLOR = '#ff5d5d';
 const BYPASSED_DASH = [4, 3];
 
 /** A color per type: the one given, or the next in `series` in the order
- *  types first appear on the pipeline's ports. */
+ *  types first appear on the pipeline's ports; `UNTYPED` when `series` is empty. */
 export function typeColors(
   pipeline: EffectPipeline, given: Readonly<Record<string, string>> = {}, series: readonly string[] = LOOK_THEME.series,
 ): TypeColor {
@@ -70,7 +70,7 @@ export function typeColors(
   for (const stage of pipeline.stages) {
     for (const port of [...(stage.inputs ?? []), ...(stage.outputs ?? [])]) {
       if (colors.has(port.type)) continue;
-      colors.set(port.type, getOwn(given, port.type) ?? series[colors.size % series.length]!);
+      colors.set(port.type, getOwn(given, port.type) ?? series[colors.size % series.length] ?? UNTYPED);
     }
   }
   return (type) => (type === undefined ? UNTYPED : colors.get(type) ?? getOwn(given, type) ?? UNTYPED);
