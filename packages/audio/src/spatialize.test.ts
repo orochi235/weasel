@@ -62,6 +62,12 @@ describe('spatialize', () => {
       .toBeCloseTo(-0.5, 6);
   });
 
+  it('holds linear rolloff at its maxDistance gain beyond it, as a PannerNode does', () => {
+    const opts = { rolloff: 'linear' as const, refDistance: 1, maxDistance: 101, rolloffFactor: 0.5 };
+    expect(spatialize({ x: 101, y: 0 }, { x: 0, y: 0 }, opts).gain).toBeCloseTo(0.5, 12);
+    expect(spatialize({ x: 199, y: 0 }, { x: 0, y: 0 }, opts).gain).toBeCloseTo(0.5, 12);
+  });
+
   it('reaches exactly zero gain at maxDistance under linear rolloff', () => {
     const out = spatialize({ x: 0, y: 100 }, L, {
       rolloff: 'linear', refDistance: 0, maxDistance: 100,

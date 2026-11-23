@@ -492,6 +492,15 @@ describe('createAudioEngine', () => {
     expect(() => engine.graph()).toThrow('@weasel-js/audio: engine is disposed');
   });
 
+  it("analyser('') taps the bus named '', not the master", () => {
+    const { ctx, engine } = engineHarness({ buses: ['', 'fx'] });
+    engine.analyser('');
+    const master = ctx.destination.connectedFrom[0];
+    const tapped = master.connectedFrom.find((n) => n.connectedTo.some((t) => t.kind === 'analyser'));
+    expect(tapped).toBeDefined();
+    expect(master.connectedTo.some((t) => t.kind === 'analyser')).toBe(false);
+  });
+
   it('analyser() throws once the engine is disposed', () => {
     const { engine } = engineHarness();
     engine.dispose();

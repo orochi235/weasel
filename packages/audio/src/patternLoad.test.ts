@@ -8,7 +8,7 @@ const base = { tempo: 120, lookahead: 0 };
 describe('patternVoicePeaks', () => {
   it('counts a bus named __proto__ as its own entry', () => {
     const peaks = patternVoicePeaks([{ step: 0, length: 1, pitch: 220, bus: '__proto__' }], { ...base, loop: false });
-    expect(Object.getPrototypeOf(peaks)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(peaks)).toBe(null);
     expect(Object.entries(peaks)).toEqual([['__proto__', 1]]);
   });
 
@@ -98,5 +98,15 @@ describe('patternVoicePeaks on a step the player refuses', () => {
     expect(() => patternVoicePeaks(events, { tempo: 120 })).toThrow(RangeError);
     expect(() => patternVoicePeaks(events, { tempo: 120, length: 16 })).toThrow(RangeError);
     expect(() => patternLength(events)).toThrow(RangeError);
+  });
+
+  it('reads a bus the pattern does not use as undefined, whatever it is named', () => {
+    const peaks = patternVoicePeaks([{ step: 0, length: 1, pitch: 220, bus: 'sfx' }], { ...base, loop: false });
+    expect(peaks.constructor).toBeUndefined();
+    expect(peaks.toString).toBeUndefined();
+  });
+
+  it('refuses a patternLength steps per beat that is not a whole number, 1 or more', () => {
+    for (const n of [0, 2.5, -4, Number.NaN]) expect(() => patternLength([{ step: 3, pitch: 220 }], n)).toThrow(RangeError);
   });
 });

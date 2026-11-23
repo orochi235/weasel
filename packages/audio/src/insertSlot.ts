@@ -30,8 +30,6 @@ export function buildSlot(ctx: BaseAudioContext, s: Slot): void {
   n.in.connect(n.dry);
   n.dry.connect(n.out);
   s.nodes = n;
-  n.wet.gain.value = s.bypassed ? 0 : 1;
-  n.dry.gain.value = s.bypassed ? 1 : 0;
   writeBypass(ctx, s, 0);
 }
 

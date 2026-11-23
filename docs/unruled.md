@@ -4028,3 +4028,18 @@ Calls the lanes made without a ruling:
   the row (its kind for one with none, counted among same-named siblings), so a track the consumer inserts or removes
   beside it leaves it as it was, and renaming a nested timeline shuts it. Keying by index path, which shifted every
   later row's fold, was the alternative.
+
+## Audit round seventy-eight (2026-11-23): audio
+
+- 2026-11-23 (the fixer's call): `createAudioEngine` and `createVoicePool` throw a `RangeError` on a `steal` other
+  than `'oldest'` or `'quietest'`, and `setListener` on a `rolloff` other than `'inverse'` or `'linear'`, as every
+  other engine option throws. There is no override. Running an unknown value as the default was the alternative.
+- 2026-11-23 (the fixer's call): `spatialize`'s linear rolloff stops falling at `maxDistance`, as a `PannerNode`'s
+  does, so a `rolloffFactor` below 1 holds `1 − rolloffFactor` there and beyond. Stretching the slope to reach 0 at
+  `maxDistance` for any factor was the alternative, and would part from the Web Audio model.
+- 2026-11-23 (the fixer's call): a node-built synth voice that starts after its `when` plays its whole envelope and
+  gate from when it starts, as a worklet or buffer voice does. Keeping it on the original clock, so a late note
+  enters at its sustain and ends on time, was the alternative.
+- 2026-11-23 (the fixer's call): a bus heard again partway through its own `setGain` ramp, after a mute or another
+  bus's solo, ramps on to that ramp's original end, as a voice's `place` does. Stepping to the ramp's target was the
+  alternative.

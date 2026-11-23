@@ -50,6 +50,8 @@ interface BusState {
   soloed: boolean;
   /** The value last written to the fader. */
   written: number;
+  /** When the bus's own `setGain` ramp ends, in context time; 0 for none. */
+  rampEnd: number;
 }
 
 /** Throws unless `names` holds at least one bus and no name twice. */
@@ -89,7 +91,7 @@ export function createBusGraph(
     const node = ctx.createGain();
     node.connect(master);
     const inserts = createInsertChain(ctx, input, node, opts);
-    states.set(name, { input, node, inserts, gain: 1, muted: false, soloed: false, written: node.gain.value });
+    states.set(name, { input, node, inserts, gain: 1, muted: false, soloed: false, written: node.gain.value, rampEnd: 0 });
   }
 
   const anySoloed = (): boolean => {
@@ -100,16 +102,28 @@ export function createBusGraph(
   const audibleUnder = (s: BusState, soloing: boolean): boolean =>
     !s.muted && (!soloing || s.soloed);
 
-  // `ramp` names the one bus whose own value changed, so a solo does not slew
-  // every other bus at whatever rate that bus was last set with. A bus whose
-  // value did not change is not written, since a write cancels its ramp in flight.
-  const apply = (ramp?: { bus: BusState; ms: number }): void => {
+  // `own` names the one bus whose own value was set, so a solo does not slew
+  // every other bus at whatever rate that bus was last set with. Any other bus
+  // whose value did not change is not written, since a write cancels its ramp in
+  // flight; one that is heard again resumes its own ramp to the same end.
+  const apply = (own?: { bus: BusState; ms?: number }): void => {
     const soloing = anySoloed();
+    const now = ctx.currentTime;
     for (const s of states.values()) {
-      const value = audibleUnder(s, soloing) ? s.gain : 0;
-      if (ramp?.bus !== s && value === s.written) continue;
+      const audible = audibleUnder(s, soloing);
+      const value = audible ? s.gain : 0;
+      let ms: number | undefined;
+      if (own?.bus === s) {
+        ms = own.ms && own.ms > 0 ? own.ms : undefined;
+        s.rampEnd = ms ? now + ms / 1000 : 0;
+      } else if (value === s.written) {
+        continue;
+      } else if (audible) {
+        const left = (s.rampEnd - now) * 1000;
+        if (left > 0) ms = left;
+      }
       s.written = value;
-      writeParam(ctx, s.node.gain, value, ramp?.bus === s ? ramp.ms : undefined);
+      writeParam(ctx, s.node.gain, value, ms);
     }
   };
 
@@ -133,7 +147,7 @@ export function createBusGraph(
         setGain(value, rampMs) {
           checkGain('bus', value, rampMs);
           s.gain = value;
-          apply(rampMs && rampMs > 0 ? { bus: s, ms: rampMs } : undefined);
+          apply({ bus: s, ms: rampMs });
         },
         mute(on) { s.muted = on; apply(); },
         solo(on) { s.soloed = on; apply(); },

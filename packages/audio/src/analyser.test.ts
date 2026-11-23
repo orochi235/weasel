@@ -3,6 +3,14 @@ import { createAnalyserTap } from './analyser';
 import { createFakeAudioContext } from './testing/fakeAudioContext';
 
 describe('createAnalyserTap', () => {
+  it('disposes without throwing when the tapped node was disconnected first', () => {
+    const ctx = createFakeAudioContext();
+    const source = ctx.createGain();
+    const tap = createAnalyserTap(ctx as never, source as never);
+    source.disconnect();
+    expect(() => tap.dispose()).not.toThrow();
+  });
+
   it('connects the analyser to the tapped node', () => {
     const ctx = createFakeAudioContext();
     const source = ctx.createGain();

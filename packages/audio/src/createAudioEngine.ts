@@ -18,7 +18,7 @@ import type {
 } from './types';
 import { createChainPool } from './voiceChains';
 import { createDropWarnings, type DropWarnings } from './voiceDrops';
-import { checkVoiceLimit, createVoicePool } from './voicePool';
+import { checkSteal, checkVoiceLimit, createVoicePool } from './voicePool';
 import { createVoices } from './voices';
 
 /** A sound engine: named mix buses, a per-bus voice pool, lookahead
@@ -214,6 +214,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
   const busNames = opts.buses ?? ['sfx', 'music', 'ui'];
   checkBusNames(busNames);
   checkVoiceLimit(opts.voiceLimit ?? 32);
+  checkSteal(opts.steal);
   const ctx = opts.context ?? new AudioContext();
   // A context the engine made is a context the engine closes; a consumer's is
   // theirs to keep.
@@ -279,7 +280,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       if (disposed) throw new Error('@weasel-js/audio: engine is disposed');
       // Every tap is one more live FFT, tracked so `dispose()` detaches it; a
       // consumer calling this per frame still wants to keep one tap rather than mint one.
-      const tap = createAnalyserTap(ctx, busName ? graph.node(busName) : graph.master, tapOpts);
+      const tap = createAnalyserTap(ctx, busName === undefined ? graph.master : graph.node(busName), tapOpts);
       taps.add(tap);
       return {
         ...tap,

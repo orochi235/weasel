@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { midiToFrequency } from './pitch';
 import { createScore, type ScoreState } from './score';
-import { SCORE_CUES, type ScoreMood } from './scoreMood';
+import { scoreBar } from './scoreBar';
+import { resolveScoreMood, SCORE_CUES, type ScoreMood } from './scoreMood';
 import { engineHarness } from './testing/engineHarness';
 
 const home = (name: string): ScoreMood => SCORE_CUES.find((c) => c.name === name)!.mood;
@@ -105,6 +106,22 @@ describe('createScore', () => {
     score.setMood(home('investigation'));
     await run(URGENT_BAR);
     expect(seen).toEqual([['urgency', 0], ['urgency', 1], ['urgency', 2], ['investigation', 0]]);
+  });
+
+  it('carries its chord progression on across a cue change', async () => {
+    const { ctx, engine, run } = await engineHarness();
+    const score = createScore(engine, { mood: home('dread') });
+    score.start(0);
+    await run(4100);
+    score.setMood(home('urgency'));
+    await run(4100);
+    expect(score.state()).toMatchObject({ bar: 2, cueBar: 0 });
+    const played = ctx._oscillators.filter((o) => o.started[0] === 8).map((o) => o.frequency.holds[0].value);
+    const written = scoreBar(resolveScoreMood(home('urgency')), 2, {}, 0)
+      .filter((e) => e.step === 0).map((e) => midiToFrequency((e.pitch as { midi: number }).midi));
+    expect(played.sort()).toEqual(written.sort());
+    expect(written).not.toEqual(scoreBar(resolveScoreMood(home('urgency')), 0).filter((e) => e.step === 0)
+      .map((e) => midiToFrequency((e.pitch as { midi: number }).midi)));
   });
 
   it('releases what is sounding on stop, and starts over from bar 0', async () => {

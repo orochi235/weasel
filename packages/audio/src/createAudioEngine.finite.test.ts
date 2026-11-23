@@ -34,6 +34,13 @@ describe('createAudioEngine refuses a voice number that is not finite', () => {
     expect(source.detune.value).toBe(200);
   });
 
+  it('refuses an unknown steal policy or listener rolloff', async () => {
+    const ctx = createFakeAudioContext();
+    expect(() => createAudioEngine({ context: ctx as never, steal: 'quiet' as never })).toThrow(RangeError);
+    const { engine } = await engineHarness();
+    expect(() => engine.setListener({ x: 0, y: 0 }, { rolloff: 'exponential' as never })).toThrow(RangeError);
+  });
+
   it('refuses a listener that is not finite and keeps the one it had', async () => {
     const { engine } = await engineHarness();
     engine.setListener({ x: 0, y: 0 });

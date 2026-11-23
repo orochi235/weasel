@@ -38,10 +38,11 @@ function workletSource(post: (event: ToProcessor) => void, id: number): WorkletS
     },
     stop(when?: number) { post({ kind: 'stop', id, at: when ?? 0 }); },
     disconnect() {},
+    // Queued, as a source node's `onended` is: `dispose` ends every voice from inside the engine's teardown.
     end() {
       if (ended) return;
       ended = true;
-      fire();
+      queueMicrotask(fire);
     },
   };
 }
