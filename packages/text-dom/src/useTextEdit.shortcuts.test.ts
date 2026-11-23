@@ -78,9 +78,11 @@ describe('useTextEdit — lowering a flag the node sets', () => {
     act(() => { pressKey(overlay, 'u', { meta: true }); });
     expect(overlay.style.textDecoration).toBe('none');
 
+    // An italic node needs no rewrite: the range is set upright on its own.
     selectChars(overlay, 4, 7);
     act(() => { pressKey(overlay, 'i', { meta: true }); });
-    expect(overlay.style.fontStyle).not.toBe('italic');
+    expect(overlay.style.fontStyle).toBe('italic');
+    expect(styles.a.fontStyle).toBe('italic');
   });
 });
 

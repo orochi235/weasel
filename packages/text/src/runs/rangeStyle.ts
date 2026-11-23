@@ -8,8 +8,10 @@
  * take the whole character; one between a letter and its mark does not.
  *
  * **Run-level flags are additive over the node's `TextStyle`: a run can
- * turn `bold` / `italic` / `underline` / `strikethrough` on, never off.**
- * So a flag is stored only when true, and absent reads as `false`. A run
+ * turn `bold` / `underline` / `strikethrough` / `overline` on, never off.**
+ * So a flag is stored only when true, and absent reads as `false`. `italic`
+ * is the exception: `false` sets a run upright under italic text, so it is
+ * stored and read as given. A run
  * that must be lighter than a bold node says so with its own numeric
  * `fontWeight`, which `bold` is a preset over (see {@link supersededKey}).
  * The decorations have no such primitive, and the tri-state is collapsed by
@@ -70,10 +72,10 @@ type AssertNoMissingStyleKey = [MissingStyleKey] extends [never] ? true : never;
 const STYLE_KEYS_ARE_EXHAUSTIVE: AssertNoMissingStyleKey = true;
 void STYLE_KEYS_ARE_EXHAUSTIVE;
 
-/** The additive flags: absent and `false` mean the same thing, so both read as `false`. */
+/** The additive flags: absent and `false` mean the same thing, so both read as `false`. `italic` is not one: a run's
+ *  `false` sets it upright under italic text. */
 const FLAG_KEYS: ReadonlySet<StyleKey> = new Set<StyleKey>([
   'bold',
-  'italic',
   'underline',
   'strikethrough',
   'overline',
@@ -161,13 +163,14 @@ export function styleAtRange(
 
 /**
  * Does any run carry styling of its own? A flag stored as `false` counts as
- * none, so runs whose styling was toggled back off read as `false`.
+ * none, so runs whose styling was toggled back off read as `false`; an
+ * upright `italic: false` counts.
  */
 export function hasStyledRun(runs: readonly StyledRun[]): boolean {
   return runs.some((run) =>
     STYLE_KEYS.some((key) => {
       const value = run[key];
-      return value !== undefined && value !== false;
+      return value !== undefined && !(value === false && FLAG_KEYS.has(key));
     }),
   );
 }
@@ -209,9 +212,8 @@ function patchRun(run: StyledRun, patch: RunStylePatch): StyledRun {
   for (const key of STYLE_KEYS) {
     if (!Object.hasOwn(patch, key)) continue;
     const value = patch[key];
-    // `false` is not a storable state — it means "no run-level override",
-    // same as `undefined`. Deleting keeps one canonical form.
-    if (value === undefined || value === false) delete next[key];
+    // A flag's `false` means "no run-level override", same as `undefined`. Deleting keeps one canonical form.
+    if (value === undefined || (value === false && FLAG_KEYS.has(key))) delete next[key];
     else (next as unknown as Record<string, unknown>)[key] = value;
   }
   return next;

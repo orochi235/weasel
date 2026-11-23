@@ -45,7 +45,7 @@ const textOfUnits = (units: readonly Unit[]): string => units.map((u) => u.ch).j
 const caretStyle = (units: readonly Unit[], at: number): RunStylePatch =>
   (at > 0 ? units[at - 1]?.style : units[0]?.style) ?? {};
 
-const FLAGS = ['bold', 'italic', 'underline', 'strikethrough', 'overline'] as const;
+const FLAGS = ['bold', 'underline', 'strikethrough', 'overline'] as const;
 
 /** `styleAtRange`'s reading of `[start, end)`: a value where every unit agrees, MIXED where they don't. */
 function rangeStyleOf(units: readonly Unit[], start: number, end: number): RangeStyle {
@@ -80,6 +80,7 @@ function patchFor(seen: RangeStyle, toggle: StyleToggle): RunStylePatch {
     const on = w === MIXED ? false : w !== undefined ? isBoldWeight(w) : seen.bold === true;
     return { bold: !on };
   }
+  if (toggle === 'italic') return { italic: seen.italic === true ? undefined : true };
   return { [toggle]: seen[toggle] !== true };
 }
 

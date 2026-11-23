@@ -100,11 +100,16 @@ describe('setFlagOverRange — un-setting a flag the node sets', () => {
     expect(r.runs[0].strikethrough).toBe(true);
   });
 
-  it('drops italic to normal at the node and raises it on the complement', () => {
-    const r = setFlagOverRange(plain, { fontStyle: 'italic' }, ...TWO, 'italic', false);
-    expect(r.style.fontStyle).toBe('normal');
-    expect(r.runs[0].italic).toBe(true);
-    expect(r.runs[1].italic).toBeUndefined();
+  it('sets an italic node\'s range upright with italic: false, leaving the node and the rest alone', () => {
+    const style: TextStyle = { fontStyle: 'italic' };
+    const upright: StyledRun[] = [{ text: 'one ', italic: false }, { text: 'two three' }];
+    const r = setFlagOverRange(upright, style, 8, 13, 'italic', false);
+    expect(r.style).toBe(style);
+    expect(r.runs).toEqual([
+      { text: 'one ', italic: false },
+      { text: 'two ' },
+      { text: 'three', italic: false },
+    ]);
   });
 
   it('lowers a bold node over the range by writing a regular weight there, leaving the node alone', () => {

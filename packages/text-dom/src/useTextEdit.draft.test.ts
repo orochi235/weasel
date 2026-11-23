@@ -45,7 +45,7 @@ describe('useTextEdit — onInput', () => {
   });
 
   it("reports a rewritten node style with the runs, as a commit would write it", () => {
-    const styles: Record<string, TextStyle> = { a: { fontSize: 16, fontStyle: 'italic' } };
+    const styles: Record<string, TextStyle> = { a: { fontSize: 16, underline: true } };
     const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
     h.opts.getStyle = (id) => styles[id];
     h.opts.setStyle = (id, style) => { styles[id] = style; };
@@ -54,16 +54,16 @@ describe('useTextEdit — onInput', () => {
     act(() => result.current.startEdit('a'));
     const overlay = getOverlay(h.container)!;
     selectChars(overlay, 4, 7);
-    act(() => { pressKey(overlay, 'i', { meta: true }); });
+    act(() => { pressKey(overlay, 'u', { meta: true }); });
     expect(onInput).toHaveBeenLastCalledWith('a', {
       text: 'one two',
-      runs: [{ text: 'one ', italic: true }, { text: 'two' }],
-      style: { fontSize: 16, fontStyle: 'normal' },
+      runs: [{ text: 'one ', underline: true }, { text: 'two' }],
+      style: { fontSize: 16 },
     });
   });
 
   it('reports a restyle that lowers a node flag and sets more besides once', () => {
-    const styles: Record<string, TextStyle> = { a: { fontSize: 16, fontStyle: 'italic' } };
+    const styles: Record<string, TextStyle> = { a: { fontSize: 16, underline: true } };
     const h = makeRichHarness({ a: { text: 'one two', runs: [{ text: 'one two' }] } });
     h.opts.getStyle = (id) => styles[id];
     h.opts.setStyle = (id, style) => { styles[id] = style; };
@@ -71,9 +71,9 @@ describe('useTextEdit — onInput', () => {
     const { result } = renderHook(() => useTextEdit({ ...h.opts, onInput }));
     act(() => result.current.startEdit('a'));
     selectChars(getOverlay(h.container)!, 4, 7);
-    act(() => result.current.applyStyleToSelection({ italic: false, underline: true }));
+    act(() => result.current.applyStyleToSelection({ underline: false, bold: true }));
     expect(onInput).toHaveBeenCalledTimes(1);
-    expect(onInput.mock.calls[0]![1].runs).toEqual([{ text: 'one ', italic: true }, { text: 'two', underline: true }]);
+    expect(onInput.mock.calls[0]![1].runs).toEqual([{ text: 'one ', underline: true }, { text: 'two', bold: true }]);
   });
 
   it('reports nothing for a restyle that changes nothing', () => {

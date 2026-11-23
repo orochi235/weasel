@@ -27,6 +27,12 @@ export function patchForToggle(
   if (toggle === 'super' || toggle === 'sub') {
     return { script: current.script === toggle ? undefined : toggle };
   }
+  if (toggle === 'italic') {
+    // A run's own `italic` (`false` included) wins over the node's; `undefined` leaves the node's showing.
+    const node = styleHasFlag(nodeStyle, 'italic');
+    const on = current.italic === undefined ? node : current.italic === true;
+    return { italic: !on === node ? undefined : !on };
+  }
   const on = toggle === 'bold'
     ? rangeWeight(current, nodeStyle).bold === true
     : current[toggle] === true || styleHasFlag(nodeStyle, toggle);

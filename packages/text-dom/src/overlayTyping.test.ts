@@ -89,13 +89,13 @@ describe('typingHandlers', () => {
   });
 
   it('takes off a flag an armed false names, keeping the rest of the run', () => {
-    const { overlay, onBeforeInput } = mount({ italic: false });
+    const { overlay, onBeforeInput } = mount({ underline: false });
     runsToDom([{ text: 'ab', italic: true, underline: true }], overlay);
     caretAt(overlay.firstChild!.firstChild!, 2);
     onBeforeInput(insertText('X'));
     expect(domToRuns(overlay)).toEqual([
       { text: 'ab', italic: true, underline: true },
-      { text: 'X', underline: true },
+      { text: 'X', italic: true },
     ]);
   });
 
