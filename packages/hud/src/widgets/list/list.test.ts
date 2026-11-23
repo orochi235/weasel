@@ -28,6 +28,16 @@ describe('list widget', () => {
     expect(l.bounds).toEqual({ x: 10, y: 20, width: 200, height: rowH * 3 + 2 });
   });
 
+  it('keeps a height setBounds gives, and follows its rows again when setBounds leaves height out', () => {
+    const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows });
+    l.setBounds({ x: 0, y: 0, width: 200, height: rowH });
+    expect(l.bounds.height).toBe(rowH);
+    l.setRows([...rows, { id: 'd', label: 'Date' }]);
+    expect(l.bounds.height).toBe(rowH);
+    l.setBounds({ x: 5, y: 0, width: 200 });
+    expect(l.bounds).toEqual({ x: 5, y: 0, width: 200, height: rowH * 4 + 3 });
+  });
+
   it('draws each label, the selected row filled, and a swatch in its leading slot', () => {
     const l = createList({ id: 'l', x: 0, y: 0, width: 200, rows, selectionMode: 'single', onActivate: () => {} });
     const cmds = l.draw(ctx);

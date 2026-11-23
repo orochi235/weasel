@@ -45,7 +45,8 @@ export interface ListOptions {
  *  typeahead, and Enter or Space to activate. Focusable when it selects or activates. */
 export interface ListWidget extends Widget {
   setRows(rows: readonly HudListRow[]): void;
-  setBounds(b: WidgetBounds): void;
+  /** A height given fixes the list's height, as `height` does at creation; one left out has it follow its rows. */
+  setBounds(b: Omit<WidgetBounds, 'height'> & { height?: number }): void;
   setHidden(hidden: boolean): void;
   /** The row the keyboard is on. */
   readonly active: number | null;
@@ -83,6 +84,7 @@ export function createList(opts: ListOptions): ListWidget {
   let rows: readonly HudListRow[] = [];
   let lastCtx: Pick<HudDrawCtx, 'tokens' | 'defaultFont'> | null = null;
   let bounds: WidgetBounds = { x: opts.x, y: opts.y, width: opts.width, height: opts.height ?? 0 };
+  let fixedHeight = opts.height !== undefined;
   let scrollTop = 0;
   const nav = createListNav(() => rows, mode, (i) => opts.onActivate?.(rows[i]!.id, i));
 
@@ -98,7 +100,7 @@ export function createList(opts: ListOptions): ListWidget {
   };
   /** Follow the rows' height, when the caller gave none. True when it moved. */
   const fit = (): boolean => {
-    if (opts.height !== undefined) return false;
+    if (fixedHeight) return false;
     const h = measure().height;
     if (h === bounds.height) return false;
     bounds = { ...bounds, height: h };
@@ -152,7 +154,14 @@ export function createList(opts: ListOptions): ListWidget {
     accessibleName: opts.accessibleName ?? opts.id,
     accessibleTree: tree,
     setRows(next) { assertLive(); setRowsInner(next); changed(); },
-    setBounds(b) { assertLive(); bounds = { ...b }; fit(); holdScroll(scrollTop); changed(); },
+    setBounds(b) {
+      assertLive();
+      fixedHeight = b.height !== undefined;
+      bounds = { x: b.x, y: b.y, width: b.width, height: b.height ?? bounds.height };
+      fit();
+      holdScroll(scrollTop);
+      changed();
+    },
     setHidden(h) { assertLive(); hidden = h; changed(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       if (lastCtx?.tokens !== ctx.tokens || lastCtx.defaultFont !== ctx.defaultFont) {
