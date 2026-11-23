@@ -278,3 +278,20 @@ describe('TilePyramid byte-bound coarsening', () => {
     expect(frame.draws.length).toBeGreaterThan(0);
   });
 });
+
+describe('TilePyramid finer stand-ins', () => {
+  it('fade in as they would on their own, not at full alpha', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 160,
+    });
+    const all: TileBudget = { ms: Infinity, tiles: 1e4, clock: () => 0 };
+    const fine = pyramid.run(view(0, 0, 0.5), 0, () => 1, all);
+    expect(fine.level).toBe(0);
+    const coarse = pyramid.run(view(0, 0, 0.2), 16, () => null, all);
+    expect(coarse.level).toBe(-1);
+    const stand = coarse.draws.filter((d) => d.tile.key.z === 0);
+    expect(stand.length).toBeGreaterThan(0);
+    for (const d of stand) expect(d.alpha).toBeCloseTo(0.1);
+    expect(coarse.fading).toBe(true);
+  });
+});

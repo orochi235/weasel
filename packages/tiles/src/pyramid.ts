@@ -186,9 +186,10 @@ export class TilePyramid<K, V, P> {
       if (t.stale && t.drawnAt !== frame) stale.push(t.key);
       t.drawnAt = frame;
     };
+    const fadeOf = (t: HeldTile<K, P>): number => (fadeMs > 0 ? Math.min(1, Math.max(0, (now - t.bornAt) / fadeMs)) : 1);
     for (const at of onScreen) {
       const t = this.cache.get(scheme.idOf(at));
-      const alpha = t === undefined ? 0 : fadeMs > 0 ? Math.min(1, Math.max(0, (now - t.bornAt) / fadeMs)) : 1;
+      const alpha = t === undefined ? 0 : fadeOf(t);
       if (t !== undefined && alpha >= 1) {
         mark(t);
         own.push({ at, tile: t, source: whole(), alpha: 1 });
@@ -202,7 +203,9 @@ export class TilePyramid<K, V, P> {
       }
       this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
-        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: 1 });
+        const a = fadeOf(child);
+        if (a < 1) fading = true;
+        (fine[depth] ??= []).push({ at: child.key, tile: child, source: whole(), alpha: a });
       });
       if (t !== undefined) {
         mark(t);
