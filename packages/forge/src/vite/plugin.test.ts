@@ -284,6 +284,23 @@ describe('forge vite plugin, served apart from the shared fixture', () => {
     await expect.poll(async () => indexOf(s), FOLLOWS).toEqual(['ui-thing--basic']);
   });
 
+  it('serves the component graph and the importers from the settled index, though asked before the index', async () => {
+    const forgeEntry = join(import.meta.dirname, '../index.ts');
+    const { dir, server: s } = await start(
+      {
+        'A.tsx': `export const A = () => null;\n`,
+        'forge-helpers.ts': `export { meta, story } from '@weasel-js/forge';\n`,
+        'thing.stories.tsx': `import { meta, story } from './forge-helpers';\nimport { A } from './A';\nexport default meta({ title: 'ui/Thing', component: A });\nexport const Basic = story({});\n`,
+        'hidden.stories.tsx': `import { meta, story } from './forge-helpers';\nexport default meta({ title: 'ui/Hidden', excludeStories: ['Basic'] });\nexport const Basic = story({});\n`,
+      },
+      { resolve: { alias: { '@weasel-js/forge': forgeEntry } } },
+    );
+    const graph = (await s.ssrLoadModule('virtual:forge/deps.js')) as { default: Record<string, unknown> };
+    expect(Object.keys(graph.default)).toEqual(['ui/Thing']);
+    const importers = await s.transformRequest('virtual:forge/importers.js');
+    expect(importers?.code).not.toContain(join(dir, 'hidden.stories.tsx'));
+  });
+
   it('serves the component graph from source, and pushes it again when a component file changes', async () => {
     const { dir, server: s } = await start({
       'A.tsx': `import { B } from './B';\nexport const A = () => <B />;\n`,
