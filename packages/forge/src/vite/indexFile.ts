@@ -142,6 +142,7 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
 
   const meta = objectOf(metaNode, bindings, wrappers);
   const title = stringOf(prop(meta, 'title', bindings, wrappers), bindings) ?? autoTitle;
+  const metaId = stringOf(prop(meta, 'id', bindings, wrappers), bindings) || undefined;
   const include = storyFilter(meta, 'includeStories', bindings, wrappers);
   const exclude = storyFilter(meta, 'excludeStories', bindings, wrappers);
   const componentNode = prop(meta, 'component', bindings, wrappers);
@@ -160,8 +161,9 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
       const tags = combineTags(metaTags, tagsOf(spec, bindings, wrappers));
       const viewport = native ? viewportOf(spec, bindings, wrappers) : undefined;
       return {
-        id: storyId(title, name),
+        id: storyId(metaId ?? title, name),
         title,
+        ...(metaId === undefined ? {} : { metaId }),
         // An empty name falls through, as the loader's does, so the tree and the trial name a story alike.
         name:
           stringOf(prop(spec, 'name', bindings, wrappers), bindings) ||

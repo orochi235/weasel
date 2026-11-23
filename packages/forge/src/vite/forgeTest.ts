@@ -69,6 +69,7 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           `const __forge_timeout = ${TIMEOUT_MS};`,
           'const __forge_options = {',
           `  setup: ${options.frameConfig ? '__forge_frame_config' : 'undefined'},`,
+          ...(entries[0]?.metaId === undefined ? [] : [`  metaId: ${q(entries[0].metaId)},`]),
           '};',
           'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_title, __forge_options);',
           // An isolated story asks for a document of its own, which the test page is not; its reason goes in the name.

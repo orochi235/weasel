@@ -15,8 +15,10 @@ describe('story ids', () => {
     expect(sanitize(input)).toBe(expected);
   });
 
-  it('joins title and export with a double dash', () => {
-    expect(storyId('ui/Slider', 'WithName')).toBe('ui-slider--withname');
+  it('joins the title and the name Storybook makes of the export with a double dash, as Storybook does', () => {
+    expect(storyId('ui/Slider', 'WithName')).toBe('ui-slider--with-name');
+    expect(storyId('Example/Page', 'LoggedIn')).toBe('example-page--logged-in');
+    expect(storyId('ui/Button', 'withIcon2')).toBe('ui-button--with-icon-2');
   });
 
   it('rejects a part with nothing left after sanitizing', () => {

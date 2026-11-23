@@ -1,7 +1,7 @@
 import { API_EXPORT, type ApiTable } from './api';
 import { byComponent, indexId, isIndexId } from './indexPages';
 import { type Libraries, TITLE_LIBRARIES } from './library';
-import { indexRenderOf, loadStories } from './load';
+import { indexRenderOf, loadStories, type StoryLoader } from './load';
 import { taggedIds } from './tags';
 import type { IndexRender, LoadedStory } from './types';
 
@@ -31,6 +31,7 @@ export type Loaded = { kind: 'story'; story: LoadedStory } | { kind: 'index'; bu
 export interface BundleEntry {
   id: string;
   title: string;
+  metaId?: string;
   file: string;
   exportName: string;
   description?: string;
@@ -43,7 +44,7 @@ export interface IndexBundleSource {
   index: readonly BundleEntry[];
   /** The module of a story file; called once per file the component's stories live in. */
   importOf: (file: string) => Promise<Record<string, unknown>>;
-  load?: ((mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[]) | undefined;
+  load?: StoryLoader | undefined;
   parameters?: Record<string, unknown> | undefined;
   prepare?: ((story: LoadedStory) => void | Promise<void>) | undefined;
   libraries?: Libraries | undefined;
@@ -74,8 +75,8 @@ export async function loadIndexBundle(id: string, source: IndexBundleSource): Pr
   const { title } = primary;
   const files = [...new Set(entries.map((e) => e.file))];
   const mods = await Promise.all(files.map(importOf));
-  const titleOf = (file: string) => entries.find((e) => e.file === file)?.title ?? title;
-  const byFile = new Map(files.map((file, i) => [file, load(mods[i] ?? {}, titleOf(file), parameters)]));
+  const entryOf = (file: string) => entries.find((e) => e.file === file);
+  const byFile = new Map(files.map((file, i) => [file, load(mods[i] ?? {}, entryOf(file)?.title ?? title, parameters, entryOf(file)?.metaId)]));
   const stories = entries.flatMap((e) => byFile.get(e.file)?.find((s) => s.exportName === e.exportName) ?? []);
   for (const story of stories) await prepare?.(story);
   const tags = commonTags(entries);

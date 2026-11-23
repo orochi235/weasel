@@ -3,8 +3,7 @@ import { openChannel } from '../protocol/channel';
 import { FRAME_HELLO, type FromFrame, PORT_HANDOFF, type ToFrame } from '../protocol/messages';
 import { indexId, isIndexId } from '../story/indexPages';
 import { loadIndexBundle } from '../story/indexBundle';
-import { loadStories } from '../story/load';
-import type { LoadedStory } from '../story/types';
+import { loadStories, type StoryLoader } from '../story/load';
 import { type FrameSetup, reportImportFault, startFrame } from './FrameController';
 import { startIndex } from './index/startIndex';
 
@@ -18,6 +17,8 @@ export interface FrameIndexEntry {
   id: string;
   /** The story's title as indexed, which titles the file's stories when its meta names none. */
   title: string;
+  /** The meta's own `id`, which the file's story ids are made from in place of `title`. */
+  metaId?: string;
   file: string;
   exportName: string;
   /** The JSDoc above the story's export, which its index page shows. */
@@ -33,7 +34,7 @@ export interface MountFrameOptions {
   index: readonly FrameIndexEntry[];
   importers: FrameImporters;
   setup?: FrameSetup;
-  load?: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
+  load?: StoryLoader;
 }
 
 export { indexRenderOf, loadStories } from '../story/load';
@@ -97,7 +98,7 @@ export async function mountFrame(options: MountFrameOptions): Promise<void> {
     const entry = options.index.find((e) => e.id === id);
     if (!entry) throw new Error(`No story with id "${id}"`);
     const mod = await loadImport(entry.file);
-    const stories = (options.load ?? loadStories)(mod, entry.title, options.setup?.parameters);
+    const stories = (options.load ?? loadStories)(mod, entry.title, options.setup?.parameters, entry.metaId);
     const story = stories.find((s) => s.exportName === entry.exportName);
     if (!story) throw new Error(`${entry.file} has no story export "${entry.exportName}"`);
     await options.setup?.prepare?.(story);

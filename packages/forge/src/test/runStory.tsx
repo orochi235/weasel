@@ -53,6 +53,8 @@ export interface RunStoryOptions {
   globals?: StoryGlobals;
   /** Runs on the story host once the story has rendered and played, before it unmounts; a throw fails the run. */
   check?: (host: HTMLElement) => unknown;
+  /** The file's index entry `metaId`, where its meta names an `id`. */
+  metaId?: string;
 }
 
 /** Stops the story a timed-out test left mounted. */
@@ -69,12 +71,12 @@ export async function runStory(
   file: string,
   /** The file's index entry title. */
   title: string,
-  { setup = {}, globals = {}, check }: RunStoryOptions = {},
+  { setup = {}, globals = {}, check, metaId }: RunStoryOptions = {},
 ): Promise<void> {
   leftover?.();
   let story: LoadedStory | undefined;
   try {
-    story = loadStories(mod, title, setup.parameters).find((s) => s.exportName === exportName);
+    story = loadStories(mod, title, setup.parameters, metaId).find((s) => s.exportName === exportName);
   } catch (error) {
     throw phased('load', error);
   }

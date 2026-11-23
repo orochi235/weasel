@@ -17,8 +17,9 @@ function sanitizeSafe(part: string, kind: 'kind' | 'name'): string {
   return sanitized;
 }
 
+/** The id Storybook gives the story `exportName` under `title`: `LoggedIn` under `Example/Page` is `example-page--logged-in`. */
 export function storyId(title: string, exportName: string): string {
-  return `${sanitizeSafe(title, 'kind')}--${sanitizeSafe(exportName, 'name')}`;
+  return `${sanitizeSafe(title, 'kind')}--${sanitizeSafe(storyNameFromExport(exportName), 'name')}`;
 }
 
 /** `PrimaryButton` → `Primary Button`, `withIcon2` → `With Icon 2`. */

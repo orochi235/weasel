@@ -189,6 +189,7 @@ export function loadCsfModule(
   mod: Record<string, unknown>,
   title: string,
   projectParameters: Record<string, unknown> = {},
+  metaId?: string,
 ): LoadedStory[] {
   const meta = (isPlainObject(mod.default) ? mod.default : {}) as Annotations;
   const stories: LoadedStory[] = [];
@@ -203,7 +204,7 @@ export function loadCsfModule(
 
     // A CSF 2 function export hoists its annotations onto itself.
     const spec: Annotations = typeof value === 'function' ? { ...value, render: value as CsfRender } : (value as Annotations);
-    const id = storyId(title, exportName);
+    const id = storyId(metaId ?? title, exportName);
     const name = spec.name || spec.storyName || storyNameFromExport(exportName);
     const args = { ...meta.args, ...spec.args };
     const parameters = combineParameters(projectParameters, meta.parameters, spec.parameters);

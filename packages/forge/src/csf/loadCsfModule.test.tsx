@@ -63,6 +63,11 @@ describe('loadCsfModule', () => {
     ]);
   });
 
+  it("makes ids from the index entry's meta id where it has one", () => {
+    const stories = loadCsfModule({ default: { title: 'Example/Page', id: 'custom' }, LoggedIn: {} }, 'Example/Page', {}, 'custom');
+    expect(stories.map((s) => s.id)).toEqual(['custom--logged-in']);
+  });
+
   it("lists no story for the plugin's API export", () => {
     const mod = { default: { title: 'ui/Chip' }, Basic: {}, [API_EXPORT]: { props: [], inherited: [], ref: null } };
     expect(loadCsfModule(mod, 'ui/Chip').map((s) => s.exportName)).toEqual(['Basic']);

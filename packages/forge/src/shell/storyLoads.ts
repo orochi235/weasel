@@ -6,7 +6,8 @@ import type { FrameImporters } from '../frame/mountFrame';
 import { loadIndexBundle } from '../story/indexBundle';
 import { indexId, isIndexId } from '../story/indexPages';
 import type { Libraries } from '../story/library';
-import type { IndexEntry, LoadedStory } from '../story/types';
+import type { StoryLoader } from '../story/load';
+import type { IndexEntry } from '../story/types';
 import type { Loaded } from './documentInstrument';
 
 /** A map less every key `ids` does not hold; the same map when there is none. */
@@ -48,7 +49,7 @@ export interface StoryLoadSource {
   index: readonly IndexEntry[];
   importers: FrameImporters | undefined;
   setup: FrameSetup;
-  load: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
+  load: StoryLoader;
   libraries: Libraries;
 }
 
@@ -125,7 +126,7 @@ export function useStoryLoads(source: StoryLoadSource): StoryLoads {
       let shared = fileLoads.current.get(entry.file);
       if (!shared || shared.module !== module || shared.ids !== key || shared.setup !== current || shared.load !== loadModule) {
         const result = module.then(async (mod) => {
-          const stories = loadModule(mod, entry.title, current.parameters);
+          const stories = loadModule(mod, entry.title, current.parameters, entry.metaId);
           const out = new Map<string, Loaded>();
           for (const sibling of siblings) {
             const story = stories.find((s) => s.exportName === sibling.exportName);

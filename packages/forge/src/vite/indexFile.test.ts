@@ -18,6 +18,13 @@ export const A = forge.story({ name: 'Named', viewport: { width: 400, height: 30
     ]);
   });
 
+  it("makes ids from a meta's id, as Storybook does, and keeps the title for the tree", () => {
+    const code = `const ID = 'custom';\nexport default { title: 'Example/Page', id: ID };\nexport const LoggedIn = {};\n`;
+    expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
+      { id: 'custom--logged-in', title: 'Example/Page', metaId: 'custom', name: 'Logged In', exportName: 'LoggedIn', file: FILE },
+    ]);
+  });
+
   it('indexes a native meta and its stories', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';
@@ -27,7 +34,7 @@ export const WithName = story({ name: 'Custom name', render: () => null });
 `;
     expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
       { id: 'ui-slider--basic', title: 'ui/Slider', name: 'Basic', exportName: 'Basic', file: FILE },
-      { id: 'ui-slider--withname', title: 'ui/Slider', name: 'Custom name', exportName: 'WithName', file: FILE },
+      { id: 'ui-slider--with-name', title: 'ui/Slider', name: 'Custom name', exportName: 'WithName', file: FILE },
     ]);
   });
 
@@ -232,7 +239,7 @@ export const FullscreenWide = fit('fullscreen', 'wide');
 export const Named: Story = { name: 'A named one', render: () => null };
 `;
     expect(ids(csf)).toEqual([
-      ['labkit-lab-fit--fullscreenwide', 'Fullscreen Wide'],
+      ['labkit-lab-fit--fullscreen-wide', 'Fullscreen Wide'],
       ['labkit-lab-fit--named', 'A named one'],
     ]);
   });

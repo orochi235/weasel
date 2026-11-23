@@ -28,6 +28,9 @@ export type Decorator = (story: () => ReactNode, ctx: StoryContext) => ReactNode
 /** What `meta()` takes: settings every story in the file shares. */
 export interface MetaSpec {
   title?: string;
+  /** What the file's story ids are made from in place of `title`, as Storybook's meta `id`. Read from the source, so
+   *  it must be a string literal, inline or in a top-level `const`. */
+  id?: string;
   decorators?: Decorator[];
   layout?: StoryLayout;
   /** Renders this story in its own frame document, for a reason the value states. The default is the workshop document. */
@@ -132,6 +135,8 @@ export interface IndexEntry {
   exportName: string;
   /** Absolute path of the story file. */
   file: string;
+  /** The meta's own `id`, read statically, which the file's story ids are made from in place of `title`. */
+  metaId?: string;
   /** The JSDoc written above this story's export, if any. */
   description?: string;
   /** The JSDoc written above the file's meta, if any. */
