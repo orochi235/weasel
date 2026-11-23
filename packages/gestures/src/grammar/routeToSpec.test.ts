@@ -21,6 +21,12 @@ describe('routeToSpec', () => {
     expect(spec('[*:*] drag')).toEqual({ kind: 'drag' });
   });
 
+  it('reads a modifier set to undefined as absent, as formatRoute does', () => {
+    const parsed = parseRoute('[*:*] click');
+    const s = routeToSpec({ ...parsed, modifiers: { shift: undefined } });
+    expect(s).toEqual({ kind: 'click' });
+  });
+
   it('keeps [*] as the self-channel atom it abbreviates', () => {
     const s = spec('[*] click => empty');
     expect(s.phase).toEqual([{ channel: '&', phase: '*' }]);
