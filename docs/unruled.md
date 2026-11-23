@@ -3916,3 +3916,9 @@ Calls the lanes made without a ruling:
   `Deployment_Node`, a `[system]`, `[container]`, or `[enterprise]` one keeping its type, and now warns that such a
   boundary comes back a deployment node, since a page cannot tell `System_Boundary` from a deployment node typed
   `system`. Writing the fixed boundary macro for those types was the alternative, and loses typed deployment nodes.
+
+## Audit round seventy-five (2026-11-22): the viewport
+
+- 2026-11-22 (the fixer's call): `useDecayLoop`'s `start` ends a coast at once, calling `onEnd`, when its velocity is
+  `NaN` or infinite, where `friction` and `minSpeed` throw: the velocity is measured at a release, and a release
+  never throws. Throwing a `RangeError` as for the options was the alternative.

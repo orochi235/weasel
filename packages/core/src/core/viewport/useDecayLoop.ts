@@ -142,8 +142,9 @@ export function useDecayLoop() {
     checkInertia('useDecayLoop', config);
     cancel();
     const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, onTick, onEnd } = config;
-    const speed = Math.sqrt(velocity.vx ** 2 + velocity.vy ** 2);
-    if (speed < minSpeed) { onEnd?.(); return; }
+    const speed = Math.hypot(velocity.vx, velocity.vy);
+    // A non-finite velocity is a bad measurement, not a fling: friction never brings it down.
+    if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.(); return; }
     stateRef.current = {
       vx: velocity.vx, vy: velocity.vy, friction, minSpeed, lastTime: null,
       posX: initialPosition?.x ?? 0, posY: initialPosition?.y ?? 0,

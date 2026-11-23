@@ -27,6 +27,18 @@ beforeEach(() => {
 afterEach(() => { vi.restoreAllMocks(); });
 
 describe('useDecayLoop', () => {
+  it.each([NaN, Infinity, -Infinity])('ends at once, without a tick, on a velocity of %s', (bad) => {
+    const onTick = vi.fn();
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => { result.current.start({ velocity: { vx: bad, vy: 0 }, onTick, onEnd }); });
+    expect(onEnd).toHaveBeenCalledTimes(1);
+    act(() => { stepRAF(16); });
+    act(() => { stepRAF(16); });
+    expect(onTick).not.toHaveBeenCalled();
+    expect(rafCallbacks).toHaveLength(0);
+  });
+
   it('calls onTick with decaying deltas each frame', () => {
     const onTick = vi.fn();
     const { result } = renderHook(() => useDecayLoop());
