@@ -8,11 +8,11 @@
  */
 
 import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
-import { createReflectable, type PushOptions, type Reflection } from '@weasel-js/registry';
+import { createReflectable, ExtensionConflictError, type PushOptions, type Reflection } from '@weasel-js/registry';
 import type { GlMat3, Rect } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
 import {
-  programSourceRegistry, type ProgramSource, type ShaderUniform,
+  programSourceRegistry, sameProgramSource, type ProgramSource, type ShaderUniform,
 } from './shaders/registerProgram';
 import { assemblePaintWgsl } from './gpu/webgpu/wgsl/paintPrelude';
 
@@ -132,7 +132,8 @@ export interface PaintDrawKind {
   toBoundsUnits?(fill: Paint, box: Rect): Paint;
   /**
    * Shader programs `bind` names, keyed by program id; registering the kind
-   * registers them. Declaring them here rather than
+   * registers them. A kind of another id declaring one of them with other
+   * source throws `ExtensionConflictError`. Declaring them here rather than
    * calling `registerProgram` at import keeps a kind loaded by
    * {@link registerPaintDrawKindLoader} free of the shader registry.
    *
@@ -155,13 +156,20 @@ export const paintDrawKindRegistry: Reflection<PaintDrawKind> = KINDS.reflection
 /** The release of each program a registered kind holds, by kind and then program id. */
 const PROGRAMS_HELD = new Map<PaintDrawKind, Map<string, () => void>>();
 
-/** Register the programs `entry` declares in place of whatever those ids hold: the kind owns them. */
+/** Register the programs `entry` declares in place of whatever those ids hold: the kind owns them.
+ *  Throws `ExtensionConflictError` for one a kind of another id declares with other source. */
 function holdPrograms(entry: PaintDrawKind): void {
   const declaredPrograms = Object.entries(entry.programs ?? {});
   // Every source is checked before any is registered, so a throw leaves no program behind.
   for (const [id, declared] of declaredPrograms) {
     if (!declared.glsl && !declared.wgsl) {
       throw new Error(`weasel registerPaintKind: kind "${entry.id}" declares program "${id}" with no source.`);
+    }
+  }
+  for (const [id, declared] of declaredPrograms) {
+    for (const held of PROGRAMS_HELD.keys()) {
+      const theirs = held.id === entry.id ? undefined : held.programs?.[id];
+      if (theirs && !sameProgramSource(theirs, declared)) throw new ExtensionConflictError('shader program', id);
     }
   }
   const releases = PROGRAMS_HELD.get(entry) ?? new Map<string, () => void>();

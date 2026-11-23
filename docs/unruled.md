@@ -4068,3 +4068,10 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): text with no pose maps a `'bounds'` paint onto a box at its `x` and `y`, as wide as
   its `width`, else a finite `maxWidth`, else its laid-out text, and as tall as its `height`, else its laid-out text.
   Placing such a paint at the text's origin with no size, as `'local'`, was the alternative.
+
+## Audit round seventy-nine (2026-11-23): renderer, part two
+
+- 2026-11-23 (the fixer's call): a paint kind declaring a program id that a kind of another id, registered and not yet
+  disposed, declares with other source throws `ExtensionConflictError`, as `registerProgram` does; an override under
+  the same kind id still replaces it. Letting the later kind take the program, or restoring the earlier holder's when
+  it is disposed, were the alternatives.
