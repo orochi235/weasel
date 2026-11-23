@@ -4,7 +4,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { ACC_WORDS, titleLines } from '../common/lines';
-import { arrowHead, dropPorts, styleProps } from '../common/styles';
+import { arrowHead, dropEndLabels, dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { BRACKETS } from '../flowchart/write';
 
@@ -116,7 +116,7 @@ export function writeBlockDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
   const out = graphOut(doc, opts, 'Mermaid');
   if (out === null) return { text: 'block-beta\n', warnings: [] };
   if (out.page.data.nodes.some((n) => n.at !== undefined)) out.warnings.add('Mermaid holds no positions; the page is laid out again when read.');
-  if (out.edges.some((e) => e.endLabels !== undefined)) out.warnings.add('Mermaid block diagrams have no labels at a connector\'s ends; they were dropped.');
+  dropEndLabels(out.edges, 'block diagrams', (m) => out.warnings.add(m));
   const w = new BlockWriter(out);
   w.lines.push(...titleLines(out.page.name), 'block-beta');
   if (w.grid.columns !== undefined) w.lines.push(`  columns ${w.grid.columns}`);

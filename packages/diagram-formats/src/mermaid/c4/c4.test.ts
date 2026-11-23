@@ -197,3 +197,12 @@ describe('C4 deployment nodes', () => {
     expect(writeC4(document).text).toContain('Deployment_Node(d, "Web", "container") {');
   });
 });
+
+describe('writing connector parts Mermaid C4 diagrams hold no place for', () => {
+  it('warns that they were dropped', () => {
+    const p = page('C4Context\n  System(a, "A")\n  System(b, "B")\n  Rel(a, b, "x")');
+    const edges = p.data.edges.map((e) => ({ ...e, endLabels: { from: '1' }, colors: { ...e.colors, stroke: '#f00', label: '#00f', width: 3 } }));
+    const { warnings } = writeC4({ pages: [{ ...p, data: { ...p.data, edges } }] });
+    expect(warnings).toEqual(expect.arrayContaining(['Mermaid C4 diagrams have no labels at a connector\'s ends; they were dropped.', 'Mermaid C4 diagram connectors hold no widths; they were dropped.']));
+  });
+});

@@ -191,3 +191,12 @@ describe('writing a class box Mermaid would read back otherwise', () => {
     expect(writeClassDiagram(boxed(rows)).warnings).toContain('Mermaid reads a member without parentheses as an attribute; such methods read back as attributes.');
   });
 });
+
+describe('writing connector parts Mermaid class diagrams hold no place for', () => {
+  it('warns that they were dropped', () => {
+    const p = page('classDiagram\n  a --> b');
+    const edges = p.data.edges.map((e) => ({ ...e, endLabels: { from: '1' }, colors: { ...e.colors, stroke: '#f00', label: '#00f', width: 3 } }));
+    const { warnings } = writeClassDiagram({ pages: [{ ...p, data: { ...p.data, edges } }] });
+    expect(warnings).toEqual(expect.arrayContaining(['Mermaid class diagram connectors hold no line colors, label colors, or widths; they were dropped.']));
+  });
+});

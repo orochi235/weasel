@@ -158,3 +158,12 @@ describe('an id Mermaid reads as accessibility text', () => {
     }
   });
 });
+
+describe('writing connector parts Mermaid architecture diagrams hold no place for', () => {
+  it('warns that they were dropped', () => {
+    const p = page('architecture-beta\n  service a(server)\n  service b(server)\n  a:R -- L:b');
+    const edges = p.data.edges.map((e) => ({ ...e, endLabels: { from: '1' }, colors: { ...e.colors, stroke: '#f00', label: '#00f', width: 3 } }));
+    const { warnings } = writeArchitecture({ pages: [{ ...p, data: { ...p.data, edges } }] });
+    expect(warnings).toEqual(expect.arrayContaining(['Mermaid architecture diagrams have no labels at a connector\'s ends; they were dropped.', 'Mermaid architecture diagrams have no styles; colors were dropped.']));
+  });
+});

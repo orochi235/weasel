@@ -5,7 +5,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
-import { dropPorts, styleProps } from '../common/styles';
+import { dropEdgeColors, dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, oneLine, spelledBreaks } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
@@ -159,6 +159,7 @@ export function writeClassDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
     dropPorts(e, (m) => out.warnings.add(m));
     w.lines.push(w.relation(e));
   }
+  dropEdgeColors(out.edges, 'class diagram', (m) => out.warnings.add(m));
   w.noteLines();
   w.styles();
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };

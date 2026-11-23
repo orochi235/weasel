@@ -2,7 +2,7 @@
 import { dataEdgeStyle, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { changed, edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { arrowHead } from '../common/styles';
+import { arrowHead, dropEdgeColors, dropEndLabels } from '../common/styles';
 import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
 import { elementParts, hasTechnology, macroOf, smallLines } from './kinds';
 import { C4_HEADERS } from './parse';
@@ -112,6 +112,8 @@ export function writeC4(doc: DiagramDocument, opts?: WriteOptions): ExportResult
   for (const n of out.nodes) w.element(n, '  ');
   for (const c of out.clusters) w.boundary(c, '  ');
   for (const e of out.edges) w.rel(e);
+  dropEndLabels(out.edges, 'C4 diagrams', (m) => out.warnings.add(m));
+  dropEdgeColors(out.edges, 'C4 diagram', (m) => out.warnings.add(m), ['stroke', 'label']);
   w.lines.push(...w.styles);
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };
 }
