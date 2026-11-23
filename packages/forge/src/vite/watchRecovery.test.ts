@@ -70,6 +70,10 @@ const edit = (file: string, text: string) => {
 };
 
 describe('watchRecovery', () => {
+  it('refuses a quietMs that is not above 0, which would check every served file each millisecond', () => {
+    for (const quietMs of [0, -1, NaN]) expect(() => watchRecovery({ quietMs })).toThrow(RangeError);
+  });
+
   it('with a quietMs no timer holds, checks files only as they are served', async () => {
     const interval = vi.spyOn(globalThis, 'setInterval');
     const { root, get } = await start([watchRecovery({ quietMs: Infinity })], { 'part.ts': 'export const part = 0;\n' });

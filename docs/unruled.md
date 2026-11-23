@@ -3981,3 +3981,7 @@ Calls the lanes made without a ruling:
   (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
   spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
   sent the title to the file's auto title in the common case, where the spread carries no title.
+## Audit round seventy-eight (2026-11-23): forge's vite plugin
+
+- 2026-11-23 (the fixer's call): `watchRecovery` throws a `RangeError` for a `quietMs` of 0, a negative value, or
+  `NaN`. Clamping it to a floor, or reading it as "check only as served" the way `Infinity` reads, was the alternative.
