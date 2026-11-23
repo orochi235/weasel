@@ -1,6 +1,5 @@
 import { createHash } from 'node:crypto';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { stableStringify } from '@weasel-js/core/json';
 import type { ViteDevServer } from 'vite';
 import { type CaptureBrowser, captureAvailability, launchCaptureBrowser, QUEUE_FULL } from './browser.ts';
 import { createCaptureCache } from './cache.ts';
@@ -19,7 +18,14 @@ const MAX_BODY = 16 * 1024 * 1024;
 
 type Launched = CaptureBrowser | { unavailable: string };
 
-const keyOf = (payload: CapturePayload) => createHash('sha1').update(stableStringify(payload)).digest('hex');
+/** JSON with object keys sorted. Not @weasel-js/core's stableStringify: configs load these plugin files before any
+ *  workspace package is built, and a payload is parsed JSON, which needs none of what that one handles. */
+const sortedJson = (value: unknown): string =>
+  JSON.stringify(value, (_key, v: unknown) =>
+    v && typeof v === 'object' && !Array.isArray(v) ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => (a < b ? -1 : 1))) : v,
+  );
+
+const keyOf = (payload: CapturePayload) => createHash('sha1').update(sortedJson(payload)).digest('hex');
 
 /** A socket address as a URL's host: IPv6 bracketed with its zone id escaped (RFC 6874), IPv4-mapped unwrapped. */
 export const urlHost = (address: string): string => {
