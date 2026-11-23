@@ -334,6 +334,20 @@ describe('Lane in graph mode', () => {
     expect(keys[1].value).toBeCloseTo(5);
   });
 
+  it.each([null, 1])('puts back its preview and cancels a key drag released where it began, selection %s', (selection) => {
+    const onKeysInput = vi.fn();
+    const onKeysChange = vi.fn();
+    const onCancel = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} selection={selection} onKeysInput={onKeysInput} onKeysChange={onKeysChange} onCancel={onCancel} />);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 1.6, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 10 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 1.6 });
+    fireEvent.pointerUp(document, { clientX: 250, clientY: 1.6 });
+    expect(onKeysChange).not.toHaveBeenCalled();
+    expect(onKeysInput).toHaveBeenLastCalledWith((sampled as { keys: unknown[] }).keys);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it('snaps a dragged key to a nearby snap time, in ruler time', () => {
     const onKeysChange = vi.fn();
     const nested = { ...laneOf(sampled), offset: 100 };

@@ -16,6 +16,8 @@ interface ActiveGesture {
   last: unknown;
   seen: unknown;
   sent: boolean;
+  /** A move sent the layer a step: a preview the consumer has to see closed, by a commit or a cancel. */
+  moved: boolean;
 }
 
 /**
@@ -73,7 +75,7 @@ export function useLayerGesture(host: LayerGestureHost) {
     if (!model) return;
     const current = working(a);
     const next = a.gesture.onMove(current, model, e, hostRef.current.ctxFor(readModifiers(e)));
-    if (next !== current) send(a, next);
+    if (next !== current) { send(a, next); a.moved = true; }
   });
 
   const onCancelRef = useLatest(() => {
@@ -96,7 +98,7 @@ export function useLayerGesture(host: LayerGestureHost) {
     if (finalState !== current) send(a, finalState);
     const changed = !deepEqual(finalState, a.startSelfState);
     if (changed) hostRef.current.onEdit(a.startStates);
-    settleLayer(a.entry, changed ? { commit: finalState, prev: a.startSelfState } : 'unchanged');
+    settleLayer(a.entry, changed ? { commit: finalState, prev: a.startSelfState } : a.moved ? 'cancel' : 'unchanged');
     finish();
   });
 
@@ -115,7 +117,7 @@ export function useLayerGesture(host: LayerGestureHost) {
   ) => {
     activeRef.current = {
       entry, gesture, startStates, startSelfState: startStates.get(entry),
-      last: pressed ? pressed.state : stateOf(entry), seen: entry.state, sent: pressed !== undefined,
+      last: pressed ? pressed.state : stateOf(entry), seen: entry.state, sent: pressed !== undefined, moved: false,
     };
     setActiveEntry(entry);
     sessionRef.current = openPointerSession(down.currentTarget, down, {

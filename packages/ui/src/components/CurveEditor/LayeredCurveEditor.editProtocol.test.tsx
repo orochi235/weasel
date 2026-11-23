@@ -62,6 +62,20 @@ describe('curve layers and the edit protocol', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('a drag released where it began closes its preview with a cancel', () => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    render(editor(<KeyframeLayer label="x" state={{ ...STATE, selectedKey: 1 }} onInput={onInput} onChange={onChange} onCancel={onCancel} />));
+    down(100, 0);
+    move(140, 20);
+    move(100, 0);
+    up(100, 0);
+    expect(onInput).toHaveBeenCalled();
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it('a key step is one edit, previewed and committed once', () => {
     const onInput = vi.fn();
     const onChange = vi.fn();

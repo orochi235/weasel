@@ -4,6 +4,7 @@ import { useElementSize } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
 import { type Keyframe } from '@weasel-js/animator';
 import { maxOf, minOf } from '@weasel-js/geom';
+import { deepEqual } from '@weasel-js/registry';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
 import { applyKeyframeDrag, type KeyframeLayerState } from '../CurveEditor/createKeyframeLayer';
 import { KeyframeLayer } from '../CurveEditor/KeyframeLayer';
@@ -99,12 +100,6 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     onKeysInput?.(applied);
   };
 
-  const onLayerCommit = (next: KeyframeLayerState, prev: KeyframeLayerState): void => {
-    setLive(null);
-    previewed.current = null;
-    if (edits && next.keys !== prev.keys) onKeysChange(next.keys);
-  };
-
   const onLayerCancel = (): void => {
     setLive(null);
     const from = previewed.current;
@@ -112,6 +107,15 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     if (!from) return;
     onKeysInput?.(from);
     onCancel?.();
+  };
+
+  // A gesture that changed only the selection leaves its keys as they were, so a preview it sent is put back.
+  const onLayerCommit = (next: KeyframeLayerState, prev: KeyframeLayerState): void => {
+    if (edits && !deepEqual(next.keys, prev.keys)) {
+      setLive(null);
+      previewed.current = null;
+      onKeysChange(next.keys);
+    } else onLayerCancel();
   };
 
   const [yLo, yHi] = valueRange(state.keys);
