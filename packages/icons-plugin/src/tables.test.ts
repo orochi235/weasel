@@ -118,3 +118,12 @@ it("builds a package's source table over its stale built one", () => {
   const tables = tablesFrom([join(root, 'src', 'icons.gen.ts')], [root]);
   expect(tables.map((t) => t.icons)).toEqual([{ a: glyph('new') }]);
 });
+
+it('follows an extensionless specifier to any icons.gen source extension', () => {
+  const root = temp();
+  for (const ext of ['tsx', 'jsx', 'mts', 'mjs', 'cts', 'cjs']) {
+    mkdirSync(join(root, ext));
+    writeFileSync(join(root, ext, `icons.gen.${ext}`), '');
+    expect(genFile('./icons.gen', join(root, ext, 'a.ts'))).toBe(join(root, ext, `icons.gen.${ext}`));
+  }
+});
