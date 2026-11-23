@@ -71,8 +71,18 @@ export function streamScene<TData, TLayer extends string, TPose>(
   // Nodes a recorded edit has touched are the document's now: undo has to find them, so no drop removes
   // them and no reload adds them again.
   const adopted = new Set<NodeId>();
+  // What each streamed node sits under or derives from, as its spec named it: undoing the removal of an
+  // adopted node restores it there, so those have to stay too.
+  const holders = new Map<NodeId, NodeId[]>();
+  const adopt = (id: NodeId) => {
+    if (!streamed.delete(id)) return;
+    adopted.add(id);
+    const up = holders.get(id);
+    holders.delete(id);
+    for (const h of up ?? []) adopt(h);
+  };
   const removePass = scene.addEditPass((edit) => {
-    for (const set of [edit.posed, edit.dataChanged, edit.reparented, edit.removed]) for (const id of set) if (streamed.delete(id)) adopted.add(id);
+    for (const set of [edit.posed, edit.dataChanged, edit.reparented, edit.removed]) for (const id of set) adopt(id);
     return null;
   });
   const stream = new TileStream<PlaneTileKey, PlaneTileView, NodeId[]>({
@@ -82,12 +92,25 @@ export function streamScene<TData, TLayer extends string, TPose>(
       if (signal.aborted) return [];
       const fresh = specs.filter((spec) => spec.id === undefined || (!adopted.has(spec.id) && scene.get(spec.id) === undefined));
       const ids = scene.untracked(() => fresh.map((spec) => scene.add(spec)));
-      for (const id of ids) streamed.add(id);
+      fresh.forEach((spec, i) => {
+        streamed.add(ids[i]!);
+        const up = [...(spec.parent ? [spec.parent] : []), ...(Array.isArray(spec.dependsOn) ? spec.dependsOn : [])];
+        if (up.length > 0) holders.set(ids[i]!, up);
+      });
       return ids;
     },
     release: (_k, ids) => {
-      const live = ids.filter((id) => streamed.delete(id) && scene.get(id) !== undefined);
-      if (live.length > 0) scene.untracked(() => scene.removeMany(live));
+      const live = ids.filter((id) => streamed.has(id) && scene.get(id) !== undefined);
+      // Removing a node takes its subtree and dependents: one that would take a node the stream does not
+      // own (adopted, or the document's own) is the document's now too.
+      const kept = new Set(live.filter((id) => scene.removalClosure([id]).some((n) => !streamed.has(n))));
+      for (const id of kept) adopt(id);
+      for (const id of ids) {
+        streamed.delete(id);
+        holders.delete(id);
+      }
+      const drop = live.filter((id) => !kept.has(id));
+      if (drop.length > 0) scene.untracked(() => scene.removeMany(drop));
     },
     ...(opts.onError ? { onError: (k: PlaneTileKey, e: unknown) => opts.onError!(cellOf(k), e) } : {}),
   });
