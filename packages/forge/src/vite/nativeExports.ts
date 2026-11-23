@@ -65,6 +65,11 @@ export function mayReturnStory(fn: Fn, scope: Scope, depth = 0): boolean {
   return fn.body.type === 'BlockStatement' ? returnsStory(fn.body.body, scope, depth + 1) : mayBeStory(fn.body, scope, depth + 1);
 }
 
+/** Whether calling `node`, the value a callee is bound to, may hand back a story: a function by what it returns, else by whether a call made it. */
+export function mayCallStory(node: t.Node | undefined, scope: Scope, depth = 0): boolean {
+  return isFn(node) ? mayReturnStory(node, scope, depth) : !isLiteralValue(node, scope.bindings);
+}
+
 /**
  * Whether a native file's export may be what forge's `story` returned, which is all the loader takes. A call is one
  * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread or
@@ -92,9 +97,7 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
       if (isFn(callee)) return mayReturnStory(callee, scope, depth);
       if (callee.type !== 'Identifier') return !isLiteralValue(callee, scope.bindings);
       if (scope.wrappers.has(callee.name)) return true;
-      const fn = scope.bindings.get(callee.name);
-      if (isFn(fn)) return mayReturnStory(fn, scope, depth);
-      if (scope.bindings.has(callee.name)) return !isLiteralValue(fn, scope.bindings);
+      if (scope.bindings.has(callee.name)) return mayCallStory(scope.bindings.get(callee.name), scope, depth);
       return scope.foreign?.call(callee.name) ?? true;
     }
     case 'ConditionalExpression':

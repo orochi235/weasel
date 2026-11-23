@@ -1,7 +1,7 @@
 import { getOwn, setOwn } from './ownKeys.ts';
 import { parseFile } from './ast.ts';
 import { indexProgram, scan } from './indexFile.ts';
-import { type Foreign, type ForeignStories, isFn, mayBeStory, mayReturnStory, type Scope } from './nativeExports.ts';
+import { type Foreign, type ForeignStories, mayBeStory, mayCallStory, type Scope } from './nativeExports.ts';
 import type { Trace } from './trace.ts';
 
 type Kind = keyof ForeignStories;
@@ -71,7 +71,7 @@ export async function foreignStories(
     const node = scope.bindings.get(local);
     if (!node) return undefined;
     const { result } = await settled(
-      (foreign) => (called ? isFn(node) && mayReturnStory(node, { ...scope, foreign }) : mayBeStory(node, { ...scope, foreign })),
+      (foreign) => (called ? mayCallStory : mayBeStory)(node, { ...scope, foreign }),
       asking(at, depth + 1),
     );
     return result;
