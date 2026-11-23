@@ -38,14 +38,35 @@ export interface Scope {
   foreign?: Foreign;
 }
 
-/** Whether any `return` of `statements`, through blocks and `if`s, may hand back a story. */
+/** The statements `stmt` runs inside it whose `return`s are its function's. */
+function innerStatements(stmt: t.Statement): t.Statement[] {
+  switch (stmt.type) {
+    case 'BlockStatement':
+      return stmt.body;
+    case 'IfStatement':
+      return [stmt.consequent, ...(stmt.alternate ? [stmt.alternate] : [])];
+    case 'TryStatement':
+      return [stmt.block, ...(stmt.handler ? [stmt.handler.body] : []), ...(stmt.finalizer ? [stmt.finalizer] : [])];
+    case 'SwitchStatement':
+      return stmt.cases.flatMap((c) => c.consequent);
+    case 'ForStatement':
+    case 'ForInStatement':
+    case 'ForOfStatement':
+    case 'WhileStatement':
+    case 'DoWhileStatement':
+    case 'LabeledStatement':
+    case 'WithStatement':
+      return [stmt.body];
+    default:
+      return [];
+  }
+}
+
+/** Whether any `return` of `statements`, through every statement that nests others, may hand back a story. */
 function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: number): boolean {
-  return statements.some((stmt) => {
-    if (stmt.type === 'ReturnStatement') return mayBeStory(stmt.argument ?? undefined, scope, depth);
-    if (stmt.type === 'BlockStatement') return returnsStory(stmt.body, scope, depth);
-    if (stmt.type !== 'IfStatement') return false;
-    return returnsStory([stmt.consequent, ...(stmt.alternate ? [stmt.alternate] : [])], scope, depth);
-  });
+  return statements.some((stmt) =>
+    stmt.type === 'ReturnStatement' ? mayBeStory(stmt.argument ?? undefined, scope, depth) : returnsStory(innerStatements(stmt), scope, depth),
+  );
 }
 
 const isGlobal = (node: t.Node, scope: Scope): boolean =>

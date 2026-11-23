@@ -53,6 +53,28 @@ export { Taken };
     expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
   });
 
+  it('follows a helper\'s returns into try, switch, loops and labeled blocks', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'ui/Slider' });
+function tried() { try { return story({}); } catch { return null; } }
+function caught() { try { throw 1; } catch { return story({}); } }
+function finished() { try { } finally { return story({}); } }
+function switched(k) { switch (k) { case 1: return story({}); default: return null; } }
+function looped(xs) { for (const x of xs) { return story({ x }); } return null; }
+function labeled() { out: { return story({}); } }
+function rows() { try { return [1]; } finally { } }
+export const Tried = tried();
+export const Caught = caught();
+export const Finished = finished();
+export const Switched = switched(1);
+export const Looped = looped([1]);
+export const Labeled = labeled();
+export const data = rows();
+`;
+    expect(ids(code).map(([, name]) => name)).toEqual(['Tried', 'Caught', 'Finished', 'Switched', 'Looped', 'Labeled']);
+  });
+
   it('reads a native export that picks between values, or copies one, by what it picks from', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';
