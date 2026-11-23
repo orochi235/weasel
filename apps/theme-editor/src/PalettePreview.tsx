@@ -6,6 +6,9 @@ import styles from './PaletteLab.module.css';
 import { PinIcon } from './PinIcon';
 import { toLch, type Constraints, type Palette } from '@weasel-js/theme/engine';
 import { gateVerdict } from './palette/unmetGates';
+import { SURFACES, type SurfaceKey } from './presets';
+
+const SURFACE_INK: Readonly<Record<SurfaceKey, string>> = { dark: '#e6e7e9', light: '#25272c' };
 
 type Point = readonly [x: number, y: number];
 
@@ -124,14 +127,10 @@ export function PalettePreview({ palette, constraints }: { palette: Palette; con
         />
       </div>
 
-      {(['#181a1e', '#f5f5f6'] as const).map((bg) => (
-        <section
-          key={bg}
-          className={styles.pane}
-          style={{ background: bg, ['--pane-fg' as string]: bg === '#181a1e' ? '#e6e7e9' : '#25272c' }}
-        >
+      {(Object.entries(SURFACES) as [SurfaceKey, string][]).map(([key, bg]) => (
+        <section key={key} className={styles.pane} style={{ background: bg, ['--pane-fg' as string]: SURFACE_INK[key] }}>
           <header className={styles.paneTitle}>
-            {bg === '#181a1e' ? 'dark surface' : 'light surface'}
+            {`${key} surface`}
             {bg === surface && <span className={styles.gated}>contrast gated here</span>}
           </header>
           <div className={styles.swatches}>

@@ -12,6 +12,7 @@ import {
   persistLive,
   type LabState,
   type Preset,
+  SURFACES,
   type SurfaceKey,
 } from './presets';
 import { HistorySlot } from './HistorySlot';
@@ -23,8 +24,6 @@ import { ConstraintsPanel } from './palette/ConstraintsPanel';
 import { unmetGates } from './palette/unmetGates';
 import { generate, type Anchor, type Constraints } from '@weasel-js/theme/engine';
 import { icon } from './icons.gen';
-
-const SURFACES: Record<SurfaceKey, string> = { dark: '#181a1e', light: '#f5f5f6' };
 
 export function PaletteLab() {
   // Restored once, at mount: an HMR bounce or a reload should not cost the

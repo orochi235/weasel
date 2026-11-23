@@ -6,6 +6,9 @@ import { isFiniteNumber } from '@weasel-js/registry';
 
 export type SurfaceKey = 'dark' | 'light';
 
+/** The surface each key stands for, which the palette is gated against and previewed on. */
+export const SURFACES: Readonly<Record<SurfaceKey, string>> = { dark: '#181a1e', light: '#f5f5f6' };
+
 /** Everything a preset restores, and everything one undo step covers. */
 export interface LabState {
   readonly c: Constraints;
