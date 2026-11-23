@@ -41,6 +41,8 @@ export const CAPTURE_PAGES = { shell: '__forge/capture.html', frame: '__forge/ca
 
 export const MIN_DPR = 1;
 export const MAX_DPR = 3;
+/** The most device pixels a capture's box may span on either side: Chromium's largest texture. */
+export const MAX_DEVICE_PX = 16384;
 
 const LAYOUTS: readonly string[] = ['centered', 'padded', 'fullscreen'] satisfies readonly StoryLayout[];
 
@@ -70,6 +72,9 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
   }
   if (typeof layout !== 'string' || !LAYOUTS.includes(layout)) return { error: `layout must be one of ${LAYOUTS.join(', ')}` };
   if (typeof dpr !== 'number' || !(dpr >= MIN_DPR && dpr <= MAX_DPR)) return { error: `dpr must be in [${MIN_DPR}, ${MAX_DPR}]` };
+  if (box.width * dpr > MAX_DEVICE_PX || box.height * dpr > MAX_DEVICE_PX) {
+    return { error: `box must span at most ${MAX_DEVICE_PX} device pixels on each side at its dpr` };
+  }
   if (!isRecord(scroll) || !finite(scroll.left) || !finite(scroll.top)) return { error: 'scroll must hold a finite left and top' };
   if (!isRecord(lab) || !isRecord(lab.globals) || (lab.mode !== 'light' && lab.mode !== 'dark')) {
     return { error: 'lab must hold globals and a mode of light or dark' };

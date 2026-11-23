@@ -3942,3 +3942,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `useTextEdit`'s `startEdit` on another node while an edit is open commits the open
   edit before opening the next, as a click away does, rather than dropping what was typed. There is no override; a
   host that means to discard calls `cancelEdit()` first.
+## Audit round seventy-six (2026-11-22): forge's vite plugin
+
+- 2026-11-22 (the fixer's call): forge's capture endpoint refuses a box past 16384 device pixels on either side
+  (`box × dpr`, Chromium's largest texture) with a 400, so a story taller than 5461 CSS pixels cannot be captured
+  at dpr 3. Clamping the box and capturing part of the story was the alternative.
