@@ -194,6 +194,20 @@ describe('emitCss', () => {
     expect(sheetFor('toString')).toBe(sheetFor('density').replaceAll('data-wzl-density', 'data-wzl-toString'));
   });
 
+  it("reads an inherited token at an axis value only the other theme declares as the default theme's own default", () => {
+    const d: ThemeDefinition = {
+      name: 'd',
+      axes: { mode: { default: 'dark', values: { dark: {}, light: {} } } },
+      pins: { t: { by: 'mode', dark: { value: '1px', type: 'dimension' }, light: { value: '2px', type: 'dimension' } } },
+    };
+    const x: ThemeDefinition = { name: 'x', extends: 'd', axes: { mode: { default: 'light', values: { sepia: {} } } } };
+    const l = (n: string) => ({ d, x })[n];
+    const own = (def: ThemeDefinition, isDefault: boolean) => ({ baked: bake(def, l), deps: axisDependencies(def, l), isDefault });
+    const sheet = emitCss([own(d, true), own(x, false)]);
+    expect(computed(sheet, [{}, { theme: 'x', mode: 'sepia' }])['--wzl-t']).toBe('1px');
+    expect(computed(sheet, [{}, { theme: 'x' }])['--wzl-t']).toBe('2px');
+  });
+
   it('resets the default theme inside a subtree of another theme', () => {
     const sheet = emitCss([input(base), input(child, false)]);
     const got = computed(sheet, [{}, { theme: 'child', mode: 'dark' }, { theme: 'base', mode: 'dark' }]);

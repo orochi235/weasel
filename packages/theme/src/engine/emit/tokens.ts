@@ -13,8 +13,12 @@ export type GeneratedTokens =
   | { readonly ok: true; readonly files: { readonly 'tokens.css': string; readonly 'themes.ts': string; readonly 'manifest.ts': string } }
   | { readonly ok: false; readonly problems: readonly string[] };
 
-/** Every generated token file for a set of definitions, the one that extends nothing being the default. Any derive issue refuses the whole set, as does a token one theme or selection has and another lacks. */
+/** Every generated token file for a set of definitions, the one that extends nothing being the default. Any derive issue refuses the whole set, as do two definitions of one name and a token one theme or selection has and another lacks. */
 export function generateTokens(definitions: readonly ThemeDefinition[]): GeneratedTokens {
+  const counts = new Map<string, number>();
+  for (const d of definitions) counts.set(d.name, (counts.get(d.name) ?? 0) + 1);
+  const repeated = [...counts].filter(([, n]) => n > 1).map(([name, n]) => `${n} themes are named ${JSON.stringify(name)}; each theme needs a name of its own`);
+  if (repeated.length > 0) return { ok: false, problems: repeated };
   const byName = new Map(definitions.map((d) => [d.name, d]));
   const lookup = (name: string) => byName.get(name);
 

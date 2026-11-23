@@ -173,10 +173,8 @@ export function rampColors(name: string, r: Record<string, unknown>, steps: read
     if (!read.ok) return undefined;
     const named = new Set<string>();
     anchors.slice(0, steps.length).forEach((a, i) => {
-      if (!steps.includes(a.name) || named.has(a.name)) {
-        const why = named.has(a.name) ? `an earlier anchor already fills step "${a.name}"` : `no step "${a.name}" on this ramp`;
-        ctx.issues.push({ kind: 'invalid', path: `${path}.anchors.${i}.name`, message: `${why}; it fills a step no anchor names` });
-      }
+      const why = !steps.includes(a.name) ? `no step "${a.name}" on this ramp` : named.has(a.name) ? `an earlier anchor already fills step "${a.name}"` : undefined;
+      if (why !== undefined) ctx.issues.push({ kind: 'invalid', path: `${path}.anchors.${i}.name`, message: `${why}; it fills a step no anchor names` });
       named.add(a.name);
     });
     const { colors, feasible } = categoricalRamp(steps, gates as Partial<Constraints>, anchors);
