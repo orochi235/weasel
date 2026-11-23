@@ -9,10 +9,19 @@ export function parseFile(code: string, file: string): t.Program {
   return parse(code, { sourceType: 'module', plugins }).program;
 }
 
-/** `program`'s bindings, exported or not. */
+/** The local a default export that names no binding of its own is declared as. */
+export const DEFAULT_LOCAL = '*default*';
+
+/** `program`'s bindings, exported or not, a default export's under its own name or `DEFAULT_LOCAL`. */
 export function bindingsOf(program: t.Program): Bindings {
   const bindings: Bindings = new Map();
   for (const stmt of program.body) {
+    if (stmt.type === 'ExportDefaultDeclaration') {
+      const decl = stmt.declaration;
+      if ((decl.type === 'FunctionDeclaration' || decl.type === 'ClassDeclaration') && decl.id) bindings.set(decl.id.name, decl);
+      else if (decl.type !== 'Identifier') bindings.set(DEFAULT_LOCAL, decl);
+      continue;
+    }
     const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);

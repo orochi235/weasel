@@ -45,4 +45,14 @@ describe('foreignStories', () => {
     };
     expect(await exportsOf(files)).toEqual(['Aliased', 'Factory']);
   });
+
+  it('follows a default-exported helper, named or not, to what it returns', async () => {
+    const files = {
+      [STORY]: `import { meta } from '@weasel-js/forge';\nimport variant from './v';\nimport arrow from './a';\nimport rowsOf from './r';\nexport default meta({ title: 'ui/S' });\nexport const Big = variant();\nexport const Small = arrow();\nexport const rows = rowsOf();\n`,
+      [`${ROOT}/src/v.ts`]: `import { story } from '@weasel-js/forge';\nexport default function variant() { return story({}); }\n`,
+      [`${ROOT}/src/a.ts`]: `import { story } from '@weasel-js/forge';\nexport default () => story({});\n`,
+      [`${ROOT}/src/r.ts`]: `export default function rowsOf() { return [1, 2]; }\n`,
+    };
+    expect(await exportsOf(files)).toEqual(['Big', 'Small']);
+  });
 });
