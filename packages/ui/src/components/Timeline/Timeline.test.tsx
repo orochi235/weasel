@@ -756,6 +756,29 @@ describe('Timeline selection under tracks edited from outside', () => {
   });
 });
 
+describe('Timeline key drags echoed through onInput', () => {
+  function Echo({ onInput }: { onInput?: (next: Track[]) => void }) {
+    const [value, setValue] = useState(tracks);
+    return (
+      <Timeline
+        {...base} tracks={value} onChange={setValue}
+        onInput={(next) => { onInput?.(next); setValue(next); }}
+      />
+    );
+  }
+  const keyTimes = (out: Track[]): number[] => (out[0] as SampledTrack<number>).keys.map((k) => k.t);
+
+  it('does not snap a dragged key back onto its own previewed time', () => {
+    const onInput = vi.fn();
+    renderWithIcons(<Echo onInput={onInput} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 10 });
+    // 3px past the last preview, inside the snap radius of it.
+    fireEvent.pointerMove(document, { clientX: 303, clientY: 10 });
+    expect(keyTimes(onInput.mock.lastCall![0] as Track[])).toEqual([0, 606]);
+  });
+});
+
 describe('Timeline folds under tracks inserted from outside', () => {
   it('keeps an open nested row open, and a shut one shut, when the consumer inserts a track before them', () => {
     const second = { ...nestedTracks()[0], label: 'wink' } as Track;
