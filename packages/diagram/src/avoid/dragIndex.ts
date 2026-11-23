@@ -6,13 +6,11 @@
  * already reads everything.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { unionRects } from '@weasel-js/geom';
+import { rectsEqual, unionRects } from '@weasel-js/geom';
 import { finiteBox } from './grid';
 import { inflatedBox, ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
 import { type AvoidInput, type AvoidObstacle, type Box } from './types';
-
-const sameBox = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
 
 /** One drag frame as the router routes it. */
 export interface DragFrame {
@@ -59,12 +57,12 @@ export class DragIndex {
       const base = this.committed.get(o.id);
       if (base === undefined) continue;
       const now = this.displaced.get(o.id) ?? base;
-      if (sameBox(now.box, o.box)) {
+      if (rectsEqual(now.box, o.box)) {
         if (this.displaced.has(o.id)) seen.add(o.id);
         continue;
       }
       this.index.replace(o);
-      if (sameBox(base.box, o.box)) this.displaced.delete(o.id);
+      if (rectsEqual(base.box, o.box)) this.displaced.delete(o.id);
       else {
         this.displaced.set(o.id, o);
         seen.add(o.id);

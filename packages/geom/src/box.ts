@@ -66,6 +66,11 @@ export function growRect(r: Readonly<Rect>, by: number): Rect {
   return { x: r.x - by, y: r.y - by, width: r.width + 2 * by, height: r.height + 2 * by };
 }
 
+/** Whether `a` and `b` are the same rect, coordinate for coordinate. */
+export function rectsEqual(a: Readonly<Rect>, b: Readonly<Rect>): boolean {
+  return a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
+}
+
 /** Whether `a` and `b` share interior: rects that only touch along an edge or
  *  at a corner answer false. */
 export function rectsOverlap(a: Readonly<Rect>, b: Readonly<Rect>): boolean {

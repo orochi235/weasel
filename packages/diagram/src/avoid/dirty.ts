@@ -5,13 +5,12 @@
  * holding no route.
  */
 import type { Vec2 } from '@weasel-js/core/math';
+import { rectsEqual } from '@weasel-js/geom';
 import { SegmentIndex } from './segments';
 import { type AvoidEdge, type AvoidObstacle, type AvoidPort, type Box } from './types';
 
-const sameBox = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
-
 function sameObstacle(a: AvoidObstacle, b: AvoidObstacle): boolean {
-  if (a.kind !== b.kind || !sameBox(a.box, b.box)) return false;
+  if (a.kind !== b.kind || !rectsEqual(a.box, b.box)) return false;
   const am = a.members;
   const bm = b.members;
   if (am === bm) return true;

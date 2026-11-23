@@ -33,7 +33,8 @@ type SceneNode = ReturnType<AnyScene['renderOrderNodes']>[number];
 /** The id of a container's header obstacle. */
 export const headerIdOf = (id: string): string => `${id}/header`;
 
-const facingPorts = (ports: readonly Port[]): AvoidPort[] =>
+/** The ports of `ports` that face a direction, as the router takes them. */
+export const facingPorts = (ports: readonly Port[]): AvoidPort[] =>
   ports.flatMap((p) => (p.normal === null ? [] : [{ point: p.point, normal: p.normal }]));
 
 /** Every id under `node`, at any depth: its children, or what a derived cluster box holds. */

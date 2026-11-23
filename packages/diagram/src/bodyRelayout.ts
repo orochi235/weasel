@@ -9,7 +9,7 @@ import {
 } from './body';
 import type { Bounds } from './outline';
 import type { BodyDivider, BodyLayout, DiagramNode, HeaderBand } from './types';
-import type { Rect } from '@weasel-js/geom';
+import { rectsEqual, type Rect } from '@weasel-js/geom';
 
 /** The `body` record a body built from `spec` carries, or `undefined` for one that cannot be laid
  *  out again from its text: one with a `ports` or `slot` row, or with port labels drawn outside it. */
@@ -76,8 +76,6 @@ const rowStyle = (s: TextData['style']): RowTextStyle => ({
   ...(s?.letterSpacing ? { tracking: s.letterSpacing / (s.fontSize ?? 16) } : {}),
 });
 
-const same = (a: Rect, b: Rect) => a.x === b.x && a.y === b.y && a.width === b.width && a.height === b.height;
-
 const sameBand = (a: HeaderBand | undefined, b: HeaderBand): boolean =>
   a !== undefined && a.height === b.height && a.text.y === b.text.y && a.text.height === b.text.height && a.aside?.width === b.aside?.width;
 
@@ -138,7 +136,7 @@ export function relayoutBodies(scene: RelayoutScene, ids: Iterable<string>, meas
       const at = child === undefined ? undefined : scene.get(child as never)?.pose as Rect | undefined;
       if (at === undefined) return;
       const next = { ...at, x: box.x, y: box.y, width: box.width, height: box.height };
-      if (!same(at, next)) scene.setPose(child as never, next as never);
+      if (!rectsEqual(at, next)) scene.setPose(child as never, next as never);
     };
     for (const box of layoutBody(spec, { x: 0, y: 0, width: grown.width, height: grown.height }, measure)) {
       place(rowNodes.get(box.index), box);
