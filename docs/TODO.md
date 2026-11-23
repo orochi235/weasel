@@ -263,6 +263,16 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P3) [maintainer] The loupe can magnify only the canvas, not the window around it** (2026-11-22). Wanted: a
+  ring toggle, `Canvas | Window`, where Window magnifies everything in the tab, toolbars, panels and the lens itself
+  included. A page can read those pixels only through `getDisplayMedia`; in Chromium, `preferCurrentTab` makes that a
+  one-click "Share this tab" prompt, and the browser shows its sharing bar while capture runs. Firefox and Safari
+  can share only a window or screen the user picks, which doesn't map back to page coordinates. Proposed shape: a
+  `source` axis on `@weasel-js/loupe`'s model beside `mode`; a `windowReadback.ts` implementing `PixelReadback` from
+  the tab's video track, its `pixel()` serving the eyedropper; a third ring track; Vector dimmed while Window is
+  on; Window disabled without `preferCurrentTab`. Waits on whether the share prompt is acceptable. Closes when
+  draw's loupe has the toggle, or the prompt is ruled out.
+
 - **(P2) [agent] `EffectList` can't turn off renaming a card, or put anything else in its header** (2026-11-22).
   Every card's name is an in-place field, and the header has no slot for a consumer's own content. agnew's block
   stack (agnew `b785d8b`, porting to 2.0) needed both: its blocks have no names, so it shows the kind's label
