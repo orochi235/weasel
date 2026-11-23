@@ -1,7 +1,10 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
 
-/** A program's top-level variable initializers and function declarations, by name. */
+/**
+ * A program's top-level locals by name: a variable's initializer, a function, class or enum declaration, and the
+ * declarator of a variable with no initializer or a destructured one.
+ */
 export type Bindings = Map<string, t.Node>;
 
 /** A file's locals that are forge's `meta` or `story`, and which. */
@@ -27,12 +30,35 @@ export function bindingsOf(program: t.Program): Bindings {
     }
     const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
     if (decl?.type === 'VariableDeclaration') {
-      for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
-    } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
+      for (const d of decl.declarations) {
+        if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
+        // A destructured or uninitialized local is still a local, though nothing here can read its value.
+        else for (const name of patternNames(d.id)) bindings.set(name, d);
+      }
+    } else if ((decl?.type === 'FunctionDeclaration' || decl?.type === 'ClassDeclaration') && decl.id) {
+      bindings.set(decl.id.name, decl);
+    } else if (decl?.type === 'TSEnumDeclaration') {
       bindings.set(decl.id.name, decl);
     }
   }
   return bindings;
+}
+
+function patternNames(node: t.LVal | t.ObjectProperty['value'] | null | undefined): string[] {
+  switch (node?.type) {
+    case 'Identifier':
+      return [node.name];
+    case 'ObjectPattern':
+      return node.properties.flatMap((p) => patternNames(p.type === 'RestElement' ? p.argument : p.value));
+    case 'ArrayPattern':
+      return node.elements.flatMap((e) => patternNames(e));
+    case 'RestElement':
+      return patternNames(node.argument);
+    case 'AssignmentPattern':
+      return patternNames(node.left);
+    default:
+      return [];
+  }
 }
 
 /** The identifier `node` calls, through casts and top-level `const`s. */
@@ -67,6 +93,8 @@ const LITERALS: ReadonlySet<string> = new Set([
   'FunctionExpression',
   'FunctionDeclaration',
   'ClassExpression',
+  'ClassDeclaration',
+  'TSEnumDeclaration',
   'JSXElement',
   'JSXFragment',
 ]);
