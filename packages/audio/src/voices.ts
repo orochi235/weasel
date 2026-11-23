@@ -313,7 +313,10 @@ export function createVoices(deps: VoicesDeps): Voices {
       return voiceHandle(ctx, voice, ops);
     },
     stopAll(reason) {
-      for (const voice of [...live.values()]) teardown(voice, reason);
+      for (const voice of [...live.values()]) {
+        voice.catchUp?.();
+        teardown(voice, reason);
+      }
     },
     cancelKey(key) {
       for (const voice of [...live.values()]) {

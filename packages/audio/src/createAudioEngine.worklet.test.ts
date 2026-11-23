@@ -216,6 +216,15 @@ describe("synthVoices: 'worklet'", () => {
     expect(onDone).toHaveBeenCalledOnce();
   });
 
+  it('reports stopAll of a voice started inside a stall as done, not dropped', async () => {
+    const { engine, node, onDone, onDrop, flush } = await startedInAStall();
+    engine.stopAll();
+    node()._ended(1);
+    await flush();
+    expect(onDrop).not.toHaveBeenCalled();
+    expect(onDone).toHaveBeenCalledOnce();
+  });
+
   it('still cancels a voice released before its time', async () => {
     const { engine, ctx, posted, flush } = await harness();
     const onDrop = vi.fn();
@@ -272,4 +281,5 @@ describe("synthVoices: 'worklet'", () => {
     expect(node().posted.slice(-2)).toEqual([{ kind: 'stop', id: 1, at: 0 }, { kind: 'dispose' }]);
     expect(node().disconnected).toBe(true);
   });
+
 });
