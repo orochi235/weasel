@@ -261,4 +261,21 @@ describe('weaselIcons library mode', () => {
     });
     expect(out.outputFiles[0]!.text).toMatch(/\/\* @icon \*\/\s*"fx:ring"/);
   });
+
+  it('refuses an esbuild build that minifies away the annotations', async () => {
+    for (const minify of [{ minify: true }, { minifyWhitespace: true }]) {
+      await expect(
+        esbuild({
+          entryPoints: [`${root}/src/widget.ts`],
+          bundle: true,
+          write: false,
+          format: 'esm',
+          logLevel: 'silent',
+          external: ['@weasel-js/icons'],
+          plugins: [weaselIcons.esbuild({ mode: 'library' })],
+          ...minify,
+        }),
+      ).rejects.toThrow(/@icon annotation.*minify/s);
+    }
+  });
 });

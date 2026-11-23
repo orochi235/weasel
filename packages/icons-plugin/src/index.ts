@@ -3,7 +3,7 @@ import { basename, dirname, join } from 'node:path';
 import type { IconTable } from '@weasel-js/icons';
 import MagicString from 'magic-string';
 import type { ViteDevServer } from 'vite';
-import { createUnplugin, type UnpluginBuildContext, type UnpluginContext, type UnpluginInstance } from 'unplugin';
+import { createUnplugin, type UnpluginBuildContext, type UnpluginContext, type UnpluginInstance, type UnpluginOptions } from 'unplugin';
 import { libraryAnnotations } from './annotate.ts';
 import { assertBundler } from './bundlers.ts';
 import { fail, iconCatalog, tablesFrom } from './catalog.ts';
@@ -84,6 +84,18 @@ function watchTables(server: ViteDevServer, add: (table: IconTable) => boolean):
   };
   server.watcher.on('change', reread);
   server.watcher.on('add', reread);
+}
+
+type PluginBuild = Parameters<NonNullable<NonNullable<UnpluginOptions['esbuild']>['setup']>>[0];
+
+const MINIFIED = 'esbuild drops the @icon annotation that library mode leaves on each icon ref when it minifies whitespace; set minifyWhitespace to false, or leave minify unset';
+
+/** esbuild has no hook to annotate its output again, so library mode refuses to minify it away. */
+function guardEsbuild(build: PluginBuild): void {
+  build.onStart(() => {
+    const { minify, minifyWhitespace = minify } = build.initialOptions;
+    return minifyWhitespace ? { errors: [{ text: MINIFIED }] } : undefined;
+  });
 }
 
 /** The ids of every module in the build, when the bundler's context can list them. */
@@ -219,6 +231,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
         renderChunk: lastRenderChunk,
         generateBundle,
       },
+      esbuild: { setup: (build) => (app ? undefined : guardEsbuild(build)) },
       rollup: { renderChunk: lastRenderChunk, generateBundle },
       rolldown: { renderChunk: lastRenderChunk, generateBundle },
     },
