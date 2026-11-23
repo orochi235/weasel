@@ -8,8 +8,9 @@ import type { StreamOptions, VoiceHandle } from './types';
 export interface StreamStarters {
   /** The element a call names, made from a URL when it is one. */
   element(media: HTMLMediaElement | string, opts: StreamOptions): HTMLMediaElement;
-  /** `el` is read when the voice starts, so a URL's element can be made once the play is accepted. */
-  starter(el: () => HTMLMediaElement, opts: StreamOptions): Starter;
+  /** `el` is read when the voice starts, so a URL's element can be made once the play is accepted.
+   *  `started` runs once the element is routed into the voice, before it plays. */
+  starter(el: () => HTMLMediaElement, opts: StreamOptions, started?: (el: HTMLMediaElement) => void): Starter;
   /** An element has one playhead: the voice streaming it now, to stop before
    *  another starts. Shared by every engine on the context. */
   streaming: WeakMap<HTMLMediaElement, VoiceHandle>;
@@ -75,7 +76,7 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
       el.src = media;
       return el;
     },
-    starter(elementOf, opts) {
+    starter(elementOf, opts, started) {
       return {
         ready: () => true,
         start(voice) {
@@ -91,6 +92,7 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
           voice.retune();
           const into = voice.out!.input!;
           node.connect(into);
+          started?.(el);
           return mediaSource(ctx, timers, el, node, into);
         },
       };
@@ -99,8 +101,8 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
   };
 }
 
-/** `engine.stream`: `media` as a new voice through `launch`, which then stops whatever voice was
- *  streaming the element. */
+/** `engine.stream`: `media` as a new voice through `launch`, which stops whatever voice was streaming the
+ *  element once it starts. */
 export function restream(
   streams: StreamStarters,
   launch: (opts: VoiceOptions, starter: Starter) => VoiceHandle,
@@ -109,13 +111,14 @@ export function restream(
 ): VoiceHandle {
   checkSpan('stream offset', opts.offset);
   let el: HTMLMediaElement | null = typeof media === 'string' ? null : media;
-  // Launched before the earlier stream stops, so one that throws or drops leaves it playing,
-  // and before a URL's element is made, so it fetches nothing. The scheduler starts the new
-  // voice a microtask later at the soonest, after the element is made and this stop.
-  const handle = launch(opts, streams.starter(() => el!, opts));
-  if (!handle.isPlaying()) return handle;
-  el ??= streams.element(media, opts);
-  streams.streaming.get(el)?.stop();
-  streams.streaming.set(el, handle);
+  // The earlier stream stops only once this one has started, so one that throws or drops, at the call or
+  // as it comes due, leaves it playing. Launched before a URL's element is made, so a refused play fetches
+  // nothing: the scheduler starts the voice a microtask later at the soonest.
+  const handle: VoiceHandle = launch(opts, streams.starter(() => el!, opts, (routed) => {
+    const earlier = streams.streaming.get(routed);
+    streams.streaming.set(routed, handle);
+    earlier?.stop();
+  }));
+  if (handle.isPlaying()) el ??= streams.element(media, opts);
   return handle;
 }

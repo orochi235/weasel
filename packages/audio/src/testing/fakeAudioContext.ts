@@ -33,7 +33,7 @@ export interface FakeBuffer {
 }
 
 export interface FakeAudioContext {
-  state: 'suspended' | 'running' | 'closed';
+  state: 'suspended' | 'running' | 'closed' | 'interrupted';
   currentTime: number;
   sampleRate: number;
   destination: FakeNode;
@@ -62,7 +62,7 @@ export interface FakeAudioContext {
   /** Test hook: end a source now, firing `onended` once. */
   _end(source: FakeSource | FakeOscillator): void;
   /** Test hook: change state and notify `statechange` listeners. */
-  _setState(state: 'suspended' | 'running' | 'closed'): void;
+  _setState(state: 'suspended' | 'running' | 'closed' | 'interrupted'): void;
   /** Test hook: every buffer source node created, in order. */
   _sources: FakeSource[];
   /** Test hook: every oscillator created, in order. */

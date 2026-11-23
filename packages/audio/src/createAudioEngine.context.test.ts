@@ -67,6 +67,7 @@ describe('createAudioEngine refusing its options', () => {
     ['an empty bus list', { buses: [] }],
     ['a voice limit of 0', { voiceLimit: 0 }],
     ['a NaN voice limit', { voiceLimit: Number.NaN }],
+    ['a fractional voice limit', { voiceLimit: 2.5 }],
   ])('makes no context of its own for %s', (_, bad) => {
     const made = vi.fn(() => createFakeAudioContext());
     vi.stubGlobal('AudioContext', function AudioContextStub() { return made(); });

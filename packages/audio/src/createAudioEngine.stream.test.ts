@@ -159,6 +159,17 @@ describe('engine.stream', () => {
     warn.mockRestore();
   });
 
+  it('keeps the earlier stream playing when a restream is stopped before it starts', async () => {
+    const { engine, tick } = await harness();
+    const el = createFakeMediaElement();
+    const first = engine.stream(el as never);
+    tick();
+    engine.stream(el as never).stop();
+    tick();
+    expect(first.isPlaying()).toBe(true);
+    expect(el.paused).toBe(false);
+  });
+
   it('streams an element again from a second engine on the same context', async () => {
     const { ctx, engine, sources, tick } = await harness();
     const el = createFakeMediaElement();

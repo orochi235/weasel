@@ -121,6 +121,18 @@ describe('createPatternPlayer', () => {
     expect(player.tempo()).toBe(60);
   });
 
+  it('keeps one step sequence when a tempo is set from a booking that fires beside its next step', async () => {
+    const { engine, run } = await harness();
+    const seen: number[] = [];
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 16, onStep: (_step, when) => seen.push(when),
+    });
+    player.start(0);
+    engine.schedule(125, () => player.setTempo(60));
+    await run(900);
+    expect(seen).toEqual([0, 250, 500, 750, 1000]);
+  });
+
   it('starts a tempo set from inside onStep with the step after, on one sequence', async () => {
     const { engine, run } = await harness();
     const seen: number[] = [];
@@ -199,6 +211,19 @@ describe('createPatternPlayer', () => {
     expect(ctx._oscillators[0].stopped.at(-1)).toBeCloseTo(0.12, 9);
     await run(1000);
     expect(starts()).toEqual([0]);
+  });
+
+  it('releases what is still sounding on stop after a pass that does not loop has ended', async () => {
+    const { ctx, engine, run } = await harness();
+    const player = createPatternPlayer(engine, {
+      tempo: 120, length: 1, loop: false,
+      events: [{ step: 0, length: 16, pitch: 220, envelope: { release: 20 } }],
+    });
+    player.start(0);
+    await run(300);
+    expect(player.isPlaying()).toBe(false);
+    player.stop();
+    expect(ctx._oscillators[0].stopped.at(-1)).toBeCloseTo(0.32, 9);
   });
 
   it('swaps its events from the next step', async () => {

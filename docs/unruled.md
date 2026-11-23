@@ -3899,3 +3899,9 @@ Calls the lanes made without a ruling:
   its opacity slider moves, and a property color field with its alpha held apart reports no alpha for it, so each
   target keeps its own opacity. There is no override. Composing the pick with a fully opaque alpha, as before, was the
   alternative.
+
+## Audit round seventy-four (2026-11-22): audio
+
+- 2026-11-22 (the fixer's call): `createAudioEngine`'s `voiceLimit` and `createVoicePool`'s `limit` throw a
+  `RangeError` on a number that is not whole, `Infinity` included, as they already did on one below 1. Flooring a
+  fractional limit was the alternative.

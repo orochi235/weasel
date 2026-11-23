@@ -57,7 +57,7 @@ export interface AudioEngine {
    *  through a `MediaElementAudioSourceNode`, instead of decoding it whole. It
    *  is a voice on a bus like any other, with the exceptions `StreamOptions`
    *  lists. An element has one playhead, so streaming one that is already
-   *  streaming stops the earlier voice. */
+   *  streaming stops the earlier voice once the new one starts. */
   stream(media: HTMLMediaElement | string, opts?: StreamOptions): VoiceHandle;
   /** Book a callback against the audio clock through the engine's lookahead
    *  scheduler; it receives its own `when` to hand on to `play` or `playNote`.
@@ -91,8 +91,9 @@ function bufferStarter(
 ): Starter {
   return {
     ready() {
-      if (sounds.buffer(sound)) return true;
-      warn.unknownSound(sound.id);
+      // A misspelled `loadAll` key hands over `undefined`.
+      if (sound != null && sounds.buffer(sound)) return true;
+      warn.unknownSound(String(sound?.id ?? sound));
       return false;
     },
     start(voice, when) {

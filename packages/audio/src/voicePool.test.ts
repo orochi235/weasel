@@ -7,6 +7,11 @@ describe('createVoicePool', () => {
     expect(() => createVoicePool({ limit: -1 })).toThrow(RangeError);
   });
 
+  it('rejects a limit that is not a whole number', () => {
+    expect(() => createVoicePool({ limit: 1.5 })).toThrow(RangeError);
+    expect(() => createVoicePool({ limit: Infinity })).toThrow(RangeError);
+  });
+
   it('allocates distinct slots while under the limit', () => {
     const pool = createVoicePool({ limit: 3 });
     const a = pool.acquire({ startedAt: 0, gain: 1 });
