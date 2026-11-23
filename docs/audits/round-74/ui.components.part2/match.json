@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "ComboBox's `loadError` is never shown under the default filter when the failed load leaves no options",
+  "The loading spinner becomes a third grid item under `width=\"fit\"` and adds a row to the field",
+  "The dialog overlay's fade-in never runs: the entering state is already fully opaque",
+  "A grid sorted by a non-sortable column shows the sort arrow but no `aria-sort`"
+ ],
+ "b": [
+  "ComboBox: clicking the already-selected option commits nothing, while Enter on it commits",
+  "ColorField: a color pick on a mixed/unset field writes opacity 100% over every target's own alpha",
+  "DataGridHead: a sort on a non-sortable column draws the arrow but gives no `aria-sort`"
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "A remove and re-add within one change reports a pose write from the shown (override) pose to the stored pose",
+  "`createNestedHitTester` returns nodes marked `pickable: false`, and loops forever on a parent cycle",
+  "`OpTable.handlers` doc says re-registering a kind replaces it; `register` throws"
+ ],
+ "b": [
+  "Setting the output grid throws when any off-grid node is locked",
+  "Dev freeze stops at an already-frozen object, so its nested values stay writable",
+  "Nested hit tester's ancestor walk hangs on a parent cycle"
+ ]
+}

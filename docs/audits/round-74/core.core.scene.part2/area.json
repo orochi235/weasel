@@ -1,0 +1,105 @@
+{
+ "id": "core.core.scene.part2",
+ "commit": "eb825dfd75133fc3ebe9452e9de8157d96ee73d3",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/core/scene/layoutPass.ts",
+  "packages/core/src/core/scene/layoutTypes.ts",
+  "packages/core/src/core/scene/lockGuard.ts",
+  "packages/core/src/core/scene/minSize.ts",
+  "packages/core/src/core/scene/nestedHit.ts",
+  "packages/core/src/core/scene/nodeAsShown.ts",
+  "packages/core/src/core/scene/nodeFlags.ts",
+  "packages/core/src/core/scene/nodeFnFields.ts",
+  "packages/core/src/core/scene/nodeFnTypes.ts",
+  "packages/core/src/core/scene/nodeGates.ts",
+  "packages/core/src/core/scene/nodeLod.ts",
+  "packages/core/src/core/scene/nodeMemo.ts",
+  "packages/core/src/core/scene/nodeStore.ts",
+  "packages/core/src/core/scene/nodeTypes.ts",
+  "packages/core/src/core/scene/notifier.ts",
+  "packages/core/src/core/scene/opTable.ts",
+  "packages/core/src/core/scene/outerOps.ts",
+  "packages/core/src/core/scene/outputGrid.ts",
+  "packages/core/src/core/scene/outsideReads.ts",
+  "packages/core/src/core/scene/owned.ts",
+  "packages/core/src/core/scene/pathEffects/derive.ts",
+  "packages/core/src/core/scene/pathEffects/effects.ts",
+  "packages/core/src/core/scene/pathEffects/foundHidden.ts",
+  "packages/core/src/core/scene/pathEffects/index.ts",
+  "packages/core/src/core/scene/pathEffects/source.ts",
+  "packages/core/src/core/scene/pathEffects/textAlong.ts",
+  "packages/core/src/core/scene/pathEffects/textAlongBands.ts",
+  "packages/core/src/core/scene/pathEffects/tween.ts",
+  "packages/core/src/core/scene/plyStacks.ts",
+  "packages/core/src/core/scene/poseFeed.ts",
+  "packages/core/src/core/scene/poseHold.ts",
+  "packages/core/src/core/scene/poseOverrideTypes.ts",
+  "packages/core/src/core/scene/poseOverrides.ts",
+  "packages/core/src/core/scene/posePlies.ts",
+  "packages/core/src/core/scene/poseRemovals.ts",
+  "packages/core/src/core/scene/poseSnapshot.ts",
+  "packages/core/src/core/scene/poseWrites.ts",
+  "packages/core/src/core/scene/reconcileSpecs.ts",
+  "packages/core/src/core/scene/recorder.ts",
+  "packages/core/src/core/scene/registeredOp.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 40,
+  "B": 40
+ },
+ "newCode": {
+  "since": 66,
+  "changedFiles": 6,
+  "findings": 1
+ },
+ "previous": {
+  "round": 66,
+  "chapman": 10.725,
+  "unfound": 3.9
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 16,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2743,
+   "total": 2743
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.6,
+   "B": 7.4,
+   "match": 0.1,
+   "fix": 16
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1450247,
+  "costUsd": 4.34
+ },
+ "fixCommits": [
+  "0de5903411598adaa8198f5b7efacb4c8f001a1b",
+  "641509535350d3621fdefff3cd9e765e5c24dcd8",
+  "e573bcfaed4c397090d1931e7e9d3787c8ac71d3",
+  "6a25861b2ac9a3710e4bfd8d100476a2fab6b717",
+  "cf9af868e69b1efe3bf5f907ea77a264bf6de680",
+  "7e6c9d32de7b4120d63c203c4ac005b07314ebfb",
+  "0e09883cc25c69d1612d33ed2753dcab29a0f730"
+ ]
+}

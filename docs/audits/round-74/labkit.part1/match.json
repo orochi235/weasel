@@ -1,0 +1,15 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "`DragDropCapability.pickUp` is declared and documented but nothing ever calls it"
+ ],
+ "b": [
+  "`DragDropCapability.pickUp` is declared but nothing ever calls it",
+  "Closing a nested lightbox clears the surface scope its still-open outer lightbox set"
+ ]
+}

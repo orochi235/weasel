@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   7,
+   2
+  ]
+ ],
+ "a": [
+  "Architecture reader accepts a group inside itself, or groups nested in a cycle",
+  "Block reader: a group id given twice, or shared with a block, gives two items with one id",
+  "Block writer writes grid counts its own reader cannot read",
+  "Block reader applies `classDef default` to groups; the flowchart reader does not apply it to subgraphs",
+  "C4 writer silently drops a node's stroke width and dash",
+  "C4 writer writes colors raw where every other Mermaid writer normalizes them with hexColor",
+  "C4 deployment writer turns every boundary into a Deployment_Node without warning",
+  "ER writer silently writes `crow-many` as one-or-many",
+  "Class writer silently drops namespace and note colors, and notes' namespace membership",
+  "Flowchart lexer refuses link text that runs right up to its closing arrow"
+ ],
+ "b": [
+  "Class relation to a class whose id starts with `o` reads as an aggregation to a truncated id",
+  "A note joined to another note is written as `note for <that note>`, and reads back with a phantom class",
+  "ER `crow-many` is written as one-or-many with no warning"
+ ]
+}

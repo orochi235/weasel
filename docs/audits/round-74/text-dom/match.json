@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "The armed style treats `italic: false` as \"absent\", though a run's italic is tri-state, so Cmd+I at a caret in an upright run under an italic node does nothing",
+  "Pasted `white-space: pre-line` / `white-space-collapse: preserve-breaks` keep every space and tab, because `\\b` matches before the hyphen",
+  "A `container` change mid-edit throws away everything typed, with no commit, no `onEnd` and no `onInput`",
+  "`startEdit` with no container leaves an edit \"open\" that shows nothing and nothing ends"
+ ],
+ "b": [
+  "A character typed at the start of a run's text node takes that run's style, while the published caret style says the run to its left",
+  "Superscript/subscript toggles can never take off a node-level `script`",
+  "Pasted `white-space: pre-line` (or `white-space-collapse: preserve-breaks`) markup loses its line breaks"
+ ]
+}

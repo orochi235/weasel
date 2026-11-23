@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "`width='fit'` sizer ignores `--wzl-select-weight`, so a bold value truncates its widest option",
+  "`width='fit'` with no `placeholder` doesn't size for React Aria's default placeholder text",
+  "The re-measure cap never resets while the list is open, so options that change after a few passes stay misaligned",
+  "Changing `gestures.dragPx` / `longPressMs` while the list is open re-arms the swallow of the next pointerup",
+  "`--wzl-select-align: center` lines the list up on the left edge while the value is centered"
+ ],
+ "b": [
+  "An `over` list misaligns the selected row when that row has a description",
+  "The pass cap in AlignOverTrigger never resets while the list is open, so a later change in the list's layout is never corrected",
+  "pressRef is never cleared, so a keyboard-opened list can swallow the first click on a row"
+ ]
+}
