@@ -13,21 +13,22 @@ import s from './Compose.module.css';
  * `<Badge>` JSX for the badge on the stage.
  */
 export function PresetsPanel({ config, setConfig }: { config: ComposeConfig; setConfig: (path: string, value: unknown) => void }) {
-  const [snippet, setSnippet] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [shown, setShown] = useState(false);
+  const [copied, setCopied] = useState<string | null>(null);
   const { look } = config;
+  const snippet = shown ? composeSnippet(config) : null;
   const copy = () => {
     const text = composeSnippet(config);
-    setSnippet(text);
-    setCopied(false);
-    void copyText(text).then(setCopied);
+    setShown(true);
+    setCopied(null);
+    void copyText(text).then((ok) => setCopied(ok ? text : null));
   };
   return (
     <PropertyPanel title="Presets" actions={<Button variant="ghost" size="sm" onClick={copy}>Copy JSX</Button>}>
       {snippet !== null && (
         <>
           <textarea readOnly aria-label="Badge JSX" className={s.snippet} value={snippet} rows={Math.min(20, snippet.split('\n').length + 1)} />
-          {copied && <p role="status" className={s.note}>Copied to the clipboard.</p>}
+          {copied === snippet && <p role="status" className={s.note}>Copied to the clipboard.</p>}
         </>
       )}
       <ul className={s.presets}>
