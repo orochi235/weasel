@@ -30,10 +30,11 @@ export const foreignFrom = (known: ForeignStories): Foreign => ({
   reexport: (name) => getOwn(known.reexports, name),
 });
 
-/** What a file is read against: its top-level bindings, its callees that are forge's, and what its imports are. */
+/** What a file is read against: its top-level bindings, its callees that are forge's, its imports, and what they are. */
 export interface Scope {
   bindings: Bindings;
   wrappers: ReadonlySet<string>;
+  imports: ReadonlySet<string>;
   foreign?: Foreign;
 }
 
@@ -47,11 +48,14 @@ function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: n
   });
 }
 
+const isGlobal = (node: t.Node, scope: Scope): boolean =>
+  node.type === 'Identifier' && !scope.bindings.has(node.name) && !scope.imports.has(node.name);
+
 const isObjectAssign = (callee: t.Node, scope: Scope): boolean =>
   callee.type === 'MemberExpression' &&
+  isGlobal(callee.object, scope) &&
   callee.object.type === 'Identifier' &&
   callee.object.name === 'Object' &&
-  !scope.bindings.has('Object') &&
   !callee.computed &&
   callee.property.type === 'Identifier' &&
   callee.property.name === 'assign';
@@ -65,7 +69,7 @@ export function mayReturnStory(fn: Fn, scope: Scope, depth = 0): boolean {
  * Whether a native file's export may be what forge's `story` returned, which is all the loader takes. A call is one
  * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread or
  * `Object.assign`) or a choice is one when something it copies or chooses from is. What cannot be read stays in: an
- * import nothing resolved, a method of anything but a literal, a function a call made.
+ * import nothing resolved, a method of anything but a literal or a global, a function a call made.
  */
 export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): boolean {
   if (!node) return true;
@@ -84,7 +88,7 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
     case 'CallExpression': {
       const { callee } = node;
       if (isObjectAssign(callee, scope)) return node.arguments.some((arg) => mayBeStory(arg, scope, depth + 1));
-      if (callee.type === 'MemberExpression') return !isLiteralValue(callee.object, scope.bindings);
+      if (callee.type === 'MemberExpression') return !isLiteralValue(callee.object, scope.bindings) && !isGlobal(callee.object, scope);
       if (callee.type !== 'Identifier') return false;
       if (scope.wrappers.has(callee.name)) return true;
       const fn = scope.bindings.get(callee.name);

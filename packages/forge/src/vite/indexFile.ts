@@ -75,10 +75,12 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
   return [...found.values()];
 }
 
-/** The program's top-level bindings, and its locals that are forge's `meta` or `story`. */
-export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string> } {
+/** The program's top-level bindings, its locals that are forge's `meta` or `story`, and every name it imports. */
+export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string>; imports: Set<string> } {
   const wrappers = new Set(extra);
+  const imports = new Set<string>();
   for (const stmt of program.body) {
+    if (stmt.type === 'ImportDeclaration') for (const spec of stmt.specifiers) imports.add(spec.local.name);
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
         if (spec.type === 'ImportSpecifier' && ['meta', 'story'].includes(exportedName(spec.imported))) {
@@ -87,11 +89,11 @@ export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings
       }
     }
   }
-  return { bindings: bindingsOf(program), wrappers };
+  return { bindings: bindingsOf(program), wrappers, imports };
 }
 
 export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>, foreign?: Foreign): IndexEntry[] {
-  const { bindings, wrappers } = scan(program, extra);
+  const { bindings, wrappers, imports } = scan(program, extra);
 
   let metaNode: t.Node | undefined;
   let metaDoc: string | undefined;
@@ -140,7 +142,7 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
-    .filter((e) => !native || (e.from ? (foreign?.reexport(e.name) ?? true) : mayBeStory(e.node, { bindings, wrappers, foreign })))
+    .filter((e) => !native || (e.from ? (foreign?.reexport(e.name) ?? true) : mayBeStory(e.node, { bindings, wrappers, imports, foreign })))
     .map(({ name, node, doc }) => {
       const spec = withAssigned(objectOf(node, bindings, wrappers), assigned.get(name));
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;

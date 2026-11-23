@@ -112,6 +112,7 @@ export const settings = Object.assign({}, { dense: true });
 export const Spaced = forge.story({ render: () => null });
 export const Made = make({ render: () => null });
 export const keys = [1, 2].map(String);
+export const list = Array.from({ length: 2 });
 `;
     expect(ids(code).map(([, name]) => name)).toEqual(['Dark', 'Spaced', 'Made']);
   });
