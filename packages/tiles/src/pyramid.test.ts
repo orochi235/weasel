@@ -314,6 +314,19 @@ describe('TilePyramid deferred bakes', () => {
     expect(pyramid.cache.get(scheme.idOf({ z: 1, x: 0, y: 0 }))?.stale).toBe(true);
   });
 
+  it('reports a tile that arrives stale as stale and pending in the frame it arrives in', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
+    });
+    const one: TileBudget = { ms: Infinity, tiles: 1, clock: () => 0 };
+    const v = view(10, 10, 1, 100, 100);
+    pyramid.run(v, 0, () => null, one);
+    pyramid.dirty([20, 20, 30, 30]);
+    const arrived = pyramid.run(v, 16, () => 1, one);
+    expect(arrived.stale.map((k) => scheme.idOf(k))).toEqual([scheme.idOf({ z: 1, x: 0, y: 0 })]);
+    expect(arrived.pending).toBeGreaterThan(0);
+  });
+
   it('keeps a deferred bake fresh when no edit meets it', () => {
     const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
       scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 0,
