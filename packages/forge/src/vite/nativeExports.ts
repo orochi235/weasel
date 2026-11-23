@@ -47,6 +47,15 @@ function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: n
   });
 }
 
+const isObjectAssign = (callee: t.Node, scope: Scope): boolean =>
+  callee.type === 'MemberExpression' &&
+  callee.object.type === 'Identifier' &&
+  callee.object.name === 'Object' &&
+  !scope.bindings.has('Object') &&
+  !callee.computed &&
+  callee.property.type === 'Identifier' &&
+  callee.property.name === 'assign';
+
 /** Whether calling `fn` may hand back a story. */
 export function mayReturnStory(fn: Fn, scope: Scope, depth = 0): boolean {
   return fn.body.type === 'BlockStatement' ? returnsStory(fn.body.body, scope, depth + 1) : mayBeStory(fn.body, scope, depth + 1);
@@ -54,8 +63,9 @@ export function mayReturnStory(fn: Fn, scope: Scope, depth = 0): boolean {
 
 /**
  * Whether a native file's export may be what forge's `story` returned, which is all the loader takes. A call is one
- * only when it calls `story` or a function that returns such a call; a value written out is not, and a copy or a
- * choice is one when something it copies or chooses from is. What cannot be read stays in: an import nothing resolved.
+ * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread or
+ * `Object.assign`) or a choice is one when something it copies or chooses from is. What cannot be read stays in: an
+ * import nothing resolved, a method of anything but a literal, a function a call made.
  */
 export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): boolean {
   if (!node) return true;
@@ -72,11 +82,15 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
         ? mayBeStory(scope.bindings.get(node.name), scope, depth + 1)
         : (scope.foreign?.value(node.name) ?? true);
     case 'CallExpression': {
-      if (node.callee.type !== 'Identifier') return false;
-      if (scope.wrappers.has(node.callee.name)) return true;
-      const fn = scope.bindings.get(node.callee.name);
+      const { callee } = node;
+      if (isObjectAssign(callee, scope)) return node.arguments.some((arg) => mayBeStory(arg, scope, depth + 1));
+      if (callee.type === 'MemberExpression') return !isLiteralValue(callee.object, scope.bindings);
+      if (callee.type !== 'Identifier') return false;
+      if (scope.wrappers.has(callee.name)) return true;
+      const fn = scope.bindings.get(callee.name);
       if (isFn(fn)) return mayReturnStory(fn, scope, depth);
-      return !scope.bindings.has(node.callee.name) && (scope.foreign?.call(node.callee.name) ?? false);
+      if (scope.bindings.has(callee.name)) return !isLiteralValue(fn, scope.bindings);
+      return scope.foreign?.call(callee.name) ?? false;
     }
     case 'ConditionalExpression':
       return mayBeStory(node.consequent, scope, depth + 1) || mayBeStory(node.alternate, scope, depth + 1);
