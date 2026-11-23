@@ -191,9 +191,12 @@ function cssNumber(tok: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** A component as a CSS `<number>`, with CSS's missing component `none` read as 0, as CSS converts it. */
-function componentNumber(tok: string): number | null {
-  return tok === 'none' ? 0 : cssNumber(tok);
+/** OKLab's a or b, or OKLCh's C: a `<number>`, a percent of 0.4, or `none`, read as 0. Unclamped. */
+function okComponent(tok: string): number | null {
+  if (tok === 'none') return 0;
+  if (!tok.endsWith('%')) return cssNumber(tok);
+  const n = cssNumber(tok.slice(0, -1));
+  return n === null ? null : (n / 100) * 0.4;
 }
 
 /** Parse a channel value: integer, float, percent, or `none`. Returns 0..1 (with `max` as the integer scale). */
@@ -251,7 +254,8 @@ function parseColorFunction(s: string): [number, number, number, number] | null 
   return [clamp01(r as number), clamp01(g as number), clamp01(b as number), a];
 }
 
-/** `oklab(L a b)` or `oklch(L C h)`, chroma-clipped into sRGB as `oklchDegToHex` clips it. L is 0..1 or a percent; a, b and C are numbers. */
+/** `oklab(L a b)` or `oklch(L C h)`, chroma-clipped into sRGB as `oklchDegToHex` clips it. L is 0..1 or a percent;
+ *  a, b and C are numbers or percents, 100% being 0.4. */
 function parseOkFunction(s: string): [number, number, number, number] | null {
   const lch = unwrapFn(s, 'oklch');
   const body = lch ?? unwrapFn(s, 'oklab');
@@ -259,8 +263,8 @@ function parseOkFunction(s: string): [number, number, number, number] | null {
   const channels = splitChannels(body);
   if (!channels) return null;
   const L = parsePercentOrNumber(channels.rgb[0]);
-  const second = componentNumber(channels.rgb[1]);
-  const third = lch !== null ? parseHue(channels.rgb[2]) : componentNumber(channels.rgb[2]);
+  const second = okComponent(channels.rgb[1]);
+  const third = lch !== null ? parseHue(channels.rgb[2]) : okComponent(channels.rgb[2]);
   const alpha = parseAlpha(channels.alpha);
   if (L === null || second === null || third === null || alpha === null) return null;
   // CSS clamps a negative chroma to 0 rather than turning the hue half a turn.

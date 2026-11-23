@@ -360,3 +360,12 @@ describe('tryParseColor', () => {
     expect(tryParseColor('currentColor')).toBeNull();
   });
 });
+
+describe('parseColor oklab()/oklch() percent components', () => {
+  it('reads a, b and C percents on the 0.4 scale CSS gives them', () => {
+    const pairs = [['oklch(70% 25% 120)', 'oklch(0.7 0.1 120)'], ['oklab(50% 20% -10%)', 'oklab(0.5 0.08 -0.04)']];
+    for (const [percent, number] of pairs) {
+      parseColor(percent).forEach((c, i) => expect(c, percent).toBeCloseTo(parseColor(number)[i]!, 12));
+    }
+  });
+});
