@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { LONG_PRESS_MS, pastDragThreshold } from '@weasel-js/gestures';
 import { useLocale } from 'react-aria';
 import { useKitSetting } from '@weasel-js/react';
@@ -7,7 +7,7 @@ import s from './Select.module.css';
 
 export type Nudge = { offset: number; crossOffset: number };
 
-/** Where, when and with what pointer the trigger was pressed. */
+/** Where, when and with what pointer the trigger was pressed, held only until that pointer lifts. */
 export type Press = { x: number; y: number; at: number; pointerType: string };
 
 export const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
@@ -34,26 +34,32 @@ export function AlignOverTrigger({
   pressRef,
   applied,
   onMeasure,
+  content,
 }: {
   triggerRef: RefObject<HTMLButtonElement | null>;
   pressRef: RefObject<Press | null>;
   applied: Nudge;
   onMeasure: (next: Nudge) => void;
+  /** What the list is drawn from: a new one restarts the passes, since the rows it lays out may have moved. */
+  content?: unknown;
 }) {
   // React Aria positions the popover but hands out no ref to it, so the
   // element is reached from inside: this marker's own parent.
   const markerRef = useRef<HTMLSpanElement>(null);
-  const dragPx = useKitSetting('gestures.dragPx');
-  const holdMs = useKitSetting('gestures.longPressMs') ?? LONG_PRESS_MS;
   // A measurement that settles takes two passes — one to place the list, one
   // to confirm. A cap is what keeps a list whose own placement changes its
   // measurement from renegotiating forever.
   const passes = useRef(0);
+  const measured = useRef(content);
   const { direction } = useLocale();
   useLayoutEffect(() => {
     const trigger = triggerRef.current;
     const popover = markerRef.current?.closest<HTMLElement>('[data-weasel-overlay]');
-    if (!trigger || !popover || passes.current > 3) return;
+    if (!trigger || !popover) return;
+    if (measured.current !== content) {
+      measured.current = content;
+      passes.current = 0;
+    }
     const value = trigger.querySelector(`.${s.value}`);
     // Nothing chosen yet, so there is no row that belongs over the trigger —
     // and putting an arbitrary one under the pointer arms it. A select showing
@@ -65,6 +71,7 @@ export function AlignOverTrigger({
         onMeasure(BELOW);
       return;
     }
+    if (passes.current > 3) return;
 
     // The trigger's own text alignment decides which edge the two labels are
     // matched on, and the list follows it so the selected row reads as the
@@ -72,8 +79,9 @@ export function AlignOverTrigger({
     const style = getComputedStyle(trigger);
     const align = style.getPropertyValue('--wzl-select-align').trim();
     const rtlText = style.direction === 'rtl';
+    const centered = align === 'center';
     const toRight = align === 'right' || (align === 'end' && !rtlText) || ((align === 'start' || align === '') && rtlText);
-    popover.dataset.align = toRight !== rtlText ? 'end' : 'start';
+    popover.dataset.align = centered ? 'center' : toRight !== rtlText ? 'end' : 'start';
 
     // Stated against each element's own box rather than measured as a gap to
     // close: React Aria repositions after this effect, so what is on screen
@@ -99,7 +107,9 @@ export function AlignOverTrigger({
     const highest = view.top + EDGE * scaleY - seat.bottom;
     const next = {
       offset: Math.max(highest, Math.min(over, lowest)) / scaleY,
-      crossOffset: ((toRight ? shown.right - (row.right - box.left) : shown.left - (row.left - box.left))
+      crossOffset: ((centered
+        ? shown.left + shown.width / 2 - (row.left + row.width / 2 - box.left)
+        : toRight ? shown.right - (row.right - box.left) : shown.left - (row.left - box.left))
         - (direction === 'rtl' ? seat.right - box.width : seat.left)) / scaleX,
     };
     if (Math.abs(next.offset - applied.offset) < 0.5 && Math.abs(next.crossOffset - applied.crossOffset) < 0.5)
@@ -108,21 +118,34 @@ export function AlignOverTrigger({
     onMeasure(next);
   });
 
+  useKeepOpeningRelease(triggerRef, pressRef);
+
+  return <span ref={markerRef} hidden />;
+}
+
+function useKeepOpeningRelease(triggerRef: RefObject<HTMLButtonElement | null>, pressRef: RefObject<Press | null>) {
   // The list covers the trigger, so the release that ends the click opening it
   // lands on a row — and a row selects on release, which shuts the list again
   // before it has been seen. A click is a press and a release in the same
   // place: that one is the opening gesture and belongs to the trigger, and the
   // list keeps every release after it. Press, hold, drag and release still
   // picks a row, which is the gesture a list over its trigger is for.
+  const dragPx = useKitSetting('gestures.dragPx');
+  const holdMs = useKitSetting('gestures.longPressMs') ?? LONG_PRESS_MS;
+  const limits = useRef({ dragPx, holdMs });
+  useLayoutEffect(() => {
+    limits.current = { dragPx, holdMs };
+  });
   useEffect(() => {
     const doc = triggerRef.current?.ownerDocument;
-    if (!doc) return;
+    // Only a press still held when the list opened is the one that opened it; one already lifted is someone else's.
+    const press = pressRef.current;
+    // React Aria opens a select on a touch's release, so that release is spent before the list exists.
+    if (!doc || !press || press.pointerType === 'touch') return;
     const onUp = (e: PointerEvent) => {
       doc.removeEventListener('pointerup', onUp, true);
-      const press = pressRef.current;
-      // React Aria opens a select on a touch's release, so that release is spent before the list exists.
-      if (!press || press.pointerType === 'touch' || performance.now() - press.at > holdMs) return;
-      if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, dragPx)) return;
+      if (performance.now() - press.at > limits.current.holdMs) return;
+      if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, limits.current.dragPx)) return;
       e.preventDefault();
       e.stopPropagation();
       // Stopped short of the row, the release also misses every document listener waiting for this pointer to
@@ -131,7 +154,24 @@ export function AlignOverTrigger({
     };
     doc.addEventListener('pointerup', onUp, true);
     return () => doc.removeEventListener('pointerup', onUp, true);
-  }, [triggerRef, pressRef, dragPx, holdMs]);
+  }, [triggerRef, pressRef]);
+}
 
-  return <span ref={markerRef} hidden />;
+/** The trigger's press, held until its pointer lifts, and the `onPointerDown` that records it. */
+export function useTriggerPress(): [RefObject<Press | null>, (e: ReactPointerEvent) => void] {
+  const pressRef = useRef<Press | null>(null);
+  const onPress = useCallback((e: ReactPointerEvent) => {
+    const press = { x: e.clientX, y: e.clientY, at: performance.now(), pointerType: e.pointerType };
+    pressRef.current = press;
+    const view = e.currentTarget.ownerDocument.defaultView;
+    // On the window, so it hears the lift after every listener on the document has.
+    const lifted = () => {
+      view?.removeEventListener('pointerup', lifted);
+      view?.removeEventListener('pointercancel', lifted);
+      if (pressRef.current === press) pressRef.current = null;
+    };
+    view?.addEventListener('pointerup', lifted);
+    view?.addEventListener('pointercancel', lifted);
+  }, []);
+  return [pressRef, onPress];
 }

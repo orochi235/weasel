@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest';
 import { render } from '@testing-library/react';
 import { useLayoutEffect, useRef } from 'react';
 import { I18nProvider } from 'react-aria';
-import { AlignOverTrigger, NO_NUDGE, type Nudge } from './alignOverTrigger';
+import { AlignOverTrigger, BELOW, NO_NUDGE, type Nudge } from './alignOverTrigger';
 import s from './Select.module.css';
 
 type Box = { left: number; top: number; width: number; height: number };
@@ -36,7 +36,7 @@ function lay(root: HTMLElement, scale: number, listLeft = 100) {
   size(q('[data-testid=popover]'), 60 / scale, 40 / scale);
 }
 
-function Harness({ selected, applied = NO_NUDGE, onMeasure, before, rtl }: { selected: boolean; applied?: Nudge; onMeasure: (n: Nudge) => void; before?: () => void; rtl?: boolean }) {
+function Harness({ selected, applied = NO_NUDGE, onMeasure, before, rtl, content }: { selected: boolean; applied?: Nudge; onMeasure: (n: Nudge) => void; before?: () => void; rtl?: boolean; content?: unknown }) {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const pressRef = useRef(null);
   return (
@@ -44,7 +44,7 @@ function Harness({ selected, applied = NO_NUDGE, onMeasure, before, rtl }: { sel
       <button ref={triggerRef} data-testid="trigger" dir={rtl ? 'rtl' : undefined} style={rtl ? { direction: 'rtl' } : undefined}><span className={s.value}>Green</span></button>
       <div data-weasel-overlay="" data-testid="popover">
         <Before run={before} />
-        <AlignOverTrigger triggerRef={triggerRef} pressRef={pressRef} applied={applied} onMeasure={onMeasure} />
+        <AlignOverTrigger triggerRef={triggerRef} pressRef={pressRef} applied={applied} onMeasure={onMeasure} content={content} />
         <div {...(selected ? { 'data-selected': '' } : {})}><span className={s.optionLabel}>Green</span></div>
       </div>
     </>
@@ -96,5 +96,39 @@ describe('AlignOverTrigger', () => {
     expect(getByTestId('popover').dataset.align).toBe('start');
     rerender(<Harness selected={false} onMeasure={onMeasure} />);
     expect(getByTestId('popover').dataset.align).toBeUndefined();
+  });
+
+  it('measures again once the list it is drawn from changes, after its passes ran out', () => {
+    const onMeasure = vi.fn();
+    const first = ['Green'];
+    const at = (content: unknown) => <Harness selected onMeasure={onMeasure} content={content} before={() => lay(document.body, 1)} />;
+    const { rerender } = render(at(first));
+    for (let i = 0; i < 6; i++) rerender(at(first));
+    expect(onMeasure).toHaveBeenCalledTimes(4);
+    rerender(at(['Green', 'Teal']));
+    expect(onMeasure).toHaveBeenCalledTimes(5);
+  });
+
+  it('hangs a list that lost its selected row below the trigger, after its passes ran out', () => {
+    const onMeasure = vi.fn();
+    const { getByTestId, rerender } = render(<Harness selected onMeasure={onMeasure} before={() => lay(document.body, 1)} />);
+    for (let i = 0; i < 6; i++) rerender(<Harness selected onMeasure={onMeasure} before={() => lay(document.body, 1)} />);
+    rerender(<Harness selected={false} onMeasure={onMeasure} />);
+    expect(onMeasure).toHaveBeenLastCalledWith(BELOW);
+    expect(getByTestId('popover').dataset.align).toBeUndefined();
+  });
+
+  it('matches the centers of the selected row and a centered value', () => {
+    const onMeasure = vi.fn();
+    const before = () => {
+      lay(document.body, 1);
+      const trigger = document.querySelector<HTMLElement>('[data-testid=trigger]')!;
+      trigger.style.setProperty('--wzl-select-align', 'center');
+      rects.set(document.querySelector(`.${s.optionLabel}`)!, { left: 104, top: 130, width: 20, height: 6 });
+    };
+    const { getByTestId } = render(<Harness selected onMeasure={onMeasure} before={before} />);
+    // The value's center is at 125 and the label's 14 into the list, so the list's left goes to 111.
+    expect(onMeasure).toHaveBeenCalledWith({ offset: -28, crossOffset: 11 });
+    expect(getByTestId('popover').dataset.align).toBe('center');
   });
 });

@@ -140,6 +140,16 @@
   color: var(--wzl-fg-subtle);
 }
 
+.optionBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.value .optionBody {
+  display: contents;
+}
+
 .optionLabel {
   min-width: 0;
   overflow: hidden;
@@ -151,6 +161,10 @@
    same, so the row that opened over the value stays on top of it. */
 .popover[data-align='end'] .option {
   justify-content: flex-end;
+}
+
+.popover[data-align='center'] .option {
+  justify-content: center;
 }
 
 .check {
@@ -201,4 +215,6 @@
 
 .sizer {
   composes: sizer from '@weasel-js/theme/sizer.module.css';
+  /* Measured in the value's weight, or a bold value outgrows the width taken for it. */
+  font-weight: var(--wzl-select-weight);
 }
