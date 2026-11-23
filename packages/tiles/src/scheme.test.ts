@@ -36,3 +36,15 @@ describe('planeFloor floorTiles', () => {
     }
   });
 });
+
+describe('planeFloor far from the origin', () => {
+  it('holds a line of no width at a large coordinate in at most floorTiles a side', () => {
+    const scheme = createPlaneScheme(512);
+    for (const bounds of [[1e15, 0, 1e15, 1], [0, -3e14, 1, -3e14]]) {
+      const keys = planeFloor(scheme, 512, bounds);
+      expect(keys.length).toBeGreaterThan(0);
+      expect(new Set(keys.map((k) => k.x)).size).toBeLessThanOrEqual(2);
+      expect(new Set(keys.map((k) => k.y)).size).toBeLessThanOrEqual(2);
+    }
+  });
+});
