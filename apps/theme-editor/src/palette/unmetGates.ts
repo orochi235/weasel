@@ -1,4 +1,4 @@
-import { floorDegrees, type Constraints, type generate } from '@weasel-js/theme/engine';
+import { floorDegrees, hueGap, toHexPreview, toLch, type Constraints, type generate } from '@weasel-js/theme/engine';
 
 export type Stats = ReturnType<typeof generate>['stats'];
 
@@ -37,8 +37,22 @@ export function unmetGates(c: Constraints, stats: Stats): string[] {
       `distance from the surface reaches ${stats.minSurfaceDistance.toFixed(3)} of ${c.minSurfaceDistance.toFixed(2)}`,
     );
   }
-  if (out.length > 0 && c.count * floor > 360) {
-    out.push(`${c.count} hues ${floor.toFixed(0)}° apart would need ${(c.count * floor).toFixed(0)}° of circle`);
+  const pinned = floor > 0 ? closestPins(c) : undefined;
+  if (pinned && pinned.gap < floor - 0.01) {
+    out.push(`pinned ${pinned.names[0]} and ${pinned.names[1]} sit ${pinned.gap.toFixed(0)}° apart, so no hue gap can reach ${floor.toFixed(0)}°`);
   }
   return out;
+}
+
+/** The two anchors nearest in hue, measured as the generator places them. */
+function closestPins(c: Constraints): { gap: number; names: [string, string] } | undefined {
+  const hues = c.anchors.map((a) => toLch(toHexPreview(a)).H);
+  let best: { gap: number; names: [string, string] } | undefined;
+  for (let i = 0; i < hues.length; i += 1) {
+    for (let j = i + 1; j < hues.length; j += 1) {
+      const gap = hueGap(hues[i], hues[j]);
+      if (!best || gap < best.gap) best = { gap, names: [c.anchors[i].name, c.anchors[j].name] };
+    }
+  }
+  return best;
 }

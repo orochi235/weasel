@@ -29,4 +29,11 @@ describe('unmetGates', () => {
     expect(gateVerdict(c, stats, 'minDistance')).toBe('bad');
     expect(unmetGates(c, stats)).toEqual(['distance between colors reaches 0.217 of 0.22']);
   });
+
+  it('blames two pins closer than the hue floor, which no free hue can fix', () => {
+    const c = withC({ count: 6, hueFloor: 0.8, minContrast: 0, minDistance: 0, minSurfaceDistance: 0, anchors: [anchor(20), anchor(30)] });
+    const palette = generate(c);
+    expect(palette.feasible).toBe(false);
+    expect(unmetGates(c, palette.stats).at(-1)).toMatch(/^pinned h20 and h30 sit \d+° apart, so no hue gap can reach 48°$/);
+  });
 });
