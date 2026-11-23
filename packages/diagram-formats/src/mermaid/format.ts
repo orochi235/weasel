@@ -102,7 +102,7 @@ function pageOfKind<K extends PageKind>(doc: DiagramDocument, opts: WriteOptions
   return page as Extract<DocumentPage, { kind: K }>;
 }
 
-const FLOWCHART_HEADER = /^(?:flowchart|graph|flowchart-elk)(?:\s+(?:TB|TD|BT|LR|RL|[<>^v]))?\s*(?:;|$)/i;
+const FLOWCHART_HEADER = /^(?:flowchart|graph|flowchart-elk)(?:\s+(?:[Tt][BbDd]|[Bb][Tt]|[Ll][Rr]|[Rr][Ll]|[<>^v]))?\s*(?:;|$)/;
 
 /** The kind `text` is, or a flowchart, whose reader then says what is wrong with it. Throws on a kind not read. */
 function kindOf(text: string): MermaidKind {

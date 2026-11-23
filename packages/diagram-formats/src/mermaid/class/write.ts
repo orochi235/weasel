@@ -5,7 +5,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { readsAsStatement, titleLines } from '../common/lines';
-import { dropPorts, styleProps } from '../common/styles';
+import { dropEdgeColors, dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, oneLine, spelledBreaks } from '../common/text';
 
 const HEADER: Readonly<Record<LayoutDirection, string>> = { down: 'TB', up: 'BT', right: 'LR', left: 'RL' };
@@ -31,15 +31,19 @@ export function classParts(node: DataNode): { annotations: string[]; name: strin
   return { annotations, name: names[0] ?? node.id, attributes, methods };
 }
 
-/** Whether every `<` in `text` closes, in order, and nothing else does: a generic Mermaid's tildes can nest. */
+/** Whether every `<` in `text` closes, in order, and nothing else does, and every tilde written for one reads back as
+ *  it: the reader opens at a `~` before an ASCII word character and closes at any other. */
 function balanced(text: string): boolean {
   let depth = 0;
   for (const c of text) {
     if (c === '<') depth += 1;
     else if (c === '>' && --depth < 0) return false;
   }
-  return depth === 0 && !/~|<>/.test(text);
+  return depth === 0 && !/[~[{"]|<(?!\w)|>(?=\w)/.test(text);
 }
+
+/** A body line the reader takes as an annotation rather than a member. */
+const ANNOTATION = /^<<\s*.+?\s*>>$/s;
 
 /** The ids the reader takes for a class and a namespace, less any holding `--`, which reads as a line. */
 const CLASS_ID = /^(?!.*--)[\w-]+$/;
@@ -79,8 +83,8 @@ class ClassWriter {
       : generic !== null && generic[1] === id && balanced(generic[2]!) ? `${id}~${generic[2]!.replace(/[<>]/g, '~')}~`
         : `${id}["${spelled(name)}"]`;
     const members = [...attributes, ...methods].map((m) => oneLine(m, 'class diagram member', (w) => this.out.warnings.add(w)).trim());
-    const kept = members.filter((m) => m !== '}' && readsAsStatement(m));
-    if (kept.length < members.length) this.out.warnings.add('Mermaid class members are lines of text; blank ones, and ones it reads as comments or a closing brace, were dropped.');
+    const kept = members.filter((m) => m !== '}' && readsAsStatement(m) && !ANNOTATION.test(m));
+    if (kept.length < members.length) this.out.warnings.add('Mermaid class members are lines of text; blank ones, and ones it reads as comments, a closing brace, or an annotation, were dropped.');
     const body = [...annotations.map((a) => `<<${a}>>`), ...kept];
     if (body.length === 0) {
       this.lines.push(`${indent}class ${head}`);
@@ -88,6 +92,7 @@ class ClassWriter {
     }
     this.lines.push(`${indent}class ${head} {`, ...body.map((b) => `${indent}  ${b}`), `${indent}}`);
     if (attributes.some((a) => a.includes('('))) this.out.warnings.add('Mermaid reads a member with parentheses as a method; such attributes read back as methods.');
+    if (methods.some((m) => !m.includes('('))) this.out.warnings.add('Mermaid reads a member without parentheses as an attribute; such methods read back as attributes.');
   }
 
   cluster(c: Cluster, indent: string): void {
@@ -154,6 +159,7 @@ export function writeClassDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
     dropPorts(e, (m) => out.warnings.add(m));
     w.lines.push(w.relation(e));
   }
+  dropEdgeColors(out.edges, 'class diagram', (m) => out.warnings.add(m));
   w.noteLines();
   w.styles();
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };

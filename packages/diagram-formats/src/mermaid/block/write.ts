@@ -3,15 +3,15 @@ import type { DataEdge, DataNode, GridOptions } from '@weasel-js/diagram';
 import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { titleLines } from '../common/lines';
-import { arrowHead, dropPorts, styleProps } from '../common/styles';
+import { ACC_WORDS, titleLines } from '../common/lines';
+import { arrowHead, dropEndLabels, dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { BRACKETS } from '../flowchart/write';
 
 const ANONYMOUS = /^block-\d+$/;
 
 /** Words a block diagram reads as a keyword where a block's id would stand. */
-const BLOCK_WORDS = ['block', 'space', 'columns'];
+const BLOCK_WORDS = ['block', 'space', 'columns', ...ACC_WORDS];
 
 type Item = { node: DataNode } | { cluster: Cluster };
 
@@ -116,7 +116,7 @@ export function writeBlockDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
   const out = graphOut(doc, opts, 'Mermaid');
   if (out === null) return { text: 'block-beta\n', warnings: [] };
   if (out.page.data.nodes.some((n) => n.at !== undefined)) out.warnings.add('Mermaid holds no positions; the page is laid out again when read.');
-  if (out.edges.some((e) => e.endLabels !== undefined)) out.warnings.add('Mermaid block diagrams have no labels at a connector\'s ends; they were dropped.');
+  dropEndLabels(out.edges, 'block diagrams', (m) => out.warnings.add(m));
   const w = new BlockWriter(out);
   w.lines.push(...titleLines(out.page.name), 'block-beta');
   if (w.grid.columns !== undefined) w.lines.push(`  columns ${w.grid.columns}`);

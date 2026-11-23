@@ -47,6 +47,12 @@ class C4Reader {
     for (const key of Object.keys(args.named)) this.warnings.list('Mermaid C4 arguments a diagram does not hold were dropped', `$${key}`);
   }
 
+  claim(alias: string, line: number): void {
+    if (this.nodes.has(alias) || this.containers.some((c) => c.id === alias)) {
+      throw lineError('Mermaid', line, `"${alias}" already names an element or boundary`);
+    }
+  }
+
   walk(stmts: readonly C4Stmt[], members: string[]): void {
     for (const s of stmts) {
       if (s.kind === 'title') {
@@ -57,6 +63,7 @@ class C4Reader {
       const kind = kindOfMacro(s.macro);
       if (kind !== null) {
         if (alias === undefined) throw lineError('Mermaid', s.line, `${s.macro} needs an alias`);
+        this.claim(alias, s.line);
         const tech = hasTechnology(kind) ? rest[1] : undefined;
         const description = hasTechnology(kind) ? rest[2] : rest[1];
         this.extras(s.args, hasTechnology(kind) ? 4 : 3);
@@ -77,6 +84,7 @@ class C4Reader {
   boundary(s: Extract<C4Stmt, { kind: 'call' }>, members: string[]): void {
     const [alias, title, type] = s.args.positional;
     if (alias === undefined) throw lineError('Mermaid', s.line, `${s.macro} needs an alias`);
+    this.claim(alias, s.line);
     const fixed = getOwn(BOUNDARY_TYPES, s.macro);
     if (s.macro === 'Node_L' || s.macro === 'Node_R') this.warnings.add('Mermaid C4 deployment node sides were dropped.');
     this.extras(s.args, fixed !== null ? 2 : 3);
@@ -124,7 +132,7 @@ class C4Reader {
     const box = this.containers.findIndex((c) => c.id === alias);
     if (node !== undefined) this.nodes.set(node.id, { ...node, colors: { ...node.colors, ...colors } });
     else if (box >= 0) this.containers[box] = { ...this.containers[box]!, colors: { ...this.containers[box]!.colors, ...colors } };
-    else throw lineError('Mermaid', s.line, `no element or boundary is named "${alias ?? ''}"`);
+    else this.warnings.list('Mermaid C4 styles naming no element or boundary declared above them were dropped', alias ?? '');
   }
 
   relStyle(s: Extract<C4Stmt, { kind: 'call' }>): void {
@@ -133,9 +141,9 @@ class C4Reader {
     for (const key of Object.keys(rest)) this.warnings.list('Mermaid C4 arguments a diagram does not hold were dropped', `$${key}`);
     const [stroke, label] = [lineColor, textColor].map((c) => mermaidColor(c, this.warnings));
     const colors: Partial<EdgeStyle> = { ...(stroke !== undefined ? { stroke } : {}), ...(label !== undefined ? { label } : {}) };
-    for (const [i, e] of this.edges.entries()) {
-      if (e.from === from && e.to === to) this.edges[i] = { ...e, colors: { ...e.colors, ...colors } };
-    }
+    const at = this.edges.findIndex((e) => e.from === from && e.to === to);
+    if (at < 0) this.warnings.list('Mermaid C4 styles naming no relationship declared above them were dropped', `${from ?? ''} -> ${to ?? ''}`);
+    else this.edges[at] = { ...this.edges[at]!, colors: { ...this.edges[at]!.colors, ...colors } };
   }
 }
 

@@ -48,6 +48,7 @@ describe('reading a Mermaid architecture diagram', () => {
   it('warns of icons it has no outline for and of group icons', () => {
     expect(readArchitecture(CLOUD).warnings).toEqual([
       'Mermaid group icons were dropped: cloud.', 'Mermaid icons not built in were drawn as rounded boxes: logos:aws-lambda.',
+      'Mermaid edge sides at a {group} end were dropped; an edge meets a group anywhere on its box.',
     ]);
   });
 
@@ -137,5 +138,32 @@ describe('writing a Mermaid architecture diagram', () => {
     const { text, warnings } = writeArchitecture({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'a', lines: ['web', 'tier'] }], edges: [] } }] });
     expect(page(text).data.nodes[0]!.lines).toEqual(['web', 'tier']);
     expect(warnings).toEqual([]);
+  });
+});
+
+/** `text` read, with node `from` renamed `to` in its nodes and edges. */
+const renamed = (text: string, from: string, to: string) => {
+  const p = page(text);
+  const id = (s: string) => (s === from ? to : s);
+  const data = { ...p.data, nodes: p.data.nodes.map((n) => ({ ...n, id: id(n.id) })), edges: p.data.edges.map((e) => ({ ...e, from: id(e.from), to: id(e.to) })) };
+  return { pages: [{ ...p, data }] };
+};
+
+describe('an id Mermaid reads as accessibility text', () => {
+  it('is renamed when written, so its line reads back as a statement of the diagram', () => {
+    for (const acc of ['accTitle', 'accDescr']) {
+      const back = page(writeArchitecture(renamed('architecture-beta\n  service x(server)[X]\n  service b(server)[B]\n  x:R -- L:b', 'x', acc)).text);
+      expect(back.data.nodes).toHaveLength(2);
+      expect(back.data.edges).toHaveLength(1);
+    }
+  });
+});
+
+describe('writing connector parts Mermaid architecture diagrams hold no place for', () => {
+  it('warns that they were dropped', () => {
+    const p = page('architecture-beta\n  service a(server)\n  service b(server)\n  a:R -- L:b');
+    const edges = p.data.edges.map((e) => ({ ...e, endLabels: { from: '1' }, colors: { ...e.colors, stroke: '#f00', label: '#00f', width: 3 } }));
+    const { warnings } = writeArchitecture({ pages: [{ ...p, data: { ...p.data, edges } }] });
+    expect(warnings).toEqual(expect.arrayContaining(['Mermaid architecture diagrams have no labels at a connector\'s ends; they were dropped.', 'Mermaid architecture diagrams have no styles; colors were dropped.']));
   });
 });

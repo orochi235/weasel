@@ -77,7 +77,6 @@ describe('reading a Mermaid C4 diagram', () => {
   it('names the line it cannot read', () => {
     expect(() => parseC4('C4Context\n  Person(a, "A"')).toThrow(/^Mermaid, line 2: cannot read/);
     expect(() => parseC4('C4Context\n  Boundary(b, "B") {\n  Person(a, "A")')).toThrow('Mermaid, line 2: a boundary opened here is never closed');
-    expect(() => readC4('C4Context\n  UpdateElementStyle(x, $bgColor="red")')).toThrow('Mermaid, line 2: no element or boundary is named "x"');
     expect(() => parseC4('C4Diagram\n')).toThrow('Mermaid, line 1: expected a C4 header, found "C4Diagram"');
   });
 });
@@ -157,5 +156,53 @@ describe('writing a Mermaid C4 diagram', () => {
       expect(text).not.toContain('title');
       expect(() => readC4(text)).not.toThrow();
     }
+  });
+});
+
+describe('readC4 on a repeated alias', () => {
+  it('throws, naming the line, on an alias an element or a boundary already names', () => {
+    expect(() => readC4('C4Context\n  System(a, "A")\n  System_Boundary(b, "B") {\n    System(a, "A2")\n  }')).toThrow(/line 4.*"a" already names/);
+    expect(() => readC4('C4Context\n  Boundary(b, "B") {\n  }\n  Boundary(b, "C") {\n  }')).toThrow(/line 4.*"b" already names/);
+  });
+});
+
+describe('C4 style macros naming nothing', () => {
+  it('drop, with a warning, a style naming no element or relationship declared above it', () => {
+    const { document, warnings } = readC4('C4Context\n  UpdateElementStyle(typo, $bgColor="red")\n  UpdateRelStyle(a, b, $lineColor="red")\n  System(a, "A")');
+    expect(onlyPage(document).data.nodes).toHaveLength(1);
+    expect(warnings).toEqual([
+      'Mermaid C4 styles naming no element or boundary declared above them were dropped: typo.',
+      'Mermaid C4 styles naming no relationship declared above them were dropped: a -> b.',
+    ]);
+  });
+
+  it('styles only the first relationship between two elements, as Mermaid does', () => {
+    const { document } = readC4('C4Context\n  System(a, "A")\n  System(b, "B")\n  Rel(a, b, "x")\n  Rel(a, b, "y")\n  UpdateRelStyle(a, b, $lineColor="red")');
+    expect(onlyPage(document).data.edges.map((e) => e.colors)).toEqual([{ stroke: 'red' }, undefined]);
+  });
+
+  it('writes no style for a later relationship between the same two elements, with a warning', () => {
+    const { document } = readC4('C4Context\n  System(a, "A")\n  System(b, "B")\n  Rel(a, b, "x")\n  Rel(a, b, "y")');
+    const page = onlyPage(document);
+    const edges = [page.data.edges[0]!, { ...page.data.edges[1]!, colors: { stroke: 'red' } }];
+    const out = writeC4({ pages: [{ ...page, data: { ...page.data, edges } }] });
+    expect(out.text).not.toContain('UpdateRelStyle');
+    expect(out.warnings).toContain('Mermaid C4 styles only the first relationship between two elements; colors of the others were dropped.');
+  });
+});
+
+describe('C4 deployment nodes', () => {
+  it('write back as deployment nodes whatever their type, so a "container" node stays one', () => {
+    const { document } = readC4('C4Deployment\n  Deployment_Node(d, "Web", "container") {\n    Container(c, "App")\n  }');
+    expect(writeC4(document).text).toContain('Deployment_Node(d, "Web", "container") {');
+  });
+});
+
+describe('writing connector parts Mermaid C4 diagrams hold no place for', () => {
+  it('warns that they were dropped', () => {
+    const p = page('C4Context\n  System(a, "A")\n  System(b, "B")\n  Rel(a, b, "x")');
+    const edges = p.data.edges.map((e) => ({ ...e, endLabels: { from: '1' }, colors: { ...e.colors, stroke: '#f00', label: '#00f', width: 3 } }));
+    const { warnings } = writeC4({ pages: [{ ...p, data: { ...p.data, edges } }] });
+    expect(warnings).toEqual(expect.arrayContaining(['Mermaid C4 diagrams have no labels at a connector\'s ends; they were dropped.', 'Mermaid C4 diagram connectors hold no widths; they were dropped.']));
   });
 });

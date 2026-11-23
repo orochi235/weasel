@@ -165,3 +165,38 @@ describe('writing a Mermaid class diagram', () => {
     expect(warnings).toContain('Mermaid class relations join classes; connectors to namespaces were dropped.');
   });
 });
+
+/** A one-class page whose box has `rows`. */
+const boxed = (rows: DataNode['rows']) => {
+  const p = page('classDiagram\n  class Foo');
+  return { pages: [{ ...p, data: { ...p.data, nodes: [{ ...p.data.nodes[0]!, rows }] } }] };
+};
+
+describe('writing a class box Mermaid would read back otherwise', () => {
+  it('quotes a generic name whose tildes would not read back as its angle brackets', () => {
+    for (const name of ['Foo<List<?>>', 'Foo<Map<Ä>>', 'Foo<List<[int]>>', 'Foo<List<K>V>']) {
+      const back = readClassDiagram(writeClassDiagram(boxed([{ kind: 'label', text: name }])).text);
+      expect(classParts(onlyPage(back.document).data.nodes[0]!).name).toBe(name);
+    }
+  });
+
+  it('drops a member row Mermaid reads as an annotation, with a warning', () => {
+    const { text, warnings } = writeClassDiagram(boxed([{ kind: 'label', text: 'Foo' }, { kind: 'divider' }, { kind: 'label', text: '<<x>>' }, { kind: 'label', text: 'y' }]));
+    expect(classParts(onlyPage(readClassDiagram(text).document).data.nodes[0]!).annotations).toEqual([]);
+    expect(warnings).toContain('Mermaid class members are lines of text; blank ones, and ones it reads as comments, a closing brace, or an annotation, were dropped.');
+  });
+
+  it('warns that a method with no parentheses reads back as an attribute', () => {
+    const rows: DataNode['rows'] = [{ kind: 'label', text: 'Foo' }, { kind: 'divider' }, { kind: 'label', text: 'a' }, { kind: 'divider' }, { kind: 'label', text: 'run' }];
+    expect(writeClassDiagram(boxed(rows)).warnings).toContain('Mermaid reads a member without parentheses as an attribute; such methods read back as attributes.');
+  });
+});
+
+describe('writing connector parts Mermaid class diagrams hold no place for', () => {
+  it('warns that they were dropped', () => {
+    const p = page('classDiagram\n  a --> b');
+    const edges = p.data.edges.map((e) => ({ ...e, endLabels: { from: '1' }, colors: { ...e.colors, stroke: '#f00', label: '#00f', width: 3 } }));
+    const { warnings } = writeClassDiagram({ pages: [{ ...p, data: { ...p.data, edges } }] });
+    expect(warnings).toEqual(expect.arrayContaining(['Mermaid class diagram connectors hold no line colors, label colors, or widths; they were dropped.']));
+  });
+});

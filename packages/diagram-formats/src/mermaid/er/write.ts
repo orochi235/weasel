@@ -4,8 +4,8 @@ import type { DataNode, LayoutDirection, Row } from '@weasel-js/diagram';
 import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, type GraphOut } from '../../graphWrite';
-import { readsAsStatement, titleLines } from '../common/lines';
-import { dropPorts, styleProps } from '../common/styles';
+import { ACC_WORDS, readsAsStatement, titleLines } from '../common/lines';
+import { dropEdgeColors, dropEndLabels, dropPorts, styleProps } from '../common/styles';
 import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import { ATTRIBUTE } from './parse';
 
@@ -44,7 +44,7 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
   const { page } = out;
   if (page.data.nodes.some((n) => n.at !== undefined)) out.warnings.add('Mermaid holds no positions; the page is laid out again when read.');
   if (out.clusters.length > 0) out.warnings.add('Mermaid ER diagrams have no containers; they were dropped.');
-  const ids = mermaidIds(page.data.nodes.map((n) => n.id), { id: /^(?!.*--)[\w-]+$/ });
+  const ids = mermaidIds(page.data.nodes.map((n) => n.id), { id: /^(?!.*--)[\w-]+$/, reserved: ACC_WORDS });
   const lines = [...titleLines(page.name), 'erDiagram'];
   if (page.direction !== undefined && page.direction !== 'down') lines.push(`  direction ${HEADER[page.direction]}`);
   for (const n of page.data.nodes) {
@@ -64,6 +64,8 @@ export function writeErDiagram(doc: DiagramDocument, opts?: WriteOptions): Expor
     const body = style.dash !== undefined ? '..' : '--';
     lines.push(`  ${ids.get(e.from)} ${end(out, style.markerStart, 0)}${body}${end(out, style.markerEnd, 1)} ${ids.get(e.to)} : "${mermaidEscaped([e.label ?? ''])}"`);
   }
+  dropEndLabels(out.edges, 'ER diagrams', (m) => out.warnings.add(m));
+  dropEdgeColors(out.edges, 'ER diagram', (m) => out.warnings.add(m));
   for (const n of page.data.nodes) {
     const props = n.colors !== undefined ? styleProps(n.colors) : '';
     if (props !== '') lines.push(`  style ${ids.get(n.id)} ${props}`);

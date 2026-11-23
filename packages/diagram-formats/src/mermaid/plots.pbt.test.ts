@@ -60,7 +60,7 @@ describe('Mermaid charts beyond pie, sankey, and timeline, property', () => {
     fc.assert(fc.property(journey, (data) => {
       const p = back(data) as JourneyData;
       // A step named for a statement is dropped, as Mermaid would read it as that statement.
-      const kept = (name: string) => !/^(?:title|section)(?:\s|$)/.test(flat(name).replace(/[#:;]/g, '').trim().replace(/^(?:%%+\s*)+/, ''));
+      const kept = (name: string) => !/^(?:title|section)\s/.test(flat(name).replace(/[#:;]/g, '').trim().replace(/^(?:%%+\s*)+/, ''));
       expect(p.sections.map((s) => s.tasks.map((t) => t.score))).toEqual(
         data.sections.map((s) => s.tasks.filter((t) => kept(t.name)).map((t) => t.score)),
       );

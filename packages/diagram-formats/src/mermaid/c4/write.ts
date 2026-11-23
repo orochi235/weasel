@@ -2,7 +2,7 @@
 import { dataEdgeStyle, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { changed, edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { arrowHead } from '../common/styles';
+import { arrowHead, dropEdgeColors, dropEndLabels } from '../common/styles';
 import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
 import { elementParts, hasTechnology, macroOf, smallLines } from './kinds';
 import { C4_HEADERS } from './parse';
@@ -57,7 +57,7 @@ class C4Writer {
   boundary(c: Cluster, indent: string): void {
     const m = /^(.*?)(?: \[([^\]]*)\])?$/s.exec(c.label ?? c.id)!;
     const [title, type] = [m[1]!, m[2]];
-    const fixed = type !== undefined ? BY_TYPE.get(type) : undefined;
+    const fixed = type !== undefined && !this.deployment ? BY_TYPE.get(type) : undefined;
     const macro = fixed ?? (this.deployment ? 'Deployment_Node' : 'Boundary');
     this.lines.push(`${indent}${macro}(${args([this.id(c.id), title, ...(fixed === undefined ? [type] : [])])}) {`);
     for (const id of c.nodes) this.element(this.out.byId.get(id)!, `${indent}  `);
@@ -90,7 +90,12 @@ class C4Writer {
       colors?.label !== undefined ? `$textColor=${quoted(colors.label)}` : null,
       colors?.stroke !== undefined ? `$lineColor=${quoted(colors.stroke)}` : null,
     ].filter((s) => s !== null);
-    if (set.length > 0) this.styles.push(`  UpdateRelStyle(${this.id(e.from)}, ${this.id(e.to)}, ${set.join(', ')})`);
+    if (set.length === 0) return;
+    if (this.out.edges.find((d) => d.from === e.from && d.to === e.to) !== e) {
+      this.out.warnings.add('Mermaid C4 styles only the first relationship between two elements; colors of the others were dropped.');
+      return;
+    }
+    this.styles.push(`  UpdateRelStyle(${this.id(e.from)}, ${this.id(e.to)}, ${set.join(', ')})`);
   }
 }
 
@@ -107,6 +112,8 @@ export function writeC4(doc: DiagramDocument, opts?: WriteOptions): ExportResult
   for (const n of out.nodes) w.element(n, '  ');
   for (const c of out.clusters) w.boundary(c, '  ');
   for (const e of out.edges) w.rel(e);
+  dropEndLabels(out.edges, 'C4 diagrams', (m) => out.warnings.add(m));
+  dropEdgeColors(out.edges, 'C4 diagram', (m) => out.warnings.add(m), ['stroke', 'label']);
   w.lines.push(...w.styles);
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };
 }

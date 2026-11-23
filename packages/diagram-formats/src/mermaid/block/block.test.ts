@@ -173,3 +173,30 @@ describe('writing a Mermaid block diagram', () => {
     expect(warnings).toContain('Mermaid block diagram links have no styles; their colors were dropped.');
   });
 });
+
+/** `text` read, with node `from` renamed `to` in its nodes and edges. */
+const renamed = (text: string, from: string, to: string) => {
+  const p = page(text);
+  const id = (s: string) => (s === from ? to : s);
+  const data = { ...p.data, nodes: p.data.nodes.map((n) => ({ ...n, id: id(n.id) })), edges: p.data.edges.map((e) => ({ ...e, from: id(e.from), to: id(e.to) })) };
+  return { pages: [{ ...p, data }] };
+};
+
+describe('an id Mermaid reads as accessibility text', () => {
+  it('is renamed when written, so its line reads back as a statement of the diagram', () => {
+    for (const acc of ['accTitle', 'accDescr']) {
+      const back = page(writeBlockDiagram(renamed('block-beta\n  x{"d"}\n  b\n  x --> b', 'x', acc)).text);
+      expect(back.data.nodes).toHaveLength(2);
+      expect(back.data.edges).toHaveLength(1);
+    }
+  });
+});
+
+describe('a space before a block mentioned again', () => {
+  it('goes before the next new block, as Mermaid places it, on an items line as on a links line', () => {
+    for (const line of ['a b', 'a --> b']) {
+      const p = page(`block-beta\n  a\n  space\n  ${line}`);
+      expect(p.layout).toMatchObject({ options: { grid: { skips: { b: 1 } } } });
+    }
+  });
+});

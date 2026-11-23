@@ -52,6 +52,7 @@ class ArchReader {
       this.warnings.add('Mermaid {group} on a service in no group was dropped.');
       return { id: end.id, port: SIDE_PORTS[end.side] };
     }
+    this.warnings.add('Mermaid edge sides at a {group} end were dropped; an edge meets a group anywhere on its box.');
     return { id: group };
   }
 

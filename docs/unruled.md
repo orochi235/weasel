@@ -1350,7 +1350,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   that is not an object or whose `kind` it does not know.
 - Ruled 2026-11-11 (my call, property tests): Mermaid writes a title or name its kind holds on one line with each line
   break as a space, with a warning; a quoted string the kind reads entities in keeps the break as `#10;`. A journey step
-  whose name opens with `title` or `section` is dropped, with a warning, since Mermaid reads the line as that statement
+  whose name opens with `title` or `section` and a space is dropped, with a warning, since Mermaid reads the line as that statement
   and journey text has no escape; a step with no name is written as `(untitled)`, as a timeline period is. A packet
   field with an empty label reads back as the gap the writer spells the same way. DOT refuses subgraphs nested more
   than 1000 deep, so a document whose containers nest deeper writes DOT its own reader refuses. Containers that hold

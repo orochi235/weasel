@@ -78,8 +78,10 @@ class BlockReader {
           }
           const fresh = !this.nodes.has(item.id);
           this.block(item, members);
-          if (fresh && skip > 0) setOwn(this.grid.skips, item.id, skip);
-          skip = 0;
+          if (fresh && skip > 0) {
+            setOwn(this.grid.skips, item.id, skip);
+            skip = 0;
+          }
         }
       } else if (s.kind === 'links') {
         for (const end of s.ends) {

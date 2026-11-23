@@ -82,12 +82,33 @@ export function nodeColors(props: ReadonlyMap<string, string>, warnings: Warning
   return Object.keys(colors).length > 0 ? colors : undefined;
 }
 
-/** Whether `marker` draws a head, for a kind that draws every head as an arrow. `warn` hears, naming `kind`, of a head
- *  that is not one. */
 /** Warns, for a kind whose connectors meet no port, that `e`'s ports were dropped. */
 export function dropPorts(e: DataEdge, warn: (message: string) => void): void {
   if (e.fromPort !== undefined || e.toPort !== undefined) warn('Mermaid has no ports; connectors\' ports were dropped.');
 }
+
+/** Warns, for a kind (`'ER diagrams'`) whose connectors hold no labels at their ends, that those on `edges` were
+ *  dropped. */
+export function dropEndLabels(edges: readonly DataEdge[], kind: string, warn: (message: string) => void): void {
+  if (edges.some((e) => e.endLabels !== undefined)) warn(`Mermaid ${kind} have no labels at a connector's ends; they were dropped.`);
+}
+
+const EDGE_COLORS = { stroke: 'line colors', label: 'label colors', width: 'widths' } as const;
+
+/** Warns, for a kind (`'ER diagram'`) whose connectors hold no colors or widths but those `kept` names, that the
+ *  others on `edges` were dropped. */
+export function dropEdgeColors(
+  edges: readonly DataEdge[], kind: string, warn: (message: string) => void, kept: readonly (keyof typeof EDGE_COLORS)[] = [],
+): void {
+  const keys = (Object.keys(EDGE_COLORS) as (keyof typeof EDGE_COLORS)[]).filter((k) => !kept.includes(k) && edges.some((e) => e.colors?.[k] !== undefined));
+  if (keys.length === 0) return;
+  const words = keys.map((k) => EDGE_COLORS[k]);
+  const list = words.length < 3 ? words.join(' or ') : `${words.slice(0, -1).join(', ')}, or ${words.at(-1)!}`;
+  warn(`Mermaid ${kind} connectors hold no ${list}; they were dropped.`);
+}
+
+/** Whether `marker` draws a head, for a kind that draws every head as an arrow. `warn` hears, naming `kind`, of a head
+ *  that is not one. */
 
 export function arrowHead(marker: MarkerRef | null | undefined, kind: string, warn: (message: string) => void): boolean {
   if (marker === null || marker === undefined) return false;

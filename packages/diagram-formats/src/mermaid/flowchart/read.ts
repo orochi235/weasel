@@ -164,6 +164,7 @@ class MermaidReader {
         this.checkProps(s.props);
         this.styles.set(s.id, [...(this.styles.get(s.id) ?? []), ...s.props]);
       } else if (s.kind === 'linkStyle') {
+        if (s.curve !== undefined) this.warnings.add('Mermaid link curves (linkStyle … interpolate) were dropped.');
         this.checkProps(s.props);
         for (const i of s.indexes === 'default' ? ['default' as const] : s.indexes) {
           this.linkStyles.set(i, [...(this.linkStyles.get(i) ?? []), ...s.props]);

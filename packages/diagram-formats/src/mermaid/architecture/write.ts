@@ -2,8 +2,8 @@
 import type { DataEdge, DataNode } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { arrowHead } from '../common/styles';
-import { titleLines } from '../common/lines';
+import { arrowHead, dropEndLabels } from '../common/styles';
+import { ACC_WORDS, titleLines } from '../common/lines';
 import { mermaidEscaped, mermaidIds, oneLine } from '../common/text';
 import type { ArchSide } from './parse';
 import { ICON_OUTLINES, SIDE_PORTS } from './read';
@@ -25,7 +25,7 @@ class ArchWriter {
   readonly clusters = new Map<string, Cluster>();
 
   constructor(readonly out: GraphOut) {
-    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true });
+    this.ids = mermaidIds([...out.page.data.nodes.map((n) => n.id), ...out.clusterIds], { unicode: true, reserved: ACC_WORDS });
     const visit = (c: Cluster, parent: string | undefined) => {
       this.clusters.set(c.id, c);
       if (parent !== undefined) this.parent.set(c.id, parent);
@@ -104,8 +104,9 @@ export function writeArchitecture(doc: DiagramDocument, opts?: WriteOptions): Ex
   for (const c of out.clusters) w.group(c);
   for (const n of out.page.data.nodes) w.node(n);
   for (const e of out.edges) w.edge(e);
+  dropEndLabels(out.edges, 'architecture diagrams', (m) => out.warnings.add(m));
   const { nodes, containers = [] } = out.page.data;
-  if ([...nodes, ...containers].some((n) => n.colors !== undefined) || out.edges.some((e) => e.colors?.stroke !== undefined)) {
+  if ([...nodes, ...containers].some((n) => n.colors !== undefined) || out.edges.some((e) => e.colors?.stroke !== undefined || e.colors?.label !== undefined || e.colors?.width !== undefined)) {
     out.warnings.add('Mermaid architecture diagrams have no styles; colors were dropped.');
   }
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };
