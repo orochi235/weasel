@@ -7,7 +7,7 @@
 import { biquadCoefficients } from './biquad';
 import { envelopeLevel, resolveEnvelope, type Envelope } from './envelope';
 import { lerp } from './lerp';
-import { checkFinite, checkRate } from './param';
+import { checkFinite, checkGain, checkRate } from './param';
 import { sineShape, waveShape } from './oscillator';
 import { NOISE_SECONDS, checkNoise, isInharmonic, noiseSamples, resolveNote } from './synthVoice';
 import type { NoiseColor, NoiseOptions, NoteOptions, VoiceFilter } from './types';
@@ -84,6 +84,7 @@ function filterStage(
  *  envelope, the gate, and the end at the close of the release. */
 function createKernel(patch: Shaping, sampleRate: number, source: Source): VoiceKernel {
   const env = resolveEnvelope(patch.envelope);
+  if (patch.gain !== undefined) checkGain('voice', patch.gain);
   const gain = patch.gain ?? 1;
   const filter = patch.filter ? filterStage(patch.filter, sampleRate) : null;
   const msPerSample = 1000 / sampleRate;
