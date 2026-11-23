@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { writeParam } from './param';
+import { initParam, writeParam } from './param';
 import { createChainPool } from './voiceChains';
 
 // As the specification has it: `setValueAtTime` moves `.value` only at the next
@@ -43,5 +43,14 @@ describe('writeParam', () => {
     const out = createChainPool(fake as never, 4).take({} as never, 0, 0);
     out.level(1, 2000);
     expect(gains[0].ramps).toEqual([{ from: 0, to: 1 }]);
+  });
+
+  it('refuses a non-finite value with its own RangeError before an AudioParam sees it', () => {
+    const p = laggingParam(1);
+    Object.defineProperty(p, 'value', {
+      get: () => 1,
+      set: (v: number) => { if (!Number.isFinite(v)) throw new TypeError('not a finite float'); },
+    });
+    expect(() => initParam(ctx, p as never, Number.NaN)).toThrow(RangeError);
   });
 });
