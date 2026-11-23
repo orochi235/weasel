@@ -119,11 +119,11 @@ const isHeaderRow = (data: Data, owner: ThemedNode): boolean =>
   data.bodyRow === 0 && traitOf(owner.data)?.header !== undefined;
 
 /** The color a box's text row takes, or `undefined` to leave it: a header row's is drawn against
- *  its band, in the box's fill unless the theme names one, and is left once the author set either. */
+ *  its band, in the box's fill unless the theme names one; a `text` color never reaches it. */
 function rowColor(data: Data, owner: ThemedNode, look: Look): string | undefined {
   if (!isHeaderRow(data, owner)) return look.own.has('text') ? undefined : look.style.text;
   if (look.style.headerText !== undefined) return look.style.headerText;
-  return look.own.has('fill') || look.own.has('text') ? undefined : look.style.fill;
+  return look.own.has('fill') ? undefined : look.style.fill;
 }
 
 /** `data`'s header band in `look`'s, `null` to drop a band color so the band follows the stroke,
