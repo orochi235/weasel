@@ -138,6 +138,14 @@ export const branchChanges = (root, env, { triggers, scoped = [] }) => {
   return { changed, reshaped: Array.isArray(marker.reshaped) ? marker.reshaped : changed, seed };
 };
 
+/** Whether this run's marker says the gate's checks already ran on its commit (`test:fleet --no-checks`). */
+export const checksSkipped = (root, env) => {
+  const at = join(root, MARKER);
+  if (!existsSync(at) || !env[COMMIT_ENV]) return false;
+  const marker = JSON.parse(readFileSync(at, 'utf8'));
+  return marker.commit === env[COMMIT_ENV] && marker.checks === false;
+};
+
 /** The branch a fleet run tests, when the marker is this run's and names one other than main. */
 export const fleetBranch = (root, env) => {
   const at = join(root, MARKER);

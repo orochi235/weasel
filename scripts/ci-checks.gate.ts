@@ -12,6 +12,8 @@ declare module 'vitest' {
   export interface ProvidedContext {
     /** What a branch run changes, from `vitest.config.ts`; null when the run tests everything. */
     gateChanges: BranchChanges | null;
+    /** Whether the run's commit had these checks run on it already (`test:fleet --no-checks`). */
+    gateChecksRan: boolean;
   }
 }
 
@@ -29,6 +31,7 @@ const output = (error: unknown) => {
 describe('the checks ci.yml runs as steps', () => {
   const checks = sourceChecks(readCi(readFileSync(CI_YML, 'utf8')).steps);
   const changes = inject('gateChanges');
+  const ran = inject('gateChecksRan');
 
   it('reads them from ci.yml', () => {
     const names = checks.map(([name]) => name);
@@ -41,7 +44,7 @@ describe('the checks ci.yml runs as steps', () => {
   // `maxConcurrency` start at once, in this order, so the longest go first: ci.yml's order had
   // typecheck, the longest by far, starting about 20 s late (gate 117 s, typecheck 97 s, 2026-10-29).
   for (const args of longestFirst(checks)) {
-    const skip = skipReason(args[0], changes);
+    const skip = ran ? 'it ran on this commit before the fleet run' : skipReason(args[0], changes);
     if (skip) console.log(`gate: skipped npm run ${args[0]}: ${skip}`);
     // Concurrent when skipped too: vitest runs each unbroken run of concurrent tests as one batch, so
     // a plain skip between two checks makes the second wait for the first to end.

@@ -21,7 +21,7 @@ import { browserCommands } from './scripts/vitest-browser-commands.ts';
 import { browserDeps } from './scripts/vitest-browser-deps.ts';
 import { browserPrebundle } from './scripts/vitest-browser-prebundle.ts';
 import { keepErrorsHome } from './scripts/vitest-browser-overlay.ts';
-import { branchChanges, selection } from './scripts/lib/fleet-tree.mjs';
+import { branchChanges, checksSkipped, selection } from './scripts/lib/fleet-tree.mjs';
 import { SCOPED, TREE_READERS, TRIGGERS } from './scripts/lib/fleet-triggers.mjs';
 import { RETRY_TIMEOUTS, timeoutRetries } from './scripts/vitest-timeout-retries.ts';
 import { loadReruns } from './scripts/vitest-load-reruns.ts';
@@ -105,6 +105,7 @@ const related = selection(import.meta.dirname, process.env, {
   scoped: SCOPED,
 });
 const changes = branchChanges(import.meta.dirname, process.env, { triggers: TRIGGERS, scoped: SCOPED });
+const checksRan = checksSkipped(import.meta.dirname, process.env);
 
 export default defineConfig({
   plugins: [timeoutRetries(), loadReruns(), devWatch()],
@@ -302,7 +303,7 @@ export default defineConfig({
           // past its timeout; cached, typecheck is the only heavy check left.
           maxConcurrency: 3,
           include: ['scripts/**/*.gate.ts'],
-          provide: { gateChanges: changes ?? null },
+          provide: { gateChanges: changes ?? null, gateChecksRan: checksRan },
         },
       },
       // Tests that need a real browser — layout, real IndexedDB, CSS that jsdom
