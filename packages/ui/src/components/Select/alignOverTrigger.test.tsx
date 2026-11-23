@@ -117,4 +117,18 @@ describe('AlignOverTrigger', () => {
     expect(onMeasure).toHaveBeenLastCalledWith(BELOW);
     expect(getByTestId('popover').dataset.align).toBeUndefined();
   });
+
+  it('matches the centers of the selected row and a centered value', () => {
+    const onMeasure = vi.fn();
+    const before = () => {
+      lay(document.body, 1);
+      const trigger = document.querySelector<HTMLElement>('[data-testid=trigger]')!;
+      trigger.style.setProperty('--wzl-select-align', 'center');
+      rects.set(document.querySelector(`.${s.optionLabel}`)!, { left: 104, top: 130, width: 20, height: 6 });
+    };
+    const { getByTestId } = render(<Harness selected onMeasure={onMeasure} before={before} />);
+    // The value's center is at 125 and the label's 14 into the list, so the list's left goes to 111.
+    expect(onMeasure).toHaveBeenCalledWith({ offset: -28, crossOffset: 11 });
+    expect(getByTestId('popover').dataset.align).toBe('center');
+  });
 });

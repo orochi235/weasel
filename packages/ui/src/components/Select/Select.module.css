@@ -153,6 +153,10 @@
   justify-content: flex-end;
 }
 
+.popover[data-align='center'] .option {
+  justify-content: center;
+}
+
 .check {
   width: 10px;
   height: 10px;

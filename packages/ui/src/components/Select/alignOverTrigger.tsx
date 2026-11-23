@@ -81,8 +81,9 @@ export function AlignOverTrigger({
     const style = getComputedStyle(trigger);
     const align = style.getPropertyValue('--wzl-select-align').trim();
     const rtlText = style.direction === 'rtl';
+    const centered = align === 'center';
     const toRight = align === 'right' || (align === 'end' && !rtlText) || ((align === 'start' || align === '') && rtlText);
-    popover.dataset.align = toRight !== rtlText ? 'end' : 'start';
+    popover.dataset.align = centered ? 'center' : toRight !== rtlText ? 'end' : 'start';
 
     // Stated against each element's own box rather than measured as a gap to
     // close: React Aria repositions after this effect, so what is on screen
@@ -108,7 +109,9 @@ export function AlignOverTrigger({
     const highest = view.top + EDGE * scaleY - seat.bottom;
     const next = {
       offset: Math.max(highest, Math.min(over, lowest)) / scaleY,
-      crossOffset: ((toRight ? shown.right - (row.right - box.left) : shown.left - (row.left - box.left))
+      crossOffset: ((centered
+        ? shown.left + shown.width / 2 - (row.left + row.width / 2 - box.left)
+        : toRight ? shown.right - (row.right - box.left) : shown.left - (row.left - box.left))
         - (direction === 'rtl' ? seat.right - box.width : seat.left)) / scaleX,
     };
     if (Math.abs(next.offset - applied.offset) < 0.5 && Math.abs(next.crossOffset - applied.crossOffset) < 0.5)
