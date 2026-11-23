@@ -3969,3 +3969,6 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): a group or section's `enableIf` that reads a field of an object leaf directly in it
   (`feature.opts.on`) spares that leaf and the way down to the field, and nothing else in it: the object's other
   fields stay disabled with the group. Sparing the whole object, every field included, was the alternative.
+- 2026-11-23 (the fixer's call): an alias with a name of its own drops the target's access letter along with its
+  short forms, and takes only an `access` it gives itself. Keeping the target's letter, which its own name may not
+  hold, was the alternative.
