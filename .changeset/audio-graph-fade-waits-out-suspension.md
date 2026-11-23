@@ -2,6 +2,6 @@
 '@weasel-js/audio': patch
 ---
 
-An audio graph's crossfade or output fade that a context suspension interrupts finishes after the context resumes rather than being cut, so a `replace` or `stop` no longer clicks on resume.
+An audio graph's crossfades and output fades no longer click when a suspended context resumes mid-fade. The fade finishes after the resume rather than being cut.
 
 <!-- entry: fix -->
