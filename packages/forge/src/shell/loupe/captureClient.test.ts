@@ -30,3 +30,9 @@ it('reports itself available again once a capture after a 503 succeeds', async (
   expect(client.status()).toBe(true);
   vi.unstubAllGlobals();
 });
+
+it('rejects a capture refused as busy and still reports itself available', async () => {
+  const client = createCaptureClient('/', answering(429, JSON.stringify({ error: 'capture queue is full' })));
+  await expect(client.take(payload('s'))).rejects.toThrow('capture queue is full');
+  expect(client.status()).not.toBe('capture queue is full');
+});
