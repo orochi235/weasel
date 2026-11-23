@@ -6,7 +6,7 @@ import { useActionStates } from '@weasel-js/ui/components/ActionBar';
 import { ContextMenuHost } from '@weasel-js/ui/components/Menu';
 import type { LoupeEvents, LoupeSettings } from '@weasel-js/hud/react';
 import { CommandBar } from '../CommandBar';
-import { LOUPE_COPY_ACTION, LOUPE_TOGGLE_ACTION, LoupeProvider } from '../LoupeProvider';
+import { LOUPE_COPY_ACTION, LOUPE_TOGGLE_ACTION, LoupeProvider, useLoupeBinding } from '../LoupeProvider';
 import { drawPrefs } from '../prefs';
 import { RightSidebar } from '../RightSidebar';
 import { StripDock } from './StripSurfaces';
@@ -65,6 +65,12 @@ function ActionStates() {
   const items = all.filter((a) => a.id === LOUPE_TOGGLE_ACTION || a.id === LOUPE_COPY_ACTION).flatMap(actionItems);
   const states = useActionStates(items);
   return <output data-testid="states">{items.map((item, i) => `${item.action.id}:${states[i]!.active}/${states[i]!.disabled}`).join(' ')}</output>;
+}
+
+/** Hands the test the binding the loupe asset's controls write through. */
+function Binding({ into }: { into: { onChange?: (path: string, value: unknown) => void } }) {
+  into.onChange = useLoupeBinding().onChange;
+  return null;
 }
 
 const strip = () => within(screen.getByTestId('strip'));
@@ -156,6 +162,15 @@ describe('the loupe asset', () => {
     click(loupeBar().getByRole('switch', { name: 'Loupe' }));
     act(() => { lens.events!.onColorChange('#336699'); });
     expect(states()).toBe(`${LOUPE_COPY_ACTION}:undefined/false ${LOUPE_TOGGLE_ACTION}:true/false`);
+  });
+
+  it('stores only a mode the loupe has', () => {
+    const binding: { onChange?: (path: string, value: unknown) => void } = {};
+    renderWithIcons(<App><Binding into={binding} /></App>);
+    for (const bad of [undefined, '', 'raster']) act(() => { binding.onChange!('mode', bad); });
+    expect(drawPrefs().isSet('loupe.mode')).toBe(false);
+    act(() => { binding.onChange!('mode', 'pixel'); });
+    expect(drawPrefs().get('loupe.mode')).toBe('pixel');
   });
 
   it('turns its switch off when the lens is closed from its own chrome', () => {

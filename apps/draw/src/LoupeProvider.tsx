@@ -159,6 +159,8 @@ function useThemeUiFont(): string {
 
 const NO_LOUPE: SchemaBinding = {};
 
+const isLoupeMode = (value: unknown): value is LoupeMode => LOUPE_MODE.options.some((o) => o.value === value);
+
 /** The loupe asset's leaves bound to the loupe in scope: `on`, `mode`, `factor`, and `color`. Unbound outside a
  *  {@link LoupeProvider}. */
 export function useLoupeBinding(): SchemaBinding {
@@ -174,7 +176,7 @@ export function useLoupeBinding(): SchemaBinding {
       },
       onChange: (path, value) => {
         if (path === 'on') state.setVisible(value === true);
-        else if (path === 'mode') drawPrefs().set('loupe.mode', value as LoupeMode);
+        else if (path === 'mode' && isLoupeMode(value)) drawPrefs().set('loupe.mode', value);
         else if (path === 'factor' && typeof value === 'number') drawPrefs().set('loupe.factor', value);
       },
     };
