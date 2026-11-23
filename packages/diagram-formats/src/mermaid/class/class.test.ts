@@ -165,3 +165,19 @@ describe('writing a Mermaid class diagram', () => {
     expect(warnings).toContain('Mermaid class relations join classes; connectors to namespaces were dropped.');
   });
 });
+
+/** A one-class page whose box has `rows`. */
+const boxed = (rows: DataNode['rows']) => {
+  const p = page('classDiagram\n  class Foo');
+  return { pages: [{ ...p, data: { ...p.data, nodes: [{ ...p.data.nodes[0]!, rows }] } }] };
+};
+
+describe('writing a class box Mermaid would read back otherwise', () => {
+  it('quotes a generic name whose tildes would not read back as its angle brackets', () => {
+    for (const name of ['Foo<List<?>>', 'Foo<Map<Ä>>', 'Foo<List<[int]>>', 'Foo<List<K>V>']) {
+      const back = readClassDiagram(writeClassDiagram(boxed([{ kind: 'label', text: name }])).text);
+      expect(classParts(onlyPage(back.document).data.nodes[0]!).name).toBe(name);
+    }
+  });
+
+});

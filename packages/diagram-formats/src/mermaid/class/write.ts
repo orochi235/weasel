@@ -31,14 +31,15 @@ export function classParts(node: DataNode): { annotations: string[]; name: strin
   return { annotations, name: names[0] ?? node.id, attributes, methods };
 }
 
-/** Whether every `<` in `text` closes, in order, and nothing else does: a generic Mermaid's tildes can nest. */
+/** Whether every `<` in `text` closes, in order, and nothing else does, and every tilde written for one reads back as
+ *  it: the reader opens at a `~` before an ASCII word character and closes at any other. */
 function balanced(text: string): boolean {
   let depth = 0;
   for (const c of text) {
     if (c === '<') depth += 1;
     else if (c === '>' && --depth < 0) return false;
   }
-  return depth === 0 && !/~|<>/.test(text);
+  return depth === 0 && !/[~[{"]|<(?!\w)|>(?=\w)/.test(text);
 }
 
 /** The ids the reader takes for a class and a namespace, less any holding `--`, which reads as a line. */
