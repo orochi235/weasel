@@ -14,7 +14,7 @@ function mount(pending: RunStylePatch = {}) {
     lastRange: () => null,
     onWritten: vi.fn(),
     onEdited: vi.fn(),
-    history: { before: vi.fn(), after: vi.fn(), seal: vi.fn(), undo: vi.fn(), redo: vi.fn() },
+    history: { before: vi.fn(), after: vi.fn(), seal: vi.fn(), moved: vi.fn(), undo: vi.fn(), redo: vi.fn() },
   };
   return { overlay, host, ...typingHandlers(overlay, host) };
 }

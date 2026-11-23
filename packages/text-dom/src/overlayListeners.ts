@@ -6,6 +6,7 @@ import { historyKey } from '@weasel-js/gestures';
 import { editEnd, imeKey } from '@weasel-js/ui-input';
 import type { OverlayHistory } from './overlayHistory';
 import type { typingHandlers } from './overlayTyping';
+import { readSelectionOffsets } from './overlaySelection';
 import { toggleForKey } from './styleShortcuts';
 import type { StyleToggle, UseTextEditOptions } from './textEditTypes';
 
@@ -14,7 +15,7 @@ export interface OverlayListenerHost {
   readonly optsRef: { readonly current: Pick<UseTextEditOptions, 'escape' | 'isEditorChrome'> };
   commit(): void;
   cancel(): void;
-  readonly history: Pick<OverlayHistory, 'undo' | 'redo'>;
+  readonly history: Pick<OverlayHistory, 'undo' | 'redo' | 'moved'>;
   toggleStyle(toggle: StyleToggle): void;
   readonly typing: ReturnType<typeof typingHandlers>;
   syncSelection(): void;
@@ -66,6 +67,11 @@ export function listenToOverlay(
     commit();
   };
 
+  const onSelectionChange = () => {
+    history.moved(readSelectionOffsets(overlay));
+    syncSelection();
+  };
+
   const listeners = Object.entries({
     keydown: onKeyDown, blur: onBlur, input: typing.onInput, beforeinput: typing.onBeforeInput,
     compositionstart: typing.onCompositionStart, compositionend: typing.onCompositionEnd,
@@ -73,12 +79,12 @@ export function listenToOverlay(
   for (const [type, fn] of listeners) overlay.addEventListener(type, fn);
   document.addEventListener('pointerdown', onPointerDownOutside, true);
   // `selectionchange` only exists on the document.
-  document.addEventListener('selectionchange', syncSelection);
+  document.addEventListener('selectionchange', onSelectionChange);
 
   return () => {
     for (const [type, fn] of listeners) overlay.removeEventListener(type, fn);
     document.removeEventListener('pointerdown', onPointerDownOutside, true);
-    document.removeEventListener('selectionchange', syncSelection);
+    document.removeEventListener('selectionchange', onSelectionChange);
   };
 }
 
