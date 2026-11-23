@@ -1,0 +1,8 @@
+{
+ "pairs": [],
+ "a": [
+  "A command-row asset drawn as a bar ignores its stored item order, while the same asset as a menu or panel honors it",
+  "The View menu's \"screen order\" is fixed by each asset's default surface, not the one it is on"
+ ],
+ "b": []
+}

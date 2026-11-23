@@ -1,0 +1,82 @@
+{
+ "id": "hud.loupe",
+ "commit": "94bb15eaa1e3568dfb48ece30faf4f05fa5cef82",
+ "date": "2026-11-22",
+ "files": [
+  "packages/hud/src/loupe/aimInput.ts",
+  "packages/hud/src/loupe/contentWatch.ts",
+  "packages/hud/src/loupe/createLoupe.ts",
+  "packages/hud/src/loupe/halo.ts",
+  "packages/hud/src/loupe/lensControls.ts",
+  "packages/hud/src/loupe/lensTone.ts",
+  "packages/hud/src/loupe/loupeColors.ts",
+  "packages/hud/src/loupe/loupeRoutes.ts",
+  "packages/hud/src/loupe/modeSwitch.ts",
+  "packages/hud/src/loupe/pinDraw.ts",
+  "packages/hud/src/loupe/pinHandle.ts",
+  "packages/hud/src/loupe/pixelReadback.ts",
+  "packages/hud/src/loupe/rimTracks.ts",
+  "packages/hud/src/loupe/textAlong.ts",
+  "packages/hud/src/loupe/vectorLens.ts",
+  "packages/hud/src/loupe/zoomTrack.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 2,
+ "distinct": 7,
+ "chapman": 9,
+ "unfound": 2,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "newCode": {
+  "since": 49,
+  "changedFiles": 11,
+  "findings": 8
+ },
+ "previous": {
+  "round": 49,
+  "chapman": 2.4161290322580644,
+  "unfound": 0.6096774193548388
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 483,
+   "total": 483
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.5,
+   "B": 8.2,
+   "match": 0.1,
+   "fix": 21
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1067265,
+  "costUsd": 3.2
+ },
+ "fixCommits": [
+  "25ffa5a7e5008e632041aa99eaf7ae4b86fc5c70",
+  "6b19c04c72642c09eeb5aa98d68542dbefcf671b",
+  "3ce0d8b21c36dfd72ad6c85c3bef8c754a04b435",
+  "cb68c26577cb5ef5bb87ee5c543c8d4257e1a192",
+  "4b62cbe12551009e87cdd46e1f33af944322ca2b",
+  "5e815147670e2d65dd7e15fab958547cd72b39f2",
+  "3414979f179636bfc0b19da1b59d8e5fd157ed74",
+  "3cf147d906ac4d7dbb85310239e342be91d933fc"
+ ]
+}

@@ -1,0 +1,16 @@
+apps/draw/src/surfaces/CommandSurfaces.tsx
+apps/draw/src/surfaces/SchemaSurfaces.module.css
+apps/draw/src/surfaces/SchemaSurfaces.tsx
+apps/draw/src/surfaces/StripSurfaces.tsx
+apps/draw/src/surfaces/appLeaves.tsx
+apps/draw/src/surfaces/assets.tsx
+apps/draw/src/surfaces/chrome.tsx
+apps/draw/src/surfaces/hostContext.ts
+apps/draw/src/surfaces/panelAssets.tsx
+apps/draw/src/surfaces/pathCommandAssets.module.css
+apps/draw/src/surfaces/pathCommandAssets.tsx
+apps/draw/src/surfaces/prefsMigration.ts
+apps/draw/src/surfaces/surfaceState.ts
+apps/draw/src/surfaces/surfaceSwitch.tsx
+apps/draw/src/surfaces/types.ts
+apps/draw/src/surfaces/useEditorSurfaceHost.ts

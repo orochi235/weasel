@@ -1,0 +1,84 @@
+{
+ "id": "core.core.viewport",
+ "commit": "94bb15eaa1e3568dfb48ece30faf4f05fa5cef82",
+ "date": "2026-11-22",
+ "files": [
+  "packages/core/src/core/viewport/checkInertia.ts",
+  "packages/core/src/core/viewport/clampView.ts",
+  "packages/core/src/core/viewport/clientToWorld.ts",
+  "packages/core/src/core/viewport/createVelocityTracker.ts",
+  "packages/core/src/core/viewport/fitSize.ts",
+  "packages/core/src/core/viewport/fitViewToBounds.ts",
+  "packages/core/src/core/viewport/homeView.ts",
+  "packages/core/src/core/viewport/interpolateView.ts",
+  "packages/core/src/core/viewport/parallax.ts",
+  "packages/core/src/core/viewport/sceneNodeClientRect.ts",
+  "packages/core/src/core/viewport/screenSlop.ts",
+  "packages/core/src/core/viewport/useCanvasSize.ts",
+  "packages/core/src/core/viewport/useDecayLoop.ts",
+  "packages/core/src/core/viewport/useFitOnce.ts",
+  "packages/core/src/core/viewport/useNodeOverlayFrame.ts",
+  "packages/core/src/core/viewport/useVelocityTracker.ts",
+  "packages/core/src/core/viewport/useViewAnimation.ts",
+  "packages/core/src/core/viewport/view.ts",
+  "packages/core/src/core/viewport/viewTransform.ts",
+  "packages/core/src/core/viewport/viewportWorldRect.ts",
+  "packages/core/src/core/viewport/wheelHandler.ts",
+  "packages/core/src/core/viewport/zoomAt.ts",
+  "packages/core/src/core/viewport/zoomBounds.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 2,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 23,
+  "B": 23
+ },
+ "newCode": {
+  "since": 41,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 41,
+  "chapman": 13,
+  "unfound": 4
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2458,
+   "total": 2458
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.3,
+   "B": 7.8,
+   "match": 0.1,
+   "fix": 24.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 394342,
+  "costUsd": 2.18
+ },
+ "fixCommits": [
+  "69ebdf40202307a88df76b997738423c56a55e16",
+  "666d2378fb8e5e18615c5565ed4c331555ee980f",
+  "52c02bcbb201f262c9cf9497b0903b8d29fddd35"
+ ]
+}

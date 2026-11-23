@@ -1,0 +1,16 @@
+packages/hud/src/loupe/aimInput.ts
+packages/hud/src/loupe/contentWatch.ts
+packages/hud/src/loupe/createLoupe.ts
+packages/hud/src/loupe/halo.ts
+packages/hud/src/loupe/lensControls.ts
+packages/hud/src/loupe/lensTone.ts
+packages/hud/src/loupe/loupeColors.ts
+packages/hud/src/loupe/loupeRoutes.ts
+packages/hud/src/loupe/modeSwitch.ts
+packages/hud/src/loupe/pinDraw.ts
+packages/hud/src/loupe/pinHandle.ts
+packages/hud/src/loupe/pixelReadback.ts
+packages/hud/src/loupe/rimTracks.ts
+packages/hud/src/loupe/textAlong.ts
+packages/hud/src/loupe/vectorLens.ts
+packages/hud/src/loupe/zoomTrack.ts

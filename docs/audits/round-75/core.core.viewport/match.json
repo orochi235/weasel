@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "animateToBounds into a viewport with no area returns true but never calls onDone",
+  "useDecayLoop coasts forever on a NaN or infinite velocity",
+  "useNodeOverlayFrame's fallback mapping is shared across node ids, so a stale toScreen maps through another node"
+ ],
+ "b": [
+  "useDecayLoop never ends a coast started with a non-finite velocity",
+  "animateToBounds returns true but never calls onDone when the viewport has no area"
+ ]
+}

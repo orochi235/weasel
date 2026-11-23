@@ -1,0 +1,76 @@
+{
+ "id": "diagram.theme",
+ "commit": "94bb15eaa1e3568dfb48ece30faf4f05fa5cef82",
+ "date": "2026-11-22",
+ "files": [
+  "packages/diagram/src/theme/applyTheme.ts",
+  "packages/diagram/src/theme/fromTokens.ts",
+  "packages/diagram/src/theme/resolve.ts",
+  "packages/diagram/src/theme/styleField.ts",
+  "packages/diagram/src/theme/themeEdit.ts",
+  "packages/diagram/src/theme/themeFile.ts",
+  "packages/diagram/src/theme/themeFixture.ts",
+  "packages/diagram/src/theme/themeWrites.ts",
+  "packages/diagram/src/theme/themes.ts",
+  "packages/diagram/src/theme/types.ts"
+ ],
+ "a": 6,
+ "b": 7,
+ "m": 6,
+ "distinct": 7,
+ "chapman": 7,
+ "unfound": 0,
+ "read": {
+  "A": 10,
+  "B": 10
+ },
+ "newCode": {
+  "since": 64,
+  "changedFiles": 1,
+  "findings": 6
+ },
+ "previous": {
+  "round": 64,
+  "chapman": 11,
+  "unfound": 4
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 365,
+   "total": 365
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.1,
+   "B": 8.3,
+   "match": 0.3,
+   "fix": 12
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1079276,
+  "costUsd": 3.17
+ },
+ "fixCommits": [
+  "0043b79f706b8d019080c20faec7b6b17bc2ea2e",
+  "0a7f73f8f457e5802aecb02899a8eefcf5aaf880",
+  "cb4e07c88cbdce834f899a756881da78796aae15",
+  "5db31d54b0ac9cfc1512f85c0f2f732f25bd5d5d",
+  "6e43e916cc1aa533c927b408118e1ea40fbe8834",
+  "5c8964587b1f06a2378d40f8cff078f1ef9fd6a7",
+  "7bcc16cd45528e702a37551398ce62bb5930600f",
+  "795891038ae80ff77a8c5a4182c5391c4962d54f"
+ ]
+}

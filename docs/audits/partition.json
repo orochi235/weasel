@@ -3947,6 +3947,8 @@
    "packages/hud/src/loupe/loupeColors.ts",
    "packages/hud/src/loupe/loupeRoutes.ts",
    "packages/hud/src/loupe/modeSwitch.ts",
+   "packages/hud/src/loupe/pinDraw.ts",
+   "packages/hud/src/loupe/pinHandle.ts",
    "packages/hud/src/loupe/pixelReadback.ts",
    "packages/hud/src/loupe/rimTracks.ts",
    "packages/hud/src/loupe/textAlong.ts",
@@ -4664,6 +4666,7 @@
   "files": [
    "packages/loupe/src/actionParamSchema.ts",
    "packages/loupe/src/actions.ts",
+   "packages/loupe/src/aim.ts",
    "packages/loupe/src/canvasSource.ts",
    "packages/loupe/src/eyedropper.ts",
    "packages/loupe/src/geometry.ts",

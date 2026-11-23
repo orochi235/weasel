@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A long-press (or any other unhandled event) during a pin press drops the press without finishing or undoing it",
+  "The ring controls stay up after the pointer leaves the canvas",
+  "Canceling a pin drag restores the old pin at a screen point, not its world point",
+  "The docked pin never draws pressed while a press is held on it",
+  "A failed readback after dispose still calls back into the disposed loupe"
+ ],
+ "b": [
+  "A lens's ring controls stay up after the pointer leaves the canvas",
+  "Dropping the pin on a rect lens's ring pins the aim there instead of taking the pin back",
+  "Canceling a pin drag restores a screen point, not the world point the pin held",
+  "The zoom keeps a canceled drag's factor, and a cancel with coordinates leaves `dragging` set"
+ ]
+}

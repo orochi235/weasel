@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Architecture reader hangs on a group cycle that does not pass through the group being checked",
+  "C4 and architecture writers drop an edge's dash without a warning",
+  "Block writer silently drops or clamps link widths other than 3"
+ ],
+ "b": [
+  "readArchitecture hangs on a group cycle that does not pass through the first group checked",
+  "The class diagram reader emits a node and a container with the same id when a namespace and a class share a name"
+ ]
+}

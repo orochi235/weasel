@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "The spline editor's \"cardinal (s = 0)\" ray label runs past the view box and is clipped",
+  "The Compose \"Badge JSX\" textarea keeps showing the snippet from the last Copy after the badge changes"
+ ],
+ "b": [
+  "Scrolling over a spline anchor writes one undo step, and one fixed ±0.1 weight change, per wheel event",
+  "The JSX snippet textarea keeps showing the old snippet after the badge changes"
+ ]
+}

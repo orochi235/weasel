@@ -1,0 +1,45 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   1
+  ],
+  [
+   3,
+   3
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   5,
+   6
+  ]
+ ],
+ "a": [
+  "A theme with no `header` band leaves the previous theme's `headerFill` on a header body",
+  "A text color set by hand freezes a header row's text, which that color never reaches",
+  "After a theme with `headerText`, an author's own fill never comes back to the header text",
+  "Theme edits can produce a theme that `diagramThemeFrom` then rejects, so the document drops back to `night`",
+  "`setDiagramFontSize` writes any number, including 0, negatives and NaN",
+  "`setDiagramColor('stroke')` adds a stroke to a shape drawn with none"
+ ],
+ "b": [
+  "Setting a header box's text color freezes its header row at the current theme's fill",
+  "A fill set under a theme with `headerText` leaves the header row stuck at that theme's headerText",
+  "Switching to a theme without `header` leaves the previous theme's header band color",
+  "setThemeValue writes any value at any path, so an edited theme can be applied but not read back",
+  "diagramThemeFrom silently falls back for an object without `roles`",
+  "setDiagramFontSize accepts sizes a theme step would clamp",
+  "setDiagramColor('stroke') on a shape with no stroke creates a width-less stroke"
+ ]
+}

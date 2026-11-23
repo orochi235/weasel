@@ -1,0 +1,89 @@
+{
+ "id": "apps.ui-lab",
+ "commit": "94bb15eaa1e3568dfb48ece30faf4f05fa5cef82",
+ "date": "2026-11-22",
+ "files": [
+  "apps/ui-lab/src/App.tsx",
+  "apps/ui-lab/src/app.css",
+  "apps/ui-lab/src/badge/baseParams.ts",
+  "apps/ui-lab/src/badge/compose/Compose.module.css",
+  "apps/ui-lab/src/badge/compose/ComposeInstrument.tsx",
+  "apps/ui-lab/src/badge/compose/EffectsRow.tsx",
+  "apps/ui-lab/src/badge/compose/OctantSplineEditor.module.css",
+  "apps/ui-lab/src/badge/compose/OctantSplineEditor.tsx",
+  "apps/ui-lab/src/badge/compose/PresetsPanel.tsx",
+  "apps/ui-lab/src/badge/compose/SplineRow.tsx",
+  "apps/ui-lab/src/badge/compose/composeConfig.ts",
+  "apps/ui-lab/src/badge/compose/presets.ts",
+  "apps/ui-lab/src/badge/compose/snippet.ts",
+  "apps/ui-lab/src/badge/compose/splineActions.ts",
+  "apps/ui-lab/src/badge/compose/splineAnchors.ts",
+  "apps/ui-lab/src/badge/compose/splineGeometry.ts",
+  "apps/ui-lab/src/badge/effectParams.ts",
+  "apps/ui-lab/src/badge/effects.ts",
+  "apps/ui-lab/src/badge/octants/Octants.module.css",
+  "apps/ui-lab/src/badge/octants/OctantsInstrument.tsx",
+  "apps/ui-lab/src/badge/params.ts",
+  "apps/ui-lab/src/badge/shapeParams.ts",
+  "apps/ui-lab/src/badge/shapes/Shapes.module.css",
+  "apps/ui-lab/src/badge/shapes/ShapesInstrument.tsx",
+  "apps/ui-lab/src/badge/shapes/shapesConfig.ts",
+  "apps/ui-lab/src/labTestSetup.ts",
+  "apps/ui-lab/src/main.tsx",
+  "apps/ui-lab/vite.config.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "newCode": {
+  "since": 36,
+  "changedFiles": 3,
+  "findings": 0
+ },
+ "previous": {
+  "round": 36,
+  "chapman": 11.8,
+  "unfound": 1.8
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 10,
+   "total": 10
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.3,
+   "B": 8.6,
+   "match": 0.1,
+   "fix": 9.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 923690,
+  "costUsd": 2.79
+ },
+ "fixCommits": [
+  "4113b319f0fdf41cbff3f30a8adb8a7da7dc0621",
+  "d8fe9530f41c5ef233ba43205412e69796a3073c",
+  "9ef3dbb2df83cfa581d8507e1d9c8383a9192166"
+ ]
+}

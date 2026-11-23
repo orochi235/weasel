@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A table cell whose text sits in a block loses its tab and lands on a line of its own",
+  "A window blur commits and closes the edit",
+  "Moving an open edit to another container drops its undo history and its armed style",
+  "Undo back to the opened state of a text ending in a break still writes a commit"
+ ],
+ "b": [
+  "A pasted table cell whose content sits in a block breaks the row into lines instead of tabs",
+  "An edit open while its container is null loses everything typed when it commits",
+  "Starting an edit on another node while one is open discards the open edit's changes",
+  "A run's `fontScale` (and in Chromium a numeric `fontSize`/`letterSpacing`) is rounded on every edit round trip",
+  "Small caps' `capitalize` context skips overlay text that is not inside a run span",
+  "Test harness `makeRichHarness` reads its id-keyed table through the prototype chain"
+ ]
+}

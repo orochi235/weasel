@@ -1,0 +1,104 @@
+{
+ "id": "text-dom",
+ "commit": "94bb15eaa1e3568dfb48ece30faf4f05fa5cef82",
+ "date": "2026-11-22",
+ "files": [
+  "packages/text-dom/src/armedStyle.ts",
+  "packages/text-dom/src/domOffsets.ts",
+  "packages/text-dom/src/domRuns.ts",
+  "packages/text-dom/src/editOverlay.ts",
+  "packages/text-dom/src/editSession.ts",
+  "packages/text-dom/src/heldNodeStyle.ts",
+  "packages/text-dom/src/index.ts",
+  "packages/text-dom/src/overlayBaseline.ts",
+  "packages/text-dom/src/overlayCarry.ts",
+  "packages/text-dom/src/overlayDirection.ts",
+  "packages/text-dom/src/overlayDraft.ts",
+  "packages/text-dom/src/overlayEdits.ts",
+  "packages/text-dom/src/overlayFollow.ts",
+  "packages/text-dom/src/overlayFrame.ts",
+  "packages/text-dom/src/overlayHistory.ts",
+  "packages/text-dom/src/overlayListeners.ts",
+  "packages/text-dom/src/overlayOpen.ts",
+  "packages/text-dom/src/overlayPlace.ts",
+  "packages/text-dom/src/overlayScroll.ts",
+  "packages/text-dom/src/overlaySeed.ts",
+  "packages/text-dom/src/overlaySelection.ts",
+  "packages/text-dom/src/overlayStyle.ts",
+  "packages/text-dom/src/overlayTyping.ts",
+  "packages/text-dom/src/pasteRuns.ts",
+  "packages/text-dom/src/pbt.fixture.ts",
+  "packages/text-dom/src/publishedRange.ts",
+  "packages/text-dom/src/runSplice.ts",
+  "packages/text-dom/src/runStyle.ts",
+  "packages/text-dom/src/selectionStyling.ts",
+  "packages/text-dom/src/styleShortcuts.ts",
+  "packages/text-dom/src/testing/baselineDrop.ts",
+  "packages/text-dom/src/testing/overlayDirection.ts",
+  "packages/text-dom/src/testing/overlayReady.ts",
+  "packages/text-dom/src/testing/textEditHarness.ts",
+  "packages/text-dom/src/textEditTypes.ts",
+  "packages/text-dom/src/useTextEdit.ts"
+ ],
+ "a": 4,
+ "b": 6,
+ "m": 1,
+ "distinct": 9,
+ "chapman": 16.5,
+ "unfound": 7.5,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "newCode": {
+  "since": 74,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 74,
+  "chapman": 19,
+  "unfound": 12
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 26,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1117,
+   "total": 1117
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.8,
+   "B": 11.1,
+   "match": 0.1,
+   "fix": 23.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2077964,
+  "costUsd": 6.22
+ },
+ "fixCommits": [
+  "7718d58ce1633aa06b6d8b10153eddef6d0709c9",
+  "649370aee919996c1feb7fb9dffd3419973169d0",
+  "8bf48357f1f1a76d0daab6068f14b9a2fac3f0d3",
+  "9d184dc113c68215ab597879bd022fca08484755",
+  "5e9f693e5bce156bf7cbfc5e3be50cac267f431d",
+  "0c3a47ddcc9f7a8527021e74349fd2802b434f54",
+  "8a7132ed38338536a5a46a2dcc3244aaa1cf233f",
+  "6f491fdc1ff29f1dc8cb7925b948b0e54933ef81",
+  "32cf0d28db8ef5cb342c2edbbf8c38cf2d601e83",
+  "ace382907e5b0ead133bacb5f56ff1dd7d16caa9"
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   4,
+   4
+  ]
+ ],
+ "a": [
+  "PinRepair converts a numeric pin's text per keystroke, so a decimal cannot be typed and a cleared or signed value turns the pin into a string for good",
+  "SemanticDrawer's literal Value field loses a number for good once the field is cleared (untyped rule)",
+  "\"Discard the draft and reload from disk\" clears the draft without waiting, then remounts from `loadDraft`, which can still return the draft",
+  "Save stays enabled while the draft does not derive, so a broken definition can be written to disk",
+  "A stored preset named like a built-in is loaded alongside it: duplicate React keys, and one name for two presets"
+ ],
+ "b": [
+  "A list-valued pin in PinRepair cannot be typed: the controlled field round-trips each keystroke through parse and serialize",
+  "Step lists are read without the theme's scope in three places and with it in three others",
+  "The theme prefs page's undo history has no limit",
+  "PinRepair's \"named in the error\" check matches any reference that appears as a substring of the message",
+  "A stored preset list can hold duplicate or built-in names, which collide as React keys and show twice",
+  "\"Varies by\" does nothing when switched off on a branch the rule lacks",
+  "The light and dark surface colors are defined twice, in PaletteLab and PalettePreview",
+  "pickRule and leafAt are two implementations of reading a leaf at a selection, and they differ on a `by` key"
+ ]
+}
