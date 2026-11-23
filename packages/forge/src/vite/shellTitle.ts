@@ -5,7 +5,7 @@ import { type Bindings, bindingsOf, calleeOf, exportedName, objectOf, parseFile,
 import { warnOnce } from './warnOnce.ts';
 
 /** A shell config module's default export as the object literal its source writes, with the file's top-level `const`s. */
-function configOf(code: string, file: string): { config: t.ObjectExpression | null; bindings: Bindings } | null {
+function configOf(code: string, file: string): { config: t.ObjectExpression | null; bindings: Bindings; wrappers: Set<string> } | null {
   let program: t.Program;
   try {
     program = parseFile(code, file);
@@ -23,7 +23,8 @@ function configOf(code: string, file: string): { config: t.ObjectExpression | nu
   }
   // Whatever wraps the object, `defineShellConfig` or a project's own helper, is taken to hand it back.
   const wrapper = calleeOf(config, bindings);
-  return { config: objectOf(config, bindings, new Set(wrapper ? [wrapper] : [])), bindings };
+  const wrappers = new Set(wrapper ? [wrapper] : []);
+  return { config: objectOf(config, bindings, wrappers), bindings, wrappers };
 }
 
 /**
@@ -32,7 +33,7 @@ function configOf(code: string, file: string): { config: t.ObjectExpression | nu
  */
 export function shellTitle(code: string, file: string): string | undefined {
   const read = configOf(code, file);
-  return read ? stringOf(prop(read.config, 'title'), read.bindings) : undefined;
+  return read ? stringOf(prop(read.config, 'title', read.bindings, read.wrappers), read.bindings) : undefined;
 }
 
 /** The array literal `node` is written as, through casts and top-level `const`s. */
@@ -64,8 +65,8 @@ const originOf = (url: string | undefined): string[] => {
 export function shellAllowOrigins(code: string, file: string, dropped?: (entry: string) => void): string[] {
   const read = configOf(code, file);
   if (!read) return [];
-  const capture = objectOf(prop(read.config, 'capture'), read.bindings, new Set());
-  const list = arrayOf(prop(capture, 'allowOrigins'), read.bindings);
+  const capture = objectOf(prop(read.config, 'capture', read.bindings, read.wrappers), read.bindings, new Set());
+  const list = arrayOf(prop(capture, 'allowOrigins', read.bindings), read.bindings);
   return (list?.elements ?? []).flatMap((el) => {
     const origins = el && el.type !== 'SpreadElement' ? originOf(stringOf(el, read.bindings)) : [];
     if (origins.length === 0 && el) dropped?.(code.slice(el.start ?? 0, el.end ?? 0));

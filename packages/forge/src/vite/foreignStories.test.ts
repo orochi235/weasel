@@ -37,4 +37,22 @@ describe('foreignStories', () => {
     }
     expect(await exportsOf(files)).toContain('Shallow');
   });
+
+  it('reads an imported alias of story, or a factory that made one, as the same code in the story file reads', async () => {
+    const files = {
+      [STORY]: `import { meta } from '@weasel-js/forge';\nimport { make, made } from './h';\nexport default meta({ title: 'ui/S' });\nexport const Aliased = make({});\nexport const Factory = made({});\n`,
+      [`${ROOT}/src/h.ts`]: `import { story } from '@weasel-js/forge';\nconst factory = () => story;\nexport const make = story;\nexport const made = factory();\n`,
+    };
+    expect(await exportsOf(files)).toEqual(['Aliased', 'Factory']);
+  });
+
+  it('follows a default-exported helper, named or not, to what it returns', async () => {
+    const files = {
+      [STORY]: `import { meta } from '@weasel-js/forge';\nimport variant from './v';\nimport arrow from './a';\nimport rowsOf from './r';\nexport default meta({ title: 'ui/S' });\nexport const Big = variant();\nexport const Small = arrow();\nexport const rows = rowsOf();\n`,
+      [`${ROOT}/src/v.ts`]: `import { story } from '@weasel-js/forge';\nexport default function variant() { return story({}); }\n`,
+      [`${ROOT}/src/a.ts`]: `import { story } from '@weasel-js/forge';\nexport default () => story({});\n`,
+      [`${ROOT}/src/r.ts`]: `export default function rowsOf() { return [1, 2]; }\n`,
+    };
+    expect(await exportsOf(files)).toEqual(['Big', 'Small']);
+  });
 });

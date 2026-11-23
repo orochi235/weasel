@@ -4,15 +4,27 @@ import type * as t from '@babel/types';
 /** A program's top-level variable initializers and function declarations, by name. */
 export type Bindings = Map<string, t.Node>;
 
+/** A file's locals that are forge's `meta` or `story`, and which. */
+export type Wrappers = ReadonlyMap<string, 'meta' | 'story'>;
+
 export function parseFile(code: string, file: string): t.Program {
   const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
   return parse(code, { sourceType: 'module', plugins }).program;
 }
 
-/** `program`'s bindings, exported or not. */
+/** The local a default export that names no binding of its own is declared as. */
+export const DEFAULT_LOCAL = '*default*';
+
+/** `program`'s bindings, exported or not, a default export's under its own name or `DEFAULT_LOCAL`. */
 export function bindingsOf(program: t.Program): Bindings {
   const bindings: Bindings = new Map();
   for (const stmt of program.body) {
+    if (stmt.type === 'ExportDefaultDeclaration') {
+      const decl = stmt.declaration;
+      if ((decl.type === 'FunctionDeclaration' || decl.type === 'ClassDeclaration') && decl.id) bindings.set(decl.id.name, decl);
+      else if (decl.type !== 'Identifier') bindings.set(DEFAULT_LOCAL, decl);
+      continue;
+    }
     const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
@@ -134,7 +146,12 @@ export function exportedName(node: t.Identifier | t.StringLiteral): string {
 }
 
 /** The object literal `node` evaluates to, through casts, `meta(…)`/`story(…)` and top-level `const`s. */
-export function objectOf(node: t.Node | undefined, bindings: Bindings, wrappers: Set<string>, depth = 0): t.ObjectExpression | null {
+export function objectOf(
+  node: t.Node | undefined,
+  bindings: Bindings,
+  wrappers: { has(name: string): boolean },
+  depth = 0,
+): t.ObjectExpression | null {
   if (!node || depth > 16) return null;
   switch (node.type) {
     case 'ObjectExpression':
@@ -156,12 +173,39 @@ export function objectOf(node: t.Node | undefined, bindings: Bindings, wrappers:
   }
 }
 
-/** The value `obj` holds at `key`: the last property naming it, as an object literal evaluates. */
-export function prop(obj: t.ObjectExpression | null, key: string): t.Node | undefined {
+const ABSENT = Symbol('absent');
+
+/**
+ * The value `obj` holds at `key`, as an object literal evaluates: the last property naming it, or what a spread after
+ * it carries, read through `bindings` and `wrappers`. A spread it cannot read is taken to set nothing.
+ */
+export function prop(
+  obj: t.ObjectExpression | null,
+  key: string,
+  bindings: Bindings = new Map(),
+  wrappers: { has(name: string): boolean } = new Set(),
+): t.Node | undefined {
+  const found = lookup(obj, key, bindings, wrappers, 0);
+  return found === ABSENT ? undefined : found;
+}
+
+function lookup(
+  obj: t.ObjectExpression | null,
+  key: string,
+  bindings: Bindings,
+  wrappers: { has(name: string): boolean },
+  depth: number,
+): t.Node | typeof ABSENT {
+  if (depth > 16) return ABSENT;
   for (const p of [...(obj?.properties ?? [])].reverse()) {
+    if (p.type === 'SpreadElement') {
+      const found = lookup(objectOf(p.argument, bindings, wrappers), key, bindings, wrappers, depth + 1);
+      if (found !== ABSENT) return found;
+      continue;
+    }
     if (p.type !== 'ObjectProperty' || p.computed) continue;
     const name = p.key.type === 'Identifier' ? p.key.name : p.key.type === 'StringLiteral' ? p.key.value : null;
     if (name === key) return p.value;
   }
-  return undefined;
+  return ABSENT;
 }

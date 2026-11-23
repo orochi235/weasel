@@ -30,7 +30,7 @@ describe('indexStoryResolved', () => {
   it("reads a meta and stories that reach forge through a project helper, the helper's isolate included", async () => {
     const { entries, resolution } = await indexStoryResolved(files[FILE] as string, FILE, source, resolve, decide());
     expect(entries.map((e) => [e.id, e.isolate])).toEqual([['ui-thing--basic', 'needs its own document']]);
-    expect([...resolution.wrappers].sort()).toEqual(['defineMeta', 'story']);
+    expect([...resolution.wrappers].sort()).toEqual([['defineMeta', 'meta'], ['story', 'story']]);
   });
 });
 

@@ -158,6 +158,15 @@ describe('capture endpoint', () => {
     expect(browser.capture).toHaveBeenCalledWith(`http://127.0.0.1:${port}/__forge/capture.html`, payload, []);
   });
 
+  it('answers a full queue as busy, with 429, not as captures being unavailable', async () => {
+    launch.mockResolvedValue(fakeBrowser(vi.fn(async () => Promise.reject(new Error(real.QUEUE_FULL)))));
+    await start();
+    const res = await post(payload);
+    expect(res.status).toBe(429);
+    expect(res.headers.get('retry-after')).toBe('1');
+    expect(await res.json()).toEqual({ error: real.QUEUE_FULL });
+  });
+
   it('refuses a POST that is not JSON with 415', async () => {
     launch.mockResolvedValue(fakeBrowser());
     await start();

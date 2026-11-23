@@ -6,7 +6,7 @@ import { createTracer } from './trace.ts';
 
 export interface WrapperResolution {
   /** The callees that are forge's `meta` or `story`. */
-  wrappers: Set<string>;
+  wrappers: Map<string, 'meta' | 'story'>;
   /** What following the file's imports found each one to be: a story, a function returning one, or neither. */
   foreign: ForeignStories;
   /** Every file read to decide it, so an edit to one can re-decide it. */
@@ -35,7 +35,7 @@ export function createWrapperResolver(read: (file: string) => string) {
 
   return async (file: string, callees: readonly ForeignCallee[], resolve: ResolveImport): Promise<WrapperResolution> => {
     const trace = tracer(resolve);
-    const wrappers = new Set<string>();
+    const wrappers = new Map<string, 'meta' | 'story'>();
     const direct = [...(trace.info(file)?.imports.values() ?? [])].some((imp) => imp.spec === '@weasel-js/forge');
     if (callees.length === 0 && !direct) return { wrappers, foreign: NO_FOREIGN, reads: trace.reads, unresolved: false };
     const forge = await trace.target('@weasel-js/forge', file);
@@ -48,7 +48,8 @@ export function createWrapperResolver(read: (file: string) => string) {
       for (const callee of callees) {
         const from = await trace.target(callee.spec, file);
         const key = from ? await trace.declaring(from, callee.imported) : null;
-        if (key && own.has(key)) wrappers.add(callee.local);
+        const kind = key ? own.get(key) : undefined;
+        if (kind) wrappers.set(callee.local, kind);
       }
     }
     const foreign = forge ? await foreignStories(file, wrappers, own, trace, read) : NO_FOREIGN;

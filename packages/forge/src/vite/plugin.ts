@@ -54,6 +54,8 @@ export interface ForgeOptions {
 }
 
 const SCRIPT = /\.[cm]?[jt]sx?$/;
+/** The virtual modules written from the index, which wait for its first pass over every file's imports. */
+const READS_INDEX: ReadonlySet<string> = new Set(['index.js', 'importers.js', 'deps.js']);
 
 interface SourceWatch {
   files: readonly string[];
@@ -181,7 +183,7 @@ export function forge(options: ForgeOptions): Plugin[] {
         if (!id.startsWith(`\0${PREFIX}`)) return undefined;
         const name = id.slice(PREFIX.length + 1);
         const resolveImport: ResolveImport = async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null;
-        if (name === 'index.js') await stories.settleAll(resolveImport);
+        if (READS_INDEX.has(name)) await stories.settleAll(resolveImport);
         if (name !== 'deps.js') return getOwn(modules, name)?.();
         return deps.module(resolveImport);
       },

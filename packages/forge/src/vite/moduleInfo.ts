@@ -1,5 +1,6 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
+import { DEFAULT_LOCAL } from './ast.ts';
 
 export interface Import {
   spec: string;
@@ -17,7 +18,6 @@ export interface ModuleInfo {
   refs: Map<string, Set<string>>;
 }
 
-const DEFAULT_LOCAL = '*default*';
 /** Keys holding types, which name no value a component could render. */
 const TYPE_KEYS = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeParameters', 'implements']);
 

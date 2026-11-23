@@ -145,7 +145,10 @@ export function serveCapture(
         png = await result.capture(page, payload, allowOrigins());
       } catch (err) {
         const message = messageOf(err);
-        if (message === QUEUE_FULL) return json(res, 503, { available: false, reason: QUEUE_FULL });
+        if (message === QUEUE_FULL) {
+          res.setHeader('Retry-After', '1');
+          return json(res, 429, { error: QUEUE_FULL });
+        }
         return json(res, 500, { error: message });
       }
       if (at === revision) cache.set(key, png);

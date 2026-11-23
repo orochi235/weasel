@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ReadApi } from '../apiTable';
 import { readTypedoc, type TypedocHref, typedocSource, withTypedoc } from './index';
+import type { TdType } from './json';
 import { typeText } from './print';
 
 const FIXTURE = join(import.meta.dirname, 'fixture.json');
@@ -149,5 +150,21 @@ describe('typeText', () => {
   it('quotes a string literal holding quotes as TypeScript would read it back', () => {
     expect(typeText({ type: 'literal', value: "it's" })).toBe("'it\\'s'");
     expect(typeText({ type: 'literal', value: 'say "hi"' })).toBe(`'say "hi"'`);
+  });
+
+  it('groups a function, a conditional, or a union where an operator would otherwise take part of it', () => {
+    const fn: TdType = { type: 'reflection', declaration: { id: 1, kind: 0, name: '__type', signatures: [{ id: 2, kind: 0, name: '__type', type: { type: 'intrinsic', name: 'void' } }] } };
+    const nul: TdType = { type: 'literal', value: null };
+    const a: TdType = { type: 'reference', name: 'A' };
+    const b: TdType = { type: 'reference', name: 'B' };
+    const cond: TdType = { type: 'conditional', checkType: a, extendsType: b, trueType: a, falseType: b };
+    const union: TdType = { type: 'union', types: [a, b] };
+    const obj: TdType = { type: 'reflection', declaration: { id: 3, kind: 0, name: '__type', children: [{ id: 4, kind: 0, name: 'x', type: a }] } };
+    expect(typeText({ type: 'union', types: [fn, nul] })).toBe('(() => void) | null');
+    expect(typeText({ type: 'union', types: [cond, nul] })).toBe('(A extends B ? A : B) | null');
+    expect(typeText({ type: 'intersection', types: [fn, a] })).toBe('(() => void) & A');
+    expect(typeText({ type: 'typeOperator', operator: 'keyof', target: union })).toBe('keyof (A | B)');
+    expect(typeText({ type: 'indexedAccess', objectType: union, indexType: { type: 'literal', value: 'k' } })).toBe("(A | B)['k']");
+    expect(typeText({ type: 'union', types: [obj, nul] })).toBe('{ x: A } | null');
   });
 });

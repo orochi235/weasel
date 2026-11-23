@@ -15,6 +15,7 @@ import {
   prop,
   stringLiteral,
   stringOf,
+  type Wrappers,
 } from './ast.ts';
 import { type Foreign, mayBeStory } from './nativeExports.ts';
 
@@ -27,7 +28,7 @@ export function indexFile(
   code: string,
   file: string,
   autoTitle: string,
-  wrappers: ReadonlySet<string> = new Set(),
+  wrappers: Wrappers = new Map(),
   foreign?: Foreign,
 ): IndexEntry[] {
   try {
@@ -50,7 +51,7 @@ export interface ForeignCallee {
  */
 export function foreignCallees(code: string, file: string): ForeignCallee[] {
   const program = parseFile(code, file);
-  const { bindings } = scan(program, new Set());
+  const { bindings } = scan(program, new Map());
   const imported = new Map<string, ForeignCallee>();
   const exported: (t.Node | null | undefined)[] = [];
   for (const stmt of program.body) {
@@ -76,29 +77,28 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
 }
 
 /** The program's top-level bindings, its locals that are forge's `meta` or `story`, and every name it imports. */
-export function scan(program: t.Program, extra: ReadonlySet<string>): { bindings: Bindings; wrappers: Set<string>; imports: Set<string> } {
-  const wrappers = new Set(extra);
+export function scan(program: t.Program, extra: Wrappers): { bindings: Bindings; wrappers: Map<string, 'meta' | 'story'>; imports: Set<string> } {
+  const wrappers = new Map(extra);
   const imports = new Set<string>();
   for (const stmt of program.body) {
     if (stmt.type === 'ImportDeclaration') for (const spec of stmt.specifiers) imports.add(spec.local.name);
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
-        if (spec.type === 'ImportSpecifier' && ['meta', 'story'].includes(exportedName(spec.imported))) {
-          wrappers.add(spec.local.name);
-        }
+        const name = spec.type === 'ImportSpecifier' ? exportedName(spec.imported) : undefined;
+        if (name === 'meta' || name === 'story') wrappers.set(spec.local.name, name);
       }
     }
   }
   return { bindings: bindingsOf(program), wrappers, imports };
 }
 
-export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: ReadonlySet<string>, foreign?: Foreign): IndexEntry[] {
+export function indexProgram(program: t.Program, file: string, autoTitle: string, extra: Wrappers, foreign?: Foreign): IndexEntry[] {
   const { bindings, wrappers, imports } = scan(program, extra);
 
   let metaNode: t.Node | undefined;
   let metaDoc: string | undefined;
-  // `from`: re-exported from another module, so there is no node to read here.
-  const exported: { name: string; node: t.Node | undefined; doc: string | undefined; from?: boolean }[] = [];
+  // `local`: the binding exported, which CSF2 assignments name. `from`: re-exported from another module, so there is no node to read here.
+  const exported: { name: string; local: string; node: t.Node | undefined; doc: string | undefined; from?: boolean }[] = [];
   for (const stmt of program.body) {
     if (stmt.type === 'ExportDefaultDeclaration') {
       metaNode = stmt.declaration;
@@ -109,50 +109,54 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
     const decl = stmt.declaration;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
-        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc });
+        if (d.id.type === 'Identifier') exported.push({ name: d.id.name, local: d.id.name, node: d.init ?? undefined, doc: docOf(d) ?? doc });
       }
     } else if (decl?.type === 'FunctionDeclaration' && decl.id) {
-      exported.push({ name: decl.id.name, node: decl, doc });
+      exported.push({ name: decl.id.name, local: decl.id.name, node: decl, doc });
     }
     for (const spec of stmt.specifiers) {
       if (spec.type !== 'ExportSpecifier' || spec.exportKind === 'type') continue;
       const name = exportedName(spec.exported);
-      const node = stmt.source ? undefined : bindings.get(exportedName(spec.local));
+      const local = exportedName(spec.local);
+      const node = stmt.source ? undefined : bindings.get(local);
       if (name === 'default') {
         metaNode = node;
         metaDoc ??= doc;
-      } else if (stmt.source) exported.push({ name, node, doc, from: true });
+      } else if (stmt.source) exported.push({ name, local, node, doc, from: true });
       // An import exported as it stands is read as the identifier it is, which is what `foreign` is asked about.
-      else exported.push({ name, node: node ?? (spec.local.type === 'Identifier' ? spec.local : undefined), doc });
+      else exported.push({ name, local, node: node ?? (spec.local.type === 'Identifier' ? spec.local : undefined), doc });
     }
   }
   if (!metaNode && !program.body.some(isDefaultExport)) return [];
   const assigned = assignedProps(program);
 
   const meta = objectOf(metaNode, bindings, wrappers);
-  const title = stringOf(prop(meta, 'title'), bindings) ?? autoTitle;
-  const include = storyFilter(meta, 'includeStories');
-  const exclude = storyFilter(meta, 'excludeStories');
-  const componentNode = prop(meta, 'component');
+  const title = stringOf(prop(meta, 'title', bindings, wrappers), bindings) ?? autoTitle;
+  const include = storyFilter(meta, 'includeStories', bindings, wrappers);
+  const exclude = storyFilter(meta, 'excludeStories', bindings, wrappers);
+  const componentNode = prop(meta, 'component', bindings, wrappers);
   const componentName = componentNode?.type === 'Identifier' ? componentNode.name : undefined;
   const metaIsolate = isolateOf(meta, bindings, wrappers, 'default');
-  const metaTags = tagsOf(meta);
+  const metaTags = tagsOf(meta, bindings, wrappers);
   const native = wrappers.has(calleeOf(metaNode, bindings) ?? '');
 
   return exported
     .filter(({ name }) => name !== '__namedExportsOrder')
     .filter(({ name }) => (!include || include(name)) && (!exclude || !exclude(name)))
     .filter((e) => !native || (e.from ? (foreign?.reexport(e.name) ?? true) : mayBeStory(e.node, { bindings, wrappers, imports, foreign })))
-    .map(({ name, node, doc }) => {
-      const spec = withAssigned(objectOf(node, bindings, wrappers), assigned.get(name));
+    .map(({ name, local, node, doc, from }) => {
+      const spec = withAssigned(objectOf(node, bindings, wrappers), from ? undefined : assigned.get(local));
       const isolate = isolateOf(spec, bindings, wrappers, name) ?? metaIsolate;
-      const tags = combineTags(metaTags, tagsOf(spec));
+      const tags = combineTags(metaTags, tagsOf(spec, bindings, wrappers));
       const viewport = native ? viewportOf(spec, bindings, wrappers) : undefined;
       return {
         id: storyId(title, name),
         title,
         // An empty name falls through, as the loader's does, so the tree and the trial name a story alike.
-        name: stringOf(prop(spec, 'name'), bindings) || stringOf(prop(spec, 'storyName'), bindings) || storyNameFromExport(name),
+        name:
+          stringOf(prop(spec, 'name', bindings, wrappers), bindings) ||
+          stringOf(prop(spec, 'storyName', bindings, wrappers), bindings) ||
+          storyNameFromExport(name),
         exportName: name,
         file,
         ...(doc === undefined ? {} : { description: doc }),
@@ -190,10 +194,10 @@ function withAssigned(spec: t.ObjectExpression | null, props: readonly t.ObjectP
  * The reason `obj` isolates its story: `isolate` on a native meta or story, `parameters.forge.isolate` in CSF.
  * It must be a string literal, because the shell reads it without importing the module.
  */
-function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Set<string>, exportName: string): string | undefined {
-  const parameters = objectOf(prop(obj, 'parameters'), bindings, wrappers);
-  const forge = objectOf(prop(parameters, 'forge'), bindings, wrappers);
-  const value = prop(obj, 'isolate') ?? prop(forge, 'isolate');
+function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers, exportName: string): string | undefined {
+  const parameters = objectOf(prop(obj, 'parameters', bindings, wrappers), bindings, wrappers);
+  const forge = objectOf(prop(parameters, 'forge', bindings, wrappers), bindings, wrappers);
+  const value = prop(obj, 'isolate', bindings, wrappers) ?? prop(forge, 'isolate', bindings, wrappers);
   if (value === undefined) return undefined;
   const literal = stringLiteral(value);
   if (literal === undefined) throw new Error(`${exportName}: isolate must be a string literal`);
@@ -201,18 +205,18 @@ function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers:
 }
 
 /** A native story's `viewport`, when both sides are number literals. */
-function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Set<string>): StoryViewport | undefined {
-  const value = objectOf(prop(obj, 'viewport'), bindings, wrappers);
-  const width = prop(value, 'width');
-  const height = prop(value, 'height');
+function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers): StoryViewport | undefined {
+  const value = objectOf(prop(obj, 'viewport', bindings, wrappers), bindings, wrappers);
+  const width = prop(value, 'width', bindings, wrappers);
+  const height = prop(value, 'height', bindings, wrappers);
   return width?.type === 'NumericLiteral' && height?.type === 'NumericLiteral'
     ? { width: width.value, height: height.value }
     : undefined;
 }
 
 /** `obj`'s `tags`: the string literals of an array literal. */
-function tagsOf(obj: t.ObjectExpression | null): string[] | undefined {
-  const value = prop(obj, 'tags');
+function tagsOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers): string[] | undefined {
+  const value = prop(obj, 'tags', bindings, wrappers);
   if (value?.type !== 'ArrayExpression') return undefined;
   return value.elements.flatMap((e) => (e ? (stringLiteral(e) ?? []) : []));
 }
@@ -229,8 +233,8 @@ function combineTags(meta: string[] | undefined, own: string[] | undefined): str
 }
 
 /** `includeStories`/`excludeStories` as a predicate, when written as a string array or a regex literal. */
-function storyFilter(obj: t.ObjectExpression | null, key: string): ((name: string) => boolean) | null {
-  const value = prop(obj, key);
+function storyFilter(obj: t.ObjectExpression | null, key: string, bindings: Bindings, wrappers: Wrappers): ((name: string) => boolean) | null {
+  const value = prop(obj, key, bindings, wrappers);
   if (value?.type === 'RegExpLiteral') {
     const re = new RegExp(value.pattern, value.flags.replace(/[gy]/g, ''));
     return (name) => re.test(name);

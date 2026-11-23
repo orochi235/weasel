@@ -3975,3 +3975,9 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): an alias with a name of its own drops the target's access letter along with its
   short forms, and takes only an `access` it gives itself. Keeping the target's letter, which its own name may not
   hold, was the alternative.
+## Audit round seventy-seven (2026-11-23): forge's vite plugin
+
+- 2026-11-23 (the fixer's call): forge's static indexer reads a meta or story key that a later spread may override
+  (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
+  spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
+  sent the title to the file's auto title in the common case, where the spread carries no title.

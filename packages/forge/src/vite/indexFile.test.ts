@@ -34,7 +34,68 @@ export { Other, table } from './other';
       call: (name: string) => ({ sized: true, rowsOf: false })[name],
       reexport: (name: string) => ({ Other: true, table: false })[name],
     };
-    expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => e.exportName)).toEqual(['Shared', 'Unknown', 'Small', 'Other']);
+    expect(indexFile(code, FILE, 'ui/Auto', new Map(), foreign).map((e) => e.exportName)).toEqual(['Shared', 'Unknown', 'Small', 'Other']);
+  });
+
+  it('keeps a native export that calls an import nothing decided, as it keeps the import itself', () => {
+    const code = `
+import { meta } from '@weasel-js/forge';
+import { made, Taken } from './helpers';
+export default meta({ title: 'ui/Slider' });
+export const Made = made();
+export const Curried = made()();
+export const Inline = (() => story({}))();
+export const settings = (() => 4)();
+export { Taken };
+`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
+    const foreign = { value: () => undefined, call: () => undefined, reexport: () => undefined };
+    expect(indexFile(code, FILE, 'ui/Auto', new Map(), foreign).map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
+  });
+
+  it('follows a helper\'s returns into try, switch, loops and labeled blocks', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+export default meta({ title: 'ui/Slider' });
+function tried() { try { return story({}); } catch { return null; } }
+function caught() { try { throw 1; } catch { return story({}); } }
+function finished() { try { } finally { return story({}); } }
+function switched(k) { switch (k) { case 1: return story({}); default: return null; } }
+function looped(xs) { for (const x of xs) { return story({ x }); } return null; }
+function labeled() { out: { return story({}); } }
+function rows() { try { return [1]; } finally { } }
+export const Tried = tried();
+export const Caught = caught();
+export const Finished = finished();
+export const Switched = switched(1);
+export const Looped = looped([1]);
+export const Labeled = labeled();
+export const data = rows();
+`;
+    expect(ids(code).map(([, name]) => name)).toEqual(['Tried', 'Caught', 'Finished', 'Switched', 'Looped', 'Labeled']);
+  });
+
+  it('leaves out of a native file a second meta, which the loader skips as no story', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+import { defineMeta, defineStory } from './helpers';
+export default meta({ title: 'ui/Slider' });
+export const Shared = meta({ title: 'ui/Base' });
+export const Helped = defineMeta({ title: 'ui/Other' });
+export const Basic = story({});
+export const Made = defineStory({});
+`;
+    const wrappers = new Map([['defineMeta', 'meta'], ['defineStory', 'story']] as const);
+    expect(indexFile(code, FILE, 'ui/Auto', wrappers).map((e) => e.exportName)).toEqual(['Basic', 'Made']);
+  });
+
+  it('reads a key a later spread may override from what the spread carries, and past a spread it cannot read', () => {
+    const titled = (head: string) =>
+      indexFile(`${head}\nexport const A = { name: 'Mine', ...base };\nconst base = { name: 'Base' };\n`, FILE, 'ui/Auto').map((e) => [e.title, e.name]);
+    expect(titled(`const shared = { title: 'ui/Shared' };\nexport default { title: 'ui/Own', ...shared };`)).toEqual([['ui/Shared', 'Base']]);
+    expect(titled(`const shared = { tags: [] };\nexport default { title: 'ui/Own', ...shared };`)).toEqual([['ui/Own', 'Base']]);
+    expect(titled(`import { shared } from './shared';\nexport default { title: 'ui/Own', ...shared };`)).toEqual([['ui/Own', 'Base']]);
+    expect(titled(`import { shared } from './shared';\nexport default { ...shared, title: 'ui/Own' };`)).toEqual([['ui/Own', 'Base']]);
   });
 
   it('reads a native export that picks between values, or copies one, by what it picks from', () => {
@@ -92,7 +153,8 @@ export const Named = named('x');
 export const data = table();
 export const Basic = story({ render: () => null });
 `;
-    expect(ids(code)).toEqual([
+    const foreign = { value: () => undefined, call: (name: string) => (name === 'makeRows' ? false : undefined), reexport: () => undefined };
+    expect(indexFile(code, FILE, 'ui/Auto', new Map(), foreign).map((e) => [e.id, e.name])).toEqual([
       ['ui-slider--small', 'Small'],
       ['ui-slider--named', 'Named'],
       ['ui-slider--basic', 'Basic'],
@@ -369,6 +431,18 @@ export const Plain = { storyName: 'Kept' };
       expect(isolates(code)).toEqual(['assigned reason', undefined]);
     });
 
+    it('reads assignments to a CSF2 story exported under another name', () => {
+      const code = `
+const Base = () => null;
+Base.storyName = 'Nice';
+Base.parameters = { forge: { isolate: 'assigned reason' } };
+export default { title: 'ui/Button' };
+export { Base as Primary };
+`;
+      expect(ids(code)).toEqual([['ui-button--primary', 'Nice']]);
+      expect(isolates(code)).toEqual(['assigned reason']);
+    });
+
     it('refuses a value that is not a string literal, naming the file and export', () => {
       const code = `
 export default { title: 'ui/Button' };
@@ -456,7 +530,7 @@ export const Plain = {};
       ['ui-auto--basic', 'Basic'],
       ['ui-auto--plain', 'Plain'],
     ]);
-    expect(indexFile(code, FILE, 'ui/Auto', new Set(['defineMeta', 'story'])).map((e) => [e.id, e.name, e.componentName])).toEqual([
+    expect(indexFile(code, FILE, 'ui/Auto', new Map([['defineMeta', 'meta'], ['story', 'story']] as const)).map((e) => [e.id, e.name, e.componentName])).toEqual([
       ['ui-thing--basic', 'The basic one', 'Thing'],
     ]);
   });
