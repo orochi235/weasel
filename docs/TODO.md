@@ -583,6 +583,12 @@ these entries are what is left of them.
   only by grep. Other 1.x names removed in 2.0 can slip through the same way. Closes when a `ClockSpec` carrying
   `rates` fails to typecheck in that position (e.g. `rates?: never`), with a type test.
 
+- **(P2) [agent] Three ui renames a 1.11 consumer hits have no changelog migration** (2026-11-23, found porting
+  lbx-editor from 1.11 to 2.0). `Callout`'s `stance="danger" | "important"` is `grade="danger" | "warn"`
+  (15e4bd4fe5); `Button`'s `variant="primary"` is `stance="confirm"` (a093c8c109); `toast.error` and
+  `toast.warning` are `toast.danger` and `toast.warn` (3e6389fd3d). `packages/ui/CHANGELOG.md` mentions none of them.
+  Closes when each has a breaking entry with a before/after snippet in the changelog of the release that made it.
+
 - **(P3) [maintainer] Without rolldown's native binding, vite 8.3.8 writes a lazy import's preload list as `[]`
   and a stray hash, and the bundle does not parse** (2026-11-21). Not weasel's: nothing here installs without
   optional dependencies; it showed up building skulkr's dashboard with `npm ci --omit=optional`, which drops
