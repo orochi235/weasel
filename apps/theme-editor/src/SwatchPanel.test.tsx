@@ -59,6 +59,19 @@ describe('<SwatchPanel>', () => {
     expect(onChange.mock.calls[1]![0]).toEqual([]);
   });
 
+  it('unpins only the anchor a swatch pinned, not another of the same name', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const { rerender } = renderWithIcons(<SwatchPanel anchors={[]} onChange={onChange} count={8} />);
+    const crayons = () => within(screen.getByRole('group', { name: 'Swatches to pin' }));
+    await user.click(crayons().getAllByRole('button')[0]!);
+    const [pinned] = onChange.mock.calls[0]![0];
+    const namesake = { name: pinned.name, hue: (pinned.hue + 180) % 360, lightness: 0.5 };
+    rerender(<SwatchPanel anchors={[pinned, namesake]} onChange={onChange} count={8} />);
+    await user.click(crayons().getAllByRole('button')[0]!);
+    expect(onChange.mock.calls[1]![0]).toEqual([namesake]);
+  });
+
   it('holds the unpinned swatches once every slot is pinned, saying why, and still unpins', async () => {
     const user = userEvent.setup();
     const onChange = vi.fn();
