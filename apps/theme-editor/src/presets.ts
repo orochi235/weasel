@@ -23,6 +23,11 @@ export interface Preset {
   readonly builtin?: boolean;
 }
 
+/** How many colors the lab generates: the count slider's range, and what a stored count is clamped into. */
+export const COUNT_RANGE = { min: 5, max: 32 } as const;
+
+const countOf = (n: number): number => Math.min(COUNT_RANGE.max, Math.max(COUNT_RANGE.min, Math.round(n)));
+
 export const INITIAL: LabState = { c: DEFAULT_CONSTRAINTS, surfaceKey: 'dark', anchors: [] };
 
 export const BUILTIN_PRESETS: readonly Preset[] = [
@@ -71,7 +76,8 @@ export function liveOf(stored: unknown): LabState {
   return stateOf(stored);
 }
 
-/** Each stored constraint holding a value the generator reads, the default for the rest. `NaN` is stored as `null`. */
+/** Each stored constraint holding a value the generator reads, the default for the rest, and the count rounded into
+ *  {@link COUNT_RANGE}. `NaN` is stored as `null`. */
 function constraintsOf(stored: unknown): Constraints {
   const from = (typeof stored === 'object' && stored !== null ? stored : {}) as Record<string, unknown>;
   const out: Record<keyof Constraints, unknown> = { ...INITIAL.c };
@@ -79,6 +85,7 @@ function constraintsOf(stored: unknown): Constraints {
     if (!Object.hasOwn(from, key)) continue;
     const value = from[key];
     if (key === 'anchors') out[key] = anchorsOf(value);
+    else if (key === 'count') out[key] = isFiniteNumber(value) ? countOf(value) : INITIAL.c.count;
     else if (key === 'order' ? value === 'hue' || value === 'farthest' : key === 'surface' ? typeof value === 'string' && HEX.test(value) : isFiniteNumber(value)) {
       out[key] = value;
     }
