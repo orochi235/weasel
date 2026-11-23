@@ -2,7 +2,7 @@
 '@weasel-js/forge': minor
 ---
 
-`StoryLoader`, the type of `loadStories` and of the `load` option on `mountFrame` and `useStoryRegistry`, is exported from `@weasel-js/forge/test`, `/frame` and `/shell`
+`StoryLoader`, the type of `loadStories` and of a `load` option, is exported from forge's `test`, `frame` and `shell` entries
 
 A replacement loader can now be annotated with it.
 
