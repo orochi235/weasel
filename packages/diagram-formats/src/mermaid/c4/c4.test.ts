@@ -204,6 +204,15 @@ describe('C4 colors', () => {
     expect(text).toContain('UpdateElementStyle(a, $bgColor="#ff0000", $borderColor="#aabbcc")');
     expect(text).toContain('UpdateRelStyle(a, b, $lineColor="#0000ff")');
   });
+
+  it('warn of a border width or dash they cannot hold', () => {
+    const { text, warnings } = writeC4(one({
+      nodes: [{ id: 'a', lines: ['A'], colors: { strokeWidth: 3 } }],
+      containers: [{ id: 'g', role: 'container', label: 'G', colors: { dash: [4, 4] } }],
+    }));
+    expect(text).not.toContain('UpdateElementStyle');
+    expect(warnings).toContain('Mermaid C4 elements and boundaries have no border width or dash; they were dropped.');
+  });
 });
 
 describe('C4 deployment nodes', () => {

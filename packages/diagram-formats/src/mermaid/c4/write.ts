@@ -52,6 +52,9 @@ class C4Writer {
       colors?.stroke !== undefined ? `$borderColor=${quoted(colors.stroke)}` : null,
     ].filter((s) => s !== null);
     if (set.length > 0) this.styles.push(`  UpdateElementStyle(${this.id(id)}, ${set.join(', ')})`);
+    if (colors?.strokeWidth !== undefined || colors?.dash !== undefined) {
+      this.out.warnings.add('Mermaid C4 elements and boundaries have no border width or dash; they were dropped.');
+    }
   }
 
   boundary(c: Cluster, indent: string): void {
