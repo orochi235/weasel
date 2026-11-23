@@ -548,6 +548,13 @@ these entries are what is left of them.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] `LabLoupe.browser.test.tsx`'s "F2 opens a lens over the pointer, carries it while held, and a tap
+  closes it" fails under the fleet suite's load** (2026-11-22): `expected <div class="lk-lens-interior" …> to be null`
+  after the tap, in one of audit round 73's six gate runs, while two runs of the file alone on a GUI node passed on the
+  same commit, and `main` passes it alone too. Likely the lens's fade (`c6211023d2`) outlasting the assertion when the
+  node is busy. Closes when the test waits for the lens to close rather than asserting at once, or the fade has a
+  test-time zero.
+
 - **(P2) [agent] `@weasel-js/kernel3d` 2.0.0 shipped without its `IconName` entries** (2026-11-22). No `.d.ts` in its
   `dist` declares the augmentation in `src/icons.gen.ts`, so `kernel3d:dollyIn` and the other camera icons don't
   typecheck as `IconName` for a consumer; astv declares them itself in `kernel3dIconNames.ts`. Closes when the packed
