@@ -47,11 +47,11 @@ function ShapeCard({ shape, ctx }: { shape: BadgeShape; ctx: Ctx }) {
 }
 
 function Gallery({ ctx }: { ctx: Ctx }) {
-  const [snippet, setSnippet] = useState<string | null>(null);
+  const [shown, setShown] = useState(false);
+  const snippet = shown ? shapeParamsSnippet(ctx.config.params) : null;
   const exportParams = () => {
-    const text = shapeParamsSnippet(ctx.config.params);
-    setSnippet(text);
-    void copyText(text);
+    setShown(true);
+    void copyText(shapeParamsSnippet(ctx.config.params));
   };
   return (
     <div className={s.gallery}>

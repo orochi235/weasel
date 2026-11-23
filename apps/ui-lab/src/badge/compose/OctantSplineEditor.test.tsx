@@ -91,9 +91,20 @@ describe('the spline curve editor', () => {
     const { host, onAnchorChange } = mount();
     const mid = polarPoint('octant', 0.5, 30);
     act(() => {
-      host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, deltaY: -1 }));
+      host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, deltaY: -100 }));
     });
     expect(onAnchorChange).toHaveBeenCalledWith(1, { s: 0.5, r: 30, w: 1.1 });
+  });
+
+  it('weighs a trackpad scroll by how far it turned, not by how many events it sent', () => {
+    const { host, onAnchorChange } = mount();
+    const mid = polarPoint('octant', 0.5, 30);
+    act(() => {
+      for (let k = 0; k < 25; k++) {
+        host.dispatchEvent(new WheelEvent('wheel', { bubbles: true, cancelable: true, clientX: mid.x, clientY: mid.y, deltaY: -4 }));
+      }
+    });
+    expect(onAnchorChange.mock.calls).toEqual([[1, { s: 0.5, r: 30, w: 1.1 }]]);
   });
 
   it('inserts an anchor where an Alt-click lands', () => {
@@ -120,5 +131,15 @@ describe('the spline curve editor', () => {
       host.dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: 30, clientY: -10, altKey: true }));
     });
     for (const handler of Object.values(handlers)) expect(handler).not.toHaveBeenCalled();
+  });
+
+  it.each(['octant', 'quadrant'] as const)("ends the cardinal ray's label inside the %s view box", (mode) => {
+    const { container } = render(
+      <OctantSplineEditor anchors={ANCHORS} mode={mode} evalAtS={() => 30} onAnchorDraft={vi.fn()} onAnchorChange={vi.fn()} onAnchorDelete={vi.fn()} onAnchorAdd={vi.fn()} />,
+    );
+    const [minX, , width] = container.querySelector('svg')!.getAttribute('viewBox')!.split(' ').map(Number);
+    const label = [...container.querySelectorAll('text')].find((el) => el.textContent === 'cardinal (s = 0)')!;
+    expect(label.getAttribute('text-anchor')).toBe('end');
+    expect(Number(label.getAttribute('x'))).toBeLessThanOrEqual(minX! + width!);
   });
 });
