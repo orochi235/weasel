@@ -6,7 +6,7 @@ import { oneLine } from '../common/text';
 
 /** A step's name as it opens its line: `(untitled)` for none, since Mermaid reads a step only with a name, a leading
  *  `%%` dropped, which would make the line a comment, the `{` after a leading `accTitle` or `accDescr` dropped, which
- *  would open accessibility text, and `null` for a name whose first word is `title` or `section`, or that is
+ *  would open accessibility text, and `null` for a name opening with `title` or `section` and a space, or that is
  *  `accTitle` or `accDescr`, which Mermaid reads as that statement. */
 function stepName(name: string, warn: (m: string) => void): string | null {
   let out = name;
@@ -18,7 +18,7 @@ function stepName(name: string, warn: (m: string) => void): string | null {
     warn('Mermaid reads a line opening "accTitle {" or "accDescr {" as accessibility text; that "{" in step names was dropped.');
     out = out.replace(/^(acc(?:Title|Descr))\s*\{\s*/, '$1 ').trim();
   }
-  if (/^(?:title|section)(?:\s|$)/.test(out)) {
+  if (/^(?:title|section)\s/.test(out)) {
     warn('Mermaid reads a step named "title …" or "section …" as that statement; those steps were dropped.');
     return null;
   }

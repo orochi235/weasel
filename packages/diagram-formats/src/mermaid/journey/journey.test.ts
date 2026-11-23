@@ -119,6 +119,13 @@ describe('writing a Mermaid journey', () => {
     expect(warnings).toContain('Mermaid reads a step named "accTitle" or "accDescr" as accessibility text; those steps were dropped.');
   });
 
+  it('keeps a step named just "title" or "section", which reads back as a step', () => {
+    const data = { kind: 'journey' as const, sections: [{ tasks: [{ name: 'title', score: 3, actors: ['Me'] }, { name: 'section', score: 2, actors: [] }] }] };
+    const { text, warnings } = writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, data });
+    expect(plotOf(text).data).toMatchObject({ sections: [{ tasks: [{ name: 'title', score: 3 }, { name: 'section', score: 2 }] }] });
+    expect(warnings).toEqual([]);
+  });
+
   it('warns of a page name its title does not match', () => {
     const data = { kind: 'journey' as const, title: 'Day', sections: [] };
     expect(writeMermaidJourney({ kind: 'plot', id: 'p', width: 10, height: 10, name: 'Trip', data }).warnings).toContain('Mermaid names a chart by its title; a page name the title does not match was dropped.');
