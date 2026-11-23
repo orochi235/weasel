@@ -201,4 +201,6 @@
 
 .sizer {
   composes: sizer from '@weasel-js/theme/sizer.module.css';
+  /* Measured in the value's weight, or a bold value outgrows the width taken for it. */
+  font-weight: var(--wzl-select-weight);
 }
