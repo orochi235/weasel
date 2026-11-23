@@ -27,6 +27,18 @@ import { clamp01 } from './scalar';
  * tuple is read-only: renderer hot paths call this per frame.
  */
 export function parseColor(input: string): readonly [number, number, number, number] {
+  const parsed = readColor(input);
+  if (parsed === null) throw new Error(`parseColor: unrecognized color "${input}"`);
+  return parsed;
+}
+
+/** {@link parseColor}'s reading of `input`, or null where it would throw. The tuple is read-only, as there. */
+export function tryParseColor(input: string): readonly [number, number, number, number] | null {
+  return readColor(input);
+}
+
+/** Failures are cached too, as null: a solid of `var(--accent)` is read on every frame. */
+function readColor(input: string): readonly [number, number, number, number] | null {
   const cached = CACHE.get(input);
   if (cached !== undefined) return cached;
   const result = parseColorUncached(input);
@@ -35,21 +47,12 @@ export function parseColor(input: string): readonly [number, number, number, num
   return result;
 }
 
-/** {@link parseColor}'s reading of `input`, or null where it would throw. The tuple is read-only, as there. */
-export function tryParseColor(input: string): readonly [number, number, number, number] | null {
-  try {
-    return parseColor(input);
-  } catch {
-    return null;
-  }
-}
-
-const CACHE = new Map<string, [number, number, number, number]>();
+const CACHE = new Map<string, [number, number, number, number] | null>();
 const CACHE_MAX = 1024;
 
-function parseColorUncached(input: string): [number, number, number, number] {
+function parseColorUncached(input: string): [number, number, number, number] | null {
   const s = input.trim();
-  if (s.startsWith('#')) return parseHex(s);
+  if (s.startsWith('#')) return parseHexOrNull(s);
 
   const lower = s.toLowerCase();
 
@@ -72,8 +75,7 @@ function parseColorUncached(input: string): [number, number, number, number] {
     const parsed = parseOkFunction(lower);
     if (parsed) return parsed;
   }
-
-  throw new Error(`parseColor: unrecognized color "${input}"`);
+  return null;
 }
 
 /** Whether `name` is one of CSS's named colors, in any case. */
@@ -146,9 +148,14 @@ export function rgbaToHex(rgba: readonly [number, number, number, number] | read
 }
 
 function parseHex(s: string): [number, number, number, number] {
+  const rgba = parseHexOrNull(s);
+  if (!rgba) throw new Error(`parseColor: invalid hex "${s}"`);
+  return rgba;
+}
+
+function parseHexOrNull(s: string): [number, number, number, number] | null {
   const bytes = parseHexBytes(s);
-  if (!bytes) throw new Error(`parseColor: invalid hex "${s}"`);
-  return [bytes[0] / 255, bytes[1] / 255, bytes[2] / 255, bytes[3] / 255];
+  return bytes && [bytes[0] / 255, bytes[1] / 255, bytes[2] / 255, bytes[3] / 255];
 }
 
 /** Match `name( body )` and return the trimmed body, or null. */
@@ -191,9 +198,12 @@ function cssNumber(tok: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-/** A component as a CSS `<number>`, with CSS's missing component `none` read as 0, as CSS converts it. */
-function componentNumber(tok: string): number | null {
-  return tok === 'none' ? 0 : cssNumber(tok);
+/** OKLab's a or b, or OKLCh's C: a `<number>`, a percent of 0.4, or `none`, read as 0. Unclamped. */
+function okComponent(tok: string): number | null {
+  if (tok === 'none') return 0;
+  if (!tok.endsWith('%')) return cssNumber(tok);
+  const n = cssNumber(tok.slice(0, -1));
+  return n === null ? null : (n / 100) * 0.4;
 }
 
 /** Parse a channel value: integer, float, percent, or `none`. Returns 0..1 (with `max` as the integer scale). */
@@ -251,7 +261,8 @@ function parseColorFunction(s: string): [number, number, number, number] | null 
   return [clamp01(r as number), clamp01(g as number), clamp01(b as number), a];
 }
 
-/** `oklab(L a b)` or `oklch(L C h)`, chroma-clipped into sRGB as `oklchDegToHex` clips it. L is 0..1 or a percent; a, b and C are numbers. */
+/** `oklab(L a b)` or `oklch(L C h)`, chroma-clipped into sRGB as `oklchDegToHex` clips it. L is 0..1 or a percent;
+ *  a, b and C are numbers or percents, 100% being 0.4. */
 function parseOkFunction(s: string): [number, number, number, number] | null {
   const lch = unwrapFn(s, 'oklch');
   const body = lch ?? unwrapFn(s, 'oklab');
@@ -259,8 +270,8 @@ function parseOkFunction(s: string): [number, number, number, number] | null {
   const channels = splitChannels(body);
   if (!channels) return null;
   const L = parsePercentOrNumber(channels.rgb[0]);
-  const second = componentNumber(channels.rgb[1]);
-  const third = lch !== null ? parseHue(channels.rgb[2]) : componentNumber(channels.rgb[2]);
+  const second = okComponent(channels.rgb[1]);
+  const third = lch !== null ? parseHue(channels.rgb[2]) : okComponent(channels.rgb[2]);
   const alpha = parseAlpha(channels.alpha);
   if (L === null || second === null || third === null || alpha === null) return null;
   // CSS clamps a negative chroma to 0 rather than turning the hue half a turn.

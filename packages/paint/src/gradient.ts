@@ -6,6 +6,7 @@
 import { parseColor, rgbaToHex } from './color';
 import { lerpColorArray, type ColorSpace } from './colorSpaces';
 import type { Paint, GradStop, GradientPaint, GradientKind } from './paint';
+import { lerp } from './scalar';
 
 /** A stop with its color already parsed to 0..1 RGBA. */
 export interface ResolvedGradientStop {
@@ -40,8 +41,10 @@ export function resolveGradientStops(stops: readonly GradStop[]): ResolvedGradie
  * is a gradient that paints differently from its own swatch.
  *
  * `space` is a gradient's `interpolate`. Alpha is linear in every space —
- * only the color channels travel through OKLab or OKLCh. Returns transparent
- * black for an empty list; a NaN `t` reads as the first stop.
+ * only the color channels travel through OKLab or OKLCh, premultiplied by
+ * alpha as in CSS, so a transparent stop lends its neighbor opacity and no
+ * color. Returns transparent black for an empty list; a NaN `t` reads as the
+ * first stop.
  */
 export function sampleResolvedStops(
   stops: readonly ResolvedGradientStop[], t: number, space: ColorSpace = 'rgb',
@@ -59,7 +62,10 @@ export function sampleResolvedStops(
     if (t < lo.offset || t >= hi.offset) continue;
     if (t === lo.offset) return lo.rgba;
     const f = (t - lo.offset) / (hi.offset - lo.offset);
-    const [r, g, b, a] = lerpColorArray(lo.rgba, hi.rgba, f, space);
+    const a = lerp(lo.rgba[3], hi.rgba[3], f);
+    // Premultiplied, as CSS blends stops: dividing the premultiplied blend by `a` is a plain blend at this weight.
+    const weight = a > 0 ? (hi.rgba[3] * f) / a : f;
+    const [r, g, b] = lerpColorArray(lo.rgba, hi.rgba, weight, space);
     return [r, g, b, a];
   }
   return last.rgba;

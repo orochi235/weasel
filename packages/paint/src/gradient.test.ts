@@ -5,6 +5,8 @@ import {
   withGradientKind,
   gradientGeometry,
   gradientForBounds,
+  resolveGradientStops,
+  sampleResolvedStops,
 } from './gradient';
 import { srgbU8ToOklab, oklabToOklch } from './colorSpaces';
 import { parseColor } from './color';
@@ -295,5 +297,25 @@ describe('interpolation space', () => {
       expect(sampleGradientStops(RB, 0, space)).toBe('#ff0000');
       expect(sampleGradientStops(RB, 1, space)).toBe('#0000ff');
     }
+  });
+});
+
+describe('sampleResolvedStops alpha', () => {
+  it('blends stops premultiplied, so a transparent stop lends no color', () => {
+    const stops = resolveGradientStops([{ offset: 0, color: '#ff0000' }, { offset: 1, color: 'transparent' }]);
+    for (const space of ['rgb', 'oklab', 'oklch'] as const) {
+      const [r, g, b, a] = sampleResolvedStops(stops, 0.5, space);
+      expect([r, g, b], space).toEqual([1, 0, 0]);
+      expect(a).toBeCloseTo(0.5, 12);
+    }
+  });
+
+  it('weighs each side by its opacity between two partly transparent stops', () => {
+    const stops = resolveGradientStops([{ offset: 0, color: 'rgb(255 0 0 / 0.75)' }, { offset: 1, color: 'rgb(0 0 255 / 0.25)' }]);
+    const [r, g, b, a] = sampleResolvedStops(stops, 0.5);
+    expect(a).toBeCloseTo(0.5, 12);
+    expect(r).toBeCloseTo(0.75, 12);
+    expect(g).toBe(0);
+    expect(b).toBeCloseTo(0.25, 12);
   });
 });

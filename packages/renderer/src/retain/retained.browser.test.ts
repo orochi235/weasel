@@ -230,8 +230,10 @@ describe('a retained group, in a real context', () => {
     read(stack({ kind: 'group', retain: 'layer', children }));
     const kept = read(stack({ kind: 'group', retain: 'layer', children }));
     expect(r.lastFrameStats().retained.composited).toBe(1);
-    // The one pixel past rounding is the rims crossing, as above.
-    expect(channelsOver(direct, kept, 1)).toBeLessThanOrEqual(3);
+    // Translucent pixels round through the surface's 8 bits by up to 2, as
+    // above (the red circle over the gradient's half-white end does). The one
+    // pixel past rounding is the rims crossing.
+    expect(channelsOver(direct, kept, 2), past(direct, kept, 2)).toBeLessThanOrEqual(3);
     expect(maxDiff(direct, kept)).toBeLessThanOrEqual(8);
   });
 

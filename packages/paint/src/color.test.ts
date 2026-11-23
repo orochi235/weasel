@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { hslToSrgb } from './hsl';
 import { hexToRgba, normalizeHex, tryNormalizeHex, parseColor, tryParseColor, parseColorBytes, rgbaToHex, __resetParseColorCache } from './color';
 import { oklchDegToHex } from './colorSpaces';
@@ -358,5 +358,28 @@ describe('tryParseColor', () => {
     expect(tryParseColor('#ff000080')).toEqual(parseColor('#ff000080'));
     expect(tryParseColor('not a color')).toBeNull();
     expect(tryParseColor('currentColor')).toBeNull();
+  });
+});
+
+describe('parseColor oklab()/oklch() percent components', () => {
+  it('reads a, b and C percents on the 0.4 scale CSS gives them', () => {
+    const pairs = [['oklch(70% 25% 120)', 'oklch(0.7 0.1 120)'], ['oklab(50% 20% -10%)', 'oklab(0.5 0.08 -0.04)']];
+    for (const [percent, number] of pairs) {
+      parseColor(percent).forEach((c, i) => expect(c, percent).toBeCloseTo(parseColor(number)[i]!, 12));
+    }
+  });
+});
+
+describe('tryParseColor on an unreadable color', () => {
+  beforeEach(() => __resetParseColorCache());
+
+  it('parses it once and answers later calls from the cache', () => {
+    const value = 'var(--accent-cache-probe)';
+    expect(tryParseColor(value)).toBeNull();
+    const spy = vi.spyOn(String.prototype, 'trim');
+    expect(tryParseColor(value)).toBeNull();
+    expect(() => parseColor(value)).toThrow(/unrecognized color/);
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 });
