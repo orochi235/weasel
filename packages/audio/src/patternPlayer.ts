@@ -100,7 +100,6 @@ export const checkTempo = (bpm: number): void => {
   }
 };
 
-/** `events` under the step each starts in. Throws on an event whose step is not finite. */
 /** Throws on an event whose step is not finite. */
 export function checkEventSteps(events: readonly PatternEvent[]): void {
   for (const e of events) {
@@ -108,6 +107,7 @@ export function checkEventSteps(events: readonly PatternEvent[]): void {
   }
 }
 
+/** `events` under the step each starts in. Throws on an event whose step is not finite. */
 function eventsByStep(events: readonly PatternEvent[]): Map<number, PatternEvent[]> {
   checkEventSteps(events);
   const byStep = new Map<number, PatternEvent[]>();
