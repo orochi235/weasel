@@ -73,6 +73,8 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
 
   // The layer works in track time; the snap candidates are ruler times.
   const snapX = useMemo(() => snapTimes.map((t) => t - offset), [snapTimes, offset]);
+  // Marks are named by the ruler time they sit at.
+  const formatX = useMemo(() => (x: number) => msLabel(x + offset), [offset]);
 
   const committed = useMemo<KeyframeLayerState>(
     () => ({ keys, selectedKey: selection, selectedSegment, drag: null }),
@@ -143,7 +145,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
           <KeyframeLayer
             id="keys"
             label={label}
-            formatX={msLabel}
+            formatX={formatX}
             snapX={snapX}
             xClamp={TRACK_TIME}
             step={KEY_STEP}

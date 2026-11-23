@@ -591,3 +591,21 @@ describe('Lane pointer session', () => {
     expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
   });
 });
+
+describe('Lane names on a row offset along the ruler', () => {
+  const offsetRow = { ...laneOf(sampled), offset: 600 };
+
+  it('names its keys and segments by the ruler time they are drawn at', () => {
+    render(<Lane {...base} row={offsetRow} />);
+    expect(screen.getAllByTestId('timeline-key').map((k) => k.getAttribute('aria-label')))
+      .toEqual(['x key at 600 ms', 'x key at 1100 ms']);
+    expect(screen.getByTestId('timeline-segment').getAttribute('aria-label')).toBe('x segment into 1100 ms');
+  });
+
+  it('names its graphed keys and segments by ruler time too', () => {
+    render(<Lane {...base} mode="graph" row={offsetRow} />);
+    expect([...document.querySelectorAll('[data-keyframe-index]')].map((k) => k.getAttribute('aria-label')))
+      .toEqual(['x key at 600 ms', 'x key at 1100 ms']);
+    expect(document.querySelector('[data-segment-index]')!.getAttribute('aria-label')).toBe('x segment into 1100 ms');
+  });
+});

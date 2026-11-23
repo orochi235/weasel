@@ -124,7 +124,7 @@ export function Lane(props: LaneProps): ReactElement {
             {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} win={win} /> : null}
             {row.kind === 'sampled' ? (
               <SegmentMarks
-                keys={sampledKeys} label={row.label} win={win} pct={pct} mark={mark}
+                keys={sampledKeys} label={row.label} offset={row.offset} win={win} pct={pct} mark={mark}
                 selectedSegment={selectedSegment} onSelectSegment={onSelectSegment}
               />
             ) : null}
