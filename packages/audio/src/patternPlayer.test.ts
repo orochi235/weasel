@@ -27,6 +27,16 @@ describe('createPatternPlayer', () => {
     expect(starts()).toEqual([0]);
   });
 
+  it('refuses a detune that is not finite, keeping the one it had', async () => {
+    const { engine, run, starts } = await harness();
+    expect(() => createPatternPlayer(engine, { tempo: 120, length: 4, detune: Infinity })).toThrow(RangeError);
+    const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });
+    expect(() => player.setDetune(Number.NaN)).toThrow(RangeError);
+    player.start(0);
+    await run(100);
+    expect(starts()).toEqual([0]);
+  });
+
   it('refuses an event whose step is not finite, keeping the events it had', async () => {
     const { engine, run, starts } = await harness();
     const player = createPatternPlayer(engine, { tempo: 120, length: 4, events: [{ step: 0, pitch: 'C4' }] });

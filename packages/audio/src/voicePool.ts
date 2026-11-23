@@ -36,7 +36,6 @@ export interface VoicePool {
   active(): number;
 }
 
-/** Throws unless `limit` is a whole number, 1 or more. */
 /** Throws a `RangeError` on a steal policy other than `'oldest'` or `'quietest'`. */
 export function checkSteal(steal: StealPolicy | undefined): void {
   if (steal !== undefined && steal !== 'oldest' && steal !== 'quietest') {
@@ -44,6 +43,7 @@ export function checkSteal(steal: StealPolicy | undefined): void {
   }
 }
 
+/** Throws a `RangeError` unless `limit` is a whole number, 1 or more. */
 export function checkVoiceLimit(limit: number): void {
   if (!(Number.isInteger(limit) && limit >= 1)) {
     throw new RangeError(`@weasel-js/audio: voice pool limit must be a whole number, at least 1, got ${limit}`);

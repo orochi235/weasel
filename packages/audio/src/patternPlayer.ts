@@ -1,5 +1,6 @@
 import { createLatest } from '@weasel-js/registry';
 import type { AudioEngine } from './createAudioEngine';
+import { checkFinite } from './param';
 import type { SoundHandle } from './soundCache';
 import type { NoiseOptions, NoteOptions, PlayOptions, VoiceHandle } from './types';
 
@@ -68,7 +69,8 @@ export interface PatternPlayer {
   /** Takes effect from the next step not yet booked. Called from `onStep`,
    *  that is the step after the one reported, which keeps its own length. */
   setTempo(bpm: number): void;
-  /** Takes effect from the next step not yet booked. */
+  /** Takes effect from the next step not yet booked. Throws a `RangeError` on a
+   *  number that is not finite, keeping the detune it had. */
   setDetune(detune: PatternDetune): void;
   /** Takes effect from the next step not yet booked. Throws a `RangeError` on an
    *  event whose step is not finite, keeping the events it had. */
@@ -76,6 +78,11 @@ export interface PatternPlayer {
 }
 
 let nextPlayer = 1;
+
+const checkDetune = (detune: PatternDetune): PatternDetune => {
+  if (typeof detune === 'number') checkFinite('pattern detune', detune);
+  return detune;
+};
 
 export const checkSteps = (what: string, n: number): void => {
   if (!Number.isInteger(n) || n < 1) {
@@ -100,7 +107,6 @@ export const checkTempo = (bpm: number): void => {
   }
 };
 
-/** `events` under the step each starts in. Throws on an event whose step is not finite. */
 /** Throws on an event whose step is not finite. */
 export function checkEventSteps(events: readonly PatternEvent[]): void {
   for (const e of events) {
@@ -108,6 +114,7 @@ export function checkEventSteps(events: readonly PatternEvent[]): void {
   }
 }
 
+/** `events` under the step each starts in. Throws on an event whose step is not finite. */
 function eventsByStep(events: readonly PatternEvent[]): Map<number, PatternEvent[]> {
   checkEventSteps(events);
   const byStep = new Map<number, PatternEvent[]>();
@@ -182,7 +189,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
   const key = `\u0000pattern:${nextPlayer++}`;
 
   let bpm = opts.tempo;
-  let drift = opts.detune ?? 0;
+  let drift = checkDetune(opts.detune ?? 0);
   let length = 1;
   let byStep = new Map<number, PatternEvent[]>();
   const setEvents = (events: readonly PatternEvent[], len?: number): void => {
@@ -290,7 +297,7 @@ export function createPatternPlayer(engine: AudioEngine, opts: PatternPlayerOpti
       nextAt = Math.max(lastAt + stepMs(), engine.now());
       book();
     },
-    setDetune(next) { drift = next; },
+    setDetune(next) { drift = checkDetune(next); },
     setEvents,
   };
 }

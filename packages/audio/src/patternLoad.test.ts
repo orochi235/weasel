@@ -110,3 +110,13 @@ describe('patternVoicePeaks on a step the player refuses', () => {
     for (const n of [0, 2.5, -4, Number.NaN]) expect(() => patternLength([{ step: 3, pitch: 220 }], n)).toThrow(RangeError);
   });
 });
+
+describe('patternVoicePeaks on a span that is not finite', () => {
+  it('throws rather than hanging or reading 0 voices', () => {
+    const hit = { step: 0, sound: { id: 'loop' } as never, loop: true };
+    expect(() => patternVoicePeaks([hit], { ...base, hitMs: () => Infinity })).toThrow(RangeError);
+    expect(() => patternVoicePeaks([hit], { ...base, hitMs: () => Number.NaN })).toThrow(RangeError);
+    expect(() => patternVoicePeaks([{ step: 0, pitch: 220, length: Infinity }], base)).toThrow(RangeError);
+    expect(() => patternVoicePeaks([{ step: 0, noise: 'white', envelope: { release: Infinity } }], base)).toThrow(RangeError);
+  });
+});

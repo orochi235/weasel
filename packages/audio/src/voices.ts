@@ -60,6 +60,9 @@ function teardownVoice(voice: LiveVoice, reason: VoiceDropReason, live: Map<numb
   // a queued callback that outlives it must find it canceled. The steal path
   // has no other place to set this.
   voice.canceled = true;
+  // A start booked far ahead would otherwise sit in the queue, holding the voice, until its time.
+  voice.unqueue?.();
+  voice.unqueue = null;
   if (!voice.playing && voice.source === null) return;
   voice.playing = false;
   if (voice.source === null) {
@@ -300,7 +303,7 @@ export function createVoices(deps: VoicesDeps): Voices {
       const voice: LiveVoice = {
         id, slots, slot: null, token: 0, key: common.cancelKey, onDrop: common.onDrop,
         source: null, env: null, retune: null, release: null, releasing: false,
-        out: null, unbook: null, catchUp: null,
+        out: null, unbook: null, unqueue: null, catchUp: null,
         baseGain, spatialGain: spatial.gain,
         rate: common.rate ?? 1, detune: common.detune ?? 0,
         position: common.position,
@@ -315,13 +318,14 @@ export function createVoices(deps: VoicesDeps): Voices {
       }
       live.set(id, voice);
       const begin = (): void => {
+        voice.unqueue = null;
         startVoice(voice, starter, bookedAt, when, common.onDone, deps.staleFloor(), teardown);
       };
       if (starter.book) {
         voice.catchUp = () => { if (ctx.currentTime * 1000 >= when) begin(); };
       }
       // A booked voice already sounds at its time, however late this runs.
-      deps.scheduler.schedule(when, begin, common.cancelKey, { reportLate: !starter.book });
+      voice.unqueue = deps.scheduler.schedule(when, begin, common.cancelKey, { reportLate: !starter.book });
       return voiceHandle(ctx, voice, ops);
     },
     stopAll(reason) {

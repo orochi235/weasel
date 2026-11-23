@@ -113,4 +113,13 @@ describe('createSoundCache.register', () => {
     const b = cache.register({ duration: 1 } as never);
     expect(a.id).not.toBe(b.id);
   });
+
+  it('loadAll returns a record with no prototype, so a misspelled key reads undefined', async () => {
+    const ctx = createFakeAudioContext();
+    const cache = createSoundCache(ctx as never, okFetch());
+    const handles = await cache.loadAll({ hit: '/hit.wav', __proto__x: '/x.wav' });
+    expect(Object.getPrototypeOf(handles)).toBe(null);
+    expect(handles.constructor).toBeUndefined();
+    expect(Object.keys(handles)).toEqual(['hit', '__proto__x']);
+  });
 });

@@ -47,10 +47,15 @@ interface Shaping {
   detune?: number;
 }
 
+/** The largest float32, where a node's playback rate and detune stop. */
+const FLOAT32_MAX = 3.4028234663852886e38;
+const MOST_DETUNE = 1200 * Math.log2(FLOAT32_MAX);
+
+/** Clamped as a node clamps its `playbackRate` and `detune`, so an overflowing tune plays rather than renders NaN. */
 const tuning = (rate: number, detune: number): number => {
   checkRate('voice rate', rate);
   checkFinite('voice detune', detune);
-  return rate * 2 ** (detune / 1200);
+  return Math.min(FLOAT32_MAX, rate * 2 ** (Math.min(Math.max(detune, -MOST_DETUNE), MOST_DETUNE) / 1200));
 };
 
 /** A voice filter as a function of one sample, its cutoff following its envelope. */
