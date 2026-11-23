@@ -85,8 +85,8 @@ interface FaceSlot extends OutlineFaceInfo {
   glyphs: Map<number, string | null>;
   /** The in-flight or settled load, so every caller waiting on it shares one parse. */
   load: Promise<void> | null;
-  /** The source's bytes while a read is in hand, so DOM text asking first and the canvas share one read. Dropped when
-   *  the load settles, which hands DOM text its bytes itself, and when the read fails. */
+  /** The source's bytes once read, so DOM text asking first and the canvas share one read. Dropped when the load
+   *  settles, which hands DOM text its bytes itself, and when the read fails; held until then, however long. */
   read: Promise<ArrayBuffer> | null;
   /** Whether a glyph this face failed to produce has been reported: glyph lookup runs every frame. */
   glyphWarned: boolean;
