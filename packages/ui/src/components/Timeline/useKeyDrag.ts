@@ -15,7 +15,7 @@ export interface KeyDragArgs {
   offset: number;
   /** The ruler time no key moves past, the end of what the ruler can show. Default `Infinity`. */
   limit?: number;
-  /** Ruler times a dragged key is pulled onto. */
+  /** Ruler times a dragged key is pulled onto, as they are when it is pressed. */
   snapTimes: readonly number[];
   /** The row's key times, in its own time. */
   times: readonly number[];
@@ -48,13 +48,14 @@ export function useKeyDrag(a: KeyDragArgs) {
   // The track reads ruler times, which `snapTimes` are; the row's keys are measured from its own start.
   const track = { min: offset, max: Math.max(offset, limit), ...spanMap(win) };
   const msAt = (clientX: number): number => sliderAt(place(clientX).f, track) - offset;
-  // Read as the pointer moves, so a window or snap times changed mid-drag place the key where its ghost is drawn.
-  const at = useLatest((ev: { clientX: number; altKey: boolean }): number => {
+  // Read as the pointer moves, so a window changed mid-drag places the key where its ghost is drawn. The stops are the
+  // ones at press: a consumer echoing the preview back would otherwise add the dragged key's own last time to them.
+  const at = useLatest((ev: { clientX: number; altKey: boolean }, stops: readonly number[]): number => {
     const { f, width } = place(ev.clientX);
     // An empty window puts every time at one place, where every stop would be in reach.
     const free = ev.altKey || !(win.to > win.from);
     const pull = width === 0 ? 0 : snapRadiusPx / width;
-    return sliderAt(f, { ...track, stops: snapTimes, pull, free }) - offset;
+    return sliderAt(f, { ...track, stops, pull, free }) - offset;
   });
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -66,6 +67,7 @@ export function useKeyDrag(a: KeyDragArgs) {
     if (!drags) return;
 
     setDrag({ keyIndex: i, t: times[i], times });
+    const stops = snapTimes;
 
     // A press that never travels is a click: it selects and moves nothing.
     const start = { clientX: e.clientX, clientY: e.clientY };
@@ -81,14 +83,14 @@ export function useKeyDrag(a: KeyDragArgs) {
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
         if (!traveled(ev)) return;
-        const t = at.current(ev);
+        const t = at.current(ev, stops);
         setDrag({ keyIndex: i, t, times });
         previewed = true;
         onKeyInput(i, t);
       },
       // A drag released back on its own time changes nothing, so a preview it sent is put back as for a cancel.
       onEnd: (ev) => {
-        const t = traveled(ev) ? at.current(ev) : times[i];
+        const t = traveled(ev) ? at.current(ev, stops) : times[i];
         if (t !== times[i]) onKeyChange(i, t);
         else if (previewed) { onRevert?.(); onCancel?.(); }
         end();

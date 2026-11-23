@@ -61,6 +61,17 @@ describe('Timeline held', () => {
     expect(screen.queryByTestId('timeline-key-ghost')).toBeNull();
   });
 
+  it('disabled, keeps a selected segment through a press on empty lane space and Escape', () => {
+    const props = { tracks: TRACKS, duration: 1000, playhead: 0, onChange: () => {}, onSeek: () => {} };
+    const { rerender } = renderWithIcons(<Timeline {...props} />);
+    fireEvent.click(screen.getByTestId('timeline-segment'));
+    expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+    rerender(<Timeline {...props} disabled />);
+    fireEvent.pointerDown(screen.getByTestId('timeline-lane-track'), { clientX: 100, clientY: 10, button: 0 });
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Escape' });
+    expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+  });
+
   it('disabled for a reason refuses everything, keeps its marks reachable, and says why', () => {
     const calls = renderTimeline((n) => n, { disabled: true, disabledReason: 'Rendering' });
     tryEverything();

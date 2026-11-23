@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, 
 import { arrowMove } from '@weasel-js/quantity';
 import { useLatest } from '@weasel-js/react';
 import type { Track } from '@weasel-js/animator';
-import type { KeySelection } from './keys';
+import { samePath, type KeyEdit, type KeySelection } from './keys';
 import { trackAtPath } from './lanes';
 import { spanClamp } from '@weasel-js/ui-input';
 import type { TimeWindow } from './timeScale';
@@ -34,7 +34,8 @@ export function useTimeWindow(given: TimeWindow | undefined, duration: number, o
  * A timeline's selected key, held unless `given`, and its selected segment, always held here. A key and a segment are
  * one selection: taking either gives up the other, and a key selection arriving through `given` drops the segment.
  * Either is dropped once its track changes by an edit the timeline did not send through `send`, which may have moved
- * its index onto another key; a key selection so dropped is reported as `null`.
+ * its index onto another key; a key selection so dropped is reported as `null`. `inspected` is the selection as it reads
+ * in a key drag's preview, once the tracks show it: the preview can re-sort the dragged key to another index.
  */
 export function useKeyAndSegment(
   given: KeySelection | null | undefined, tracks: readonly Track[], onSelectionChange?: (sel: KeySelection | null) => void,
@@ -44,6 +45,7 @@ export function useKeyAndSegment(
   const [segment, setSegment] = useState<{ sel: KeySelection; reads: string } | null>(null);
   // The tracks this timeline last sent out: a track reading as it does there changed by the timeline's own edit.
   const [sent, setSent] = useState<readonly Track[] | null>(null);
+  const [previewed, setPreviewed] = useState<KeyEdit | null>(null);
   const [givenKey, setGivenKey] = useState(selectionKey(given));
   const nextGivenKey = selectionKey(given);
   if (nextGivenKey !== givenKey) {
@@ -62,7 +64,7 @@ export function useKeyAndSegment(
     const now = keyPin?.id === id ? readsOwn(held.trackPath, keyPin.reads) : trackReading(tracks, held.trackPath);
     if (now === null) stale = id;
     else if (keyPin?.id !== id || keyPin.reads !== now) setKeyPin({ id, reads: now });
-  }
+  } else if (keyPin) setKeyPin(null);
   if (segment) {
     const now = readsOwn(segment.sel.trackPath, segment.reads);
     if (now === null) setSegment(null);
@@ -71,12 +73,16 @@ export function useKeyAndSegment(
   const drop = useLatest(() => setHeld(null));
   useEffect(() => { if (stale !== null) drop.current(); }, [stale, drop]);
   const selection = stale === null ? held : null;
+  const pv = previewed?.selection;
+  const inspected = selection && pv && samePath(pv.trackPath, selection.trackPath)
+    && trackReading(tracks, pv.trackPath) === trackReading(previewed.tracks, pv.trackPath) ? pv : selection;
 
   /** Selects `sel`, as it reads in `after` when the same edit changes the tracks. */
   const selectKey = (sel: KeySelection | null, after: readonly Track[] = tracks): void => {
     setHeld(sel);
     setKeyPin(sel ? { id: selectionKey(sel), reads: trackReading(after, sel.trackPath) } : null);
     setSegment(null);
+    setPreviewed(null);
   };
   const selectSegment = (sel: KeySelection): void => {
     setSegment({ sel, reads: trackReading(tracks, sel.trackPath) });
@@ -84,7 +90,7 @@ export function useKeyAndSegment(
   };
   const dropSegment = (): void => setSegment(null);
   const send = (next: readonly Track[]): void => setSent(next);
-  return { selection, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment, send };
+  return { selection, inspected, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment, send, preview: setPreviewed };
 }
 
 /** Which nested rows are open, by `LaneRow.fold`. Folding one drops a key or segment selection on a row under it. */

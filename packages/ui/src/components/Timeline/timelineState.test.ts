@@ -35,6 +35,21 @@ describe('useKeyAndSegment against tracks changed from outside', () => {
     expect(result.current.selection).toBeNull();
   });
 
+  it('takes a key selection given again after it went null and its track was edited from outside', () => {
+    const onSelectionChange = vi.fn();
+    const sel = { trackPath: [0], keyIndex: 1 };
+    const { result, rerender } = renderHook(
+      ({ given, tracks }) => useKeyAndSegment(given, tracks, onSelectionChange),
+      { initialProps: { given: sel as typeof sel | null, tracks: start } },
+    );
+    rerender({ given: null, tracks: start });
+    const edited = [sampled('x', [0, 50, 100, 200]), start[1]];
+    rerender({ given: null, tracks: edited });
+    rerender({ given: sel, tracks: edited });
+    expect(result.current.selection).toEqual(sel);
+    expect(onSelectionChange).not.toHaveBeenCalled();
+  });
+
   it('keeps it across the timeline\'s own edits and a copy of the same tracks', () => {
     const { result, rerender } = renderHook(({ tracks }) => useKeyAndSegment(undefined, tracks), { initialProps: { tracks: start } });
     act(() => result.current.selectKey({ trackPath: [0], keyIndex: 2 }));
