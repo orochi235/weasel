@@ -3932,3 +3932,8 @@ Calls the lanes made without a ruling:
   class's name, as the block and architecture readers do for a name given twice. There is no override. Renaming the
   container, as the flowchart reader does for a subgraph, was the alternative; the class writer names a namespace by
   its id, so the renamed one would not read back under its own name.
+## Audit round seventy-five (2026-11-22): the viewport
+
+- 2026-11-22 (the fixer's call): `useDecayLoop`'s `start` ends a coast at once, calling `onEnd`, when its velocity is
+  `NaN` or infinite, where `friction` and `minSpeed` throw: the velocity is measured at a release, and a release
+  never throws. Throwing a `RangeError` as for the options was the alternative.

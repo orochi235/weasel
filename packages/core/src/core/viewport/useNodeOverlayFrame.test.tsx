@@ -194,6 +194,23 @@ describe('useNodeOverlayFrame', () => {
     near(result.current!.toScreen({ x: 10, y: 20 }), 10, 45);
   });
 
+  it("keeps a removed node's toScreen on its own last mapping after the frame moves to another node", () => {
+    const scene = sceneWith([
+      { id: 'a', pose: { x: 10, y: 20, width: 100, height: 50 } },
+      { id: 'b', pose: { x: 500, y: 400, width: 10, height: 10, rotation: Math.PI / 2 } },
+    ]);
+    const el = container();
+    const { result, rerender } = renderHook(({ id }: { id: string }) => {
+      const ref = useRef<HTMLDivElement>(el);
+      return useNodeOverlayFrame(scene, ref, id as NodeId, { view: () => IDENTITY });
+    }, { initialProps: { id: 'a' } });
+    const frameA = result.current!;
+    rerender({ id: 'b' });
+    scene.remove(asNodeId('a'));
+    near(frameA.toScreen({ x: 10, y: 20 }), 10, 20);
+    near(frameA.toLocal({ x: 10, y: 20 }), 10, 20);
+  });
+
   it('is null with no node id, an unknown id, or an unmeasured container', () => {
     const scene = sceneWith([{ id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } }]);
     expect(frameFor(scene, null)).toBeNull();

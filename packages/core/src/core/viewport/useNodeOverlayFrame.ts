@@ -79,14 +79,15 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
     return box ? projectionOf(poseFrameOf(box), resolveView(view)) : null;
   }, [scene, nodeId, compose, view]);
 
-  const lastInvertible = useRef<Projection | null>(null);
+  // Keyed by `project`, so a mapping handed out for one node never falls back to another's.
+  const lastInvertible = useRef(new WeakMap<() => Projection | null, Projection>());
 
   /** The live mapping, or while there is none that inverts, the last one that did. */
   const mapping = useCallback((): Projection => {
     const m = project();
-    if (m?.invertible) lastInvertible.current = m;
+    if (m?.invertible) lastInvertible.current.set(project, m);
     // Published by the commit that handed out toScreen and toLocal, so there is one.
-    return m?.invertible ? m : lastInvertible.current!;
+    return m?.invertible ? m : lastInvertible.current.get(project)!;
   }, [project]);
 
   const toScreen = useCallback((p: OverlayPoint): OverlayPoint => forward(mapping(), p), [mapping]);
@@ -96,7 +97,7 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
   const m = box && width !== 0 && height !== 0 ? project() : null;
   const invertible = m?.invertible ? m : null;
   useInsertionEffect(() => {
-    if (invertible) lastInvertible.current = invertible;
+    if (invertible) lastInvertible.current.set(project, invertible);
   });
 
   if (!box || !invertible) return null;
