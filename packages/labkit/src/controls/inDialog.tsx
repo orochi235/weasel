@@ -148,10 +148,9 @@ export function inDialog(body: LeafRenderer, opts: InDialogOptions = {}): LeafRe
           setValue={ctx.setValue}
           commit={opts.commit}
         >
-          {(draft, setDraft) => {
+          {(draft, setDraft, update) => {
             // Every way the body writes goes to the draft, from the draft: a write past it would land at once
             // and survive Cancel. Its drafts are the draft too, which Done alone writes.
-            const update = (fn: (value: unknown) => unknown): void => setDraft(fn(draft));
             return body({
               ...ctx,
               value: draft,

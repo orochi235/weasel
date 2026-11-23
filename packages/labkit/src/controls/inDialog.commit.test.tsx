@@ -94,3 +94,29 @@ describe('a .dialog commit', () => {
     expect(setConfig).not.toHaveBeenCalled();
   });
 });
+
+describe("a .dialog body's update", () => {
+  it.each([
+    ['update', (ctx: LeafContext) => ctx.update],
+    [
+      'drafts.update',
+      (ctx: LeafContext) => (fn: (v: unknown) => unknown) => ctx.drafts?.update(fn),
+    ],
+  ])('folds two %s calls in one event into the latest draft', (_name, pick) => {
+    const twice = (ctx: LeafContext) => (
+      <button
+        type="button"
+        onClick={() => {
+          pick(ctx)((v) => `${String(v)}a`);
+          pick(ctx)((v) => `${String(v)}b`);
+        }}
+      >
+        twice
+      </button>
+    );
+    const setConfig = mount(twice);
+    press('twice');
+    press('Done');
+    expect(setConfig.mock.calls).toEqual([['note', 'hiab']]);
+  });
+});

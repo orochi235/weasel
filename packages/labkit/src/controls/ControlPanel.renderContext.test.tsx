@@ -88,4 +88,41 @@ describe('<ControlPanel> renderer context', () => {
     fireEvent.click(screen.getByRole('button', { name: 'reset a' }));
     expect(setConfig).toHaveBeenCalledWith('a', 1);
   });
+
+  it.each([
+    ['update', (ctx: Parameters<LeafRenderer>[0]) => ctx.update],
+    [
+      'drafts.update',
+      (ctx: Parameters<LeafRenderer>[0]) => (fn: (v: unknown) => unknown) => ctx.drafts?.update(fn),
+    ],
+  ])("folds two %s calls in one event into the row's latest value", (_name, pick) => {
+    const setConfig = vi.fn();
+    const draftConfig = vi.fn();
+    const schema = resolveConfigSchema(
+      f.schema({
+        a: f.number(1).render((ctx) => (
+          <button
+            type="button"
+            onClick={() => {
+              pick(ctx)((v) => Number(v) + 1);
+              pick(ctx)((v) => Number(v) * 10);
+            }}
+          >
+            twice
+          </button>
+        )),
+      }),
+      [],
+    );
+    render(
+      <ControlPanel
+        schema={schema}
+        config={{ a: 1 }}
+        setConfig={setConfig}
+        draftConfig={draftConfig}
+      />,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'twice' }));
+    expect([...setConfig.mock.calls, ...draftConfig.mock.calls].at(-1)).toEqual(['a', 20]);
+  });
 });

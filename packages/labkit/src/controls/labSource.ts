@@ -159,7 +159,18 @@ export function labRowContext(
   setAuto: ((next: boolean) => void) | undefined,
 ): LeafContext {
   const { value, draft } = row;
-  const write = (next: unknown): void => input.setConfig(path, next);
+  // Two updates in one event fold: the second reads what the first wrote, not this render's value.
+  let latest = value;
+  const write = (next: unknown): void => {
+    latest = next;
+    input.setConfig(path, next);
+  };
+  const send =
+    draft &&
+    ((next: unknown): void => {
+      latest = next;
+      draft(next);
+    });
   return {
     ...sourceLeafContext(createLabConfigSource(input), path, pref),
     value,
@@ -167,8 +178,8 @@ export function labRowContext(
     values: input.config,
     changed: row.changed,
     setValue: write,
-    update: (fn) => write(fn(value)),
-    ...(draft ? { drafts: { setValue: draft, update: (fn) => draft(fn(value)) } } : {}),
+    update: (fn) => write(fn(latest)),
+    ...(send ? { drafts: { setValue: send, update: (fn) => send(fn(latest)) } } : {}),
     auto: input.auto?.has(path) ?? false,
     setAuto: setAuto ?? (() => {}),
     fields: row.fields,

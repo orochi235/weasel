@@ -9,8 +9,12 @@ export interface DraftDialogRowProps
   setValue: (value: unknown) => void;
   /** Turns the draft into the value Done writes. Runs once at Done, and only on a draft that was edited. */
   commit?: (draft: unknown) => unknown;
-  /** The dialog's body, editing `value` as a draft. */
-  children: (value: unknown, setValue: (value: unknown) => void) => ReactNode;
+  /** The dialog's body, editing `value` as a draft; `update` folds into the latest draft. */
+  children: (
+    value: unknown,
+    setValue: (value: unknown) => void,
+    update: (fn: (value: unknown) => unknown) => void,
+  ) => ReactNode;
 }
 
 const lateWrite = (label: ReactNode): string =>
@@ -29,8 +33,8 @@ export function DraftDialogRow({ value, setValue, commit, children, ...row }: Dr
     open.current = false;
     setDraft(null);
   };
-  const write = (next: unknown): void => {
-    if (open.current) setDraft({ value: next });
+  const write = (fn: (prev: unknown) => unknown): void => {
+    if (open.current) setDraft((prev) => ({ value: fn(prev === null ? value : prev.value) }));
     else if (isDev()) console.warn(lateWrite(row.label));
   };
   return (
@@ -46,7 +50,7 @@ export function DraftDialogRow({ value, setValue, commit, children, ...row }: Dr
       }}
       onCancel={closed}
     >
-      {() => children(draft === null ? value : draft.value, write)}
+      {() => children(draft === null ? value : draft.value, (next) => write(() => next), write)}
     </DialogRow>
   );
 }
