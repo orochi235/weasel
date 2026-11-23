@@ -1,8 +1,8 @@
 import { getOwn } from '@weasel-js/registry';
-import { isByAxis, type AxisChoice, type ThemeDefinition, type Varying } from '@weasel-js/theme';
+import type { ThemeDefinition } from '@weasel-js/theme';
 import { contrast, type SemanticRule } from '@weasel-js/theme/engine';
 import type { ModeView } from './draft';
-import { ruleSummary, stepOf } from './model';
+import { leafAt, ruleSummary, stepOf } from './model';
 
 export type RuleKind = 'step' | 'offset' | 'contrast' | 'ref' | 'literal';
 
@@ -50,16 +50,6 @@ export function defaultRule(
   }
 }
 
-export function pickRule(rule: Varying<SemanticRule>, selection: AxisChoice): SemanticRule | undefined {
-  let r: unknown = rule;
-  while (isByAxis(r)) {
-    const value = getOwn(selection, r.by);
-    if (value === undefined || !Object.hasOwn(r, value)) return undefined;
-    r = (r as Record<string, unknown>)[value];
-  }
-  return r as SemanticRule;
-}
-
 export interface ContrastCheck {
   readonly against: string;
   readonly min: number;
@@ -103,7 +93,7 @@ export function semanticRows(draft: ThemeDefinition, merged: ThemeDefinition, vi
         const final = v.resolved as Readonly<Record<string, string>>;
         const p = getOwn(v.result.provenance, name)!;
         const hex = final[`--wzl-${name}`] ?? text(token.value);
-        const picked = pickRule(rule, v.selection);
+        const picked = leafAt(rule, v.selection);
         const wanted = [
           ...(picked && 'contrast' in picked ? picked.contrast.against.map((against) => ({ against, min: picked.contrast.min })) : []),
           ...(picked?.check ? picked.check.against.map((against) => ({ against, min: picked.check!.contrast })) : []),

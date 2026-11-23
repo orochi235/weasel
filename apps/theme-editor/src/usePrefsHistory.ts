@@ -2,6 +2,7 @@ import { createHistory, createSwapOp, type History } from '@weasel-js/history';
 import { prefLeaves, type PrefGroup, type PrefPath, type PrefSelection, type PrefsStore } from '@weasel-js/prefs';
 import { deepEqual } from '@weasel-js/registry';
 import { useMemo } from 'react';
+import { HISTORY_LIMIT } from './useLabHistory';
 
 /** Held for a leaf that is auto where its schema starts it pinned: a mark, not a value. */
 const AUTO = Symbol('auto');
@@ -66,7 +67,7 @@ export function usePrefsHistory(store: PrefsStore<PrefGroup>): PrefsHistory {
   return useMemo(() => {
     const paths = [...prefLeaves(store.schema).keys()];
     // Long enough that a drag or typing reads as one edit, short enough that two deliberate edits stay apart.
-    const history = createHistory(store, { coalesceWindowMs: 500 });
+    const history = createHistory(store, { coalesceWindowMs: 500, historyLimit: HISTORY_LIMIT });
     const write = (key: string, label: string, run: () => void): void => {
       const prev = heldOf(store, paths);
       run();

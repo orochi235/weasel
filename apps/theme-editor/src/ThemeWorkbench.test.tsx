@@ -104,6 +104,16 @@ describe('<ThemeWorkbench>', () => {
       expect(screen.getAllByRole('region', { name: / scale$/ }).length).toBeGreaterThan(0);
     });
 
+    it('holds Save while the draft does not derive', () => {
+      const put = vi.fn();
+      renderBench({ api: apiWith(put) });
+      breakIt();
+      const save = screen.getByRole('button', { name: 'Save, with unsaved changes' });
+      expect(save).toBeDisabled();
+      fireEvent.click(save);
+      expect(put).not.toHaveBeenCalled();
+    });
+
     it('keeps rendering while a ramp is compared in the preview', () => {
       renderBench();
       fireEvent.click(screen.getByRole('button', { name: /^Ramps/ }));

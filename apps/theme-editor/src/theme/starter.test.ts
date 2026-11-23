@@ -12,7 +12,7 @@ describe('starterDefinition', () => {
     expect(harbor.extends).toBe('weasel');
     expect(result.issues).toEqual([]);
     expect(result.provenance['gray-800']).toMatchObject({ layer: 'ramps', pinned: false });
-    expect(countTokens(harbor, result).overridden).toBe(0);
+    expect(countTokens(harbor, result, harbor).overridden).toBe(0);
   });
 
   it('keeps chroma at both ends of its accent', () => {

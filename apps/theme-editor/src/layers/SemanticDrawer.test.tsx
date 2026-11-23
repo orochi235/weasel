@@ -36,12 +36,31 @@ describe('<SemanticDrawer>', () => {
     expect(onRule.mock.calls.at(-1)![0]).toEqual({ value: 0.6, type: 'number' });
   });
 
+  it('keeps an untyped number literal a number when its field is cleared', () => {
+    const { onRule, rerender } = renderDrawer({ value: 4 } as SemanticRule);
+    type('');
+    const cleared = onRule.mock.calls.at(-1)?.[0] ?? { value: 4 };
+    expect(cleared).toEqual({ value: 4 });
+    rerender(cleared);
+    type('8');
+    expect(onRule.mock.calls.at(-1)![0]).toEqual({ value: 8 });
+  });
+
   it('shows a cubic-bezier literal as CSS writes it and keeps it four numbers when edited', () => {
     const { onRule } = renderDrawer({ value: [0.32, 0, 0.67, 0], type: 'cubicBezier' } as SemanticRule);
     const field = screen.getByRole('textbox', { name: 'Value' });
     expect(field).toHaveValue('cubic-bezier(0.32, 0, 0.67, 0)');
     type('cubic-bezier(0.32, 0, 0.67, 0.1)');
     expect(onRule.mock.calls.at(-1)![0]).toEqual({ value: [0.32, 0, 0.67, 0.1], type: 'cubicBezier' });
+  });
+
+  it('turns Varies by off while editing a branch the rule lacks, keeping a branch it has', async () => {
+    const dark = { value: 'a' } as SemanticRule;
+    const { onRule } = renderDrawer({ by: 'mode', dark } as Varying<SemanticRule>);
+    await userEvent.click(screen.getByRole('radio', { name: 'light' }));
+    expect(screen.getByText(/has no light branch/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Varies by mode' }));
+    expect(onRule.mock.calls.at(-1)?.[0]).toEqual(dark);
   });
 
   it('edits a branch of the rule again after Varies by is turned off and on', () => {

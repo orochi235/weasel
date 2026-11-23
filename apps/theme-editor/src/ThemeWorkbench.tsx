@@ -241,7 +241,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     }
   };
 
-  const counts = countTokens(draft, derived.primary.result);
+  const counts = countTokens(draft, derived.primary.result, derived.merged);
   // A pinned token jumps to Pins: the pin is what decides its value.
   const layerOf = (token: string): LayerId =>
     pinApplies(derived.primary.result, token) ? 'pins' : (getOwn(derived.primary.result.provenance, token)?.layer ?? 'pins');
@@ -270,7 +270,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       case 'semantics':
         return <SemanticsLayer draft={draft} derived={derived} lookup={lookup} highlight={highlight} onChange={history.update} />;
       default:
-        return <TokenLayer layer={layer} draft={draft} result={derived.primary.result} selection={derived.primary.selection} highlight={highlight} onChange={history.update} />;
+        return <TokenLayer layer={layer} draft={draft} result={derived.primary.result} merged={derived.merged} selection={derived.primary.selection} highlight={highlight} onChange={history.update} />;
     }
   })();
 
@@ -295,7 +295,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     </div>
   );
   const saveButton = (
-    <Button stance="confirm" size="sm" disabled={!dirty || saving} onClick={save} aria-label={dirty ? 'Save, with unsaved changes' : 'Save'}>
+    <Button stance="confirm" size="sm" disabled={!dirty || saving || error !== null} onClick={save} aria-label={dirty ? 'Save, with unsaved changes' : 'Save'}>
       {dirty && <span className={styles.dirtyDot} aria-hidden="true" />}
       Save
     </Button>

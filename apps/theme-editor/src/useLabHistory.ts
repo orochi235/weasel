@@ -30,8 +30,8 @@ function stepsBackTo<T>(saved: SavedLabHistory<T>, state: T): number | null {
   return null;
 }
 
-/** How many steps a history keeps. */
-const HISTORY_LIMIT = 200;
+/** How many steps a history keeps, on every page. */
+export const HISTORY_LIMIT = 200;
 
 export interface LabHistory<T> {
   state: T;

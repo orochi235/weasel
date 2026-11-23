@@ -179,9 +179,10 @@ export function SemanticDrawer({ name, rule, row, axes, ramps, semantics, issues
       `semantics.${name}.${varies ? `${branch}.` : ''}${field}`,
     );
   const setVaries = (on: boolean) => {
-    if (!current) return;
+    const keep = current ?? (present as Varying<SemanticRule> | undefined);
+    if (!keep) return;
     onRule(
-      on ? ({ by: 'mode', ...Object.fromEntries(modeValues.map((m) => [m, current])) } as Varying<SemanticRule>) : current,
+      on ? ({ by: 'mode', ...Object.fromEntries(modeValues.map((m) => [m, keep])) } as Varying<SemanticRule>) : keep,
       `semantics.${name}.by`,
     );
   };

@@ -1,5 +1,5 @@
 import { resolveTheme, type ThemeDefinition } from '@weasel-js/theme';
-import { derive } from '@weasel-js/theme/engine';
+import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
 import { adoptGenerated, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf } from './model';
@@ -8,7 +8,7 @@ const lookup = lookupOf(child);
 
 describe('countTokens', () => {
   it("counts weasel's own tokens and the pins over generated ones", () => {
-    const counts = countTokens(weasel, derive(weasel, { mode: 'dark' }, lookup));
+    const counts = countTokens(weasel, derive(weasel, { mode: 'dark' }, lookup), weasel);
     expect(counts).toMatchObject({ overridden: 23, total: 182 });
     expect(counts.layers).toEqual({
       seeds: { count: 1, pinned: 0 },
@@ -21,7 +21,7 @@ describe('countTokens', () => {
   });
 
   it("counts a child's own tokens only", () => {
-    const counts = countTokens(child, derive(child, { mode: 'dark' }, lookup));
+    const counts = countTokens(child, derive(child, { mode: 'dark' }, lookup), mergeChain(child, lookup));
     expect(counts).toMatchObject({ overridden: 1, total: 2 });
     expect(counts.layers.semantics).toEqual({ count: 1, pinned: 1 });
     expect(counts.layers.pins).toEqual({ count: 2, pinned: 1 });
@@ -29,7 +29,7 @@ describe('countTokens', () => {
 
   it('counts a pin only at a selection where it applies', () => {
     const def = { ...weasel, pins: { ...weasel.pins, gap: { by: 'mode', dark: { value: '4px', type: 'dimension' } } } } as ThemeDefinition;
-    const at = (mode: string) => countTokens(def, derive(def, { mode }, lookup)).layers.pins.count;
+    const at = (mode: string) => countTokens(def, derive(def, { mode }, lookup), def).layers.pins.count;
     expect(at('dark')).toBe(at('light') + 1);
   });
 });
@@ -37,7 +37,7 @@ describe('countTokens', () => {
 describe('names Object.prototype holds', () => {
   it('counts no token for a pin named constructor that has no value at this selection', () => {
     const def = { name: 'p', pins: { constructor: { by: 'mode', light: { value: '#ffffff', type: 'color' } } } } as ThemeDefinition;
-    const counts = countTokens(def, derive(def, { mode: 'dark' }));
+    const counts = countTokens(def, derive(def, { mode: 'dark' }), def);
     expect(counts).toMatchObject({ overridden: 0, total: 0 });
   });
 
@@ -67,7 +67,7 @@ describe('pins', () => {
     expect(Object.keys(adopted.pins!).filter((n) => n.startsWith('gray-'))).toEqual([]);
     const result = derive(adopted, { mode: 'dark' }, lookup);
     expect(result.tokens['gray-800'].value).toBe('#1a1c21');
-    expect(countTokens(adopted, result).overridden).toBe(13);
+    expect(countTokens(adopted, result, adopted).overridden).toBe(13);
   });
 });
 

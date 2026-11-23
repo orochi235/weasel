@@ -18,7 +18,7 @@ const groupOf = (name: string) => name.split('-')[0] ?? name;
  * A seed that varies by axis shows its value at `selection`, the one an edit writes;
  * one with no value there is left out, as a pin that does not apply is.
  */
-export function layerEntries(layer: LayerId, def: ThemeDefinition, result: DeriveResult, selection: AxisChoice): TokenEntry[] {
+export function layerEntries(layer: LayerId, def: ThemeDefinition, result: DeriveResult, selection: AxisChoice, merged: ThemeDefinition): TokenEntry[] {
   if (layer === 'seeds') {
     return Object.entries(def.seeds ?? {}).flatMap(([name, v]) => {
       const leaf = leafAt(v, selection);
@@ -29,7 +29,7 @@ export function layerEntries(layer: LayerId, def: ThemeDefinition, result: Deriv
   const names =
     layer === 'pins'
       ? Object.keys(def.pins ?? {}).filter((n) => pinApplies(result, n))
-      : ownTokenNames(def).filter((n) => getOwn(result.provenance, n)?.layer === layer);
+      : ownTokenNames(def, merged).filter((n) => getOwn(result.provenance, n)?.layer === layer);
   return names.flatMap((name) => {
     const token = getOwn(result.tokens, name);
     if (!token) return [];

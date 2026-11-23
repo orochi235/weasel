@@ -4,6 +4,7 @@ import { DEFAULT_CONSTRAINTS, type Palette } from '@weasel-js/theme/engine';
 import { afterEach, describe, expect, it } from 'vitest';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { PalettePreview } from './PalettePreview';
+import { SURFACES } from './presets';
 
 const stats = {
   meanChroma: 0.15,
@@ -36,5 +37,10 @@ describe('<PalettePreview> stats', () => {
     renderWithIcons(<PalettePreview palette={{ ...palette, stats: { ...stats, minContrast: 1.1 } } as Palette} constraints={c} />);
     expect(verdictOf('1.10')).toMatch(/_statValue_/);
     expect(verdictOf('0.250')).toMatch(/_statValue_/);
+  });
+
+  it('marks the pane drawn on the surface the gate measured against', () => {
+    renderWithIcons(<PalettePreview palette={palette} constraints={{ ...DEFAULT_CONSTRAINTS, surface: SURFACES.light }} />);
+    expect(screen.getByText('contrast gated here').closest('section')).toHaveTextContent(/^light surface/);
   });
 });

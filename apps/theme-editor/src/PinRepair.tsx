@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { isByAxis, parseTokenValue, serializeTokenValue, type ThemeDefinition, type TokenValue } from '@weasel-js/theme';
 import { Button } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
@@ -35,10 +36,41 @@ function plain(pin: unknown): { text: string; write: (text: string) => unknown }
   return inner && { text: inner.text, write: (text) => ({ ...(pin as object), value: inner.parse(text) }) };
 }
 
+/** Whether `error` names `ref` whole: `accent` is not named by `accent-fg`, nor `fg` by `seeds.fg`. */
+const mentions = (error: string, ref: string): boolean =>
+  new RegExp(`(?<![\\w.-])${ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-]|\\.\\w)`).test(error);
+
 /** Whether the error names something this pin refers to: `{nope}` in the value, `nope` in the message. A reference
  *  to another of the draft's pins is not it: the error names the pin at fault too, and others refer to that one. */
 const named = (text: string, error: string, pins: ReadonlySet<string>): boolean =>
-  [...text.matchAll(/\{([^{}]+)\}/g)].some(([, ref]) => !pins.has(ref!) && error.includes(ref!));
+  [...text.matchAll(/\{([^{}]+)\}/g)].some(([, ref]) => !pins.has(ref!) && mentions(error, ref!));
+
+interface Typing {
+  readonly text: string;
+  readonly write: (text: string) => unknown;
+  readonly wrote: string;
+}
+
+/** A pin's field: the typed text stays as typed, and each keystroke converts against the value the edit began from, so
+ *  `0.` on the way to `0.5`, or `Inter, ` on the way to a second family, is not redrawn from the value it parses to. */
+function PinField({ token, pin, value, onWrite }: { token: string; pin: unknown; value: NonNullable<ReturnType<typeof plain>>; onWrite: (pin: unknown) => void }) {
+  const [typing, setTyping] = useState<Typing | null>(null);
+  // Typing only holds while the pin is still what it wrote: an undo, or any other write, shows the pin again.
+  const live = typing !== null && typing.wrote === JSON.stringify(pin) ? typing : null;
+  return (
+    <Input
+      aria-label={token}
+      value={live?.text ?? value.text}
+      onChange={(text) => {
+        const write = live?.write ?? value.write;
+        const next = write(text);
+        setTyping({ text, write, wrote: JSON.stringify(next) });
+        onWrite(next);
+      }}
+      onBlur={() => setTyping(null)}
+    />
+  );
+}
 
 /**
  * The pins of a draft that does not derive, each editable in place, so one bad
@@ -51,7 +83,7 @@ export function PinRepair({ draft, error, onChange }: PinRepairProps) {
   const rows = Object.entries(draft.pins ?? {})
     .map(([token, pin]) => {
       const value = plain(pin);
-      return { token, value, byAxis: isByAxis(pin), suspect: value !== null && named(value.text, error, pins) };
+      return { token, pin, value, byAxis: isByAxis(pin), suspect: value !== null && named(value.text, error, pins) };
     })
     .sort((a, b) => Number(b.suspect) - Number(a.suspect));
   if (rows.length === 0) return null;
@@ -59,16 +91,17 @@ export function PinRepair({ draft, error, onChange }: PinRepairProps) {
     <section aria-label="Pins" className={styles.repair}>
       <p>Fix or remove the pin at fault to keep the rest of this draft.</p>
       <ul className={styles.repairRows}>
-        {rows.map(({ token, value, byAxis, suspect }) => (
+        {rows.map(({ token, pin, value, byAxis, suspect }) => (
           <li key={token} className={styles.repairRow} data-suspect={suspect ? '' : undefined}>
             <span className={styles.repairToken}>{token}</span>
             {value === null ? (
               <span className={styles.repairNote}>{byAxis ? 'varies by axis' : 'not editable here'}</span>
             ) : (
-              <Input
-                aria-label={token}
-                value={value.text}
-                onChange={(next) => onChange(setPin(draft, token, value.write(next) as never), `pin:${token}`, `Edit ${token}`)}
+              <PinField
+                token={token}
+                pin={pin}
+                value={value}
+                onWrite={(next) => onChange(setPin(draft, token, next as never), `pin:${token}`, `Edit ${token}`)}
               />
             )}
             {suspect && <span className={styles.repairNote}>named in the error</span>}

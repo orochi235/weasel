@@ -6,6 +6,9 @@ import { isFiniteNumber } from '@weasel-js/registry';
 
 export type SurfaceKey = 'dark' | 'light';
 
+/** The surface each key stands for, which the palette is gated against and previewed on. */
+export const SURFACES: Readonly<Record<SurfaceKey, string>> = { dark: '#181a1e', light: '#f5f5f6' };
+
 /** Everything a preset restores, and everything one undo step covers. */
 export interface LabState {
   readonly c: Constraints;
@@ -140,12 +143,14 @@ export const liveHistory: LabHistoryStore<LabState> = {
  *  refuses to write over a state `loadLive` could not read until that one is kept aside. */
 export const persistLive = (state: LabState): Promise<boolean> => writeSession([LIVE_KEY, state]);
 
-/** The presets a stored list, as `JSON.parse` reads it, holds, dropping entries that are not presets. Throws on a
- *  value that is not a list. */
+/** The presets a stored list, as `JSON.parse` reads it, holds, dropping entries that are not presets and, as saving
+ *  does, one named like a built-in or by a later entry. Throws on a value that is not a list. */
 export function savedOf(stored: unknown): Preset[] {
   if (!Array.isArray(stored)) throw new Error('not a list of palette presets');
-  return stored
-    .filter((p): p is Preset => typeof p === 'object' && p !== null && typeof (p as Preset).name === 'string')
+  const builtin = new Set(BUILTIN_PRESETS.map((p) => p.name));
+  const presets = stored.filter((p): p is Preset => typeof p === 'object' && p !== null && typeof (p as Preset).name === 'string');
+  return presets
+    .filter((p, i) => !builtin.has(p.name) && !presets.slice(i + 1).some((later) => later.name === p.name))
     .map((p) => ({ name: p.name, state: stateOf(p.state) }));
 }
 

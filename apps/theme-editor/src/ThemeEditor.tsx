@@ -94,7 +94,7 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
   const draft = loadDraft(current.name);
   const reload = async () => {
     const fresh = await loaded.api.get(current.name);
-    void clearDraft(current.name);
+    await clearDraft(current.name);
     clearDraftHistory(current.name);
     replace(fresh);
     setGeneration((g) => g + 1);
