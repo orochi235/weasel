@@ -79,7 +79,7 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
     dispose() {},
     deps: () => {
       const aim = host.aim();
-      return [host.shown(), host.aimMode(), aim.x, aim.y, press?.at?.x, press?.at?.y, hovered, win.bounds.x, win.bounds.y, win.bounds.width];
+      return [host.shown(), host.aimMode(), aim.x, aim.y, press?.from, press?.at?.x, press?.at?.y, hovered, win.bounds.x, win.bounds.y, win.bounds.width];
     },
     draw(ctx: HudDrawCtx): DrawCommand[] {
       if (press?.at) {

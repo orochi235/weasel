@@ -108,4 +108,11 @@ describe('the loupe pin', () => {
     pin.onPointer(at('up', 100, 100));
     expect(lens.mode).toBe('follow');
   });
+
+  it('redraws pressed as soon as the docked pin is pressed', () => {
+    const { pin, dock } = setup();
+    const before = pin.deps!(ctx);
+    pin.onPointer(at('down', dock.x, dock.y));
+    expect(pin.deps!(ctx)).not.toEqual(before);
+  });
 });
