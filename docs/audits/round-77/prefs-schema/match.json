@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "A root-path read into a list or map entry finds no item-field default, where the same field read `from: 'item'` gets one",
+  "`prefDisplayBounds` decides a unit's direction from stored 0 and 1 only, so a decreasing unit undefined there comes out with min above max",
+  "A group's switch that is a field of an object leaf in the group is disabled by the group's own `enableIf`",
+  "`prefAliasedLeaf` drops the target's short forms when the alias names itself, but keeps the target's access letter",
+  "The pbt fixture's `leaf()` says it excludes `paint`, but its scalar arm yields paint leaves"
+ ],
+ "b": [
+  "prefStatusAt disables an item's switch field that applyPrefConditions spares",
+  "An entry read with `from: 'item'` and the same value read by its root path give different answers when the entry is null"
+ ]
+}

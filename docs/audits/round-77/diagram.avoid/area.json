@@ -1,0 +1,88 @@
+{
+ "id": "diagram.avoid",
+ "commit": "9081ff60eaadbfc5530490c9f0f077c44c65945d",
+ "date": "2026-11-23",
+ "files": [
+  "packages/diagram/src/avoid/avoid.bench.ts",
+  "packages/diagram/src/avoid/avoidFixture.ts",
+  "packages/diagram/src/avoid/dirty.ts",
+  "packages/diagram/src/avoid/dragIndex.ts",
+  "packages/diagram/src/avoid/edgeRoute.ts",
+  "packages/diagram/src/avoid/grid.ts",
+  "packages/diagram/src/avoid/hash.ts",
+  "packages/diagram/src/avoid/heap.ts",
+  "packages/diagram/src/avoid/holds.ts",
+  "packages/diagram/src/avoid/index.ts",
+  "packages/diagram/src/avoid/install.ts",
+  "packages/diagram/src/avoid/labels.ts",
+  "packages/diagram/src/avoid/nudge.ts",
+  "packages/diagram/src/avoid/obstacles.ts",
+  "packages/diagram/src/avoid/router.ts",
+  "packages/diagram/src/avoid/sceneInput.ts",
+  "packages/diagram/src/avoid/scenes.fixture.ts",
+  "packages/diagram/src/avoid/search.ts",
+  "packages/diagram/src/avoid/segments.ts",
+  "packages/diagram/src/avoid/specRoutes.ts",
+  "packages/diagram/src/avoid/stateTable.ts",
+  "packages/diagram/src/avoid/turns.ts",
+  "packages/diagram/src/avoid/types.ts",
+  "packages/diagram/src/avoid/useAvoidRouting.ts",
+  "packages/diagram/src/avoid/visibility.ts"
+ ],
+ "a": 5,
+ "b": 1,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 76,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 76,
+  "chapman": 11,
+  "unfound": 2
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 21,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4902,
+   "total": 4902
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 12.1,
+   "B": 13.3,
+   "match": 0.1,
+   "fix": 30.7
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 780725,
+  "costUsd": 5
+ },
+ "fixCommits": [
+  "419b5367fe50d30a33f9e19ec6f4de59ff318b81",
+  "59db2dc4b3d78b477c3e0a4c0b90b7eaf7854550",
+  "5f4e45401095f3d8e7214d7ba1e21e6402b00585",
+  "7086ead15642bd6d3d722b1353601ca79283fb75",
+  "c224c0a22b20260ab802cfc37172bced0a748b86"
+ ]
+}

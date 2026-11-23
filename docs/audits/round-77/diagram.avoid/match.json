@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "A commit re-nudges a clean connector apart from its old channel mates, so it can land on one of them",
+  "The drag-frame limit drops the margin that the commit-time limit keeps",
+  "SpatialHash.remove leaves empty cell lists, and walking every cell visits them",
+  "createSpecRouter routes an edge with more than two `dependsOn`; avoidSceneInput skips it",
+  "The same box-equality and facing-port filters are defined twice"
+ ],
+ "b": [
+  "A drag frame's search limit grows to a moved shape's bare box, without the margin a commit's limit keeps"
+ ]
+}

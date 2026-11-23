@@ -1,0 +1,97 @@
+{
+ "id": "paint",
+ "commit": "9081ff60eaadbfc5530490c9f0f077c44c65945d",
+ "date": "2026-11-23",
+ "files": [
+  "packages/paint/src/alignedStrokeRect.ts",
+  "packages/paint/src/chromaCurve.ts",
+  "packages/paint/src/color.ts",
+  "packages/paint/src/colorSpaces.ts",
+  "packages/paint/src/commandPaint.ts",
+  "packages/paint/src/contrast.ts",
+  "packages/paint/src/cssColor.ts",
+  "packages/paint/src/gradient.ts",
+  "packages/paint/src/hex.ts",
+  "packages/paint/src/hexAlpha.ts",
+  "packages/paint/src/hsl.ts",
+  "packages/paint/src/hue.ts",
+  "packages/paint/src/index.ts",
+  "packages/paint/src/isPaint.ts",
+  "packages/paint/src/lerpPaint.ts",
+  "packages/paint/src/mix.ts",
+  "packages/paint/src/paint.ts",
+  "packages/paint/src/paintDefaults.ts",
+  "packages/paint/src/paintKey.ts",
+  "packages/paint/src/paintPreview.ts",
+  "packages/paint/src/paintValue.ts",
+  "packages/paint/src/palette.ts",
+  "packages/paint/src/patternPaint.ts",
+  "packages/paint/src/patternTransform.ts",
+  "packages/paint/src/pbt.fixture.ts",
+  "packages/paint/src/ramp.ts",
+  "packages/paint/src/resolvePaint.ts",
+  "packages/paint/src/scalar.ts",
+  "packages/paint/src/shortArc.ts",
+  "packages/paint/src/strokeTrim.ts",
+  "packages/paint/src/texture.ts",
+  "packages/paint/src/vertexWidth.ts"
+ ],
+ "a": 2,
+ "b": 4,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 6.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 32,
+  "B": 32
+ },
+ "newCode": {
+  "since": 72,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 72,
+  "chapman": 11.6,
+  "unfound": 1.6
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4365,
+   "total": 4365
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.6,
+   "B": 11.7,
+   "match": 0.7,
+   "fix": 19.1,
+   "repair": 11.8
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1301836,
+  "costUsd": 3.99
+ },
+ "fixCommits": [
+  "5bbf26c29e0c781d09bf151ece412136b8168b87",
+  "9d6399fec3424a681013e135a1281327103a48ca",
+  "91f5e5f17a72d76be2c62487590d88bc427679a8",
+  "e05aee4c62d68826687d67d7d57ec699910d81de",
+  "1a44c2cfb192203b4cb625ee46258044df7ac8d2",
+  "e5ce100318fb7ff15ce2d046b7da3c94b14d420d"
+ ]
+}

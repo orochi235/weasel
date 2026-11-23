@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "Lowering italic in an italic node takes the node-rewrite path, holding and committing a node style that never changed"
+ ],
+ "b": [
+  "A CRLF split across two runs draws as two lines in the overlay, one on the canvas",
+  "`runsToDom` and `normalizeSmallCaps` read a run's `lang: ''` two ways, so small-caps pieces are rewritten on the first input",
+  "A carried edit waits on the faces of the node's stored runs, not on what the overlay actually holds",
+  "Handing focus back from editor chrome uses a bare `overlay.focus`, where the overlay's own focus path keeps a clipped box's scroll",
+  "The rich test harnesses read and write their node table through the prototype chain"
+ ]
+}

@@ -1,0 +1,102 @@
+{
+ "id": "devtools.views",
+ "commit": "9081ff60eaadbfc5530490c9f0f077c44c65945d",
+ "date": "2026-11-23",
+ "files": [
+  "packages/devtools/src/views/Bindings.tsx",
+  "packages/devtools/src/views/CoordTable.tsx",
+  "packages/devtools/src/views/DecisionPath.tsx",
+  "packages/devtools/src/views/DispatchView.module.css",
+  "packages/devtools/src/views/DispatchView.tsx",
+  "packages/devtools/src/views/FallthroughDiagram.fixtures.ts",
+  "packages/devtools/src/views/FallthroughDiagram.module.css",
+  "packages/devtools/src/views/FallthroughDiagram.stories.tsx",
+  "packages/devtools/src/views/FallthroughDiagram.tsx",
+  "packages/devtools/src/views/FrameView.module.css",
+  "packages/devtools/src/views/FrameView.tsx",
+  "packages/devtools/src/views/GestureRoute.module.css",
+  "packages/devtools/src/views/GestureRoute.stories.module.css",
+  "packages/devtools/src/views/GestureRoute.stories.tsx",
+  "packages/devtools/src/views/GestureRoute.tsx",
+  "packages/devtools/src/views/HistoryTable.tsx",
+  "packages/devtools/src/views/HistoryView.module.css",
+  "packages/devtools/src/views/HistoryView.tsx",
+  "packages/devtools/src/views/NodeDetail.tsx",
+  "packages/devtools/src/views/RegistryBrowser.browser.module.css",
+  "packages/devtools/src/views/RegistryBrowser.module.css",
+  "packages/devtools/src/views/RegistryBrowser.tsx",
+  "packages/devtools/src/views/RegistryEntryDetail.tsx",
+  "packages/devtools/src/views/RegistryView.module.css",
+  "packages/devtools/src/views/RegistryView.tsx",
+  "packages/devtools/src/views/SceneView.module.css",
+  "packages/devtools/src/views/SceneView.tsx",
+  "packages/devtools/src/views/StateView.module.css",
+  "packages/devtools/src/views/StateView.tsx",
+  "packages/devtools/src/views/TraceTable.module.css",
+  "packages/devtools/src/views/TraceTable.tsx",
+  "packages/devtools/src/views/ValueView.module.css",
+  "packages/devtools/src/views/ValueView.tsx",
+  "packages/devtools/src/views/coalesced.ts",
+  "packages/devtools/src/views/formatAge.ts",
+  "packages/devtools/src/views/keyName.ts",
+  "packages/devtools/src/views/modLegends.ts",
+  "packages/devtools/src/views/note.module.css",
+  "packages/devtools/src/views/sequenced.ts",
+  "packages/devtools/src/views/useSceneTree.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 40,
+  "B": 40
+ },
+ "newCode": {
+  "since": 71,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 71,
+  "chapman": 9,
+  "unfound": 4
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 8,
+  "testFiles": {
+   "failed": 0,
+   "passed": 242,
+   "total": 242
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.1,
+   "B": 12.5,
+   "match": 0.1,
+   "fix": 6.5
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 839271,
+  "costUsd": 2.59
+ },
+ "fixCommits": [
+  "a6a05c0863e8986cc62151d7f7a9957a7fc578ff",
+  "daacb89c92603466a435cd4f663714fbf5253e4a",
+  "2ad04b03fd6264ce98fd9847b962d5fec18a1a6f",
+  "8faa8b775142bdcf096fd0f57067c892b80c4c4a"
+ ]
+}

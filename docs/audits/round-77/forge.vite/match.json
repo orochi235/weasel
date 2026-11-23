@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A native story built through an imported alias or factory-made `story` is dropped, though the same code in-file stays in",
+  "`returnsStory` misses returns inside `try`, `switch`, loops and labeled blocks, so a helper returning a story there drops it",
+  "The in-file walk counts a call to `meta` as a story, while the foreign walk tells `meta` from `story`",
+  "`typeText` prints a function type inside a union or intersection without parentheses, which changes its meaning",
+  "`prop()` takes the last property naming a key and ignores a later spread that overrides it"
+ ],
+ "b": [
+  "A native story built by a default-exported helper is dropped from the index",
+  "A call to an import nothing could decide is taken for \"not a story\", contrary to mayBeStory's own rule",
+  "importers.js and deps.js are served from the index before the wrapper settle pass has run",
+  "CSF2 assignments are lost when a story is exported under another name",
+  "A full capture queue is answered as \"capture unavailable\""
+ ]
+}

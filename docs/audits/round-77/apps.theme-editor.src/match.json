@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "Editing a pin in the token layers drops its `description` and `scope`",
+  "Ramp and scale editors read their parameters from the last derivation, not the draft, when the draft does not derive",
+  "Unpinning a swatch removes every anchor sharing its name",
+  "\"Copy as tokens\" writes swatch names into JSON unescaped"
+ ],
+ "b": [
+  "Anchor lightness field's 0.3–0.97 bounds (and 0.01/1° steps) don't cover the lightness a pinned hex really has",
+  "Unpinning a grid swatch removes every anchor with that name, not just the one pinned",
+  "Stored constraints keep any string for an enum field such as `order`",
+  "`fitted` undercounts the size it trims, so a saved history can end up over budget"
+ ]
+}

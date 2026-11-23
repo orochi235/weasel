@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "Turning coords off leaves an in-flight read free to refill the coord list, so stale coords reappear when it is turned back on",
+  "A predicted, handled record with no `fired` reads \"handled\" in the trace row but \"would handle\" in its decision path",
+  "`defaultOpen` opens a grouped category but never its group, so the category stays hidden under a closed parent"
+ ],
+ "b": [
+  "A grouped category's parent branch badges how many categories it holds, not how many entries, so a filter's matches under a group go uncounted there",
+  "The live row's expanded state outlives the live record, so it reopens on its own when a prediction returns"
+ ]
+}

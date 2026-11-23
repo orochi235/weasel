@@ -1,0 +1,87 @@
+{
+ "id": "ui.components.Timeline",
+ "commit": "9081ff60eaadbfc5530490c9f0f077c44c65945d",
+ "date": "2026-11-23",
+ "files": [
+  "packages/ui/src/components/Timeline/AnimatedTimeline.tsx",
+  "packages/ui/src/components/Timeline/Lane.tsx",
+  "packages/ui/src/components/Timeline/LaneGraph.tsx",
+  "packages/ui/src/components/Timeline/LaneMarks.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.module.css",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.tsx",
+  "packages/ui/src/components/Timeline/Timeline.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.tsx",
+  "packages/ui/src/components/Timeline/Timeline.tsx",
+  "packages/ui/src/components/Timeline/TimelineInspector.tsx",
+  "packages/ui/src/components/Timeline/index.ts",
+  "packages/ui/src/components/Timeline/keys.ts",
+  "packages/ui/src/components/Timeline/lanes.ts",
+  "packages/ui/src/components/Timeline/timeScale.ts",
+  "packages/ui/src/components/Timeline/timelineState.ts",
+  "packages/ui/src/components/Timeline/useKeyDrag.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 0,
+ "distinct": 9,
+ "chapman": 29,
+ "unfound": 20,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 9.5,
+  "unfound": 1.5
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 27,
+  "testFiles": {
+   "failed": 0,
+   "passed": 740,
+   "total": 740
+  },
+  "gui": true,
+  "repairs": 1,
+  "capstone": true
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 13.3,
+   "B": 14.2,
+   "match": 0.1,
+   "fix": 22.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1612851,
+  "costUsd": 4.67
+ },
+ "fixCommits": [
+  "d4e54eb1ec73320c4fdb39d4cb668011fe455ce6",
+  "e01bfbfaaaf51e2ee0b555171a5403652a0859e0",
+  "e335da013d2e48082e2334012a090893b9b6229c",
+  "85bcbfd1d887e4fb13aab1dd926e1b91a0a8ca0e",
+  "001355dee371d7b7bc7a512ca0dc0b83bdd1a2c8",
+  "5657546bceab447f4a152bce900cb7eb3254c8e9",
+  "551690e2185913509c87b03b4cd19cb2178d8246",
+  "4a9ffe05ed55556a024c0b4600f326842492890f",
+  "7c6fc6903d009f0bed0df331a0bb9186674141cb",
+  "bf590b211b05350b3a942942622568fb6256c262"
+ ]
+}

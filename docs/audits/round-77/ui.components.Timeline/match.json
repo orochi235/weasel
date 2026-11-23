@@ -1,0 +1,16 @@
+{
+ "pairs": [],
+ "a": [
+  "Lane tracks narrow by the scrollbar's width when the lanes scroll, so keys stop lining up with the ruler and playhead",
+  "A graph-mode key drag that previews and is released where it started sends onInput but neither onChange nor onCancel, and leaves `previewed` set for the next gesture",
+  "A dope-sheet drag dims and highlights the wrong key when the consumer applies the `onInput` previews it gets",
+  "A flat graph lane draws its keys near the bottom of the lane, not in the middle its comment promises"
+ ],
+ "b": [
+  "insertKey into an eased stretch makes its first half linear, contrary to its doc",
+  "Dragged keys snap to sampled keys only, never to event times",
+  "Graph-mode Delete leaves focus on a different key than the one selected",
+  "A selection on a collapsed nested row stays editable in the inspector while Delete refuses it",
+  "ZOOM_STEP is documented as one notch's factor but is a per-pixel exponent"
+ ]
+}
