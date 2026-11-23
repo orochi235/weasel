@@ -44,10 +44,14 @@ export function prefAliasName(alias: PrefAlias, target?: PrefLeaf): string {
   return target === undefined ? 'Alias' : target.name;
 }
 
-/** A leaf drawn through an alias: the target, under the alias's own name, description and access letter where it gives them. */
+/** A leaf drawn through an alias: the target, under the alias's own name, description, access letter and short forms
+ *  where it gives them. A name of its own drops the target's short forms. */
 export function prefAliasedLeaf(alias: PrefAlias, target: PrefLeaf): PrefLeaf {
+  const { short: _short, ...rest } = target;
+  const short = alias.short ?? (alias.name === '' ? target.short : undefined);
   return {
-    ...target,
+    ...rest,
+    ...(short ? { short } : {}),
     name: prefAliasName(alias, target),
     description: alias.description === '' ? target.description : alias.description,
     ...(alias.access ? { access: alias.access } : {}),
