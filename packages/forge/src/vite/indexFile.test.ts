@@ -37,6 +37,22 @@ export { Other, table } from './other';
     expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => e.exportName)).toEqual(['Shared', 'Unknown', 'Small', 'Other']);
   });
 
+  it('keeps a native export that calls an import nothing decided, as it keeps the import itself', () => {
+    const code = `
+import { meta } from '@weasel-js/forge';
+import { made, Taken } from './helpers';
+export default meta({ title: 'ui/Slider' });
+export const Made = made();
+export const Curried = made()();
+export const Inline = (() => story({}))();
+export const settings = (() => 4)();
+export { Taken };
+`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
+    const foreign = { value: () => undefined, call: () => undefined, reexport: () => undefined };
+    expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => e.exportName)).toEqual(['Made', 'Curried', 'Inline', 'Taken']);
+  });
+
   it('reads a native export that picks between values, or copies one, by what it picks from', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';
@@ -92,7 +108,8 @@ export const Named = named('x');
 export const data = table();
 export const Basic = story({ render: () => null });
 `;
-    expect(ids(code)).toEqual([
+    const foreign = { value: () => undefined, call: (name: string) => (name === 'makeRows' ? false : undefined), reexport: () => undefined };
+    expect(indexFile(code, FILE, 'ui/Auto', new Set(), foreign).map((e) => [e.id, e.name])).toEqual([
       ['ui-slider--small', 'Small'],
       ['ui-slider--named', 'Named'],
       ['ui-slider--basic', 'Basic'],

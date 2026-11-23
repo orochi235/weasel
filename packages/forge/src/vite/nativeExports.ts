@@ -89,12 +89,13 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
       const { callee } = node;
       if (isObjectAssign(callee, scope)) return node.arguments.some((arg) => mayBeStory(arg, scope, depth + 1));
       if (callee.type === 'MemberExpression') return !isLiteralValue(callee.object, scope.bindings) && !isGlobal(callee.object, scope);
-      if (callee.type !== 'Identifier') return false;
+      if (isFn(callee)) return mayReturnStory(callee, scope, depth);
+      if (callee.type !== 'Identifier') return !isLiteralValue(callee, scope.bindings);
       if (scope.wrappers.has(callee.name)) return true;
       const fn = scope.bindings.get(callee.name);
       if (isFn(fn)) return mayReturnStory(fn, scope, depth);
       if (scope.bindings.has(callee.name)) return !isLiteralValue(fn, scope.bindings);
-      return scope.foreign?.call(callee.name) ?? false;
+      return scope.foreign?.call(callee.name) ?? true;
     }
     case 'ConditionalExpression':
       return mayBeStory(node.consequent, scope, depth + 1) || mayBeStory(node.alternate, scope, depth + 1);
