@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { deriveDraft } from './draft';
+import { deriveDraft, type ModeView } from './draft';
 import { lookupOf, weasel } from './fixtures';
 import { setPin, setSemantic } from './model';
 import { defaultRule, ruleKind, semanticRows } from './semantics';
@@ -31,6 +31,19 @@ describe('semanticRows', () => {
     const row = rowsOf(setPin(weasel, 'fg', { value: '#ffffff', type: 'color' })).find((r) => r.name === 'fg')!;
     expect(row.cells[0]).toMatchObject({ mode: 'dark', produced: '{gray-100}', pin: '#ffffff' });
     expect(row.ownPin).toBe(true);
+  });
+});
+
+describe('semanticRows on an axis value named by', () => {
+  it('reads no rule there, rather than the axis name', () => {
+    const merged = { name: 'probe', semantics: { x: { by: 'mode', dark: { ref: 'a' } } } } as unknown as ThemeDefinition;
+    const view = {
+      mode: 'by',
+      selection: { mode: 'by' },
+      result: { tokens: { x: { value: '#000000' } }, provenance: { x: { pinned: false } } },
+      resolved: { '--wzl-x': '#000000' },
+    } as unknown as ModeView;
+    expect(semanticRows(merged, merged, [view])[0]?.cells[0]?.checks).toEqual([]);
   });
 });
 
