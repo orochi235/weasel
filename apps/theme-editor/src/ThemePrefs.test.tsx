@@ -46,6 +46,27 @@ describe('<ThemePrefs>', () => {
     expect(within(row).getByRole('textbox')).toHaveValue('var(--btn-glass)');
   });
 
+  it('shows the reference again once its edit ends, or its value changes elsewhere', () => {
+    mount();
+    fireEvent.click(within(screen.getByRole('navigation')).getByText('Button'));
+    const row = () => document.querySelector('[data-pref-path="button.button-surface"]') as HTMLElement;
+    const edit = () => fireEvent.click(within(row()).getByRole('button', { name: 'Edit surface as text' }));
+    edit();
+    fireEvent.blur(within(row()).getByRole('textbox'));
+    expect(within(row()).queryByRole('textbox')).toBeNull();
+    edit();
+    const field = within(row()).getByRole('textbox');
+    fireEvent.input(field, { target: { value: 'var(--btn-frost)' } });
+    fireEvent.change(field, { target: { value: 'var(--btn-frost)' } });
+    fireEvent.keyDown(field, { key: 'Enter' });
+    expect(within(row()).getByText('--btn-frost')).toBeTruthy();
+    edit();
+    expect(within(row()).getByRole('textbox')).toHaveValue('var(--btn-frost)');
+    fireEvent.click(screen.getByRole('button', { name: 'Undo' }));
+    expect(within(row()).queryByRole('textbox')).toBeNull();
+    expect(within(row()).getByText('--btn-glass')).toBeTruthy();
+  });
+
   it('pins an edit over the theme, and draws the preview in what it pins', () => {
     mount();
     fireEvent.click(within(screen.getByRole('navigation')).getByText('Gray'));
