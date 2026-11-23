@@ -1,9 +1,9 @@
 /**
  * The kit's built-in shape kinds — one table, every other spelling derived.
  *
- * This module imports nothing at runtime on purpose: anything barrel-reachable
- * that needs these lists at module-evaluation time must not route through the
- * package barrel.
+ * This module imports nothing through the package barrel at runtime on purpose:
+ * anything barrel-reachable that needs these lists at module-evaluation time
+ * must not route through it.
  */
 
 import { getOwn } from '@weasel-js/registry';
