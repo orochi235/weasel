@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 import { isDataForkFont, isFontCollection, sfntFromCollection } from './sfnt';
 import { createOpenTypeParser } from './opentypeParser';
 import { synthesizeCollection } from './fontFiles.fixture';
+import { writeFont } from './writtenFont.fixture';
 
 // packages/font/src/outline -> repo root
 const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
@@ -139,5 +140,28 @@ describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
       .rejects.toThrow(/"NoSuchFace-Bold".*Inter-Regular/);
     await expect(createOpenTypeParser('Inter-Regular')(collection)).resolves.toBeTruthy();
     await expect(createOpenTypeParser()(collection)).resolves.toBeTruthy();
+  });
+});
+
+describe('a collection member whose directory names a table twice', () => {
+  const ttc = (): ArrayBuffer => synthesizeCollection(writeFont({
+    family: 'Probe', unitsPerEm: 1000, glyphs: [{ unicodes: [65], advance: 500, contours: [] }],
+  }));
+  /** The first member's directory starts after the 12-byte header and two member offsets. */
+  const record = (i: number): number => 20 + 12 + i * 16;
+
+  it('refuses two records over the same bytes, rather than copying them once each', () => {
+    const bytes = ttc();
+    const view = new DataView(bytes);
+    view.setUint32(record(1) + 8, view.getUint32(record(0) + 8));
+    view.setUint32(record(1) + 12, view.getUint32(record(0) + 12));
+    expect(() => sfntFromCollection(bytes)).toThrow(/font collection is damaged: tables .* overlap/);
+  });
+
+  it('refuses one tag listed twice', () => {
+    const bytes = ttc();
+    const view = new DataView(bytes);
+    view.setUint32(record(1), view.getUint32(record(0)));
+    expect(() => sfntFromCollection(bytes)).toThrow(/font collection is damaged: table ".{4}" is listed twice/);
   });
 });

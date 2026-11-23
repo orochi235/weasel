@@ -111,6 +111,22 @@ function postScriptNameAt(view: DataView, records: readonly TableRecord[]): stri
   return null;
 }
 
+/** Throws unless each table is listed once and no two share bytes, so a member's copy is no larger than its file. */
+function checkDistinctTables(records: readonly TableRecord[]): void {
+  const tags = new Set<string>();
+  for (const r of records) {
+    if (tags.has(r.tag)) throw new Error(`font collection is damaged: table "${r.tag}" is listed twice in one member`);
+    tags.add(r.tag);
+  }
+  const placed = records.filter((r) => r.length > 0).sort((a, b) => a.offset - b.offset);
+  for (let i = 1; i < placed.length; i++) {
+    const [prev, next] = [placed[i - 1]!, placed[i]!];
+    if (next.offset < prev.offset + prev.length) {
+      throw new Error(`font collection is damaged: tables "${prev.tag}" and "${next.tag}" of one member overlap`);
+    }
+  }
+}
+
 /** Re-emit the table directory at `dirOffset` as a standalone sfnt buffer. */
 function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): ArrayBuffer {
   const records = readTableDirectory(view, dirOffset);
@@ -124,6 +140,7 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
     }
     total += padded(r.length);
   }
+  checkDistinctTables(records);
 
   const out = new ArrayBuffer(total);
   const dst = new DataView(out);
