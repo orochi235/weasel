@@ -8,7 +8,8 @@ import type { StreamOptions, VoiceHandle } from './types';
 export interface StreamStarters {
   /** The element a call names, made from a URL when it is one. */
   element(media: HTMLMediaElement | string, opts: StreamOptions): HTMLMediaElement;
-  starter(el: HTMLMediaElement, opts: StreamOptions): Starter;
+  /** `el` is read when the voice starts, so a URL's element can be made once the play is accepted. */
+  starter(el: () => HTMLMediaElement, opts: StreamOptions): Starter;
   /** An element has one playhead: the voice streaming it now, to stop before
    *  another starts. Shared by every engine on the context. */
   streaming: WeakMap<HTMLMediaElement, VoiceHandle>;
@@ -74,10 +75,11 @@ export function createStreamStarters(ctx: AudioContext, timers: Timers): StreamS
       el.src = media;
       return el;
     },
-    starter(el, opts) {
+    starter(elementOf, opts) {
       return {
         ready: () => true,
         start(voice) {
+          const el = elementOf();
           let node = mediaSources.get(el);
           if (!node) {
             node = ctx.createMediaElementSource(el);
@@ -106,11 +108,13 @@ export function restream(
   opts: StreamOptions,
 ): VoiceHandle {
   checkSpan('stream offset', opts.offset);
-  const el = streams.element(media, opts);
-  // Launched before the earlier stream stops, so one that throws or drops leaves it playing.
-  // The scheduler starts the new one a microtask later at the soonest, after this stop.
-  const handle = launch(opts, streams.starter(el, opts));
+  let el: HTMLMediaElement | null = typeof media === 'string' ? null : media;
+  // Launched before the earlier stream stops, so one that throws or drops leaves it playing,
+  // and before a URL's element is made, so it fetches nothing. The scheduler starts the new
+  // voice a microtask later at the soonest, after the element is made and this stop.
+  const handle = launch(opts, streams.starter(() => el!, opts));
   if (!handle.isPlaying()) return handle;
+  el ??= streams.element(media, opts);
   streams.streaming.get(el)?.stop();
   streams.streaming.set(el, handle);
   return handle;
