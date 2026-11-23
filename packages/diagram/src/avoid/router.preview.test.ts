@@ -29,3 +29,12 @@ describe('a preview over its budget', () => {
     expect(router.update(input(-200), { preview: true, budgetMs: -1 }).has('ab')).toBe(false);
   });
 });
+
+describe('a preview before anything is committed', () => {
+  it('routes every connector around the obstacles it is given', () => {
+    const wall = rectShape('wall', 200, -100, 60, 260);
+    const router = createAvoidRouter();
+    const routes = router.update({ obstacles: [a, b, wall], edges: [edgeBetween('ab', a, b, 'e', 'w')] }, { preview: true });
+    expect(routes.get('ab')!.length).toBeGreaterThan(0);
+  });
+});

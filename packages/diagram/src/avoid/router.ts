@@ -17,7 +17,8 @@ import { AVOID_DEFAULTS, type AvoidEdge, type AvoidInput, type AvoidObstacle, ty
 /** How one {@link AvoidRouter.update} runs. */
 export interface AvoidUpdateOptions {
   /** A drag frame: route against the committed obstacles without replacing
-   *  them, with no crossing penalty and no nudging. */
+   *  them, with no crossing penalty and no nudging. With nothing committed
+   *  yet, every connector routes against `input`'s obstacles. */
   preview?: boolean;
   /** Milliseconds a preview may spend. The connectors it does not reach keep
    *  the route the last preview since {@link AvoidRouter.beginPreview} gave
@@ -119,8 +120,14 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
 
   function preview(input: AvoidInput, budgetMs: number): AvoidRoutes {
     const start = now();
-    if (drag === null) indexForDrag({ obstacles: [...committed.values()], edges: input.edges });
-    return previewFrame(drag!.frame(input.obstacles), (id) => edgeIn(input.edges, id), previews, opts, () => now() - start > budgetMs);
+    const spent = () => now() - start > budgetMs;
+    if (drag === null) {
+      const index = new ObstacleIndex([...input.obstacles, ...labelObstacles(input.edges, routeOf)], opts.clearance, opts.labelClearance);
+      const byId = new Map(input.edges.map((e) => [e.id, e]));
+      const frame = { index, dirty: [...byId.keys()], limit: limitOf(input, opts.margin) };
+      return previewFrame(frame, (id) => byId.get(id), previews, opts, spent);
+    }
+    return previewFrame(drag.frame(input.obstacles), (id) => edgeIn(input.edges, id), previews, opts, spent);
   }
 
   /** Route `dirty` around `obstacles`, which hold `input`'s labels as they stand, and commit. */
