@@ -51,6 +51,13 @@ describe('reading a Mermaid class diagram', () => {
     expect(edge('classDiagram\nA --|> B', 'A', 'B').colors).toEqual({ markerEnd: 'triangle-hollow' });
   });
 
+  it('reads an o right after a relation\'s line as the start of the id it begins, not as a head', () => {
+    expect(edge('classDiagram\na --obj', 'a', 'obj').colors).toEqual({ markerEnd: null });
+    expect(edge('classDiagram\na ..obj', 'a', 'obj').colors).toEqual({ dash: [4, 4], markerEnd: null });
+    expect(edge('classDiagram\na --o b', 'a', 'b').colors).toEqual({ markerEnd: 'diamond-hollow' });
+    expect(edge('classDiagram\na --o"1" b', 'a', 'b').colors).toEqual({ markerEnd: 'diamond-hollow' });
+  });
+
   it('reads namespaces as containers, notes as note shapes, and styles as colors', () => {
     const p = page(SHOP);
     expect(p.data.containers).toEqual([{ id: 'billing', role: 'container', label: 'billing', members: ['Invoice', 'Payment'] }]);
@@ -148,6 +155,27 @@ describe('writing a Mermaid class diagram', () => {
   it('writes a note whose text is in its rows', () => {
     const text = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: { nodes: [{ id: 'n', outline: 'note', rows: [{ kind: 'label', text: 'remember' }] }], edges: [] } }] }).text;
     expect(text).toContain('  note "remember"');
+  });
+
+  it('writes a note joined only to another note on its own, with a warning, not as a note for it', () => {
+    const { text, warnings } = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a', outline: 'note', lines: ['one'] }, { id: 'b', outline: 'note', lines: ['two'] }], edges: [{ from: 'a', to: 'b' }],
+    } }] });
+    expect(text).toContain('  note "one"\n  note "two"\n');
+    expect(page(text).data.nodes.every((n) => n.outline === 'note')).toBe(true);
+    expect(warnings).toContain('Mermaid notes join one class; their other connectors were dropped.');
+  });
+
+  it('warns that note and namespace colors, and a note\'s namespace, were dropped', () => {
+    const { text, warnings } = writeClassDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a', lines: ['a'] }, { id: 'n', outline: 'note', lines: ['hi'], colors: { fill: '#ff0000' } }], edges: [],
+      containers: [{ id: 'ns', role: 'container', label: 'ns', members: ['a', 'n'], colors: { fill: '#00ff00' } }],
+    } }] });
+    expect(text).not.toContain('style');
+    expect(warnings).toEqual(expect.arrayContaining([
+      'Mermaid class diagrams style only classes; note and namespace colors were dropped.',
+      'Mermaid class notes stand outside namespaces; notes in one were written at the top level.',
+    ]));
   });
 
   it('keeps a backslash and the n after it in a note line', () => {

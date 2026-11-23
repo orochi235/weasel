@@ -8,6 +8,7 @@ import { setOwn } from '@weasel-js/registry';
 import type { DataContainer, DataEdge, DataNode, EdgeStyle, GridOptions, Outline } from '@weasel-js/diagram';
 import type { ImportResult, PageLayout } from '../../document';
 import { IdMint, Warnings, graphPage } from '../../graphRead';
+import { lineError } from '../../lineError';
 import { readPageName } from '../common/lines';
 import { StyleSheet } from '../common/styles';
 import { textLines } from '../common/text';
@@ -76,6 +77,7 @@ class BlockReader {
             skip += item.n;
             continue;
           }
+          if (this.groupIds.has(item.id)) throw lineError('Mermaid', s.line, `"${item.id}" already names a group`);
           const fresh = !this.nodes.has(item.id);
           this.block(item, members);
           if (fresh && skip > 0) {
@@ -96,6 +98,7 @@ class BlockReader {
         s.links.forEach((link, k) => this.link(link, s.ends[k]!.id, s.ends[k + 1]!.id));
       } else if (s.kind === 'group') {
         const id = s.id ?? this.mint.next(ANONYMOUS_GROUP);
+        if (this.groups.has(id)) throw lineError('Mermaid', s.line, `"${id}" already names a group`);
         const inner: string[] = [];
         this.groups.set(id, inner);
         members.push(id);
@@ -140,7 +143,7 @@ function namedIds(stmts: readonly BlockStmt[], out = { all: new Set<string>(), g
 }
 
 /** Reads a Mermaid block diagram into a one-page document of `notation` `'block'`, laid out by `grid`. Throws, naming
- *  the line, on text that is not one. */
+ *  the line, on text that is not one, or on a group's id given twice or to a block. */
 export function readBlockDiagram(text: string): ImportResult {
   const { source, stmts } = parseBlockDiagram(text);
   const named = namedIds(stmts);
@@ -151,7 +154,7 @@ export function readBlockDiagram(text: string): ImportResult {
     return { id, lines: n.lines, outline: n.outline, ...(colors !== undefined ? { colors } : {}) };
   });
   const containers: DataContainer[] = [...r.groups].map(([id, members]) => {
-    const colors = r.styles.colorsOf(id);
+    const colors = r.styles.colorsOf(id, false);
     return { id, role: 'container', ...(members.length > 0 ? { members } : {}), ...(colors !== undefined ? { colors } : {}) };
   });
   const name = readPageName(source, r.warnings);

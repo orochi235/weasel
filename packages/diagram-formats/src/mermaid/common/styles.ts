@@ -149,10 +149,10 @@ export class StyleSheet {
     this.styles.set(id, [...(this.styles.get(id) ?? []), ...props]);
   }
 
-  /** `id`'s colors: the `default` class's, then its classes' in order, then its own style's. */
-  colorsOf(id: string): Partial<NodeStyle> | undefined {
+  /** `id`'s colors: the `default` class's, unless `id` is a container, then its classes' in order, then its own style's. */
+  colorsOf(id: string, isNode = true): Partial<NodeStyle> | undefined {
     const props = new Map<string, string>();
-    const lists = [this.defs.get('default'), ...(this.classes.get(id) ?? []).map((c) => this.defs.get(c)), this.styles.get(id)];
+    const lists = [isNode ? this.defs.get('default') : undefined, ...(this.classes.get(id) ?? []).map((c) => this.defs.get(c)), this.styles.get(id)];
     for (const list of lists) for (const [k, v] of list ?? []) props.set(k, v);
     return nodeColors(props, this.warnings);
   }

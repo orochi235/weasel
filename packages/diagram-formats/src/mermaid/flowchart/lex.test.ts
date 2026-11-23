@@ -57,6 +57,12 @@ describe('lexFlowchart', () => {
     ]);
   });
 
+  it('ends a link\'s inline text at an arrow with no space before it, as Mermaid does', () => {
+    expect(lex('A -- yes-->B -. maybe.-> C == big==>D')).toEqual([
+      'word:A', 'link:normal>:yes', 'word:B', 'link:dotted>:maybe', 'word:C', 'link:thick>:big', 'word:D',
+    ]);
+  });
+
   it('reads an arrow inside a link\'s quoted inline text as text', () => {
     expect(lex('A -- "a --> b" --> B == "x ==> y" ==> C')).toEqual([
       'word:A', 'link:normal>:a --> b', 'word:B', 'link:thick>:x ==> y', 'word:C',

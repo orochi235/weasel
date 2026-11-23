@@ -15,6 +15,19 @@ const BLOCK_WORDS = ['block', 'space', 'columns', ...ACC_WORDS];
 
 type Item = { node: DataNode } | { cluster: Cluster };
 
+/** A grid count as Mermaid reads one, a whole number from 1: rounded, with a warning, where it is a number that is
+ *  not one, and dropped where it rounds below 1. */
+function gridCount(n: number | undefined, what: string, warn: (m: string) => void): number | undefined {
+  if (n === undefined) return undefined;
+  const whole = Math.round(n);
+  if (!Number.isFinite(whole) || whole < 1) {
+    warn(`Mermaid block ${what} are whole numbers from 1; others were dropped.`);
+    return undefined;
+  }
+  if (whole !== n) warn(`Mermaid block ${what} are whole numbers; others were rounded.`);
+  return whole;
+}
+
 class BlockWriter {
   readonly lines: string[] = [];
   readonly ids: Map<string, string>;
@@ -44,7 +57,7 @@ class BlockWriter {
   }
 
   span(id: string): string {
-    const n = (this.grid.spans && getOwn(this.grid.spans, id));
+    const n = this.count(this.grid.spans && getOwn(this.grid.spans, id), 'spans');
     return n !== undefined && n > 1 ? `:${n}` : '';
   }
 
@@ -53,11 +66,15 @@ class BlockWriter {
     items.sort((a, b) => this.first(a) - this.first(b));
     for (const item of items) {
       const id = 'node' in item ? item.node.id : item.cluster.id;
-      const skip = (this.grid.skips && getOwn(this.grid.skips, id)) ?? 0;
+      const skip = this.count(this.grid.skips && getOwn(this.grid.skips, id), 'spaces') ?? 0;
       if (skip > 0) this.lines.push(`${indent}${skip === 1 ? 'space' : `space:${skip}`}`);
       if ('node' in item) this.lines.push(`${indent}${this.block(item.node)}${this.span(id)}`);
       else this.group(item.cluster, indent);
     }
+  }
+
+  count(n: number | undefined, what: string): number | undefined {
+    return gridCount(n, what, (m) => this.out.warnings.add(m));
   }
 
   block(node: DataNode): string {
@@ -74,7 +91,7 @@ class BlockWriter {
   group(c: Cluster, indent: string): void {
     const named = !ANONYMOUS.test(c.id) || this.span(c.id) !== '' || this.named.has(c.id);
     this.lines.push(`${indent}block${named ? `:${this.id(c.id)}${this.span(c.id)}` : ''}`);
-    const columns = this.grid.clusterColumns && getOwn(this.grid.clusterColumns, c.id);
+    const columns = this.count(this.grid.clusterColumns && getOwn(this.grid.clusterColumns, c.id), 'column counts');
     if (columns !== undefined) this.lines.push(`${indent}  columns ${columns}`);
     this.level(c.nodes.map((id) => this.out.byId.get(id)!), c.clusters, `${indent}  `);
     this.lines.push(`${indent}end`);
@@ -119,7 +136,8 @@ export function writeBlockDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
   dropEndLabels(out.edges, 'block diagrams', (m) => out.warnings.add(m));
   const w = new BlockWriter(out);
   w.lines.push(...titleLines(out.page.name), 'block-beta');
-  if (w.grid.columns !== undefined) w.lines.push(`  columns ${w.grid.columns}`);
+  const columns = w.count(w.grid.columns, 'column counts');
+  if (columns !== undefined) w.lines.push(`  columns ${columns}`);
   w.level(out.nodes, out.clusters, '  ');
   for (const e of out.edges) w.lines.push(w.link(e));
   w.styles();
