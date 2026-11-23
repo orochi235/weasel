@@ -61,15 +61,18 @@ const PLUCK: Envelope = { attack: 5, decay: 140, sustain: 0.2, release: 80 };
 
 /**
  * One bar of score as pattern events, for a player `SCORE_BAR_STEPS` long.
- * `bar` counts bars since the score began: it picks the chord, by the harmonic
- * rhythm, and how many layers a pulsed score has built up to, one more every
- * two bars. The same arguments always write the same bar.
+ * `bar` counts bars since the score began, and picks the chord by the harmonic
+ * rhythm. `built` counts the bars a pulsed score's layers have been building
+ * over, one more every two bars; it defaults to `bar`, and a score restarts it
+ * when its cue changes. The same arguments always write the same bar.
  *
  * With no pulse, the bar is its chord held throughout. With one, the layers
  * are an ostinato over the chord's tones, a bass on the root, the ostinato
  * doubled an octave up on the off pulses, and the chord held as a pad.
  */
-export function scoreBar(params: ScoreSettings, bar: number, opts: ScoreBarOptions = {}): PatternNote[] {
+export function scoreBar(
+  params: ScoreSettings, bar: number, opts: ScoreBarOptions = {}, built = bar,
+): PatternNote[] {
   const gain = opts.gain ?? 0.5;
   const chord = scoreChord(params, Math.floor(bar / params.harmonicRhythm), opts.tonic);
   const swell: Envelope = { attack: params.attack, release: params.attack };
@@ -84,7 +87,7 @@ export function scoreBar(params: ScoreSettings, bar: number, opts: ScoreBarOptio
 
   if (params.density === 0) return pad(1, swell);
 
-  const layers = Math.min(params.layers, 1 + Math.floor(bar / 2));
+  const layers = Math.min(params.layers, 1 + Math.floor(built / 2));
   const every = 4 / params.density;
   const order = figure(chord.length, opts.seed);
   const envelope = held ? swell : PLUCK;

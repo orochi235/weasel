@@ -65,7 +65,7 @@ export function createScore(engine: AudioEngine, opts: ScoreOptions): Score {
       params: resolveScoreMood(target),
     };
   };
-  const eventsOf = (state: ScoreState) => scoreBar(state.params, state.cueBar, barOpts);
+  const eventsOf = (state: ScoreState) => scoreBar(state.params, state.bar, barOpts, state.cueBar);
 
   let current = stateAt(0, null);
   /** The bar last reported in this run, -1 before its first. */
