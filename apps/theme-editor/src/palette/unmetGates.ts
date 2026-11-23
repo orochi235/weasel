@@ -5,9 +5,8 @@ export type Stats = ReturnType<typeof generate>['stats'];
 /** Whether `stats` clears a distance or contrast gate; undefined for a gate set to 0, which is off. */
 export function gateVerdict(c: Constraints, stats: Stats, gate: 'minContrast' | 'minDistance' | 'minSurfaceDistance'): 'ok' | 'bad' | undefined {
   if (!(c[gate] > 0)) return undefined;
-  // Contrast is compared exactly; distances get the slack their three printed decimals cannot show.
-  const slack = gate === 'minContrast' ? 0 : 0.005;
-  return stats[gate] < c[gate] - slack ? 'bad' : 'ok';
+  // Exact, as the generator's own check is: any slack here calls a gate met beside a palette marked infeasible.
+  return stats[gate] < c[gate] ? 'bad' : 'ok';
 }
 
 /**
