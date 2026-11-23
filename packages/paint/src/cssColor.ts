@@ -25,7 +25,7 @@ export function parsesAsColor(value: string, supports: ((value: string) => boole
 }
 
 /** The functions `parseColor` reads in full, unless they nest one (`calc()`) or take relative syntax (`from`). */
-const PARSED_FUNCTION = /^(?:rgba?|hsla?|oklab|oklch)\((?!\s*from\s)[^(]*\)$/i;
+const PARSED_FUNCTION = /^(?:(?:rgba?|hsla?|oklab|oklch)\((?!\s*from\s)|color\(\s*srgb(?:-linear)?\s)[^(]*\)$/i;
 
 /** The most parentheses any color value nests: relative color syntax around `color-mix` reaches four. */
 const MAX_COLOR_DEPTH = 16;
