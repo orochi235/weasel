@@ -108,6 +108,7 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
         if (!overLens(p)) host.pinAt(p);
         return;
       }
+      if (evt.type !== 'up' && evt.type !== 'cancel') return;
       const was = press;
       press = null;
       if (evt.type === 'cancel' || !p) {
@@ -115,7 +116,6 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
         else host.pinAt(was.wasAim);
         return;
       }
-      if (evt.type !== 'up') return;
       if (!was.at) {
         // A click: the docked pin toggles; the target stays where it is.
         if (was.from === 'dock') host.setAimMode(was.was === 'pinned' ? 'follow' : 'pinned');

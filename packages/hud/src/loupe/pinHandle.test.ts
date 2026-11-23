@@ -97,4 +97,15 @@ describe('the loupe pin', () => {
     pin.onPointer({ type: 'cancel', native: null });
     expect(lens.mode).toBe('follow');
   });
+
+  it('keeps carrying the pin through a long press, a double click, or a context menu', () => {
+    const { pin, lens, dock } = setup();
+    pin.onPointer(at('down', dock.x, dock.y));
+    for (const type of ['longpress', 'doubleclick', 'contextmenu'] as const) pin.onPointer({ type, x: dock.x, y: dock.y, native: null });
+    pin.onPointer(at('move', 400, 300));
+    expect(lens).toEqual({ mode: 'pinned', aim: { x: 400, y: 300 } });
+    pin.onPointer(at('move', 100, 100));
+    pin.onPointer(at('up', 100, 100));
+    expect(lens.mode).toBe('follow');
+  });
 });
