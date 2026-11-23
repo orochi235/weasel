@@ -154,6 +154,13 @@ describe('insert chain wiring', () => {
     h.chain.add(a);
     expect(() => h.chain.add(a)).toThrow(/already/);
   });
+
+  it('rejects an effect that is already in another chain', () => {
+    const h = harness();
+    const a = h.fx('A');
+    h.chain.add(a);
+    expect(() => harness().chain.add(a)).toThrow(/already/);
+  });
 });
 
 describe('insert chain transitions', () => {
