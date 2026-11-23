@@ -238,6 +238,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
               pressRef={pressRef}
               applied={nudge}
               onMeasure={setNudge}
+              content={options ?? children}
             />
           )}
           <SelectList options={options}>{children}</SelectList>

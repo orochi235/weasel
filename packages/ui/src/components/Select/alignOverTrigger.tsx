@@ -34,11 +34,14 @@ export function AlignOverTrigger({
   pressRef,
   applied,
   onMeasure,
+  content,
 }: {
   triggerRef: RefObject<HTMLButtonElement | null>;
   pressRef: RefObject<Press | null>;
   applied: Nudge;
   onMeasure: (next: Nudge) => void;
+  /** What the list is drawn from: a new one restarts the passes, since the rows it lays out may have moved. */
+  content?: unknown;
 }) {
   // React Aria positions the popover but hands out no ref to it, so the
   // element is reached from inside: this marker's own parent.
@@ -49,11 +52,16 @@ export function AlignOverTrigger({
   // to confirm. A cap is what keeps a list whose own placement changes its
   // measurement from renegotiating forever.
   const passes = useRef(0);
+  const measured = useRef(content);
   const { direction } = useLocale();
   useLayoutEffect(() => {
     const trigger = triggerRef.current;
     const popover = markerRef.current?.closest<HTMLElement>('[data-weasel-overlay]');
-    if (!trigger || !popover || passes.current > 3) return;
+    if (!trigger || !popover) return;
+    if (measured.current !== content) {
+      measured.current = content;
+      passes.current = 0;
+    }
     const value = trigger.querySelector(`.${s.value}`);
     // Nothing chosen yet, so there is no row that belongs over the trigger —
     // and putting an arbitrary one under the pointer arms it. A select showing
@@ -65,6 +73,7 @@ export function AlignOverTrigger({
         onMeasure(BELOW);
       return;
     }
+    if (passes.current > 3) return;
 
     // The trigger's own text alignment decides which edge the two labels are
     // matched on, and the list follows it so the selected row reads as the
