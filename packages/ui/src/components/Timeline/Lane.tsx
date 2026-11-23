@@ -51,6 +51,8 @@ export interface LaneProps {
   expanded: boolean;
   /** Times a dragged key snaps to. */
   snapTimes: readonly number[];
+  /** The ruler time no key is dragged, stepped, or inserted past: the timeline's duration. Default `Infinity`. */
+  limit?: number;
   /** Index of the key a selected segment runs INTO, or null. */
   selectedSegment?: number | null;
   onSelectSegment?: (keyIndex: number) => void;
@@ -63,13 +65,13 @@ export interface LaneProps {
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onKeyInput, onKeyChange, onInsert, expanded, snapTimes,
-    selectedSegment = null, onPressEmpty, hold = FREE,
+    limit = Infinity, selectedSegment = null, onPressEmpty, hold = FREE,
   } = props;
   const { onSelect, onSelectSegment, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = rowTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
+    trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
   });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
@@ -80,7 +82,7 @@ export function Lane(props: LaneProps): ReactElement {
   const refocusRef = useFocusFollowsKey(trackRef, selection);
   const deletes = hold.edits && row.kind === 'sampled';
 
-  const onKeyDown = markKeys({ edits: hold.edits, onKeyChange, onSelect, refocus: refocusRef });
+  const onKeyDown = markKeys({ edits: hold.edits, last: Math.max(0, limit - row.offset), onKeyChange, onSelect, refocus: refocusRef });
 
   return (
     <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
@@ -110,6 +112,7 @@ export function Lane(props: LaneProps): ReactElement {
             label={row.label}
             window={win}
             offset={row.offset}
+            limit={limit}
             snapTimes={snapTimes}
             selection={selection}
             selectedSegment={selectedSegment}
@@ -121,10 +124,10 @@ export function Lane(props: LaneProps): ReactElement {
           />
         ) : (
           <>
-            {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} win={win} /> : null}
+            {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} end={row.end} win={win} /> : null}
             {row.kind === 'sampled' ? (
               <SegmentMarks
-                keys={sampledKeys} label={row.label} win={win} pct={pct} mark={mark}
+                keys={sampledKeys} label={row.label} offset={row.offset} win={win} pct={pct} mark={mark}
                 selectedSegment={selectedSegment} onSelectSegment={onSelectSegment}
               />
             ) : null}
@@ -155,8 +158,10 @@ function gated(props: LaneProps, hold: LaneHold) {
 
 /** A key mark's keys: the arrows step it, unless the lane refuses edits, and Enter or Space selects it. `refocus` is
  *  set only for a key that will change, or a render for another reason would pull focus to the selected key. */
-function markKeys({ edits, onKeyChange, onSelect, refocus }: {
+function markKeys({ edits, last, onKeyChange, onSelect, refocus }: {
   edits: boolean;
+  /** The latest time, in the row's own, a step lands on. */
+  last: number;
   onKeyChange: LaneProps['onKeyChange'];
   onSelect: (keyIndex: number) => void;
   refocus: { current: boolean };
@@ -165,7 +170,7 @@ function markKeys({ edits, onKeyChange, onSelect, refocus }: {
     const dx = arrowMove(e.key, e.shiftKey)?.dx ?? 0;
     if (dx !== 0 && edits) {
       e.preventDefault();
-      const to = Math.max(0, t + dx * KEY_STEP_MS);
+      const to = Math.max(0, Math.min(last, t + dx * KEY_STEP_MS));
       if (to !== t) {
         refocus.current = true;
         onKeyChange(i, to);
@@ -204,10 +209,11 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
   );
 }
 
-/** A collapsed nested timeline's run on the ruler; an endless one runs off the window's end. */
-function NestedBar({ track, offset, win }: { track: TimelineTrack; offset: number; win: TimeWindow }) {
+/** A collapsed nested timeline's run on the ruler, cut where the timelines around it stop playing it; an endless one
+ *  runs off the window's end. */
+function NestedBar({ track, offset, end, win }: { track: TimelineTrack; offset: number; end: number; win: TimeWindow }) {
   const start = offset + track.at;
-  const span = Math.min(timelineSpan(track.timeline), Math.max(0, win.to - start));
+  const span = Math.min(timelineSpan(track.timeline), Math.max(0, Math.min(win.to, end) - start));
   return <div className={s.nestedBar} data-testid="timeline-nested" style={{ left: toPercent(win, start), width: spanPercent(win, span) }} />;
 }
 

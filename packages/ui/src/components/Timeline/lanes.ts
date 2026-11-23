@@ -1,8 +1,11 @@
 import type { EventTrack, NestedTimeline, SampledTrack, Track } from '@weasel-js/animator';
 
 export interface LaneRow {
-  /** Stable across re-renders and edits: the dotted index path. */
+  /** The dotted index path, unique among the rows. */
   key: string;
+  /** What the row folds by: each timeline's label down to it, or its kind for one with none, with how many siblings
+   *  before it share that, so a track inserted or removed beside it from outside leaves it open or shut. */
+  fold: string;
   /** Index path into the track tree, outermost first. */
   path: number[];
   track: Track;
@@ -28,18 +31,23 @@ function isNumeric(track: Track): boolean {
 }
 
 /** Flatten the track tree to rows, descending only into expanded nested
- *  timelines. `expanded` holds the `key` of each open nested row. */
+ *  timelines. `expanded` holds the `fold` of each open nested row. */
 export function buildLanes(
   tracks: readonly Track[],
   expanded: ReadonlySet<string>,
 ): LaneRow[] {
   const out: LaneRow[] = [];
-  const walk = (list: readonly Track[], path: number[], depth: number, offset: number, end: number): void => {
+  const walk = (list: readonly Track[], path: number[], parent: string, depth: number, offset: number, end: number): void => {
+    const seen = new Map<string, number>();
     list.forEach((track, i) => {
       const nextPath = [...path, i];
-      const key = nextPath.join('.');
+      const name = foldName(track);
+      const n = seen.get(name) ?? 0;
+      seen.set(name, n + 1);
+      const fold = `${parent}${parent ? '/' : ''}${name}${n > 0 ? `#${n}` : ''}`;
       out.push({
-        key,
+        key: nextPath.join('.'),
+        fold,
         path: nextPath,
         track,
         label: track.label ?? `${track.kind} ${i}`,
@@ -49,15 +57,18 @@ export function buildLanes(
         kind: track.kind,
         numeric: isNumeric(track),
       });
-      if (track.kind === 'timeline' && expanded.has(key)) {
+      if (track.kind === 'timeline' && expanded.has(fold)) {
         const start = offset + track.at;
-        walk(track.timeline.tracks, nextPath, depth + 1, start, Math.min(end, start + (declaredSpan(track.timeline) ?? Infinity)));
+        walk(track.timeline.tracks, nextPath, fold, depth + 1, start, Math.min(end, start + (declaredSpan(track.timeline) ?? Infinity)));
       }
     });
   };
-  walk(tracks, [], 0, 0, Infinity);
+  walk(tracks, [], '', 0, 0, Infinity);
   return out;
 }
+
+/** A track's part of a fold, its label or else its kind, with the characters a fold joins by escaped. */
+const foldName = (track: Track): string => (track.label === undefined ? `(${track.kind})` : track.label.replace(/[\\/#(]/g, '\\$&'));
 
 /** The times of a row's keys or event crossings, in its own time; none for a nested timeline's row. */
 export function rowTimes(row: LaneRow): number[] {

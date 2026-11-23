@@ -9,12 +9,12 @@ import { Lane, type LaneHold, type LaneProps } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
 import { buildLanes, rowTimes, type LaneRow } from './lanes';
-import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
+import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySeed, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 import { useFolds, useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
 import { TimelineInspector } from './TimelineInspector';
 
-export type { KeySelection } from './keys';
+export type { KeySeed, KeySelection } from './keys';
 export type { TimeWindow } from './timeScale';
 
 /** What `renderKeyEditor` is handed for the selected keyframe. */
@@ -56,6 +56,10 @@ export interface TimelineProps extends HoldProps {
   selection?: KeySelection | null;
   onSelectionChange?: (sel: KeySelection | null) => void;
   renderKeyEditor?: (ctx: KeyEditorCtx) => ReactNode;
+  /** The value of a key double-clicked onto an empty sampled track, or `undefined` to insert none. Default: the
+   *  track's target's value, else 0 for a track with no `interpolate` or `interpolator`; one with either and no
+   *  target takes no key, with a warning. */
+  seedKey?: KeySeed;
 
   window?: TimeWindow;
   onWindowChange?: (w: TimeWindow) => void;
@@ -68,15 +72,11 @@ export interface TimelineProps extends HoldProps {
  *  lane per track, and a transport. Every edit comes back through `onChange`
  *  as a new track array; Delete or Backspace removes the selected key. */
 export function Timeline(props: TimelineProps): ReactElement {
-  const {
-    tracks, duration, playhead,
-    onInput, onChange, onSeek,
-    renderKeyEditor, label, className,
-  } = props;
+  const { tracks, duration, playhead, onSeek, renderKeyEditor, label, className } = props;
 
   const hold = useControlHold(props, { readonlyRole: false });
   const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
-  const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
+  const { selection, segmentSelection, selectKey, selectSegment, dropSegment, send } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
   const { expanded, toggle } = useFolds({ selection, segmentSelection, selectKey, dropSegment });
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
   const pressHold = useKeyEditsHeldByPress();
@@ -86,9 +86,17 @@ export function Timeline(props: TimelineProps): ReactElement {
   const snapTimes = useMemo(() => snapTimesOf(rows, duration), [rows, duration]);
 
 
+  const onInput = props.onInput && ((next: Track[]): void => {
+    send(next);
+    props.onInput?.(next);
+  });
+  const onChange = (next: Track[]): void => {
+    send(next);
+    props.onChange(next);
+  };
   const commit = (r: KeyEdit): void => {
     onChange(r.tracks);
-    selectKey(r.selection);
+    selectKey(r.selection, r.tracks);
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
@@ -98,7 +106,7 @@ export function Timeline(props: TimelineProps): ReactElement {
       dropSegment();
       return;
     }
-    if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses) return;
+    if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses || !onTimeline(e)) return;
     const marked = markedKey(e.target as Element, rows);
     const target = marked === undefined ? selection : marked;
     if (target && deletable(target, rows)) {
@@ -150,12 +158,13 @@ export function Timeline(props: TimelineProps): ReactElement {
               window={win}
               mode={mode}
               selection={selection && samePath(selection.trackPath, trackPath) ? selection.keyIndex : null}
-              expanded={expanded.has(row.key)}
+              expanded={expanded.has(row.fold)}
               snapTimes={snapTimes}
+              limit={duration}
               hold={laneHold}
-              onExpandedChange={() => toggle(row.key)}
+              onExpandedChange={() => toggle(row)}
               onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}
-              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit })}
+              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit }, props.seedKey)}
               onCancel={props.onCancel}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
               onSelectSegment={(keyIndex) => selectSegment({ trackPath, keyIndex })}
@@ -179,6 +188,10 @@ export function Timeline(props: TimelineProps): ReactElement {
 
 const ignore = (): void => {};
 
+/** A press on the root or the lanes, not on the transport, the Graph switch, or the inspector beside them. */
+const onTimeline = (e: ReactKeyboardEvent): boolean =>
+  e.target === e.currentTarget || Boolean((e.target as Element).closest?.('[data-lane-key]'));
+
 /**
  * A lane's edits as edits to the whole track list: live ones through `onInput`, and finished ones through `onChange`,
  * or `commit` where the edit also moves the selection.
@@ -187,7 +200,7 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   commit: (r: KeyEdit) => void;
-}): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
+}, seed?: KeySeed): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
   return {
     onKeyInput: (keyIndex, toMs) => report.onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks),
     onKeyRevert: () => report.onInput?.(tracks.slice()),
@@ -198,7 +211,10 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
     },
     onKeysInput: (keys) => report.onInput?.(setKeys(tracks, trackPath, keys)),
     onKeysChange: (keys) => report.onChange(setKeys(tracks, trackPath, keys)),
-    onInsert: (atMs) => report.commit(insertKey(tracks, trackPath, atMs)),
+    onInsert: (atMs) => {
+      const r = insertKey(tracks, trackPath, atMs, seed);
+      if (r.selection) report.commit(r);
+    },
   };
 }
 

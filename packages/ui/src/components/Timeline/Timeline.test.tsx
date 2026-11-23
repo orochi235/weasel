@@ -647,3 +647,123 @@ describe('Timeline', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('Timeline Delete away from the lanes', () => {
+  it('deletes no key for a Delete or Backspace on the transport, the Graph switch, or the key editor', () => {
+    const onChange = vi.fn();
+    renderWithIcons(
+      <Timeline
+        {...base} tracks={tracks()} onChange={onChange}
+        transport={{ playing: false, loop: false, rate: 1, onPlayingChange: () => {}, onLoopChange: () => {}, onRateChange: () => {} }}
+        renderKeyEditor={() => <button type="button" data-testid="swatch">swatch</button>}
+      />,
+    );
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    onChange.mockClear();
+    fireEvent.keyDown(screen.getByRole('switch', { name: 'Graph mode' }), { key: 'Delete' });
+    fireEvent.keyDown(screen.getByTestId('swatch'), { key: 'Backspace' });
+    fireEvent.keyDown(screen.getByRole('button', { name: /play/i }), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(onChange).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('Timeline keys held inside the duration', () => {
+  const nearEnd = (): Track[] => ([
+    { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 995, value: 10 }], onTick: () => {} },
+  ] as Track[]);
+  const keyTimes = (fn: ReturnType<typeof vi.fn>): number[] =>
+    ((fn.mock.lastCall![0] as Track[])[0] as SampledTrack<number>).keys.map((k) => k.t);
+
+  it('drops a key dragged past the lane\'s end at the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 700, clientY: 10, altKey: true });
+    fireEvent.pointerUp(document, { clientX: 700, clientY: 10, altKey: true });
+    expect(keyTimes(onChange)).toEqual([0, 1000]);
+  });
+
+  it('steps a key no further than the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={nearEnd()} onChange={onChange} />);
+    fireEvent.keyDown(screen.getAllByTestId('timeline-key')[1], { key: 'ArrowRight' });
+    expect(keyTimes(onChange)).toEqual([0, 1000]);
+  });
+
+  it('inserts no key past the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    fireEvent.doubleClick(screen.getAllByTestId('timeline-lane-track')[0], { clientX: 800 });
+    expect(keyTimes(onChange)).toEqual([0, 500, 1000]);
+  });
+
+  it('steps a graphed key no further than the duration', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} mode="graph" tracks={nearEnd()} onChange={onChange} />);
+    fireEvent.keyDown(document.querySelectorAll('[data-keyframe-index]')[1], { key: 'ArrowRight' });
+    expect(keyTimes(onChange)).toEqual([0, 1000]);
+  });
+});
+
+describe('Timeline insert on an empty track', () => {
+  const colors = (): Track[] => ([{ kind: 'sampled', label: 'fill', keys: [], interpolate: (a: string) => a, onTick: () => {} }] as unknown as Track[]);
+
+  it('reports no edit for a double-click on an empty track it cannot seed', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={colors()} onChange={onChange} />);
+    fireEvent.doubleClick(screen.getByTestId('timeline-lane-track'), { clientX: 100 });
+    expect(onChange).not.toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('seeds it through seedKey', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={colors()} onChange={onChange} seedKey={() => '#000'} />);
+    fireEvent.doubleClick(screen.getByTestId('timeline-lane-track'), { clientX: 100 });
+    expect(((onChange.mock.lastCall![0] as Track[])[0] as SampledTrack<string>).keys).toEqual([{ t: 200, value: '#000' }]);
+  });
+});
+
+describe('Timeline selection under tracks edited from outside', () => {
+  it('deletes nothing for Delete once a key the consumer inserted moved the selected index onto another key', () => {
+    const onChange = vi.fn();
+    const onSelectionChange = vi.fn();
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} onSelectionChange={onSelectionChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    const inserted = tracks();
+    (inserted[0] as SampledTrack<number>).keys.splice(1, 0, { t: 100, value: 2 });
+    rerender(<Timeline {...base} tracks={inserted} onChange={onChange} onSelectionChange={onSelectionChange} />);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps the selection across its own move echoed back', () => {
+    function Echo() {
+      const [value, setValue] = useState(tracks);
+      return <Timeline {...base} tracks={value} onChange={setValue} onInput={setValue} />;
+    }
+    renderWithIcons(<Echo />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 10, altKey: true });
+    fireEvent.pointerUp(document, { clientX: 300, clientY: 10, altKey: true });
+    expect(screen.getAllByTestId('timeline-key')[1]).toHaveAttribute('aria-current', 'true');
+  });
+});
+
+describe('Timeline folds under tracks inserted from outside', () => {
+  it('keeps an open nested row open, and a shut one shut, when the consumer inserts a track before them', () => {
+    const second = { ...nestedTracks()[0], label: 'wink' } as Track;
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={[...nestedTracks(), second]} />);
+    fireEvent.click(screen.getAllByTestId('timeline-disclosure')[0]);
+    expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(3);
+    rerender(<Timeline {...base} tracks={[tracks()[1], ...nestedTracks(), second]} />);
+    expect(screen.getAllByTestId('timeline-disclosure').map((d) => d.getAttribute('aria-expanded'))).toEqual(['true', 'false']);
+    expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(4);
+  });
+});

@@ -46,7 +46,7 @@ const laneOf = (t: Track) => buildLanes([t], new Set())[0];
 describe('Lane', () => {
   it('marks the keys of a nested row that sit past where its timeline stops', () => {
     const parent = { kind: 'timeline', label: 'n', at: 100, timeline: { duration: 300, tracks: [sampled] } } as Track;
-    const row = buildLanes([parent], new Set(['0']))[1]!;
+    const row = buildLanes([parent], new Set(['n']))[1]!;
     render(<Lane {...base} row={row} />);
     const keys = screen.getAllByTestId('timeline-key');
     expect(keys.map((k) => k.getAttribute('data-past'))).toEqual([null, 'true']);
@@ -79,7 +79,7 @@ describe('Lane', () => {
   it('indents a row\'s label by its depth, however deep', () => {
     let track: Track = sampled;
     for (let i = 0; i < 5; i++) track = { kind: 'timeline', label: `n${i}`, at: 0, timeline: { tracks: [track] } } as Track;
-    const row = buildLanes([track], new Set(['0', '0.0', '0.0.0', '0.0.0.0', '0.0.0.0.0'])).at(-1)!;
+    const row = buildLanes([track], new Set(['n4', 'n4/n3', 'n4/n3/n2', 'n4/n3/n2/n1', 'n4/n3/n2/n1/n0'])).at(-1)!;
     const { container } = render(<Lane {...base} row={row} />);
     expect(row.depth).toBe(5);
     expect(container.querySelector<HTMLElement>('[data-depth] > div')!.style.getPropertyValue('--depth')).toBe('5');
@@ -589,5 +589,35 @@ describe('Lane pointer session', () => {
     expect(onKeyChange).toHaveBeenCalledTimes(1);
     expect(onKeyChange).toHaveBeenCalledWith(1, 800);
     expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+  });
+});
+
+describe('Lane names on a row offset along the ruler', () => {
+  const offsetRow = { ...laneOf(sampled), offset: 600 };
+
+  it('names its keys and segments by the ruler time they are drawn at', () => {
+    render(<Lane {...base} row={offsetRow} />);
+    expect(screen.getAllByTestId('timeline-key').map((k) => k.getAttribute('aria-label')))
+      .toEqual(['x key at 600 ms', 'x key at 1100 ms']);
+    expect(screen.getByTestId('timeline-segment').getAttribute('aria-label')).toBe('x segment into 1100 ms');
+  });
+
+  it('names its graphed keys and segments by ruler time too', () => {
+    render(<Lane {...base} mode="graph" row={offsetRow} />);
+    expect([...document.querySelectorAll('[data-keyframe-index]')].map((k) => k.getAttribute('aria-label')))
+      .toEqual(['x key at 600 ms', 'x key at 1100 ms']);
+    expect(document.querySelector('[data-segment-index]')!.getAttribute('aria-label')).toBe('x segment into 1100 ms');
+  });
+});
+
+describe('Lane nested bar under a parent that stops early', () => {
+  it('ends the bar where the timeline around it stops playing it', () => {
+    const inner = { kind: 'timeline', label: 'B', at: 200, timeline: { duration: 400, tracks: [] } };
+    const outer = { kind: 'timeline', label: 'A', at: 0, timeline: { duration: 300, tracks: [inner] } } as unknown as Track;
+    const row = buildLanes([outer], new Set(['A']))[1];
+    render(<Lane {...base} row={row} />);
+    const bar = screen.getByTestId('timeline-nested');
+    expect(bar.style.left).toBe('20%');
+    expect(bar.style.width).toBe('10%');
   });
 });

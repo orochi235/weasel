@@ -9,9 +9,11 @@ import type { LaneRow } from './lanes';
 export type MarkHold = { tabIndex: 0 | -1 } & FocusHoldAttrs;
 
 /** One focusable segment per pair of neighboring keys, named by the key it runs into. */
-export function SegmentMarks({ keys, label, win, pct, mark, selectedSegment, onSelectSegment }: {
+export function SegmentMarks({ keys, label, offset, win, pct, mark, selectedSegment, onSelectSegment }: {
   keys: readonly Keyframe<unknown>[];
   label: string;
+  /** Where the row's own time starts on the ruler, which its names read. */
+  offset: number;
   win: TimeWindow;
   pct: (ms: number) => string;
   mark: MarkHold;
@@ -27,7 +29,7 @@ export function SegmentMarks({ keys, label, win, pct, mark, selectedSegment, onS
             key={`seg-${i}`}
             role="button"
             {...mark}
-            aria-label={`${label} segment into ${msLabel(k.t)}`}
+            aria-label={`${label} segment into ${msLabel(k.t + offset)}`}
             aria-current={selectedSegment === i ? 'true' : undefined}
             data-testid="timeline-segment"
             data-segment-index={i}
@@ -61,7 +63,7 @@ export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, onKey
           key={i}
           role="button"
           {...mark}
-          aria-label={`${row.label} key at ${msLabel(t)}`}
+          aria-label={`${row.label} key at ${msLabel(t + row.offset)}`}
           aria-current={selection === i ? 'true' : undefined}
           data-testid={event ? 'timeline-event' : 'timeline-key'}
           data-keyframe-index={i}

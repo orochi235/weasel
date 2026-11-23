@@ -1,5 +1,6 @@
-import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { arrowMove } from '@weasel-js/quantity';
+import { useLatest } from '@weasel-js/react';
 import type { Track } from '@weasel-js/animator';
 import type { KeySelection } from './keys';
 import { trackAtPath } from './lanes';
@@ -32,34 +33,61 @@ export function useTimeWindow(given: TimeWindow | undefined, duration: number, o
 /**
  * A timeline's selected key, held unless `given`, and its selected segment, always held here. A key and a segment are
  * one selection: taking either gives up the other, and a key selection arriving through `given` drops the segment.
+ * Either is dropped once its track changes by an edit the timeline did not send through `send`, which may have moved
+ * its index onto another key; a key selection so dropped is reported as `null`.
  */
 export function useKeyAndSegment(
   given: KeySelection | null | undefined, tracks: readonly Track[], onSelectionChange?: (sel: KeySelection | null) => void,
 ) {
-  const [selection, setSelection] = useHeld<KeySelection | null>(given, null, onSelectionChange);
-  // By key index, so it is dropped once its track's key times change and the index may name another segment.
-  const [segment, setSegment] = useState<{ sel: KeySelection; times: string } | null>(null);
+  const [held, setHeld] = useHeld<KeySelection | null>(given, null, onSelectionChange);
+  const [keyPin, setKeyPin] = useState<{ id: string; reads: string } | null>(null);
+  const [segment, setSegment] = useState<{ sel: KeySelection; reads: string } | null>(null);
+  // The tracks this timeline last sent out: a track reading as it does there changed by the timeline's own edit.
+  const [sent, setSent] = useState<readonly Track[] | null>(null);
   const [givenKey, setGivenKey] = useState(selectionKey(given));
   const nextGivenKey = selectionKey(given);
   if (nextGivenKey !== givenKey) {
     setGivenKey(nextGivenKey);
     if (given) setSegment(null);
   }
-  if (segment && keyTimesAt(tracks, segment.sel.trackPath) !== segment.times) setSegment(null);
+  /** How the track at `path` reads now, or `null` when something other than the timeline changed it from `reads`. */
+  const readsOwn = (path: readonly number[], reads: string): string | null => {
+    const now = trackReading(tracks, path);
+    return now === reads || (sent !== null && trackReading(sent, path) === now) ? now : null;
+  };
 
-  const selectKey = (sel: KeySelection | null): void => {
-    setSelection(sel);
+  let stale: string | null = null;
+  if (held) {
+    const id = selectionKey(held);
+    const now = keyPin?.id === id ? readsOwn(held.trackPath, keyPin.reads) : trackReading(tracks, held.trackPath);
+    if (now === null) stale = id;
+    else if (keyPin?.id !== id || keyPin.reads !== now) setKeyPin({ id, reads: now });
+  }
+  if (segment) {
+    const now = readsOwn(segment.sel.trackPath, segment.reads);
+    if (now === null) setSegment(null);
+    else if (now !== segment.reads) setSegment({ ...segment, reads: now });
+  }
+  const drop = useLatest(() => setHeld(null));
+  useEffect(() => { if (stale !== null) drop.current(); }, [stale, drop]);
+  const selection = stale === null ? held : null;
+
+  /** Selects `sel`, as it reads in `after` when the same edit changes the tracks. */
+  const selectKey = (sel: KeySelection | null, after: readonly Track[] = tracks): void => {
+    setHeld(sel);
+    setKeyPin(sel ? { id: selectionKey(sel), reads: trackReading(after, sel.trackPath) } : null);
     setSegment(null);
   };
   const selectSegment = (sel: KeySelection): void => {
-    setSegment({ sel, times: keyTimesAt(tracks, sel.trackPath) });
-    if (selection) setSelection(null);
+    setSegment({ sel, reads: trackReading(tracks, sel.trackPath) });
+    if (selection) setHeld(null);
   };
   const dropSegment = (): void => setSegment(null);
-  return { selection, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment };
+  const send = (next: readonly Track[]): void => setSent(next);
+  return { selection, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment, send };
 }
 
-/** Which nested rows are open, by row key. Folding one drops a key or segment selection on a row under it. */
+/** Which nested rows are open, by `LaneRow.fold`. Folding one drops a key or segment selection on a row under it. */
 export function useFolds(sel: {
   selection: KeySelection | null;
   segmentSelection: KeySelection | null;
@@ -67,11 +95,12 @@ export function useFolds(sel: {
   dropSegment: () => void;
 }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  const toggle = (key: string): void => {
-    const folding = expanded.has(key);
+  const toggle = (row: { fold: string; key: string }): void => {
+    const { fold, key } = row;
+    const folding = expanded.has(fold);
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(fold)) next.delete(fold); else next.add(fold);
       return next;
     });
     if (!folding) return;
@@ -85,9 +114,12 @@ export function useFolds(sel: {
 const selectionKey = (sel: KeySelection | null | undefined): string =>
   (sel ? `${sel.trackPath.join('.')}:${sel.keyIndex}` : String(sel));
 
-function keyTimesAt(tracks: readonly Track[], path: readonly number[]): string {
+/** A track's kind, label, and key or event times: what an index into it is read against. */
+function trackReading(tracks: readonly Track[], path: readonly number[]): string {
   const track = trackAtPath(tracks, path);
-  return track?.kind === 'sampled' ? track.keys.map((k) => k.t).join(',') : '';
+  if (!track) return '';
+  const times = track.kind === 'sampled' ? track.keys.map((k) => k.t) : track.kind === 'event' ? track.events.map((e) => e.t) : [];
+  return `${track.kind}:${track.label ?? ''}:${times.join(',')}`;
 }
 
 /**

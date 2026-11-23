@@ -26,19 +26,19 @@ describe('buildLanes', () => {
   it('ends a nested row where its timeline stops playing, within every timeline around it', () => {
     const inner = { kind: 'timeline', label: 'in', at: 20, timeline: { duration: 500, tracks: [sampled('x', [0, 1])] } } as Track;
     const outer = { kind: 'timeline', label: 'out', at: 100, timeline: { duration: 300, tracks: [inner] } } as Track;
-    const rows = buildLanes([outer], new Set(['0', '0.0']));
+    const rows = buildLanes([outer], new Set(['out', 'out/in']));
     expect(rows.map((r) => r.end)).toEqual([Infinity, 400, 400]);
   });
 
   it('ends a nested row whose duration is below 0 or not a number where its bar ends, at its start', () => {
     for (const duration of [-100, Number.NaN]) {
       const inner = { kind: 'timeline', label: 'n', at: 100, timeline: { duration, tracks: [sampled('x', [0])] } } as Track;
-      expect(buildLanes([inner], new Set(['0'])).map((r) => r.end), String(duration)).toEqual([Infinity, 100]);
+      expect(buildLanes([inner], new Set(['n'])).map((r) => r.end), String(duration)).toEqual([Infinity, 100]);
     }
   });
 
   it('ends a nested row with no declared duration where its parent ends', () => {
-    const rows = buildLanes([nested('n', 100, [sampled('x', [0])])], new Set(['0']));
+    const rows = buildLanes([nested('n', 100, [sampled('x', [0])])], new Set(['n']));
     expect(rows.map((r) => r.end)).toEqual([Infinity, Infinity]);
   });
 
@@ -53,7 +53,22 @@ describe('buildLanes', () => {
     expect(buildLanes([t], new Set())[0].label).toBe('sampled 0');
   });
 
-  it('gives each row a stable path-derived key', () => {
+  it('folds a row by its timelines\' labels, so a track inserted before it leaves it open', () => {
+    const open = new Set(['blink']);
+    const before = buildLanes([nested('blink', 0, [sampled('o', [0])])], open);
+    const after = buildLanes([sampled('x', [0]), nested('blink', 0, [sampled('o', [0])])], open);
+    expect(before.map((r) => r.label)).toEqual(['blink', 'o']);
+    expect(after.map((r) => r.label)).toEqual(['x', 'blink', 'o']);
+  });
+
+  it('folds same-labeled and unlabeled siblings apart', () => {
+    const anon = { kind: 'timeline', at: 0, timeline: { tracks: [] } } as unknown as Track;
+    const rows = buildLanes([nested('a/b', 0, []), nested('a/b', 0, []), anon, sampled('(timeline)', [0])], new Set());
+    expect(new Set(rows.map((r) => r.fold)).size).toBe(4);
+    expect(rows[2].fold).toBe('(timeline)');
+  });
+
+  it('gives each row a path-derived key', () => {
     const rows = buildLanes([sampled('x', [0]), sampled('y', [0])], new Set());
     expect(rows.map((r) => r.key)).toEqual(['0', '1']);
   });
@@ -65,7 +80,7 @@ describe('buildLanes', () => {
   });
 
   it('shows an expanded nested timeline’s children one level deeper', () => {
-    const rows = buildLanes([nested('blink', 200, [sampled('o', [0, 1])])], new Set(['0']));
+    const rows = buildLanes([nested('blink', 200, [sampled('o', [0, 1])])], new Set(['blink']));
     expect(rows.map((r) => r.label)).toEqual(['blink', 'o']);
     expect(rows.map((r) => r.depth)).toEqual([0, 1]);
     expect(rows.map((r) => r.key)).toEqual(['0', '0.0']);
@@ -74,7 +89,7 @@ describe('buildLanes', () => {
   it('accumulates the nested offset onto a child row', () => {
     const rows = buildLanes(
       [nested('outer', 200, [nested('inner', 50, [sampled('o', [0, 1])])])],
-      new Set(['0', '0.0']),
+      new Set(['outer', 'outer/inner']),
     );
     expect(rows.map((r) => r.offset)).toEqual([0, 200, 250]);
   });

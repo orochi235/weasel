@@ -18,7 +18,6 @@ const V_INSET_PCT = 8;
 
 /** One arrow-key step, in ms; shift multiplies by ten. */
 const KEY_STEP = { x: 10 };
-const TRACK_TIME = [0, Infinity] as const;
 
 export interface LaneGraphProps {
   keys: readonly Keyframe<number>[];
@@ -26,6 +25,8 @@ export interface LaneGraphProps {
   window: TimeWindow;
   /** Ruler time of this track's zero. */
   offset: number;
+  /** The ruler time no key moves past. Default `Infinity`. */
+  limit?: number;
   /** Ruler times a dragged key snaps to. */
   snapTimes: readonly number[];
   selection: number | null;
@@ -64,7 +65,7 @@ function refuseSteps(e: ReactKeyboardEvent<HTMLDivElement>): void {
  *  lane and windowed to the ruler. */
 export function LaneGraph(props: LaneGraphProps): ReactElement {
   const {
-    keys, label, window: win, offset, snapTimes, selection, selectedSegment,
+    keys, label, window: win, offset, limit = Infinity, snapTimes, selection, selectedSegment,
     onSelect, onSelectSegment, onKeysInput, onKeysChange, onCancel, edits = true,
   } = props;
 
@@ -73,6 +74,9 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
 
   // The layer works in track time; the snap candidates are ruler times.
   const snapX = useMemo(() => snapTimes.map((t) => t - offset), [snapTimes, offset]);
+  // Marks are named by the ruler time they sit at.
+  const xClamp = useMemo(() => [0, Math.max(0, limit - offset)] as const, [limit, offset]);
+  const formatX = useMemo(() => (x: number) => msLabel(x + offset), [offset]);
 
   const committed = useMemo<KeyframeLayerState>(
     () => ({ keys, selectedKey: selection, selectedSegment, drag: null }),
@@ -143,9 +147,9 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
           <KeyframeLayer
             id="keys"
             label={label}
-            formatX={msLabel}
+            formatX={formatX}
             snapX={snapX}
-            xClamp={TRACK_TIME}
+            xClamp={xClamp}
             step={KEY_STEP}
             state={state}
             onInput={onLayerChange}

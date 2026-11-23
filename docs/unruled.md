@@ -4013,3 +4013,18 @@ Calls the lanes made without a ruling:
   package and none of them is the file's own package (by the nearest `package.json` name), the API panel shows no
   TypeDoc comments for it. Taking the first match, as before, was the alternative, and could show another
   component's descriptions.
+## Audit round seventy-eight (2026-11-23): ui's Timeline
+
+- 2026-11-23 (the fixer's call): a key double-clicked onto an empty sampled track takes the track's target's value,
+  or 0 when the track has no `interpolate` or `interpolator`, and a track with either and no target takes no key and
+  warns, naming `seedKey`, the `Timeline` prop that seeds one. Seeding 0 whatever the track's values, as before, was
+  the alternative.
+- 2026-11-23 (the fixer's call): a `Timeline` drops its selected key or segment once the track it is on changes by an
+  edit the timeline did not send (a key inserted, removed, or moved there, or another track now at its path), reporting
+  `null` to `onSelectionChange`; a controlled `selection` so stranded selects nothing until another is given. A track
+  is told apart by its kind, label, and key times. Following the key to its new index, which an edit from outside
+  does not say, was the alternative.
+- 2026-11-23 (the fixer's call): a `Timeline` remembers which nested rows are open by each timeline's label down to
+  the row (its kind for one with none, counted among same-named siblings), so a track the consumer inserts or removes
+  beside it leaves it as it was, and renaming a nested timeline shuts it. Keying by index path, which shifted every
+  later row's fold, was the alternative.
