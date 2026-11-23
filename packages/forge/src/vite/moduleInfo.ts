@@ -1,6 +1,7 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
 import { DEFAULT_LOCAL } from './ast.ts';
+import { freeNames } from './freeNames.ts';
 
 export interface Import {
   spec: string;
@@ -14,12 +15,9 @@ export interface ModuleInfo {
   imports: Map<string, Import>;
   exports: Map<string, Export>;
   stars: string[];
-  /** Per top-level binding, the names its declaration refers to. */
+  /** Per top-level binding, the names its declaration refers to and does not declare itself. */
   refs: Map<string, Set<string>>;
 }
-
-/** Keys holding types, which name no value a component could render. */
-const TYPE_KEYS = new Set(['typeAnnotation', 'typeParameters', 'typeArguments', 'returnType', 'superTypeParameters', 'implements']);
 
 /** What `code`, the source of `file`, imports, exports and declares at its top level. */
 export function moduleInfo(code: string, file: string): ModuleInfo {
@@ -29,7 +27,7 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
   const exports = new Map<string, Export>();
   const stars: string[] = [];
   const refs = new Map<string, Set<string>>();
-  const declare = (name: string, node: t.Node | null | undefined) => refs.set(name, node ? namesIn(node) : new Set());
+  const declare = (name: string, node: t.Node | null | undefined) => refs.set(name, node ? freeNames(node) : new Set());
 
   const declareStatement = (decl: t.Node | null | undefined): string[] => {
     if (!decl) return [];
@@ -95,33 +93,4 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
 
 function nameOf(node: t.Identifier | t.StringLiteral): string {
   return node.type === 'Identifier' ? node.name : node.value;
-}
-
-/** Every identifier `node` refers to as a value, JSX tags included. Types and property names are left out. */
-function namesIn(node: t.Node): Set<string> {
-  const out = new Set<string>();
-  const walk = (value: unknown, key?: string): void => {
-    if (key !== undefined && TYPE_KEYS.has(key)) return;
-    if (Array.isArray(value)) {
-      for (const item of value) walk(item);
-      return;
-    }
-    if (!value || typeof value !== 'object' || typeof (value as { type?: unknown }).type !== 'string') return;
-    const n = value as t.Node;
-    if (n.type.startsWith('TS') && !('expression' in n)) return;
-    if (n.type === 'Identifier' || n.type === 'JSXIdentifier') {
-      out.add(n.name);
-      return;
-    }
-    for (const [k, child] of Object.entries(n)) {
-      if (k === 'leadingComments' || k === 'trailingComments' || k === 'innerComments' || k === 'loc') continue;
-      if ((n.type === 'MemberExpression' || n.type === 'OptionalMemberExpression') && k === 'property' && !n.computed) continue;
-      if (n.type === 'JSXMemberExpression' && k === 'property') continue;
-      if ((n.type === 'ObjectProperty' || n.type === 'ObjectMethod' || n.type === 'ClassMethod' || n.type === 'ClassProperty') && k === 'key' && !n.computed) continue;
-      if (n.type === 'JSXAttribute' && k === 'name') continue;
-      walk(child, k);
-    }
-  };
-  walk(node);
-  return out;
 }

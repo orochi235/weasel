@@ -44,7 +44,7 @@ export function bindingsOf(program: t.Program): Bindings {
   return bindings;
 }
 
-function patternNames(node: t.LVal | t.ObjectProperty['value'] | null | undefined): string[] {
+export function patternNames(node: t.LVal | t.ObjectProperty['value'] | null | undefined): string[] {
   switch (node?.type) {
     case 'Identifier':
       return [node.name];
