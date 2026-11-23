@@ -223,6 +223,14 @@ describe('createCanvasSource', () => {
     expect([...s.pixel({ x: 10, y: 10 })!]).toEqual([10, 20, 30, 255]);
   });
 
+  it('makes one probe canvas, even when it gets no context', () => {
+    vi.spyOn(FakeOffscreen.prototype, 'getContext').mockReturnValue(null as unknown as FakeCtx);
+    const s = createCanvasSource(canvas());
+    expect(s.pixel({ x: 1, y: 1 })).toBeNull();
+    expect(s.pixel({ x: 1, y: 1 })).toBeNull();
+    expect(made).toHaveLength(1);
+  });
+
   it('never calls getContext on the canvas it reads', () => {
     const c = canvas();
     const getContext = vi.fn(() => null);

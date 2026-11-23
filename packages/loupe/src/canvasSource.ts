@@ -125,7 +125,7 @@ export function createCanvasSource(
   let missedSince: number | null = null;
   let warned = false;
   let unheldWarned = false;
-  let probe: Ctx2D | null = null;
+  let probe: Ctx2D | null | undefined;
   const frames = createEmitter();
 
   const source: CanvasSource = {
@@ -196,11 +196,8 @@ export function createCanvasSource(
       const y = Math.floor(p.y);
       // The frame's own size: a capture taken before the canvas was resized is smaller or larger than it.
       if (!(x >= 0 && y >= 0 && x < frame.width && y < frame.height)) return null;
-      if (!probe) {
-        const c = makeCanvas(1, 1);
-        probe = context2d(c, true);
-        if (!probe) return null;
-      }
+      if (probe === undefined) probe = context2d(makeCanvas(1, 1), true);
+      if (!probe) return null;
       probe.globalCompositeOperation = 'copy';
       probe.drawImage(frame, x, y, 1, 1, 0, 0, 1, 1);
       return probe.getImageData(0, 0, 1, 1).data;
