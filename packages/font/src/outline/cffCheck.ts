@@ -17,19 +17,23 @@ const TOP_OFFSETS = new Map<number, number>([
   [1236, 1], // FDArray (12 36)
   [1237, 1], // FDSelect (12 37)
 ]);
+/** CFF2 Top DICT operators, each an offset holding one integer: CharStrings, FDArray, FDSelect, and vstore. */
+const CFF2_TOP_OFFSETS = [17, 1236, 1237, 24] as const;
 /** Private DICT `Subrs`, an offset from the Private DICT's start. */
 const SUBRS = 19;
 /** `charset` and `Encoding` values below these name a predefined set, not an offset. */
+/** The CFF2 DICT operator `blend`. */
+const BLEND = 23;
 const PREDEFINED: Record<number, number> = { 15: 3, 16: 2 };
 
 const bad = (what: string): Error => new Error(`the font's CFF table is damaged: ${what}`);
 
-/** Throws unless the CFF table `cff` (the table's bytes alone) can be read without leaving it. A table whose header
- *  says CFF2 passes unread, and one whose header names neither version is refused. */
+/** Throws unless the CFF table `cff` (the table's bytes alone) can be read without leaving it, by the version its
+ *  header names; one whose header names neither 1 nor 2 is refused. */
 export function checkCff(cff: DataView): void {
   if (cff.byteLength < 4) throw bad('its header is cut off');
   const major = cff.getUint8(0);
-  if (major === 2) return;
+  if (major === 2) return checkCff2(cff);
   // opentype.js reads every major version below 2 as CFF 1, so a 0 would pass unchecked.
   if (major !== 1) throw bad(`its header names version ${major}`);
   const names = readIndex(cff, cff.getUint8(2), 'Name INDEX');
@@ -52,31 +56,52 @@ export function checkCff(cff: DataView): void {
   if (!top.has(17)) throw bad('it has no CharStrings');
 }
 
-function checkFontDict(cff: DataView, item: [number, number]): void {
-  const operands = readDict(cff, item, 'FDArray Font DICT').get(18);
+/** CFF2 (`version` 2): a Top DICT the header sizes, then the Global Subr INDEX, with INDEX counts four bytes wide. */
+function checkCff2(cff: DataView): void {
+  if (cff.byteLength < 5) throw bad('its header is cut off');
+  const headerSize = cff.getUint8(2);
+  const topEnd = headerSize + cff.getUint16(3);
+  if (headerSize < 5 || topEnd > cff.byteLength) throw bad('its Top DICT runs past the table');
+  readIndex(cff, topEnd, 'Global Subr INDEX', 2);
+  const top = readDict(cff, [headerSize, topEnd], 'Top DICT', 2);
+  for (const op of CFF2_TOP_OFFSETS) {
+    const operands = top.get(op);
+    if (operands === undefined) continue;
+    if (operands.length !== 1 || !Number.isInteger(operands[0])) throw bad(`Top DICT operator ${op} holds ${operands.join(' ')}`);
+    if (operands[0]! < 0 || operands[0]! >= cff.byteLength) throw bad(`Top DICT operator ${op} points past the table`);
+    if (op === 17) readIndex(cff, operands[0]!, 'CharStrings INDEX', 2);
+    if (op === 1236) for (const item of readIndex(cff, operands[0]!, 'FDArray INDEX', 2).items) checkFontDict(cff, item, 2);
+  }
+  if (!top.has(17)) throw bad('it has no CharStrings');
+  if (!top.has(1236)) throw bad('it has no FDArray');
+}
+
+function checkFontDict(cff: DataView, item: [number, number], version: 1 | 2 = 1): void {
+  const operands = readDict(cff, item, 'FDArray Font DICT', version).get(18);
   if (operands === undefined) return;
   if (operands.length !== 2 || !operands.every(Number.isInteger)) throw bad(`Font DICT operator 18 holds ${operands.join(' ')}`);
-  checkPrivate(cff, operands[1]!, operands[0]!);
+  checkPrivate(cff, operands[1]!, operands[0]!, version);
 }
 
-function checkPrivate(cff: DataView, at: number, size: number): void {
+function checkPrivate(cff: DataView, at: number, size: number, version: 1 | 2 = 1): void {
   if (at < 0 || size < 0 || at + size > cff.byteLength) throw bad('its Private DICT runs past the table');
-  const subrs = readDict(cff, [at, at + size], 'Private DICT').get(SUBRS);
+  const subrs = readDict(cff, [at, at + size], 'Private DICT', version).get(SUBRS);
   if (subrs === undefined) return;
   if (subrs.length !== 1 || !Number.isInteger(subrs[0])) throw bad(`Private DICT Subrs holds ${subrs.join(' ')}`);
-  readIndex(cff, at + subrs[0]!, 'Local Subr INDEX');
+  readIndex(cff, at + subrs[0]!, 'Local Subr INDEX', version);
 }
 
-/** An INDEX at `at`: each item's `[start, end)`, and where the INDEX ends. */
-function readIndex(cff: DataView, at: number, what: string): { items: [number, number][]; end: number } {
+/** An INDEX at `at`: each item's `[start, end)`, and where the INDEX ends. A CFF2 INDEX counts in four bytes. */
+function readIndex(cff: DataView, at: number, what: string, version: 1 | 2 = 1): { items: [number, number][]; end: number } {
   const past = () => bad(`its ${what} runs past the table`);
-  if (at < 0 || at + 2 > cff.byteLength) throw past();
-  const count = cff.getUint16(at);
-  if (count === 0) return { items: [], end: at + 2 };
-  if (at + 3 > cff.byteLength) throw past();
-  const size = cff.getUint8(at + 2);
+  const countBytes = version === 2 ? 4 : 2;
+  if (at < 0 || at + countBytes > cff.byteLength) throw past();
+  const count = version === 2 ? cff.getUint32(at) : cff.getUint16(at);
+  if (count === 0) return { items: [], end: at + countBytes };
+  if (at + countBytes + 1 > cff.byteLength) throw past();
+  const size = cff.getUint8(at + countBytes);
   if (size < 1 || size > 4) throw bad(`its ${what} has offsets ${size} bytes wide`);
-  const offsetsAt = at + 3;
+  const offsetsAt = at + countBytes + 1;
   const base = offsetsAt + (count + 1) * size - 1;
   if (base + 1 > cff.byteLength) throw past();
   const offset = (i: number): number => {
@@ -96,8 +121,9 @@ function readIndex(cff: DataView, at: number, what: string): { items: [number, n
   return { items, end: base + prev };
 }
 
-/** A DICT's operators, each with its operands; a two-byte operator `12 n` is keyed `1200 + n`. */
-function readDict(cff: DataView, [start, end]: [number, number], what: string): Map<number, number[]> {
+/** A DICT's operators, each with its operands; a two-byte operator `12 n` is keyed `1200 + n`. CFF2 adds operators up
+ *  to 27, among them `blend`, which keeps the first of its operands as many as its last one names, as opentype.js does. */
+function readDict(cff: DataView, [start, end]: [number, number], what: string, version: 1 | 2 = 1): Map<number, number[]> {
   const out = new Map<number, number[]>();
   let operands: number[] = [];
   let at = start;
@@ -107,7 +133,10 @@ function readDict(cff: DataView, [start, end]: [number, number], what: string): 
   };
   while (at < end) {
     const b0 = byte();
-    if (b0 <= 21) {
+    if (version === 2 && b0 === BLEND) {
+      const kept = operands.pop();
+      if (kept !== undefined && operands.length > kept) operands.length = Math.max(0, Math.floor(kept));
+    } else if (b0 <= (version === 2 ? 27 : 21)) {
       out.set(b0 === 12 ? 1200 + byte() : b0, operands);
       operands = [];
     } else if (b0 === 28) operands.push(((byte() << 8) | byte()) << 16 >> 16);
