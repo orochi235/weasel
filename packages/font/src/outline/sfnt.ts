@@ -156,6 +156,7 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
  * Standalone font bytes for one member of a collection or a `.dfont`.
  *
  * `postScriptName` selects the member; when it is absent or matches nothing,
+ * an empty name included,
  * the first member is returned, `matched` says which happened, and `names`
  * lists every member's PostScript name. A single font passes through
  * unchanged.
@@ -167,7 +168,7 @@ export function sfntFromCollection(
   const members = membersOf(bytes);
   if (!members) return { bytes, matched: true, names: [] };
   const names = members.map((m) => m.name);
-  const at = postScriptName ? names.indexOf(postScriptName) : 0;
+  const at = postScriptName === undefined ? 0 : names.indexOf(postScriptName);
   return { bytes: members[Math.max(at, 0)].bytes(), matched: at >= 0, names };
 }
 
