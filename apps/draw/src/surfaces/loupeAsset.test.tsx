@@ -76,7 +76,7 @@ describe('the loupe asset', () => {
     renderWithIcons(<App />);
     expect(loupeBar().getByRole('switch', { name: 'Loupe' })).not.toBeChecked();
     expect(loupeBar().queryByRole('spinbutton', { name: 'Magnification' })).toBeNull();
-    expect(lens.settings).toEqual({ visible: false, mode: 'vector', factor: 8 });
+    expect(lens.settings).toMatchObject({ visible: false, mode: 'vector', factor: 8 });
   });
 
   it('drives the lens from its switch, mode, and magnification', () => {
@@ -99,7 +99,7 @@ describe('the loupe asset', () => {
     drawPrefs().set('loupe.mode', 'pixel');
     drawPrefs().set('loupe.factor', 4);
     renderWithIcons(<App />);
-    expect(lens.settings).toEqual({ visible: false, mode: 'pixel', factor: 4 });
+    expect(lens.settings).toMatchObject({ visible: false, mode: 'pixel', factor: 4 });
     click(loupeBar().getByRole('switch', { name: 'Loupe' }));
     click(loupeBar().getByRole('radio', { name: 'Vector' }));
     expect(drawPrefs().get('loupe.mode')).toBe('vector');

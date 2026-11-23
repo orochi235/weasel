@@ -11,7 +11,7 @@ interface Point { x: number; y: number }
  */
 export function lensAimInput(
   input: HTMLElement,
-  lens: { aimAt(p: Point): void; holds(p: Point): boolean },
+  lens: { aimAt(p: Point): void; holds(p: Point): boolean; pointerAt?(p: Point): void },
 ): LoupeAimInput {
   let free: Point | null = null;
   let pressed = false;
@@ -23,6 +23,7 @@ export function lensAimInput(
   return {
     aimAt(clientX, clientY, held) {
       const p = local(clientX, clientY);
+      lens.pointerAt?.(p);
       if (!held) {
         pressed = holding = false;
         free = p;

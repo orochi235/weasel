@@ -4,6 +4,8 @@ import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { Hud } from '../hud';
 import { createLoupe, type LoupeHandle, type LoupeMode } from '../loupe/createLoupe';
 import type { WindowShapeKind } from '../widgets/window/window';
+import type { GlyphSource } from '../glyph';
+import type { IconSpec } from '@weasel-js/icons';
 
 /** What the lens is told to be: whoever owns these drives it. */
 export interface LoupeSettings {
@@ -12,6 +14,10 @@ export interface LoupeSettings {
   factor: number;
   /** The lens's outline, `'round'` by default; see `LoupeOptions.shape`. A change rebuilds the lens. */
   shape?: WindowShapeKind;
+  /** The registry and the per-mode icons the mode switch draws; see `LoupeOptions.modeIcons`. Read when the lens is
+   *  built. */
+  icons?: GlyphSource;
+  modeIcons?: Partial<Record<LoupeMode, IconSpec>>;
 }
 
 /** What the lens reports back. */
@@ -75,6 +81,8 @@ export function useLoupe(
       mode,
       factor,
       ...(shape ? { shape } : {}),
+      ...(settingsRef.current.icons ? { icons: settingsRef.current.icons } : {}),
+      ...(settingsRef.current.modeIcons ? { modeIcons: settingsRef.current.modeIcons } : {}),
       requestRedraw: () => api.requestRedraw(),
       contentVersion: () => api.getPaintedVersion(),
       onColorChange: (hex) => eventsRef.current.onColorChange(hex),

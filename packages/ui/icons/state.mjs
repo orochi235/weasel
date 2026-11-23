@@ -15,6 +15,10 @@ const WAVES = `<path d="${[3.4, 6.2].flatMap((r) => [wave(r, -35, 35), wave(r, 1
 // ── refresh ──────────────────────────────────────────────────────────────
 // Two arcs, each a third of the circle, heads on opposite ends. Distinct from
 // `reset`, which is a single near-full arc.
+/** The loupe-mode glyphs' cells: 3 px squares on a 3.75 px pitch, from 2.875 to 17.125. */
+const PX0 = 2.875;
+const PITCH = 3.75;
+const cell = (c, r) => `<rect x="${PX0 + c * PITCH}" y="${PX0 + r * PITCH}" width="3" height="3" fill="currentColor" stroke="none"/>`;
 const RR = 6.1;
 const cwTangent = (deg) => [Math.sin((deg * Math.PI) / 180), Math.cos((deg * Math.PI) / 180)];
 const rf1a = onCircle(10, 10, RR, 200);
@@ -218,6 +222,12 @@ const STATE = {
   snap: `
     <path d="M5.4 15.6V9.4a4.6 4.6 0 0 1 9.2 0v6.2h-3.2V9.4a1.4 1.4 0 0 0-2.8 0v6.2z"/>
     <path d="M5.4 12.8h3.2M11.4 12.8h3.2" stroke-width="1"/>`,
+  // A loupe's two modes as one S curve: drawn smooth between its anchors, and stepped
+  // into the cells a raster would light. The curve's ends are the end cells' centers.
+  vector: `
+    <path d="M${PX0 + 1.5} ${PX0 + PITCH * 3 + 1.5}C10 ${PX0 + PITCH * 3 + 1.5} 10 ${PX0 + 1.5} ${PX0 + PITCH * 3 + 1.5} ${PX0 + 1.5}"/>
+    ${[[0, 3], [3, 0]].map(([c, r]) => cell(c, r)).join('')}`,
+  pixels: [[0, 3], [1, 3], [1, 2], [2, 1], [2, 0], [3, 0]].map(([c, r]) => cell(c, r)).join(''),
   drop: { d: drop, fill: drop },
   type: `
     <path d="M4.6 6.4V4.2h10.8v2.2"/>
@@ -274,7 +284,7 @@ const SPLIT = {
   instrument: [
     'crosshair', 'fullscreen', 'compare', 'search', 'loupe',
     'layers', 'page', 'link', 'collapse', 'expand', 'chevron',
-    'grid', 'snap', 'randomize', 'refresh',
+    'grid', 'snap', 'vector', 'pixels', 'randomize', 'refresh',
     'drop', 'type', 'typeface', 'more',
   ],
 };

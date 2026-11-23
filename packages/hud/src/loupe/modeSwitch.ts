@@ -1,80 +1,95 @@
+import { textCommandFromRuns } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import type { LoupeMode } from '@weasel-js/loupe';
-import { rectContainsPointHalfOpen } from '@weasel-js/geom';
-import { IDLE_PRESS } from '@weasel-js/ui-input';
-import type { HudDrawCtx, HudPointerEvent, Widget, WidgetBounds } from '../widget';
+import { solidFill } from '@weasel-js/paint';
+import type { HudDrawCtx, HudPointerEvent, Widget } from '../widget';
 import type { WindowWidget } from '../widgets/window/window';
+import { textWidth } from '../menu/textWidth';
 import { lensTone } from './lensTone';
-import { hudButton } from '../widgets/button';
+import { iconCommands, type GlyphSource } from '../glyph';
+import type { IconSpec } from '@weasel-js/icons';
+import { BAND, bandPath, outwardOf, ringBoundsOf, rimTrackIn } from './rimTracks';
 
 const SEGMENTS: readonly { mode: LoupeMode; label: string }[] = [
   { mode: 'vector', label: 'Vector' },
   { mode: 'pixel', label: 'Pixel' },
 ];
-const SEGMENT_W = 60;
-const HEIGHT = 20;
-/** Gap between the switch and the top of a rect lens's interior, and between its corners and a round lens's rim. */
-const INSET = 10;
-const CLEAR = 6;
-const NOWHERE: WidgetBounds = { x: 0, y: 0, width: 0, height: 0 };
-
-/** Where the switch sits in a lens whose interior is `r`: centered at its top, and in a round interior as high as its
- *  top corners clear the circle. Null when it does not fit in the upper third. */
-export function modeSwitchBoundsIn(r: WidgetBounds, round: boolean): WidgetBounds | null {
-  const width = SEGMENT_W * SEGMENTS.length;
-  const x = r.x + (r.width - width) / 2;
-  if (x < r.x) return null;
-  const radius = r.width / 2;
-  const below = round ? radius - Math.sqrt(Math.max(0, radius * radius - (width / 2) ** 2)) + CLEAR : INSET;
-  const y = r.y + below;
-  return below <= r.height / 3 ? { x, y, width, height: HEIGHT } : null;
-}
+/** Fraction of the track left empty at each end of a segment, so the two read apart. */
+const PAD = 0.015;
+const LABEL_PX = 10;
+const ICON_PX = 12;
+/** Px from the track's centerline to a caption's nearest point, outward past the band. */
+const CAPTION_GAP = BAND / 2 + 4;
 
 /** What the switch reads of its lens, and tells it. */
 export interface ModeSwitchHost {
   win: WindowWidget;
   round: boolean;
+  /** Whether the controls are up; hidden, they draw nothing and take no press. */
+  shown(): boolean;
   mode(): LoupeMode;
   setMode(mode: LoupeMode): void;
+  /** Where the icons in `modeIcons` are drawn from. */
+  icons?: GlyphSource;
+  /** An icon for each mode, set before its caption. */
+  modeIcons?: Partial<Record<LoupeMode, IconSpec>>;
 }
 
-/** A Vector | Pixel switch over the top of a lens. It follows the lens's window, hiding with it, and lights the
- *  lens's current mode; a click on the other segment switches to it. */
+/** A Vector | Pixel switch on the ring outside a lens, beside its zoom. It follows the lens's window, hiding with
+ *  it, and lights the lens's current mode; a click on the other segment switches to it. */
 export function createModeSwitch(id: string, host: ModeSwitchHost): Widget {
   const { win } = host;
-  const place = (): WidgetBounds | null => modeSwitchBoundsIn(win.contentRect, host.round);
+  const track = () => rimTrackIn(win.bounds, host.round, 'mode');
   const segmentAt = (x: number, y: number): number => {
-    const b = place();
-    if (!b || !rectContainsPointHalfOpen(b, x, y)) return -1;
-    return Math.min(SEGMENTS.length - 1, Math.floor((x - b.x) / SEGMENT_W));
+    const near = track().nearest({ x, y });
+    return near.distance <= BAND / 2 ? Math.min(SEGMENTS.length - 1, Math.floor(near.f * SEGMENTS.length)) : -1;
   };
   let hovered = -1;
   let held = -1;
 
   return {
     id,
-    get bounds() { return place() ?? NOWHERE; },
-    get hidden() { return win.hidden || win.disposed === true || place() === null; },
+    get bounds() { return ringBoundsOf(win.bounds); },
+    get hidden() { return !host.shown() || win.hidden || win.disposed === true; },
     focusRing: false,
     dispose() {},
-    deps: () => [host.mode(), hovered, held, win.contentRect.x, win.contentRect.y, win.contentRect.width],
+    deps: () => [host.shown(), host.mode(), hovered, held, win.bounds.x, win.bounds.y, win.bounds.width],
     draw(ctx: HudDrawCtx): DrawCommand[] {
-      const b = place();
-      if (!b) return [];
       const t = ctx.tokens;
-      return SEGMENTS.flatMap((s, i) => {
+      const shape = track();
+      const share = 1 / SEGMENTS.length;
+      const font = { fontFamily: ctx.defaultFont, fontSize: LABEL_PX };
+      return SEGMENTS.flatMap((s, i): DrawCommand[] => {
         const on = host.mode() === s.mode;
-        return hudButton.draw(
-          { label: s.label, size: 'sm', press: { ...IDLE_PRESS, hovered: hovered === i, held: held === i } },
+        const fill = held === i || on ? '--wzl-surface-pressed' : hovered === i ? '--wzl-surface-hover' : '--wzl-surface-raised';
+        const { point: mid, normal } = shape.at(share * (i + 0.5));
+        const color = lensTone(t, on ? '--wzl-accent-fg' : '--wzl-fg');
+        const spec = host.modeIcons?.[s.mode];
+        const placed = spec && host.icons
+          ? iconCommands(host.icons, spec, { x: mid.x - ICON_PX / 2, y: mid.y - ICON_PX / 2, size: ICON_PX, color })
+          : [];
+        // With an icon in the band, the caption sits outside it, as the zoom's stop labels do.
+        const away = placed.length > 0 ? outwardOf(host.round) * CAPTION_GAP : 0;
+        const w = textWidth(s.label, LABEL_PX, ctx.defaultFont);
+        const cx = mid.x + normal.x * away, cy = mid.y + normal.y * away;
+        // Pushed out by half its own box along the normal, so its nearest side, not its middle, keeps the gap.
+        const left = cx - w / 2 + ((normal.x * w) / 2) * Math.sign(away);
+        const top = cy - LABEL_PX / 2 + ((normal.y * LABEL_PX) / 2) * Math.sign(away);
+        return [
           {
-            bounds: { x: b.x + i * SEGMENT_W, y: b.y, width: SEGMENT_W, height: HEIGHT },
-            ctx,
-            ...(on ? { fill: lensTone(t, '--wzl-surface-pressed'), hoverFill: lensTone(t, '--wzl-surface-pressed'), textColor: lensTone(t, '--wzl-accent-fg') } : {}),
+            kind: 'path', path: bandPath(shape, share * i + PAD, share * (i + 1) - PAD),
+            fill: solidFill(lensTone(t, fill)),
+            stroke: { paint: { kind: 'solid', color: lensTone(t, '--wzl-border') }, width: 1 },
           },
-        );
+          ...placed,
+          textCommandFromRuns(
+            left, top, [{ text: s.label, fill: solidFill(color) }],
+            font, undefined, LABEL_PX, 'center',
+          ),
+        ];
       });
     },
-    hitTest: (x, y) => !win.hidden && segmentAt(x, y) >= 0,
+    hitTest: (x, y) => host.shown() && !win.hidden && segmentAt(x, y) >= 0,
     cursorAt: (x, y) => (segmentAt(x, y) >= 0 ? 'pointer' : 'default'),
     onPointer(evt: HudPointerEvent) {
       const at = 'x' in evt && Number.isFinite(evt.x) && Number.isFinite(evt.y) ? segmentAt(evt.x, evt.y) : -1;

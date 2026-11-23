@@ -286,10 +286,13 @@ describe('a loupe that paints through a view but takes no input', () => {
     const m = await mount();
     const loupe = await openLoupe(m, 'view');
     const rect = loupe.window.contentRect;
-    const cmds = loupe.window.content!({
+    const drawn = loupe.window.content!({
       data: {}, view: { x: 0, y: 0, scale: { x: 1, y: 1 } }, dims: { width: 400, height: 400, dpr: 1 },
       rect, defaultFont: 'D', color: () => '#000000', tokens: { '--wzl-surface': '#ffffff' } as never,
     });
+    // Nothing is read under the aim yet, so the picture comes inside its see-through group.
+    expect(drawn).toMatchObject([{ kind: 'group', alpha: 0.35 }]);
+    const cmds = (drawn[0] as GroupDrawCommand).children;
     // The backdrop, then the view's clipped group.
     expect(cmds.map((c) => c.kind)).toEqual(['path', 'group']);
     expect(cmds[1]).toMatchObject({ clip: { width: rect.width, height: rect.height } });

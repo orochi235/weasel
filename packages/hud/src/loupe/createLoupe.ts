@@ -11,6 +11,8 @@ import { createPixelReadback } from './pixelReadback';
 import { createVectorLens } from './vectorLens';
 import { registerLoupe } from './loupeRoutes';
 import { addLoupeControls } from './lensControls';
+import type { GlyphSource } from '../glyph';
+import type { IconSpec } from '@weasel-js/icons';
 import type { Rect } from '@weasel-js/geom';
 import { solidFill } from '@weasel-js/paint';
 
@@ -47,10 +49,14 @@ export interface LoupeBaseOptions {
    * titled window; prefer the round lens unless the lens must carry a title or be closed from its own chrome.
    */
   shape?: WindowShapeKind;
-  /** Draw a Vector | Pixel switch across the top of the lens and a zoom along its bottom. Default `true`. */
+  /** Ring the lens with a zoom and a Vector | Pixel switch, shown while the pointer is near it. Default `true`. */
   controls?: boolean;
   /** The factors the zoom stops at, ascending. Default `LOUPE_FACTOR_STOPS`, 1× to 64× in doublings. */
   zoomStops?: readonly number[];
+  /** Where the icons in `modeIcons` are drawn from: the app's icon registry. */
+  icons?: GlyphSource;
+  /** An icon for each mode, set before its caption on the mode switch. */
+  modeIcons?: Partial<Record<LoupeMode, IconSpec>>;
   /** Called when the lens's own switch changes its mode. */
   onModeChange?: (mode: LoupeMode) => void;
   /** Called when the lens's own zoom changes its factor. */
@@ -164,12 +170,13 @@ export interface LoupeHandle {
   dispose(): void;
 }
 
-/** How opaque the magnified picture is while the lens is being moved. */
-const MOVING_ALPHA = 0.35;
+/** How opaque the magnified picture is while the lens is moved, or aimed where nothing is drawn. */
+const SEE_THROUGH_ALPHA = 0.35;
 
 /** Where a lens of each shape starts when told nothing. */
 const DEFAULT_BOUNDS: Record<WindowShapeKind, WidgetBounds> = {
-  round: { x: 24, y: 24, width: 200, height: 200 },
+  // Clear of the canvas's edge by the ring of controls round it.
+  round: { x: 48, y: 48, width: 200, height: 200 },
   rect: { x: 24, y: 24, width: 220, height: 200 },
 };
 
@@ -219,8 +226,8 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     watch.drew(ctx.view);
     colors.drew(ctx);
     const picture = model.mode === 'vector' ? vector.draw(ctx) : pixels.draw(ctx, backdrop(ctx));
-    // See-through while it moves, so what it is being moved over shows.
-    return win.moving ? [{ kind: 'group', alpha: MOVING_ALPHA, children: picture }] : picture;
+    // See-through while it moves, so what it is moved over shows, and while it has nothing under its aim to show.
+    return win.moving || model.color === null ? [{ kind: 'group', alpha: SEE_THROUGH_ALPHA, children: picture }] : picture;
   };
 
   const backdropColor = (ctx: HudContentCtx): string =>
@@ -279,14 +286,15 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const unregister = registerLoupe(hud, lensAimInput(input, {
     aimAt: (p) => model.aimAt(p),
+    pointerAt: (p) => controls?.pointerAt(p),
     holds: (p) => interactive && surface.covers(p),
   }));
 
-  const removeControls = opts.controls === false ? () => {} : addLoupeControls(opts, win, model, shape === 'round');
+  const controls = opts.controls === false ? null : addLoupeControls(opts, win, model, shape === 'round');
 
   const teardown = () => {
     disposed = true;
-    removeControls();
+    controls?.remove();
     unsubscribeFrame();
     unregister();
     vector.remove();

@@ -12,7 +12,9 @@ import type { LoupeMode } from '@weasel-js/hud';
 import { copyText } from '@weasel-js/react';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
+import { useIconRegistry } from '@weasel-js/icons/react';
 import { pref } from '@weasel-js/prefs';
+import { icon } from './icons.gen';
 import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
 import { drawPrefs, usePref } from './prefs';
 import type { SchemaBinding } from './surfaces/types';
@@ -25,6 +27,8 @@ function reportCopyRefused(hex: string): void {
 
 /** The action that copies the hex under the loupe. */
 export const LOUPE_COPY_ACTION = 'draw.loupe.copy';
+const MODE_ICONS = { vector: icon('ui:vector'), pixel: icon('ui:pixels') } as const;
+
 /** The action that shows or hides the loupe. */
 export const LOUPE_TOGGLE_ACTION = 'draw.loupe.toggle';
 
@@ -71,7 +75,11 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
   const [visible, setShown] = useState(LOUPE_SCHEMA.children.on.default);
   const [mode] = usePref('loupe.mode');
   const [factor] = usePref('loupe.factor');
-  const settings = useMemo((): LoupeSettings => ({ visible, mode, factor }), [visible, mode, factor]);
+  const icons = useIconRegistry() ?? undefined;
+  const settings = useMemo(
+    (): LoupeSettings => ({ visible, mode, factor, ...(icons ? { icons, modeIcons: MODE_ICONS } : {}) }),
+    [visible, mode, factor, icons],
+  );
   const [color, setColor] = useState<string | null>(null);
   // A hidden lens reads nothing: the color it last read is not under any loupe now.
   const setVisible = useCallback((v: boolean) => {

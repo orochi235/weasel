@@ -685,6 +685,16 @@
       "group": "Instrument",
       "tags": []
     },
+    "vector": {
+      "body": "<path d=\"M4.375 15.625C10 15.625 10 4.375 15.625 4.375\"/><rect x=\"2.875\" y=\"14.125\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"14.125\" y=\"2.875\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Instrument",
+      "tags": []
+    },
+    "pixels": {
+      "body": "<rect x=\"2.875\" y=\"14.125\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"6.625\" y=\"14.125\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"6.625\" y=\"10.375\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"10.375\" y=\"6.625\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"10.375\" y=\"2.875\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/><rect x=\"14.125\" y=\"2.875\" width=\"3\" height=\"3\" fill=\"currentColor\" stroke=\"none\"/>",
+      "group": "Instrument",
+      "tags": []
+    },
     "randomize": {
       "body": "<rect x=\"3.6\" y=\"3.6\" width=\"12.8\" height=\"12.8\" rx=\"2\"/><circle cx=\"7.2\" cy=\"7.2\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"10\" cy=\"10\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/><circle cx=\"12.8\" cy=\"12.8\" r=\"1\" fill=\"currentColor\" stroke=\"none\"/>",
       "group": "Instrument",

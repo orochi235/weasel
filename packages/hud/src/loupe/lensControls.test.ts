@@ -1,26 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import type { LoupeMode } from '@weasel-js/loupe';
+import { createHud } from '../hud';
 import { createWindow } from '../widgets/window/window';
-import { createModeSwitch, modeSwitchBoundsIn } from './modeSwitch';
-import { createZoomTrack, zoomTrackIn } from './zoomTrack';
+import { addLensControls } from './lensControls';
+import { createModeSwitch } from './modeSwitch';
+import { RIM_GAP, rimTrackIn } from './rimTracks';
+import { createZoomTrack } from './zoomTrack';
 
-const round = () => createWindow({ id: 'w', title: 'Loupe', shape: 'round', x: 0, y: 0, width: 200, height: 200 });
+const B = { x: 0, y: 0, width: 200, height: 200 };
+const round = () => createWindow({ id: 'w', title: 'Loupe', shape: 'round', ...B });
 const at = (type: 'down' | 'move' | 'up', x: number, y: number) => ({ type, x, y, native: null });
+const shown = () => true;
+
+describe('the ring', () => {
+  it('runs outside the rim, the zoom from the lower left through 6 o’clock, then the switch', () => {
+    for (const part of ['zoom', 'mode'] as const) {
+      for (const f of [0, 0.5, 1]) {
+        const p = rimTrackIn(B, true, part).at(f).point;
+        expect(Math.hypot(p.x - 100, p.y - 100)).toBeCloseTo(100 + RIM_GAP);
+      }
+    }
+    expect(rimTrackIn(B, true, 'zoom').at(0).point.x).toBeLessThan(100);
+    expect(rimTrackIn(B, true, 'mode').at(0).point.x).toBeGreaterThan(rimTrackIn(B, true, 'zoom').at(1).point.x);
+  });
+});
 
 describe('the mode switch', () => {
-  it('fits under a round lens’s rim, and not in one too small for it', () => {
-    const b = modeSwitchBoundsIn({ x: 0, y: 0, width: 188, height: 188 }, true)!;
-    const r = 94;
-    expect(Math.hypot(b.width / 2, r - b.y)).toBeLessThan(r);
-    expect(modeSwitchBoundsIn({ x: 0, y: 0, width: 90, height: 90 }, true)).toBeNull();
-  });
-
   it('switches to the segment clicked', () => {
     let mode: LoupeMode = 'vector';
     const win = round();
-    const sw = createModeSwitch('m', { win, round: true, mode: () => mode, setMode: (m) => { mode = m; } });
-    const b = sw.bounds;
-    const pixel = { x: b.x + b.width * 0.75, y: b.y + b.height / 2 };
+    const sw = createModeSwitch('m', { win, round: true, shown, mode: () => mode, setMode: (m) => { mode = m; } });
+    const pixel = rimTrackIn(win.bounds, true, 'mode').at(0.75).point;
     expect(sw.hitTest(pixel.x, pixel.y)).toBe(true);
     sw.onPointer(at('down', pixel.x, pixel.y));
     sw.onPointer(at('up', pixel.x, pixel.y));
@@ -29,7 +39,7 @@ describe('the mode switch', () => {
 
   it('hides with its window', () => {
     const win = round();
-    const sw = createModeSwitch('m', { win, round: true, mode: () => 'vector', setMode: () => {} });
+    const sw = createModeSwitch('m', { win, round: true, shown, mode: () => 'vector', setMode: () => {} });
     win.setHidden(true);
     expect(sw.hidden).toBe(true);
   });
@@ -38,18 +48,11 @@ describe('the mode switch', () => {
 describe('the zoom', () => {
   const stops = [1, 2, 4, 8, 16, 32, 64];
 
-  it('runs across the bottom of a round lens, through 6 o’clock', () => {
-    const track = zoomTrackIn({ x: 0, y: 0, width: 188, height: 188 }, true);
-    const middle = track.at(0.5).point;
-    expect(middle.x).toBeCloseTo(94);
-    expect(middle.y).toBeGreaterThan(150);
-  });
-
   it('sets the factor to the stop nearest a press on its band, and follows a drag', () => {
     let factor = 8;
     const win = round();
-    const zoom = createZoomTrack('z', { win, round: true, stops, factor: () => factor, setFactor: (f) => { factor = f; } });
-    const track = zoomTrackIn(win.contentRect, true);
+    const zoom = createZoomTrack('z', { win, round: true, shown, stops, factor: () => factor, setFactor: (f) => { factor = f; } });
+    const track = rimTrackIn(win.bounds, true, 'zoom');
     const first = track.at(0).point;
     expect(zoom.hitTest(first.x, first.y)).toBe(true);
     zoom.onPointer(at('down', first.x, first.y));
@@ -60,10 +63,27 @@ describe('the zoom', () => {
     zoom.onPointer(at('up', last.x, last.y));
   });
 
-  it('leaves the middle of the lens to the lens', () => {
-    const zoom = createZoomTrack('z', { win: round(), round: true, stops, factor: () => 8, setFactor: () => {} });
+  it('leaves the lens itself to the lens', () => {
+    const zoom = createZoomTrack('z', { win: round(), round: true, shown, stops, factor: () => 8, setFactor: () => {} });
     expect(zoom.hitTest(100, 100)).toBe(false);
   });
+});
+
+it('shows the controls only while the pointer is near the lens', () => {
+  const hud = createHud();
+  const win = round();
+  const controls = addLensControls({
+    hud, win, round: true, stops: [1, 2, 4], requestRedraw: () => {},
+    mode: () => 'vector', setMode: () => {}, factor: () => 2, setFactor: () => {},
+  });
+  const ring = hud.widgets();
+  expect(ring.every((w) => w.hidden)).toBe(true);
+  controls.pointerAt({ x: 100, y: 100 });
+  expect(ring.every((w) => !w.hidden)).toBe(true);
+  controls.pointerAt({ x: 600, y: 600 });
+  expect(ring.every((w) => w.hidden)).toBe(true);
+  controls.remove();
+  expect(hud.widgets()).toHaveLength(0);
 });
 
 it('says it is moving only while a drag moves it', () => {

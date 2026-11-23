@@ -135,6 +135,8 @@ export type UiIconName =
   | 'chevron'
   | 'grid'
   | 'snap'
+  | 'vector'
+  | 'pixels'
   | 'randomize'
   | 'refresh'
   | 'drop'
@@ -512,6 +514,8 @@ export const ICON_GROUPS: readonly { label: string; names: readonly UiIconName[]
       "chevron",
       "grid",
       "snap",
+      "vector",
+      "pixels",
       "randomize",
       "refresh",
       "drop",
@@ -849,6 +853,8 @@ declare module '@weasel-js/icons' {
     'ui:chevron': true;
     'ui:grid': true;
     'ui:snap': true;
+    'ui:vector': true;
+    'ui:pixels': true;
     'ui:randomize': true;
     'ui:refresh': true;
     'ui:drop': true;

@@ -357,10 +357,14 @@ describe('createLoupe', () => {
     });
     const rect = loupe.window.contentRect;
     const cmds = loupe.window.content!({ data: null, view, dims, rect, defaultFont: 'D', color: () => '#000000', tokens });
+    // Nothing is read under the aim yet, so the picture is see-through.
     expect(cmds).toEqual([{
-      kind: 'path',
-      path: { kind: 'rect', x: rect.x, y: rect.y, width: rect.width, height: rect.height },
-      fill: { paint: { kind: 'solid', color: '#123456' } },
+      kind: 'group', alpha: 0.35,
+      children: [{
+        kind: 'path',
+        path: { kind: 'rect', x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+        fill: { paint: { kind: 'solid', color: '#123456' } },
+      }],
     }]);
   });
 
