@@ -163,22 +163,13 @@ function outlinesEmbeddable(os2: EmbedTables['os2']): boolean {
   return (os2?.version ?? 0) < 3 && (fsType & LOOSER_THAN_RESTRICTED) !== 0;
 }
 
-/** A `name` table entry in English, or undefined; opentype.js throws for a font whose table names no platform. */
-function englishNameOf(font: import('opentype.js').Font, key: string): string | undefined {
-  try {
-    return (font as { getEnglishName?: (k: string) => string | undefined }).getEnglishName?.(key);
-  } catch {
-    return undefined;
-  }
-}
-
 /** `ascent` and `descent` are the face's in ems, for a font whose `hhea` states none. */
 function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent: number, descent: number): FaceEmbedding {
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
   const t = font.tables as EmbedTables;
   return {
     sfnt,
-    postScriptName: englishNameOf(font, 'postScriptName') ?? '',
+    postScriptName: postScriptNameOf(sfnt) ?? '',
     unitsPerEm: font.unitsPerEm,
     outlines: t.cff && !t.glyf ? 'cff' : 'truetype',
     embeddable: outlinesEmbeddable(t.os2),
