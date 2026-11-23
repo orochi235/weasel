@@ -180,6 +180,12 @@ describe('visiblePrefSubtree', () => {
 });
 
 describe('prefDisplayBounds', () => {
+  it('sorts a unitless leaf\'s stops and holds them to its bounds, as under an identity unit', () => {
+    const leaf: PrefNumber = { kind: 'number', name: 'W', description: '', default: 50, min: 0, max: 100, stops: [50, 10, 200] };
+    expect(prefDisplayBounds(leaf).stops).toEqual([10, 50, 100]);
+    expect(prefDisplayBounds({ ...leaf, unit: { scale: 1 } }).stops).toEqual([10, 50, 100]);
+  });
+
   it('passes a unitless leaf\'s bounds through, defaulting only the step', () => {
     const leaf: PrefNumber = { kind: 'number', name: 'W', description: '', default: 0, min: 2, max: 8 };
     expect(prefDisplayBounds(leaf)).toEqual({ min: 2, max: 8, step: 1 });
