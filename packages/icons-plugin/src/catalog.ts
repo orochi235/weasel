@@ -22,9 +22,15 @@ export function fail(ctx: object, message: string): never {
   throw new Error(message);
 }
 
-/** The tables beside each icons.gen module and declared by each package directory. */
-export function tablesFrom(gens: Iterable<string>, pkgs: Iterable<string>): IconTable[] {
-  return [...[...gens].map(tableBeside), ...[...pkgs].flatMap(declaredTables)].filter((t): t is IconTable => t !== undefined);
+/**
+ * The tables beside each icons.gen module and declared by each package directory. A package built
+ * from source can have a stale built table, so a declared table gives way to a source table of its
+ * namespace and owner, and to any table `held` says is already taken in.
+ */
+export function tablesFrom(gens: Iterable<string>, pkgs: Iterable<string>, held?: (table: IconTable) => boolean): IconTable[] {
+  const source = [...gens].map(tableBeside).filter((t): t is IconTable => t !== undefined);
+  const shadowed = (t: IconTable) => source.some((s) => s.namespace === t.namespace && s.owner === t.owner) || !!held?.(t);
+  return [...source, ...[...pkgs].flatMap(declaredTables).filter((t) => !shadowed(t))];
 }
 
 /**
@@ -54,6 +60,8 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
 
   return {
     add,
+    /** Whether a table of `table`'s namespace and owner is held. */
+    holds: (table: IconTable) => tables.get(table.namespace)?.owner === table.owner,
     record: (id: string, use: ModuleUse) => void uses.set(id, use),
     forget: (id: string) => void uses.delete(id),
     /** Drop the modules a rebuild no longer holds. */

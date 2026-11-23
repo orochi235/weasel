@@ -160,7 +160,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
       } else {
         const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
         fresh.forEach((d) => seenPackages.add(d));
-        const changed = tablesFrom(gens, fresh).map((t) => catalog.add(this, t)).includes(true);
+        const changed = tablesFrom(gens, fresh, catalog.holds).map((t) => catalog.add(this, t)).includes(true);
         server?.watcher.add(gens.map((g) => join(dirname(g), TABLE)));
         if (changed && server) invalidateVariants(server);
       }

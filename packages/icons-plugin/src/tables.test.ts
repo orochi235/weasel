@@ -105,3 +105,16 @@ it("reads every source table of an unbuilt package, not the first one found", ()
   }
   expect(declaredTables(root).map((t) => t.namespace).sort()).toEqual(['fa', 'fb']);
 });
+
+it("builds a package's source table over its stale built one", () => {
+  const root = temp();
+  mkdirSync(join(root, 'src'));
+  mkdirSync(join(root, 'dist'));
+  const glyph = (body: string) => ({ body, group: 'G', tags: [] });
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'pkg', weaselIcons: { table: './dist/icons.table.json' } }));
+  writeFileSync(join(root, 'src', 'icons.gen.ts'), `export const icon = scopedIcon<'a'>('fx');\n`);
+  writeFileSync(join(root, 'src', 'icons.table.json'), JSON.stringify({ namespace: 'fx', owner: 'pkg', icons: { a: glyph('new') } }));
+  writeFileSync(join(root, 'dist', 'icons.table.json'), JSON.stringify({ namespace: 'fx', owner: 'pkg', icons: { a: glyph('old'), gone: glyph('x') } }));
+  const tables = tablesFrom([join(root, 'src', 'icons.gen.ts')], [root]);
+  expect(tables.map((t) => t.icons)).toEqual([{ a: glyph('new') }]);
+});
