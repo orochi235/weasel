@@ -18,12 +18,13 @@ export function nearestPortalHost(from: Element | null | undefined): HTMLElement
 }
 
 const set = (value: string | undefined) => value !== undefined && value !== '' && value !== 'none';
-const FIXED_CONTAINING_WILL_CHANGE = /\b(transform|translate|scale|rotate|perspective|transform-style|offset-path|contain)\b/;
-const FILTER_WILL_CHANGE = /(^|[\s,])(filter|backdrop-filter)\b/;
+// Whole idents only: `transform-origin` and `contain-intrinsic-size` contain nothing.
+const FIXED_CONTAINING_WILL_CHANGE = /(^|[\s,])(transform|translate|scale|rotate|perspective|transform-style|offset-path|contain)(?=$|[\s,])/;
+const FILTER_WILL_CHANGE = /(^|[\s,])(filter|backdrop-filter)(?=$|[\s,])/;
 
 /** Whether `el` is the containing block of its fixed-position descendants rather than the viewport. */
 function containsFixed(el: Element): boolean {
-  const cs = getComputedStyle(el);
+  const cs = (el.ownerDocument.defaultView ?? window).getComputedStyle(el);
   // Filter Effects exempts the root: `html { filter: invert(1) }` leaves fixed boxes to the viewport.
   const root = el === el.ownerDocument.documentElement;
   const willChange = cs.willChange ?? '';
@@ -63,7 +64,8 @@ export interface FixedSeat {
  * point, and divide by `scale`, to place it.
  */
 export function fixedSeat(from: Element | null | undefined): FixedSeat {
-  const host = nearestPortalHost(from) ?? document.body;
+  const doc = from?.ownerDocument ?? document;
+  const host = nearestPortalHost(from) ?? doc.body;
   // The containing block can be any ancestor of the host, not only the host.
   for (let el: Element | null = host; el !== null; el = el.parentElement) {
     if (!containsFixed(el)) continue;
@@ -72,7 +74,7 @@ export function fixedSeat(from: Element | null | undefined): FixedSeat {
     // Fixed descendants are placed from the padding box, inside the border the rect includes.
     const box = el as Partial<Pick<HTMLElement, 'clientLeft' | 'clientTop'>>;
     // They scroll with a scrolling block's content. The root's rect already moves with the document's scroll.
-    const scroll = el === document.documentElement ? { scrollLeft: 0, scrollTop: 0 } : el;
+    const scroll = el === doc.documentElement ? { scrollLeft: 0, scrollTop: 0 } : el;
     return {
       host,
       left: rect.left + ((box.clientLeft ?? 0) - scroll.scrollLeft) * scale.x,

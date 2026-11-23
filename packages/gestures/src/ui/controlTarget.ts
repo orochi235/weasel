@@ -1,3 +1,5 @@
+import { isElement } from './domNode';
+
 /** Elements that handle their own press and keys. */
 export const CONTROL_SELECTOR = [
   'button', 'input', 'select', 'textarea', 'a[href]', 'summary', '[contenteditable=""]', '[contenteditable="true"]',
@@ -13,7 +15,7 @@ export const CONTROL_SELECTOR = [
  * controls'.
  */
 export function isInControlWithin(target: EventTarget | null, host: Element): boolean {
-  if (!(target instanceof Element)) return false;
+  if (!isElement(target)) return false;
   const control = target.closest(CONTROL_SELECTOR);
   return control !== null && control !== host && host.contains(control);
 }

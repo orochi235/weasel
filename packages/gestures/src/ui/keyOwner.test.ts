@@ -130,3 +130,41 @@ describe('textOwnsChord', () => {
     expect(textOwnsChord({ ...k, ctrlKey: true }, false)).toBe(false);
   });
 });
+
+describe('an element in another document', () => {
+  function inFrame(html: string): { target: Element; key: (key: string) => KeyboardEvent; done: () => void } {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = html;
+    const target = doc.body.firstElementChild!;
+    const Keyboard = (frame.contentWindow as unknown as typeof globalThis).KeyboardEvent;
+    const key = (k: string) => {
+      const e = new Keyboard('keydown', { key: k, bubbles: true });
+      target.dispatchEvent(e);
+      return e;
+    };
+    return { target, key, done: () => frame.remove() };
+  }
+
+  it('is editable, and owns the keys it owns in this document', () => {
+    const field = inFrame('<input>');
+    expect(isEditableTarget(field.target)).toBe(true);
+    field.done();
+    const button = inFrame('<button></button>');
+    expect(focusedControlOwnsKey(button.key(' '))).toBe(true);
+    button.done();
+    const select = inFrame('<select></select>');
+    expect(focusedControlOwnsKey(select.key('a'))).toBe(true);
+    select.done();
+    const range = inFrame('<input type="range">');
+    expect(focusedControlOwnsKey(range.key('ArrowUp'))).toBe(true);
+    range.done();
+    const check = inFrame('<form><input type="checkbox"></form>');
+    const box = check.target.firstElementChild!;
+    const e = new (box.ownerDocument.defaultView as unknown as typeof globalThis).KeyboardEvent('keydown', { key: 'Enter' });
+    box.dispatchEvent(e);
+    expect(focusedControlOwnsKey(e)).toBe(true);
+    check.done();
+  });
+});

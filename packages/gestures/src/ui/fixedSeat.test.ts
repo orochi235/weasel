@@ -89,11 +89,14 @@ describe('fixedSeat', () => {
     expect(fixedSeat(from)).toMatchObject({ left: 12, top: 7 });
   });
 
-  it.each([['willChange', 'opacity'], ['containerType', 'normal'], ['contentVisibility', 'visible']])(
+  it.each([
+    ['willChange', 'opacity'], ['willChange', 'transform-origin'], ['willChange', 'perspective-origin, opacity'],
+    ['willChange', 'contain-intrinsic-size'], ['containerType', 'normal'], ['contentVisibility', 'visible']])(
     'seats at the viewport origin past an ancestor whose %s is %s',
     (prop, value) => {
       const from = mount('<div id="a"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
       const outer = document.getElementById('a')!;
+      outer.getBoundingClientRect = () => DOMRect.fromRect({ x: 12, y: 7 });
       const real = window.getComputedStyle.bind(window);
       vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
         const cs = real(el);
@@ -147,4 +150,16 @@ describe('fixedSeat', () => {
       }
     },
   );
+
+  it("seats in the element's own document, and leaves out the scroll of that document's root", () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<i id="from"></i>';
+    const root = doc.documentElement;
+    root.style.transform = 'translate(1px, 0)';
+    root.getBoundingClientRect = () => DOMRect.fromRect({ x: 5, y: -30 });
+    Object.defineProperty(root, 'scrollTop', { value: 30 });
+    expect(fixedSeat(doc.getElementById('from'))).toEqual({ host: doc.body, left: 5, top: -30, scale: { x: 1, y: 1 } });
+  });
 });
