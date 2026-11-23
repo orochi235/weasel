@@ -1,18 +1,12 @@
-import {
-  isBuiltinPref,
-  type PrefGroup,
-  type PrefLeaf,
-  type PrefSection,
-  prefValueOrDefault,
-} from '@weasel-js/prefs';
+import { isBuiltinPref, type PrefGroup, type PrefLeaf, type PrefSection } from '@weasel-js/prefs';
 import { enumControlAt, prefFieldProps } from '@weasel-js/ui/components/Prefs';
 import { PropertyField } from '@weasel-js/ui/components/Properties';
-import { configValueAt } from '../config/path';
 import type { ResolvedConfig } from '../config/types';
 import { isRowEnabled } from '../config/visible';
 import type { ControlMatrixColumn } from './ControlMatrix';
 import { ControlRow } from './ControlRow';
 import { useFieldChoices } from './fieldChoices';
+import { leafValueAt } from './fields';
 import type { MatrixTarget } from './matrixTarget';
 
 /** The open popover: which cell, and the element it hangs off. */
@@ -56,7 +50,7 @@ export function MatrixEditor({
     ? prefFieldProps(
         shown,
         {
-          value: prefValueOrDefault(shown, configValueAt(config, at)),
+          value: leafValueAt(config, at, shown),
           setValue: (next) => setConfig(at, next),
           fields: choices,
           disabled,

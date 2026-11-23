@@ -16,6 +16,7 @@ import {
 } from '@weasel-js/ui/components/Prefs';
 import { PropertyControl, type PropertyControlProps } from '@weasel-js/ui/components/Properties';
 import { configValueAt } from '../config/path';
+import { isEncodedLeaf } from '../config/storedDefault';
 import { useFieldChoices } from './fieldChoices';
 
 const unwritten = (): void => {};
@@ -46,9 +47,15 @@ export function extra<T>(leaf: PrefLeaf, key: LeafExtra): T | undefined {
   return (leaf as unknown as Record<string, T | undefined>)[key];
 }
 
-/** What the row of `leaf` at `path` shows of `config` ({@link prefValueOrDefault}). */
+/** What `leaf`'s control is handed when it holds `held`: an encoded leaf's stored value as it is, which its
+ *  encoding reads even when absent (its default is the option it reads as), and any other's value or default. */
+export function fieldValue(leaf: PrefLeaf, held: unknown): unknown {
+  return isEncodedLeaf(leaf) ? held : prefValueOrDefault(leaf, held);
+}
+
+/** What the row of `leaf` at `path` hands its control of `config` ({@link fieldValue}). */
 export function leafValueAt(config: unknown, path: string, leaf: PrefLeaf): unknown {
-  return prefValueOrDefault(leaf, configValueAt(config, path));
+  return fieldValue(leaf, configValueAt(config, path));
 }
 
 /**
