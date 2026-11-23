@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useElapsed } from '@weasel-js/react';
 import {
   BRANCH_SYMBOLS, EffectChart, compact, lanes, nodeGraph, rack, shownPorts,
@@ -124,24 +124,47 @@ function withPreviews(run: EffectRun, canvases: Map<string, OffscreenCanvas>, t:
   return { stages };
 }
 
-/** Close a run's preview bitmaps once the next run has replaced it, and the last one on unmount:
- *  a bitmap's backing is memory the garbage collector does not see. */
-export function useClosePreviews(run: EffectRun): void {
-  useEffect(() => () => {
-    for (const ran of Object.values(run.stages)) for (const b of Object.values(ran.previews ?? {})) b.close();
+const closePreviews = (run: EffectRun) => {
+  for (const ran of Object.values(run.stages)) for (const b of Object.values(ran.previews ?? {})) b.close();
+};
+
+/** `mint(t)`, run in an effect rather than during render: a render React discards (StrictMode's
+ *  second, an interrupted one) would leave bitmaps nobody closes, and their backing is memory the
+ *  garbage collector does not see. Each minted run is closed once a later one is shown, and on
+ *  unmount. `null` until the first is minted. */
+export function usePreviewRun(t: number, mint: (t: number) => EffectRun): EffectRun | null {
+  const [run, setRun] = useState<EffectRun | null>(null);
+  const minted = useRef(new Set<EffectRun>());
+  useEffect(() => {
+    const all = minted.current;
+    return () => {
+      for (const r of all) closePreviews(r);
+      all.clear();
+    };
+  }, []);
+  // Declared before the minting effect, so a run minted in this commit is not yet swept.
+  useEffect(() => {
+    for (const r of minted.current) if (r !== run) { closePreviews(r); minted.current.delete(r); }
   }, [run]);
+  useEffect(() => {
+    const r = mint(t);
+    minted.current.add(r);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hands over the bitmaps this effect mints
+    setRun(r);
+  }, [t, mint]);
+  return run;
 }
 
 export function EffectChartPreviewDemo() {
   const [canvases] = useState(() => new Map<string, OffscreenCanvas>());
   const t = useElapsed() / 1000;
-  const run = useMemo(() => withPreviews(runAt(t), canvases, t), [t, canvases]);
-  useClosePreviews(run);
+  const mint = useCallback((at: number) => withPreviews(runAt(at), canvases, at), [canvases]);
+  const run = usePreviewRun(t, mint);
   return (
     <DemoStage width={W} height={H}>
       <EffectChart
         pipeline={PIPELINE}
-        run={run}
+        run={run ?? runAt(t)}
         options={SHOW_PREVIEWS}
         background={GROUND}
         className="ckd-canvas"
