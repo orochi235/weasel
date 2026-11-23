@@ -8,7 +8,7 @@
  */
 
 import type { ColorSpace, Paint, PaintUnits, GradStop } from '@weasel-js/paint';
-import { createReflectable, ExtensionConflictError, type PushOptions, type Reflection } from '@weasel-js/registry';
+import { createReflectable, ExtensionConflictError, getOwn, type PushOptions, type Reflection } from '@weasel-js/registry';
 import type { GlMat3, Rect } from '@weasel-js/geom';
 import type { GpuTexture } from './gpu/types';
 import {
@@ -168,7 +168,7 @@ function holdPrograms(entry: PaintDrawKind): void {
   }
   for (const [id, declared] of declaredPrograms) {
     for (const held of PROGRAMS_HELD.keys()) {
-      const theirs = held.id === entry.id ? undefined : held.programs?.[id];
+      const theirs = held.id === entry.id || !held.programs ? undefined : getOwn(held.programs, id);
       if (theirs && !sameProgramSource(theirs, declared)) throw new ExtensionConflictError('shader program', id);
     }
   }
