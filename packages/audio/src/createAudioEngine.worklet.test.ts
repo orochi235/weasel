@@ -139,6 +139,7 @@ describe("synthVoices: 'worklet'", () => {
     expect(posted('stop')).toEqual([{ kind: 'stop', id: 1, at: ctx.currentTime + 0.05 }]);
     expect(voice.isPlaying()).toBe(true);
     node()._ended(1);
+    await Promise.resolve();
     expect(voice.isPlaying()).toBe(false);
     expect(onDone).toHaveBeenCalledOnce();
     expect(engine.activeVoices()).toBe(0);
@@ -225,6 +226,23 @@ describe("synthVoices: 'worklet'", () => {
     await flush();
     expect(onDrop).not.toHaveBeenCalled();
     expect(onDone).toHaveBeenCalledOnce();
+  });
+
+  it('finishes disposing before a voice it ends reports done, so a throwing onDone cannot cut it short', async () => {
+    const { ctx, engine, run, flush } = await harness();
+    engine.playNote({ pitch: 440, onDone: () => { throw new Error('from onDone'); } });
+    await run(25);
+    const failures: unknown[] = [];
+    const prior = globalThis.queueMicrotask;
+    globalThis.queueMicrotask = (fn) => prior(() => { try { fn(); } catch (err) { failures.push(err); } });
+    try {
+      expect(() => engine.dispose()).not.toThrow();
+      expect(ctx.destination.connectedFrom).toEqual([]);
+      await flush();
+    } finally {
+      globalThis.queueMicrotask = prior;
+    }
+    expect(failures).toHaveLength(1);
   });
 
   it('reports dispose of a voice started inside a stall as done, not dropped', async () => {
