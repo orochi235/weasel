@@ -35,9 +35,12 @@ describe('isInControlWithin', () => {
     'agrees with focusedControlOwnsKey that %s is a control',
     (html) => {
       const { target, host } = pressIn(html);
-      const e = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
-      target.dispatchEvent(e);
-      expect(focusedControlOwnsKey(e)).toBe(true);
+      const owns = [' ', 'Enter'].some((key) => {
+        const e = new KeyboardEvent('keydown', { key, bubbles: true });
+        target.dispatchEvent(e);
+        return focusedControlOwnsKey(e);
+      });
+      expect(owns).toBe(true);
       expect(isInControlWithin(target, host)).toBe(true);
     },
   );

@@ -28,6 +28,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   `toolOptionsPrefs` throw, since its options would land in the group every tool's shared options are kept in.
   `toolOptionsPrefs` also throws for an option key or shared key with a dot, and for a tool whose options would sit
   inside another tool's option (`path`'s option `brush` beside a tool `path.brush`), rather than escaping either.
+- 2026-11-22: `activatesFocusedControl` (and so `focusedControlOwnsKey`) gives a control only the key that activates
+  it: Space alone to a checkbox, radio or switch, Enter alone to a link. A page-level Enter shortcut now fires on a
+  focused checkbox, except a native checkbox or radio in a form, where Enter submits the form.
 - 2026-11-20: `CONTROL_SELECTOR` names everything `focusedControlOwnsKey` leaves Space and Enter to:
   `summary` and roles `tab`, `option`, `radio`, `menuitemcheckbox` and `menuitemradio` now count as
   controls a host leaves a press to, and the last three also own Space and Enter. A dispatcher surface
@@ -1769,7 +1772,7 @@ Calls the round made:
   or it stops promising to stay focusable.
 - Removing an `EffectList` card hands focus on through `useRemovedRowFocus`; removing the last drops it to the page.
   `ListEditor` (previous entry first) and `GradientEditor` (neighboring stop) keep rules of their own.
-- gestures' `CONTROL_SELECTOR` has no `radio`, `tab`, `menuitemcheckbox`, `menuitemradio` or `slider` role. Widening it
+- gestures' `CONTROL_SELECTOR` has no `slider`, `spinbutton`, `combobox` or `scrollbar` role. Widening it
   changes press ownership in `ItemList`, `Tree` and the reorder lists. Left as is; nothing breaks today.
 - The eyedropper and the hand tool target `THROUGH_CHROME`, so they sample and pan through exclusive chrome claims
   (measurements, selection handles). The hand always pans (Mike, 2026-11-08), except from UI floating over the
@@ -1839,7 +1842,8 @@ Rulings and TODO pickups that landed in the same batch are here too.
   edited since the JSON was written with its own reader alone.
 - Keys match a Latin chord by physical key only while Ctrl, Alt or Cmd is held, so single-letter tool keys don't
   fire on a Cyrillic layout and AltGr+E (€) doesn't fire `e`. A shifted character needs `shift` in its binding.
-  Only a second finger abandons a held long-press; a touch or mouse beside a held pen does not (palm rejection).
+  Only a second finger abandons a held long-press; a touch or mouse beside a held pen does not (palm rejection),
+  and a pen beside a held finger does not either, so a palm that lands first can still long-press under a pen.
 - A held key ends in the view that took its keydown. A carry cancels on window blur. A press on a keyboard-off
   dispatcher leaves the keys where they are but still moves the chrome scope.
 - Mode keys (entry and leave) sit at the ambient tier, so an active tool's own key comes first. The conflict check

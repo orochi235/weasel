@@ -27,23 +27,30 @@ export function isEditableTarget(target: EventTarget | null): boolean {
   return ce === 'true' || ce === '' || ce === 'plaintext-only';
 }
 
-const ACTIVATED_BY_KEY = [
-  'button', 'a[href]', 'summary', 'select',
+const ACTIVATED_BY_EITHER = [
+  'button', 'summary', 'select',
   'input[type="button"]', 'input[type="submit"]', 'input[type="reset"]', 'input[type="image"]',
   'input[type="file"]', 'input[type="color"]',
-  'input[type="checkbox"]', 'input[type="radio"]',
-  '[role="button"]', '[role="link"]', '[role="checkbox"]', '[role="switch"]', '[role="radio"]',
-  '[role="menuitem"]', '[role="menuitemcheckbox"]', '[role="menuitemradio"]', '[role="tab"]', '[role="option"]',
+  '[role="button"]', '[role="menuitem"]', '[role="menuitemcheckbox"]', '[role="menuitemradio"]',
+  '[role="tab"]', '[role="option"]',
 ].join(', ');
+const ACTIVATED_BY_SPACE = [
+  'input[type="checkbox"]', 'input[type="radio"]', '[role="checkbox"]', '[role="switch"]', '[role="radio"]',
+].join(', ');
+const ACTIVATED_BY_ENTER = ['a[href]', '[role="link"]'].join(', ');
 
 /**
- * True when `e` is Space or Enter on a focused control those keys activate — a
- * button, a link, a checkbox. The key is that control's, so a page-level
- * listener that claims it cancels the control's own activation.
+ * True when `e` is Space or Enter on a focused control that key activates — a
+ * button, a link on Enter, a checkbox on Space. The key is that control's, so
+ * a page-level listener that claims it cancels the control's own activation.
+ * Enter on a checkbox or radio in a form submits the form, so it is theirs too.
  */
 export function activatesFocusedControl(e: KeyboardEvent): boolean {
-  if (e.key !== ' ' && e.key !== 'Enter') return false;
-  return e.target instanceof Element && e.target.matches(ACTIVATED_BY_KEY);
+  const t = e.target;
+  if (!(t instanceof Element) || (e.key !== ' ' && e.key !== 'Enter')) return false;
+  if (t.matches(ACTIVATED_BY_EITHER)) return true;
+  if (e.key === ' ') return t.matches(ACTIVATED_BY_SPACE);
+  return t.matches(ACTIVATED_BY_ENTER) || (t instanceof HTMLInputElement && t.form !== null && t.matches(ACTIVATED_BY_SPACE));
 }
 
 const SELECT_NAVIGATION = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown']);
