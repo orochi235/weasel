@@ -88,15 +88,15 @@ function constraintsOf(stored: unknown): Constraints {
 
 const HEX = /^#[0-9a-f]{6}$/i;
 
-/** Each stored anchor with a name, a finite hue and lightness, and a chroma that is finite or absent. */
+/** Each stored anchor with a name, a finite hue, a lightness from 0 to 1, and a chroma that is absent or at least 0. */
 function anchorsOf(stored: unknown): Anchor[] {
   if (!Array.isArray(stored)) return [];
   return stored.flatMap((a: unknown): Anchor[] => {
     if (typeof a !== 'object' || a === null) return [];
     const { name, hue, lightness, chroma } = a as Record<string, unknown>;
-    if (typeof name !== 'string' || !isFiniteNumber(hue) || !isFiniteNumber(lightness)) return [];
+    if (typeof name !== 'string' || !isFiniteNumber(hue) || !isFiniteNumber(lightness) || lightness < 0 || lightness > 1) return [];
     if (chroma === undefined) return [{ name, hue, lightness }];
-    return isFiniteNumber(chroma) ? [{ name, hue, lightness, chroma }] : [];
+    return isFiniteNumber(chroma) && chroma >= 0 ? [{ name, hue, lightness, chroma }] : [];
   });
 }
 
