@@ -77,7 +77,6 @@ describe('reading a Mermaid C4 diagram', () => {
   it('names the line it cannot read', () => {
     expect(() => parseC4('C4Context\n  Person(a, "A"')).toThrow(/^Mermaid, line 2: cannot read/);
     expect(() => parseC4('C4Context\n  Boundary(b, "B") {\n  Person(a, "A")')).toThrow('Mermaid, line 2: a boundary opened here is never closed');
-    expect(() => readC4('C4Context\n  UpdateElementStyle(x, $bgColor="red")')).toThrow('Mermaid, line 2: no element or boundary is named "x"');
     expect(() => parseC4('C4Diagram\n')).toThrow('Mermaid, line 1: expected a C4 header, found "C4Diagram"');
   });
 });
@@ -164,5 +163,30 @@ describe('readC4 on a repeated alias', () => {
   it('throws, naming the line, on an alias an element or a boundary already names', () => {
     expect(() => readC4('C4Context\n  System(a, "A")\n  System_Boundary(b, "B") {\n    System(a, "A2")\n  }')).toThrow(/line 4.*"a" already names/);
     expect(() => readC4('C4Context\n  Boundary(b, "B") {\n  }\n  Boundary(b, "C") {\n  }')).toThrow(/line 4.*"b" already names/);
+  });
+});
+
+describe('C4 style macros naming nothing', () => {
+  it('drop, with a warning, a style naming no element or relationship declared above it', () => {
+    const { document, warnings } = readC4('C4Context\n  UpdateElementStyle(typo, $bgColor="red")\n  UpdateRelStyle(a, b, $lineColor="red")\n  System(a, "A")');
+    expect(onlyPage(document).data.nodes).toHaveLength(1);
+    expect(warnings).toEqual([
+      'Mermaid C4 styles naming no element or boundary declared above them were dropped: typo.',
+      'Mermaid C4 styles naming no relationship declared above them were dropped: a -> b.',
+    ]);
+  });
+
+  it('styles only the first relationship between two elements, as Mermaid does', () => {
+    const { document } = readC4('C4Context\n  System(a, "A")\n  System(b, "B")\n  Rel(a, b, "x")\n  Rel(a, b, "y")\n  UpdateRelStyle(a, b, $lineColor="red")');
+    expect(onlyPage(document).data.edges.map((e) => e.colors)).toEqual([{ stroke: 'red' }, undefined]);
+  });
+
+  it('writes no style for a later relationship between the same two elements, with a warning', () => {
+    const { document } = readC4('C4Context\n  System(a, "A")\n  System(b, "B")\n  Rel(a, b, "x")\n  Rel(a, b, "y")');
+    const page = onlyPage(document);
+    const edges = [page.data.edges[0]!, { ...page.data.edges[1]!, colors: { stroke: 'red' } }];
+    const out = writeC4({ pages: [{ ...page, data: { ...page.data, edges } }] });
+    expect(out.text).not.toContain('UpdateRelStyle');
+    expect(out.warnings).toContain('Mermaid C4 styles only the first relationship between two elements; colors of the others were dropped.');
   });
 });

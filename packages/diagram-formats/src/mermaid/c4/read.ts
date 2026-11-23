@@ -132,7 +132,7 @@ class C4Reader {
     const box = this.containers.findIndex((c) => c.id === alias);
     if (node !== undefined) this.nodes.set(node.id, { ...node, colors: { ...node.colors, ...colors } });
     else if (box >= 0) this.containers[box] = { ...this.containers[box]!, colors: { ...this.containers[box]!.colors, ...colors } };
-    else throw lineError('Mermaid', s.line, `no element or boundary is named "${alias ?? ''}"`);
+    else this.warnings.list('Mermaid C4 styles naming no element or boundary declared above them were dropped', alias ?? '');
   }
 
   relStyle(s: Extract<C4Stmt, { kind: 'call' }>): void {
@@ -141,9 +141,9 @@ class C4Reader {
     for (const key of Object.keys(rest)) this.warnings.list('Mermaid C4 arguments a diagram does not hold were dropped', `$${key}`);
     const [stroke, label] = [lineColor, textColor].map((c) => mermaidColor(c, this.warnings));
     const colors: Partial<EdgeStyle> = { ...(stroke !== undefined ? { stroke } : {}), ...(label !== undefined ? { label } : {}) };
-    for (const [i, e] of this.edges.entries()) {
-      if (e.from === from && e.to === to) this.edges[i] = { ...e, colors: { ...e.colors, ...colors } };
-    }
+    const at = this.edges.findIndex((e) => e.from === from && e.to === to);
+    if (at < 0) this.warnings.list('Mermaid C4 styles naming no relationship declared above them were dropped', `${from ?? ''} -> ${to ?? ''}`);
+    else this.edges[at] = { ...this.edges[at]!, colors: { ...this.edges[at]!.colors, ...colors } };
   }
 }
 

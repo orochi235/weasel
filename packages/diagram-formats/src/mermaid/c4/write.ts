@@ -90,7 +90,12 @@ class C4Writer {
       colors?.label !== undefined ? `$textColor=${quoted(colors.label)}` : null,
       colors?.stroke !== undefined ? `$lineColor=${quoted(colors.stroke)}` : null,
     ].filter((s) => s !== null);
-    if (set.length > 0) this.styles.push(`  UpdateRelStyle(${this.id(e.from)}, ${this.id(e.to)}, ${set.join(', ')})`);
+    if (set.length === 0) return;
+    if (this.out.edges.find((d) => d.from === e.from && d.to === e.to) !== e) {
+      this.out.warnings.add('Mermaid C4 styles only the first relationship between two elements; colors of the others were dropped.');
+      return;
+    }
+    this.styles.push(`  UpdateRelStyle(${this.id(e.from)}, ${this.id(e.to)}, ${set.join(', ')})`);
   }
 }
 
