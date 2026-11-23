@@ -25,7 +25,7 @@ export interface SpatialOptions {
   right?: SpatialPoint;
 }
 
-/** Throws a `RangeError` on a listener at a point, or with options, that are not finite. */
+/** Throws a `RangeError` on a listener at a point, or with options, that are not finite, or an unknown rolloff. */
 export function checkListener(at: SpatialPoint, opts: SpatialOptions = {}): void {
   checkPoint('listener', at);
   checkFinite('listener refDistance', opts.refDistance);
@@ -33,6 +33,9 @@ export function checkListener(at: SpatialPoint, opts: SpatialOptions = {}): void
   checkFinite('listener rolloffFactor', opts.rolloffFactor);
   checkFinite('listener panWidth', opts.panWidth);
   checkPoint('listener right', opts.right);
+  if (opts.rolloff !== undefined && opts.rolloff !== 'inverse' && opts.rolloff !== 'linear') {
+    throw new RangeError(`@weasel-js/audio: a listener rolloff is 'inverse' or 'linear', not ${String(opts.rolloff)}`);
+  }
 }
 
 /**
