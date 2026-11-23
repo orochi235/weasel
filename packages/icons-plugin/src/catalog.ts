@@ -55,6 +55,7 @@ export function iconCatalog(variants: Record<string, VariantFilter>) {
   return {
     add,
     record: (id: string, use: ModuleUse) => void uses.set(id, use),
+    forget: (id: string) => void uses.delete(id),
     /** Drop the modules a rebuild no longer holds. */
     keep(live: ReadonlySet<string>) {
       for (const id of uses.keys()) if (!live.has(id)) uses.delete(id);

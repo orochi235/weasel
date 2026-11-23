@@ -125,6 +125,30 @@ describe('weaselIcons app mode', () => {
     expect(second).not.toContain('lib-star-body');
   });
 
+  it('forgets the refs of a compiled module that stops naming icons on a rebuild', async () => {
+    const plugin = weaselIcons.vite({ mode: 'app' });
+    let named = true;
+    const sfc: Plugin = {
+      name: 'fake-sfc',
+      transform: (code, id) => (!id.endsWith('.sfc') ? null : named ? code.replace(/<\/?script>/g, '') : `export const ring = 'ring';`),
+    };
+    const entryOf = async () => {
+      const out = await build({
+        root,
+        logLevel: 'silent',
+        configFile: false,
+        resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+        plugins: [sfc, plugin],
+        build: { write: false, minify: false, rollupOptions: { input: `${root}/src/sfc.ts` } },
+      });
+      const result = Array.isArray(out) ? out[0]! : (out as Rollup.RollupOutput);
+      return result.output.find((o): o is Rollup.OutputChunk => o.type === 'chunk' && o.isEntry)!.code;
+    };
+    expect(await entryOf()).toContain('fx-ring-body');
+    named = false;
+    expect(await entryOf()).not.toContain('fx-ring-body');
+  });
+
   it('refuses a custom variant named all when constructed', () => {
     expect(() => weaselIcons.vite({ mode: 'app', variants: { all: {} } })).toThrow(/cannot be named "all"/);
   });

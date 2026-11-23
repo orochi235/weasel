@@ -128,6 +128,11 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
     if (stripped) fail(this, stripped);
   }
 
+  function forget(id: string) {
+    if (!app) library.record(id, []);
+    else if (!dev) catalog.forget(id);
+  }
+
   async function transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
     const file = id.split('?')[0]!;
     const gens: string[] = [];
@@ -169,7 +174,10 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
     enforce: 'post' as const,
     transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
     transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
-      return code.includes('icons.gen') || code.includes('@icon') ? transform.call(this, code, id) : null;
+      if (code.includes('icons.gen') || code.includes('@icon')) return transform.call(this, code, id);
+      // A watch rebuild of a module that named icons before must not keep its old refs.
+      forget(id);
+      return null;
     },
   };
 
