@@ -45,6 +45,27 @@ describe('livePlan', () => {
     expect(p.edges).toEqual([]);
   });
 
+  it('plays a level given as text as the number it spells, and fails a stage whose level text is none', () => {
+    const level = (value: string) => plan(
+      [stage('osc', 'audio.oscillator'), stage('g', 'audio.gain', { params: [{ id: 'gain', label: 'gain', value }] })],
+      [wire('osc', 'g')],
+    );
+    expect(level('0.2').nodes.g!.levels).toEqual({ gain: 0.2 });
+    const bad = level('loud');
+    expect(bad.nodes.g).toBeUndefined();
+    expect(bad.errors.g).toBe('gain is not a number: "loud"');
+  });
+
+  it('judges a feedback loop only over the wires it plays', () => {
+    const p = plan(
+      [stage('osc', 'audio.oscillator'), stage('gain', 'audio.gain'), stage('out', 'audio.output')],
+      [wire('osc', 'gain'), wire('gain', 'out'), wire('gain', 'osc', 'nope')],
+    );
+    expect(p.errors).toEqual({});
+    expect(Object.keys(p.nodes).sort()).toEqual(['gain', 'osc']);
+    expect(p.edges).toHaveLength(2);
+  });
+
   it('plans a stage whose id is __proto__ as its own node', () => {
     const p = plan([stage('__proto__', 'audio.oscillator'), stage('out', 'audio.output')], [wire('__proto__', 'out')]);
     expect(Object.getPrototypeOf(p.nodes)).toBe(Object.prototype);

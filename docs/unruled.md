@@ -3861,3 +3861,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): an insert chain's crossfade that a suspension interrupts waits for the context to
   resume and the ramp to end, so `inserts.settled()` stays pending through the suspension; a close still ends it at
   once. Snapping the surviving link to its target and unlinking at the suspension was the alternative.
+## Audit round seventy-three (2026-11-22): the effect editor and live audio
+
+- 2026-11-22 (the fixer's call): a live audio level given as text, as a param with no `control` reads, plays as the
+  number the text spells, and text that spells none (`"440 Hz"`, `"loud"`) fails the stage, naming the level. It had
+  played at the stage type's default. Reading a leading number past a unit was the alternative.

@@ -133,6 +133,36 @@ describe('EffectEditor clusters under nodeGraph', () => {
     expect(dissolved.pipeline.clusters).toEqual([]);
     expect(dissolved.clusterBoxes).toBeUndefined();
   });
+  it('leaves ids that name nothing out of a new cluster, and makes none of only those', () => {
+    const { onChange, api } = mount();
+    let id: string | null = 'unset';
+    act(() => { id = api.current!.cluster(['nope']); });
+    expect(id).toBeNull();
+    expect(onChange).not.toHaveBeenCalled();
+    act(() => { id = api.current!.cluster(['nope', 'c']); });
+    expect(id).toBe('cluster');
+    expect((onChange.mock.calls[0]![0] as EffectDoc).pipeline.clusters!.at(-1)).toEqual({ id: 'cluster', members: ['c'] });
+  });
+
+
+  it('pins the stages layout placed before it dissolves a cluster, as cluster does', () => {
+    const { onChange, api } = mount({ ...DOC, places: {}, clusterBoxes: {} });
+    act(() => api.current!.dissolveCluster('g'));
+    const [dissolved] = onChange.mock.calls[0]! as [EffectDoc, string];
+    expect(Object.keys(dissolved.places).sort()).toEqual(['a', 'b', 'c']);
+  });
+
+  it('closes the rename field when its cluster leaves the doc, and keeps it shut for a new one of that id', () => {
+    const api = createRef<EffectEditorApi>();
+    const ui = (doc: EffectDoc) => <EffectEditor ref={api} doc={doc} onChange={vi.fn()} width={800} height={600} />;
+    const { rerender } = render(ui(DOC));
+    act(() => api.current!.renameCluster('g'));
+    expect(seen.at(-1)!.overlays).toHaveLength(1);
+    rerender(ui({ ...DOC, pipeline: { ...DOC.pipeline, clusters: [] }, clusterBoxes: {} }));
+    expect(seen.at(-1)!.overlays).toBeUndefined();
+    rerender(ui(DOC));
+    expect(seen.at(-1)!.overlays).toBeUndefined();
+  });
 });
 
 describe('EffectEditor clusters under rack', () => {

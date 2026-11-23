@@ -49,6 +49,11 @@ describe('clusterStages', () => {
   it('makes nothing of no stages', () => {
     expect(clusterStages(DOC, [])).toBe(DOC);
   });
+
+  it('leaves out ids that name no stage or cluster, and makes nothing of only those', () => {
+    expect(clusterStages(DOC, ['nope'])).toBe(DOC);
+    expect(clusterStages(DOC, ['nope', 'c']).pipeline.clusters!.at(-1)!.members).toEqual(['c']);
+  });
 });
 
 describe('dissolveCluster', () => {

@@ -15,7 +15,7 @@ export interface AudioStageNode {
   settings(params: Readonly<Record<string, unknown>>, sources: AudioSources): Readonly<Record<string, unknown>>;
   /** The ids of its numeric params, each a `params` key of the def `build` returns. */
   levels: readonly string[];
-  /** What each level plays at when the stage's params give it no number; one left out gets the factory's own default. */
+  /** What each level plays at when the stage's params leave it out; one left out here gets the factory's own default. */
   levelDefaults?: Readonly<Record<string, number>>;
   build(ctx: BaseAudioContext, settings: Readonly<Record<string, unknown>>, levels: Readonly<Record<string, number>>): GraphNodeDef;
 }

@@ -80,9 +80,10 @@ export interface EffectEditorApi {
   addStage(type: EffectStageType, client?: { x: number; y: number }): string;
   /** Puts stages and clusters in a new cluster, as `clusterStages` does, and reports it as 'Group'.
    *  Under `nodeGraph` it first pins every stage where it shows, as a drag
-   *  does. Returns the new cluster's id, or `null` for no ids. */
+   *  does. Returns the new cluster's id, or `null` when no id names a stage or cluster. */
   cluster(ids: readonly string[]): string | null;
-  /** Dissolves a cluster, as `dissolveCluster` does, and reports it as 'Ungroup'. */
+  /** Dissolves a cluster, as `dissolveCluster` does, and reports it as 'Ungroup'.
+   *  Under `nodeGraph` it first pins every stage where it shows, as a drag does. */
   dissolveCluster(id: string): void;
   /** Opens the field a cluster's title is renamed in, over its title, or above
    *  its box where it has none; a double-click on the title does
@@ -125,6 +126,8 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
   const now = useLatest({ doc, built, specs, look, options, onChange });
   const view = useRef<DiagramViewApi | null>(null);
   const [renaming, setRenaming] = useState<string | null>(null);
+  // The field unmounts with its cluster without blurring, so it never closes itself.
+  if (renaming !== null && !doc.pipeline.clusters?.some((g) => g.id === renaming)) setRenaming(null);
   const handlers = useMemo(() => editHandlers(() => now.current, picks.unpick, setRenaming), [now, picks.unpick]);
   const ambient = useMemo(() => {
     const source = (): ReorderSource => {
@@ -157,14 +160,16 @@ export const EffectEditor = forwardRef<EffectEditorApi, EffectEditorProps>(funct
     },
     cluster: (ids) => {
       const { doc: d, specs: shown, look: l, onChange: report } = now.current;
-      if (ids.length === 0) return null;
       const base = l === 'nodeGraph' ? pinShown(ensureWireIds(d), shown) : d;
-      report(clusterStages(base, ids), 'Group');
+      const next = clusterStages(base, ids);
+      if (next === base) return null;
+      report(next, 'Group');
       return nextClusterId(d.pipeline);
     },
     dissolveCluster: (id) => {
-      const { doc: d, onChange: report } = now.current;
-      if (d.pipeline.clusters?.some((g) => g.id === id)) report(dissolveCluster(d, id), 'Ungroup');
+      const { doc: d, specs: shown, look: l, onChange: report } = now.current;
+      if (!d.pipeline.clusters?.some((g) => g.id === id)) return;
+      report(dissolveCluster(l === 'nodeGraph' ? pinShown(ensureWireIds(d), shown) : d, id), 'Ungroup');
     },
     renameCluster: (id) => setRenaming(id),
     visible: () => view.current?.visible() ?? null,
