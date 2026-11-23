@@ -54,6 +54,15 @@ describe('<SemanticDrawer>', () => {
     expect(onRule.mock.calls.at(-1)![0]).toEqual({ value: [0.32, 0, 0.67, 0.1], type: 'cubicBezier' });
   });
 
+  it('turns Varies by off while editing a branch the rule lacks, keeping a branch it has', async () => {
+    const dark = { value: 'a' } as SemanticRule;
+    const { onRule } = renderDrawer({ by: 'mode', dark } as Varying<SemanticRule>);
+    await userEvent.click(screen.getByRole('radio', { name: 'light' }));
+    expect(screen.getByText(/has no light branch/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Varies by mode' }));
+    expect(onRule.mock.calls.at(-1)?.[0]).toEqual(dark);
+  });
+
   it('edits a branch of the rule again after Varies by is turned off and on', () => {
     const comfortable = { value: 'a' } as SemanticRule;
     const { onRule, rerender } = renderDrawer({ by: 'density', comfortable, compact: { value: 'b' } } as Varying<SemanticRule>);
