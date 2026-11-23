@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A Live lens cell whose comparison turns on or off under one handle leaves its old request standing",
+  "A capture refuses state with an undefined entry that it accepts in config",
+  "A 503 from a capture leaves the source unavailable after captures work again",
+  "The Pixels source is built once from the first LoupeCaptureContext and ignores later values",
+  "The compare menu groups rows by display label, so two globals sharing a label share one submenu"
+ ],
+ "b": [
+  "A Live lens cell whose comparison toggles between none and some leaves its old request standing in `LiveLenses`",
+  "Capture state is refused for undefined entries that config strips, and for an undefined state",
+  "A successful capture never clears a status a 503 set, and nothing re-polls",
+  "The token chain cache misses CSSOM edits to existing sheets"
+ ]
+}

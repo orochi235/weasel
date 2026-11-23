@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "An invalid `voiceLimit` or an empty `buses` throws after the engine has created its own AudioContext, which leaks",
+  "`stopAll` and `dispose` skip the `catchUp` that `stop`, `release` and `cancelKey` run, so a worklet voice that is already sounding gets reported as dropped",
+  "On dispose, `onDone` never fires for a started worklet voice",
+  "`setPan` stops position tracking but keeps the last position's distance attenuation in the voice's level",
+  "Duplicate names in `buses` leave a fader wired to master that nothing can reach",
+  "One effect object can be added to two buses' insert chains, so one bus's removal disposes it under the other",
+  "`patternVoicePeaks` returns `{}` for a pattern holding a non-finite step, where the player throws",
+  "The score names the wrong bar when a stall skips all of bar 0",
+  "Kernel voices do not check `gain`, so a NaN or Infinity gain renders the whole buffer as NaN",
+  "`createTickTimer` hands a computed delay straight to `setTimeout`, so `Infinity` fires at once",
+  "`stream(url)` starts fetching the media before the play is checked, even when it then throws or drops"
+ ],
+ "b": [
+  "createAudioEngine leaks the AudioContext it made when its bus list or voice limit is refused",
+  "An insert crossfade cut short by a suspension clicks when the context resumes",
+  "A pattern player started on a disposed engine, or running when the engine is disposed, reports isPlaying() true forever"
+ ]
+}

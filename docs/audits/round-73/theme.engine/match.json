@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "axisDependencies settles an inherited step's producer even where a descendant's step replaces it at some selections, dropping the replacing entry's axes",
+  "A categorical ramp's duplicate anchor whose name is no step is reported as filling that step already",
+  "emitThemes writes an unparseable `TokenName` when no theme has a token",
+  "generateTokens accepts two definitions with the same name and emits both under one selector"
+ ],
+ "b": [
+  "emitCss gives a non-default theme's inherited tokens its own default at an axis value only it declares, where tokenAt (bake, THEMES, the runtime) gives the root's default",
+  "A pin over a rule that failed at this selection stays in `failed`, so an untyped pin there is never reported",
+  "generateTokens accepts two definitions with the same name and emits both under one theme attribute"
+ ]
+}

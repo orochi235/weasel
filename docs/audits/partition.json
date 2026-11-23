@@ -3924,13 +3924,6 @@
    "packages/hud/src/index.ts",
    "packages/hud/src/layerDeps.ts",
    "packages/hud/src/layerDraw.ts",
-   "packages/hud/src/loupe/aimInput.ts",
-   "packages/hud/src/loupe/contentWatch.ts",
-   "packages/hud/src/loupe/createLoupe.ts",
-   "packages/hud/src/loupe/loupeColors.ts",
-   "packages/hud/src/loupe/loupeRoutes.ts",
-   "packages/hud/src/loupe/pixelReadback.ts",
-   "packages/hud/src/loupe/vectorLens.ts",
    "packages/hud/src/measureEnv.ts",
    "packages/hud/src/openPresses.ts",
    "packages/hud/src/pbt.fixture.ts",
@@ -3940,6 +3933,25 @@
    "packages/hud/src/textInputHost.ts",
    "packages/hud/src/tool.ts",
    "packages/hud/src/widget.ts"
+  ]
+ },
+ {
+  "id": "hud.loupe",
+  "files": [
+   "packages/hud/src/loupe/aimInput.ts",
+   "packages/hud/src/loupe/contentWatch.ts",
+   "packages/hud/src/loupe/createLoupe.ts",
+   "packages/hud/src/loupe/halo.ts",
+   "packages/hud/src/loupe/lensControls.ts",
+   "packages/hud/src/loupe/lensTone.ts",
+   "packages/hud/src/loupe/loupeColors.ts",
+   "packages/hud/src/loupe/loupeRoutes.ts",
+   "packages/hud/src/loupe/modeSwitch.ts",
+   "packages/hud/src/loupe/pixelReadback.ts",
+   "packages/hud/src/loupe/rimTracks.ts",
+   "packages/hud/src/loupe/textAlong.ts",
+   "packages/hud/src/loupe/vectorLens.ts",
+   "packages/hud/src/loupe/zoomTrack.ts"
   ]
  },
  {
@@ -4420,7 +4432,6 @@
    "packages/labkit/src/icons.gen.ts",
    "packages/labkit/src/index.ts",
    "packages/labkit/src/instrument/defineInstrument.ts",
-   "packages/labkit/src/instrument/index.ts",
    "packages/labkit/src/instrument/serializers.ts",
    "packages/labkit/src/instrument/types.ts",
    "packages/labkit/src/instrument/undo.ts",
@@ -4659,7 +4670,8 @@
    "packages/loupe/src/index.ts",
    "packages/loupe/src/model.ts",
    "packages/loupe/src/pbt.fixture.ts",
-   "packages/loupe/src/sampler.ts"
+   "packages/loupe/src/sampler.ts",
+   "packages/loupe/src/zoomStops.ts"
   ]
  },
  {

@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "EffectEditor's `renaming` state outlives the cluster it names, so a later cluster minted with the same id opens the rename field unasked",
+  "Remaking the live audio runner closes the bitmaps of the run still on screen before the new runner's state renders"
+ ],
+ "b": [
+  "livePlan judges feedback loops over every raw wire, though it feeds stages only over wires the chart draws",
+  "A numeric audio param without a `control` plays at its default, while a setting without one is used as written",
+  "EffectEditorApi.dissolveCluster does not pin shown stages under nodeGraph, unlike cluster",
+  "EffectEditorApi.cluster makes and reports a group of ids that name nothing"
+ ]
+}

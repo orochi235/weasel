@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "`DragDropCapability.pickUp` is declared and documented but nothing ever calls it",
+  "`useJob.start` calls `begin` twice, and `run` gets a state derived from a different base than the one items fold into",
+  "A layer change while a lightbox is open sends focus out of the modal, then back, and records the wrong return target",
+  "`liftStack` leaves earlier members lifted with no undo when a later `showPopover` throws",
+  "Palette items cannot be used from the keyboard",
+  "`Instrument.undo` doc lists different default snapshot events than `UndoCapability.snapshotOn`",
+  "`@weasel-js/labkit/instrument` barrel omits capability types the root exports"
+ ],
+ "b": [
+  "`DragDropCapability.pickUp` is declared and documented but nothing ever calls it",
+  "`DragFeedback.reason` is never shown anywhere",
+  "Nested lightboxes under one `<LightboxLayers>`: closing the inner one unlifts the outer's shared layers",
+  "A drop computes `onDrop` from the last rendered state instead of the state it lands on",
+  "`Instrument.undo` doc names the wrong default snapshot events"
+ ]
+}

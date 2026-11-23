@@ -1,0 +1,92 @@
+{
+ "id": "theme.engine",
+ "commit": "3b7040612f5f1a5a66fb140cc019f4a90fffe831",
+ "date": "2026-11-22",
+ "files": [
+  "packages/theme/src/engine/axisIssues.ts",
+  "packages/theme/src/engine/bake.ts",
+  "packages/theme/src/engine/color/generate.ts",
+  "packages/theme/src/engine/color/hueNames.ts",
+  "packages/theme/src/engine/color/hueSearch.ts",
+  "packages/theme/src/engine/color/oklch.ts",
+  "packages/theme/src/engine/color/paletteStats.ts",
+  "packages/theme/src/engine/color/placement.ts",
+  "packages/theme/src/engine/definition.fixture.ts",
+  "packages/theme/src/engine/deps.ts",
+  "packages/theme/src/engine/derive.ts",
+  "packages/theme/src/engine/emit/css.ts",
+  "packages/theme/src/engine/emit/dtcg.ts",
+  "packages/theme/src/engine/emit/e.tokens.css",
+  "packages/theme/src/engine/emit/manifest.ts",
+  "packages/theme/src/engine/emit/themes.ts",
+  "packages/theme/src/engine/emit/tokens.ts",
+  "packages/theme/src/engine/entries.ts",
+  "packages/theme/src/engine/merge.ts",
+  "packages/theme/src/engine/pinValues.ts",
+  "packages/theme/src/engine/ramps.ts",
+  "packages/theme/src/engine/references.ts",
+  "packages/theme/src/engine/ruleShape.ts",
+  "packages/theme/src/engine/safeNames.ts",
+  "packages/theme/src/engine/scales.ts",
+  "packages/theme/src/engine/semantics.ts",
+  "packages/theme/src/engine/steps.ts",
+  "packages/theme/src/engine/tokenSink.ts",
+  "packages/theme/src/engine/types.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 29,
+  "B": 29
+ },
+ "newCode": {
+  "since": 72,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 72,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 14,
+  "testFiles": {
+   "failed": 0,
+   "passed": 82,
+   "total": 82
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.8,
+   "B": 8.6,
+   "match": 0.2,
+   "fix": 14.3
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1488836,
+  "costUsd": 4.73
+ },
+ "fixCommits": [
+  "70a1ae27366ce008c5988581c1dae7180ef79288",
+  "00fbf228ffc858fc35edfd154d67ea0bf46f1b9b",
+  "62245d19361d3d2a8ef6064fbceb8071debe5726",
+  "db973099ae9c34e1685c029de23f77c1a956a86a",
+  "db2adbc53bb10b41000abb42838403d5aafa0b04"
+ ]
+}

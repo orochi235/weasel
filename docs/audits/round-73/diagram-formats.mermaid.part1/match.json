@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   7,
+   5
+  ]
+ ],
+ "a": [
+  "C4 reader lists an element declared twice as a member twice, or of two boundaries",
+  "C4 reader throws on an UpdateElementStyle naming no element, which Mermaid ignores",
+  "Flowchart `linkStyle … interpolate <curve> <styles>` loses its styles",
+  "Mermaid detect accepts any-case flowchart headers that the reader then rejects",
+  "Journey writer drops a step named exactly \"title\" or \"section\", which reads back fine",
+  "Several graph writers drop end labels and edge colors without a warning",
+  "Class writer writes a method with no parentheses as an attribute, without a warning",
+  "Block reader treats a pending `space` two ways depending on the statement",
+  "C4 writer turns a deployment node whose type is \"system\", \"container\" or \"enterprise\" into a boundary macro"
+ ],
+ "b": [
+  "Architecture writer lets a service id be `accTitle`/`accDescr`, so its edges read back as accessibility text",
+  "Block writer lets a block id be `accTitle`/`accDescr`; a span or a `{` shape then reads as accessibility text or throws",
+  "ER writer lets an entity id be `accTitle`/`accDescr`; an entity with attributes then reads as accessibility text or throws",
+  "A nested class generic whose inner argument starts with a non-ASCII-word character round-trips wrong",
+  "An architecture edge's side is silently dropped at a `{group}` end",
+  "Block reader drops a `space` before a block mentioned again only on an items line; on a links line it carries to the next block",
+  "Class writer writes an attribute or method row `<<x>>` into the body, where it reads back as an annotation"
+ ]
+}

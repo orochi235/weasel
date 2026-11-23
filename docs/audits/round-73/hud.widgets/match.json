@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   4
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "A window drawn once on a zero-area host is pinned to (0, 0) by every later setBounds and title drag",
+  "A rect window's border ring is stroked on its bounds' edge and pokes half its width outside, while a round window's is inset",
+  "A list made without `height` silently drops the height a later setBounds gives it",
+  "A list's hover highlight stays on the old row after a wheel scroll",
+  "A focused list whose rows went empty and came back has no active row, so the first arrow key skips the home row"
+ ],
+ "b": [
+  "A host drawn once at 0×0 makes every later clamp pin the window to (0, 0)",
+  "The list's focus ring ignores the HUD's focus-visible state, so tabbing into it shows no focus at all",
+  "`setBounds` on a list with no `height` option silently drops the caller's height",
+  "Wheel-scrolling a list leaves the hover highlight on a row the pointer has left",
+  "A rect window's border stroke straddles its bounds; a round window's is inset"
+ ]
+}

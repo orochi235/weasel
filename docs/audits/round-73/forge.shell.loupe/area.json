@@ -1,0 +1,83 @@
+{
+ "id": "forge.shell.loupe",
+ "commit": "3b7040612f5f1a5a66fb140cc019f4a90fffe831",
+ "date": "2026-11-22",
+ "files": [
+  "packages/forge/src/shell/loupe/CaptureInputs.tsx",
+  "packages/forge/src/shell/loupe/CompareMenu.tsx",
+  "packages/forge/src/shell/loupe/ForgeLoupe.tsx",
+  "packages/forge/src/shell/loupe/LiveCopies.tsx",
+  "packages/forge/src/shell/loupe/captureClient.ts",
+  "packages/forge/src/shell/loupe/captureContext.ts",
+  "packages/forge/src/shell/loupe/capturePayload.ts",
+  "packages/forge/src/shell/loupe/conditions.ts",
+  "packages/forge/src/shell/loupe/frameScroll.ts",
+  "packages/forge/src/shell/loupe/liveLenses.ts",
+  "packages/forge/src/shell/loupe/liveSource.ts",
+  "packages/forge/src/shell/loupe/loupe.css",
+  "packages/forge/src/shell/loupe/pixels.fixture.ts",
+  "packages/forge/src/shell/loupe/pixelsLens.ts",
+  "packages/forge/src/shell/loupe/pixelsSource.ts",
+  "packages/forge/src/shell/loupe/readouts.tsx",
+  "packages/forge/src/shell/loupe/tokenChain.ts",
+  "packages/forge/src/shell/loupe/trialAt.ts",
+  "packages/forge/src/shell/loupe/usePixelsSource.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 3,
+ "distinct": 6,
+ "chapman": 6.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 19,
+  "B": 19
+ },
+ "newCode": {
+  "since": 48,
+  "changedFiles": 6,
+  "findings": 2
+ },
+ "previous": {
+  "round": 48,
+  "chapman": 12.5,
+  "unfound": 1.5
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 0,
+   "passed": 33,
+   "total": 33
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.3,
+   "B": 4.4,
+   "match": 0.2,
+   "fix": 16.5
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 950957,
+  "costUsd": 2.9
+ },
+ "fixCommits": [
+  "4f67d1fc1015489306f563a41bcfcbe0f48fe394",
+  "7d3a1d67e33fe018710aa6205c503aab9abaf842",
+  "f8bd7474d2d0dd9b13864afd450ddd76c60cf3bc",
+  "a0952ab1264a4ed13c081171cef3fdb5dc23082e",
+  "ca4453b97268734fbc2225ad1877b94f25f9febe",
+  "5262d22ec6fdcf55e2f7f5dacb2be79c991bc2a3"
+ ]
+}

@@ -1,0 +1,110 @@
+{
+ "id": "ui.components.part2",
+ "commit": "3b7040612f5f1a5a66fb140cc019f4a90fffe831",
+ "date": "2026-11-22",
+ "files": [
+  "packages/ui/src/components/ColorField/ColorField.stories.tsx",
+  "packages/ui/src/components/ColorField/ColorField.tsx",
+  "packages/ui/src/components/ColorField/index.ts",
+  "packages/ui/src/components/ColorField/usePickerClose.ts",
+  "packages/ui/src/components/ColorModeControl/ColorModeControl.stories.module.css",
+  "packages/ui/src/components/ColorModeControl/ColorModeControl.stories.tsx",
+  "packages/ui/src/components/ColorModeControl/ColorModeControl.tsx",
+  "packages/ui/src/components/ColorModeControl/colorModes.ts",
+  "packages/ui/src/components/ColorModeControl/index.ts",
+  "packages/ui/src/components/ComboBox/ComboBox.module.css",
+  "packages/ui/src/components/ComboBox/ComboBox.stories.module.css",
+  "packages/ui/src/components/ComboBox/ComboBox.stories.tsx",
+  "packages/ui/src/components/ComboBox/ComboBox.tsx",
+  "packages/ui/src/components/ComboBox/index.ts",
+  "packages/ui/src/components/CommandPalette/CommandPalette.module.css",
+  "packages/ui/src/components/CommandPalette/CommandPalette.stories.tsx",
+  "packages/ui/src/components/CommandPalette/CommandPalette.tsx",
+  "packages/ui/src/components/CommandPalette/index.ts",
+  "packages/ui/src/components/CommandPalette/selectionSummary.ts",
+  "packages/ui/src/components/CommandPalette/usePaletteItems.ts",
+  "packages/ui/src/components/ControlSize/ControlSize.stories.module.css",
+  "packages/ui/src/components/ControlSize/ControlSize.stories.tsx",
+  "packages/ui/src/components/ControlSize/ControlSize.tsx",
+  "packages/ui/src/components/ControlSize/index.ts",
+  "packages/ui/src/components/CycleButton/CycleButton.stories.module.css",
+  "packages/ui/src/components/CycleButton/CycleButton.stories.tsx",
+  "packages/ui/src/components/CycleButton/CycleButton.tsx",
+  "packages/ui/src/components/CycleButton/index.ts",
+  "packages/ui/src/components/DataGrid/DataGrid.module.css",
+  "packages/ui/src/components/DataGrid/DataGrid.stories.module.css",
+  "packages/ui/src/components/DataGrid/DataGrid.stories.tsx",
+  "packages/ui/src/components/DataGrid/DataGrid.tsx",
+  "packages/ui/src/components/DataGrid/DataGridHead.tsx",
+  "packages/ui/src/components/DataGrid/DataGridRow.tsx",
+  "packages/ui/src/components/DataGrid/index.ts",
+  "packages/ui/src/components/DataGrid/rowSort.ts",
+  "packages/ui/src/components/DetailList/DetailList.module.css",
+  "packages/ui/src/components/DetailList/DetailList.stories.module.css",
+  "packages/ui/src/components/DetailList/DetailList.stories.tsx",
+  "packages/ui/src/components/DetailList/DetailList.tsx",
+  "packages/ui/src/components/DetailList/index.ts",
+  "packages/ui/src/components/Dialog/ContainedModal.tsx",
+  "packages/ui/src/components/Dialog/Dialog.module.css",
+  "packages/ui/src/components/Dialog/Dialog.stories.tsx",
+  "packages/ui/src/components/Dialog/Dialog.tsx",
+  "packages/ui/src/components/Dialog/index.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 14,
+ "unfound": 8,
+ "read": {
+  "A": 46,
+  "B": 46
+ },
+ "newCode": {
+  "since": 60,
+  "changedFiles": 5,
+  "findings": 1
+ },
+ "previous": {
+  "round": 60,
+  "chapman": 12.5,
+  "unfound": 1.5
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 14,
+  "testFiles": {
+   "failed": 0,
+   "passed": 887,
+   "total": 887
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2,
+   "B": 4.5,
+   "match": 0.2,
+   "fix": 13.2
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 888160,
+  "costUsd": 2.79
+ },
+ "fixCommits": [
+  "131b855267e2c15fcf4879fc1b52bf100741854c",
+  "0024c4843e96ce6c1cd09fd12d3cb68fd813aed9",
+  "ba34e0fa0b80f71f7d36885a3dd46ae107c10a85",
+  "8cd2a9edf1b5794b73891fc56fa6ca34966f5aca",
+  "4ddbe14e47b240e1ef096ca7caf497fc83a0722e",
+  "1713893227a7998d18903588f6503c3b51f9900f"
+ ]
+}

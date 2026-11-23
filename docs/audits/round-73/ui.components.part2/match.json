@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "inertOutside inerts overlays already open when the modal opens, but leaves later ones alone",
+  "Selection summary's advice to use plural kind labels produces \"pathses\"",
+  "Row activation fires on clicks into ARIA-role controls the INTERACTIVE list omits",
+  "Detail-row ids built from raw row ids break `aria-controls` when an id holds whitespace"
+ ],
+ "b": [
+  "ComboBox never shows `errorLabel` when a failed load leaves the previous rows in place",
+  "CycleButton with a `value` not in `options` names option 0 as current and a click skips it"
+ ]
+}
