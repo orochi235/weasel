@@ -755,3 +755,15 @@ describe('Timeline selection under tracks edited from outside', () => {
     expect(screen.getAllByTestId('timeline-key')[1]).toHaveAttribute('aria-current', 'true');
   });
 });
+
+describe('Timeline folds under tracks inserted from outside', () => {
+  it('keeps an open nested row open, and a shut one shut, when the consumer inserts a track before them', () => {
+    const second = { ...nestedTracks()[0], label: 'wink' } as Track;
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={[...nestedTracks(), second]} />);
+    fireEvent.click(screen.getAllByTestId('timeline-disclosure')[0]);
+    expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(3);
+    rerender(<Timeline {...base} tracks={[tracks()[1], ...nestedTracks(), second]} />);
+    expect(screen.getAllByTestId('timeline-disclosure').map((d) => d.getAttribute('aria-expanded'))).toEqual(['true', 'false']);
+    expect(screen.getAllByTestId('timeline-lane-track')).toHaveLength(4);
+  });
+});

@@ -158,11 +158,11 @@ export function Timeline(props: TimelineProps): ReactElement {
               window={win}
               mode={mode}
               selection={selection && samePath(selection.trackPath, trackPath) ? selection.keyIndex : null}
-              expanded={expanded.has(row.key)}
+              expanded={expanded.has(row.fold)}
               snapTimes={snapTimes}
               limit={duration}
               hold={laneHold}
-              onExpandedChange={() => toggle(row.key)}
+              onExpandedChange={() => toggle(row)}
               onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}
               {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit }, props.seedKey)}
               onCancel={props.onCancel}

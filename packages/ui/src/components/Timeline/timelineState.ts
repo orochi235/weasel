@@ -87,7 +87,7 @@ export function useKeyAndSegment(
   return { selection, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment, send };
 }
 
-/** Which nested rows are open, by row key. Folding one drops a key or segment selection on a row under it. */
+/** Which nested rows are open, by `LaneRow.fold`. Folding one drops a key or segment selection on a row under it. */
 export function useFolds(sel: {
   selection: KeySelection | null;
   segmentSelection: KeySelection | null;
@@ -95,11 +95,12 @@ export function useFolds(sel: {
   dropSegment: () => void;
 }) {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
-  const toggle = (key: string): void => {
-    const folding = expanded.has(key);
+  const toggle = (row: { fold: string; key: string }): void => {
+    const { fold, key } = row;
+    const folding = expanded.has(fold);
     setExpanded((prev) => {
       const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
+      if (next.has(fold)) next.delete(fold); else next.add(fold);
       return next;
     });
     if (!folding) return;

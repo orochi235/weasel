@@ -46,7 +46,7 @@ const laneOf = (t: Track) => buildLanes([t], new Set())[0];
 describe('Lane', () => {
   it('marks the keys of a nested row that sit past where its timeline stops', () => {
     const parent = { kind: 'timeline', label: 'n', at: 100, timeline: { duration: 300, tracks: [sampled] } } as Track;
-    const row = buildLanes([parent], new Set(['0']))[1]!;
+    const row = buildLanes([parent], new Set(['n']))[1]!;
     render(<Lane {...base} row={row} />);
     const keys = screen.getAllByTestId('timeline-key');
     expect(keys.map((k) => k.getAttribute('data-past'))).toEqual([null, 'true']);
@@ -79,7 +79,7 @@ describe('Lane', () => {
   it('indents a row\'s label by its depth, however deep', () => {
     let track: Track = sampled;
     for (let i = 0; i < 5; i++) track = { kind: 'timeline', label: `n${i}`, at: 0, timeline: { tracks: [track] } } as Track;
-    const row = buildLanes([track], new Set(['0', '0.0', '0.0.0', '0.0.0.0', '0.0.0.0.0'])).at(-1)!;
+    const row = buildLanes([track], new Set(['n4', 'n4/n3', 'n4/n3/n2', 'n4/n3/n2/n1', 'n4/n3/n2/n1/n0'])).at(-1)!;
     const { container } = render(<Lane {...base} row={row} />);
     expect(row.depth).toBe(5);
     expect(container.querySelector<HTMLElement>('[data-depth] > div')!.style.getPropertyValue('--depth')).toBe('5');
@@ -614,7 +614,7 @@ describe('Lane nested bar under a parent that stops early', () => {
   it('ends the bar where the timeline around it stops playing it', () => {
     const inner = { kind: 'timeline', label: 'B', at: 200, timeline: { duration: 400, tracks: [] } };
     const outer = { kind: 'timeline', label: 'A', at: 0, timeline: { duration: 300, tracks: [inner] } } as unknown as Track;
-    const row = buildLanes([outer], new Set(['0']))[1];
+    const row = buildLanes([outer], new Set(['A']))[1];
     render(<Lane {...base} row={row} />);
     const bar = screen.getByTestId('timeline-nested');
     expect(bar.style.left).toBe('20%');

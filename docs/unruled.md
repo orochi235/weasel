@@ -3992,3 +3992,7 @@ Calls the lanes made without a ruling:
   `null` to `onSelectionChange`; a controlled `selection` so stranded selects nothing until another is given. A track
   is told apart by its kind, label, and key times. Following the key to its new index, which an edit from outside
   does not say, was the alternative.
+- 2026-11-23 (the fixer's call): a `Timeline` remembers which nested rows are open by each timeline's label down to
+  the row (its kind for one with none, counted among same-named siblings), so a track the consumer inserts or removes
+  beside it leaves it as it was, and renaming a nested timeline shuts it. Keying by index path, which shifted every
+  later row's fold, was the alternative.
