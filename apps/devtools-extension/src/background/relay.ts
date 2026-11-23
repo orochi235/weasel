@@ -7,7 +7,7 @@ import {
   DEVTOOLS_PROTOCOL, isPageMessage, isPanelMessage, type DevtoolsRootInfo, type PageMessage, type PanelMessage,
 } from '@weasel-js/devtools/protocol';
 import type { PortLike } from '../browserApi';
-import { PORT_PAGE, PORT_PANEL, isPanelHello } from '../envelope';
+import { PORT_PAGE, PORT_PANEL, REPLACED, isPanelHello } from '../envelope';
 import { scopePageMessage, unscopeRootId } from './frames';
 
 interface Frame {
@@ -148,11 +148,12 @@ export function createRelay({ wake }: RelayOptions): Relay {
     let t: Tab | null = null;
     let tabId = -1;
     port.onMessage.addListener((m) => {
-      if (t) return isPanelMessage(m) ? fromPanel(t, tabId, m) : undefined;
+      if (t) return t.panel === port && isPanelMessage(m) ? fromPanel(t, tabId, m) : undefined;
       if (!isPanelHello(m)) return port.disconnect();
       tabId = m.inspect;
       t = tab(tabId);
-      t.panel?.disconnect();
+      // Told rather than dropped: a panel whose port drops reconnects, and would take the tab back.
+      t.panel?.postMessage(REPLACED);
       t.panel = port;
       // The requests in flight were the old panel's, numbered by its transport; this one's may reuse their ids.
       for (const f of t.frames.values()) f.asked.clear();

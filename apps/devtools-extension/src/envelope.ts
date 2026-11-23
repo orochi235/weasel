@@ -21,6 +21,13 @@ export function isPanelHello(m: unknown): m is PanelHello {
   return typeof m === 'object' && m !== null && typeof (m as PanelHello).inspect === 'number';
 }
 
+/** What the background sends a panel that another panel for its tab took the place of: it should go, and not come back. */
+export const REPLACED = { weaselDevtools: 'replaced' } as const;
+
+export function isReplaced(m: unknown): boolean {
+  return typeof m === 'object' && m !== null && (m as typeof REPLACED).weaselDevtools === 'replaced';
+}
+
 /** What the background sends a tab's content scripts to make them connect. */
 export const CONNECT_REQUEST = { weaselDevtools: 'connect' } as const;
 

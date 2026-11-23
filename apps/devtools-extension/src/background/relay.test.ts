@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { portPair, type FakePort } from '../testing/fakePorts';
 import { DEVTOOLS_PROTOCOL as PROTOCOL } from '@weasel-js/devtools/protocol';
-import { PORT_PAGE, PORT_PANEL } from '../envelope';
+import { PORT_PAGE, PORT_PANEL, REPLACED } from '../envelope';
 import { createRelay } from './relay';
 
 const P = PROTOCOL;
@@ -201,6 +201,20 @@ describe('the background relay', () => {
       { type: 'error', protocol: P, requestId: 1, message: 'weasel devtools: frame 0 went before it answered' },
       { type: 'root-removed', protocol: P, rootId: 'root-1' },
     ]);
+  });
+
+  it('tells a panel another took its place for the tab, and stops hearing it', () => {
+    const { page, panel } = setup();
+    const content = page(1);
+    const first = panel(1);
+    const second = panel(1);
+    expect(first.received).toEqual([REPLACED]);
+    first.postMessage(yo);
+    expect(content.received).toEqual([]);
+    first.disconnect();
+    second.postMessage(yo);
+    expect(content.received).toEqual([yo]);
+    expect(content.closed).toBe(false);
   });
 
   it('sends a panel that replaced another no answer for the requests the other asked', () => {
