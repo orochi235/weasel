@@ -119,7 +119,7 @@ export type { TextRenderer } from './markdownRenderer';
 export { MIXED, styleAtRange, applyStyleToRange, patchRangeStyle, hasStyledRun, supersededKey } from './runs/rangeStyle';
 export type { Mixed, RangeStyle, RunStylePatch, StyleKey } from './runs/rangeStyle';
 export { effectiveRangeStyle, rangeWeight } from './runs/effectiveRangeStyle';
-export { setFlagOverRange, styleHasFlag, unboldPatch } from './runs/flagRange';
+export { clearScriptOverRange, setFlagOverRange, styleHasFlag, unboldPatch } from './runs/flagRange';
 export type { FlagKey, SetFlagResult } from './runs/flagRange';
 
 export { SYNTHETIC_ITALIC_RADIANS } from './syntheticItalic';

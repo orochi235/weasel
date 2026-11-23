@@ -101,3 +101,19 @@ export function setFlagOverRange(
 
   return { runs: next, style: clearNodeFlag(style, key) };
 }
+
+/**
+ * Take `script` off `[start, end)` in text whose node sets one. A run has no value for "no script", so this takes the
+ * rewrite: the node's script is cleared and set on every run outside the range that carries none of its own.
+ */
+export function clearScriptOverRange(
+  runs: readonly StyledRun[],
+  style: TextStyle,
+  start: number,
+  end: number,
+): SetFlagResult {
+  const { script, ...rest } = style;
+  if (script === undefined) return { runs: applyStyleToRange(runs, start, end, { script: undefined }), style };
+  const raised = runs.map((run) => (run.script === undefined ? { ...run, script } : { ...run }));
+  return { runs: applyStyleToRange(raised, start, end, { script: undefined }), style: rest };
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { setFlagOverRange, styleHasFlag } from './flagRange';
+import { clearScriptOverRange, setFlagOverRange, styleHasFlag } from './flagRange';
 import { styleAtRange } from './rangeStyle';
 import type { StyledRun } from '../runs';
 import type { TextStyle } from '../textStyle';
@@ -165,5 +165,23 @@ describe('setFlagOverRange — un-setting a flag the node sets', () => {
     const r = setFlagOverRange(plain, { underline: true }, 5, 5, 'underline', false);
     expect(r.style.underline).toBeUndefined();
     expect(r.runs).toEqual([{ text: 'one two three', underline: true }]);
+  });
+});
+
+describe('clearScriptOverRange', () => {
+  it('clears the node script and sets it on the runs outside the range that carry none', () => {
+    const runs: StyledRun[] = [{ text: 'one ' }, { text: 'two', script: 'sub' }, { text: ' three' }];
+    const r = clearScriptOverRange(runs, { fontSize: 16, script: 'super' }, 8, 13);
+    expect(r.style).toEqual({ fontSize: 16 });
+    expect(r.runs).toEqual([
+      { text: 'one ', script: 'super' }, { text: 'two', script: 'sub' }, { text: ' ', script: 'super' }, { text: 'three' },
+    ]);
+  });
+
+  it('takes a run script off in a node with none, leaving the node alone', () => {
+    const style: TextStyle = { fontSize: 16 };
+    const r = clearScriptOverRange([{ text: 'ab', script: 'sub' }], style, 0, 2);
+    expect(r.style).toBe(style);
+    expect(r.runs).toEqual([{ text: 'ab' }]);
   });
 });
