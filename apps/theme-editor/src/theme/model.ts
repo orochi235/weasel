@@ -120,19 +120,25 @@ export function leafAt<T>(v: Varying<T> | undefined, selection: AxisChoice): T |
   return cur as T | undefined;
 }
 
+/** The branch of `v` that `selection` names; throws when it names none, where writing a leaf would drop every branch. */
+function branchOf(v: { readonly by: string }, selection: AxisChoice): string {
+  const key = getOwn(selection, v.by);
+  if (key === undefined || key === 'by') throw new Error(`no ${v.by} value is chosen, so no branch of this variation can be edited`);
+  return key;
+}
+
 /** `v` with the leaf at `selection` replaced by `leaf`; every other branch of a `by` stays as it was. */
 export function writeAt<T>(v: Varying<T> | undefined, selection: AxisChoice, leaf: T): Varying<T> {
   if (!isByAxis(v)) return leaf;
-  const key = getOwn(selection, v.by);
-  if (key === undefined || key === 'by') return leaf;
+  const key = branchOf(v, selection);
   return { ...v, [key]: writeAt(getOwn(v, key) as Varying<T> | undefined, selection, leaf) } as Varying<T>;
 }
 
 /** `v` without its leaf at `selection`; every other branch of a `by` stays. Undefined when nothing is left. */
 export function clearAt<T>(v: Varying<T> | undefined, selection: AxisChoice): Varying<T> | undefined {
   if (!isByAxis(v)) return undefined;
-  const key = getOwn(selection, v.by);
-  if (key === undefined || key === 'by' || !Object.hasOwn(v, key)) return v;
+  const key = branchOf(v, selection);
+  if (!Object.hasOwn(v, key)) return v;
   const rest: Record<string, unknown> = { ...v };
   const inner = clearAt(getOwn(v, key) as Varying<T> | undefined, selection);
   if (inner === undefined) delete rest[key];

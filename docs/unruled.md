@@ -3942,3 +3942,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `useTextEdit`'s `startEdit` on another node while an edit is open commits the open
   edit before opening the next, as a click away does, rather than dropping what was typed. There is no override; a
   host that means to discard calls `cancelEdit()` first.
+## Audit round seventy-six (2026-11-22): the theme editor
+
+- 2026-11-22 (the fixer's call): the theme editor's `writeAt` and `clearAt` throw for a variation whose axis the
+  selection does not choose, where `writeAt` returned the bare leaf and dropped every branch. `leafAt` reads no
+  value there, so the editor never offers that field; writing to whichever branch comes first was the alternative.
