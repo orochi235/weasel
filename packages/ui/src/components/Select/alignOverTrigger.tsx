@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { LONG_PRESS_MS, pastDragThreshold } from '@weasel-js/gestures';
 import { useLocale } from 'react-aria';
 import { useKitSetting } from '@weasel-js/react';
@@ -46,8 +46,6 @@ export function AlignOverTrigger({
   // React Aria positions the popover but hands out no ref to it, so the
   // element is reached from inside: this marker's own parent.
   const markerRef = useRef<HTMLSpanElement>(null);
-  const dragPx = useKitSetting('gestures.dragPx');
-  const holdMs = useKitSetting('gestures.longPressMs') ?? LONG_PRESS_MS;
   // A measurement that settles takes two passes — one to place the list, one
   // to confirm. A cap is what keeps a list whose own placement changes its
   // measurement from renegotiating forever.
@@ -120,12 +118,20 @@ export function AlignOverTrigger({
     onMeasure(next);
   });
 
+  useKeepOpeningRelease(triggerRef, pressRef);
+
+  return <span ref={markerRef} hidden />;
+}
+
+function useKeepOpeningRelease(triggerRef: RefObject<HTMLButtonElement | null>, pressRef: RefObject<Press | null>) {
   // The list covers the trigger, so the release that ends the click opening it
   // lands on a row — and a row selects on release, which shuts the list again
   // before it has been seen. A click is a press and a release in the same
   // place: that one is the opening gesture and belongs to the trigger, and the
   // list keeps every release after it. Press, hold, drag and release still
   // picks a row, which is the gesture a list over its trigger is for.
+  const dragPx = useKitSetting('gestures.dragPx');
+  const holdMs = useKitSetting('gestures.longPressMs') ?? LONG_PRESS_MS;
   const limits = useRef({ dragPx, holdMs });
   useLayoutEffect(() => {
     limits.current = { dragPx, holdMs };
@@ -149,6 +155,23 @@ export function AlignOverTrigger({
     doc.addEventListener('pointerup', onUp, true);
     return () => doc.removeEventListener('pointerup', onUp, true);
   }, [triggerRef, pressRef]);
+}
 
-  return <span ref={markerRef} hidden />;
+/** The trigger's press, held until its pointer lifts, and the `onPointerDown` that records it. */
+export function useTriggerPress(): [RefObject<Press | null>, (e: ReactPointerEvent) => void] {
+  const pressRef = useRef<Press | null>(null);
+  const onPress = useCallback((e: ReactPointerEvent) => {
+    const press = { x: e.clientX, y: e.clientY, at: performance.now(), pointerType: e.pointerType };
+    pressRef.current = press;
+    const view = e.currentTarget.ownerDocument.defaultView;
+    // On the window, so it hears the lift after every listener on the document has.
+    const lifted = () => {
+      view?.removeEventListener('pointerup', lifted);
+      view?.removeEventListener('pointercancel', lifted);
+      if (pressRef.current === press) pressRef.current = null;
+    };
+    view?.addEventListener('pointerup', lifted);
+    view?.addEventListener('pointercancel', lifted);
+  }, []);
+  return [pressRef, onPress];
 }

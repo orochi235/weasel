@@ -1,4 +1,4 @@
-import { createContext, useContext, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from 'react';
+import { useLayoutEffect, useState, type ReactNode, type Ref } from 'react';
 import { useObjectRef } from 'react-aria';
 import {
   Select as RACSelect,
@@ -6,17 +6,12 @@ import {
   Button as RACButton,
   SelectValue,
   ListBox as RACListBox,
-  ListBoxItem as RACListBoxItem,
-  ListBoxSection as RACListBoxSection,
-  Header,
-  Text,
   SelectStateContext,
   type SelectProps as RACSelectProps,
-  type ListBoxItemProps as RACListBoxItemProps,
 } from 'react-aria-components';
 import { Popover } from '../Popover';
-import { heldItemProps, useHeldAriaRef, useHeldPick } from '../heldItem';
-import { AlignOverTrigger, BELOW, NO_NUDGE, type Press } from './alignOverTrigger';
+import { useHeldPick } from '../heldItem';
+import { AlignOverTrigger, BELOW, NO_NUDGE, useTriggerPress } from './alignOverTrigger';
 import { FieldFoot, fieldRootClass, type FieldSlotProps, type FieldStateProps } from '../Field/fieldSlots';
 import { useOverlayPortal, type OverlayPortalProps } from '../../overlays/portalHost';
 import { useRacField } from '../Field/racField';
@@ -31,7 +26,10 @@ import type { ControlSizeProps } from '../ControlSize';
 import { useFieldSizeClass } from '../Field/fieldSize';
 import type { ListOption } from '../listOption';
 import { Caret } from '../Caret';
-import { FitSizer, withIcon } from './optionLabels';
+import { FitSizer } from './optionLabels';
+import { InTrigger, renderOption, SelectSection } from './selectItem';
+
+export { SelectItem, SelectSection, type SelectItemProps, type SelectSectionProps } from './selectItem';
 import { MIXED_HINT } from '../Field/mixedHint';
 import type { OptionKey } from '../../optionKey';
 
@@ -162,7 +160,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const shownKey = selectedKey === undefined ? ownKey : selectedKey;
   const placeholder = mixed ? MIXED_HINT : placeholderProp;
   const triggerRef = useObjectRef(ref);
-  const pressRef = useRef<Press | null>(null);
+  const [pressRef, onPress] = useTriggerPress();
   const { probe, pick } = useHeldPick(SelectStateContext, triggerRef);
   const [nudge, setNudge] = useState(NO_NUDGE);
   // React Aria's own localized placeholder, read off the trigger, for a `width='fit'` sizer given none.
@@ -197,24 +195,9 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           id={triggerId}
           ref={triggerRef}
           className={`${f.frame} ${s.trigger}`}
-          onPointerDown={(e) => {
-            const press = { x: e.clientX, y: e.clientY, at: performance.now(), pointerType: e.pointerType };
-            pressRef.current = press;
-            liftOf(e.currentTarget.ownerDocument.defaultView, () => {
-              if (pressRef.current === press) pressRef.current = null;
-            });
-          }}
+          onPointerDown={onPress}
         >
-          <SelectValue className={s.value}>
-            {({ defaultChildren, isPlaceholder }) =>
-              isPlaceholder ? (
-                <>
-                  {placeholder ?? defaultChildren}
-                  {keepsHint && <Report value={defaultChildren} to={setOwnHint} />}
-                </>
-              ) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
-            }
-          </SelectValue>
+          <TriggerValue placeholder={placeholder} onOwnHint={keepsHint ? setOwnHint : undefined} />
           {width === 'fit' && <FitSizer className={s.sizer} placeholder={placeholder ?? ownHint} options={options} section={SelectSection}>{children}</FitSizer>}
           {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
@@ -252,16 +235,20 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   );
 }
 
-/** Runs `then` once, after the next pointer lift anywhere in `view` has reached every other listener. */
-function liftOf(view: Window | null, then: () => void) {
-  if (!view) return;
-  const done = () => {
-    view.removeEventListener('pointerup', done);
-    view.removeEventListener('pointercancel', done);
-    then();
-  };
-  view.addEventListener('pointerup', done);
-  view.addEventListener('pointercancel', done);
+/** The trigger's text: the selected row's label, or the placeholder, React Aria's own handed to `onOwnHint`. */
+function TriggerValue({ placeholder, onOwnHint }: { placeholder: ReactNode; onOwnHint?: (hint: ReactNode) => void }) {
+  return (
+    <SelectValue className={s.value}>
+      {({ defaultChildren, isPlaceholder }) =>
+        isPlaceholder ? (
+          <>
+            {placeholder ?? defaultChildren}
+            {onOwnHint && <Report value={defaultChildren} to={onOwnHint} />}
+          </>
+        ) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
+      }
+    </SelectValue>
+  );
 }
 
 /** Hands `value` up to a parent that cannot read it, before paint. */
@@ -317,113 +304,4 @@ function assertDistinct<T extends OptionKey>(options: ReadonlyArray<ListOption<T
     if (seen.has(text)) throw new RangeError(`weasel: Select has two options whose values read "${text}"; each option's value must differ from every other's as text.`);
     seen.add(text);
   }
-}
-
-/** True inside `SelectValue`'s copy of the selected row, which shows its label and not its note. */
-const InTrigger = createContext(false);
-
-/* `SelectValue` copies the selected row into the trigger, mark included; the
-   trigger hides it, so the `width='fit'` sizer leaves it out. */
-function CheckMark() {
-  return (
-    <svg className={s.check} viewBox="0 0 10 10" aria-hidden="true">
-      <polyline points="1.5,5 4,7.5 8.5,3" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function renderOption<T extends OptionKey>(o: ListOption<T>) {
-  return (
-    <SelectItem
-      key={String(o.value)} id={o.value} disabled={o.disabled} icon={o.icon} textValue={o.textValue}
-      description={o.description} disabledReason={o.disabledReason}
-    >
-      {o.label}
-    </SelectItem>
-  );
-}
-
-/** Props for {@link SelectSection}. */
-export type SelectSectionProps = {
-  /** Heading shown above the section's rows; it also names the group for
-   *  screen readers. */
-  title?: ReactNode;
-  children?: ReactNode;
-  className?: string;
-};
-
-/** A titled group of `SelectItem` rows in a {@link Select}'s list. */
-export function SelectSection({ title, children, className }: SelectSectionProps) {
-  return (
-    <RACListBoxSection className={[s.section, className].filter(Boolean).join(' ')}>
-      {title !== undefined && <Header className={s.sectionHeader}>{title}</Header>}
-      {children}
-    </RACListBoxSection>
-  );
-}
-
-/** Props for {@link SelectItem}, on top of React Aria's `ListBoxItem` props. */
-export type SelectItemProps = Omit<RACListBoxItemProps, 'className' | 'children' | 'isDisabled'> & {
-  children?: ReactNode;
-  /** The row cannot be chosen. */
-  disabled?: boolean;
-  /** A glyph drawn before the label, in the list and in the trigger. */
-  icon?: ReactNode;
-  /** A line under the label in the list, and the row's accessible description. */
-  description?: string;
-  /** Why the row is disabled, in place of `description` while `disabled`. */
-  disabledReason?: string;
-  className?: string;
-};
-
-/**
- * Every row renders a check mark beside its label, so from React Aria's
- * side the children are never plain text and it can't derive the string
- * type-to-select and screen readers need — it warns once per row. A string
- * label already *is* that string, so derive it rather than making every
- * call site restate it; anything richer has to say what it reads as.
- */
-function textValueOf(children: ReactNode, explicit: string | undefined): string | undefined {
-  if (explicit !== undefined) return explicit;
-  return typeof children === 'string' || typeof children === 'number'
-    ? String(children)
-    : undefined;
-}
-
-/**
- * One row in a {@link Select}'s list, with a leading check mark when
- * selected. A string child supplies its own `textValue`; anything richer must
- * pass one so type-to-select and screen readers have something to read.
- */
-export function SelectItem({ children, icon, className, textValue, description, disabled, disabledReason, ...rest }: SelectItemProps) {
-  const note = (disabled && disabledReason) || description;
-  const row = useHeldAriaRef(disabled);
-  return (
-    <RACListBoxItem
-      {...rest}
-      ref={row}
-      {...heldItemProps(disabled)}
-      textValue={textValueOf(children, textValue)}
-      className={[s.option, className].filter(Boolean).join(' ')}
-    >
-      <CheckMark />
-      {note ? (
-        <span className={s.optionBody}>
-          {/* A description slot needs a label slot beside it, or the row's name takes in the description too. */}
-          <OptionLabel>{withIcon(icon, <Text slot="label">{children}</Text>)}</OptionLabel>
-          <OptionNote>{note}</OptionNote>
-        </span>
-      ) : <OptionLabel>{withIcon(icon, children)}</OptionLabel>}
-    </RACListBoxItem>
-  );
-}
-
-/** A box around the label alone, not just text and not its note: landing the list over its trigger means
- *  measuring where this row's label line sits. */
-function OptionLabel({ children }: { children: ReactNode }) {
-  return <span className={s.optionLabel}>{children}</span>;
-}
-
-function OptionNote({ children }: { children: string }) {
-  return useContext(InTrigger) ? null : <Text slot="description" className={s.note}>{children}</Text>;
 }
