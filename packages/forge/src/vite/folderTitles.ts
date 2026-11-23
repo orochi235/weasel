@@ -1,3 +1,4 @@
+import { relative } from 'node:path';
 import type { IndexEntry } from '../story/types';
 
 /** A library whose stories are titled for the folder they sit in. Paths are relative to the repo root. */
@@ -53,9 +54,9 @@ export function folderTitleReport(
   entries: readonly IndexEntry[],
   rule: FolderTitleRule,
   exportsOf: (folder: string) => ReadonlySet<string>,
-  root = '',
+  root: string,
 ): { lines: string[]; ok: boolean } {
-  const under = (file: string) => (file.startsWith(root) ? file.slice(root.length).replace(/^\//, '') : file);
+  const under = (file: string) => relative(root, file);
   const titles = new Map<string, string>();
   for (const entry of entries) if (!titles.has(under(entry.file))) titles.set(under(entry.file), entry.title);
   const wrong: [string, string, string][] = [];

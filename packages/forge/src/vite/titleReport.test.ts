@@ -32,6 +32,11 @@ describe('titleReport', () => {
     ]);
   });
 
+  it('prints a file outside root relative to it, not as a sibling directory cut at the prefix', () => {
+    const { lines } = titleReport([entry('ui/Bar on an arc', '/r2/Bar.stories.tsx')], '/r');
+    expect(lines[0]).toBe("../r2/Bar.stories.tsx  'ui/Bar on an arc'");
+  });
+
   it('fails two files under one title exporting the same name', () => {
     const { lines, ok } = titleReport([entry('ui/Bar', '/r/Bar.stories.tsx', 'Lab'), entry('ui/Bar', '/r/lab/BarArc.stories.tsx', 'Lab')], '/r');
     expect(ok).toBe(false);
