@@ -18,8 +18,9 @@ export function nearestPortalHost(from: Element | null | undefined): HTMLElement
 }
 
 const set = (value: string | undefined) => value !== undefined && value !== '' && value !== 'none';
-const FIXED_CONTAINING_WILL_CHANGE = /\b(transform|translate|scale|rotate|perspective|transform-style|offset-path|contain)\b/;
-const FILTER_WILL_CHANGE = /(^|[\s,])(filter|backdrop-filter)\b/;
+// Whole idents only: `transform-origin` and `contain-intrinsic-size` contain nothing.
+const FIXED_CONTAINING_WILL_CHANGE = /(^|[\s,])(transform|translate|scale|rotate|perspective|transform-style|offset-path|contain)(?=$|[\s,])/;
+const FILTER_WILL_CHANGE = /(^|[\s,])(filter|backdrop-filter)(?=$|[\s,])/;
 
 /** Whether `el` is the containing block of its fixed-position descendants rather than the viewport. */
 function containsFixed(el: Element): boolean {

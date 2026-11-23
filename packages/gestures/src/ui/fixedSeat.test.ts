@@ -89,11 +89,14 @@ describe('fixedSeat', () => {
     expect(fixedSeat(from)).toMatchObject({ left: 12, top: 7 });
   });
 
-  it.each([['willChange', 'opacity'], ['containerType', 'normal'], ['contentVisibility', 'visible']])(
+  it.each([
+    ['willChange', 'opacity'], ['willChange', 'transform-origin'], ['willChange', 'perspective-origin, opacity'],
+    ['willChange', 'contain-intrinsic-size'], ['containerType', 'normal'], ['contentVisibility', 'visible']])(
     'seats at the viewport origin past an ancestor whose %s is %s',
     (prop, value) => {
       const from = mount('<div id="a"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
       const outer = document.getElementById('a')!;
+      outer.getBoundingClientRect = () => DOMRect.fromRect({ x: 12, y: 7 });
       const real = window.getComputedStyle.bind(window);
       vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
         const cs = real(el);
