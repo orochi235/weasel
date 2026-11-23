@@ -88,7 +88,7 @@ describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
     const collection = synthesizeCollection(single);
     expect(isFontCollection(collection)).toBe(true);
 
-    const { bytes: out } = sfntFromCollection(collection);
+    const out = sfntFromCollection(collection).bytes!;
     expect(isFontCollection(out)).toBe(false);
 
     // Table *bytes* must survive exactly — they are copied, never re-encoded,
@@ -111,8 +111,7 @@ describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
     const collection = synthesizeCollection(interBytes());
     expect(sfntFromCollection(collection, 'Inter-Regular').matched).toBe(true);
     expect(sfntFromCollection(collection, 'NoSuchFace-Bold').matched).toBe(false);
-    expect(sfntFromCollection(collection, 'NoSuchFace-Bold').bytes.byteLength)
-      .toBeGreaterThan(0);
+    expect(sfntFromCollection(collection, 'NoSuchFace-Bold').bytes).toBeNull();
   });
 
   it('still unpacks a member when another member\'s name table lies past the end of the file', () => {
@@ -126,7 +125,7 @@ describe.skipIf(!existsSync(INTER_TTF))('sfnt collection unpacking', () => {
     const { matched, names, bytes } = sfntFromCollection(collection, 'Inter-Regular');
     expect(matched).toBe(true);
     expect(names).toEqual(['Inter-Regular', null]);
-    expect(bytes.byteLength).toBeGreaterThan(0);
+    expect(bytes!.byteLength).toBeGreaterThan(0);
   });
 
   it('names every member, so a caller can say what it was offered', () => {

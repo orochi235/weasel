@@ -163,22 +163,13 @@ function outlinesEmbeddable(os2: EmbedTables['os2']): boolean {
   return (os2?.version ?? 0) < 3 && (fsType & LOOSER_THAN_RESTRICTED) !== 0;
 }
 
-/** A `name` table entry in English, or undefined; opentype.js throws for a font whose table names no platform. */
-function englishNameOf(font: import('opentype.js').Font, key: string): string | undefined {
-  try {
-    return (font as { getEnglishName?: (k: string) => string | undefined }).getEnglishName?.(key);
-  } catch {
-    return undefined;
-  }
-}
-
 /** `ascent` and `descent` are the face's in ems, for a font whose `hhea` states none. */
 function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent: number, descent: number): FaceEmbedding {
   // Typed `any` by the 1.x typings; read through the narrow shape instead.
   const t = font.tables as EmbedTables;
   return {
     sfnt,
-    postScriptName: englishNameOf(font, 'postScriptName') ?? '',
+    postScriptName: postScriptNameOf(sfnt) ?? '',
     unitsPerEm: font.unitsPerEm,
     outlines: t.cff && !t.glyf ? 'cff' : 'truetype',
     embeddable: outlinesEmbeddable(t.os2),
@@ -211,11 +202,12 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
     const ns = await loadOpenType();
     assertOpenType2(ns);
     const parse = parserOf(ns);
-    const { bytes: single, matched, names } = sfntFromCollection(isWoff(bytes) ? await sfntFromWoff(bytes) : bytes, postScriptName);
-    if (!matched) {
+    const member = sfntFromCollection(isWoff(bytes) ? await sfntFromWoff(bytes) : bytes, postScriptName);
+    if (!member.matched) {
       throw new Error(
-        `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
+        `no member of the font file is named "${postScriptName}" (it holds ${member.names.join(', ')})`);
     }
+    const single = member.bytes;
     // A variable font's nameID 6 names its default instance, the only one whose outlines opentype.js draws.
     if (postScriptName !== undefined && tableOf(single, 'fvar')) {
       const defaultName = postScriptNameOf(single);
@@ -224,8 +216,11 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
           + `(${defaultName === null ? 'which names none' : `"${defaultName}"`}), and the outline parser draws only that one`);
       }
     }
-    // opentype.js reads `CFF ` whenever the font lacks a glyf and loca pair, whatever its signature says.
-    const cff = tableOf(single, 'glyf') && tableOf(single, 'loca') ? null : tableOf(single, 'CFF ');
+    // opentype.js reads `CFF `, else `CFF2`, whenever the font lacks a glyf and loca pair, whatever its signature
+    // says, and reads either by the version its header names.
+    const cff = tableOf(single, 'glyf') && tableOf(single, 'loca')
+      ? null
+      : tableOf(single, 'CFF ') ?? tableOf(single, 'CFF2');
     if (cff) checkCff(cff);
     const cmap = tableOf(single, 'cmap');
     if (cmap) checkCmap(cmap);

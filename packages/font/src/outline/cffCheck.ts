@@ -24,10 +24,14 @@ const PREDEFINED: Record<number, number> = { 15: 3, 16: 2 };
 
 const bad = (what: string): Error => new Error(`the font's CFF table is damaged: ${what}`);
 
-/** Throws unless the CFF table `cff` (the table's bytes alone) can be read without leaving it. CFF2 passes unread. */
+/** Throws unless the CFF table `cff` (the table's bytes alone) can be read without leaving it. A table whose header
+ *  says CFF2 passes unread, and one whose header names neither version is refused. */
 export function checkCff(cff: DataView): void {
   if (cff.byteLength < 4) throw bad('its header is cut off');
-  if (cff.getUint8(0) !== 1) return;
+  const major = cff.getUint8(0);
+  if (major === 2) return;
+  // opentype.js reads every major version below 2 as CFF 1, so a 0 would pass unchecked.
+  if (major !== 1) throw bad(`its header names version ${major}`);
   const names = readIndex(cff, cff.getUint8(2), 'Name INDEX');
   const tops = readIndex(cff, names.end, 'Top DICT INDEX');
   const strings = readIndex(cff, tops.end, 'String INDEX');

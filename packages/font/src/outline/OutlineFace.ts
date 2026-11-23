@@ -60,8 +60,10 @@ export interface FaceEmbedding {
   unitsPerEm: number;
   /** `'cff'` when the face has a `CFF ` table and no `glyf`. */
   outlines: 'truetype' | 'cff';
-  /** False when OS/2 fsType forbids embedding (bit 1, 0x0002) or allows
-   *  bitmaps only (bit 9, 0x0200). */
+  /** False when OS/2 fsType allows bitmaps only (bit 9, 0x0200), or sets
+   *  Restricted (bit 1, 0x0002) with no looser permission beside it. From
+   *  OS/2 version 3 the bits are exclusive and Restricted always forbids; a
+   *  version 0–2 font setting Preview & Print or Editable beside it embeds. */
   embeddable: boolean;
   /** Glyph index for a codepoint; `null` for `.notdef` (0). */
   glyphIndexOf(cp: number): number | null;
