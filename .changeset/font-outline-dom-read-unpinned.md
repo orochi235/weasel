@@ -2,6 +2,6 @@
 '@weasel-js/font': patch
 ---
 
-An outline face's file, read again for DOM text after the canvas has loaded it, is no longer held in memory until the face is unregistered.
+A font file read again for DOM text after the canvas loaded it is no longer held until the face is unregistered.
 
 <!-- entry: fix perf -->
