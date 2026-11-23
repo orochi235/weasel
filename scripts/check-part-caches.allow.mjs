@@ -52,6 +52,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/renderer/src/draw/triangleCut.ts', 'turns on the origin, replaced when it changes'],
   ['packages/renderer/src/meshPaint/meshPaint.ts', ['set for a different key than it is read for; or deleted', 2]],
   ['packages/renderer/src/rendererParts.ts', 'set by a separate register function and read without being made'],
+  ['packages/renderer/src/textBounds.ts', 'set on each refill of a command, and read by its layers without being made'],
   ['packages/renderer/src/testing/recorderCtx.ts', 'set from another function\'s argument and read without being made'],
   ['packages/svg/src/alignedTextStroke.ts', 'a count replaced on every call'],
   ['packages/svg/src/cascade.ts', 'replaced by the binding call and rebuilt when the media changes'],
