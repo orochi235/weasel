@@ -1,6 +1,7 @@
 import { isApplePlatform } from './platform';
 import { getOwn } from '@weasel-js/registry';
 import type { ModifierKey } from '../grammar/routeGrammar';
+import { eventKeyName } from '../grammar/keyRouteGrammar';
 
 /** One key of a shortcut as a keyboard prints it. */
 export interface KeyLegend {
@@ -159,11 +160,18 @@ const NAMED_KEY: Record<string, Record<Platform, Record<LegendStyle, string>>> =
   ArrowRight:  { macos: { auto: '→',    symbol: '→',        text: '→' },         windows: { auto: '→',         symbol: '→',         text: '→' },         linux: { auto: '→',         symbol: '→',         text: '→' } },
 };
 
+/** The modifier each modifier key's `KeyboardEvent.key` names. */
+const MOD_KEYS: Readonly<Record<string, ModifierKey>> = {
+  Shift: 'shift', Control: 'ctrl', Alt: 'alt', Meta: 'meta',
+};
+
 /**
  * Render a raw `KeyboardEvent.key` value as a platform-appropriate
- * `KeyLegend`. Named non-modifier keys (Esc, Enter, Tab, Space, Backspace,
- * Delete, arrows) get the platform's conventional form. Letter / digit /
- * other keys pass through upper-cased.
+ * `KeyLegend`. Named keys (Esc, Enter, Tab, Space, Backspace, Delete,
+ * arrows) get the platform's conventional form, and a modifier key
+ * (`Shift`, `Control`, `Alt`, `Meta`) the label {@link keyLegendsFromMods}
+ * gives it. `Esc` and `Space` are read in any case, as the matcher reads
+ * them. Letter / digit / other keys pass through upper-cased.
  *
  * ```ts
  * keyLegendFromKey('Escape', { platform: 'macos' })   // { label: '⎋' }
@@ -180,8 +188,12 @@ export function keyLegendFromKey(
 ): KeyLegend {
   const platform = opts.platform ?? detectPlatform();
   const legend = opts.legend ?? 'auto';
-  const entry = getOwn(NAMED_KEY, raw);
-  const override = getOwn(opts.labels, raw) ?? (raw.length === 1 ? getOwn(opts.labels, raw.toUpperCase()) : undefined);
-  const label = override ?? (entry ? entry[platform][legend] : raw.length === 1 ? raw.toUpperCase() : raw);
+  const key = eventKeyName(raw);
+  const override = getOwn(opts.labels, raw) ?? getOwn(opts.labels, key)
+    ?? (key.length === 1 ? getOwn(opts.labels, key.toUpperCase()) : undefined);
+  const mod = getOwn(MOD_KEYS, key);
+  if (override === undefined && mod) return keyLegendsFromMods([{ name: mod, optional: opts.optional }], opts)[0]!;
+  const entry = getOwn(NAMED_KEY, key);
+  const label = override ?? (entry ? entry[platform][legend] : key.length === 1 ? key.toUpperCase() : key);
   return opts.optional ? { label, optional: true } : { label };
 }
