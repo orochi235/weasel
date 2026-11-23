@@ -25,6 +25,13 @@ describe('probeFrame', () => {
     expect(probeFrame()).toEqual({ kitVersion: '1.0.0', roots: 0 });
   });
 
+  it('reads no version from a hook whose version throws when read', () => {
+    w.__weaselDevtools__ = { get kitVersion() { throw new Error('broken'); }, roots: () => [{}] };
+    expect(probeFrame()).toEqual({ kitVersion: '', roots: 1 });
+    w.__weaselDevtools__ = { kitVersion: { toString() { throw new Error('broken'); } }, roots: () => [{}] };
+    expect(probeFrame()).toEqual({ kitVersion: '', roots: 1 });
+  });
+
   it('closes over nothing, since only its source reaches the page', () => {
     w.__weaselDevtools__ = { kitVersion: '2.0.0', roots: () => [] };
     const detached = new Function(`return (${probeFrame.toString()})()`) as () => unknown;

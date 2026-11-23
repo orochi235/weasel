@@ -24,7 +24,13 @@ export function probeFrame(): FrameWeasel | null {
   } catch {
     // A hook whose roots() throws.
   }
-  return { kitVersion: String(hook.kitVersion ?? ''), roots };
+  let kitVersion = '';
+  try {
+    kitVersion = String(hook.kitVersion ?? '');
+  } catch {
+    // A version that throws when read or turned into a string.
+  }
+  return { kitVersion, roots };
 }
 
 export function summarize(frames: readonly unknown[]): TabWeasel | null {
