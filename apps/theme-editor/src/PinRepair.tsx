@@ -3,7 +3,7 @@ import { isByAxis, parseTokenValue, serializeTokenValue, type ThemeDefinition, t
 import { Button } from '@weasel-js/ui/components/Button';
 import { Input } from '@weasel-js/ui/components/Input';
 import styles from './ThemeEditor.module.css';
-import { keepNumberness, removePin, setPin } from './theme/model';
+import { keepNumberness, removePin, setPin, textTypeOf } from './theme/model';
 
 export interface PinRepairProps {
   readonly draft: ThemeDefinition;
@@ -15,15 +15,11 @@ export interface PinRepairProps {
 const isList = (v: unknown): v is readonly (string | number)[] =>
   Array.isArray(v) && v.every((x) => typeof x === 'string' || typeof x === 'number');
 
-/** A list's DTCG type when the pin names none: four numbers ease, names make a font stack. */
-const listType = (v: readonly (string | number)[], type: unknown): string =>
-  typeof type === 'string' ? type : v.length === 4 && v.every((x) => typeof x === 'number') ? 'cubicBezier' : 'fontFamily';
-
 /** A token value as text and back: a number stays one, a list keeps its type's spelling. */
 function edit(value: unknown, type: unknown): { text: string; parse: (text: string) => TokenValue } | null {
   if (typeof value === 'string' || typeof value === 'number') return { text: String(value), parse: (text) => keepNumberness(text, value) };
   if (!isList(value)) return null;
-  const t = listType(value, type);
+  const t = textTypeOf(type, value);
   return { text: serializeTokenValue(t, value), parse: (text) => parseTokenValue(t, text) };
 }
 

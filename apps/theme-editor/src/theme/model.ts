@@ -94,13 +94,22 @@ const asNumber = (raw: string): number | null => (raw.trim() !== '' && Number.is
 export const keepNumberness = (raw: string, previous: unknown): string | number =>
   typeof previous !== 'number' ? raw : raw.trim() === '' ? previous : (asNumber(raw) ?? raw);
 
-/** Text typed over a value of DTCG `type`, in the shape a definition stores: a number stays one, a bezier four numbers. */
+/** The DTCG type `value` is spelled in as text: `type`, unless that has no spelling for the list `value` is, when four
+ *  numbers read as an ease and any other list as a font stack, so editing the text keeps it a list. */
+export function textTypeOf(type: unknown, value: unknown): string {
+  const t = typeof type === 'string' ? type : 'string';
+  if (!Array.isArray(value) || t === 'cubicBezier' || t === 'fontFamily') return t;
+  return value.length === 4 && value.every((x) => typeof x === 'number') ? 'cubicBezier' : 'fontFamily';
+}
+
+/** Text typed over `previous`, a value of DTCG `type`, in the shape a definition stores: a number stays one, a list
+ *  one in the spelling {@link textTypeOf} gives it. */
 export const tokenValueFromText = (type: string | undefined, raw: string, previous: unknown): TokenValue =>
   typeof previous === 'number'
     ? keepNumberness(raw, previous)
     : type === 'number'
       ? (asNumber(raw) ?? raw)
-      : parseTokenValue(type ?? 'string', raw);
+      : parseTokenValue(textTypeOf(type, previous), raw);
 
 function withEntry<T>(record: Readonly<Record<string, T>> | undefined, key: string, value: T): Record<string, T> {
   return { ...record, [key]: value };

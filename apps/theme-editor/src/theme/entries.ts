@@ -2,7 +2,7 @@ import { getOwn } from '@weasel-js/registry';
 import { serializeTokenValue, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { inferTokenType, type TokenEntry } from '@weasel-js/ui/components/TokenPanel';
-import { layerNames, leafAt, type LayerId } from './model';
+import { layerNames, leafAt, textTypeOf, type LayerId } from './model';
 
 const seedText = (v: string | number) => (typeof v === 'string' ? v : String(v));
 
@@ -33,7 +33,7 @@ export function layerEntries(layer: LayerId, def: ThemeDefinition, result: Deriv
       name,
       type: token.type,
       group: groupOf(name),
-      value: serializeTokenValue(token.type, token.value),
+      value: serializeTokenValue(textTypeOf(token.type, token.value), token.value),
       // A pin is itself the override; in any other layer only one that replaced a generated value is.
       overridden: layer === 'pins' || (p.pinned === true && p.generated !== undefined),
     }];
