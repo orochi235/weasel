@@ -781,6 +781,17 @@ describe('domRuns — small caps', () => {
     expect(normalizeSmallCaps(parent)).toBe(false);
   });
 
+  it('counts overlay text outside a run span in the word a run continues', () => {
+    const base = { ...DEFAULT_TEXT_STYLE, fontVariantCaps: 'small-caps' as const, textTransform: 'capitalize' as const };
+    runsToDom([{ text: 'He' }, { text: 'llo' }], parent, base);
+    const [first, second] = parent.querySelectorAll('span[data-run]');
+    first.replaceWith('He');
+    parent.style.fontVariant = 'small-caps';
+    parent.style.textTransform = 'capitalize';
+    expect(normalizeSmallCaps(parent)).toBe(false);
+    expect(pieces(second)).toEqual([['llo', true]]);
+  });
+
   it('reads CSS small caps on pasted markup as the run variant', () => {
     parent.innerHTML = '<span style="font-variant: small-caps">a</span><span>b</span>';
     expect(domToRuns(parent)).toEqual([{ text: 'a', fontVariantCaps: 'small-caps' }, { text: 'b' }]);

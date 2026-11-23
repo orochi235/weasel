@@ -317,7 +317,13 @@ export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = D
       before += text;
       return;
     }
-    for (const child of el.children) if (child instanceof HTMLElement) visit(child, v, t, lang, own);
+    // Text outside any run span is still text the next run's word may continue.
+    for (const n of el.childNodes) {
+      if (n.nodeType === Node.TEXT_NODE) before += (n as Text).data;
+      else if (n instanceof HTMLElement && n.tagName === 'BR') before += '\n';
+      else if (n instanceof HTMLElement && n.hasAttribute(BREAK_ATTR)) before += restoreBreak(n);
+      else if (n instanceof HTMLElement) visit(n, v, t, lang, own);
+    }
   };
   visit(parent, 'normal', 'none', undefined, EMPTY_STYLE);
   return changed;
