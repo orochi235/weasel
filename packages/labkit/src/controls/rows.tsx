@@ -8,7 +8,7 @@ import {
 } from '@weasel-js/ui/components/Properties';
 import { Fragment, type ReactNode } from 'react';
 import { configValueAt } from '../config/path';
-import { BareControl, leafValueAt } from './fields';
+import { BareControl, leafValueAt, siblingsAt } from './fields';
 
 /** A leaf this panel has no control for is named rather than dropped: a silent
  *  gap reads as "this control does not exist". */
@@ -100,6 +100,7 @@ export function PairedRow<TC extends Record<string, unknown>>({
             <BareControl
               leaf={leaf}
               value={leafValueAt(shown, path, leaf)}
+              siblings={siblingsAt(shown, path)}
               write={(value) => setConfig(path, value)}
               draft={draftConfig && ((value) => draftConfig(path, value))}
               disabled={disabled}

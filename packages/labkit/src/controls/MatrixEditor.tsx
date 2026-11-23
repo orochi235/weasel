@@ -6,7 +6,7 @@ import { isRowEnabled } from '../config/visible';
 import type { ControlMatrixColumn } from './ControlMatrix';
 import { ControlRow } from './ControlRow';
 import { useFieldChoices } from './fieldChoices';
-import { leafValueAt } from './fields';
+import { leafValueAt, siblingsAt } from './fields';
 import type { MatrixTarget } from './matrixTarget';
 
 /** The open popover: which cell, and the element it hangs off. */
@@ -51,6 +51,7 @@ export function MatrixEditor({
         shown,
         {
           value: leafValueAt(config, at, shown),
+          siblings: siblingsAt(config, at),
           setValue: (next) => setConfig(at, next),
           fields: choices,
           disabled,

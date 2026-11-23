@@ -8,7 +8,7 @@ import { boundAction } from './boundAction';
 import { ControlBar } from './ControlBar';
 import { ControlRow } from './ControlRow';
 import type { Rows } from './controlPack';
-import { extra, leafValueAt } from './fields';
+import { extra, leafValueAt, siblingsAt } from './fields';
 import { headingActions, type liftedControl } from './panelHeadings';
 import type { PanelRowsSource } from './panelRows';
 import { ResetGroup } from './ResetGroup';
@@ -81,6 +81,7 @@ function barRow<TC extends Record<string, unknown>>(
       enabled={s.enabled}
       active={s.active}
       value={(p, leaf) => leafValueAt(s.shown, p, leaf)}
+      siblings={(p) => siblingsAt(s.shown, p)}
       read={(p) => configValueAt(s.shown, p)}
       write={s.setConfig}
       bind={(leaf) => boundAction(leaf, s.config as Record<string, unknown>, s.setConfig)}

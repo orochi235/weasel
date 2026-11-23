@@ -9,8 +9,7 @@ import {
 import { loneLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import { PropertySpan } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
-import { useFieldChoices } from './fieldChoices';
-import { labField, useLabSettles, useTextWaitMs } from './fields';
+import { labField, useLabFieldSetting } from './fields';
 
 export interface ControlBarProps {
   group: PrefGroup;
@@ -24,6 +23,8 @@ export interface ControlBarProps {
   active?: (path: string) => boolean;
   /** The value the leaf at a path shows. */
   value: (path: string, leaf: PrefLeaf) => unknown;
+  /** The object the leaf at a path is a field of, which an `encoding` reads and writes against. */
+  siblings?: (path: string) => Record<string, unknown> | undefined;
   /** Reads the panel's values, which a number's `minAt` and `maxAt` bound it by. */
   read: PrefBoundReader;
   write: (path: string, value: unknown) => void;
@@ -52,6 +53,7 @@ export function ControlBar(props: ControlBarProps) {
     enabled,
     active,
     value,
+    siblings,
     read,
     write,
     bind,
@@ -75,6 +77,7 @@ export function ControlBar(props: ControlBarProps) {
             path={at}
             leaf={drawn}
             value={value(at, leaf)}
+            siblings={siblings?.(at)}
             write={(v) => write(at, v)}
             draft={draft && ((v) => draft(at, v))}
             read={read}
@@ -117,6 +120,7 @@ function Cell({
   path,
   leaf,
   value,
+  siblings,
   write,
   draft,
   read,
@@ -127,6 +131,7 @@ function Cell({
   path: string;
   leaf: PrefLeaf;
   value: unknown;
+  siblings: Record<string, unknown> | undefined;
   write: (value: unknown) => void;
   draft: ((value: unknown) => void) | undefined;
   read: PrefBoundReader;
@@ -134,16 +139,7 @@ function Cell({
   active: boolean;
   row: () => ReactNode;
 }) {
-  const field = labField(
-    leaf,
-    value,
-    write,
-    useFieldChoices(),
-    disabled,
-    draft,
-    read,
-    useLabSettles(),
-    useTextWaitMs(leaf),
-  );
+  const setting = useLabFieldSetting(leaf);
+  const field = labField(leaf, { ...setting, value, siblings, write, disabled, draft, read });
   return <>{renderBarLeaf({ leaf, path, name: leaf.name, field, disabled, active, row })}</>;
 }

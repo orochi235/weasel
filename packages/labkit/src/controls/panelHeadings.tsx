@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { headingLeaf } from '../config/headingLeaf';
 import { configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig, SectionSpec } from '../config/types';
-import { BareControl, leafValueAt } from './fields';
+import { BareControl, leafValueAt, siblingsAt } from './fields';
 
 /** What a lifted heading control reads and writes through. */
 export interface LiftScope<TC extends Record<string, unknown>> {
@@ -33,6 +33,7 @@ export function liftedControl<TC extends Record<string, unknown>>(
       <BareControl
         leaf={leaf}
         value={leafValueAt(shown, path, leaf)}
+        siblings={siblingsAt(shown, path)}
         write={(value) => setConfig(path, value)}
         draft={draftConfig && ((value) => draftConfig(path, value))}
         name={typeof heading === 'string' ? heading : undefined}

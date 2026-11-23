@@ -18,18 +18,16 @@ import {
 import { type LeafContext, sourceLeafContext } from '@weasel-js/ui/components/PrefsSource';
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
-import { configValueAt, isRecord, withConfigValueAt } from '../config/path';
+import { configValueAt, withConfigValueAt } from '../config/path';
 import { isEncodedLeaf } from '../config/storedDefault';
 import type { ResolvedConfig } from '../config/types';
 import { isRowActive, isRowEnabled, isRowVisible } from '../config/visible';
-import { leafValueAt } from './fields';
+import { leafValueAt, siblingsAt } from './fields';
 
 /** What the row at `path` shows of `config` while pinned: an encoded leaf's stored value read through its encoding. */
 export function shownAt(config: Record<string, unknown>, path: string, leaf: PrefLeaf): unknown {
   if (!isEncodedLeaf(leaf)) return leafValueAt(config, path, leaf);
-  const dot = path.lastIndexOf('.');
-  const within = dot === -1 ? config : configValueAt(config, path.slice(0, dot));
-  return prefDecodedValue(leaf, configValueAt(config, path), isRecord(within) ? within : undefined);
+  return prefDecodedValue(leaf, configValueAt(config, path), siblingsAt(config, path));
 }
 
 /** What a lab's config source reads and writes. */
@@ -86,11 +84,8 @@ export function createLabConfigSource(input: LabConfigInput): PrefsSource {
     schema: resolved.group,
     valueAt,
     write,
-    update: (path, fn, options) => {
-      const dot = path.lastIndexOf('.');
-      const within = dot === -1 ? config : configValueAt(config, path.slice(0, dot));
-      write(path, fn(configValueAt(config, path), isRecord(within) ? within : undefined), options);
-    },
+    update: (path, fn, options) =>
+      write(path, fn(configValueAt(config, path), siblingsAt(config, path)), options),
     autoAt,
     setAuto: (path, next) => {
       if (autoAt(path) !== undefined) setRowAuto?.(path, next, valueAt(path).value);

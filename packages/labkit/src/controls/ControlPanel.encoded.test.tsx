@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react';
+import { fireEvent, screen } from '@testing-library/react';
 import type { PrefLeaf } from '@weasel-js/prefs';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { describe, expect, it, vi } from 'vitest';
@@ -14,6 +14,12 @@ const skew = boolean('Skew', {
   read: (v: unknown) => v !== undefined,
   write: (on: boolean) => (on ? [1, 0] : undefined),
 });
+/** Reads and writes the object it is a field of. */
+const linked = boolean('Linked', {
+  read: (_v: unknown, siblings?: Record<string, unknown>) => siblings?.lock === 'on',
+  write: (on: boolean, siblings?: Record<string, unknown>) => `${on}:${String(siblings?.lock)}`,
+});
+
 function mount(members: Record<string, PrefLeaf>, config: Record<string, unknown>) {
   const setConfig = vi.fn();
   const schema = resolveConfigSchema(f.prefs({ name: '', members }), []);
@@ -28,5 +34,18 @@ describe('<ControlPanel> an encoded leaf', () => {
   it('reads a field holding nothing through its encoding, not its default', () => {
     mount({ 'pose.skew': skew }, { pose: {} });
     expect(checked('Skew')).toBe(false);
+  });
+
+  it('reads and writes against the object it is a field of', () => {
+    const setConfig = mount(
+      {
+        'pose.linked': linked,
+        'pose.lock': boolean('Lock', { read: () => true, write: () => 'on' }),
+      },
+      { pose: { lock: 'on' } },
+    );
+    expect(checked('Linked')).toBe(true);
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Linked' }));
+    expect(setConfig).toHaveBeenCalledWith('pose.linked', 'false:on');
   });
 });
