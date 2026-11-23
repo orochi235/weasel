@@ -3923,3 +3923,6 @@ Calls the lanes made without a ruling:
   theme they return would fail a `diagramThemeErrors` check its input passed: a size that is not above 0, a string
   that is not a color, an empty font family, or an empty role name. A document saving such a theme read back `night`.
   Normalizing the value (clamping the size, trimming to a default name) was the alternative.
+- 2026-11-22 (the fixer's call): `setDiagramFontSize` throws a `RangeError` on a size that is not a finite number above
+  0, before it writes anything, holding a hand-set size to the bound a theme's font size has. Clamping it to 1, as a
+  theme step does, was the alternative.

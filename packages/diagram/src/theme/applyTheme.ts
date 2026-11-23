@@ -192,10 +192,12 @@ export function setDiagramColor(scene: AnyScene, ids: readonly string[], field: 
  * Sets the text of every shape and connector among `ids` — a shape's rows, a
  * connector's label — to `size`, and records it in their `ownFont`, so a
  * theme's size change leaves it. One undo entry. A locked one, or locked text of one, is left as it is.
+ * Throws a `RangeError` on a size that is not a finite number above 0, as a theme's font size must be.
  */
 export function setDiagramFontSize(
   scene: AnyScene, ids: readonly string[], size: number, opts: Pick<DiagramStyleEditOptions, 'label'> & { measure?: MeasureRowText } = {},
 ): void {
+  if (!Number.isFinite(size) || !(size > 0)) throw new RangeError(`setDiagramFontSize: ${size} is not a text size`);
   scene.batch(opts.label ?? 'Set text size', () => {
     const writes = new Map<string, unknown>();
     for (const id of ids) {
