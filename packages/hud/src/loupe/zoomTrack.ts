@@ -11,6 +11,8 @@ import { textAt } from './textAlong';
 const THUMB_R = 6;
 const SAMPLES = 48;
 const LABEL_PX = 13;
+/** Oswald draws `×` at 0.7 the height of its `+`; this brings it level. */
+const TIMES_SCALE = 1.4;
 /** Px from the track to the centerline its stop labels are set along, outward past the band. */
 const LABEL_GAP = BAND / 2 + 9;
 
@@ -68,7 +70,7 @@ export function createZoomTrack(id: string, host: ZoomTrackHost): Widget {
         out.push({ kind: 'path', path: ellipsePath(dot), fill: solidFill(lensTone(t, '--wzl-fg-muted')), stroke: stroke(halo, 1) });
         const color = i === at ? lensTone(t, '--wzl-fg') : lensTone(t, '--wzl-fg-muted');
         out.push(...textAt(labels, fractionOf(i), {
-          text: `${stop}×`, fontFamily: ctx.defaultFont, fontSize: LABEL_PX, color, halo,
+          text: [{ text: `${stop}` }, { text: '×', scale: TIMES_SCALE }], fontFamily: ctx.defaultFont, fontSize: LABEL_PX, color, halo,
         }));
       });
       const thumb = shape.at(fractionOf(at)).point;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DrawCommand, GroupDrawCommand } from '@weasel-js/core/renderer';
+import type { DrawCommand, GroupDrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { ellipseShape, lineShape } from '@weasel-js/geom';
 import { runAlong, textAlong, textAt } from './textAlong';
 
@@ -36,5 +36,14 @@ describe('textAlong', () => {
     expect((cmds[0] as GroupDrawCommand).children).toHaveLength(8);
     expect(turnOf(cmds[1]!)).toBeCloseTo(turnOf(cmds[0]!));
     expect(turnOf(cmds[1]!)).toBeGreaterThan(0.5);
+  });
+
+  it('sets a scaled run larger, after the rest, centered on the same line', () => {
+    const line = lineShape({ x: 0, y: 0 }, { x: 100, y: 0 });
+    const [g] = textAt(line, 0.5, { ...t, text: [{ text: '64' }, { text: '×', scale: 1.4 }] });
+    const [digits, times] = (g as GroupDrawCommand).children as TextDrawCommand[];
+    expect(times!.style.fontSize).toBeCloseTo(14);
+    expect(times!.x).toBeGreaterThan(digits!.x);
+    expect(times!.y + times!.height! / 2).toBeCloseTo(digits!.y + digits!.height! / 2);
   });
 });
