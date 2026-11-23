@@ -1,9 +1,9 @@
 /** Which paths' anchors take a press: the selected ones, and the path being edited even when it is not selected itself
  *  — a hidden path edited through the effect that is. */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { pathFromD } from '@weasel-js/geom';
 import type { ChromeState } from 'core/selection/chromeState';
-import { createPathAnchorAffordances } from './pathAnchors';
+import { createPathAnchorAffordances, type AnchorState } from './pathAnchors';
 
 const LINE = pathFromD('M0 0 L100 0');
 const regionIds = (editingId: string | null, selection: string[]) => {
@@ -22,5 +22,28 @@ describe('createPathAnchorAffordances', () => {
 
   it('offers nothing for a path neither selected nor edited', () => {
     expect(regionIds(null, ['fx'])).toEqual([]);
+  });
+});
+
+describe('extension parts', () => {
+  const ext = { id: 'probe', parts: () => [{ x: 50, y: 0, hitKind: 'probe:0' }] };
+
+  it('warns once, naming getNode, when extensions with parts come without it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    // @ts-expect-error: extensions need getNode to answer their parts' target.
+    const state: AnchorState = { editingId: 'p', getPose: () => LINE, extensions: [ext] };
+    const [, parts] = createPathAnchorAffordances(() => state);
+    parts!.regions({ selection: [] } as unknown as ChromeState);
+    parts!.regions({ selection: [] } as unknown as ChromeState);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(String(warn.mock.calls[0]![0])).toContain('getNode');
+    warn.mockRestore();
+  });
+
+  it('offers the parts once getNode is given', () => {
+    const [, parts] = createPathAnchorAffordances(() => ({
+      editingId: 'p', getPose: () => LINE, getNode: () => ({ pose: LINE, data: {} }), extensions: [ext],
+    }));
+    expect(parts!.regions({ selection: [] } as unknown as ChromeState).map((r) => r.id)).toEqual(['p:probe:0']);
   });
 });

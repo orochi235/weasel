@@ -4068,3 +4068,10 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): text with no pose maps a `'bounds'` paint onto a box at its `x` and `y`, as wide as
   its `width`, else a finite `maxWidth`, else its laid-out text, and as tall as its `height`, else its laid-out text.
   Placing such a paint at the text's origin with no size, as `'local'`, was the alternative.
+
+## Audit round seventy-nine (2026-11-23): core
+
+- 2026-11-23 (the fixer's call): an `AnchorState` with `extensions` requires `getNode`, which answers the node each
+  extension's parts read; the type refuses one without it, and at run time `createPathAnchorAffordances` warns once
+  and offers no parts. There is no override. Building the parts with no node, which `PathEditTarget` does not allow,
+  was the alternative.
