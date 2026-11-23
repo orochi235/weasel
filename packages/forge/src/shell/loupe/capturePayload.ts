@@ -57,9 +57,11 @@ function survived(value: unknown, round: unknown): boolean {
   return keys.length === Object.keys(round).length && keys.every((key) => Object.hasOwn(round, key) && survived(value[key], round[key]));
 }
 
-function sendable(state: unknown): boolean {
+/** Whether `value` reaches the capture as itself; an undefined one arrives as the absent field it reads as. */
+function sendable(value: unknown): boolean {
+  if (value === undefined) return true;
   try {
-    return survived(state, JSON.parse(JSON.stringify(state) ?? 'undefined'));
+    return survived(value, JSON.parse(JSON.stringify(value)));
   } catch {
     return false;
   }
@@ -83,7 +85,8 @@ const clampDpr = (dpr: number) => clamp(dpr, MIN_DPR, MAX_DPR);
  */
 export function capturePayload(input: CapturePayloadInput): CapturePayload | { unavailable: string } {
   const { entry, layout, config, state, globals, overrides, host, dpr, resolved, lab, colorScheme, playhead } = input;
-  if (!sendable(state)) return { unavailable: STATE_UNSENDABLE };
+  const sentState = withoutUndefined(state);
+  if (!sendable(sentState)) return { unavailable: STATE_UNSENDABLE };
   const sent = withoutUndefined(withArgs(storyConfig(config), resolved.args));
   if (!sendable(sent)) return { unavailable: CONFIG_UNSENDABLE };
   const box = { width: host.offsetWidth, height: host.offsetHeight };
@@ -93,7 +96,7 @@ export function capturePayload(input: CapturePayloadInput): CapturePayload | { u
     story: entry.id,
     isolate,
     config: sent,
-    state,
+    state: sentState,
     globals,
     overrides,
     playhead: isolate ? null : playhead,
