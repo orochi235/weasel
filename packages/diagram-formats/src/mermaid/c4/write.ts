@@ -1,7 +1,7 @@
 /** One graph page as a Mermaid C4 diagram: shapes as elements by their `<<kind>>` row, containers as boundaries. */
 import { dataEdgeStyle, type DataEdge, type DataNode, type EdgeStyle, type NodeStyle } from '@weasel-js/diagram';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
-import { changed, edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
+import { changed, edgeStyleIn, graphOut, hexColor, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
 import { arrowHead, dropEdgeColors, dropEndLabels } from '../common/styles';
 import { mermaidIds, mermaidQuoted, oneLine } from '../common/text';
 import { elementParts, hasTechnology, macroOf, smallLines } from './kinds';
@@ -11,8 +11,8 @@ import { BOUNDARY_TYPES, C4_NOTATIONS } from './read';
 const BY_TYPE = new Map(Object.entries(BOUNDARY_TYPES).filter(([, t]) => t !== null).map(([macro, t]) => [t!, macro]));
 const REL_WAYS: Readonly<Record<string, string>> = { 'n s': 'U', 's n': 'D', 'w e': 'L', 'e w': 'R' };
 
-/** A color argument in quotes, its own quotes made single. */
-const quoted = (s: string): string => `"${s.replace(/"/g, "'")}"`;
+/** A color argument as hex where it reads as one, in quotes, its own quotes made single. */
+const quoted = (s: string): string => `"${hexColor(s).replace(/"/g, "'")}"`;
 
 /** Positional arguments, the first `bare` as ids and the rest quoted text, trailing empty ones left off. */
 function args(list: readonly (string | undefined)[], bare = 1): string {
