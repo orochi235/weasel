@@ -10,14 +10,7 @@
   transition: opacity var(--wzl-motion-fast);
 }
 
-.overlay[data-entering] {
-  opacity: 0;
-}
-
-.overlay[data-entering][data-rac] {
-  opacity: 1;
-}
-
+.overlay[data-entering],
 .overlay[data-exiting] {
   opacity: 0;
 }
