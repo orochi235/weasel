@@ -198,7 +198,11 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           ref={triggerRef}
           className={`${f.frame} ${s.trigger}`}
           onPointerDown={(e) => {
-            pressRef.current = { x: e.clientX, y: e.clientY, at: performance.now(), pointerType: e.pointerType };
+            const press = { x: e.clientX, y: e.clientY, at: performance.now(), pointerType: e.pointerType };
+            pressRef.current = press;
+            liftOf(e.currentTarget.ownerDocument.defaultView, () => {
+              if (pressRef.current === press) pressRef.current = null;
+            });
           }}
         >
           <SelectValue className={s.value}>
@@ -246,6 +250,18 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
       )}
     </RACSelect>,
   );
+}
+
+/** Runs `then` once, after the next pointer lift anywhere in `view` has reached every other listener. */
+function liftOf(view: Window | null, then: () => void) {
+  if (!view) return;
+  const done = () => {
+    view.removeEventListener('pointerup', done);
+    view.removeEventListener('pointercancel', done);
+    then();
+  };
+  view.addEventListener('pointerup', done);
+  view.addEventListener('pointercancel', done);
 }
 
 /** Hands `value` up to a parent that cannot read it, before paint. */

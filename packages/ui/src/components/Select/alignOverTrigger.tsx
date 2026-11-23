@@ -7,7 +7,7 @@ import s from './Select.module.css';
 
 export type Nudge = { offset: number; crossOffset: number };
 
-/** Where, when and with what pointer the trigger was pressed. */
+/** Where, when and with what pointer the trigger was pressed, held only until that pointer lifts. */
 export type Press = { x: number; y: number; at: number; pointerType: string };
 
 export const NO_NUDGE: Nudge = { offset: 0, crossOffset: 0 };
@@ -129,12 +129,13 @@ export function AlignOverTrigger({
   });
   useEffect(() => {
     const doc = triggerRef.current?.ownerDocument;
-    if (!doc) return;
+    // Only a press still held when the list opened is the one that opened it; one already lifted is someone else's.
+    const press = pressRef.current;
+    // React Aria opens a select on a touch's release, so that release is spent before the list exists.
+    if (!doc || !press || press.pointerType === 'touch') return;
     const onUp = (e: PointerEvent) => {
       doc.removeEventListener('pointerup', onUp, true);
-      const press = pressRef.current;
-      // React Aria opens a select on a touch's release, so that release is spent before the list exists.
-      if (!press || press.pointerType === 'touch' || performance.now() - press.at > limits.current.holdMs) return;
+      if (performance.now() - press.at > limits.current.holdMs) return;
       if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, limits.current.dragPx)) return;
       e.preventDefault();
       e.stopPropagation();

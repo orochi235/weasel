@@ -329,6 +329,22 @@ describe('Select', () => {
       }
     });
 
+    it('keeps the first release in a list opened from the keyboard just after a click on the trigger', () => {
+      render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      for (let i = 0; i < 2; i++) {
+        act(() => { press(trigger, { clientX: 20, clientY: 10 }); });
+        fireEvent(document, createEvent.pointerUp(document, { clientX: 20, clientY: 10 }));
+      }
+      act(() => { fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' }); });
+      expect(screen.queryByRole('listbox')).toBeNull();
+      act(() => { fireEvent.keyDown(trigger, { key: 'ArrowDown' }); });
+      expect(screen.getByRole('listbox')).toBeTruthy();
+      const up = createEvent.pointerUp(document, { clientX: 21, clientY: 11 });
+      fireEvent(document, up);
+      expect(up.defaultPrevented).toBe(false);
+    });
+
     it('keeps every release after the opening one when the gesture settings change while open', () => {
       const at = (dragPx: number) => (
         <KitSettingsProvider value={{ gestures: { dragPx } }}><Select label="Color" options={OPTIONS} defaultSelectedKey="g" /></KitSettingsProvider>
