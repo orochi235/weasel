@@ -55,7 +55,8 @@ function renderEvent(entry: TraceLogEntry): ReactNode {
 function renderOutcome(entry: TraceLogEntry): ReactNode {
   if (entry.kind === 'mode') return <><code>{entry.from ?? '∅'}</code> → <code>{entry.to ?? '∅'}</code></>;
   if (entry.outcome === 'unhandled') return entry.predicted ? 'would not handle' : 'unhandled';
-  return entry.fired ? <code>{entry.fired}</code> : 'handled';
+  if (entry.fired) return <code>{entry.fired}</code>;
+  return entry.predicted ? 'would handle' : 'handled';
 }
 
 export function TraceTable({ entries, live, now, showHandled, showUnhandled, empty }: TraceTableProps): ReactElement {

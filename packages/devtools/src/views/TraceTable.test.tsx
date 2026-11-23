@@ -2,7 +2,7 @@
 import { afterEach, expect, it } from 'vitest';
 import { cleanup, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
-import { nothingMatched } from './FallthroughDiagram.fixtures';
+import { bareDragSelect, nothingMatched } from './FallthroughDiagram.fixtures';
 import { sequenced } from './sequenced';
 import { TraceTable } from './TraceTable';
 
@@ -22,3 +22,11 @@ it('says the live prediction would not handle a press, beside a logged input lef
   expect(screen.getAllByRole('cell', { name: 'would not handle' })).toHaveLength(1);
   expect(screen.getAllByRole('cell', { name: 'unhandled' })).toHaveLength(1);
 });
+
+it('says the live prediction would handle a press it names no action for', () => {
+  renderWithIcons(
+    <TraceTable entries={[]} live={{ ...bareDragSelect, predicted: true, fired: null }} now={0} showHandled showUnhandled empty="none" />,
+  );
+  expect(screen.getByRole('cell', { name: 'would handle' })).toBeTruthy();
+});
+
