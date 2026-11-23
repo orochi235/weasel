@@ -1,9 +1,20 @@
-import { type ReactNode, type RefObject, useMemo } from 'react';
+import { isDev } from '@weasel-js/react';
+import { type ReactNode, type RefObject, useEffect, useMemo } from 'react';
 import type { CanvasLayerDescriptor } from '../canvas/useLayerScheduler';
 import { type UseDragDropResult, useDragDrop } from '../dragdrop/DragDropRuntime';
 import { withDragFeedback } from '../dragdrop/feedbackLayer';
 import { Palette } from '../dragdrop/Palette';
 import type { Instrument, PaletteItem } from '../instrument/types';
+
+const warnedOfPickUp = new WeakSet<Instrument>();
+
+function warnOfPickUp(instrument: Instrument): void {
+  if (!isDev() || !instrument.dragDrop?.pickUp || warnedOfPickUp.has(instrument)) return;
+  warnedOfPickUp.add(instrument);
+  console.warn(
+    `[labkit] instrument "${instrument.name}" declares \`dragDrop.pickUp\`, which labkit does not call yet: a press on a placed item does not pick it up.`,
+  );
+}
 
 /** What a trial's drag and drop reads and writes. */
 export interface TrialDragDropSources {
@@ -34,6 +45,7 @@ export function useTrialDragDrop({
   layers: CanvasLayerDescriptor[];
   palette: ReactNode;
 } {
+  useEffect(() => warnOfPickUp(instrument), [instrument]);
   const dragDrop = useDragDrop({
     capability: instrument.dragDrop ?? { palette: [], onDrop: (_p, _i, s) => s },
     state,
