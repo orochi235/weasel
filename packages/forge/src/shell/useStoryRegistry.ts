@@ -3,8 +3,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { FrameSetup } from '../frame/FrameController';
 import type { FrameImporters } from '../frame/mountFrame';
 import { type Libraries, TITLE_LIBRARIES } from '../story/library';
-import { loadStories } from '../story/load';
-import type { IndexEntry, LoadedStory } from '../story/types';
+import { loadStories, type StoryLoader } from '../story/load';
+import type { IndexEntry } from '../story/types';
 import type { GlobalDeclarations } from './globals';
 import { buildInstruments, EMPTY_CACHE, type InstrumentCache } from './instrumentCache';
 import { type FrameReady, readyKey } from './readyKey';
@@ -38,7 +38,7 @@ export interface StoryRegistryOptions {
   /** The workshop's story hosts. Given, a story or index page rendered in the document takes marks. Keep it the
    *  same object: an instrument already built keeps the hosts it was built with. */
   hosts?: StoryHosts;
-  load?: (mod: Record<string, unknown>, title: string, parameters?: Record<string, unknown>) => LoadedStory[];
+  load?: StoryLoader;
 }
 
 const NO_GLOBALS: GlobalDeclarations = {};

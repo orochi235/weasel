@@ -6,6 +6,25 @@ const FILE = '/repo/packages/ui/src/Slider.stories.tsx';
 const ids = (code: string, file = FILE) => indexFile(code, file, 'ui/Auto').map((e) => [e.id, e.name]);
 
 describe('indexFile', () => {
+  it('reads a file importing forge as a namespace as native', () => {
+    const code = `
+import * as forge from '@weasel-js/forge';
+export default forge.meta({ title: 'ui/Slider' });
+export const helper = 3;
+export const A = forge.story({ name: 'Named', viewport: { width: 400, height: 300 }, render: () => null });
+`;
+    expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
+      { id: 'ui-slider--a', title: 'ui/Slider', name: 'Named', exportName: 'A', file: FILE, viewport: { width: 400, height: 300 } },
+    ]);
+  });
+
+  it("makes ids from a meta's id, as Storybook does, and keeps the title for the tree", () => {
+    const code = `const ID = 'custom';\nexport default { title: 'Example/Page', id: ID };\nexport const LoggedIn = {};\n`;
+    expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
+      { id: 'custom--logged-in', title: 'Example/Page', metaId: 'custom', name: 'Logged In', exportName: 'LoggedIn', file: FILE },
+    ]);
+  });
+
   it('indexes a native meta and its stories', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';
@@ -15,7 +34,7 @@ export const WithName = story({ name: 'Custom name', render: () => null });
 `;
     expect(indexFile(code, FILE, 'ui/Auto')).toEqual([
       { id: 'ui-slider--basic', title: 'ui/Slider', name: 'Basic', exportName: 'Basic', file: FILE },
-      { id: 'ui-slider--withname', title: 'ui/Slider', name: 'Custom name', exportName: 'WithName', file: FILE },
+      { id: 'ui-slider--with-name', title: 'ui/Slider', name: 'Custom name', exportName: 'WithName', file: FILE },
     ]);
   });
 
@@ -220,7 +239,7 @@ export const FullscreenWide = fit('fullscreen', 'wide');
 export const Named: Story = { name: 'A named one', render: () => null };
 `;
     expect(ids(csf)).toEqual([
-      ['labkit-lab-fit--fullscreenwide', 'Fullscreen Wide'],
+      ['labkit-lab-fit--fullscreen-wide', 'Fullscreen Wide'],
       ['labkit-lab-fit--named', 'A named one'],
     ]);
   });
@@ -308,6 +327,20 @@ export const Shown = {};
     expect(ids(code)).toEqual([['ui-tag--shown', 'Shown']]);
   });
 
+  it('honors includeStories and excludeStories held in top-level consts', () => {
+    const code = `
+const HIDDEN = ['helper'];
+const SHOWN = /^Sh/;
+export default { title: 'ui/Tag', excludeStories: HIDDEN, includeStories: SHOWN };
+export const Shown = {};
+export const helper = {};
+export const Other = {};
+`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.exportName)).toEqual(['Shown']);
+    const named = `const NAME = 'Other';\nexport default { title: 'ui/Tag', excludeStories: [NAME] };\nexport const Shown = {};\nexport const Other = {};\n`;
+    expect(indexFile(named, FILE, 'ui/Auto').map((e) => e.exportName)).toEqual(['Shown']);
+  });
+
   it('honors a regex excludeStories', () => {
     const code = `
 export default { title: 'ui/Tag', excludeStories: /.*Data$/ };
@@ -391,8 +424,10 @@ export const Literal = story({ viewport: { width: 320, height: 200 }, render: ()
 export const Bound = story({ viewport: size, render: () => null });
 export const Computed = story({ viewport: { width: 2 * 160, height: 200 }, render: () => null });
 export const None = story({ render: () => null });
+const W = 320;
+export const Sides = story({ viewport: { width: W, height: 400 as number }, render: () => null });
 `;
-      expect(viewports(code)).toEqual([{ width: 320, height: 200 }, { width: 1, height: 2 }, undefined, undefined]);
+      expect(viewports(code)).toEqual([{ width: 320, height: 200 }, { width: 1, height: 2 }, undefined, undefined, { width: 320, height: 400 }]);
     });
 
     it('reads no viewport off a CSF story, whose viewport comes from its parameters and globals', () => {
@@ -461,6 +496,15 @@ export { Base as Primary };
       expect(isolates(code)).toEqual(['assigned reason']);
     });
 
+    it('reads a reason held in a top-level const', () => {
+      const code = `
+const REASON = 'shared reason';
+export default { title: 'ui/Button' };
+export const Basic = { parameters: { forge: { isolate: REASON } } };
+`;
+      expect(isolates(code)).toEqual(['shared reason']);
+    });
+
     it('refuses a value that is not a string literal, naming the file and export', () => {
       const code = `
 export default { title: 'ui/Button' };
@@ -517,6 +561,16 @@ export const AllPermutations = { tags: ['gallery', '!b'] };
       expect(tags(`export default { title: 'ui/Route' };\nexport const A = { tags: ['gallery'] };\n`)).toEqual([['gallery']]);
     });
 
+    it('reads tags held in top-level consts, as it reads a title', () => {
+      const code = `
+const TAGS = ['gallery', '!test'];
+const LAB = 'lab';
+export default { title: 'ui/All', tags: TAGS };
+export const A = { tags: [LAB, 'test'] as const };
+`;
+      expect(tags(code)).toEqual([['gallery', 'lab', 'test']]);
+    });
+
     it('reads only string literals, and leaves the key off a meta with none', () => {
       expect(tags(`export default { title: 'ui/All', tags: ['gallery', NAME] };\nexport const A = {};\n`)).toEqual([['gallery']]);
       expect(indexFile(`export default { title: 'ui/All' };\nexport const A = {};\n`, FILE, 'ui/Auto')[0]).not.toHaveProperty('tags');
@@ -557,6 +611,14 @@ export const Plain = {};
     expect(foreignCallees(code, FILE)).toEqual([
       { local: 'defineMeta', spec: './forge-helpers', imported: 'meta' },
       { local: 'story', spec: './forge-helpers', imported: 'story' },
+    ]);
+  });
+
+  it('names a namespace import of a helper module by the member called', () => {
+    const ns = `import * as kit from './kit';\nexport default kit.meta({ title: 'ui/X' });\nexport const A = kit.story({});\n`;
+    expect(foreignCallees(ns, FILE)).toEqual([
+      { local: 'kit.meta', spec: './kit', imported: 'meta' },
+      { local: 'kit.story', spec: './kit', imported: 'story' },
     ]);
   });
 

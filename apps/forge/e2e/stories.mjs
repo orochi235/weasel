@@ -14,7 +14,7 @@ export const csfChecks = [
     },
   },
   {
-    id: 'draw-commandbar--emptydocument',
+    id: 'draw-commandbar--empty-document',
     what: 'apps/draw story, inside its host and on screen',
     check: async ({ frame }) => {
       const box = await frame.evaluate((host) => {

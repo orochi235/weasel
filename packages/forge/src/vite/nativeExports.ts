@@ -1,6 +1,6 @@
 import type * as t from '@babel/types';
 import { getOwn } from './ownKeys.ts';
-import { type Bindings, isLiteralValue, type Wrappers } from './ast.ts';
+import { type Bindings, calleeName, isLiteralValue, type Wrappers } from './ast.ts';
 
 type Fn = t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration;
 
@@ -114,10 +114,11 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
     case 'CallExpression': {
       const { callee } = node;
       if (isObjectAssign(callee, scope)) return node.arguments.some((arg) => mayBeStory(arg, scope, depth + 1));
+      const wrapper = scope.wrappers.get(calleeName(callee) ?? '');
+      if (wrapper) return wrapper === 'story';
       if (callee.type === 'MemberExpression') return !isLiteralValue(callee.object, scope.bindings) && !isGlobal(callee.object, scope);
       if (isFn(callee)) return mayReturnStory(callee, scope, depth);
       if (callee.type !== 'Identifier') return !isLiteralValue(callee, scope.bindings);
-      if (scope.wrappers.has(callee.name)) return scope.wrappers.get(callee.name) === 'story';
       if (scope.bindings.has(callee.name)) return mayCallStory(scope.bindings.get(callee.name), scope, depth);
       return scope.foreign?.call(callee.name) ?? true;
     }

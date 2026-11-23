@@ -15,11 +15,18 @@ describe('loadNativeModule', () => {
     helper: 42,
   };
 
+  it("makes ids from the index entry's meta id where it has one", () => {
+    expect(loadNativeModule(mod, 'ui/Slider', 'custom').map((s) => [s.id, s.title])).toEqual([
+      ['custom--basic', 'ui/Slider'],
+      ['custom--with-name', 'ui/Slider'],
+    ]);
+  });
+
   it('loads each branded story export', () => {
     const stories = loadNativeModule(mod, 'ui/Slider');
     expect(stories.map((s) => [s.id, s.name, s.layout])).toEqual([
       ['ui-slider--basic', 'Basic', 'padded'],
-      ['ui-slider--withname', 'Custom name', 'fullscreen'],
+      ['ui-slider--with-name', 'Custom name', 'fullscreen'],
     ]);
   });
 

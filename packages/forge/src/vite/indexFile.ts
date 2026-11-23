@@ -13,8 +13,8 @@ import {
   objectOf,
   parseFile,
   prop,
-  stringLiteral,
   stringOf,
+  valueOf,
   type Wrappers,
 } from './ast.ts';
 import { type Foreign, mayBeStory } from './nativeExports.ts';
@@ -40,6 +40,7 @@ export function indexFile(
 
 /** An import that a story file's default export or a named export is a call to. */
 export interface ForeignCallee {
+  /** The callee as written: the import's local, or `ns.name` for a member of a namespace import. */
   local: string;
   spec: string;
   imported: string;
@@ -53,10 +54,12 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
   const program = parseFile(code, file);
   const { bindings } = scan(program, new Map());
   const imported = new Map<string, ForeignCallee>();
+  const namespaces = new Map<string, string>();
   const exported: (t.Node | null | undefined)[] = [];
   for (const stmt of program.body) {
     if (stmt.type === 'ImportDeclaration' && stmt.importKind !== 'type' && stmt.source.value !== '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
+        if (spec.type === 'ImportNamespaceSpecifier') namespaces.set(spec.local.name, stmt.source.value);
         if (spec.type === 'ImportNamespaceSpecifier' || (spec.type === 'ImportSpecifier' && spec.importKind === 'type')) continue;
         const name = spec.type === 'ImportDefaultSpecifier' ? 'default' : exportedName(spec.imported);
         imported.set(spec.local.name, { local: spec.local.name, spec: stmt.source.value, imported: name });
@@ -70,13 +73,16 @@ export function foreignCallees(code: string, file: string): ForeignCallee[] {
   }
   const found = new Map<string, ForeignCallee>();
   for (const node of exported) {
-    const hit = imported.get(calleeOf(node ?? undefined, bindings) ?? '');
+    const callee = calleeOf(node ?? undefined, bindings) ?? '';
+    const [ns = '', member] = callee.split('.');
+    const from = member === undefined ? undefined : namespaces.get(ns);
+    const hit = from === undefined ? imported.get(callee) : { local: callee, spec: from, imported: member as string };
     if (hit) found.set(hit.local, hit);
   }
   return [...found.values()];
 }
 
-/** The program's top-level bindings, its locals that are forge's `meta` or `story`, and every name it imports. */
+/** The program's top-level bindings, its callees that are forge's `meta` or `story`, and every name it imports. */
 export function scan(program: t.Program, extra: Wrappers): { bindings: Bindings; wrappers: Map<string, 'meta' | 'story'>; imports: Set<string> } {
   const wrappers = new Map(extra);
   const imports = new Set<string>();
@@ -84,6 +90,10 @@ export function scan(program: t.Program, extra: Wrappers): { bindings: Bindings;
     if (stmt.type === 'ImportDeclaration') for (const spec of stmt.specifiers) imports.add(spec.local.name);
     if (stmt.type === 'ImportDeclaration' && stmt.source.value === '@weasel-js/forge') {
       for (const spec of stmt.specifiers) {
+        if (spec.type === 'ImportNamespaceSpecifier') {
+          wrappers.set(`${spec.local.name}.meta`, 'meta');
+          wrappers.set(`${spec.local.name}.story`, 'story');
+        }
         const name = spec.type === 'ImportSpecifier' ? exportedName(spec.imported) : undefined;
         if (name === 'meta' || name === 'story') wrappers.set(spec.local.name, name);
       }
@@ -132,6 +142,7 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
 
   const meta = objectOf(metaNode, bindings, wrappers);
   const title = stringOf(prop(meta, 'title', bindings, wrappers), bindings) ?? autoTitle;
+  const metaId = stringOf(prop(meta, 'id', bindings, wrappers), bindings) || undefined;
   const include = storyFilter(meta, 'includeStories', bindings, wrappers);
   const exclude = storyFilter(meta, 'excludeStories', bindings, wrappers);
   const componentNode = prop(meta, 'component', bindings, wrappers);
@@ -150,8 +161,9 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
       const tags = combineTags(metaTags, tagsOf(spec, bindings, wrappers));
       const viewport = native ? viewportOf(spec, bindings, wrappers) : undefined;
       return {
-        id: storyId(title, name),
+        id: storyId(metaId ?? title, name),
         title,
+        ...(metaId === undefined ? {} : { metaId }),
         // An empty name falls through, as the loader's does, so the tree and the trial name a story alike.
         name:
           stringOf(prop(spec, 'name', bindings, wrappers), bindings) ||
@@ -192,14 +204,14 @@ function withAssigned(spec: t.ObjectExpression | null, props: readonly t.ObjectP
 
 /**
  * The reason `obj` isolates its story: `isolate` on a native meta or story, `parameters.forge.isolate` in CSF.
- * It must be a string literal, because the shell reads it without importing the module.
+ * It must be a string literal, inline or in a top-level `const`, because the shell reads it without importing the module.
  */
 function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers, exportName: string): string | undefined {
   const parameters = objectOf(prop(obj, 'parameters', bindings, wrappers), bindings, wrappers);
   const forge = objectOf(prop(parameters, 'forge', bindings, wrappers), bindings, wrappers);
   const value = prop(obj, 'isolate', bindings, wrappers) ?? prop(forge, 'isolate', bindings, wrappers);
   if (value === undefined) return undefined;
-  const literal = stringLiteral(value);
+  const literal = stringOf(value, bindings);
   if (literal === undefined) throw new Error(`${exportName}: isolate must be a string literal`);
   return literal;
 }
@@ -207,8 +219,8 @@ function isolateOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers:
 /** A native story's `viewport`, when both sides are number literals. */
 function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers): StoryViewport | undefined {
   const value = objectOf(prop(obj, 'viewport', bindings, wrappers), bindings, wrappers);
-  const width = prop(value, 'width', bindings, wrappers);
-  const height = prop(value, 'height', bindings, wrappers);
+  const width = valueOf(prop(value, 'width', bindings, wrappers), bindings);
+  const height = valueOf(prop(value, 'height', bindings, wrappers), bindings);
   return width?.type === 'NumericLiteral' && height?.type === 'NumericLiteral'
     ? { width: width.value, height: height.value }
     : undefined;
@@ -216,9 +228,9 @@ function viewportOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers
 
 /** `obj`'s `tags`: the string literals of an array literal. */
 function tagsOf(obj: t.ObjectExpression | null, bindings: Bindings, wrappers: Wrappers): string[] | undefined {
-  const value = prop(obj, 'tags', bindings, wrappers);
+  const value = valueOf(prop(obj, 'tags', bindings, wrappers), bindings);
   if (value?.type !== 'ArrayExpression') return undefined;
-  return value.elements.flatMap((e) => (e ? (stringLiteral(e) ?? []) : []));
+  return value.elements.flatMap((e) => (e ? (stringOf(e, bindings) ?? []) : []));
 }
 
 /** A story's tags as Storybook combines them: the meta's, then its own, where `!tag` at either level removes `tag`. */
@@ -232,16 +244,17 @@ function combineTags(meta: string[] | undefined, own: string[] | undefined): str
   return [...out];
 }
 
-/** `includeStories`/`excludeStories` as a predicate, when written as a string array or a regex literal. */
+/** `includeStories`/`excludeStories` as a predicate, when written as an array of strings or a regex literal. */
 function storyFilter(obj: t.ObjectExpression | null, key: string, bindings: Bindings, wrappers: Wrappers): ((name: string) => boolean) | null {
-  const value = prop(obj, key, bindings, wrappers);
+  const value = valueOf(prop(obj, key, bindings, wrappers), bindings);
   if (value?.type === 'RegExpLiteral') {
     const re = new RegExp(value.pattern, value.flags.replace(/[gy]/g, ''));
     return (name) => re.test(name);
   }
-  if (value?.type === 'ArrayExpression' && value.elements.every((e) => e?.type === 'StringLiteral')) {
-    const names = new Set(value.elements.map((e) => (e as t.StringLiteral).value));
-    return (name) => names.has(name);
+  const names = value?.type === 'ArrayExpression' ? value.elements.map((e) => (e ? stringOf(e, bindings) : undefined)) : [];
+  if (value?.type === 'ArrayExpression' && names.every((n) => n !== undefined)) {
+    const set = new Set(names);
+    return (name) => set.has(name);
   }
   return null;
 }

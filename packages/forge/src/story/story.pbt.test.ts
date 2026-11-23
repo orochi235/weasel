@@ -39,7 +39,7 @@ describe('ids', () => {
     const seen = tally();
     fc.assert(
       fc.property(part, part, (title, name) => {
-        const [t, n] = [sanitize(title), sanitize(name)];
+        const [t, n] = [sanitize(title), sanitize(storyNameFromExport(name))];
         if (t === '' || n === '') {
           expect(() => storyId(title, name)).toThrow(t === '' ? /^Invalid kind/ : /^Invalid name/);
           seen.count('refused');

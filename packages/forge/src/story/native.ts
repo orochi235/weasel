@@ -10,14 +10,14 @@ import { DEFAULT_LAYOUT } from '../protocol/messages';
  * entry's, which wins over the meta's own: the index reads the meta without running it and can miss it, so taking
  * the meta's here would give one story two titles.
  */
-export function loadNativeModule(mod: Record<string, unknown>, title: string): LoadedStory[] {
+export function loadNativeModule(mod: Record<string, unknown>, title: string, metaId?: string): LoadedStory[] {
   const metaSpec: MetaSpec = isNative(mod.default, 'meta') ? (mod.default as MetaSpec) : {};
   const stories: LoadedStory[] = [];
   for (const [exportName, value] of Object.entries(mod)) {
     if (exportName === 'default' || !isNative(value, 'story')) continue;
     const spec = value as StorySpec<unknown, unknown>;
     stories.push({
-      id: storyId(title, exportName),
+      id: storyId(metaId ?? title, exportName),
       title,
       name: spec.name || storyNameFromExport(exportName),
       exportName,

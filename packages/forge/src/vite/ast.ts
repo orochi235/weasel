@@ -7,7 +7,7 @@ import type * as t from '@babel/types';
  */
 export type Bindings = Map<string, t.Node>;
 
-/** A file's locals that are forge's `meta` or `story`, and which. */
+/** A file's callees that are forge's `meta` or `story`, and which, keyed as `calleeName` writes them. */
 export type Wrappers = ReadonlyMap<string, 'meta' | 'story'>;
 
 export function parseFile(code: string, file: string): t.Program {
@@ -44,7 +44,7 @@ export function bindingsOf(program: t.Program): Bindings {
   return bindings;
 }
 
-function patternNames(node: t.LVal | t.ObjectProperty['value'] | null | undefined): string[] {
+export function patternNames(node: t.LVal | t.ObjectProperty['value'] | null | undefined): string[] {
   switch (node?.type) {
     case 'Identifier':
       return [node.name];
@@ -61,7 +61,14 @@ function patternNames(node: t.LVal | t.ObjectProperty['value'] | null | undefine
   }
 }
 
-/** The identifier `node` calls, through casts and top-level `const`s. */
+/** The name a call's callee is written as: `meta`, or `forge.meta` off a namespace import. */
+export function calleeName(callee: t.Node): string | undefined {
+  if (callee.type === 'Identifier') return callee.name;
+  if (callee.type !== 'MemberExpression' || callee.computed) return undefined;
+  return callee.object.type === 'Identifier' && callee.property.type === 'Identifier' ? `${callee.object.name}.${callee.property.name}` : undefined;
+}
+
+/** The name `node` calls, as `calleeName` writes it, through casts and top-level `const`s. */
 export function calleeOf(node: t.Node | undefined, bindings: Bindings, depth = 0): string | undefined {
   if (!node || depth > 16) return undefined;
   switch (node.type) {
@@ -72,7 +79,7 @@ export function calleeOf(node: t.Node | undefined, bindings: Bindings, depth = 0
     case 'ParenthesizedExpression':
       return calleeOf(node.expression, bindings, depth + 1);
     case 'CallExpression':
-      return node.callee.type === 'Identifier' ? node.callee.name : undefined;
+      return calleeName(node.callee);
     case 'Identifier':
       return calleeOf(bindings.get(node.name), bindings, depth + 1);
     default:
@@ -126,8 +133,8 @@ export function stringLiteral(node: t.Node): string | undefined {
   return undefined;
 }
 
-/** The string `node` is written as: a literal, through casts and top-level `const`s. */
-export function stringOf(node: t.Node | undefined, bindings: Bindings, depth = 0): string | undefined {
+/** The expression `node` stands for, through casts and top-level `const`s. */
+export function valueOf(node: t.Node | undefined, bindings: Bindings, depth = 0): t.Node | undefined {
   if (!node || depth > 16) return undefined;
   switch (node.type) {
     case 'TSSatisfiesExpression':
@@ -135,12 +142,18 @@ export function stringOf(node: t.Node | undefined, bindings: Bindings, depth = 0
     case 'TSTypeAssertion':
     case 'TSNonNullExpression':
     case 'ParenthesizedExpression':
-      return stringOf(node.expression, bindings, depth + 1);
+      return valueOf(node.expression, bindings, depth + 1);
     case 'Identifier':
-      return stringOf(bindings.get(node.name), bindings, depth + 1);
+      return valueOf(bindings.get(node.name), bindings, depth + 1);
     default:
-      return stringLiteral(node);
+      return node;
   }
+}
+
+/** The string `node` is written as: a literal, through casts and top-level `const`s. */
+export function stringOf(node: t.Node | undefined, bindings: Bindings): string | undefined {
+  const value = valueOf(node, bindings);
+  return value && stringLiteral(value);
 }
 
 export function isDefaultExport(stmt: t.Statement): boolean {
@@ -191,7 +204,7 @@ export function objectOf(
     case 'ParenthesizedExpression':
       return objectOf(node.expression, bindings, wrappers, depth + 1);
     case 'CallExpression':
-      return node.callee.type === 'Identifier' && wrappers.has(node.callee.name)
+      return wrappers.has(calleeName(node.callee) ?? '')
         ? objectOf(node.arguments[0], bindings, wrappers, depth + 1)
         : null;
     case 'Identifier':
