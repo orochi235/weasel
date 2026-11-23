@@ -274,18 +274,21 @@ function sourceText(el: Element, before = ''): string {
   return out;
 }
 
-/** Whether `span`'s children are the pieces `writeSmallCaps` would write. */
-function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string | undefined, before: string): boolean {
-  const want = smallCapsPieces(sourceText(span, before), transform, lang, before);
+/** A run's child that holds only text: a text node, a `<br>`, a break stand-in, or a small-caps piece. */
+function flatNode(n: ChildNode): string | null {
+  if (n.nodeType === Node.TEXT_NODE) return (n as Text).data;
+  if (!(n instanceof HTMLElement)) return null;
+  if (n.tagName === 'BR') return '\n';
+  if (n.hasAttribute(BREAK_ATTR)) return restoreBreak(n);
+  return isSmallCapsPiece(n) ? n.textContent ?? '' : null;
+}
+
+/** Whether `nodes` are the pieces `want` names. */
+function piecesMatch(nodes: readonly ChildNode[], want: ReadonlyArray<{ text: string; small: boolean }>): boolean {
   const have: Array<{ text: string; small: boolean }> = [];
-  for (const n of span.childNodes) {
-    let small: boolean;
-    let text: string;
-    if (n.nodeType === Node.TEXT_NODE) { small = false; text = (n as Text).data; }
-    else if (n instanceof HTMLElement && n.tagName === 'BR') { small = false; text = '\n'; }
-    else if (n instanceof HTMLElement && n.hasAttribute(BREAK_ATTR)) { small = false; text = restoreBreak(n); }
-    else if (n instanceof HTMLElement && isSmallCapsPiece(n) && n.children.length === 0) { small = true; text = n.textContent ?? ''; }
-    else return false;
+  for (const n of nodes) {
+    const text = flatNode(n) ?? '';
+    const small = n instanceof HTMLElement && isSmallCapsPiece(n);
     if (text.length === 0) continue;
     const last = have[have.length - 1];
     if (last && last.small === small) last.text += text;
@@ -305,27 +308,59 @@ export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = D
   let changed = false;
   let before = '';
   const all = sourceText(parent);
+  /** Rewrite `nodes`, a stretch of `run`'s text-only children, as the pieces its face and caps need. */
+  const normalizeText = (
+    nodes: readonly ChildNode[], v: FontVariantCaps, t: TextTransform, lang: string | undefined,
+    own: StyleState,
+  ): void => {
+    const text = nodes.map((n) => flatNode(n) ?? '').join('');
+    const face = resolveRunFace(toRun(text, own), base);
+    const synth = v === 'small-caps' && !hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle);
+    const want = synth ? smallCapsPieces(text, t, lang, before) : text.length > 0 ? [{ text, small: false }] : [];
+    if (!piecesMatch(nodes, want)) {
+      const next = all.charCodeAt(before.length + text.length);
+      const scratch = document.createElement('span');
+      if (synth) writeSmallCaps(scratch, text, t, lang, before, next);
+      else appendOverlayText(scratch, text, next);
+      nodes[0].before(...scratch.childNodes);
+      for (const n of nodes) n.remove();
+      changed = true;
+    }
+    before += text;
+  };
+  /** A run span, or an element the browser nested in one: its text in pieces, each nested element by its own style. */
+  const normalizeRun = (
+    el: HTMLElement, v: FontVariantCaps, t: TextTransform, lang: string | undefined, own: StyleState,
+  ): void => {
+    for (const piece of Array.from(el.children)) {
+      if (piece instanceof HTMLElement && isSmallCapsPiece(piece) && piece.children.length > 0) {
+        piece.replaceWith(...piece.childNodes);
+        changed = true;
+      }
+    }
+    let flat: ChildNode[] = [];
+    for (const n of Array.from(el.childNodes)) {
+      if (flatNode(n) !== null) { flat.push(n); continue; }
+      if (flat.length > 0) normalizeText(flat, v, t, lang, own);
+      flat = [];
+      if (n instanceof HTMLElement) {
+        if (BLOCK_TAGS.has(n.tagName) && before.length > 0) before += '\n';
+        visit(n, v, t, lang, own, true);
+      }
+    }
+    if (flat.length > 0) normalizeText(flat, v, t, lang, own);
+  };
   const visit = (
     el: HTMLElement, variant: FontVariantCaps, transform: TextTransform, inherited: string | undefined,
-    state: StyleState,
+    state: StyleState, inRun = false,
   ): void => {
     const v = cssFontVariant(el) ?? variant;
     const tt = el.style.textTransform;
     const t = TRANSFORMS.has(tt) ? (tt as TextTransform) : transform;
     const lang = el.hasAttribute('lang') ? el.lang || undefined : inherited;
     const own = el === parent ? state : styleStateFromElement(el, state);
-    if (el.hasAttribute('data-run')) {
-      const text = sourceText(el, before);
-      const face = resolveRunFace(toRun(text, own), base);
-      const next = all.charCodeAt(before.length + text.length);
-      if (v === 'small-caps' && !hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
-        if (!piecesMatch(el, t, lang, before)) { writeSmallCaps(el, text, t, lang, before, next); changed = true; }
-      } else if (el.querySelector('[data-small-caps]')) {
-        el.replaceChildren();
-        appendOverlayText(el, text, next);
-        changed = true;
-      }
-      before += text;
+    if (inRun || el.hasAttribute('data-run')) {
+      normalizeRun(el, v, t, lang, own);
       return;
     }
     // Text outside any run span is still text the next run's word may continue.
