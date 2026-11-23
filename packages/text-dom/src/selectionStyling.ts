@@ -87,7 +87,7 @@ export function useSelectionStyling(host: SelectionStylingHost) {
     }
     const unsetFlag = id !== null && canWriteStyle
       ? (Object.keys(patch) as FlagKey[]).find((key) =>
-          key !== 'bold'
+          key !== 'bold' && key !== 'italic'
           && patch[key] === false
           && styleHasFlag(styleOf(id) ?? {}, key))
       : undefined;
