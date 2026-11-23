@@ -23,6 +23,12 @@ describe('DIAGRAM_MERMAID', () => {
     expect(() => read(';')).toThrow(/line 1/);
   });
 
+  it('refuses a flowchart header in a case its reader does not read', () => {
+    expect(DIAGRAM_MERMAID.detect('Flowchart TD\nA --> B')).toBe(false);
+    expect(DIAGRAM_MERMAID.detect('GRAPH LR\nA --> B')).toBe(false);
+    expect(DIAGRAM_MERMAID.detect('graph lr\nA --> B')).toBe(true);
+  });
+
   it('refuses a DOT graph that starts the same way', () => {
     expect(DIAGRAM_MERMAID.detect('graph { a -- b }')).toBe(false);
     expect(DIAGRAM_MERMAID.detect('graph G {\n a\n}')).toBe(false);
