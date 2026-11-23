@@ -248,3 +248,15 @@ describe('TilePyramid fade over finer stand-ins', () => {
     expect(frame.draws.some((d) => d.tile.key.z === 2)).toBe(true);
   });
 });
+
+describe('TilePyramid levels a scheme cannot tile', () => {
+  it('draws live at a level that is not finite', () => {
+    const inf = { ...scheme, levelFor: () => Infinity };
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme: inf, bytesOf: () => 1, release: () => {}, floor: () => [],
+    });
+    const frame = pyramid.run(view(10, 10, 1), 0, () => 1, budget);
+    expect(frame.live).toBe(true);
+    expect(frame.draws).toHaveLength(0);
+  });
+});

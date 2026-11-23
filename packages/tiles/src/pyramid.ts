@@ -47,7 +47,7 @@ export interface TilePyramidOptions<K, V, P> extends TileCacheOptions<P> {
   /** The tiles always held, never evicted, so something can always stand in: the content at a level
    *  where it fits a few tiles a side. */
   floor(): readonly K[];
-  /** Past this level the content draws live. */
+  /** Past this level the content draws live, as it does at a level that is not finite. */
   maxLevel?: number;
   /** Fade a tile in over its stand-in for this long. Default 160. */
   fadeMs?: number;
@@ -88,7 +88,7 @@ export class TilePyramid<K, V, P> {
     const frame = ++this.frameNo;
     let level = scheme.levelFor(view, this.level);
     const maxLevel = this.opts.maxLevel ?? Infinity;
-    if (level > maxLevel) {
+    if (!Number.isFinite(level) || level > maxLevel) {
       this.level = level;
       return { level, draws: [], live: true, baked: 0, pending: 0, fading: false, stale: [] };
     }
