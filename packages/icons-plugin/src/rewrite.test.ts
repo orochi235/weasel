@@ -135,6 +135,10 @@ describe('rewriteIconCalls on imports it cannot follow', () => {
   it('says nothing about a type-only re-export', () => {
     expect(warned(`export type { CoreIconName } from './icons.gen';\n`)).toBe('');
   });
+
+  it('says nothing about a type-only re-export of the imported icon', () => {
+    expect(warned(`import { icon } from './icons.gen';\nexport { type icon };\nicon('x');\n`)).toBe('');
+  });
 });
 
 describe('rewriteIconCalls in comments and strings', () => {
