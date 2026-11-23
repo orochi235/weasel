@@ -70,4 +70,22 @@ describe('registerPaintDrawKindLoader', () => {
     await warming;
     expect(getPaintDrawKind('gone')).toBeUndefined();
   });
+
+  it('loads the loader a displacing one uncovers, though its own load ran while it was displaced', async () => {
+    const kind = { id: 'under' } as PaintDrawKind;
+    let finish!: (kind: PaintDrawKind) => void;
+    const older = vi.fn()
+      .mockImplementationOnce(() => new Promise<PaintDrawKind>((r) => { finish = r; }))
+      .mockImplementation(() => Promise.resolve(kind));
+    registerPaintDrawKindLoader('under', older);
+    const warming = warmPaintKinds(['under']);
+    const off = registerPaintDrawKindLoader('under', () => Promise.resolve({ id: 'under' } as PaintDrawKind));
+    finish(kind);
+    await warming;
+    off();
+    expect(getPaintDrawKind('under')).toBeUndefined();
+    await warmPaintKinds(['under']);
+    expect(older).toHaveBeenCalledTimes(2);
+    expect(getPaintDrawKind('under')).toBe(kind);
+  });
 });

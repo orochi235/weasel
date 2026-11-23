@@ -297,7 +297,9 @@ function startLoad(id: string): Promise<void> {
   const done = loader.load().then((entry): Promise<void> | void => {
     if (entry.id !== id) failed(new Error(`weasel: the loader for paint kind "${id}" resolved to "${entry.id}".`));
     if (LOADERS.get(id) !== loader) {
-      // Displaced or disposed while it ran: the live loader, if any, answers instead.
+      // Displaced or disposed while it ran: the live loader, if any, answers instead, and
+      // this one loads again should it be uncovered.
+      loader.started = undefined;
       const live = LOADERS.get(id);
       return !live || live.has(id) ? undefined : startLoad(id);
     }
