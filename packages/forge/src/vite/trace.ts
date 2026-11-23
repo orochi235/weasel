@@ -38,28 +38,29 @@ export function createTracer(read: (file: string) => string): (resolve: ResolveI
         if (!id) trace.unresolved = true;
         return id && !id.startsWith('\0') ? id : null;
       },
-      declaring: (at, name) => declaring(at, name, 0),
+      declaring: (at, name) => declaring(at, name, 0, new Set()),
     };
-    const declaring = async (at: string, name: string, depth: number): Promise<string | null> => {
+    const declaring = async (at: string, name: string, depth: number, seen: Set<string>): Promise<string | null> => {
       trace.reads.add(at);
       const mod = info(at);
-      if (!mod || depth > 32) return null;
+      if (!mod || depth > 32 || seen.has(`${at}#${name}`)) return null;
+      seen.add(`${at}#${name}`);
       const exp = mod.exports.get(name);
       if (exp?.kind === 'local') {
         const imp = mod.imports.get(exp.local);
         if (!imp) return `${at}#${exp.local}`;
         if (imp.imported === '*') return null;
         const next = await trace.target(imp.spec, at);
-        return next ? declaring(next, imp.imported, depth + 1) : null;
+        return next ? declaring(next, imp.imported, depth + 1, seen) : null;
       }
       if (exp?.kind === 'from') {
         const next = await trace.target(exp.spec, at);
-        return next ? declaring(next, exp.imported, depth + 1) : null;
+        return next ? declaring(next, exp.imported, depth + 1, seen) : null;
       }
       if (name === 'default') return null;
       for (const spec of mod.stars) {
         const next = await trace.target(spec, at);
-        const found = next ? await declaring(next, name, depth + 1) : null;
+        const found = next ? await declaring(next, name, depth + 1, seen) : null;
         if (found) return found;
       }
       return null;
