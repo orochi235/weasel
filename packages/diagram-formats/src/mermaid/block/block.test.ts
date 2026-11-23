@@ -81,6 +81,12 @@ describe('reading a Mermaid block diagram', () => {
     expect(() => parseBlockDiagram('block-beta\n  end')).toThrow('Mermaid, line 2: "end" closes no block');
   });
 
+  it('refuses a group id given twice, or given to a block', () => {
+    expect(() => readBlockDiagram('block-beta\n  block:g\n    a\n  end\n  block:g\n    b\n  end')).toThrow('Mermaid, line 5: "g" already names a group');
+    expect(() => readBlockDiagram('block-beta\n  g\n  block:g\n    a\n  end')).toThrow('Mermaid, line 2: "g" already names a group');
+    expect(() => readBlockDiagram('block-beta\n  block:g\n    a\n  end\n  g')).toThrow('Mermaid, line 5: "g" already names a group');
+  });
+
   it('gives an anonymous group an id no block holds', () => {
     const read = readBlockDiagram('block-beta\n  block-1\n  block\n    a\n  end');
     expect(onlyPage(read.document).data.containers!.map((c) => c.id)).toEqual(['block-2']);

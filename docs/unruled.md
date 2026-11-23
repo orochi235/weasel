@@ -3885,3 +3885,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a lightbox opened inside another, sharing its `<LightboxLayers>`, leaves a shared
   `below` layer where the outer one put it and raises a shared `above` layer over itself, then back over the outer
   one when it closes. Giving the inner lightbox no shared layers at all was the alternative.
+## Audit round seventy-four (2026-11-22): Mermaid diagrams, part one
+
+- 2026-11-22 (the fixer's call): a Mermaid block diagram throws, naming the line, on a group id given twice or also
+  given to a block, as the architecture reader does for a name given twice. There is no override. Merging the second
+  into the first was the alternative.
