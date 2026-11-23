@@ -18,24 +18,29 @@ export function nearestPortalHost(from: Element | null | undefined): HTMLElement
 }
 
 const set = (value: string | undefined) => value !== undefined && value !== '' && value !== 'none';
-const FIXED_CONTAINING_WILL_CHANGE = /\b(transform|translate|scale|rotate|perspective|filter|backdrop-filter|contain)\b/;
+const FIXED_CONTAINING_WILL_CHANGE = /\b(transform|translate|scale|rotate|perspective|transform-style|offset-path|contain)\b/;
+const FILTER_WILL_CHANGE = /(^|[\s,])(filter|backdrop-filter)\b/;
 
 /** Whether `el` is the containing block of its fixed-position descendants rather than the viewport. */
 function containsFixed(el: Element): boolean {
   const cs = getComputedStyle(el);
+  // Filter Effects exempts the root: `html { filter: invert(1) }` leaves fixed boxes to the viewport.
+  const root = el === el.ownerDocument.documentElement;
+  const willChange = cs.willChange ?? '';
   return (
     set(cs.transform) ||
     set(cs.translate) ||
     set(cs.scale) ||
     set(cs.rotate) ||
-    set(cs.filter) ||
-    set(cs.backdropFilter) ||
+    (!root && (set(cs.filter) || set(cs.backdropFilter) || FILTER_WILL_CHANGE.test(willChange))) ||
     set(cs.perspective) ||
+    cs.transformStyle === 'preserve-3d' ||
+    set(cs.offsetPath) ||
     /paint|layout|strict|content/.test(cs.contain ?? '') ||
     // `container-type` other than `normal` and `content-visibility: auto` both apply layout containment.
     (cs.containerType !== undefined && cs.containerType !== '' && cs.containerType !== 'normal') ||
     cs.contentVisibility === 'auto' ||
-    FIXED_CONTAINING_WILL_CHANGE.test(cs.willChange ?? '')
+    FIXED_CONTAINING_WILL_CHANGE.test(willChange)
   );
 }
 
