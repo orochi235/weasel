@@ -76,8 +76,8 @@ export interface LoupeModelOptions {
   /** Called when a pick lands — an eyedropper on the magnified surface. Where
    *  the color goes is the consumer's business. */
   onPick?: (hex: string) => void;
-  /** Called when the model tears itself down because the surface reported the
-   *  lens gone, so the painter can drop what it was holding. */
+  /** Called once when the model tears itself down, by `dispose()` or because the
+   *  surface reported the lens gone, so the painter can drop what it was holding. */
   onDispose?: () => void;
 }
 
