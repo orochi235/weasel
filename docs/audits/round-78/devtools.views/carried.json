@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r77-4",
+   "claim": "A grouped category's parent branch badges how many categories it holds, not how many entries, so a filter's matches under a group go uncounted there",
+   "where": "packages/devtools/src/views/RegistryBrowser.tsx:96 (counted)",
+   "from": "B",
+   "round": 77,
+   "rounds": [
+    77
+   ]
+  }
+ ]
+}

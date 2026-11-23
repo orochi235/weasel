@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "A condition on a field two levels into an object ignores the default of the field holding it"
+ ],
+ "b": [
+  "prefObjectBase calls `fromScalar` unguarded, where repair treats a throw from it as an invalid value",
+  "An alias's drawn leaf keeps the target's `pair`, whose `with` names the target's partners, not leaves beside the alias",
+  "The once-per-path warning set in prefConditionHolds grows without bound and is never cleared"
+ ]
+}

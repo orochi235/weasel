@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   0
+  ],
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "Connecting the same two ports twice adds a second edge with the same id",
+  "The preview demo leaks a full set of ImageBitmaps per frame under StrictMode",
+  "A failed export keeps the previous image under a caption describing the new settings"
+ ],
+ "b": [
+  "EffectChartPreviewDemo mints preview bitmaps inside useMemo, so a render React discards leaks them",
+  "DiagramOverlaysDemo never clears its hover, so the \"+\" overlay stays stuck on the last edge hovered",
+  "DiagramNodesDemo appends every connect, so connecting the same two ports twice gives two edges with one id",
+  "GesturesDemo starts the drag controllers on any mouse button but feeds them moves only for the primary button",
+  "DitherDemo's export pane keeps the previous export's pixels when an export fails"
+ ]
+}

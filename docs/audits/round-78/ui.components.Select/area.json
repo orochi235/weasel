@@ -1,0 +1,77 @@
+{
+ "id": "ui.components.Select",
+ "commit": "9a2362dfc40bfba329a811ef1e04528605c185ff",
+ "date": "2026-11-23",
+ "files": [
+  "packages/ui/src/components/Select/Select.fontOptions.stories.module.css",
+  "packages/ui/src/components/Select/Select.fontOptions.stories.tsx",
+  "packages/ui/src/components/Select/Select.module.css",
+  "packages/ui/src/components/Select/Select.stories.module.css",
+  "packages/ui/src/components/Select/Select.stories.tsx",
+  "packages/ui/src/components/Select/Select.tsx",
+  "packages/ui/src/components/Select/alignOverTrigger.tsx",
+  "packages/ui/src/components/Select/index.ts",
+  "packages/ui/src/components/Select/listbox.module.css",
+  "packages/ui/src/components/Select/optionLabels.tsx",
+  "packages/ui/src/components/Select/selectItem.tsx"
+ ],
+ "a": 3,
+ "b": 4,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 74,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 74,
+  "chapman": 11,
+  "unfound": 4
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1060,
+   "total": 1060
+  },
+  "gui": true,
+  "repairs": 1,
+  "capstone": true
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 4.3,
+   "match": 0.1,
+   "fix": 26.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1068108,
+  "costUsd": 3.26
+ },
+ "fixCommits": [
+  "396562de9af2cd9c698561c88bb07435d76f1eb5",
+  "bd11e7490f1eedf77398507aaf1f6845951f6f10",
+  "561644b5e5932049d4b0afbe91e0ddc06df9f572",
+  "57459c0b9606ef0eac446ef0c554d0807355b10c",
+  "1ff69c8eab283c692952e45237182cd62881706f",
+  "c83ba930e7c317cd1cf4b41125e3e726c722aef9",
+  "a02ae1204bc4124a0a37e44c86e461cb00c5439c"
+ ]
+}

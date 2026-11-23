@@ -1,0 +1,83 @@
+{
+ "id": "font.outline",
+ "commit": "9a2362dfc40bfba329a811ef1e04528605c185ff",
+ "date": "2026-11-23",
+ "files": [
+  "packages/font/src/outline/OutlineFace.ts",
+  "packages/font/src/outline/cffCheck.ts",
+  "packages/font/src/outline/closeContours.ts",
+  "packages/font/src/outline/cmapCheck.ts",
+  "packages/font/src/outline/dataFork.ts",
+  "packages/font/src/outline/fontEmbedding.ts",
+  "packages/font/src/outline/fontFiles.fixture.ts",
+  "packages/font/src/outline/gposKerning.ts",
+  "packages/font/src/outline/localFonts.ts",
+  "packages/font/src/outline/opentypeParser.ts",
+  "packages/font/src/outline/outlineRegistry.ts",
+  "packages/font/src/outline/sfnt.ts",
+  "packages/font/src/outline/tag.ts",
+  "packages/font/src/outline/woff.ts",
+  "packages/font/src/outline/writtenFont.fixture.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 0,
+ "distinct": 8,
+ "chapman": 24,
+ "unfound": 16,
+ "read": {
+  "A": 15,
+  "B": 15
+ },
+ "newCode": {
+  "since": 76,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 76,
+  "chapman": 13,
+  "unfound": 4
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3615,
+   "total": 3615
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.9,
+   "B": 5.9,
+   "match": 0.1,
+   "fix": 26.1
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1890391,
+  "costUsd": 5.51
+ },
+ "fixCommits": [
+  "192c8d420d94d898ecb98ba290efb5bd47841fc3",
+  "60a2a3b518ce7784646cd786ff8a8014e231ccbf",
+  "174d2dce98d8ba701d1d9595301aa5cb4e97dc95",
+  "e2a9fc97012e9eb550741f0a9dbdad9cbdca4b0d",
+  "eac918b387dbddd50d63304ed089bd7a0a81c1e6",
+  "4c16afa508493c71cc0db815057b7380acf5efbe",
+  "df8f65d44ad84ae3439fe80c493ed3973a4c878c",
+  "b8656b258cfb9110d7833af397bd699bb194028d",
+  "be2bdfe412fdf255e538024de96e4efe682116d9",
+  "bd082e5e1e1f650c4454dc2045c790773daafd2f"
+ ]
+}

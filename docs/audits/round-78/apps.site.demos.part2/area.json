@@ -1,0 +1,111 @@
+{
+ "id": "apps.site.demos.part2",
+ "commit": "9a2362dfc40bfba329a811ef1e04528605c185ff",
+ "date": "2026-11-23",
+ "files": [
+  "apps/site/demos/DiagramLiveDemo.tsx",
+  "apps/site/demos/DiagramNodesDemo.tsx",
+  "apps/site/demos/DiagramOverlaysDemo.tsx",
+  "apps/site/demos/DiagramReorderDemo.tsx",
+  "apps/site/demos/DitherDemo.module.css",
+  "apps/site/demos/DitherDemo.tsx",
+  "apps/site/demos/DownloadLink.module.css",
+  "apps/site/demos/DownloadLink.tsx",
+  "apps/site/demos/DrapeLabDemo.tsx",
+  "apps/site/demos/EasingsDemo.module.css",
+  "apps/site/demos/EasingsDemo.tsx",
+  "apps/site/demos/EditingDemo.module.css",
+  "apps/site/demos/EditingDemo.tsx",
+  "apps/site/demos/EditingSessionsDemo.module.css",
+  "apps/site/demos/EditingSessionsDemo.tsx",
+  "apps/site/demos/EffectChartDemo.tsx",
+  "apps/site/demos/EffectsDemo.tsx",
+  "apps/site/demos/ExportDemo.module.css",
+  "apps/site/demos/ExportDemo.tsx",
+  "apps/site/demos/FairingLabDemo.module.css",
+  "apps/site/demos/FairingLabDemo.tsx",
+  "apps/site/demos/FilletLabDemo.module.css",
+  "apps/site/demos/FilletLabDemo.tsx",
+  "apps/site/demos/FilletPanel.tsx",
+  "apps/site/demos/FontFallbackDemo.module.css",
+  "apps/site/demos/FontFallbackDemo.tsx",
+  "apps/site/demos/ForceGraphDemo.module.css",
+  "apps/site/demos/ForceGraphDemo.tsx",
+  "apps/site/demos/GeomDemo.module.css",
+  "apps/site/demos/GeomDemo.tsx",
+  "apps/site/demos/GestureGrammarDemo.module.css",
+  "apps/site/demos/GestureGrammarDemo.tsx",
+  "apps/site/demos/GesturesDemo.tsx",
+  "apps/site/demos/HandleLockLabDemo.module.css",
+  "apps/site/demos/HandleLockLabDemo.tsx",
+  "apps/site/demos/HandleSnapLabDemo.tsx",
+  "apps/site/demos/HistoryDemo.module.css",
+  "apps/site/demos/HistoryDemo.tsx",
+  "apps/site/demos/HudContextMenuDemo.tsx",
+  "apps/site/demos/HudDemo.tsx",
+  "apps/site/demos/HudGalleryDemo.tsx",
+  "apps/site/demos/IconsDemo.module.css",
+  "apps/site/demos/IconsDemo.tsx",
+  "apps/site/demos/ImageDemo.tsx",
+  "apps/site/demos/IngestionDemo.tsx",
+  "apps/site/demos/InsertDemo.tsx",
+  "apps/site/demos/Kernel3dDemo.module.css",
+  "apps/site/demos/Kernel3dDemo.tsx"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 3,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 48,
+  "B": 48
+ },
+ "newCode": {
+  "since": 36,
+  "changedFiles": 28,
+  "findings": 2
+ },
+ "previous": {
+  "round": 36,
+  "chapman": 9.285714285714286,
+  "unfound": 2.857142857142857
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 24,
+   "total": 24
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.7,
+   "B": 2.2,
+   "match": 0.1,
+   "fix": 13.8
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1350150,
+  "costUsd": 3.91
+ },
+ "fixCommits": [
+  "cd683e6adeb4fe7285e01208b9a5279430fe6f7f",
+  "f74d618b837f7a6a7fd765954c60edf02b8a9048",
+  "3bae18a3c8985be3a17477747fe40c778b410764",
+  "f5a96a61d4d1712d4d19efc9558b672c44c6719b",
+  "2b4ebd5eeefe814c082ba2f55b3cf5b7f3fcdad8"
+ ]
+}

@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A dragged key can land past `duration`, where the window can never show it",
+  "The held key selection is never checked against the tracks, though the segment selection is",
+  "Fold state is keyed by index path, so an external track insert or removal opens a different nested row",
+  "Inserting into an empty sampled track seeds a numeric `0` whatever the track's value type",
+  "A nested timeline's bar ignores where its parent stops playing it"
+ ],
+ "b": [
+  "Graph-mode lanes ignore the timeline's hold for tab order and focus attributes",
+  "An uncontrolled key selection survives track edits that move its index to another key; the segment selection beside it is dropped",
+  "Delete or Backspace with focus on the transport, the Graph switch or the inspector deletes the selected key",
+  "Key and segment marks on a nested row are named by track-local time, not the ruler time they sit at"
+ ]
+}

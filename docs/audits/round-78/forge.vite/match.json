@@ -1,0 +1,34 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   4,
+   4
+  ],
+  [
+   5,
+   0
+  ]
+ ],
+ "a": [
+  "`watchRecovery({ quietMs: 0 })` (or a negative value) starts a ~1 ms interval that stats every served file forever",
+  "A story file that fails to parse on an edit keeps its old entries, where one that fails on first read has none",
+  "`inferred` TypeDoc types print without `infer`, so a conditional type's signature reads wrong",
+  "Mapped types print without their `readonly`/`?` modifiers or `as` clause",
+  "forge always runs the watch probe, so adding `watchProbe()` beside `forge()` probes twice and logs the warning twice",
+  "`bindingsOf` ignores top-level class declarations, so a native story file exporting a local class indexes it as a story",
+  "`forgeTest` never transforms a story file outside the vite root, which `forge` indexes",
+  "The issues endpoint turns a non-array `gh` answer into an unhandled 500 instead of its 502",
+  "TypeDoc lookup matches a component's file by path suffix, so a same-named export in another package's same-suffixed file can be taken"
+ ],
+ "b": [
+  "A native story file's `export { LocalClass }` (or an enum or a destructured const) is indexed as a story",
+  "A story file edited into a parse error keeps its old entries, though a file that fails at startup has none",
+  "Deleting a file leaves other importers' cached resolutions pointing at it, so the component graph loses an edge another file now answers",
+  "A capture requested over a link-local IPv6 address builds a page URL that WHATWG URL rejects",
+  "With `watchProbe()` beside `forge()`, the server probes twice and logs the silent-watcher warning twice"
+ ]
+}

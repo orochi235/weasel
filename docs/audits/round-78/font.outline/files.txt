@@ -1,0 +1,15 @@
+packages/font/src/outline/OutlineFace.ts
+packages/font/src/outline/cffCheck.ts
+packages/font/src/outline/closeContours.ts
+packages/font/src/outline/cmapCheck.ts
+packages/font/src/outline/dataFork.ts
+packages/font/src/outline/fontEmbedding.ts
+packages/font/src/outline/fontFiles.fixture.ts
+packages/font/src/outline/gposKerning.ts
+packages/font/src/outline/localFonts.ts
+packages/font/src/outline/opentypeParser.ts
+packages/font/src/outline/outlineRegistry.ts
+packages/font/src/outline/sfnt.ts
+packages/font/src/outline/tag.ts
+packages/font/src/outline/woff.ts
+packages/font/src/outline/writtenFont.fixture.ts

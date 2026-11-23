@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "effectiveRangeStyle reports italic (and every override key) as MIXED across runs that all render the same",
+  "measureTextBounds lays out without `justify` and `alignWidth`, unlike every text pose reader"
+ ],
+ "b": [
+  "measureTextBounds lays out without `justify` (or `alignWidth`), so a justified style measures narrower than it draws",
+  "A run grammar marker with `repeat` 0 (or a non-integer or negative one) hangs `markdownToRuns`"
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A Windows AltGr chord that types a non-Latin capital is taken as a styling shortcut, so Shift+AltGr+X cannot type Ź on a Polish layout",
+  "normalizeSmallCaps flattens any element nested in a small-caps run span, dropping the styling it carried",
+  "Typing joins the previous undo step after the caret has left and come back, though the history says a step joins only while the caret has not left",
+  "While an open edit waits with no container, `nodeStyle` and `effectiveStyle` report the node's own style, not the rewritten one the edit still holds"
+ ],
+ "b": [
+  "Ending an edit and restarting the same node in one dispatch leaves the overlay open with no draft, so nothing typed afterwards is ever committed",
+  "normalizeSmallCaps flattens any styling element nested inside a small-caps run span"
+ ]
+}

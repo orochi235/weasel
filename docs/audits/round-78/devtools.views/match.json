@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "Flipping one overlay in the State tab pins every debug flag over the canvas's own settings",
+  "`defaultOpen` leaves a grouped category's parent branch closed when the category is not in the mount-time list"
+ ],
+ "b": [
+  "TraceTable and HistoryTable keep their expanded row ids across a follower reset, so a new follower's row with the same seq opens on its own"
+ ]
+}
