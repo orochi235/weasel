@@ -10,7 +10,7 @@ const FORGE = `export const meta = (spec) => spec;\nexport const story = (spec) 
 const resolve = async (spec: string) => (spec === '@weasel-js/forge' ? `${ROOT}/forge/index.ts` : `${ROOT}/src/${spec.slice(2)}.ts`);
 
 const exportsOf = async (files: Record<string, string>) => {
-  const all = { ...files, [`${ROOT}/forge/index.ts`]: FORGE };
+  const all: Record<string, string> = { ...files, [`${ROOT}/forge/index.ts`]: FORGE };
   const { entries } = await indexStoryResolved(all[STORY]!, STORY, source, resolve, createWrapperResolver((path) => all[path] ?? ''));
   return entries.map((e) => e.exportName);
 };
