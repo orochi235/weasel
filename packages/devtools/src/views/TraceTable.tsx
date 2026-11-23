@@ -55,11 +55,14 @@ function renderEvent(entry: TraceLogEntry): ReactNode {
 function renderOutcome(entry: TraceLogEntry): ReactNode {
   if (entry.kind === 'mode') return <><code>{entry.from ?? '∅'}</code> → <code>{entry.to ?? '∅'}</code></>;
   if (entry.outcome === 'unhandled') return entry.predicted ? 'would not handle' : 'unhandled';
-  return entry.fired ? <code>{entry.fired}</code> : 'handled';
+  if (entry.fired) return <code>{entry.fired}</code>;
+  return entry.predicted ? 'would handle' : 'handled';
 }
 
 export function TraceTable({ entries, live, now, showHandled, showUnhandled, empty }: TraceTableProps): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  // The live row's id outlives its record, so a prediction that goes away takes its open state with it.
+  if (!live && expanded.has(LIVE_ID)) setExpanded((cur) => new Set([...cur].filter((id) => id !== LIVE_ID)));
 
   const rows = entries
     .map(({ seq, record }): TraceRow => ({ id: String(seq), entry: record }))

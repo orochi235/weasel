@@ -57,6 +57,10 @@ const categoryKey = (id: string) => `cat:${id}`;
 const groupKey = (id: string) => `group:${id}`;
 const leafKey = (category: string, id: string) => `leaf:${JSON.stringify([category, id])}`;
 
+/** The branches to open so a category shows: its own and its group's. */
+const openKeys = (c: Pick<RegistryCategory, 'id'> & { group?: RegistryCategory['group'] }): string[] =>
+  [categoryKey(c.id), ...(c.group ? [groupKey(c.group.id)] : [])];
+
 const countBadge = (count: number, className?: string) => (
   <Badge className={className} shape="pill" size="sm" variant="solid">{count}</Badge>
 );
@@ -92,9 +96,11 @@ function treeOf(categories: readonly RegistryCategory[]) {
   return { nodes: out, picks, texts };
 }
 
-/** Badges each branch with the children it shows, so a filtered category counts what the filter left. */
+const leaves = (n: TreeNode): number => (n.children ? n.children.reduce((sum, c) => sum + leaves(c), 0) : 1);
+
+/** Badges each branch with the entries it shows, so a filtered category or group counts what the filter left. */
 const counted = (nodes: readonly TreeNode[]): TreeNode[] =>
-  nodes.map((n) => (n.children ? { ...n, trailing: countBadge(n.children.length), children: counted(n.children) } : n));
+  nodes.map((n) => (n.children ? { ...n, trailing: countBadge(leaves(n)), children: counted(n.children) } : n));
 
 /**
  * A filter field over a tree of registry categories, beside a detail pane.
@@ -112,7 +118,7 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
     onFilterChange?.(next);
   };
   const [openIds, setOpenIds] = useState<ReadonlySet<string>>(
-    () => new Set([...(props.defaultOpen ?? [])].map(categoryKey)),
+    () => new Set([...(props.defaultOpen ?? [])].flatMap((id) => openKeys(categories.find((c) => c.id === id) ?? { id }))),
   );
 
   // Open the selection's category when the selection moves into it, and only then, so it can still be closed.
@@ -121,7 +127,7 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
   if ((selectedCategory?.id ?? null) !== openedFor) {
     setOpenedFor(selectedCategory?.id ?? null);
     if (selectedCategory) {
-      const ids = [categoryKey(selectedCategory.id), ...(selectedCategory.group ? [groupKey(selectedCategory.group.id)] : [])];
+      const ids = openKeys(selectedCategory);
       setOpenIds((cur) => (ids.every((id) => cur.has(id)) ? cur : new Set([...cur, ...ids])));
     }
   }

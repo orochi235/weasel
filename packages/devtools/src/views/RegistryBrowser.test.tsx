@@ -43,6 +43,24 @@ describe('RegistryBrowser', () => {
     expect(item(/^Ops/)).toHaveAttribute('aria-expanded', 'false');
   });
 
+  const GROUPED: readonly RegistryCategory[] = [
+    { id: 'tools', label: 'Tools', group: { id: 'g', label: 'Live' }, entries: [{ id: 'a', label: 'alpha' }, { id: 'b', label: 'beta' }] },
+    { id: 'deps', label: 'Deps', group: { id: 'g', label: 'Live' }, entries: [{ id: 'c', label: 'gamma' }, { id: 'd', label: 'delta' }, { id: 'e', label: 'epsilon' }] },
+  ];
+
+  it('opens a grouped category named in defaultOpen along with its group', () => {
+    renderWithIcons(browser({ categories: GROUPED, defaultOpen: ['tools'] }));
+    expect(item(/^Live/)).toHaveAttribute('aria-expanded', 'true');
+    expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
+  });
+
+  it('badges a group with the entries under it, filtered or not', () => {
+    renderWithIcons(browser({ categories: GROUPED }));
+    expect(item('Live 5')).toBeTruthy();
+    filter('alpha');
+    expect(item('Live 1')).toBeTruthy();
+  });
+
   it('expands a category on click and shows its entries', () => {
     renderWithIcons(browser());
     fireEvent.click(screen.getByText('Ops'));
