@@ -72,15 +72,11 @@ export interface TimelineProps extends HoldProps {
  *  lane per track, and a transport. Every edit comes back through `onChange`
  *  as a new track array; Delete or Backspace removes the selected key. */
 export function Timeline(props: TimelineProps): ReactElement {
-  const {
-    tracks, duration, playhead,
-    onInput, onChange, onSeek,
-    renderKeyEditor, label, className,
-  } = props;
+  const { tracks, duration, playhead, onSeek, renderKeyEditor, label, className } = props;
 
   const hold = useControlHold(props, { readonlyRole: false });
   const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
-  const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
+  const { selection, segmentSelection, selectKey, selectSegment, dropSegment, send } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
   const { expanded, toggle } = useFolds({ selection, segmentSelection, selectKey, dropSegment });
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
   const pressHold = useKeyEditsHeldByPress();
@@ -90,9 +86,17 @@ export function Timeline(props: TimelineProps): ReactElement {
   const snapTimes = useMemo(() => snapTimesOf(rows, duration), [rows, duration]);
 
 
+  const onInput = props.onInput && ((next: Track[]): void => {
+    send(next);
+    props.onInput?.(next);
+  });
+  const onChange = (next: Track[]): void => {
+    send(next);
+    props.onChange(next);
+  };
   const commit = (r: KeyEdit): void => {
     onChange(r.tracks);
-    selectKey(r.selection);
+    selectKey(r.selection, r.tracks);
   };
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {

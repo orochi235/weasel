@@ -727,3 +727,31 @@ describe('Timeline insert on an empty track', () => {
     expect(((onChange.mock.lastCall![0] as Track[])[0] as SampledTrack<string>).keys).toEqual([{ t: 200, value: '#000' }]);
   });
 });
+
+describe('Timeline selection under tracks edited from outside', () => {
+  it('deletes nothing for Delete once a key the consumer inserted moved the selected index onto another key', () => {
+    const onChange = vi.fn();
+    const onSelectionChange = vi.fn();
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} onSelectionChange={onSelectionChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 250 });
+    const inserted = tracks();
+    (inserted[0] as SampledTrack<number>).keys.splice(1, 0, { t: 100, value: 2 });
+    rerender(<Timeline {...base} tracks={inserted} onChange={onChange} onSelectionChange={onSelectionChange} />);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
+    fireEvent.keyDown(screen.getByTestId('timeline-root'), { key: 'Delete' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('keeps the selection across its own move echoed back', () => {
+    function Echo() {
+      const [value, setValue] = useState(tracks);
+      return <Timeline {...base} tracks={value} onChange={setValue} onInput={setValue} />;
+    }
+    renderWithIcons(<Echo />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 10, altKey: true });
+    fireEvent.pointerUp(document, { clientX: 300, clientY: 10, altKey: true });
+    expect(screen.getAllByTestId('timeline-key')[1]).toHaveAttribute('aria-current', 'true');
+  });
+});

@@ -3987,3 +3987,8 @@ Calls the lanes made without a ruling:
   or 0 when the track has no `interpolate` or `interpolator`, and a track with either and no target takes no key and
   warns, naming `seedKey`, the `Timeline` prop that seeds one. Seeding 0 whatever the track's values, as before, was
   the alternative.
+- 2026-11-23 (the fixer's call): a `Timeline` drops its selected key or segment once the track it is on changes by an
+  edit the timeline did not send (a key inserted, removed, or moved there, or another track now at its path), reporting
+  `null` to `onSelectionChange`; a controlled `selection` so stranded selects nothing until another is given. A track
+  is told apart by its kind, label, and key times. Following the key to its new index, which an edit from outside
+  does not say, was the alternative.
