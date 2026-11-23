@@ -1468,7 +1468,7 @@
   ```
   
   <!-- entry: breaking api -->
-- 162f816: `ResizeAdapter` and `RotateAdapter` are gone; type a resize or rotate adapter as `MoveAdapter`, which carries every member they had.
+- 162f816: `ResizeAdapter` and `RotateAdapter` are gone; type a resize or rotate adapter as `MoveAdapter`, which carries every member they had. `MoveAdapter` also requires `getNodes`, `getParent` and `getChildren`; an adapter with only the old members types as `Pick<MoveAdapter<Node, Pose>, 'getNode' | 'getPose' | 'setPose' | 'applyOps'>`.
   
   Nothing in the kit read either type, and `SceneCanvasAdapter` already satisfied both through `MoveAdapter`.
   
