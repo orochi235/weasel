@@ -91,4 +91,9 @@ describe('loupe model: a pinned aim', () => {
     loupe.setAimMode('follow');
     expect(loupe.pin).toBeNull();
   });
+
+  it.each(['worldAt', 'pointFor'] as const)('refuses a surface that implements %s without its inverse', (only) => {
+    const { surface } = pannedSurface({ [only === 'worldAt' ? 'pointFor' : 'worldAt']: undefined });
+    expect(() => createLoupeModel({ surface })).toThrow(TypeError);
+  });
 });

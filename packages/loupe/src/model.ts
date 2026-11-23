@@ -51,7 +51,8 @@ export interface LoupeSurface {
   /**
    * The content point under surface point `p`, in whatever space the content lives in (a canvas's world). A pinned
    * aim is held as one, so it stays on what it was put on while the surface's camera pans and zooms. Implement it
-   * with {@link pointFor}; with neither, a pin holds its surface point.
+   * with {@link pointFor} or not at all: `createLoupeModel` throws on a surface with only one. With neither, a pin
+   * holds its surface point.
    */
   worldAt?(p: LoupePoint): LoupePoint;
   /** Where content point `w` stands on the surface now: the inverse of {@link worldAt}. */
@@ -76,8 +77,8 @@ export interface LoupeModelOptions {
   /** Called when a pick lands — an eyedropper on the magnified surface. Where
    *  the color goes is the consumer's business. */
   onPick?: (hex: string) => void;
-  /** Called when the model tears itself down because the surface reported the
-   *  lens gone, so the painter can drop what it was holding. */
+  /** Called once when the model tears itself down, by `dispose()` or because the
+   *  surface reported the lens gone, so the painter can drop what it was holding. */
   onDispose?: () => void;
 }
 
@@ -119,6 +120,7 @@ export interface LoupeModel {
 function sampleNow(surface: LoupeSurface, p: LoupePoint): string | null {
   const hex: unknown = surface.sample(p);
   if (typeof (hex as { then?: unknown } | null)?.then === 'function') {
+    (hex as PromiseLike<unknown>).then(undefined, () => {});
     throw new TypeError(
       '[weasel loupe] A loupe surface answers at once, and its sample() answered with a promise. ' +
         'Give an asynchronous sampler to createEyedropperModel, and the loupe a surface that reads now.',
@@ -135,7 +137,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
   let mode: LoupeMode = opts.mode ?? 'vector';
   const clamp = (n: number): number =>
-    normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
+    normalizeZoom(clampTo(normalizeZoom(n), opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
 
   let factor = clamp(opts.factor ?? 8);
   const aim = createLoupeAim(surface, opts.aimMode ?? 'follow');

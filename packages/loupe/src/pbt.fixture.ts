@@ -55,7 +55,7 @@ export const byte = fc.integer({ min: 0, max: 255 });
 /** RGBA bytes, alpha often 0 or 255. */
 export const rgbaBytes = fc.tuple(byte, byte, byte, fc.oneof(byte, fc.constantFrom(0, 255)));
 
-/** `|a - b|` within `rel` of the larger magnitude involved, or `abs`. */
+/** `|a - b|` within `rel` of the largest of 1, `|a|`, `|b|` and `scale`. */
 export function near(a: number, b: number, scale: number, rel = 1e-9): boolean {
   return Math.abs(a - b) <= rel * Math.max(1, Math.abs(a), Math.abs(b), scale);
 }

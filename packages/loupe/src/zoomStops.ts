@@ -8,8 +8,10 @@ export const LOUPE_FACTOR_STOPS: readonly number[] = Array.from(
   (_, i) => LOUPE_FACTOR_MIN * 2 ** i,
 );
 
-/** The index of the stop in `stops` nearest `factor`, measured in doublings, so 6× is as near 4× as 8×. */
+/** The index of the stop in `stops` nearest `factor`, measured in doublings, so 3× is nearer 4× than 2×. Throws a
+ *  `RangeError` on an empty `stops`, which has no index to answer. */
 export function nearestStopIndex(stops: readonly number[], factor: number): number {
+  if (stops.length === 0) throw new RangeError('[weasel loupe] nearestStopIndex needs at least one stop.');
   let best = 0;
   for (let i = 1; i < stops.length; i++) {
     if (Math.abs(Math.log2(stops[i]! / factor)) < Math.abs(Math.log2(stops[best]! / factor))) best = i;

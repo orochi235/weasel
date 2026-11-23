@@ -62,7 +62,7 @@ export interface CanvasSource {
    *  which includes whenever no reader holds it. */
   frame(): CanvasImageSource | null;
   /** RGBA of the backing-store pixel at `p` (device px, not CSS px), or
-   *  `null` off the canvas or while there is no frame. Read it through
+   *  `null` off the canvas, while there is no frame, or from a canvas tainted by another origin's image. Read it through
    *  {@link canvasPixelSource} to sample it at a surface point. */
   pixel(p: LoupePoint): Uint8ClampedArray | null;
   /** Start reading. While any reader holds the source, `capture` copies;
@@ -74,9 +74,9 @@ export interface CanvasSource {
   subscribeFrame(fn: () => void): () => void;
 }
 
-/** A frame read this many times with no capture behind it means the drawing
- *  code is not calling `capture()`. About two seconds of lens frames. */
-const MISSED_FRAMES_BEFORE_WARNING = 120;
+/** Frames read for this long with no capture behind them mean the drawing code is not calling `capture()`. Timed
+ *  rather than counted, since a lens and an eyedropper's hover may both read every frame. */
+const MISSED_MS_BEFORE_WARNING = 2000;
 
 function isWebGL(ctx: SourceContext): ctx is WebGLRenderingContext | WebGL2RenderingContext {
   return 'drawArrays' in ctx;
@@ -98,6 +98,32 @@ type Ctx2D = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
 function context2d(canvas: SourceCanvas, willReadFrequently = false): Ctx2D | null {
   return canvas.getContext('2d', { willReadFrequently }) as Ctx2D | null;
+}
+
+/** Reads one pixel of a frame through a 1×1 canvas made on first use: `null` where there is no 2D context to read
+ *  through, or the frame is tainted by another origin's image. */
+function createProbe(): (frame: SourceCanvas, x: number, y: number) => Uint8ClampedArray | null {
+  let ctx: Ctx2D | null | undefined;
+  let taintWarned = false;
+  return (frame, x, y) => {
+    if (ctx === undefined) ctx = context2d(makeCanvas(1, 1), true);
+    if (!ctx) return null;
+    ctx.globalCompositeOperation = 'copy';
+    ctx.drawImage(frame, x, y, 1, 1, 0, 0, 1, 1);
+    try {
+      return ctx.getImageData(0, 0, 1, 1).data;
+    } catch (e) {
+      if (!(e instanceof DOMException && e.name === 'SecurityError')) throw e;
+      if (!taintWarned) {
+        taintWarned = true;
+        console.warn(
+          '[weasel loupe] A canvas source cannot read its canvas: it holds an image drawn from another origin ' +
+            'without CORS. Its pixels answer null.',
+        );
+      }
+      return null;
+    }
+  };
 }
 
 /**
@@ -122,10 +148,10 @@ export function createCanvasSource(
   let readers = 0;
   let snapshot: SourceCanvas | null = null;
   let current = false;
-  let missed = 0;
+  let missedSince: number | null = null;
   let warned = false;
   let unheldWarned = false;
-  let probe: Ctx2D | null = null;
+  const probe = createProbe();
   const frames = createEmitter();
 
   const source: CanvasSource = {
@@ -140,7 +166,7 @@ export function createCanvasSource(
       if (readers === 0) return;
       const { width, height } = canvas;
       if (width === 0 || height === 0) {
-        missed = 0;
+        missedSince = null;
         // The canvas shows nothing now; the last copy is of a picture that has gone.
         if (current) {
           current = false;
@@ -158,7 +184,7 @@ export function createCanvasSource(
       ctx.globalCompositeOperation = 'copy';
       ctx.drawImage(canvas, 0, 0);
       current = true;
-      missed = 0;
+      missedSince = null;
       frames.emit();
     },
 
@@ -176,7 +202,9 @@ export function createCanvasSource(
         }
         return null;
       }
-      if (!warned && ++missed >= MISSED_FRAMES_BEFORE_WARNING) {
+      const now = performance.now();
+      missedSince ??= now;
+      if (!warned && now - missedSince >= MISSED_MS_BEFORE_WARNING) {
         warned = true;
         console.warn(
           '[weasel loupe] A WebGL canvas without preserveDrawingBuffer is being read, ' +
@@ -194,14 +222,7 @@ export function createCanvasSource(
       const y = Math.floor(p.y);
       // The frame's own size: a capture taken before the canvas was resized is smaller or larger than it.
       if (!(x >= 0 && y >= 0 && x < frame.width && y < frame.height)) return null;
-      if (!probe) {
-        const c = makeCanvas(1, 1);
-        probe = context2d(c, true);
-        if (!probe) return null;
-      }
-      probe.globalCompositeOperation = 'copy';
-      probe.drawImage(frame, x, y, 1, 1, 0, 0, 1, 1);
-      return probe.getImageData(0, 0, 1, 1).data;
+      return probe(frame, x, y);
     },
 
     retain() {
@@ -209,6 +230,7 @@ export function createCanvasSource(
       if (readers === 1 && captured) {
         // Whatever was copied before the last reader left may be long stale.
         current = false;
+        missedSince = null;
         options.requestRedraw?.();
       }
       let held = true;

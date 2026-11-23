@@ -96,7 +96,7 @@ describe('createLoupeModel', () => {
           onColorChange: (hex) => colors.push(hex), onPick: (hex) => picks.push(hex), onDispose: () => { disposals++; },
         });
 
-        const clamp = (n: number) => normalizeZoom(Math.min(range?.maxFactor ?? Infinity, Math.max(range?.minFactor ?? -Infinity, n)));
+        const clamp = (n: number) => normalizeZoom(Math.min(range?.maxFactor ?? Infinity, Math.max(range?.minFactor ?? -Infinity, normalizeZoom(n))));
         const m = {
           aim: { x: 0, y: 0 } as LoupePoint, factor: clamp(initial ?? 8), mode: 'vector' as LoupeMode,
           color: null as string | null, disposed: false, unsampled: false, colors: [] as (string | null)[], picks: [] as string[],

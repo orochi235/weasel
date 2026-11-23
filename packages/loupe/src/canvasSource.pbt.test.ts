@@ -21,21 +21,24 @@ beforeEach(() => { vi.stubGlobal('OffscreenCanvas', FakeOffscreen); });
 afterEach(() => { vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 type Kind = 'canvas' | 'kept' | 'cleared';
-interface Model { captured: boolean; readers: number; current: boolean; snapshot: { width: number; height: number } | null; missed: number; warned: boolean; unheld: boolean; redraws: number; frames: number }
+interface Model { captured: boolean; readers: number; current: boolean; snapshot: { width: number; height: number } | null; missedSince: number | null; warned: boolean; unheld: boolean; redraws: number; frames: number }
 interface Real {
   source: CanvasSource; canvas: { width: number; height: number };
   releases: (() => void)[]; redraws: number; frames: number; warns: number;
 }
 
 const seen = tally();
+/** The time `performance.now` answers: each read lands 20 ms after the last. */
+let clock = 0;
 
 function check(m: Model, r: Real): void {
   expect(r.source.captured).toBe(m.captured);
   expect([r.redraws, r.frames, r.warns]).toEqual([m.redraws, m.frames, (m.warned ? 1 : 0) + (m.unheld ? 1 : 0)]);
 }
 
-/** What `frame()` answers, read as a reader would, the model stepping its missed count alongside. */
+/** What `frame()` answers, read as a reader would, the model stepping its missed-capture clock alongside. */
 function read(m: Model, r: Real): void {
+  clock += 20;
   const got = r.source.frame();
   if (!m.captured) {
     expect(got).toBe(r.canvas.width > 0 && r.canvas.height > 0 ? r.canvas : null);
@@ -49,10 +52,11 @@ function read(m: Model, r: Real): void {
   }
 }
 
-/** A captured source read with no frame: one warning for reading it unheld, another for 120 held reads with no capture. */
+/** A captured source read with no frame: one warning for reading it unheld, another for two seconds of held reads with no capture. */
 function miss(m: Model): void {
   if (m.readers === 0) { if (!m.unheld) { m.unheld = true; seen.count('warned unheld'); } return; }
-  if (!m.warned && ++m.missed >= 120) { m.warned = true; seen.count('warned'); }
+  m.missedSince ??= clock;
+  if (!m.warned && clock - m.missedSince >= 2000) { m.warned = true; seen.count('warned'); }
 }
 
 const cmd = (label: string, run: (m: Model, r: Real) => void, ...args: unknown[]): fc.Command<Model, Real> => ({
@@ -65,7 +69,7 @@ const commands = [
   fc.constant(cmd('retain', (m, r) => {
     r.releases.push(r.source.retain());
     m.readers++;
-    if (m.readers === 1 && m.captured) { m.current = false; m.redraws++; }
+    if (m.readers === 1 && m.captured) { m.current = false; m.missedSince = null; m.redraws++; }
   })),
   fc.tuple(fc.nat(), fc.boolean()).map(([n, twice]) => cmd('release', (m, r) => {
     if (r.releases.length === 0) return;
@@ -80,10 +84,10 @@ const commands = [
     m.captured = true;
     const { width, height } = r.canvas;
     if (m.readers === 0) return;
-    if (width === 0 || height === 0) { if (m.current) m.frames++; m.current = false; m.missed = 0; return; }
+    if (width === 0 || height === 0) { if (m.current) m.frames++; m.current = false; m.missedSince = null; return; }
     m.snapshot = { width, height };
     m.current = true;
-    m.missed = 0;
+    m.missedSince = null;
     m.frames++;
   })),
   fc.record({ width: fc.oneof(fc.constant(0), fc.integer({ min: 1, max: 64 })), height: fc.oneof(fc.constant(0), fc.integer({ min: 1, max: 64 })) })
@@ -107,10 +111,11 @@ function setup(kind: Kind): () => { model: Model; real: Real } {
       canvas, drawArrays: () => undefined, getContextAttributes: () => ({ preserveDrawingBuffer: kind === 'kept' }),
     };
     const real = { canvas, releases: [], redraws: 0, frames: 0, warns: 0 } as unknown as Real;
+    vi.spyOn(performance, 'now').mockImplementation(() => clock);
     vi.spyOn(console, 'warn').mockImplementation(() => { real.warns++; });
     real.source = createCanvasSource(target as never, { requestRedraw: () => { real.redraws++; } });
     real.source.subscribeFrame(() => { real.frames++; });
-    const model: Model = { captured: kind === 'cleared', readers: 0, current: false, snapshot: null, missed: 0, warned: false, unheld: false, redraws: 0, frames: 0 };
+    const model: Model = { captured: kind === 'cleared', readers: 0, current: false, snapshot: null, missedSince: null, warned: false, unheld: false, redraws: 0, frames: 0 };
     return { model, real };
   };
 }
