@@ -3,13 +3,14 @@
 import { prefConditionHolds, prefConditionReadsItem, type PrefCondition, type PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue, prefSectionLeaves, prefValueAt } from './helpers';
-import { prefSchemaHolding } from './holding';
+import { prefLeavesHoldingIn, prefSchemaHolding, UNSEEN, UNSEEN_LEAF } from './holding';
+import { prefObjectBase } from './object';
 import { prefValueAbsent } from './leafValue';
-import type { PrefLeaf } from './schema';
+import type { PrefLeaf, PrefObject } from './schema';
 import { setOwn } from '@weasel-js/registry';
 import { isPrefScope, prefScopeValue } from './scope';
 import { prefOverridesLookup, prefScopedDefault, prefScopesOf } from './scopeSpec';
-import { prefShownReader } from './shown';
+import { prefShownReader, prefVariantField } from './shown';
 
 /** Every field a schema node holds a {@link PrefCondition} in. `activeIf` is an action leaf's alone. */
 export const PREF_CONDITION_FIELDS = ['showIf', 'enableIf', 'activeIf'] as const;
@@ -30,11 +31,11 @@ export interface PrefEntry {
   value: unknown;
 }
 
-/** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of the item's default. */
+/** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of the item's
+ *  default, a field read as {@link fieldValue} reads it. */
 function entryValue({ item, value }: PrefEntry, path: string): unknown {
   if (path === '') return prefValueAbsent(item, value) ? item.default : value;
-  const held = prefValueAt(value, path);
-  return held !== undefined ? held : prefValueAt(item.default, path);
+  return fieldValue(item, prefValueAbsent(item, value) ? item.default : value, path);
 }
 
 /**
@@ -67,7 +68,8 @@ export function deferEntryConditions(holds: PrefConditionJudge): PrefConditionJu
  * Reads a value by path the way a form over `schema` shows it: what `values`
  * holds there, else what the leaf at that path holds with nothing stored (its
  * `auto.value` where it starts auto, its `defaultScope` where it has one, else
- * its `default`), or the part of that the rest of the path names. A split
+ * its `default`), or the part of that the rest of the path names, as
+ * {@link fieldValue} reads it. A split
  * value reads as the one its selectors' options, read the same way, name.
  * `over` is the schema `schema` is drawn over: a path no leaf of `schema`
  * holds is read as a reader over `over` reads it.
@@ -82,8 +84,7 @@ export function prefReader(schema: PrefGroup | PrefSection, values: unknown, ove
     const value = shownValue(leaf, prefValueAt(values, key), read);
     if (key === path) return value;
     const rest = path.slice(key.length + 1);
-    const field = prefValueAt(value, rest);
-    return field !== undefined ? field : prefValueAt(shownValue(leaf, undefined, read), rest);
+    return fieldValue(leaf, value, rest);
   };
   return read;
 }
@@ -103,6 +104,20 @@ function leafHolding(schema: PrefGroup | PrefSection, path: string): [key: strin
     node = child;
   }
   return undefined;
+}
+
+/**
+ * The field at `rest` of `value`, which `leaf` shows, as a form draws it: where the object omits it, the default of
+ * the leaf describing it, and absent where none does. An object leaf's scalar is read as the object it lifts to.
+ */
+function fieldValue(leaf: PrefLeaf, value: unknown, rest: string): unknown {
+  const held = leaf.kind === 'object' ? prefObjectBase(leaf as PrefObject, value) : value;
+  const field = prefValueAt(held, rest);
+  if (field !== undefined) return field;
+  const found = prefLeavesHoldingIn(leaf, rest);
+  if (found === undefined || found === UNSEEN) return undefined;
+  const describes = found.find((each) => (each.variants ?? []).every((v) => prefVariantField(v.at === '' ? held : prefValueAt(held, v.at), v.tag) === v.key));
+  return describes === undefined || describes.leaf === UNSEEN_LEAF ? undefined : unsetValue(describes.leaf);
 }
 
 /** What `leaf`, holding `held`, reads as: with nothing held, what it holds unset; a split value, the option `read` selects. */

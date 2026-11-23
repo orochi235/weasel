@@ -20,6 +20,29 @@ describe('prefReader', () => {
   });
 });
 
+const stroke = {
+  kind: 'object', name: 'Stroke', description: '', default: { width: 1, dash: [4, 2] }, children: { width: num('Width') },
+} as PrefObject;
+
+describe('a field an object omits', () => {
+  it('reads as absent where the object is held, and as the default’s field where it is not', () => {
+    const root: PrefGroup = { name: '', children: { stroke } };
+    expect(prefReader(root, { stroke: { width: 2 } })('stroke.dash')).toBeUndefined();
+    expect(prefReader(root, {})('stroke.dash')).toEqual([4, 2]);
+  });
+
+  it('reads as the default of the leaf describing it, as a form draws it', () => {
+    const root: PrefGroup = { name: '', children: { stroke } };
+    expect(prefReader(root, { stroke: { dash: [1] } })('stroke.width')).toBe(5);
+  });
+
+  it('reads as absent in an entry that holds the object', () => {
+    const holds = prefJudge({ name: '', children: {} }, () => undefined, { item: stroke, value: { width: 2 } });
+    expect(holds({ from: 'item', path: 'dash' }, 'showIf')).toBe(false);
+    expect(prefJudge({ name: '', children: {} }, () => undefined, { item: stroke, value: undefined })({ from: 'item', path: 'dash' }, 'showIf')).toBe(true);
+  });
+});
+
 describe('prefJudge', () => {
   it('reads an entry holding null as its item’s default', () => {
     const item = num('Item');

@@ -3942,3 +3942,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `useTextEdit`'s `startEdit` on another node while an edit is open commits the open
   edit before opening the next, as a click away does, rather than dropping what was typed. There is no override; a
   host that means to discard calls `cancelEdit()` first.
+## Audit round seventy-six (2026-11-22): prefs-schema
+
+- 2026-11-22 (the fixer's call): a condition reads a field an object leaf, or a list's or a map's entry, holds
+  without as a form draws it: the default of the field's own leaf, and absent where no leaf describes it, as `repair`
+  keeps it. The object's own `default` answers only while nothing at all is held. Reading the field from the object's
+  `default`, as before, was the alternative, and showed rows for a value the form drew otherwise.
