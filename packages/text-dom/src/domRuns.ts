@@ -304,6 +304,7 @@ function piecesMatch(span: HTMLElement, transform: TextTransform, lang: string |
 export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = DEFAULT_TEXT_STYLE): boolean {
   let changed = false;
   let before = '';
+  const all = sourceText(parent);
   const visit = (
     el: HTMLElement, variant: FontVariantCaps, transform: TextTransform, inherited: string | undefined,
     state: StyleState,
@@ -316,11 +317,12 @@ export function normalizeSmallCaps(parent: HTMLElement, base: OverlayRunBase = D
     if (el.hasAttribute('data-run')) {
       const text = sourceText(el, before);
       const face = resolveRunFace(toRun(text, own), base);
+      const next = all.charCodeAt(before.length + text.length);
       if (v === 'small-caps' && !hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
-        if (!piecesMatch(el, t, lang, before)) { writeSmallCaps(el, text, t, lang, before); changed = true; }
+        if (!piecesMatch(el, t, lang, before)) { writeSmallCaps(el, text, t, lang, before, next); changed = true; }
       } else if (el.querySelector('[data-small-caps]')) {
         el.replaceChildren();
-        appendOverlayText(el, text);
+        appendOverlayText(el, text, next);
         changed = true;
       }
       before += text;

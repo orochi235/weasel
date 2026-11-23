@@ -789,6 +789,18 @@ describe('domRuns — small caps', () => {
     expect(normalizeSmallCaps(parent)).toBe(false);
   });
 
+  it('breaks once at a CRLF split across runs when it rewrites a run into pieces', () => {
+    parent.style.fontVariant = 'small-caps';
+    for (const text of ['a\r', '\nb']) {
+      const run = document.createElement('span');
+      run.setAttribute('data-run', '');
+      run.textContent = text;
+      parent.appendChild(run);
+    }
+    expect(normalizeSmallCaps(parent)).toBe(true);
+    expect(parent.querySelectorAll('[data-break]')).toHaveLength(0);
+  });
+
   it('counts overlay text outside a run span in the word a run continues', () => {
     const base = { ...DEFAULT_TEXT_STYLE, fontVariantCaps: 'small-caps' as const, textTransform: 'capitalize' as const };
     runsToDom([{ text: 'He' }, { text: 'llo' }], parent, base);
