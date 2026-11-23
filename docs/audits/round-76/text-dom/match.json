@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "normalizeSmallCaps rewrites a run span from `sourceText`, which drops the newline a block inside it reads as",
+  "The overlay's `::selection` rule matches the overlay element only, not the run spans that hold its text"
+ ],
+ "b": [
+  "A turned clipping node measures the CSS baseline wrong, and caches the wrong value for every later edit in that face",
+  "A node whose pose goes null mid-edit hides the focused overlay with `display: none`, which drops focus, so the edit is orphaned",
+  "The docs say a run cannot say \"not italic\" and that the toggle is declined without `setStyle`, while the code writes `italic: false` on runs"
+ ]
+}

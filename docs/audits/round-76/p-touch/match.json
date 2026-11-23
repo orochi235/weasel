@@ -1,0 +1,15 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "textObject gates `lineHeight` only for multi-line or wrapped text, but a single line's position also depends on it",
+  "Carried `.lbx` objects skip the along-tape bounds check every mapped object gets, so under auto length they grow the label"
+ ],
+ "b": [
+  "A single-line text box at a non-default lineHeight is written as an object, though its line sits off P-touch's position"
+ ]
+}

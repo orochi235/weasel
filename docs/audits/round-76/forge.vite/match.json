@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "folderTitles suggests a title its own `fits` rejects when no export matches the file name",
+  "A native story built by a member call or a call through a non-function binding is dropped from the index",
+  "foreignStories caches the depth-limit answer by key, so the result depends on the order imports are visited",
+  "The capture payload's box has no upper bound, so one request can ask Chromium for a viewport of any size",
+  "serveCapture.close() leaves a Chromium launched by a capture that arrives while it is closing"
+ ],
+ "b": [
+  "foreignStories deadlocks on mutually recursive imported functions",
+  "Tracing `export *` cycles has no visited set, so the work grows exponentially",
+  "`closeServer` is not a vite plugin hook, so Chromium and the capture cache outlive the dev server",
+  "A capture's box has no upper bound",
+  "`folderTitleReport`'s default `root = ''` makes every story file uncovered, so the check passes without checking",
+  "warnOnce and the capture endpoint import workspace packages that resolve only to dist"
+ ]
+}

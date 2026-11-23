@@ -1,0 +1,17 @@
+{
+ "pairs": [],
+ "a": [
+  "Infeasible palette with more anchors than colors is told to \"ask for fewer colors\"",
+  "A distance gate missed by under 0.005 marks the palette infeasible while every readout says it passes",
+  "The \"would need N° of circle\" explanation can never fire",
+  "Clearing a pin that varies by axis drops every branch, while editing it writes only the current one",
+  "writeAt replaces a whole axis variation with a leaf when the selection lacks its axis"
+ ],
+ "b": [
+  "SemanticDrawer's number fields write NaN into the rule when cleared, where AnchorList guards it",
+  "PinRepair's Remove and Edit share one coalesce key, so an edit followed by Remove is a single undo step",
+  "Jumping to an inherited component token opens the Components layer, which does not list it",
+  "Restored palette history steps bypass the state validation that loadLive applies",
+  "Semantic cell `produced` is undefined, not a string, for a pin over a token with no generated value"
+ ]
+}

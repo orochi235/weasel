@@ -1,0 +1,97 @@
+{
+ "id": "prefs-schema",
+ "commit": "8d4af58eba06794393ff861c9fe8762fdda45f72",
+ "date": "2026-11-22",
+ "files": [
+  "packages/prefs-schema/src/action.ts",
+  "packages/prefs-schema/src/alias.ts",
+  "packages/prefs-schema/src/bounds.ts",
+  "packages/prefs-schema/src/build.ts",
+  "packages/prefs-schema/src/condition.ts",
+  "packages/prefs-schema/src/groupConditions.ts",
+  "packages/prefs-schema/src/groups.ts",
+  "packages/prefs-schema/src/helpers.ts",
+  "packages/prefs-schema/src/holding.ts",
+  "packages/prefs-schema/src/index.ts",
+  "packages/prefs-schema/src/internal.ts",
+  "packages/prefs-schema/src/judge.ts",
+  "packages/prefs-schema/src/label.ts",
+  "packages/prefs-schema/src/leafValue.ts",
+  "packages/prefs-schema/src/list.ts",
+  "packages/prefs-schema/src/map.ts",
+  "packages/prefs-schema/src/number.ts",
+  "packages/prefs-schema/src/object.ts",
+  "packages/prefs-schema/src/paths.ts",
+  "packages/prefs-schema/src/presets.ts",
+  "packages/prefs-schema/src/repair.ts",
+  "packages/prefs-schema/src/schema.ts",
+  "packages/prefs-schema/src/schemaIcon.typetest.ts",
+  "packages/prefs-schema/src/scope.ts",
+  "packages/prefs-schema/src/scopeSpec.ts",
+  "packages/prefs-schema/src/shown.ts",
+  "packages/prefs-schema/src/status.ts",
+  "packages/prefs-schema/src/statusAt.ts",
+  "packages/prefs-schema/src/testing/pbt.fixture.ts",
+  "packages/prefs-schema/src/union.ts",
+  "packages/prefs-schema/src/unit.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 0,
+ "distinct": 9,
+ "chapman": 29,
+ "unfound": 20,
+ "read": {
+  "A": 31,
+  "B": 31
+ },
+ "newCode": {
+  "since": 70,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 70,
+  "chapman": 8,
+  "unfound": 4
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 22,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3615,
+   "total": 3615
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.8,
+   "B": 10.6,
+   "match": 0.1,
+   "fix": 27.1
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 659776,
+  "costUsd": 4.78
+ },
+ "fixCommits": [
+  "448936cb4c8f8f13379d606964a630932e951676",
+  "a7138a326c0667f2df6c5f50098eed2ae2607b62",
+  "78f509451c840eab84e22816f6211e60798ae3c9",
+  "98f566f0f3146c6ca40f431c670f646c4a030ac8",
+  "b13b028b1c2403d0b43c4f789aaf74e58f38bf98",
+  "72f577803190920801381ce4e893b40565d97a29",
+  "3e4bc80e4b02316564362f587652736084c50002",
+  "528eb6545ef696f177f1e86b9d1edc125882d716"
+ ]
+}

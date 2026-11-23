@@ -1,0 +1,31 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   3
+  ],
+  [
+   4,
+   5
+  ]
+ ],
+ "a": [
+  "fixedSeat ignores the scroll offset of a containing block that is a scroll container",
+  "routeToSpec reads an explicitly undefined modifier as optional, while formatRoute and describeRoute read it as absent",
+  "formatShortcut treats `shift: 'optional'` as falsy only on the key, not on its leader steps",
+  "activatesFocusedControl misses inputs that Space or Enter activate: file, color and image",
+  "The GestureDescriptor doc lists `wheel` as targetless, but its descriptor has `hasTarget: true`"
+ ],
+ "b": [
+  "A palm that lands before the pen keeps its long-press running and blocks the pen's own long-press",
+  "fixedSeat ignores the scroll offset of a scrolling containing block",
+  "CONTROL_SELECTOR leaves out ARIA widgets that handle their own press and keys",
+  "formatShortcut drops an optional Shift on the key but prints one on a leader step as required",
+  "activatesFocusedControl claims Enter on checkboxes, radios and switches, and Space on links",
+  "GestureDescriptor.hasTarget doc names `wheel` as targetless"
+ ]
+}

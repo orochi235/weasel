@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   3,
+   4
+  ],
+  [
+   6,
+   2
+  ]
+ ],
+ "a": [
+  "A drag frame's search limit takes a non-finite box unfiltered, so a failing leg doubles its window ~1000 times",
+  "A connector that finds no path places its label on its stale stored route during the commit, but on its fallback line afterward",
+  "A connector label is avoided on the scene path but not on the data-backed path when its connector is split across pages",
+  "An edge with no facing ports is routed null and has its route stripped on the spec path, but left alone on the scene path",
+  "Only an edge's first label is an obstacle; any further label of the same connector is not avoided by anyone",
+  "A preview before any seed or commit routes against no obstacles at all",
+  "A locked connector's unstored route still shapes the committed state: its label and segments sit where it is not drawn"
+ ],
+ "b": [
+  "A drag frame's stored (parent-local) pose is read as a world pose",
+  "Descendants of a dragged container keep their old world poses in a preview frame",
+  "A locked connector is rerouted on every edit, and its unstored route steers the others",
+  "A drag frame with a non-finite box makes each search double its window ~1000 times",
+  "Spec routing and scene routing disagree on a connector whose end offers no facing port"
+ ]
+}

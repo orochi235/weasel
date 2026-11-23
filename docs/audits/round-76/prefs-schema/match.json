@@ -1,0 +1,16 @@
+{
+ "pairs": [],
+ "a": [
+  "prefReader reads a stored `null` as the value, where the control shows the default",
+  "A condition on an omitted object field reads the default's field, which repair says the field does not have",
+  "An alias drawn under its own name keeps the target's `short` forms, so a narrow surface shows the target's abbreviation",
+  "prefDisplayBounds sorts and clamps `stops` under a unit and returns them raw without one",
+  "A disabled owner's switch exemption never matches a field reading the entry itself (`from: 'item', path: ''`)"
+ ],
+ "b": [
+  "A union's variants that share a field key share one status: a condition on one variant's field disables (or hides, or activates) the same-keyed field of every other variant",
+  "A `minAt`/`maxAt` reading NaN wipes the declared bound it is folded into",
+  "`prefReader` recurses without bound on a scoped leaf whose selector is scoped back by it",
+  "The list of condition fields is defined twice, in `groupConditions.ts` and in `judge.ts`"
+ ]
+}

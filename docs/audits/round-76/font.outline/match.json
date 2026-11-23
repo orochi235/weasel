@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   5,
+   4
+  ]
+ ],
+ "a": [
+  "WOFF table inflation has no bound until it finishes, so a small damaged or hostile table can exhaust memory",
+  "A warn-once key is the variant, not the registration, so a re-registered face that fails again warns nothing",
+  "A DOM-only read of a Blob or thunk source keeps a copy of the bytes for the registration's whole life",
+  "GPOS lookup indexes are not checked against LookupList's count, so a bad index reads another table's bytes as a lookup",
+  "`.dfont` type and reference counts handle the stored-minus-one 0xffff two different ways",
+  "Local fonts quote their `local()` name with JSON.stringify, not the package's CSS string quoter"
+ ],
+ "b": [
+  "WOFF tables inflate without a bound: a small table that decompresses huge exhausts memory before the length check",
+  "`embeddable` refuses fonts whose fsType sets Restricted alongside a less restrictive bit",
+  "A GPOS `kern` feature with no readable pair lookups suppresses the legacy `kern` table",
+  "The per-face glyph memo has no bound",
+  "The `local(...)` src is quoted with JSON.stringify rather than the package's CSS string quoting"
+ ]
+}
