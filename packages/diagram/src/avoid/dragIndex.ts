@@ -6,7 +6,7 @@
  * already reads everything.
  */
 import type { Vec2 } from '@weasel-js/core/math';
-import { rectsEqual, unionRects } from '@weasel-js/geom';
+import { growRect, rectsEqual, unionRects } from '@weasel-js/geom';
 import { finiteBox } from './grid';
 import { inflatedBox, ObstacleIndex } from './obstacles';
 import { SegmentIndex } from './segments';
@@ -34,6 +34,8 @@ export class DragIndex {
     private readonly clearance: number,
     private readonly limit: Box,
     private readonly labelClearance = clearance,
+    /** The room past a moved shape its frame's limit keeps, as the commit's limit keeps past every box. */
+    private readonly margin = 0,
   ) {
     for (const o of input.obstacles) this.committed.set(o.id, o);
     this.index = new ObstacleIndex(input.obstacles, clearance, labelClearance);
@@ -80,7 +82,7 @@ export class DragIndex {
       for (const e of this.attached.get(id) ?? []) first.add(e);
       this.segments.edgesMeeting(inflatedBox(this.committed.get(id)!, this.clearance, this.labelClearance), meeting);
       this.segments.edgesMeeting(inflatedBox(o, this.clearance, this.labelClearance), meeting);
-      if (finiteBox(o.box)) limit = unionRects([limit, o.box])!;
+      if (finiteBox(o.box)) limit = unionRects([limit, growRect(o.box, 2 * this.margin)])!;
     }
     return { index: this.index, dirty: [...first, ...[...meeting].filter((e) => !first.has(e))], limit };
   }

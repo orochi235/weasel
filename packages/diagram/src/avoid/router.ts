@@ -108,7 +108,7 @@ export function createAvoidRouter(options: AvoidOptions = {}): AvoidRouter {
   /** Index what `input`, as committed, holds now, for the drag frames that follow. */
   function indexForDrag(input: AvoidInput): void {
     const routes = new Map(input.edges.map((e) => [e.id, routeOf(e)]));
-    drag = new DragIndex(input, routes, opts.clearance, limitOf(input, opts.margin), opts.labelClearance);
+    drag = new DragIndex(input, routes, opts.clearance, limitOf(input, opts.margin), opts.labelClearance, opts.margin);
     positions = new Map(input.edges.map((e, k) => [e.id, k]));
   }
 
