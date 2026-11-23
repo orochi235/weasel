@@ -46,13 +46,14 @@ function restoreBreak(el: Element): string {
  * Append `text` to `parent` as the overlay sets it: a hard break the browser
  * would not break at becomes a `<span data-break>` holding a `\n`, carrying
  * the original's code as hex. A CR that opens a CRLF is left as it is — the
- * LF breaks, and the CR draws nothing.
+ * LF breaks, and the CR draws nothing. `next` is the code unit that follows
+ * `text` in the whole content, for a CRLF split across two runs.
  */
-export function appendOverlayText(parent: Node, text: string): void {
+export function appendOverlayText(parent: Node, text: string, next = NaN): void {
   let from = 0;
   for (let i = 0; i < text.length; i++) {
     const c = text.charCodeAt(i);
-    if (c === 10 || !isHardLineBreak(c) || (c === 13 && text.charCodeAt(i + 1) === 10)) continue;
+    if (c === 10 || !isHardLineBreak(c) || (c === 13 && (i + 1 < text.length ? text.charCodeAt(i + 1) : next) === 10)) continue;
     if (i > from) parent.appendChild(document.createTextNode(text.slice(from, i)));
     const span = document.createElement('span');
     span.setAttribute(BREAK_ATTR, c.toString(16));
@@ -145,11 +146,12 @@ function smallCapsPieces(
 
 /** Replace `span`'s children with `text`, its small-caps letters in pieces. */
 function writeSmallCaps(
-  span: HTMLElement, text: string, transform: TextTransform, lang: string | undefined, before: string,
+  span: HTMLElement, text: string, transform: TextTransform, lang: string | undefined, before: string, next: number,
 ): void {
   span.replaceChildren();
-  for (const p of smallCapsPieces(text, transform, lang, before)) {
-    if (!p.small) { appendOverlayText(span, p.text); continue; }
+  const pieces = smallCapsPieces(text, transform, lang, before);
+  for (const [i, p] of pieces.entries()) {
+    if (!p.small) { appendOverlayText(span, p.text, i + 1 < pieces.length ? pieces[i + 1].text.charCodeAt(0) : next); continue; }
     const piece = document.createElement('span');
     piece.setAttribute('data-small-caps', '');
     piece.style.fontSize = `calc(var(${SMALL_CAPS_SCALE_PROPERTY}, ${SMALL_CAPS_SCALE}) * 1em)`;
@@ -170,17 +172,19 @@ export function runsToDom(
 ): void {
   parent.replaceChildren();
   let before = '';
+  const all = runs.map((r) => r.text).join('');
   for (const run of runs) {
     const span = document.createElement('span');
     span.setAttribute('data-run', '');
+    const next = all.charCodeAt(before.length + run.text.length);
     const face = resolveRunFace(run, base);
     if ((run.fontVariantCaps ?? base.fontVariantCaps) === 'small-caps'
       && !hasOwnSmallCaps(face.fontFamily, face.fontWeight, face.fontStyle)) {
       const scale = smallCapsScaleFor(face.fontFamily, face.fontWeight, face.fontStyle);
       span.style.setProperty(SMALL_CAPS_SCALE_PROPERTY, String(scale));
-      writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang, before);
+      writeSmallCaps(span, run.text, run.textTransform ?? base.textTransform, run.lang ?? base.lang, before, next);
     } else {
-      appendOverlayText(span, run.text);
+      appendOverlayText(span, run.text, next);
     }
     before += run.text;
     // CSS as well as the pieces: it is what pasted markup says, and it gives a
