@@ -88,8 +88,8 @@ export function useTextEdit(
   useEffect(() => {
     const { container, getText, getStyle, getPaint } = optsRef.current;
     const carried = takeCarry(editingId, container != null);
+    holdNodeStyle(editingId == null ? null : carried?.held ?? null);
     if (editingId == null || !container) return;
-    holdNodeStyle(carried?.held ?? null);
 
     const style = resolveTextStyle(carried?.held ?? getStyle(editingId), getPaint?.(editingId));
     baseRef.current = style;
