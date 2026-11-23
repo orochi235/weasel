@@ -11,6 +11,7 @@ import {
   branchChanges,
   changedFiles,
   checkTree,
+  checksSkipped,
   fleetBranch,
   lockScope,
   selection,
@@ -427,5 +428,18 @@ describe('runsEverything', () => {
   it('counts the lockfile as owned only when its change is confined to named workspaces', () => {
     expect(runsEverything(['package-lock.json'], { triggers, scoped, lockScope: ['packages/ui'] })).toBe(false);
     expect(runsEverything(['package-lock.json'], { triggers, scoped, lockScope: null })).toBe(true);
+  });
+});
+
+describe('checksSkipped', () => {
+  const marked = (checks?: boolean) => put(MARKER, JSON.stringify({ commit: COMMIT, files: {}, ...(checks === undefined ? {} : { checks }) }));
+
+  it("is true only when this run's marker says the checks ran already", () => {
+    marked(false);
+    expect(checksSkipped(root, { [COMMIT_ENV]: COMMIT })).toBe(true);
+    expect(checksSkipped(root, { [COMMIT_ENV]: OTHER })).toBe(false);
+    expect(checksSkipped(root, {})).toBe(false);
+    marked();
+    expect(checksSkipped(root, { [COMMIT_ENV]: COMMIT })).toBe(false);
   });
 });

@@ -12,6 +12,7 @@
  *   npm run test:fleet -- HEAD --node studio    # the rest goes to `onto test`
  *   npm run test:fleet -- --full       # every test, on a branch too
  *   npm run test:fleet -- --since <ref>   # select from what the branch changes past <ref>, not main
+ *   npm run test:fleet -- --no-checks  # skip ci-checks.gate.ts's checks, which ran on this commit already
  *
  * The browser project runs as a job of its own on a node whose GPU is idle and that nobody is using,
  * beside a job running the rest, when one is free (`scripts/lib/fleet-parts.mjs`); WEASEL_FLEET_SPLIT=0,
@@ -37,8 +38,9 @@ if (sinceAt >= 0 && (!since || since.startsWith('-'))) {
   console.error('fleet-test: --since needs a ref');
   process.exit(2);
 }
-const argv = args.filter((arg) => arg !== '--full');
-const full = argv.length < args.length;
+const noChecks = args.includes('--no-checks');
+const argv = args.filter((arg) => arg !== '--full' && arg !== '--no-checks');
+const full = argv.length < args.length - Number(noChecks);
 const [first, ...rest] = argv;
 const named = first && !first.startsWith('-');
 const ontoArgs = named ? rest : argv;
@@ -76,7 +78,8 @@ try {
   const lockAt = (ref) => JSON.parse(git('show', `${ref}:package-lock.json`));
   const locked = select?.includes('package-lock.json') ? lockScope(lockAt(newer), lockAt(commit)) : undefined;
   const first = firstFor(ROOT, branch);
-  armTree(tree, { commit, branch: branch || undefined, files, select, reshaped, ...(locked !== undefined && { lockScope: locked }), ...(first.length > 0 && { first }) }, { plan: true });
+  armTree(tree, { commit, branch: branch || undefined, files, select, reshaped, ...(locked !== undefined && { lockScope: locked }), ...(first.length > 0 && { first }), ...(noChecks && { checks: false }) }, { plan: true });
+  if (noChecks) console.log('fleet-test: --no-checks, so the gate skips the checks ci.yml runs as steps');
   if (first.length > 0) console.log(`fleet-test: running first the ${first.length} file(s) this branch's last run failed in, stopping if one fails again`);
   console.log(`fleet-test: tree check armed for ${commit.slice(0, 9)}, ${Object.keys(files).length} changed path(s)`);
   if (select) console.log(`fleet-test: selecting from the ${select.length} path(s) the branch changes against ${newer.slice(0, 9)}`);
