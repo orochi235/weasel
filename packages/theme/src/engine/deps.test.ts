@@ -284,6 +284,21 @@ describe('axisDependencies', () => {
     const all: Record<string, ThemeDefinition> = { rp: parent, rc: kid };
     expect(axisDependencies(kid, (n) => all[n])['blue-500']).toEqual({ own: [], all: [] });
   });
+
+  it("joins an inherited ramp step with a child's step that replaces it at only some selections", () => {
+    const parent: ThemeDefinition = {
+      name: 'sp',
+      axes: { mode: { default: 'dark', values: { dark: {}, light: {} } } },
+      ramps: { blue: { kind: 'lightness', steps: ['500'], lightness: [0.5, 0.5] } },
+    };
+    const kid = {
+      name: 'sc',
+      extends: 'sp',
+      scales: { blue: { steps: { by: 'mode', dark: ['500'], light: [] }, base: 4, step: 4 } },
+    } as unknown as ThemeDefinition;
+    const all: Record<string, ThemeDefinition> = { sp: parent, sc: kid };
+    expect(axisDependencies(kid, (n) => all[n])['blue-500'].own).toEqual(['mode']);
+  });
 });
 
 describe('a pin with a seed in its value list', () => {

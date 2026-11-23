@@ -140,6 +140,8 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
   const scope: StepScope = { axes: def.axes ?? {}, seeds: def.seeds };
   const declaredSteps = (entry: unknown) => stepsOf(entry, scope);
   const produce = producer(nodes);
+  // A descendant's step that replaces an inherited one at only some selections produces it at those, wherever it sits in the order.
+  const settles = (token: string, always: boolean) => always && !partly.has(token);
 
   /** Step token → the ramps that declare it. */
   const stepRamps = new Map<string, Set<string>>();
@@ -151,7 +153,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     scan(ramp, n);
     const always = new Set(alwaysDeclaredSteps(ramp, scope));
     for (const step of declaredSteps(ramp)) {
-      if (!replaced.ramps.has(stepKey(name, step))) produce(`${name}-${step}`, n, always.has(step));
+      if (!replaced.ramps.has(stepKey(name, step))) produce(`${name}-${step}`, n, settles(`${name}-${step}`, always.has(step)));
       stepRamps.set(`${name}-${step}`, (stepRamps.get(`${name}-${step}`) ?? new Set()).add(name));
     }
   }
@@ -159,7 +161,7 @@ export function axisDependencies(definition: ThemeDefinition, lookup?: Lookup): 
     const n = node();
     scan(s, n);
     const always = new Set(alwaysDeclaredSteps(s, scope));
-    for (const step of declaredSteps(s)) if (!replaced.scales.has(stepKey(name, step))) produce(`${name}-${step}`, n, always.has(step));
+    for (const step of declaredSteps(s)) if (!replaced.scales.has(stepKey(name, step))) produce(`${name}-${step}`, n, settles(`${name}-${step}`, always.has(step)));
   }
 
   /** Every ramp a token could sit on: its own, or the ones its semantic rule leaves, pins, or components lead to. */
