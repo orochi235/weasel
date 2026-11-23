@@ -2,6 +2,8 @@
 "@weasel-js/diagram": patch
 ---
 
-Live audio judges a feedback loop only over wires it plays, so a stray wire to a port its stage lacks, or through a stage that is not audio, no longer silences the stages it would close a loop around.
+Live audio judges feedback loops only over the wires it plays, so a stray wire no longer silences the stages around it.
+
+A wire to a port its stage lacks, or through a stage that is not audio, closes no loop.
 
 <!-- entry: fix -->
