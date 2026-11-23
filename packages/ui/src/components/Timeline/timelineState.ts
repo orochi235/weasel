@@ -62,7 +62,7 @@ export function useKeyAndSegment(
     const now = keyPin?.id === id ? readsOwn(held.trackPath, keyPin.reads) : trackReading(tracks, held.trackPath);
     if (now === null) stale = id;
     else if (keyPin?.id !== id || keyPin.reads !== now) setKeyPin({ id, reads: now });
-  }
+  } else if (keyPin) setKeyPin(null);
   if (segment) {
     const now = readsOwn(segment.sel.trackPath, segment.reads);
     if (now === null) setSegment(null);
