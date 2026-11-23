@@ -2,6 +2,6 @@
 '@weasel-js/audio': patch
 ---
 
-`engine.analyser('')` taps the bus named `''`, as `bus('')` and `play({ bus: '' })` use it, rather than the master.
+`engine.analyser('')` taps the bus named `''` rather than the master.
 
 <!-- entry: fix -->
