@@ -117,8 +117,16 @@ describe('text boxes', () => {
   it('rasterizes a box of more than one line at a line height of its own, or a tab at a tab size of its own', async () => {
     expect(await written(box({ style: { lineHeight: 2 } }, [run('one\ntwo')]))).toBeUndefined();
     expect(await written(box({ style: { lineHeight: 2 } }))).toBeUndefined();
-    expect(await written(box({ maxWidth: Infinity, style: { lineHeight: 2 } }))).toBeDefined();
+    expect(await written(box({ maxWidth: Infinity, verticalAlign: 'center', style: { lineHeight: 2 } }))).toBeDefined();
     expect(await written(box({ style: { tabSize: 2 } }, [run('a\tb')]))).toBeUndefined();
     expect(await written(box({ style: { tabSize: 2 } }))).toBeDefined();
+  });
+
+  it('rasterizes one line at a line height of its own unless it is centered, since the leading moves it in the box', async () => {
+    for (const verticalAlign of [undefined, 'top', 'bottom'] as const) {
+      expect(await written(box({ maxWidth: Infinity, verticalAlign, style: { lineHeight: 2 } }))).toBeUndefined();
+    }
+    expect(await written(box({ maxWidth: Infinity, verticalAlign: 'center', style: { lineHeight: 2 } }))).toBeDefined();
+    expect(await written(box({ maxWidth: Infinity, verticalAlign: 'top' }))).toBeDefined();
   });
 });
