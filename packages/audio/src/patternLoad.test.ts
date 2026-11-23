@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { patternVoicePeaks } from './patternLoad';
+import { patternLength } from './patternPlayer';
 
 // 120 bpm in sixteenths: 125 ms a step. No lookahead unless a test sets one.
 const base = { tempo: 120, lookahead: 0 };
@@ -88,5 +89,14 @@ describe('patternVoicePeaks', () => {
   it('reads a pattern of a million events without overflowing the call stack', () => {
     const events = Array.from({ length: 1_000_000 }, (_, i) => ({ step: i * 100, length: 1, pitch: 220, bus: 'music' }));
     expect(patternVoicePeaks(events, { ...base, loop: false })).toEqual({ music: 1 });
+  });
+});
+
+describe('patternVoicePeaks on a step the player refuses', () => {
+  it.each([Number.NaN, Infinity])('throws for step %s, as the player does, with or without a length', (step) => {
+    const events = [{ step, sound: 'kick' as never }];
+    expect(() => patternVoicePeaks(events, { tempo: 120 })).toThrow(RangeError);
+    expect(() => patternVoicePeaks(events, { tempo: 120, length: 16 })).toThrow(RangeError);
+    expect(() => patternLength(events)).toThrow(RangeError);
   });
 });
