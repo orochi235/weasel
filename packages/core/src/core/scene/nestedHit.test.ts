@@ -92,4 +92,23 @@ describe('createNestedHitTester', () => {
     expect(t.pickOutermost({ x: 100, y: 100 })).toBe('c');
     expect(t.pickOutermost({ x: 150, y: 100 })).toBeNull();
   });
+
+  it('passes over a node marked pickable: false to the one behind it', () => {
+    const nodes = [
+      { id: 'box', parent: null, pose: { x: 0, y: 0, width: 100, height: 100 } },
+      { id: 'label', parent: 'box', pose: { x: 10, y: 10, width: 50, height: 20 }, pickable: false },
+    ];
+    const t = createNestedHitTester(
+      {
+        getNode: (id) => nodes.find((n) => n.id === id),
+        getNodes: () => nodes,
+        getPose: (id) => nodes.find((n) => n.id === id)!.pose,
+        getParent: (id) => nodes.find((n) => n.id === id)?.parent ?? null,
+      },
+      { composePose: composeRectPose },
+    );
+    expect(t.pickBest({ x: 20, y: 15 }, true, ['box'])).toBe('box');
+    expect(t.pickOutermost({ x: 20, y: 15 })).toBe('box');
+  });
+
 });

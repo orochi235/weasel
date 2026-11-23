@@ -14,7 +14,7 @@ export interface NestedHitOptions<TNode extends { id: string }, TPose> {
   /** Predicate for "this object is a nesting parent body". The leaf scan
    *  skips objects for which this returns true so a click on a parent's
    *  painted body resolves to a child leaf, not the parent itself. Default:
-   *  never (treat every object as hittable). */
+   *  never. A node with `pickable: false` is skipped either way. */
   isGroup?: (id: string, obj: TNode | undefined) => boolean;
 }
 
@@ -64,7 +64,7 @@ export function createNestedHitTester<TNode extends { id: string }, TPose>(
     const objs = adapter.getNodes();
     for (let i = objs.length - 1; i >= 0; i--) {
       const o = objs[i];
-      if (isGroup(o.id, o)) continue;
+      if ((o as { pickable?: boolean }).pickable === false || isGroup(o.id, o)) continue;
       const w = worldOf(o.id);
       if (!w) continue;
       const b = poseDescriptorForNode(d, o).getBounds(w);
