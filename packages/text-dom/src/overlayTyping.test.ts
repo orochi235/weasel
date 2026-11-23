@@ -57,6 +57,17 @@ describe('typingHandlers', () => {
     expect(host.onEdited).toHaveBeenCalledTimes(1);
   });
 
+  it('gives a character typed at the start of a later run\'s text the run before it, as the caret reports', () => {
+    const { overlay, host, onBeforeInput } = mount();
+    runsToDom([{ text: 'ab', bold: true }, { text: 'cd' }], overlay);
+    caretAt(overlay.children[1]!.firstChild!, 0);
+    const ev = insertText('X');
+    onBeforeInput(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    expect(domToRuns(overlay)).toEqual([{ text: 'abX', bold: true }, { text: 'cd' }]);
+    expect(host.onWritten).toHaveBeenCalledWith({ start: 3, end: 3 });
+  });
+
   it('gives a character typed before the first run span that run', () => {
     const { overlay, onBeforeInput } = mount();
     runsToDom([{ text: 'a', italic: true }, { text: 'b' }], overlay);
