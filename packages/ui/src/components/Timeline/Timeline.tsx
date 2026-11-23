@@ -1,4 +1,4 @@
-import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
+import { useMemo, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import type { EasingSpec } from '@weasel-js/geom';
 import { isEditableTarget } from '@weasel-js/gestures';
 import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
@@ -8,10 +8,10 @@ import s from './Timeline.module.css';
 import { Lane, type LaneHold, type LaneProps } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
-import { buildLanes, type LaneRow } from './lanes';
+import { buildLanes, rowTimes, type LaneRow } from './lanes';
 import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
-import { useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
+import { useFolds, useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
 import { TimelineInspector } from './TimelineInspector';
 
 export type { KeySelection } from './keys';
@@ -75,9 +75,9 @@ export function Timeline(props: TimelineProps): ReactElement {
   } = props;
 
   const hold = useControlHold(props, { readonlyRole: false });
-  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
   const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
   const { selection, segmentSelection, selectKey, selectSegment, dropSegment } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
+  const { expanded, toggle } = useFolds({ selection, segmentSelection, selectKey, dropSegment });
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
   const pressHold = useKeyEditsHeldByPress();
 
@@ -85,13 +85,6 @@ export function Timeline(props: TimelineProps): ReactElement {
 
   const snapTimes = useMemo(() => snapTimesOf(rows, duration), [rows, duration]);
 
-  const toggle = (key: string): void => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) next.delete(key); else next.add(key);
-      return next;
-    });
-  };
 
   const commit = (r: KeyEdit): void => {
     onChange(r.tracks);
@@ -174,8 +167,8 @@ export function Timeline(props: TimelineProps): ReactElement {
 
       <TimelineInspector
         tracks={tracks}
-        selection={selection}
-        segmentSelection={segmentSelection}
+        selection={drawn(selection, rows)}
+        segmentSelection={drawn(segmentSelection, rows)}
         renderKeyEditor={renderKeyEditor}
         edits={edits}
         onChange={onChange}
@@ -242,13 +235,18 @@ function TransportRow({ transport, playhead, duration, hold, graph, onGraphChang
   );
 }
 
-/** Every key time on every row — what a dragged key snaps to — and either end. */
+/** Every key and event time on every row drawn — what a dragged key snaps to — and either end. */
 function snapTimesOf(rows: readonly LaneRow[], duration: number): number[] {
   const out = new Set<number>([0, duration]);
   for (const row of rows) {
-    if (row.kind === 'sampled') for (const k of (row.track as SampledTrack<unknown>).keys) out.add(k.t + row.offset);
+    for (const t of rowTimes(row)) out.add(t + row.offset);
   }
   return [...out];
+}
+
+/** `sel` when it is on a row that is drawn: one on a row folded away edits nothing, as Delete deletes nothing for it. */
+function drawn(sel: KeySelection | null, rows: readonly LaneRow[]): KeySelection | null {
+  return sel && rows.some((r) => samePath(r.path, sel.trackPath)) ? sel : null;
 }
 
 /** Whether `sel` names a key that exists on a sampled row that is drawn. */

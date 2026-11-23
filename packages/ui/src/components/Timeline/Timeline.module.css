@@ -158,7 +158,8 @@
 
 .label { padding: var(--wzl-space-2) var(--wzl-space-3); color: var(--wzl-fg-muted); }
 
-.body { display: flex; align-items: stretch; }
+/* The same gutter as `.lanes`, so a time on the ruler sits over the same time on every lane. */
+.body { display: flex; align-items: stretch; overflow: hidden; scrollbar-gutter: stable; }
 .gutter { box-sizing: border-box; flex: 0 0 var(--wzl-timeline-label-w, 120px); border-right: 1px solid var(--wzl-border); }
 .rulerWrap { flex: 1 1 auto; min-width: 0; }
 
@@ -167,6 +168,7 @@
   min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 
 .inspector {

@@ -1,4 +1,4 @@
-import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactElement, RefObject } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactElement } from 'react';
 import type { Keyframe } from '@weasel-js/animator';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
@@ -43,14 +43,13 @@ export function SegmentMarks({ keys, label, win, pct, mark, selectedSegment, onS
 }
 
 /** One focusable mark per key or event on a row, at its time. */
-export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, keyEls, onKeyPointerDown, onKeyDown }: {
+export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, onKeyPointerDown, onKeyDown }: {
   row: LaneRow;
   times: readonly number[];
   pct: (ms: number) => string;
   mark: MarkHold;
   selection: number | null;
   draggedIndex: number | undefined;
-  keyEls: RefObject<(HTMLDivElement | null)[]>;
   onKeyPointerDown: (i: number) => (e: ReactPointerEvent<HTMLDivElement>) => void;
   onKeyDown: (i: number, t: number) => (e: ReactKeyboardEvent<HTMLDivElement>) => void;
 }): ReactElement {
@@ -60,7 +59,6 @@ export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, keyEl
       {times.map((t, i) => (
         <div
           key={i}
-          ref={(el) => { keyEls.current[i] = el; }}
           role="button"
           {...mark}
           aria-label={`${row.label} key at ${msLabel(t)}`}

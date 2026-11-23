@@ -59,6 +59,29 @@ export function useKeyAndSegment(
   return { selection, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment };
 }
 
+/** Which nested rows are open, by row key. Folding one drops a key or segment selection on a row under it. */
+export function useFolds(sel: {
+  selection: KeySelection | null;
+  segmentSelection: KeySelection | null;
+  selectKey: (sel: KeySelection | null) => void;
+  dropSegment: () => void;
+}) {
+  const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set());
+  const toggle = (key: string): void => {
+    const folding = expanded.has(key);
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+    if (!folding) return;
+    const under = (s: KeySelection | null): boolean => s !== null && s.trackPath.join('.').startsWith(`${key}.`);
+    if (under(sel.selection)) sel.selectKey(null);
+    else if (under(sel.segmentSelection)) sel.dropSegment();
+  };
+  return { expanded, toggle };
+}
+
 const selectionKey = (sel: KeySelection | null | undefined): string =>
   (sel ? `${sel.trackPath.join('.')}:${sel.keyIndex}` : String(sel));
 

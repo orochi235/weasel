@@ -250,6 +250,25 @@ describe('Timeline', () => {
     }
   });
 
+  it('keeps focus on the key that is selected once Delete removes the focused one in graph mode', () => {
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 100, value: 1 }, { t: 200, value: 2 }], onTick: () => {} },
+      ] as Track[]);
+      return <Timeline {...base} mode="graph" tracks={value} onChange={setValue} />;
+    }
+    renderWithIcons(<Host />);
+    const keys = () => [...document.querySelectorAll<SVGElement>('[data-keyframe-index]')];
+    for (const at of [2, 1]) {
+      const key = keys()[at]!;
+      key.focus();
+      fireEvent.keyDown(key, { key: 'Enter' });
+      fireEvent.keyDown(key, { key: 'Delete' });
+      expect(keys()).toHaveLength(at);
+      expect(document.activeElement).toBe(keys()[at - 1]);
+    }
+  });
+
   it('deletes the key Delete is pressed on, not another one selected', () => {
     const onChange = vi.fn();
     const three = [
@@ -519,6 +538,15 @@ describe('Timeline', () => {
     expect(nestedKeyTimes(onChange.mock.calls[0][0] as Track[])).toEqual([300, 300]);
   });
 
+  it('snaps a dragged key to an event crossing on another row', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    // The event at 250 sits 125px in; dropped 3px shy of it, the key lands on it.
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 122, clientY: 10 });
+    expect(((onChange.mock.calls[0][0] as Track[])[0] as SampledTrack<number>).keys.map((k) => k.t)).toEqual([250, 500]);
+  });
+
   it('deletes nothing for Delete once the selected key’s row is folded away', () => {
     const onChange = vi.fn();
     renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
@@ -530,6 +558,34 @@ describe('Timeline', () => {
     disclosure.focus();
     fireEvent.keyDown(disclosure, { key: 'Delete' });
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('drops a selection on a row it folds away, and edits no key on a row not drawn', () => {
+    const onSelectionChange = vi.fn();
+    const renderKeyEditor = () => <span data-testid="key-editor" />;
+    const { rerender } = renderWithIcons(
+      <Timeline {...base} tracks={nestedTracks()} onSelectionChange={onSelectionChange} renderKeyEditor={renderKeyEditor} />,
+    );
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 0, clientY: 10 });
+    expect(screen.getByTestId('key-editor')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
+    expect(screen.queryByTestId('key-editor')).not.toBeInTheDocument();
+    rerender(<Timeline {...base} tracks={nestedTracks()} selection={{ trackPath: [0, 0], keyIndex: 0 }} renderKeyEditor={renderKeyEditor} />);
+    expect(screen.queryByTestId('key-editor')).not.toBeInTheDocument();
+  });
+
+  it('drops a segment selection on a row it folds away', () => {
+    renderWithIcons(<Timeline {...base} tracks={nestedTracks()} />);
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    fireEvent.click(screen.getAllByTestId('timeline-segment')[0]);
+    expect(screen.getByTestId('easing-preview')).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTestId('timeline-disclosure'));
+    expect(screen.queryByTestId('easing-preview')).not.toBeInTheDocument();
   });
 
   it('deletes nothing for Delete on a selected key the tracks no longer hold', () => {

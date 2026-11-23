@@ -31,13 +31,14 @@ export interface KeyDragArgs {
 /**
  * A lane as a slider track windowed onto the timeline: `msAt` is the row's own time under a pointer, and
  * `onKeyPointerDown` drags a key along it, pulled onto `snapTimes` unless Alt is held. `drag` is where the dragged
- * key would land, held here so a drag previews whether or not the consumer wires `onKeyInput`.
+ * key would land, held here so a drag previews whether or not the consumer wires `onKeyInput`, with the key times it
+ * began from.
  */
 export function useKeyDrag(a: KeyDragArgs) {
   const { trackRef, window: win, offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert, onCancel, drags = true } = a;
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
-  const [drag, setDrag] = useState<{ keyIndex: number; t: number } | null>(null);
+  const [drag, setDrag] = useState<{ keyIndex: number; t: number; times: readonly number[] } | null>(null);
   const snapRadiusPx = useSnapRadiusPx();
   const dragPx = useKitSetting('gestures.dragPx');
 
@@ -62,7 +63,7 @@ export function useKeyDrag(a: KeyDragArgs) {
     onSelect(i);
     if (!drags) return;
 
-    setDrag({ keyIndex: i, t: times[i] });
+    setDrag({ keyIndex: i, t: times[i], times });
 
     // A press that never travels is a click: it selects and moves nothing.
     const start = { clientX: e.clientX, clientY: e.clientY };
@@ -79,7 +80,7 @@ export function useKeyDrag(a: KeyDragArgs) {
       onMove: (ev) => {
         if (!traveled(ev)) return;
         const t = at.current(ev);
-        setDrag({ keyIndex: i, t });
+        setDrag({ keyIndex: i, t, times });
         previewed = true;
         onKeyInput(i, t);
       },

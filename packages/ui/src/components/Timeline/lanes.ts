@@ -1,4 +1,4 @@
-import type { NestedTimeline, SampledTrack, Track } from '@weasel-js/animator';
+import type { EventTrack, NestedTimeline, SampledTrack, Track } from '@weasel-js/animator';
 
 export interface LaneRow {
   /** Stable across re-renders and edits: the dotted index path. */
@@ -57,6 +57,13 @@ export function buildLanes(
   };
   walk(tracks, [], 0, 0, Infinity);
   return out;
+}
+
+/** The times of a row's keys or event crossings, in its own time; none for a nested timeline's row. */
+export function rowTimes(row: LaneRow): number[] {
+  if (row.kind === 'sampled') return (row.track as SampledTrack<unknown>).keys.map((k) => k.t);
+  if (row.kind === 'event') return (row.track as EventTrack).events.map((e) => e.t);
+  return [];
 }
 
 /** The track at an index path, or `undefined` when the path leaves the tree. */

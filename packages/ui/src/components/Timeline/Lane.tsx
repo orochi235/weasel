@@ -1,12 +1,12 @@
-import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
-import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
+import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type RefObject } from 'react';
+import { type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { arrowMove } from '@weasel-js/quantity';
 import { LaneGraph } from './LaneGraph';
-import { timelineSpan, type LaneRow } from './lanes';
+import { rowTimes, timelineSpan, type LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
 import { KeyGhost, KeyMarks, SegmentMarks, type MarkHold } from './LaneMarks';
 
@@ -60,12 +60,6 @@ export interface LaneProps {
   hold?: LaneHold;
 }
 
-function entryTimes(row: LaneRow): number[] {
-  if (row.kind === 'sampled') return (row.track as SampledTrack<unknown>).keys.map((k) => k.t);
-  if (row.kind === 'event') return (row.track as EventTrack).events.map((e) => e.t);
-  return [];
-}
-
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onKeyInput, onKeyChange, onInsert, expanded, snapTimes,
@@ -73,7 +67,7 @@ export function Lane(props: LaneProps): ReactElement {
   } = props;
   const { onSelect, onSelectSegment, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const times = entryTimes(row);
+  const times = rowTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
     trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
   });
@@ -83,9 +77,10 @@ export function Lane(props: LaneProps): ReactElement {
   const graph = mode === 'graph' && row.numeric;
   const sampledKeys = row.kind === 'sampled' ? (row.track as SampledTrack<number>).keys : [];
 
-  const { keyEls, refocus } = useFocusFollowsKey(selection);
+  const refocusRef = useFocusFollowsKey(trackRef, selection);
+  const deletes = hold.edits && row.kind === 'sampled';
 
-  const onKeyDown = markKeys({ edits: hold.edits, deletes: hold.edits && row.kind === 'sampled', onKeyChange, onSelect, refocus });
+  const onKeyDown = markKeys({ edits: hold.edits, onKeyChange, onSelect, refocus: refocusRef });
 
   return (
     <div className={s.lane} data-lane-key={row.key} data-depth={row.depth} data-mode={mode} data-graph={graph ? 'true' : undefined}>
@@ -97,6 +92,10 @@ export function Lane(props: LaneProps): ReactElement {
         onPointerDown={(e) => {
           if ((e.target as Element).closest('[data-keyframe-index], [data-handle-index], [data-segment-index]')) return;
           onPressEmpty?.();
+        }}
+        onKeyDown={(e) => {
+          // The timeline deletes the key as this bubbles up; focus goes to the key selected after it.
+          if (deletes && (e.key === 'Delete' || e.key === 'Backspace') && (e.target as Element).closest('[data-keyframe-index]')) refocusRef.current = true;
         }}
         onDoubleClick={(e) => {
           if (row.kind !== 'sampled' || !hold.edits) return;
@@ -130,8 +129,8 @@ export function Lane(props: LaneProps): ReactElement {
               />
             ) : null}
             <KeyMarks
-              row={row} times={times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
-              keyEls={keyEls} onKeyPointerDown={onKeyPointerDown} onKeyDown={onKeyDown}
+              row={row} times={drag?.times ?? times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
+              onKeyPointerDown={onKeyPointerDown} onKeyDown={onKeyDown}
             />
 
             {drag ? <KeyGhost event={row.kind === 'event'} left={pct(drag.t)} /> : null}
@@ -156,10 +155,8 @@ function gated(props: LaneProps, hold: LaneHold) {
 
 /** A key mark's keys: the arrows step it, unless the lane refuses edits, and Enter or Space selects it. `refocus` is
  *  set only for a key that will change, or a render for another reason would pull focus to the selected key. */
-function markKeys({ edits, deletes, onKeyChange, onSelect, refocus }: {
+function markKeys({ edits, onKeyChange, onSelect, refocus }: {
   edits: boolean;
-  /** Delete and Backspace remove the key: an editable sampled row. */
-  deletes: boolean;
   onKeyChange: LaneProps['onKeyChange'];
   onSelect: (keyIndex: number) => void;
   refocus: { current: boolean };
@@ -175,8 +172,6 @@ function markKeys({ edits, deletes, onKeyChange, onSelect, refocus }: {
       }
     }
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(i); }
-    // The timeline deletes the key as this bubbles up; focus goes to the key selected after it.
-    if ((e.key === 'Delete' || e.key === 'Backspace') && deletes) refocus.current = true;
   };
 }
 
@@ -224,16 +219,16 @@ function AfterEnd({ end, win }: { end: number; win: TimeWindow }) {
 
 /** A keyboard move can re-sort the key to another index, and a delete selects another: set `refocus` and focus follows
  *  the selected key there once the lane renders. */
-function useFocusFollowsKey(selection: number | null) {
-  const keyEls = useRef<(HTMLDivElement | null)[]>([]);
+function useFocusFollowsKey(trackRef: RefObject<HTMLDivElement | null>, selection: number | null) {
   const refocus = useRef(false);
   useEffect(() => {
     if (!refocus.current) return;
     refocus.current = false;
+    const marks = trackRef.current?.querySelectorAll<HTMLElement | SVGElement>('[data-keyframe-index]');
     // Not from wherever focus went since: a key that asked for this may have changed nothing.
     const at = document.activeElement;
-    if (at !== null && at !== document.body && !keyEls.current.includes(at as HTMLDivElement)) return;
-    if (selection !== null) keyEls.current[selection]?.focus();
+    if (at !== null && at !== document.body && ![...(marks ?? [])].includes(at as HTMLElement)) return;
+    if (selection !== null) [...(marks ?? [])].find((m) => m.getAttribute('data-keyframe-index') === String(selection))?.focus();
   });
-  return { keyEls, refocus };
+  return refocus;
 }
