@@ -81,6 +81,13 @@ describe('an entry of a list or a map read by its path from the root', () => {
     expect(prefJudge(root, () => undefined, { item: num('N'), value: null })({ from: 'item', path: '', is: 5 }, 'showIf')).toBe(true);
   });
 
+  it('reads an entry holding nothing as the item’s auto value where it starts auto, from the root and from the entry', () => {
+    const item = num('N', { auto: { on: true, value: 9 } } as Partial<PrefLeaf>);
+    const root: PrefGroup = { name: '', children: { m: map(item) } };
+    expect(prefReader(root, { m: { k: null } })('m.k')).toBe(9);
+    expect(prefJudge(root, () => undefined, { item, value: undefined })({ from: 'item', path: '', is: 9 }, 'showIf')).toBe(true);
+  });
+
   it('reads no entry where the list holds none', () => {
     const root: PrefGroup = { name: '', children: { phases: list(row) } };
     expect(prefReader(root, { phases: [] })('phases.0.hold')).toBeUndefined();

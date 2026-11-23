@@ -33,11 +33,11 @@ export interface PrefEntry {
   value: unknown;
 }
 
-/** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of the item's
- *  default, a field read as {@link fieldValue} reads it. */
+/** What `entry` holds at `path`, the empty path being the entry itself: its own value, else that part of what the item
+ *  holds unset, a field read as {@link fieldValue} reads it. */
 function entryValue({ item, value }: PrefEntry, path: string): unknown {
-  if (path === '') return prefValueAbsent(item, value) ? item.default : value;
-  return fieldValue(item, prefValueAbsent(item, value) ? item.default : value, path);
+  const held = prefValueAbsent(item, value) ? unsetValue(item) : value;
+  return path === '' ? held : fieldValue(item, held, path);
 }
 
 /**
