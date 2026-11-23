@@ -3981,3 +3981,16 @@ Calls the lanes made without a ruling:
   (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
   spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
   sent the title to the file's auto title in the common case, where the spread carries no title.
+## Audit round seventy-eight (2026-11-23): the theme editor
+
+- 2026-11-23 (the fixer's call): "Reload from disk" and "Discard this unsaved theme" leave the draft open and say why
+  when the browser refuses to remove the stored draft, since it would otherwise open again on the next load. Opening
+  the file anyway and leaving the stale draft stored was the alternative.
+- 2026-11-23 (the fixer's call): the theme editor keeps undo histories across a reload for only the two themes saved
+  most recently, forgets every other theme's when the browser refuses one for room, and forgets a theme's at load once
+  the server's list no longer names it. A total character budget evicting the oldest steps across themes was the
+  alternative.
+- 2026-11-23 (the fixer's call): each layer in the theme editor's rail counts what its page lists: every token of the
+  chain for ramps, scales, semantics, and components, and the seeds with a value at the selection. The header's
+  "N of M overridden" still counts the theme's own tokens. Counting only the theme's own tokens in the rail too, and
+  listing only those on the pages, was the alternative.
