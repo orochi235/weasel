@@ -9,6 +9,8 @@ import styles from './PaletteLab.module.css';
 export interface AnchorListProps {
   anchors: readonly Anchor[];
   onChange: (next: readonly Anchor[]) => void;
+  /** Where the host offers colors to pin, as `the panel below`. Without one, the list says nothing about pinning more. */
+  pickFrom?: string;
 }
 
 /**
@@ -16,7 +18,7 @@ export interface AnchorListProps {
  * pinning, since a color gets pinned precisely when the lightness law would
  * have excluded it. Yellow is the sharpest case, not a special one.
  */
-export function AnchorList({ anchors, onChange }: AnchorListProps) {
+export function AnchorList({ anchors, onChange, pickFrom }: AnchorListProps) {
   const replace = (i: number, next: Partial<Anchor>) =>
     onChange(anchors.map((a, j) => (j === i ? { ...a, ...next } : a)));
   const remove = (i: number) => onChange(anchors.filter((_, j) => j !== i));
@@ -29,8 +31,9 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
     <PropertyGroup title="Anchors">
       {anchors.length === 0 && (
         <p className={styles.anchorHint}>
-          Nothing pinned — every color comes from the lightness law. Pin one when the law would
-          otherwise give you a different color than the name.
+          Nothing pinned — every color comes from the lightness law.
+          {pickFrom !== undefined &&
+            ` Pin one from ${pickFrom} when the law would otherwise give you a different color than the name.`}
         </p>
       )}
 
@@ -76,7 +79,7 @@ export function AnchorList({ anchors, onChange }: AnchorListProps) {
 
       {anchors.length > 0 && (
         <p className={styles.anchorHint}>
-          Pinned colors keep their own lightness. Pick more from the panel below.
+          Pinned colors keep their own lightness.{pickFrom !== undefined && ` Pick more from ${pickFrom}.`}
         </p>
       )}
     </PropertyGroup>
