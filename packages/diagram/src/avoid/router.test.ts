@@ -151,6 +151,22 @@ describe('createAvoidRouter', () => {
     expect(Math.abs(runX('one') - runX('two'))).toBe(8);
   });
 
+  it('keeps a spread connector apart from its channel mates when a new connector crosses only it', () => {
+    const lefts = [0, 120, 240].map((y, k) => rectShape(`l${k}`, 0, y));
+    const rights = [300, 420, 540].map((y, k) => rectShape(`r${k}`, 160, y));
+    const fa = rectShape('fa', -100, -200);
+    const fb = rectShape('fb', 250, 200);
+    const obstacles = [...lefts, ...rights, fa, fb];
+    const edges = ['m', 'p', 'q'].map((id, k) => edgeBetween(id, lefts[k]!, rights[k]!, 'e', 'w'));
+    const router = createAvoidRouter();
+    const first = router.update({ obstacles, edges });
+    const runs = new Set(edges.map((e) => first.get(e.id)![0]!.x));
+    expect(runs.size).toBe(3);
+    const crossing = edgeBetween('f', fa, fb, 's', 'n', [{ x: -50, y: 90 }, { x: 300, y: 90 }]);
+    const second = router.update({ obstacles, edges: [...stored({ obstacles, edges }, first).edges, crossing] });
+    expect([...second.keys()]).toEqual(['f']);
+  });
+
   it('routes a connector around another connector’s label, as stationed on that connector’s new route', () => {
     const left = rectShape('left', 0, 0);
     const right = rectShape('right', 400, 0);

@@ -250,8 +250,9 @@ function routeDirty(dirty: readonly AvoidEdge[], ctx: EdgeRouteContext & { cross
   return fresh;
 }
 
-/** The routes to nudge: each one just made, and each clean one whose
- *  segments `clean` finds meeting theirs, as it was before nudging. */
+/** The routes to nudge: each one just made, each clean one whose segments
+ *  `clean` finds meeting theirs, and each clean one sharing a channel with one
+ *  of those, as it was before nudging. */
 function bundleOf(
   fresh: ReadonlyMap<string, Vec2[] | null>,
   edges: readonly AvoidEdge[],
@@ -266,8 +267,16 @@ function bundleOf(
     bundle.set(id, { points: full, waypoints: waypoints.get(id)! });
     for (let i = 1; i + 2 < full.length; i++) clean.edgesMeeting(segmentBox(full[i]!, full[i + 1]!), mates);
   }
-  for (const e of edges) {
-    if (mates.has(e.id) && !fresh.has(e.id) && e.locked !== true) bundle.set(e.id, { points: rawOf(e), waypoints: e.waypoints ?? [] });
+  const byId = new Map(edges.map((e) => [e.id, e]));
+  const queue = [...mates];
+  for (let id = queue.pop(); id !== undefined; id = queue.pop()) {
+    const e = byId.get(id);
+    if (e === undefined || bundle.has(id) || e.locked === true) continue;
+    const points = rawOf(e);
+    bundle.set(id, { points, waypoints: e.waypoints ?? [] });
+    const along = new Set<string>();
+    for (let i = 1; i + 2 < points.length; i++) clean.edgesAlong(points[i]!, points[i + 1]!, along);
+    for (const mate of along) if (!bundle.has(mate)) queue.push(mate);
   }
   return bundle;
 }
