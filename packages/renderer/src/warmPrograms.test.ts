@@ -73,4 +73,17 @@ describe('warmPrograms', () => {
     warmPrograms();
     expect(getContext).toHaveBeenCalledTimes(1);
   });
+
+  it('lets its context go when building a program throws', () => {
+    const warm = context(true);
+    const gl = new Proxy(warm.gl, {
+      get(target, prop) {
+        if (prop === 'createProgram') return () => { throw new Error('lost'); };
+        return Reflect.get(target, prop);
+      },
+    });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(gl as unknown as RenderingContext);
+    warmPrograms();
+    expect(warm.state.lost).toBe(true);
+  });
 });
