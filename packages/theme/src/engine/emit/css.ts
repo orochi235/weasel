@@ -175,12 +175,16 @@ export function emitCss(themes: readonly EmitInput[]): string {
     const axes = combineAxes(t.baked.axes, def.baked.axes);
     const resolved = new Resolved(t.baked.axes, chainOf(t.baked, byName));
     const selections = enumerateAxisChoices(axes);
+    // No default-theme block matches an axis value only this theme declares, so a token varying on that axis would
+    // read this theme's defaults block there, at its own default rather than the default theme's.
+    const unmatched = (n: string, sel: AxisChoice) =>
+      union(axes, getOwn(t.deps, n)?.all, getOwn(def.deps, n)?.all).some((a) => !Object.hasOwn(getOwn(def.baked.axes, a)?.values ?? {}, getOwn(sel, a)!));
     const differs = resolved.names.filter((n) =>
       selections.some((sel) => {
         const mine = resolved.token(n, sel);
         if (!mine) return false;
         const theirs = defResolved.token(n, sel);
-        return !theirs || cssValue(n, mine) !== cssValue(n, theirs) || resolved.expanded(n, sel) !== defResolved.expanded(n, sel);
+        return !theirs || unmatched(n, sel) || cssValue(n, mine) !== cssValue(n, theirs) || resolved.expanded(n, sel) !== defResolved.expanded(n, sel);
       }),
     );
     return { t, axes, resolved, differs };
