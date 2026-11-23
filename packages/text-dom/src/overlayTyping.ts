@@ -77,7 +77,7 @@ export interface TypingHost {
   /** The overlay's text changed, by the browser's hand or this module's. */
   onEdited: () => void;
   /** The edit's undo, which every input is recorded in and the history inputs step. */
-  history: OverlayHistory;
+  history: Omit<OverlayHistory, 'steps'>;
 }
 
 /** The overlay's `beforeinput`, `input` and composition listeners. */
