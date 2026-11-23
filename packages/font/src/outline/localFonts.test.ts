@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { canQueryLocalFonts, enableLocalFontOutlines, parseFontStyle } from './localFonts';
-import { glyphOutline, listFontOutlines, outlineCssSource, registerFontOutlines, _resetFontOutlinesForTests } from './outlineRegistry';
+import { glyphOutline, listFontOutlines, loadFontOutlines, outlineCssSource, registerFontOutlines, _resetFontOutlinesForTests } from './outlineRegistry';
+import { synthesizeCollection } from './fontFiles.fixture';
+import { writeFont } from './writtenFont.fixture';
 
 function fontData(family: string, style: string) {
   return {
@@ -86,6 +88,15 @@ describe('enableLocalFontOutlines', () => {
     vi.stubGlobal('queryLocalFonts', vi.fn(async () => [{ ...fontData('Odd', 'Regular'), postscriptName: '' }]));
     await enableLocalFontOutlines();
     expect(outlineCssSource('Odd', 400, 'normal')).toHaveProperty('bytes');
+  });
+
+  it('loads a collection face with no PostScript name from its first member, as DOM text gets its bytes', async () => {
+    const ttc = synthesizeCollection(writeFont({ family: 'Odd', unitsPerEm: 1000, glyphs: [{ unicodes: [65], advance: 500, contours: [] }] }));
+    vi.stubGlobal('queryLocalFonts', vi.fn(async () => [
+      { ...fontData('Odd', 'Regular'), postscriptName: '', blob: async () => new Blob([ttc]) },
+    ]));
+    await enableLocalFontOutlines();
+    expect(await loadFontOutlines('Odd')).toBe('ready');
   });
 
   it('registers a face per variant, without reading any blob', async () => {

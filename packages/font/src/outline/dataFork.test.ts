@@ -15,6 +15,16 @@ const FORK = dataFork([
   { type: 'sfnt', data: REGULAR },
   { type: 'sfnt', data: BOLD },
 ]);
+/** Where the `sfnt` type's reference list starts. */
+function sfntReferences(view: DataView): number {
+  const mapOffset = view.getUint32(4);
+  const typeList = mapOffset + view.getUint16(mapOffset + 24);
+  for (let t = 0; t <= view.getUint16(typeList); t++) {
+    const entry = typeList + 2 + t * 8;
+    if (String.fromCharCode(...new Uint8Array(view.buffer, entry, 4)) === 'sfnt') return typeList + view.getUint16(entry + 6);
+  }
+  throw new Error('no sfnt type');
+}
 const asArray = (b: ArrayBuffer): number[] => Array.from(new Uint8Array(b));
 
 describe('a .dfont\'s sfnt resources', () => {
@@ -61,6 +71,25 @@ describe('a .dfont\'s sfnt resources', () => {
     const fork = dataFork([{ type: 'sfnt', data: REGULAR }]);
     new DataView(fork).setUint32(256, REGULAR.length + 4096);
     expect(() => sfntFromCollection(fork)).toThrow(/\.dfont.*truncated/);
+  });
+
+  it('refuses two references to one resource, rather than copying it once for each', () => {
+    const fork = FORK.slice(0);
+    const view = new DataView(fork);
+    const refs = sfntReferences(view);
+    view.setUint32(refs + 12 + 4, view.getUint32(refs + 4));
+    expect(() => sfntResources(fork)).toThrow(/\.dfont.*damaged.*overlap/);
+  });
+
+  it('refuses a type list that names the sfnt references twice', () => {
+    const fork = FORK.slice(0);
+    const view = new DataView(fork);
+    const mapOffset = view.getUint32(4);
+    const typeList = mapOffset + view.getUint16(mapOffset + 24);
+    // FORK's types are FOND, then sfnt: point the FOND entry at sfnt's references, under sfnt's tag.
+    view.setUint32(typeList + 2, view.getUint32(typeList + 2 + 8));
+    view.setUint32(typeList + 2 + 4, view.getUint32(typeList + 2 + 8 + 4));
+    expect(() => sfntResources(fork)).toThrow(/\.dfont.*damaged.*overlap/);
   });
 
   it.skipIf(!existsSync(INTER_TTF))('returns a real font byte for byte', () => {
