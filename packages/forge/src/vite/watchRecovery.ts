@@ -31,6 +31,28 @@ const mtimeOf = (file: string): number | undefined => {
 
 const withoutQuery = (url: string) => url.replace(/[?#].*$/s, '');
 
+/** Each module read but not yet transformed, in the order read: its file's modification time, and when. */
+function pendingReads() {
+  const read = new Map<string, { mtime: number; at: number }>();
+  return {
+    set(id: string, mtime: number | undefined) {
+      const at = Date.now();
+      // A load another plugin fails never reaches transform, so its entry goes once it is a minute old.
+      for (const [old, entry] of read) {
+        if (at - entry.at < STALE_READ_MS) break;
+        read.delete(old);
+      }
+      read.delete(id);
+      if (mtime !== undefined) read.set(id, { mtime, at });
+    },
+    take(id: string): number | undefined {
+      const mtime = read.get(id)?.mtime;
+      read.delete(id);
+      return mtime;
+    },
+  };
+}
+
 /**
  * A plugin that serves an edit the OS never reported. Each module vite serves from a file is stamped with the file's
  * modification time when vite reads it. A request for a module whose file has changed since, and a check of every
@@ -42,8 +64,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
   if (!(quietMs > 0)) throw new RangeError(`watchRecovery: quietMs must be above 0, got ${quietMs}`);
   /** Each served file's modules, with the file's modification time when vite read it for that module. */
   const stamps = new Map<string, Map<string, number>>();
-  /** Each client module read but not yet transformed, in the order read: its file's modification time, and when. */
-  const read = new Map<string, { mtime: number; at: number }>();
+  const read = pendingReads();
   const fileOfUrl = new Map<string, string>();
   let server: ViteDevServer | undefined;
   let active = false;
@@ -131,23 +152,14 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
         if (!active || this.environment.name !== 'client') return;
         const file = withoutQuery(id);
         if (skipped(file)) return;
-        const mtime = mtimeOf(file);
-        const at = Date.now();
-        // A load another plugin fails never reaches transform, so its entry goes once it is a minute old.
-        for (const [old, entry] of read) {
-          if (at - entry.at < STALE_READ_MS) break;
-          read.delete(old);
-        }
-        read.delete(id);
-        if (mtime !== undefined) read.set(id, { mtime, at });
+        read.set(id, mtimeOf(file));
       },
     },
     transform: {
       order: 'pre',
       handler(_code, id) {
-        const mtime = read.get(id)?.mtime;
+        const mtime = read.take(id);
         if (mtime === undefined) return;
-        read.delete(id);
         if (this.environment.mode !== 'dev') return;
         const mod = this.environment.moduleGraph.getModuleById(id);
         if (!mod?.file) return;
