@@ -96,9 +96,11 @@ function treeOf(categories: readonly RegistryCategory[]) {
   return { nodes: out, picks, texts };
 }
 
-/** Badges each branch with the children it shows, so a filtered category counts what the filter left. */
+const leaves = (n: TreeNode): number => (n.children ? n.children.reduce((sum, c) => sum + leaves(c), 0) : 1);
+
+/** Badges each branch with the entries it shows, so a filtered category or group counts what the filter left. */
 const counted = (nodes: readonly TreeNode[]): TreeNode[] =>
-  nodes.map((n) => (n.children ? { ...n, trailing: countBadge(n.children.length), children: counted(n.children) } : n));
+  nodes.map((n) => (n.children ? { ...n, trailing: countBadge(leaves(n)), children: counted(n.children) } : n));
 
 /**
  * A filter field over a tree of registry categories, beside a detail pane.

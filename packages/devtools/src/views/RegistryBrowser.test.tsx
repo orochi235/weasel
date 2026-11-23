@@ -54,6 +54,13 @@ describe('RegistryBrowser', () => {
     expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('badges a group with the entries under it, filtered or not', () => {
+    renderWithIcons(browser({ categories: GROUPED }));
+    expect(item('Live 5')).toBeTruthy();
+    filter('alpha');
+    expect(item('Live 1')).toBeTruthy();
+  });
+
   it('expands a category on click and shows its entries', () => {
     renderWithIcons(browser());
     fireEvent.click(screen.getByText('Ops'));
