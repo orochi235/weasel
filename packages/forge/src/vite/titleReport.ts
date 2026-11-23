@@ -28,8 +28,8 @@ export function warnShared(entries: IndexEntry[], root: string, logger: Logger |
  * id two stories share. That segment names the component in the Components view, so a phrase there is a story
  * filed as a component of its own; it belongs under the component it shows, named for what it adds.
  */
-export function titleReport(entries: readonly IndexEntry[], root = ''): { lines: string[]; ok: boolean } {
-  const under = (file: string) => (file.startsWith(root) ? file.slice(root.length).replace(/^\//, '') : file);
+export function titleReport(entries: readonly IndexEntry[], root: string): { lines: string[]; ok: boolean } {
+  const under = (file: string) => relative(root, file);
   const spaced = new Map<string, string>();
   for (const entry of entries) {
     if (/\s/.test(entry.title.split('/').pop() ?? '')) spaced.set(under(entry.file), entry.title);

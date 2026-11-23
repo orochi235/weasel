@@ -21,7 +21,7 @@ describe('folderTitles', () => {
     expect(fits('pkg/ui/src/components/Keycaps/KeySequence.stories.tsx', 'ui/Keycaps/KeySequence')).toBe(true);
     expect(fits('pkg/ui/src/components/Keycaps/Keycaps.stories.tsx', 'ui/Keycaps/KeySequence')).toBe(false);
     expect(fits('pkg/ui/src/components/Keycaps/KeyBank.stories.tsx', 'ui/Keycaps/KeyBank')).toBe(false);
-    expect(folderTitles('pkg/ui/src/components/Keycaps/KeyBank.stories.tsx', RULE, exportsOf)?.expected).toBe('ui/Keycaps/KeyBank');
+    expect(folderTitles('pkg/ui/src/components/Keycaps/KeyBank.stories.tsx', RULE, exportsOf)?.expected).toBeNull();
   });
 
   it('matches a file to its export ignoring case, so no case-only rename is needed', () => {
@@ -63,6 +63,12 @@ describe('folderTitleReport', () => {
     expect(ok).toBe(false);
     expect(lines[0]).toBe("pkg/ui/src/components/Slider/Slider.stories.tsx  'ui/Foundations/Slider' → 'ui/Slider'");
     expect(lines).toHaveLength(2);
+  });
+
+  it('asks for a rename, not a title, when the file is named for neither its folder nor an export', () => {
+    const { lines, ok } = folderTitleReport([entry('ui/Keycaps/KeyBank', '/r/pkg/ui/src/components/Keycaps/KeyBank.stories.tsx')], RULE, exportsOf, '/r');
+    expect(ok).toBe(false);
+    expect(lines[0]).toBe("pkg/ui/src/components/Keycaps/KeyBank.stories.tsx  'ui/Keycaps/KeyBank' → no title fits: name the file for 'Keycaps' or one of its exports");
   });
 
   it('passes when every covered file fits', () => {

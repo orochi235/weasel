@@ -3953,3 +3953,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): the theme editor's `writeAt` and `clearAt` throw for a variation whose axis the
   selection does not choose, where `writeAt` returned the bare leaf and dropped every branch. `leafAt` reads no
   value there, so the editor never offers that field; writing to whichever branch comes first was the alternative.
+## Audit round seventy-six (2026-11-22): forge's vite plugin
+
+- 2026-11-22 (the fixer's call): forge's capture endpoint refuses a box past 16384 device pixels on either side
+  (`box × dpr`, Chromium's largest texture) with a 400, so a story taller than 5461 CSS pixels cannot be captured
+  at dpr 3. Clamping the box and capturing part of the story was the alternative.

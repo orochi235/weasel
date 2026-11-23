@@ -51,11 +51,11 @@ export async function foreignStories(
     const key = await trace.declaring(at, name);
     if (!key) return undefined;
     if (own.has(key)) return called && own.get(key) === 'story';
-    const memo = `${key}:${called}`;
-    if (!answers.has(memo)) {
-      // Set before it is awaited, so a cycle of imports meets a pending answer and not a second walk.
-      answers.set(memo, depth > MAX_DEPTH ? Promise.resolve(undefined) : declared(key, called, depth));
-    }
+    if (depth > MAX_DEPTH) return undefined;
+    // Keyed by depth too: a walk asks only deeper, so it never waits on its own answer, and what the depth limit cut
+    // short at one depth is not reused at a shallower one.
+    const memo = `${key}:${called}:${depth}`;
+    if (!answers.has(memo)) answers.set(memo, declared(key, called, depth));
     return answers.get(memo);
   };
 

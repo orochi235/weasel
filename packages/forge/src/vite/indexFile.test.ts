@@ -99,6 +99,24 @@ export const Basic = story({ render: () => null });
     ]);
   });
 
+  it('keeps a native export copied by Object.assign from a story, or made by a call it cannot read', () => {
+    const code = `
+import { meta, story } from '@weasel-js/forge';
+import * as forge from '@weasel-js/forge';
+import { storyFactory } from './factory';
+export default meta({ title: 'ui/Slider' });
+const Basic = story({ render: () => null });
+const make = storyFactory();
+export const Dark = Object.assign({}, Basic, { name: 'Dark' });
+export const settings = Object.assign({}, { dense: true });
+export const Spaced = forge.story({ render: () => null });
+export const Made = make({ render: () => null });
+export const keys = [1, 2].map(String);
+export const list = Array.from({ length: 2 });
+`;
+    expect(ids(code).map(([, name]) => name)).toEqual(['Dark', 'Spaced', 'Made']);
+  });
+
   it('reads a CSF title written as a constant or a template with no expression, and falls back to the auto title otherwise', () => {
     const titled = (title: string) => ids(`const TITLE = 'ui/Const';\nexport default { title: ${title} };\nexport const A = {};\n`)[0]?.[0];
     expect(titled('TITLE')).toBe('ui-const--a');

@@ -52,31 +52,32 @@ export function createBindings(
   };
 
   /** The binding `name` exported from `file` is declared as, through re-exports. */
-  const declaring = async (file: string, name: string, depth = 0): Promise<Key | null> => {
+  const declaring = async (file: string, name: string, depth: number, seen: Set<Key>): Promise<Key | null> => {
     const mod = info(file);
-    if (!mod || depth > 32) return null;
+    if (!mod || depth > 32 || seen.has(keyOf(file, name))) return null;
+    seen.add(keyOf(file, name));
     const exp = mod.exports.get(name);
     if (exp?.kind === 'local') {
       const imp = mod.imports.get(exp.local);
-      return imp ? importKey(file, imp, depth + 1) : keyOf(file, exp.local);
+      return imp ? importKey(file, imp, depth + 1, seen) : keyOf(file, exp.local);
     }
     if (exp?.kind === 'from') {
       const target = await resolveFrom(exp.spec, file);
-      return target ? declaring(target, exp.imported, depth + 1) : null;
+      return target ? declaring(target, exp.imported, depth + 1, seen) : null;
     }
     if (name === 'default') return null;
     for (const spec of mod.stars) {
       const target = await resolveFrom(spec, file);
-      const found = target ? await declaring(target, name, depth + 1) : null;
+      const found = target ? await declaring(target, name, depth + 1, seen) : null;
       if (found) return found;
     }
     return null;
   };
 
-  const importKey = async (importer: string, imp: Import, depth = 0): Promise<Key | null> => {
+  const importKey = async (importer: string, imp: Import, depth = 0, seen = new Set<Key>()): Promise<Key | null> => {
     if (imp.imported === '*') return null;
     const target = await resolveFrom(imp.spec, importer);
-    return target ? declaring(target, imp.imported, depth) : null;
+    return target ? declaring(target, imp.imported, depth, seen) : null;
   };
 
   const componentOf = async (entry: IndexEntry): Promise<Key | null> => {

@@ -24,6 +24,12 @@ describe('parsePayload', () => {
     expect(parsePayload({ ...valid, playhead: null, isolate: true })).toEqual({ ...valid, playhead: null, isolate: true });
   });
 
+  it('rejects a box wider or taller than Chromium can draw at its dpr', () => {
+    expect(parsePayload({ ...valid, box: { width: 1e7, height: 200 } })).toEqual({ error: expect.stringContaining('box') });
+    expect(parsePayload({ ...valid, box: { width: 320, height: 8193 }, dpr: 2 })).toEqual({ error: expect.stringContaining('box') });
+    expect(parsePayload({ ...valid, box: { width: 320, height: 8192 }, dpr: 2 })).not.toHaveProperty('error');
+  });
+
   it('rejects a payload whose dpr is out of range or whose box is empty', () => {
     for (const dpr of [0.5, 3.5, Number.NaN]) {
       expect(parsePayload({ ...valid, dpr })).toEqual({ error: expect.stringContaining('dpr') });
