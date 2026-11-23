@@ -5,6 +5,9 @@
  * ramp, which keeps running and wins; and a ramp with no anchor interpolates
  * from the previous scheduled endpoint rather than from the value the param
  * holds now, so a second ramp jumps before it moves.
+ *
+ * A step sets `.value` as well: `setValueAtTime` alone moves `.value` only at the
+ * next render, so a ramp written later in the same task would anchor at the old value.
  */
 export function writeParam(
   ctx: BaseAudioContext,
@@ -20,6 +23,7 @@ export function writeParam(
     param.setValueAtTime(param.value, now);
     param.linearRampToValueAtTime(value, now + rampMs / 1000);
   } else {
+    param.value = value;
     param.setValueAtTime(value, now);
   }
 }
@@ -71,12 +75,7 @@ export function checkPoint(what: string, p: { x: number; y: number; z?: number }
   checkFinite(`${what}'s z`, p.z);
 }
 
-/**
- * Give a param nothing has scheduled yet its starting value. `.value` is
- * written as well, so a ramp `writeParam` anchors before the first render
- * starts there rather than at the param's default.
- */
+/** Give a param nothing has scheduled yet its starting value: {@link writeParam} as a step. */
 export function initParam(ctx: BaseAudioContext, param: AudioParam, value: number): void {
-  param.value = value;
   writeParam(ctx, param, value);
 }

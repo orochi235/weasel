@@ -27,8 +27,6 @@ export function createInsertRoute(ctx: BaseAudioContext, head: AudioNode, tail: 
 
   const link = (from: AudioNode, to: AudioNode, gain: number): Link => {
     const g = ctx.createGain();
-    // `.value` first, so `writeParam` anchors a ramp at it rather than at 1.
-    g.gain.value = gain;
     writeParam(ctx, g.gain, gain);
     from.connect(g);
     g.connect(to);
