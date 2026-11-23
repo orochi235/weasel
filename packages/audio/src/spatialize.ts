@@ -10,7 +10,8 @@ export interface SpatialOptions {
   /** Distance within which gain stays at 1. Default 1. The inverse model needs
    *  this above 0: at 0 it cliffs gain from 1 to 0 at any nonzero distance. */
   refDistance?: number;
-  /** Distance at which linear rolloff reaches 0. Ignored by inverse. Default
+  /** Distance past which linear rolloff stops falling, as a `PannerNode`'s does: gain
+   *  there is 1 − `rolloffFactor`, so 0 at the default factor. Ignored by inverse. Default
    *  10000. At or below `refDistance` it gives the same 1-to-0 cliff, there. */
   maxDistance?: number;
   /** Default 'inverse' — the natural-sounding one. */
@@ -75,7 +76,7 @@ export function spatialize(
     const span = maxDistance / 2 - refDistance / 2;
     gain = span <= 0 ? 0
       : rolloffFactor === 0 ? 1
-      : 1 - rolloffFactor * ((distance / 2 - refDistance / 2) / span);
+      : 1 - rolloffFactor * ((Math.min(distance, maxDistance) / 2 - refDistance / 2) / span);
   } else {
     const fall = rolloffFactor === 0 ? 0 : rolloffFactor * (distance - refDistance);
     gain = refDistance === 0 ? 0 : refDistance / (refDistance + fall);
