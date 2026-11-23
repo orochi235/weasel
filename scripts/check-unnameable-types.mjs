@@ -13,10 +13,16 @@
  * `check-unnameable-types.allow.json`. The list only shrinks: a new name
  * fails, and a recorded name that is now exported or gone fails until
  * `npm run check:unnameable -- --update` drops it. Run after `npm run build`.
+ *
+ * Paths after the flags check only the packages holding them, and `--build` builds those first (and any sibling
+ * they need that has no `dist`), so a branch's own packages are checked without a full build.
  */
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, relative, resolve as resolvePath, sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { buildGraph } from './build-workspaces.mjs';
 import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
 
 const ALLOW = join(repoRoot, 'scripts', 'check-unnameable-types.allow.json');
@@ -94,14 +100,63 @@ export function unnameableTypes(dir, manifest) {
   return [...found].sort();
 }
 
+/** The workspaces of `all` holding any of `paths` (relative to the repo root): every one when there are none. */
+export function packagesHolding(all, paths, root = repoRoot) {
+  if (paths.length === 0) return all;
+  const rel = paths.map((p) => relative(root, resolvePath(root, p)));
+  return all.filter(({ dir }) => {
+    const own = relative(root, dir);
+    return rel.some((p) => p === own || p.startsWith(own + sep));
+  });
+}
+
+/**
+ * The order to build `names` in, each after the siblings `graph` says it needs; a sibling not in `names` is built too
+ * when `built(sibling)` says it has no `dist`.
+ */
+export function buildOrder(graph, names, built) {
+  const order = [];
+  const seen = new Set();
+  const wanted = new Set(names);
+  const visit = (name) => {
+    if (seen.has(name) || (!wanted.has(name) && built(name))) return;
+    seen.add(name);
+    for (const dep of graph.get(name) ?? []) visit(dep);
+    order.push(name);
+  };
+  for (const name of names) visit(name);
+  return order;
+}
+
 function main() {
-  const update = process.argv.includes('--update');
+  const args = process.argv.slice(2);
+  const update = args.includes('--update');
+  const paths = args.filter((a) => !a.startsWith('--'));
   const seeding = update && !existsSync(ALLOW);
   const allow = existsSync(ALLOW) ? JSON.parse(readFileSync(ALLOW, 'utf8')) : {};
   const added = [];
   const stale = [];
-  const next = {};
-  const packages = publishableWorkspaces();
+  const all = publishableWorkspaces();
+  const packages = packagesHolding(all, paths);
+  if (packages.length === 0) {
+    console.log('[unnameable] OK — no published package holds the paths given.');
+    return;
+  }
+  // Packages not checked keep their allowlist entries as they are.
+  const checked = new Set(packages.map(({ manifest }) => manifest.name));
+  const next = Object.fromEntries(Object.entries(allow).filter(([name]) => !checked.has(name)));
+  if (args.includes('--build')) {
+    const dirOf = new Map(all.map(({ dir, manifest }) => [manifest.name, dir]));
+    const graph = buildGraph(all.map(({ manifest }) => manifest));
+    for (const name of buildOrder(graph, [...checked], (n) => existsSync(join(dirOf.get(n), 'dist')))) {
+      console.log(`[unnameable] building ${name}`);
+      const { status } = spawnSync('npm', ['run', 'build', '-w', name], { cwd: repoRoot, stdio: 'inherit' });
+      if (status !== 0) {
+        console.error(`\n[unnameable] npm run build -w ${name} failed (exit ${status}).`);
+        process.exit(status ?? 1);
+      }
+    }
+  }
   packages.forEach(({ dir, manifest }, i) => {
     const names = unnameableTypes(dir, manifest);
     const allowed = new Set(seeding ? names : (allow[manifest.name] ?? []));
@@ -121,7 +176,8 @@ function main() {
     process.exit(1);
   }
   if (update) {
-    writeFileSync(ALLOW, `${JSON.stringify(next, null, 2)}\n`);
+    const sorted = Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)));
+    writeFileSync(ALLOW, `${JSON.stringify(sorted, null, 2)}\n`);
     console.log(`[unnameable] ${stale.length} name(s) dropped from the allowlist.`);
     return;
   }
@@ -137,4 +193,4 @@ function main() {
   console.log(`[unnameable] OK — no new unnameable types; ${total} allowlisted.`);
 }
 
-main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();
