@@ -75,6 +75,21 @@ function listTree(
   };
 }
 
+/** The rows laid out at `width`, measured against the last draw's theme, or the built-in one before any draw. */
+function measureList(
+  rows: readonly HudListRow[], opts: ListOptions, width: number, drawn: Pick<HudDrawCtx, 'tokens' | 'defaultFont'> | null,
+): RowListLayout & { height: number } {
+  const ctx = drawn ?? { tokens: (builtIn ??= resolveTheme(weaselTheme)), defaultFont: DEFAULT_FONT_FAMILY };
+  const m = measureRowList({ rows, empty: opts.empty }, fixedWidth(width), hudMeasureEnv(ctx, opts.fontFamily));
+  return { ...m.layout, height: m.height };
+}
+
+/** The scroll that brings `r` fully into a view `viewH` tall, moving as little as it can from `top`. */
+function scrollToShow(r: WidgetBounds, top: number, viewH: number): number {
+  if (r.y < top) return r.y;
+  return r.y + r.height > top + viewH ? r.y + r.height - viewH : top;
+}
+
 export function createList(opts: ListOptions): ListWidget {
   const rev = createRevision(opts.onChange);
   let subs = createEmitter();
@@ -90,14 +105,7 @@ export function createList(opts: ListOptions): ListWidget {
 
   const changed = () => { rev.changed(); subs.emit(); };
   const assertLive = () => { if (disposed) throw new Error('weasel-hud: cannot mutate a disposed widget.'); };
-  const measure = (): RowListLayout & { height: number } => {
-    const ctx = lastCtx ?? { tokens: (builtIn ??= resolveTheme(weaselTheme)), defaultFont: DEFAULT_FONT_FAMILY };
-    const m = measureRowList(
-      { rows, empty: opts.empty }, fixedWidth(bounds.width),
-      hudMeasureEnv(ctx, opts.fontFamily),
-    );
-    return { ...m.layout, height: m.height };
-  };
+  const measure = () => measureList(rows, opts, bounds.width, lastCtx);
   /** Follow the rows' height, when the caller gave none. True when it moved. */
   const fit = (): boolean => {
     if (fixedHeight) return false;
@@ -117,9 +125,7 @@ export function createList(opts: ListOptions): ListWidget {
   /** Scroll the keyboard's row into view, as a focused DOM row scrolls itself. */
   const reveal = (): void => {
     const r = nav.active === null ? undefined : measure().rows[nav.active]?.rect;
-    if (!r) return;
-    if (r.y < scrollTop) holdScroll(r.y);
-    else if (r.y + r.height > scrollTop + bounds.height) holdScroll(r.y + r.height - bounds.height);
+    if (r) holdScroll(scrollToShow(r, scrollTop, bounds.height));
   };
   const setRowsInner = (next: readonly HudListRow[]) => {
     const prev = rows;
@@ -155,12 +161,9 @@ export function createList(opts: ListOptions): ListWidget {
     accessibleTree: tree,
     setRows(next) { assertLive(); setRowsInner(next); changed(); },
     setBounds(b) {
-      assertLive();
-      fixedHeight = b.height !== undefined;
+      assertLive(); fixedHeight = b.height !== undefined;
       bounds = { x: b.x, y: b.y, width: b.width, height: b.height ?? bounds.height };
-      fit();
-      holdScroll(scrollTop);
-      changed();
+      fit(); holdScroll(scrollTop); changed();
     },
     setHidden(h) { assertLive(); hidden = h; changed(); },
     draw(ctx: HudDrawCtx): DrawCommand[] {
