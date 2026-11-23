@@ -21,6 +21,10 @@ const CRAYON_COLUMNS = 12;
 /** What tells one anchor from another: two sources' swatches, or a hex pin, can share a name but not this. */
 const colorOf = (a: Anchor): string => `${a.hue}|${a.lightness}|${a.chroma}`;
 
+/** Whether `name` is `base` or the `base-N` that `add` gives a name already taken. */
+const namedFor = (name: string, base: string): boolean =>
+  name === base || (name.startsWith(`${base}-`) && /^\d+$/.test(name.slice(base.length + 1)));
+
 export type SourceId = 'named' | 'lego' | 'copic';
 
 interface Swatch {
@@ -111,7 +115,12 @@ export function SwatchPanel({ anchors, onChange, count }: SwatchPanelProps) {
     for (let n = 2; taken.has(name); n += 1) name = `${a.name}-${n}`;
     onChange([...anchors, { ...a, name }]);
   };
-  const unpin = (s: Swatch) => onChange(anchors.filter((a) => colorOf(a) !== colors.get(s.key)));
+  const unpin = (s: Swatch) => {
+    const color = colors.get(s.key);
+    const same = anchors.filter((a) => colorOf(a) === color);
+    const drop = same.find((a) => namedFor(a.name, s.name)) ?? same[0];
+    onChange(anchors.filter((a) => a !== drop));
+  };
   const byKey = new Map(swatches.map((s) => [s.key, s]));
   const crayons: SwatchGridOption[] = swatches.map((s) => {
     const pinned = isPinned(s);
