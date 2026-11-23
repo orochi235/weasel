@@ -65,6 +65,7 @@ describe('reading a Mermaid architecture diagram', () => {
     expect(() => readArchitecture('architecture-beta\n  group a[A]\n  junction a')).toThrow('Mermaid, line 3: "a" already names');
     expect(() => readArchitecture('architecture-beta\n  group a[A] in a')).toThrow('Mermaid, line 2: group "a" would hold itself');
     expect(() => readArchitecture('architecture-beta\n  group a[A] in b\n  group b[B] in a')).toThrow('Mermaid, line 2: group "a" would hold itself');
+    expect(() => readArchitecture('architecture-beta\n  group a[A] in b\n  group b[B] in c\n  group c[C] in b')).toThrow('Mermaid, line 3: group "b" would hold itself');
   });
 });
 
