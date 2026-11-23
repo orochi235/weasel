@@ -38,8 +38,11 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
   const [error, setError] = useState<string | null>(null);
   // A new follower reads its ring from the start, with coords off, so what the last one delivered goes.
   const [following, setFollowing] = useState(follower);
+  // Keys the table, whose expanded rows are named by seqs a new follower starts over from 0.
+  const [generation, setGeneration] = useState(0);
   if (following !== follower) {
     setFollowing(follower);
+    setGeneration((g) => g + 1);
     setEntries([]);
     setCoords([]);
     setLive(null);
@@ -106,7 +109,7 @@ export function DispatchView({ client, rootId }: DevtoolsViewProps): ReactElemen
       </div>
       {error && <p className={s.note} role="alert">{error}</p>}
       <div className={s.body}>
-        <TraceTable
+        <TraceTable key={generation}
           entries={entries}
           live={live}
           now={now}

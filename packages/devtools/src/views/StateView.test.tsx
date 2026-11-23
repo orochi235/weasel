@@ -38,6 +38,13 @@ describe('<StateView> overlays', () => {
     expect(page.on()).toEqual(['bounds', 'ids']);
   });
 
+  it('overrides only the flag a click flips, leaving the canvas its own say over the rest', async () => {
+    const page = fakePage(['fps']);
+    renderWithIcons(<StateView client={page.client} rootId="r" />);
+    await flip('bounds');
+    expect(page.sent).toEqual([{ bounds: true }]);
+  });
+
   it('shows one overlay alone on Alt-click, and every overlay on a second', async () => {
     const page = fakePage(['bounds', 'fps']);
     renderWithIcons(<StateView client={page.client} rootId="r" />);

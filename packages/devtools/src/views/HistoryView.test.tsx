@@ -38,6 +38,21 @@ function fakePage() {
 }
 
 describe('<HistoryView>', () => {
+  it('opens no step of a new client because a step of the old one with its seq was open', async () => {
+    const first = fakePage();
+    const view = renderWithIcons(<HistoryView client={first.client} rootId="r" />);
+    act(() => first.push(step('kit:first')));
+    fireEvent.click(await screen.findByRole('cell', { name: 'push' }));
+    expect(await screen.findByText('kit:first')).toBeTruthy();
+
+    const second = fakePage();
+    view.rerender(<HistoryView client={second.client} rootId="r" />);
+    act(() => second.push(step('kit:second')));
+    await waitFor(() => expect(screen.getByRole('status', { name: 'Position' }).textContent).toBe('1 / 1'));
+    await screen.findByRole('cell', { name: 'push' });
+    expect(screen.queryByText('kit:second')).toBeNull();
+  });
+
   it('opens only the step pressed, not a later one that takes its place in the list', async () => {
     const page = fakePage();
     renderWithIcons(<HistoryView client={page.client} rootId="r" />);

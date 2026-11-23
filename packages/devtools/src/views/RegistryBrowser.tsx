@@ -117,9 +117,17 @@ export function RegistryBrowser(props: RegistryBrowserProps): ReactElement {
     if (!controlled) setOwnFilter(next);
     onFilterChange?.(next);
   };
-  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(
-    () => new Set([...(props.defaultOpen ?? [])].flatMap((id) => openKeys(categories.find((c) => c.id === id) ?? { id }))),
-  );
+  const [initialOpen] = useState(() => [...(props.defaultOpen ?? [])]);
+  const [openIds, setOpenIds] = useState<ReadonlySet<string>>(() => new Set(initialOpen.map(categoryKey)));
+
+  // A `defaultOpen` category opens its group when it first appears, which may be after mount.
+  const [unplaced, setUnplaced] = useState<ReadonlySet<string>>(() => new Set(initialOpen));
+  const arrived = unplaced.size ? categories.filter((c) => unplaced.has(c.id)) : [];
+  if (arrived.length) {
+    setUnplaced((cur) => new Set([...cur].filter((id) => !arrived.some((c) => c.id === id))));
+    const ids = arrived.flatMap(openKeys);
+    setOpenIds((cur) => (ids.every((id) => cur.has(id)) ? cur : new Set([...cur, ...ids])));
+  }
 
   // Open the selection's category when the selection moves into it, and only then, so it can still be closed.
   const selectedCategory = selected ? categories.find((c) => c.id === selected.category) ?? null : null;

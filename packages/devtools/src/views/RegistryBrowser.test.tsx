@@ -54,6 +54,13 @@ describe('RegistryBrowser', () => {
     expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
   });
 
+  it('opens the group of a defaultOpen category that arrives after mount', () => {
+    const { rerender } = renderWithIcons(browser({ categories: [], defaultOpen: ['tools'] }));
+    rerender(browser({ categories: GROUPED, defaultOpen: ['tools'] }));
+    expect(item(/^Live/)).toHaveAttribute('aria-expanded', 'true');
+    expect(item(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('badges a group with the entries under it, filtered or not', () => {
     renderWithIcons(browser({ categories: GROUPED }));
     expect(item('Live 5')).toBeTruthy();
