@@ -35,13 +35,13 @@ const URL_FORM = /^(?:ssh|git|https?):\/\/(?:[^@/\s]+@)?([\w.-]+)(?::\d+)?\/([\w
 
 /**
  * The repository a remote URL names, in either the `git@host:owner/name.git` or the URL form. A host under
- * `github.com`, such as an SSH alias `work.github.com`, is taken as github.com itself.
+ * `github.com` or named for it, such as an SSH alias `work.github.com` or `github.com-work`, is taken as github.com.
  */
 export function repoOf(remote: string): RemoteRepo | null {
   const match = SCP.exec(remote.trim()) ?? URL_FORM.exec(remote.trim());
   if (!match) return null;
   const [, rawHost = '', owner = '', name = ''] = match;
-  const host = rawHost === 'github.com' || rawHost.endsWith('.github.com') ? 'github.com' : rawHost;
+  const host = /^(?:[\w-]+\.)*github\.com(?:[-_][\w-]+)?$/.test(rawHost) ? 'github.com' : rawHost;
   const slug = `${owner}/${name}`;
   return { slug, url: `https://${host}/${slug}`, ghRepo: host === 'github.com' ? slug : `${host}/${slug}` };
 }

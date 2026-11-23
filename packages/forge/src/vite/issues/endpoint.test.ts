@@ -49,6 +49,13 @@ describe('repoOf', () => {
     expect(repoOf('https://github.com/acme/widgets')?.slug).toBe('acme/widgets');
     expect(repoOf('ssh://git@github.com:22/acme/widgets.git')?.slug).toBe('acme/widgets');
     expect(repoOf('git@work.github.com:acme/widgets.git')?.url).toBe('https://github.com/acme/widgets');
+    expect(repoOf('git@github.com-work:acme/widgets.git')).toEqual({
+      slug: 'acme/widgets',
+      url: 'https://github.com/acme/widgets',
+      ghRepo: 'acme/widgets',
+    });
+    expect(repoOf('git@github.com_work:acme/widgets.git')?.ghRepo).toBe('acme/widgets');
+    expect(repoOf('git@github.community.test:acme/widgets.git')?.ghRepo).toBe('github.community.test/acme/widgets');
   });
 
   it('names an Enterprise host to gh, and nothing for a path that is not a repository', () => {
