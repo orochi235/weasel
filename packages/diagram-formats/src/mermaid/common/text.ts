@@ -80,7 +80,7 @@ export function mermaidIds(
     let base = id.replace(chars.other, '_').replace(/^_+(?=[\p{L}\p{N}_])|(?<=[\p{L}\p{N}_])_+$/gu, '') || 'n';
     if (/^\d/.test(base)) base = `n${base}`;
     if (!valid(base)) base = `${base}_`;
-    const pick = freshId(base, taken, { from: 2, sep: '_', bare: true });
+    const pick = freshId(base, { has: (c) => taken.has(c) || words.has(c.toLowerCase()) }, { from: 2, sep: '_', bare: true });
     taken.add(pick);
     out.set(id, pick);
   }
