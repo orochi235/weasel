@@ -168,6 +168,18 @@ describe('typeText', () => {
     expect(typeText({ type: 'union', types: [obj, nul] })).toBe('{ x: A } | null');
   });
 
+  it('prints a mapped type with its modifiers and its as clause', () => {
+    const k: TdType = { type: 'reference', name: 'K' };
+    const keys: TdType = { type: 'typeOperator', operator: 'keyof', target: { type: 'reference', name: 'T' } };
+    const value: TdType = { type: 'indexedAccess', objectType: { type: 'reference', name: 'T' }, indexType: k };
+    const mapped = (extra: Partial<TdType>): TdType => ({ type: 'mapped', parameter: 'K', parameterType: keys, templateType: value, ...extra });
+    expect(typeText(mapped({ optionalModifier: '+' }))).toBe('{ [K in keyof T]?: T[K] }');
+    expect(typeText(mapped({ readonlyModifier: '-', optionalModifier: '-' }))).toBe('{ -readonly [K in keyof T]-?: T[K] }');
+    expect(typeText(mapped({ readonlyModifier: '+' }))).toBe('{ readonly [K in keyof T]: T[K] }');
+    const renamed: TdType = { type: 'templateLiteral', head: 'on', tail: [[k, '']] };
+    expect(typeText(mapped({ nameType: renamed }))).toBe('{ [K in keyof T as `on${K}`]: T[K] }');
+  });
+
   it('prints an inferred type with its infer, and its constraint', () => {
     const t: TdType = { type: 'reference', name: 'T' };
     const u: TdType = { type: 'reference', name: 'U' };

@@ -58,6 +58,10 @@ export interface TdType {
   parameter?: string;
   parameterType?: TdType;
   templateType?: TdType;
+  readonlyModifier?: '+' | '-';
+  optionalModifier?: '+' | '-';
+  /** A mapped type's `as` clause. */
+  nameType?: TdType;
   /** An `infer`'s `extends` constraint. */
   constraint?: TdType;
 }

@@ -39,8 +39,12 @@ export function typeText(type: TdType | undefined): string {
       return `\`${type.head ?? ''}${(type.tail ?? []).map(([t, text]) => `\${${typeText(t)}}${text}`).join('')}\``;
     case 'predicate':
       return `${type.asserts ? 'asserts ' : ''}${type.name}${type.targetType ? ` is ${typeText(type.targetType)}` : ''}`;
-    case 'mapped':
-      return `{ [${type.parameter} in ${typeText(type.parameterType)}]: ${typeText(type.templateType)} }`;
+    case 'mapped': {
+      const readonly = type.readonlyModifier === '+' ? 'readonly ' : type.readonlyModifier === '-' ? '-readonly ' : '';
+      const optional = type.optionalModifier === '+' ? '?' : type.optionalModifier === '-' ? '-?' : '';
+      const as = type.nameType ? ` as ${typeText(type.nameType)}` : '';
+      return `{ ${readonly}[${type.parameter} in ${typeText(type.parameterType)}${as}]${optional}: ${typeText(type.templateType)} }`;
+    }
     case 'reflection':
       return reflectionText(type.declaration);
     default:
