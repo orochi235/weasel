@@ -134,6 +134,9 @@ function collect(
       const placed = placeCarried(carried, state);
       if (typeof placed === 'string') skipped.push({ kind: 'group', detail: placed });
       else if (!placed.every(finiteObject)) skipped.push({ kind: 'group', detail: 'lbxObjectsCommand placed at a position no number can say' });
+      else if (Number.isFinite(end) && !placed.every((o) => withinLength(o, end))) {
+        skipped.push({ kind: 'group', detail: 'lbxObjectsCommand reaching past the end of an auto-length label' });
+      }
       else if (placed.length > 0 && !insideClips(placed, clips)) {
         skipped.push({ kind: 'group', detail: 'lbxObjectsCommand not wholly inside an axis-aligned rect clip' });
       } else for (const object of placed) out.push({ object });

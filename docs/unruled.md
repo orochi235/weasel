@@ -646,10 +646,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-20 (my call, audit round 53): the `.lbx` writer takes P-touch's own line spacing and tab stops to match
   the default `lineHeight` and `tabSize`, and rasterizes a text box that sets more than one line at another line
   height or holds a tab at another tab size, rather than write `lineSpace`, whose unit bil-lbx does not state.
+  2026-11-22 (audit round 76): a box of one line at another line height is rasterized too unless its
+  `verticalAlign` is `center`, since the half-leading moves that line within a top- or bottom-aligned box.
 - 2026-11-20 (my call, audit round 53): under `autoLength`, the `.lbx` writer rasterizes a shape or text box
   reaching past either end of the label, so it is cropped there as rasterized paint is, rather than let P-touch
-  grow the label for it. An `lbxObjectsCommand` past the end is still written whole, since it cannot be
-  rasterized; whether it should be skipped instead is unasked. A carried object under a transform that scales an
+  grow the label for it. An `lbxObjectsCommand` reaching past either end cannot be rasterized, so it is skipped
+  with a reason instead (audit round 76; it was written whole before, letting the label grow). A carried object under a transform that scales an
   axis to zero is dropped with no report, as paint there draws nothing.
 - 2026-11-22 (my call, audit round 69): the `.lbx` writer rasterizes a text box any of whose runs names a `lang`,
   even one whose forms match the face's defaults, since a `text:text` names no language and the writer cannot tell

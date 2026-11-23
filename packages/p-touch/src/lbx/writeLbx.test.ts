@@ -148,6 +148,16 @@ describe('lbxConfig', () => {
 describe('lbxObjectsCommand', () => {
   const barcode: BarcodeObject = { type: 'barcode', protocol: 'CODE128', data: 'A-123', position: { x: 2, y: 3, width: 40, height: 10 } };
 
+  it('skips carried objects reaching past either end of an auto-length label, which P-touch would grow it for', async () => {
+    for (const x of [150, 120, -20]) {
+      const { config, skipped } = await lbxConfig({ ...page([lbxObjectsCommand([{ ...barcode, position: { ...barcode.position, x } }])]), autoLength: true });
+      expect(config.objects).toEqual([]);
+      expect(skipped).toEqual([{ kind: 'group', detail: 'lbxObjectsCommand reaching past the end of an auto-length label' }]);
+    }
+    expect((await lbxConfig({ ...page([lbxObjectsCommand([barcode])]), autoLength: true })).config.objects).toHaveLength(1);
+    expect((await lbxConfig(page([lbxObjectsCommand([{ ...barcode, position: { ...barcode.position, x: 150 } }])]))).config.objects).toHaveLength(1);
+  });
+
   it('puts carried objects in the file through the transforms above them, in paint order', async () => {
     const { config, skipped } = await lbxConfig(page([
       rect(0, 0, 5, 5, { fill: { paint: { color: '#000' } } }),

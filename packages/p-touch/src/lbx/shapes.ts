@@ -173,8 +173,9 @@ export function textObject(cmd: TextDrawCommand, state: DrawState): TextObject |
   const data = cmd.runs.map((run) => run.text).join('').replace(HARD_BREAK, '\n');
   if (NOT_XML.test(data) || NOT_XML_ATTR.test(first!.fontFamily)) return undefined;
   // P-touch spaces lines and tab stops its own way, which only the defaults are taken to match.
-  const lines = data.includes('\n') || Number.isFinite(cmd.maxWidth);
-  if (lines && (cmd.style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight) !== DEFAULT_TEXT_STYLE.lineHeight) return undefined;
+  // A lone line's half-leading moves it too, except in a centered box, where it cancels.
+  const spacingShows = data.includes('\n') || Number.isFinite(cmd.maxWidth) || (cmd.verticalAlign ?? 'top') !== 'center';
+  if (spacingShows && (cmd.style.lineHeight ?? DEFAULT_TEXT_STYLE.lineHeight) !== DEFAULT_TEXT_STYLE.lineHeight) return undefined;
   if (data.includes('\t') && (cmd.style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize) !== DEFAULT_TEXT_STYLE.tabSize) return undefined;
   // Only text the canvas lays out left to right is an object: `start` and `end` map to LEFT and RIGHT.
   const direction = cmd.direction ?? cmd.style.direction ?? 'auto';
