@@ -165,7 +165,7 @@ export function writeClassDiagram(doc: DiagramDocument, opts?: WriteOptions): Ex
     dropPorts(e, (m) => out.warnings.add(m));
     w.lines.push(w.relation(e));
   }
-  dropEdgeColors(out.edges, 'class diagram', (m) => out.warnings.add(m));
+  dropEdgeColors(out.edges, 'class diagram', (m) => out.warnings.add(m), ['dash']);
   w.noteLines();
   w.styles();
   return { text: `${w.lines.join('\n')}\n`, warnings: out.warnings.all() };

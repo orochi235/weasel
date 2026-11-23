@@ -93,9 +93,9 @@ export function dropEndLabels(edges: readonly DataEdge[], kind: string, warn: (m
   if (edges.some((e) => e.endLabels !== undefined)) warn(`Mermaid ${kind} have no labels at a connector's ends; they were dropped.`);
 }
 
-const EDGE_COLORS = { stroke: 'line colors', label: 'label colors', width: 'widths' } as const;
+const EDGE_COLORS = { stroke: 'line colors', label: 'label colors', width: 'widths', dash: 'dashes' } as const;
 
-/** Warns, for a kind (`'ER diagram'`) whose connectors hold no colors or widths but those `kept` names, that the
+/** Warns, for a kind (`'ER diagram'`) whose connectors hold no colors, widths, or dashes but those `kept` names, that the
  *  others on `edges` were dropped. */
 export function dropEdgeColors(
   edges: readonly DataEdge[], kind: string, warn: (message: string) => void, kept: readonly (keyof typeof EDGE_COLORS)[] = [],
