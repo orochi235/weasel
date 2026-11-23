@@ -216,12 +216,15 @@ describe('createLiveAudioRunner', () => {
     expect(graph.applies.at(-1)).toEqual([{ kind: 'set', id: 'osc', param: 'frequency', value: 220 }]);
   });
 
-  it('leaves out a wire into a port its node lacks, names the stage, and keeps following the rest', () => {
+  it('leaves out a wire into a port its stage has and its node lacks, names the stage, and keeps following the rest', () => {
     const { runner, graph } = setup();
-    const stale = (frequency: number): EffectPipeline => ({
-      ...withGain(frequency),
-      wires: [{ from: { stage: 'osc', port: 'out' }, to: { stage: 'gain', port: 'inn' } }, wire('gain', 'out')],
-    });
+    const stale = (frequency: number): EffectPipeline => {
+      const p = withGain(frequency);
+      return {
+        stages: p.stages.map((s) => (s.id === 'gain' ? { ...s, inputs: [{ id: 'inn', type: 'audio' }] } : s)),
+        wires: [{ from: { stage: 'osc', port: 'out' }, to: { stage: 'gain', port: 'inn' } }, wire('gain', 'out')],
+      };
+    };
     runner.setPipeline(stale(440));
     expect(runner.state.run?.stages.gain?.error).toBe('no input port "inn"');
     expect(graph.applies.flat().some((p) => p.kind === 'connect' && 'node' in p.to && p.to.port === 'inn')).toBe(false);
