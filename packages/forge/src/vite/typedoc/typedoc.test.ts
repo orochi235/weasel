@@ -194,6 +194,12 @@ describe('typeText', () => {
     expect(signatureText(signature)).toBe("<T extends string = 'a'>(key: T) => T");
   });
 
+  it("prints an object type's readonly members as readonly", () => {
+    const a: TdType = { type: 'reference', name: 'A' };
+    const child = { id: 2, kind: 1024, name: 'x', type: a, flags: { isReadonly: true, isOptional: true } };
+    expect(typeText({ type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', children: [child] } })).toBe('{ readonly x?: A }');
+  });
+
   it('prints an inferred type with its infer, and its constraint', () => {
     const t: TdType = { type: 'reference', name: 'T' };
     const u: TdType = { type: 'reference', name: 'U' };

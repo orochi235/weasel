@@ -81,7 +81,9 @@ function reflectionText(declaration: TdReflection | undefined): string {
   if (!declaration) return '{}';
   const [signature] = declaration.signatures ?? [];
   if (signature && isSignature(declaration)) return signatureText(signature);
-  const members = (declaration.children ?? []).map((c) => `${c.name}${c.flags?.isOptional ? '?' : ''}: ${typeText(c.type)}`);
+  const members = (declaration.children ?? []).map(
+    (c) => `${c.flags?.isReadonly ? 'readonly ' : ''}${c.name}${c.flags?.isOptional ? '?' : ''}: ${typeText(c.type)}`,
+  );
   return members.length ? `{ ${members.join('; ')} }` : '{}';
 }
 
