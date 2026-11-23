@@ -132,4 +132,14 @@ describe('the spline curve editor', () => {
     });
     for (const handler of Object.values(handlers)) expect(handler).not.toHaveBeenCalled();
   });
+
+  it.each(['octant', 'quadrant'] as const)("ends the cardinal ray's label inside the %s view box", (mode) => {
+    const { container } = render(
+      <OctantSplineEditor anchors={ANCHORS} mode={mode} evalAtS={() => 30} onAnchorDraft={vi.fn()} onAnchorChange={vi.fn()} onAnchorDelete={vi.fn()} onAnchorAdd={vi.fn()} />,
+    );
+    const [minX, , width] = container.querySelector('svg')!.getAttribute('viewBox')!.split(' ').map(Number);
+    const label = [...container.querySelectorAll('text')].find((el) => el.textContent === 'cardinal (s = 0)')!;
+    expect(label.getAttribute('text-anchor')).toBe('end');
+    expect(Number(label.getAttribute('x'))).toBeLessThanOrEqual(minX! + width!);
+  });
 });

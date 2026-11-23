@@ -78,7 +78,7 @@ function Grid({ mode }: { mode: SplineMode }) {
       ))}
       <line x1="0" y1="0" x2={RAY_LENGTH} y2="0" className={s.ray} strokeWidth="0.4" strokeDasharray="1.5 1.5" />
       <line x1="0" y1="0" x2={trimNumber(endX, 2)} y2={trimNumber(endY, 2)} className={s.ray} strokeWidth="0.4" strokeDasharray="1.5 1.5" />
-      <text x="76" y="2" fontSize="3" className={s.rayLabel}>cardinal (s = 0)</text>
+      <text x={RAY_LENGTH} y="4" fontSize="3" textAnchor="end" className={s.rayLabel}>cardinal (s = 0)</text>
       <text x={trimNumber(endX + 2, 2)} y={trimNumber(endY - 1, 2)} fontSize="3" className={s.rayLabel}>
         {mode === 'octant' ? 'diagonal (s = 1)' : 'next cardinal (s = 1)'}
       </text>
