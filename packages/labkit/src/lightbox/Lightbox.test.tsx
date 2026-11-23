@@ -2,6 +2,8 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { SurfaceContext } from '../surface/SurfaceContext';
+import type { SurfaceHandle } from '../surface/useTiledSurface';
 import { Lightbox } from './Lightbox';
 import { useLightboxControl } from './LightboxContext';
 import { LightboxLayers } from './LightboxLayers';
@@ -351,5 +353,34 @@ describe('Lightbox', () => {
     expect([open(outer), open(inner)]).toEqual([true, false]);
     fireEvent.keyDown(document.body, { key: 'Escape' });
     expect([open(outer), open(inner)]).toEqual([false, false]);
+  });
+
+  it("gives a surface back the outer lightbox's scope when the inner one closes", () => {
+    const scope = vi.fn();
+    const surface = { scope } as unknown as SurfaceHandle;
+    renderWithIcons(
+      <SurfaceContext.Provider value={surface}>
+        <Lightbox label="outer">
+          <Lightbox label="inner">
+            <div />
+          </Lightbox>
+        </Lightbox>
+      </SurfaceContext.Provider>,
+    );
+    const [outer, inner] = [...document.querySelectorAll('.lk-lightbox')] as [
+      HTMLElement,
+      HTMLElement,
+    ];
+    const expandOf = (el: HTMLElement) =>
+      el.querySelector(':scope > .lk-lightbox__open') as HTMLElement;
+    fireEvent.click(expandOf(outer));
+    const outerScope = scope.mock.lastCall?.[0];
+    expect(outerScope).toContain(outer);
+    fireEvent.click(expandOf(inner));
+    expect(scope.mock.lastCall?.[0]).toContain(inner);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(scope.mock.lastCall?.[0]).toBe(outerScope);
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(scope.mock.lastCall?.[0]).toBe(null);
   });
 });
