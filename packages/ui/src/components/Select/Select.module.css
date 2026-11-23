@@ -141,9 +141,7 @@
 }
 
 .optionBody {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+  composes: optionBody from './listbox.module.css';
 }
 
 .value .optionBody {
@@ -183,9 +181,7 @@
 }
 
 .note {
-  display: block;
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-subtle);
+  composes: note from './listbox.module.css';
 }
 
 .value .note {

@@ -34,9 +34,11 @@
 .optionBody {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .note {
+  display: block;
   font-size: var(--wzl-font-size-sm);
   color: var(--wzl-fg-subtle);
 }
