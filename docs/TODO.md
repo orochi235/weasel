@@ -577,6 +577,12 @@ these entries are what is left of them.
   typecheck as `IconName` for a consumer; astv declares them itself in `kernel3dIconNames.ts`. Closes when the packed
   kernel3d declares them, and a check fails a package whose packed types miss its `IconName` entries.
 
+- **(P2) [agent] A 1.x clock option `rates` typechecks silently under 2.0 when the clock comes from a function**
+  (2026-11-23). x-xstitch's instrument declared `clock: (c) => ({ … rates })`; the returned literal isn't
+  excess-property checked, so the renamed field (`speeds`, clock 2.0.0) was dropped without an error and found
+  only by grep. Other 1.x names removed in 2.0 can slip through the same way. Closes when a `ClockSpec` carrying
+  `rates` fails to typecheck in that position (e.g. `rates?: never`), with a type test.
+
 - **(P3) [maintainer] Without rolldown's native binding, vite 8.3.8 writes a lazy import's preload list as `[]`
   and a stray hash, and the bundle does not parse** (2026-11-21). Not weasel's: nothing here installs without
   optional dependencies; it showed up building skulkr's dashboard with `npm ci --omit=optional`, which drops
