@@ -167,8 +167,19 @@ describe('ColorField', () => {
     fireEvent.input(input, { target: { value: '#000000' } });
     fireEvent.blur(input);
     expect(onChange).toHaveBeenCalledTimes(1);
-    expect(onChange).toHaveBeenCalledWith('#000000ff');
+    expect(onChange).toHaveBeenCalledWith('#000000');
     expect(container.querySelector('[data-mixed]')).not.toBeNull();
+  });
+
+  it.each(['mixed', 'unset'] as const)('leaves the opacity out of a color pick on a %s field', (state) => {
+    const onInput = vi.fn();
+    const onChange = vi.fn();
+    render(<ColorField {...{ [state]: true }} alpha onInput={onInput} onChange={onChange} aria-label="Fill" />);
+    const input = screen.getByLabelText('Fill');
+    fireEvent.input(input, { target: { value: '#336699' } });
+    fireEvent.blur(input);
+    expect(onInput).toHaveBeenLastCalledWith('#336699');
+    expect(onChange).toHaveBeenCalledWith('#336699');
   });
 
   it('mixed disables the opacity slider until the first color edit', () => {
