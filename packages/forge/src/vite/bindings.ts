@@ -62,6 +62,7 @@ export function createBindings(
       return imp ? importKey(file, imp, depth + 1, seen) : keyOf(file, exp.local);
     }
     if (exp?.kind === 'from') {
+      if (exp.imported === '*') return null;
       const target = await resolveFrom(exp.spec, file);
       return target ? declaring(target, exp.imported, depth + 1, seen) : null;
     }

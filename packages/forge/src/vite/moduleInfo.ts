@@ -1,11 +1,11 @@
 import { type ParserPlugin, parse } from '@babel/parser';
 import type * as t from '@babel/types';
-import { DEFAULT_LOCAL } from './ast.ts';
+import { DEFAULT_LOCAL, patternNames } from './ast.ts';
 import { freeNames } from './freeNames.ts';
 
 export interface Import {
   spec: string;
-  /** `*` for a namespace import. */
+  /** `*` for a namespace import or re-export. */
   imported: string;
 }
 
@@ -27,6 +27,8 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
   const exports = new Map<string, Export>();
   const stars: string[] = [];
   const refs = new Map<string, Set<string>>();
+  /** `const { a: b } = ns`: each name destructured off a top-level identifier, which may be a namespace import. */
+  const picked: { local: string; from: string; imported: string }[] = [];
   const declare = (name: string, node: t.Node | null | undefined) => refs.set(name, node ? freeNames(node) : new Set());
 
   const declareStatement = (decl: t.Node | null | undefined): string[] => {
@@ -39,10 +41,25 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
         return [decl.id.name];
       case 'VariableDeclaration':
         return decl.declarations.flatMap((d) => {
-          if (d.id.type !== 'Identifier') return [];
-          declare(d.id.name, d.init);
-          return [d.id.name];
+          if (d.id.type === 'Identifier') {
+            declare(d.id.name, d.init);
+            return [d.id.name];
+          }
+          const names = patternNames(d.id);
+          for (const name of names) declare(name, d);
+          if (d.id.type === 'ObjectPattern' && d.init?.type === 'Identifier') {
+            for (const p of d.id.properties) {
+              if (p.type === 'ObjectProperty' && !p.computed && p.value.type === 'Identifier') {
+                picked.push({ local: p.value.name, from: d.init.name, imported: p.key.type === 'Identifier' ? p.key.name : nameOf(p.key as t.StringLiteral) });
+              }
+            }
+          }
+          return names;
         });
+      case 'TSEnumDeclaration':
+        if (decl.declare) return [];
+        declare(decl.id.name, decl);
+        return [decl.id.name];
       default:
         return [];
     }
@@ -63,6 +80,9 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
         if (stmt.exportKind === 'type') break;
         for (const name of declareStatement(stmt.declaration)) exports.set(name, { kind: 'local', local: name });
         for (const spec of stmt.specifiers) {
+          if (spec.type === 'ExportNamespaceSpecifier' && stmt.source) {
+            exports.set(nameOf(spec.exported), { kind: 'from', spec: stmt.source.value, imported: '*' });
+          }
           if (spec.type === 'ExportSpecifier' && spec.exportKind === 'type') continue;
           if (spec.type !== 'ExportSpecifier') continue;
           const exported = nameOf(spec.exported);
@@ -87,6 +107,11 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
       default:
         declareStatement(stmt);
     }
+  }
+  // Destructuring a namespace import binds what a named import of the same members would.
+  for (const { local, from, imported } of picked) {
+    const ns = imports.get(from);
+    if (ns?.imported === '*' && !imports.has(local)) imports.set(local, { spec: ns.spec, imported });
   }
   return { imports, exports, stars, refs };
 }

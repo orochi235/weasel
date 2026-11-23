@@ -54,6 +54,7 @@ export function createTracer(read: (file: string) => string): (resolve: ResolveI
         return next ? declaring(next, imp.imported, depth + 1, seen) : null;
       }
       if (exp?.kind === 'from') {
+        if (exp.imported === '*') return null;
         const next = await trace.target(exp.spec, at);
         return next ? declaring(next, exp.imported, depth + 1, seen) : null;
       }
