@@ -91,10 +91,12 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
   }, []);
 
   const colorRef = useLatest(color);
+  const hasColor = color !== null;
+  // Rebuilt when `enabled` or `active` would answer otherwise: registry-drawn chrome re-reads them on a registration.
   const copy = useMemo((): Action => ({
     id: LOUPE_COPY_ACTION,
     label: 'Copy loupe color',
-    enabled: () => (colorRef.current ? true : ActionDisabledReason.NotApplicable),
+    enabled: () => (hasColor ? true : ActionDisabledReason.NotApplicable),
     invoker: {
       timing: 'immediate',
       run: () => {
@@ -102,18 +104,17 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
         if (hex) void copyText(hex).then((took) => { if (!took) reportCopyRefused(hex); });
       },
     },
-  }), [colorRef]);
+  }), [colorRef, hasColor]);
   useAction(copy);
 
-  const visibleRef = useLatest(visible);
   const toggle = useMemo((): Action => ({
     id: LOUPE_TOGGLE_ACTION,
     label: 'Loupe',
     // F2, as labkit's quick lens takes it.
     defaultBinding: [{ spec: { kind: 'key', key: 'F2', phase: BETWEEN_GESTURES }, opts: { id: `${LOUPE_TOGGLE_ACTION}.key` } }],
-    active: () => visibleRef.current,
-    invoker: { timing: 'immediate', run: () => setVisible(!visibleRef.current) },
-  }), [visibleRef, setVisible]);
+    active: () => visible,
+    invoker: { timing: 'immediate', run: () => setVisible(!visible) },
+  }), [visible, setVisible]);
   useAction(toggle);
 
   const state = useMemo((): LoupeState => ({ ...settings, color, setVisible }), [settings, color, setVisible]);
