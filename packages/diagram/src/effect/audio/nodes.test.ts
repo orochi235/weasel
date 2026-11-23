@@ -76,4 +76,10 @@ describe('settings', () => {
     node.build(ctx, { seconds: 3 }, { mix: 0.3 });
     expect(audio.createReverbNode).toHaveBeenCalledWith(ctx, { seconds: 3, mix: 0.3 });
   });
+
+  it('reads reverb seconds given as text as a number, and fails the stage on text that is none', () => {
+    const node = audioStageNodes['audio.reverb']!;
+    expect(node.settings({ seconds: '2.5' }, {})).toEqual({ seconds: 2.5 });
+    expect(() => node.settings({ seconds: '2 s' }, {})).toThrow('seconds is not a number: "2 s"');
+  });
 });
