@@ -1,3 +1,4 @@
+import { mimeMatchesGlob } from './ingestTypes';
 import { parseTargetSpec } from './match';
 import { isApplePlatform } from './platform';
 import type { GestureSpec, ModSpec, PhaseSpec, TargetSpec } from './spec';
@@ -87,7 +88,9 @@ function phaseRank(spec: PhaseSpec | undefined): number {
  * Rank the filter a spec's own kind adds, on the same principle as `phaseRank`:
  * 1 for the kind's default, 2 for a value narrowing it, 0 for one widening it.
  *
- *    2 — a `wheel` or `pinch` `direction`, or non-empty drop/carry/paste `types`
+ *    2 — a `wheel` or `pinch` `direction`, or drop/carry/paste `types` naming
+ *        no catch-all glob (`*`, `*\/*`: the list is a union, so one of them
+ *        lets everything through)
  *    0 — a `drag` on `button: '*'` (the default is the primary button alone),
  *        a `hover` with `held: 'optional'` (the default is no button held)
  */
@@ -99,7 +102,8 @@ function exactRank(spec: GestureSpec): number {
     case 'drop':
     case 'carry':
     case 'paste':
-      return spec.types !== undefined && spec.types.length > 0 ? 2 : 1;
+      return spec.types !== undefined && spec.types.length > 0 && !spec.types.some((g) => mimeMatchesGlob('', g))
+        ? 2 : 1;
     case 'drag':
       return spec.button === '*' ? 0 : 1;
     case 'hover':

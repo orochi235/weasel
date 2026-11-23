@@ -134,4 +134,11 @@ describe("specificity ranks a kind's own filter", () => {
   it('a hover with no button held outranks one that may have a button held', () => {
     above({ kind: 'hover' }, { kind: 'hover', held: 'optional' });
   });
+
+  it('a catch-all MIME glob ranks as no types filter', () => {
+    above({ kind: 'drop', types: ['text/csv'] }, { kind: 'drop', types: ['*/*'] });
+    above({ kind: 'paste', types: ['text/csv'] }, { kind: 'paste', types: ['*'] });
+    above({ kind: 'carry', types: ['image/*'] }, { kind: 'carry', types: ['text/csv', '*/*'] });
+    expect(specificity({ kind: 'drop', types: ['*/*'] })).toEqual(specificity({ kind: 'drop' }));
+  });
 });
