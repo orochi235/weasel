@@ -50,7 +50,8 @@ export function paintToLocalUnits(fill: Paint, box: Rect): PosedPaint {
 /**
  * Inverse of {@link paintToLocalUnits}: express a gradient already positioned
  * in `box`'s frame as `0..1` fractions of that box (`units: 'bounds'`), so
- * it follows the node when moved or resized.
+ * it follows the node when moved or resized. A paint already in `'bounds'`
+ * units is returned untouched; any other is taken to be in `box`'s frame.
  *
  * A zero-width or zero-height box has no frame to normalize against; the
  * fill is returned untouched rather than divided by zero.
@@ -59,6 +60,7 @@ export function paintToBoundsUnits(fill: Paint, box: Rect): Paint {
   if (!isBuiltinKind(fill)) {
     return getPaintDrawKind(fill.kind)?.toBoundsUnits?.(fill, box) ?? fill;
   }
+  if ('units' in fill && fill.units === 'bounds') return fill;
   if (isPatternPaint(fill)) {
     const o = fill.origin ?? { x: 0, y: 0 };
     return { ...fill, origin: { x: o.x - box.x, y: o.y - box.y }, units: 'bounds' as const };
