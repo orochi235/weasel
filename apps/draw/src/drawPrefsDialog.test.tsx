@@ -72,8 +72,20 @@ describe('RegistryEnumControl', () => {
   const pref = (control?: 'select' | 'radio'): WeaselDrawPrefRegistryEnum => ({
     kind: 'registry-enum', source: 'tools', name: 'Last used tool', description: '', default: 'rect', ...(control ? { control } : {}),
   });
-  const ctx = (control: 'select' | 'radio' | undefined, setValue = vi.fn()): LeafContext =>
-    loneLeafContext('tools.lastTool', pref(control) as LeafContext['pref'], 'rect', setValue);
+  const ctx = (control: 'select' | 'radio' | undefined, setValue = vi.fn(), value: unknown = 'rect'): LeafContext =>
+    loneLeafContext('tools.lastTool', pref(control) as LeafContext['pref'], value, setValue);
+
+  it('shows the default for a value that is not a string', () => {
+    for (const value of [undefined, 3]) {
+      const { unmount } = render(
+        <RegistryEnumSourcesContext.Provider value={sources}>
+          <RegistryEnumControl {...ctx('radio', vi.fn(), value)} />
+        </RegistryEnumSourcesContext.Provider>,
+      );
+      expect((screen.getByRole('radio', { name: 'Rectangle' }) as HTMLInputElement).checked).toBe(true);
+      unmount();
+    }
+  });
 
   it('draws radios for a leaf whose control is radio, and its row as a group', () => {
     const setValue = vi.fn();
