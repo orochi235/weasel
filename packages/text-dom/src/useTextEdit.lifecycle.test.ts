@@ -3,7 +3,7 @@ import { act, render, renderHook } from '@testing-library/react';
 import { Suspense, createElement, startTransition, useState } from 'react';
 import { Hang } from '@weasel-js/react/testing/abandonRender';
 import { useTextEdit } from './useTextEdit';
-import { makeHarness, getOverlay, appendChar, seedPlainOverlay } from './testing/textEditHarness';
+import { makeHarness, getOverlay, appendChar, pressKey, seedPlainOverlay } from './testing/textEditHarness';
 
 describe('useTextEdit — the caret an edit opens with', () => {
   beforeEach(() => {
@@ -37,6 +37,19 @@ describe('useTextEdit — an edit that changed nothing writes nothing', () => {
     act(() => result.current.commitEdit());
     expect(h.commits).toEqual([]);
     expect(h.texts.a).toBe('abc\n');
+  });
+
+  it('writes nothing when undo takes text ending in a break back to how it opened', () => {
+    const h = makeHarness({ a: 'ab\n' });
+    const onChange = vi.fn();
+    h.opts.onChange = onChange;
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    const overlay = getOverlay(h.container)!;
+    act(() => { pressKey(overlay, 'b', { ctrl: true }); });
+    act(() => { pressKey(overlay, 'z', { ctrl: true }); });
+    act(() => result.current.commitEdit());
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('does not call `commit` either', () => {
