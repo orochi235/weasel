@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { drawOneLayer, useLatest } from '@weasel-js/core';
 import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
 import type { Hud } from '../hud';
-import { createLoupe, type LoupeHandle, type LoupeMode } from '../loupe/createLoupe';
+import { createLoupe, type LoupeAimMode, type LoupeHandle, type LoupeMode } from '../loupe/createLoupe';
 import type { WindowShapeKind } from '../widgets/window/window';
 import type { GlyphSource } from '../glyph';
 import type { IconSpec } from '@weasel-js/icons';
@@ -18,6 +18,8 @@ export interface LoupeSettings {
    *  built. */
   icons?: GlyphSource;
   modeIcons?: Partial<Record<LoupeMode, IconSpec>>;
+  /** The pin's icon on the ring, from `icons`; see `LoupeOptions.pinIcon`. Read when the lens is built. */
+  pinIcon?: IconSpec;
 }
 
 /** What the lens reports back. */
@@ -32,6 +34,8 @@ export interface LoupeEvents {
   onModeChange?(mode: LoupeMode): void;
   /** The lens's own zoom changed its factor. Write it back to whatever `settings.factor` is read from. */
   onFactorChange?(factor: number): void;
+  /** The lens's own pin pinned its aim, or let it follow the pointer again. */
+  onAimModeChange?(mode: LoupeAimMode): void;
 }
 
 /** A loupe over `ref`'s canvas, kept to `settings`. Mount only once `ref` is populated: `createLoupe` reads it in a
@@ -83,6 +87,8 @@ export function useLoupe(
       ...(shape ? { shape } : {}),
       ...(settingsRef.current.icons ? { icons: settingsRef.current.icons } : {}),
       ...(settingsRef.current.modeIcons ? { modeIcons: settingsRef.current.modeIcons } : {}),
+      ...(settingsRef.current.pinIcon ? { pinIcon: settingsRef.current.pinIcon } : {}),
+      camera: () => api.getView(),
       requestRedraw: () => api.requestRedraw(),
       contentVersion: () => api.getPaintedVersion(),
       onColorChange: (hex) => eventsRef.current.onColorChange(hex),
@@ -90,6 +96,7 @@ export function useLoupe(
       onClose: () => eventsRef.current.onClose(),
       onModeChange: (m) => eventsRef.current.onModeChange?.(m),
       onFactorChange: (f) => eventsRef.current.onFactorChange?.(f),
+      onAimModeChange: (m) => eventsRef.current.onAimModeChange?.(m),
     });
     loupe.window.setHidden(!visible);
     handle.current = loupe;

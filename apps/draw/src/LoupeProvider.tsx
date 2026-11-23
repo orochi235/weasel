@@ -30,6 +30,7 @@ function reportCopyRefused(hex: string): void {
 /** The action that copies the hex under the loupe. */
 export const LOUPE_COPY_ACTION = 'draw.loupe.copy';
 const MODE_ICONS = { vector: icon('ui:vector'), pixel: icon('ui:pixels') } as const;
+const PIN_ICON = icon('ui:pin');
 
 /** The action that shows or hides the loupe. */
 export const LOUPE_TOGGLE_ACTION = 'draw.loupe.toggle';
@@ -79,7 +80,7 @@ export function LoupeProvider({ canvasRef, ready, source, children }: LoupeProvi
   const [factor] = usePref('loupe.factor');
   const icons = useIconRegistry() ?? undefined;
   const settings = useMemo(
-    (): LoupeSettings => ({ visible, mode, factor, ...(icons ? { icons, modeIcons: MODE_ICONS } : {}) }),
+    (): LoupeSettings => ({ visible, mode, factor, ...(icons ? { icons, modeIcons: MODE_ICONS, pinIcon: PIN_ICON } : {}) }),
     [visible, mode, factor, icons],
   );
   const [color, setColor] = useState<string | null>(null);

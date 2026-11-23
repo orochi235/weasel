@@ -1,5 +1,6 @@
 export { createLoupeModel } from './model';
 export type {
+  LoupeAimMode,
   LoupeMode,
   LoupeModel,
   LoupeModelOptions,

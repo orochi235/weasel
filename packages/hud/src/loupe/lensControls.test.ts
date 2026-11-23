@@ -75,6 +75,7 @@ it('shows the controls only while the pointer is near the lens', () => {
   const controls = addLensControls({
     hud, win, round: true, stops: [1, 2, 4], requestRedraw: () => {},
     mode: () => 'vector', setMode: () => {}, factor: () => 2, setFactor: () => {},
+    aimMode: () => 'follow', aim: () => ({ x: 0, y: 0 }), pinAt: () => {}, setAimMode: () => {},
   });
   const ring = hud.widgets();
   expect(ring.every((w) => w.hidden)).toBe(true);

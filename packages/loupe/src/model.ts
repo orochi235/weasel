@@ -1,10 +1,15 @@
 import { clamp as clampTo, normalizeZoom } from '@weasel-js/geom';
 import { type LoupePoint, type LoupeRect, loupeSourcePoint } from './geometry';
+import { createLoupeAim } from './aim';
 
 /** How a loupe magnifies. `'vector'` re-renders the source through a zoomed-in
  *  view, so content stays sharp at any factor; `'pixel'` blows up the actual
  *  pixels the surface presented. */
 export type LoupeMode = 'vector' | 'pixel';
+
+/** What a loupe's aim follows. `'follow'` takes every aim it is given, the pointer's; `'pinned'` holds a point of the
+ *  content still, ignoring aims, until it is pinned elsewhere or set to follow again. */
+export type LoupeAimMode = 'follow' | 'pinned';
 
 /**
  * What a loupe needs from the surface it magnifies. A painter implements it,
@@ -43,12 +48,22 @@ export interface LoupeSurface {
    * Omit it when `sample` can answer for a fresh aim right away.
    */
   subscribeFrame?(fn: () => void): () => void;
+  /**
+   * The content point under surface point `p`, in whatever space the content lives in (a canvas's world). A pinned
+   * aim is held as one, so it stays on what it was put on while the surface's camera pans and zooms. Implement it
+   * with {@link pointFor}; with neither, a pin holds its surface point.
+   */
+  worldAt?(p: LoupePoint): LoupePoint;
+  /** Where content point `w` stands on the surface now: the inverse of {@link worldAt}. */
+  pointFor?(w: LoupePoint): LoupePoint;
 }
 
 /** Options for {@link createLoupeModel}. */
 export interface LoupeModelOptions {
   surface: LoupeSurface;
   mode?: LoupeMode;
+  /** What the aim follows. Default `'follow'`; a model made `'pinned'` pins where its aim first is, the origin. */
+  aimMode?: LoupeAimMode;
   /** Magnification. Default 8. Always positive and finite: a factor that is
    *  not becomes `ZOOM_FLOOR`, the same rule a view's zoom follows. */
   factor?: number;
@@ -69,16 +84,21 @@ export interface LoupeModelOptions {
 /** Where a loupe is aimed, how far it magnifies, and what color it is over. */
 export interface LoupeModel {
   readonly mode: LoupeMode;
+  readonly aimMode: LoupeAimMode;
   readonly factor: number;
-  /** Last aimed point, in the surface's CSS px. */
+  /** Where the lens is aimed, in the surface's CSS px: the last aim it took, or, pinned, where its pin stands now. */
   readonly aim: LoupePoint;
   /** Hex color under the aim point. `null` before an aim is sampled, and where the surface answers `null`. */
   readonly color: string | null;
   setMode(mode: LoupeMode): void;
   setFactor(factor: number): void;
-  /** Aim at a surface point. Ignored while the lens covers it, is hidden, or
-   *  the model is disposed. */
+  /** Aim at a surface point. Ignored while pinned, while the lens covers it or is hidden, and once the model is
+   *  disposed. */
   aimAt(p: LoupePoint): void;
+  /** Pin the aim at the content under the aim now, or let it follow aims again from where it stands. */
+  setAimMode(mode: LoupeAimMode): void;
+  /** Pin the aim at the content under surface point `p`. Ignored where `aimAt` would ignore it, the pin aside. */
+  pinAt(p: LoupePoint): void;
   /** Sample what the lens shows at `p`, a point inside it, and report that to
    *  `onPick`. Omit `p` to pick at the aim point. Leaves the aim, and `color`,
    *  alone. */
@@ -89,9 +109,21 @@ export interface LoupeModel {
   dispose(): void;
 }
 
+/** `surface`'s color at `p`, refusing a surface that answers later. */
+function sampleNow(surface: LoupeSurface, p: LoupePoint): string | null {
+  const hex: unknown = surface.sample(p);
+  if (typeof (hex as { then?: unknown } | null)?.then === 'function') {
+    throw new TypeError(
+      '[weasel loupe] A loupe surface answers at once, and its sample() answered with a promise. ' +
+        'Give an asynchronous sampler to createEyedropperModel, and the loupe a surface that reads now.',
+    );
+  }
+  return hex as string | null;
+}
+
 /**
  * Build the loupe's model over a surface. It holds the state a magnifier has —
- * aim, factor, mode, color — and none of the drawing.
+ * aim, what it follows, factor, mode, color — and none of the drawing.
  */
 export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   const { surface } = opts;
@@ -100,24 +132,13 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     normalizeZoom(clampTo(n, opts.minFactor ?? Number.NEGATIVE_INFINITY, opts.maxFactor ?? Number.POSITIVE_INFINITY));
 
   let factor = clamp(opts.factor ?? 8);
-  let aim: LoupePoint = { x: 0, y: 0 };
+  const aim = createLoupeAim(surface, opts.aimMode ?? 'follow');
   let color: string | null = null;
   let disposed = false;
   let aimUnsampled = false;
 
-  const sampleAt = (p: LoupePoint): string | null => {
-    const hex: unknown = surface.sample(p);
-    if (typeof (hex as { then?: unknown } | null)?.then === 'function') {
-      throw new TypeError(
-        '[weasel loupe] A loupe surface answers at once, and its sample() answered with a promise. ' +
-          'Give an asynchronous sampler to createEyedropperModel, and the loupe a surface that reads now.',
-      );
-    }
-    return hex as string | null;
-  };
-
   const sampleColor = () => {
-    const hex = sampleAt(aim);
+    const hex = sampleNow(surface, aim.now());
     if (hex === color) return;
     color = hex;
     opts.onColorChange?.(hex);
@@ -146,10 +167,19 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     return true;
   }
 
+  /** The aim moved: sample it, now or on the frame that shows it. */
+  const aimed = () => {
+    if (unsubscribeFrame) aimUnsampled = true;
+    else sampleColor();
+    surface.changed();
+  };
+  const refuses = (p: LoupePoint) => disposed || dead() || surface.hidden() || surface.covers(p);
+
   return {
     get mode() { return mode; },
+    get aimMode() { return aim.mode; },
     get factor() { return factor; },
-    get aim() { return aim; },
+    get aim() { return aim.now(); },
     get color() { return color; },
 
     setMode(next) {
@@ -167,28 +197,35 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     aimAt(p) {
-      if (disposed || dead()) return;
-      if (surface.hidden()) return;
-      if (surface.covers(p)) return;
-      aim = p;
-      if (unsubscribeFrame) aimUnsampled = true;
-      else sampleColor();
+      if (aim.mode === 'pinned' || refuses(p)) return;
+      aim.follow(p);
+      aimed();
+    },
+
+    setAimMode(next) {
+      if (disposed || dead() || !aim.setMode(next)) return;
       surface.changed();
+    },
+
+    pinAt(p) {
+      if (refuses(p)) return;
+      aim.pin(p);
+      aimed();
     },
 
     pick(p) {
       if (disposed || dead()) return null;
-      let at = aim;
+      let at = aim.now();
       if (p) {
         const rect = surface.lens();
         if (!rect) return null;
-        at = loupeSourcePoint(p, rect, rect.shows ?? aim, rect.factor ?? factor);
+        at = loupeSourcePoint(p, rect, rect.shows ?? at, rect.factor ?? factor);
         // The lens is part of the picture the surface presents. A point near
         // its frame maps back underneath it, and sampling there reports the
         // lens' own chrome as artwork.
         if (surface.covers(at)) return null;
       }
-      const hex = sampleAt(at);
+      const hex = sampleNow(surface, at);
       if (hex !== null) opts.onPick?.(hex);
       return hex;
     },

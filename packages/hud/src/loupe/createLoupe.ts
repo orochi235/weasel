@@ -1,6 +1,6 @@
-import type { RenderLayer, SceneCanvasApi } from '@weasel-js/core';
+import { viewScreenToWorld, viewWorldToScreen, type RenderLayer, type SceneCanvasApi, type View } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
-import { createLoupeModel, type LoupeMode, type LoupeModel, type LoupeSurface } from '@weasel-js/loupe';
+import { createLoupeModel, type LoupeAimMode, type LoupeMode, type LoupeModel, type LoupeSurface } from '@weasel-js/loupe';
 import type { Hud } from '../hud';
 import type { WindowShapeKind, WindowWidget } from '../widgets/window/window';
 import type { HudContentCtx, WidgetBounds } from '../widget';
@@ -16,7 +16,7 @@ import type { IconSpec } from '@weasel-js/icons';
 import type { Rect } from '@weasel-js/geom';
 import { solidFill } from '@weasel-js/paint';
 
-export type { LoupeMode };
+export type { LoupeAimMode, LoupeMode };
 
 /** Options for `createLoupe` shared by a plain lens and an interactive one. */
 export interface LoupeBaseOptions {
@@ -41,7 +41,12 @@ export interface LoupeBaseOptions {
    * only in vector mode, or when told through `refresh()`; a camera move it follows either way.
    */
   contentVersion?: () => number;
+  /** The canvas's camera, read live, which a pin holds its world point through. Pass `CanvasExtensionApi.getView`.
+   *  Without one, the camera the lens last drew through, a frame behind a pan. */
+  camera?: () => View;
   mode?: LoupeMode;
+  /** What the aim follows: the pointer, or a pin on the content. Default `'follow'`. */
+  aimMode?: LoupeAimMode;
   factor?: number;
   /**
    * The lens's outline. `'round'`, the default, is a bare circle moved by its interior (or, for an `interactive`
@@ -49,7 +54,7 @@ export interface LoupeBaseOptions {
    * titled window; prefer the round lens unless the lens must carry a title or be closed from its own chrome.
    */
   shape?: WindowShapeKind;
-  /** Ring the lens with a zoom and a Vector | Pixel switch, shown while the pointer is near it. Default `true`. */
+  /** Ring the lens with a zoom, a Vector | Pixel switch and a pin, shown while the pointer is near it. Default `true`. */
   controls?: boolean;
   /** The factors the zoom stops at, ascending. Default `LOUPE_FACTOR_STOPS`, 1× to 64× in doublings. */
   zoomStops?: readonly number[];
@@ -57,6 +62,10 @@ export interface LoupeBaseOptions {
   icons?: GlyphSource;
   /** An icon for each mode, set before its caption on the mode switch. */
   modeIcons?: Partial<Record<LoupeMode, IconSpec>>;
+  /** The pin's icon on the ring, from `icons`; without one a plain needle is drawn. */
+  pinIcon?: IconSpec;
+  /** Called when the lens's own pin pins its aim or lets it follow again. */
+  onAimModeChange?: (mode: LoupeAimMode) => void;
   /** Called when the lens's own switch changes its mode. */
   onModeChange?: (mode: LoupeMode) => void;
   /** Called when the lens's own zoom changes its factor. */
@@ -126,11 +135,15 @@ const backdropOf = (ctx: HudContentCtx, color: string): DrawCommand => ({
   fill: solidFill(color),
 });
 
-/** What the loupe model reads of the window it magnifies into. `changed` hears that the model changed what the lens shows. */
+/** What the loupe model reads of the window it magnifies into. `changed` hears that the model changed what the lens
+ *  shows; `camera` is the canvas's, which a pin is held in the world of. */
 function createLensSurface(
   win: WindowWidget, sample: LoupeSurface['sample'], changed: () => void, subscribeFrame: Hud['subscribeFrame'],
+  camera: () => View,
 ): LoupeSurface {
   return {
+    worldAt: (p) => viewScreenToWorld(camera(), p),
+    pointFor: (w) => viewWorldToScreen(camera(), w),
     lens: () => win.contentRect,
     covers: (p) => win.hitTest(p.x, p.y) || (win.passes?.(p.x, p.y) ?? false),
     sample,
@@ -146,8 +159,10 @@ function createLensSurface(
 export interface LoupeHandle {
   readonly window: WindowWidget;
   readonly mode: LoupeMode;
+  readonly aimMode: LoupeAimMode;
   readonly factor: number;
-  /** Last aimed point, in screen-space CSS px relative to the canvas. */
+  /** Where the lens is aimed, in screen-space CSS px relative to the canvas: the last aim, or where its pin stands
+   *  now. */
   readonly aim: { x: number; y: number };
   /** Hex color under the aim point, read off the framebuffer on the first
    *  frame to land after the aim. `null` until then, or when the GL context
@@ -155,6 +170,11 @@ export interface LoupeHandle {
   readonly color: string | null;
   setMode(mode: LoupeMode): void;
   setFactor(factor: number): void;
+  /** Pin the aim at the world point under it, held there as the camera moves; or let it follow the pointer again. A
+   *  pin holds the canvas's own camera: over a `<CanvasView>` panel with a camera of its own, it follows the canvas's. */
+  setAimMode(mode: LoupeAimMode): void;
+  /** Pin the aim at the world point under screen point `p`. */
+  pinAt(p: { x: number; y: number }): void;
   /** Aim at a screen point. Ignored while the point is over the window —
    *  that is the freeze rule that makes the borders reachable. */
   aimAt(p: { x: number; y: number }): void;
@@ -219,11 +239,14 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const shape = opts.shape ?? 'round';
 
+  /** The canvas's camera, as the lens last drew through it. */
+  let drewThrough: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const watch = createContentWatch(opts.contentVersion ?? host?.getPaintedVersion);
   let refreshAsked = false;
 
   const content = (ctx: HudContentCtx): DrawCommand[] => {
     watch.drew(ctx.view);
+    drewThrough = ctx.view;
     colors.drew(ctx);
     const picture = model.mode === 'vector' ? vector.draw(ctx) : pixels.draw(ctx, backdrop(ctx));
     // See-through while it moves, so what it is moved over shows, and while it has nothing under its aim to show.
@@ -252,7 +275,9 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
 
   const win = lensWindow(opts, interactive, content, scheduleRefresh, (p) => { model.pick(p); });
 
-  const surface = createLensSurface(win, colors.sample, () => { scheduleRefresh(); requestRedraw(); }, hud.subscribeFrame);
+  const surface = createLensSurface(
+    win, colors.sample, () => { scheduleRefresh(); requestRedraw(); }, hud.subscribeFrame, opts.camera ?? (() => drewThrough),
+  );
 
   // Subscribed ahead of the model, so the frame that lands first is already
   // readable by the time the model samples on it.
@@ -273,6 +298,7 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
   const model: LoupeModel = createLoupeModel({
     surface,
     ...(opts.mode ? { mode: opts.mode } : {}),
+    ...(opts.aimMode ? { aimMode: opts.aimMode } : {}),
     ...(opts.factor !== undefined ? { factor: opts.factor } : {}),
     ...(opts.onColorChange ? { onColorChange: opts.onColorChange } : {}),
     ...(opts.onPick ? { onPick: opts.onPick } : {}),
@@ -302,21 +328,29 @@ export function createLoupe(opts: LoupeOptions): LoupeHandle {
     colors.dispose();
   };
 
+  return handleOver(win, model, () => {
+    if (disposed) return;
+    refreshAsked = true;
+    requestRedraw();
+  });
+}
+
+/** The handle a loupe hands out: its model, through its window. */
+function handleOver(win: WindowWidget, model: LoupeModel, refresh: () => void): LoupeHandle {
   return {
     window: win,
     get mode() { return model.mode; },
+    get aimMode() { return model.aimMode; },
     get factor() { return model.factor; },
     get aim() { return model.aim; },
     get color() { return model.color; },
     setMode: model.setMode,
     setFactor: model.setFactor,
+    setAimMode: model.setAimMode,
+    pinAt: model.pinAt,
     aimAt: model.aimAt,
     pick: model.pick,
-    refresh() {
-      if (disposed) return;
-      refreshAsked = true;
-      requestRedraw();
-    },
+    refresh,
     dispose() {
       model.dispose();
       win.dispose();

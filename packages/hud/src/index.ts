@@ -38,6 +38,6 @@ export type { MenuIcons } from './menu/panelCommands';
 export { DEFAULT_MENU_PALETTE } from './menu/colorPicker';
 export { glyphCommands, iconCommands, type GlyphPlacement, type GlyphSource } from './glyph';
 export { boxShadowCommands } from './boxShadow';
-export { createLoupe, type LoupeOptions, type LoupeBaseOptions, type LoupeHandle, type LoupeMode } from './loupe/createLoupe';
+export { createLoupe, type LoupeOptions, type LoupeBaseOptions, type LoupeHandle, type LoupeMode, type LoupeAimMode } from './loupe/createLoupe';
 export { loupeInnerView } from '@weasel-js/loupe';
 export type { ResolvedTheme } from '@weasel-js/theme';

@@ -1,9 +1,10 @@
-import { LOUPE_FACTOR_STOPS, type LoupeMode, type LoupeModel } from '@weasel-js/loupe';
+import { LOUPE_FACTOR_STOPS, type LoupeAimMode, type LoupeMode, type LoupeModel } from '@weasel-js/loupe';
 import type { LoupeBaseOptions } from './createLoupe';
 import type { Hud } from '../hud';
 import type { WindowWidget } from '../widgets/window/window';
 import { createModeSwitch } from './modeSwitch';
 import { createZoomTrack } from './zoomTrack';
+import { createPinHandle } from './pinHandle';
 import { ringBoundsOf } from './rimTracks';
 import type { GlyphSource } from '../glyph';
 import type { IconSpec } from '@weasel-js/icons';
@@ -19,8 +20,13 @@ export interface LensControlsHost {
   factor(): number;
   setFactor(factor: number): void;
   requestRedraw(): void;
+  aimMode(): LoupeAimMode;
+  aim(): { x: number; y: number };
+  pinAt(p: { x: number; y: number }): void;
+  setAimMode(mode: LoupeAimMode): void;
   icons?: GlyphSource;
   modeIcons?: Partial<Record<LoupeMode, IconSpec>>;
+  pinIcon?: IconSpec;
 }
 
 /** A lens's controls on its HUD: told where the pointer is, they show only near it. */
@@ -33,7 +39,7 @@ export interface LensControls {
 /** Px past the ring the pointer may be and still keep the controls up. */
 const NEAR = 32;
 
-/** Puts a lens's mode switch and zoom on its HUD, above its window. They show while the pointer is near the ring,
+/** Puts a lens's mode switch, zoom and pin on its HUD, above its window. They show while the pointer is near the ring,
  *  having moved or pressed there (a touch counts), or while the lens is being moved, and hide once it moves away. */
 export function addLensControls(host: LensControlsHost): LensControls {
   const { hud, win, round } = host;
@@ -46,6 +52,10 @@ export function addLensControls(host: LensControlsHost): LensControls {
       ...(host.icons ? { icons: host.icons } : {}), ...(host.modeIcons ? { modeIcons: host.modeIcons } : {}),
     }),
     createZoomTrack(`${win.id}:zoom`, { win, round, shown, stops: host.stops, factor: host.factor, setFactor: redrawn(host.setFactor) }),
+    createPinHandle(`${win.id}:pin`, {
+      win, round, shown, aimMode: host.aimMode, aim: host.aim, pinAt: redrawn(host.pinAt), setAimMode: redrawn(host.setAimMode),
+      ...(host.icons ? { icons: host.icons } : {}), ...(host.pinIcon ? { pinIcon: host.pinIcon } : {}),
+    }),
   ];
   for (const w of widgets) {
     const press = w.onPointer.bind(w);
@@ -66,12 +76,18 @@ export function addLensControls(host: LensControlsHost): LensControls {
 
 /** {@link addLensControls} for a loupe: they set its model, and report a change it made to `opts`. */
 export function addLoupeControls(
-  opts: Pick<LoupeBaseOptions, 'hud' | 'requestRedraw' | 'zoomStops' | 'onModeChange' | 'onFactorChange' | 'icons' | 'modeIcons'>,
+  opts: Pick<LoupeBaseOptions,
+    'hud' | 'requestRedraw' | 'zoomStops' | 'onModeChange' | 'onFactorChange' | 'onAimModeChange' | 'icons' | 'modeIcons' | 'pinIcon'>,
   win: WindowWidget, model: LoupeModel, round: boolean,
 ): LensControls {
   return addLensControls({
     hud: opts.hud, win, round, stops: opts.zoomStops ?? LOUPE_FACTOR_STOPS, requestRedraw: opts.requestRedraw,
     ...(opts.icons ? { icons: opts.icons } : {}), ...(opts.modeIcons ? { modeIcons: opts.modeIcons } : {}),
+    ...(opts.pinIcon ? { pinIcon: opts.pinIcon } : {}),
+    aimMode: () => model.aimMode,
+    aim: () => model.aim,
+    pinAt: (p) => { const was = model.aimMode; model.pinAt(p); if (model.aimMode !== was) opts.onAimModeChange?.(model.aimMode); },
+    setAimMode: (m) => { if (m === model.aimMode) return; model.setAimMode(m); opts.onAimModeChange?.(m); },
     mode: () => model.mode,
     setMode: (m) => { if (m === model.mode) return; model.setMode(m); opts.onModeChange?.(m); },
     factor: () => model.factor,

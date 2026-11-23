@@ -12,6 +12,9 @@ const ARCS = { zoom: [266, 176], mode: [170, 102] } as const;
 /** Where along a rect lens's bottom each control runs, as fractions of its width. */
 const SPANS = { zoom: [0.04, 0.6], mode: [0.66, 0.96] } as const;
 
+/** Where the pin sits on a round lens's ring, as those degrees: just past the mode switch's end. */
+const PIN_AT = 92;
+
 /** Which control a track carries. */
 export type RimPart = keyof typeof ARCS;
 
@@ -30,6 +33,15 @@ export function rimTrackIn(b: WidgetBounds, round: boolean, part: RimPart, out =
   const y = b.y + b.height + RIM_GAP + out;
   const [from, to] = SPANS[part];
   return lineShape({ x: b.x + b.width * from, y }, { x: b.x + b.width * to, y });
+}
+
+/** Where a lens whose window is `b` docks its pin: on the ring just past the mode switch, or past the end of a rect
+ *  lens's controls. */
+export function pinDockIn(b: WidgetBounds, round: boolean): { x: number; y: number } {
+  if (!round) return { x: b.x + b.width + RIM_GAP, y: b.y + b.height + RIM_GAP };
+  const radius = b.width / 2 + RIM_GAP;
+  const turn = (PIN_AT * Math.PI) / 180;
+  return { x: b.x + b.width / 2 + radius * Math.sin(turn), y: b.y + b.height / 2 - radius * Math.cos(turn) };
 }
 
 /** The stretch of `track` from fraction `f0` to `f1`, thickened to `BAND` across it, as one closed shape. */
