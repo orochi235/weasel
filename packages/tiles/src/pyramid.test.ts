@@ -296,6 +296,23 @@ describe('TilePyramid finer stand-ins', () => {
   });
 });
 
+describe('TilePyramid coarser stand-ins', () => {
+  it('fade in over the stand-in that was there before, and ask for frames while they do', () => {
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme, bytesOf: () => 1, release: () => {}, floor: () => [], fadeMs: 160,
+    });
+    const all: TileBudget = { ms: Infinity, tiles: 1e4, clock: () => 0 };
+    expect(pyramid.run(view(0, 0, 0.1), 0, () => 1, all).level).toBe(-2);
+    expect(pyramid.run(view(0, 0, 0.2), 1000, () => 1, all).level).toBe(-1);
+    const frame = pyramid.run(view(0, 0, 0.5), 1016, () => null, { ...all, tiles: 0 });
+    expect(frame.level).toBe(0);
+    const spot = scheme.idOf({ z: 0, x: 0, y: 0 });
+    const under = frame.draws.filter((d) => scheme.idOf(d.at) === spot).map((d) => [d.tile.key.z, d.alpha]);
+    expect(under).toEqual([[-2, 1], [-1, expect.closeTo(0.1)]]);
+    expect(frame.fading).toBe(true);
+  });
+});
+
 describe('TilePyramid deferred bakes', () => {
   it('marks a tile stale when an edit meets it while its bake is still out', () => {
     const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({

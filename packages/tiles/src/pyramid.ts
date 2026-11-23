@@ -238,11 +238,19 @@ export class TilePyramid<K, V, P> {
         continue;
       }
       // Missing, or fading in: something coarser underneath, and what is finer over that.
-      const anc = this.ancestorHeld(at, up, floorLevel);
-      if (anc !== null) {
+      const chain: TileDraw<K, P>[] = [];
+      for (let from = at, left = up; ;) {
+        const anc = this.ancestorHeld(from, left, floorLevel);
+        if (anc === null) break;
         mark(anc);
-        coarse.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: 1 });
+        const a = fadeOf(anc);
+        chain.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: a });
+        if (a >= 1) break;
+        fading = true;
+        left -= scheme.levelOf(from) - scheme.levelOf(anc.key);
+        from = anc.key;
       }
+      coarse.push(...chain.reverse());
       this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
         const a = fadeOf(child);
