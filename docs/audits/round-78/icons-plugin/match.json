@@ -1,0 +1,32 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   4,
+   3
+  ],
+  [
+   5,
+   5
+  ]
+ ],
+ "a": [
+  "A compiled (non-source) module that stops naming icons keeps its old refs through watch rebuilds",
+  "A build lets a package's built table override its source table, which dev explicitly avoids",
+  "A namespace named `all` cannot be loaded as `virtual:weasel-icons/<namespace>`, and nothing says so",
+  "An extensionless `./icons.gen` import is not followed when the generated file is `.tsx`, `.jsx`, `.mts` or `.mjs`",
+  "Identifiers in TS type and declaration positions count as \"other uses\" of `icon`, and `import icon = …` does not shadow",
+  "The dev table watcher can throw out of a chokidar listener"
+ ],
+ "b": [
+  "A package's declared (built) table overrides the source table beside the icons.gen a module imports, so a stale `dist/icons.table.json` wins",
+  "Library mode under esbuild has no check that the `@icon` annotations survived, so a minified esbuild build ships unannotated refs silently",
+  "`declaredTable`'s unbuilt fallback takes the first source table under `src` while dev's `packageTables` takes all of them",
+  "Identifiers in type positions outside `TSTypeAnnotation` are reported as non-call uses of `icon`",
+  "A JSX element naming the imported `icon` binding is neither rewritten nor warned about",
+  "`watchTables` reads the table's directory outside its `try`, so a table whose directory vanishes throws out of the watcher listener"
+ ]
+}

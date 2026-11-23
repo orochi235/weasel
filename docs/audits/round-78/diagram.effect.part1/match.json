@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "A replaced runner's last preview bitmaps can be closed while a render still shows them"
+ ],
+ "b": [
+  "Node defs built for a structural batch the graph refuses are dropped without `dispose`",
+  "A wire picked before a controlled `selected` change shows picked again once `selected` returns to null"
+ ]
+}

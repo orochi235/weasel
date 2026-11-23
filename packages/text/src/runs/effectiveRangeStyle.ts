@@ -38,8 +38,8 @@ const OVERRIDES = [
 ] as const;
 
 /**
- * What is actually rendering across a range: `range` (from `styleAtRange`,
- * or `useTextEdit`'s `rangeStyle`) resolved against the node's own `style`
+ * What is actually rendering across a range: `range` (from `styleAtRange`
+ * given the same node, or `useTextEdit`'s `rangeStyle`) resolved against the node's own `style`
  * and `paint`, as the canvas resolves runs. `null` reads the node alone.
  *
  * Flags are additive — a run can turn one on, never off — so a node flag

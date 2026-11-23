@@ -1,0 +1,12 @@
+packages/icons-plugin/src/annotate.ts
+packages/icons-plugin/src/bundlers.ts
+packages/icons-plugin/src/catalog.ts
+packages/icons-plugin/src/collect.ts
+packages/icons-plugin/src/index.ts
+packages/icons-plugin/src/parse.ts
+packages/icons-plugin/src/pbt.fixture.ts
+packages/icons-plugin/src/rewrite.ts
+packages/icons-plugin/src/scope.ts
+packages/icons-plugin/src/tables.ts
+packages/icons-plugin/src/virtual.ts
+packages/icons-plugin/src/walk.ts

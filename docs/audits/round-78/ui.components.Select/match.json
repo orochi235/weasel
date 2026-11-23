@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ]
+ ],
+ "a": [
+  "Select's option body and note are defined twice, and ComboBox's copy has drifted (no `min-width: 0`)",
+  "A `width='fit'` select whose key isn't among its options shows a placeholder its sizer never measured",
+  "`variant='bare'` ignores the `--wzl-select-pad` and `--wzl-select-bg` hooks but honors `--wzl-select-border`"
+ ],
+ "b": [
+  "An end- or center-aligned list lands a described row's label off the trigger's value",
+  "The over-trigger clamp reads the layout viewport, while React Aria holds the list to the visual viewport",
+  "Only four of the props the types omit are dropped at run time",
+  "Select and ComboBox style an option's body and note from two diverging copies"
+ ]
+}

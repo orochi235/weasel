@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "Scales layer labels a `factors` scale \"geometric\"",
+  "Unpinning a grid swatch also removes every other anchor that has the same color",
+  "\"Reload from disk\" can reopen the draft it just claimed to discard",
+  "Resetting a by-axis pin at a selection with no branch records an undo step that changes nothing"
+ ],
+ "b": [
+  "Per-theme undo histories in localStorage have no reaper, so editing a few themes can fill the quota the drafts and live state need",
+  "The rail's Components count leaves out inherited components, though the Components layer lists them",
+  "AnchorList's hints in the Ramps layer's gate editor point at a panel that isn't there"
+ ]
+}

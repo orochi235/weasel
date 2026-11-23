@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "planeFloor's hair for a zero-length side grows with the coordinate, so a line far from the origin pins hundreds or more floor tiles",
+  "keysMeeting never ends once a tile index passes 2^53"
+ ],
+ "b": [
+  "An infinite `pxPerUnit` hangs `run`: the level becomes `Infinity`, which default `maxLevel` does not catch, and `keysMeeting` loops forever at a tile side of 0",
+  "The byte-bound coarsening can step past a scheme's top level and leave the screen blank",
+  "Finer stand-ins are drawn at full alpha even while they are still fading in, so they pop",
+  "An edit made while a deferred bake is in flight is lost: the tile arrives marked fresh"
+ ]
+}

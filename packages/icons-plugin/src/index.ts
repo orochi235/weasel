@@ -3,7 +3,7 @@ import { basename, dirname, join } from 'node:path';
 import type { IconTable } from '@weasel-js/icons';
 import MagicString from 'magic-string';
 import type { ViteDevServer } from 'vite';
-import { createUnplugin, type UnpluginBuildContext, type UnpluginContext, type UnpluginInstance } from 'unplugin';
+import { createUnplugin, type UnpluginBuildContext, type UnpluginContext, type UnpluginInstance, type UnpluginOptions } from 'unplugin';
 import { libraryAnnotations } from './annotate.ts';
 import { assertBundler } from './bundlers.ts';
 import { fail, iconCatalog, tablesFrom } from './catalog.ts';
@@ -72,10 +72,13 @@ function invalidateVariants(server: ViteDevServer): void {
  */
 function watchTables(server: ViteDevServer, add: (table: IconTable) => boolean): void {
   const reread = (file: string) => {
-    if (basename(file) !== TABLE || !readdirSync(dirname(file)).some((n) => GEN_FILE.test(n))) return;
+    if (basename(file) !== TABLE) return;
     try {
+      if (!readdirSync(dirname(file)).some((n) => GEN_FILE.test(n))) return;
       if (add(JSON.parse(readFileSync(file, 'utf8')) as IconTable)) invalidateVariants(server);
     } catch (error) {
+      // Removed before the event was handled, as a clean step or a branch switch does.
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return;
       server.config.logger.warn(`weasel-icons: ${file} was not read: ${(error as Error).message}`);
     }
   };
@@ -83,10 +86,42 @@ function watchTables(server: ViteDevServer, add: (table: IconTable) => boolean):
   server.watcher.on('add', reread);
 }
 
+type PluginBuild = Parameters<NonNullable<NonNullable<UnpluginOptions['esbuild']>['setup']>>[0];
+
+const MINIFIED = 'esbuild drops the @icon annotation that library mode leaves on each icon ref when it minifies whitespace; set minifyWhitespace to false, or leave minify unset';
+
+/**
+ * esbuild has no hook to annotate its output again, so library mode refuses to minify it away. An
+ * IIFE is a finished script no bundler reads again, so its annotations have no reader to lose.
+ */
+function guardEsbuild(build: PluginBuild): void {
+  build.onStart(() => {
+    const { minify, minifyWhitespace = minify, format } = build.initialOptions;
+    return minifyWhitespace && format !== 'iife' ? { errors: [{ text: MINIFIED }] } : undefined;
+  });
+}
+
 /** The ids of every module in the build, when the bundler's context can list them. */
 function liveModules(ctx: object): Set<string> | undefined {
   if (!('getModuleIds' in ctx) || typeof ctx.getModuleIds !== 'function') return undefined;
   return new Set(ctx.getModuleIds() as Iterable<string>);
+}
+
+type Ctx = UnpluginBuildContext & UnpluginContext;
+
+/** Reads a module another plugin compiles to JS, such as a single-file component, once that is done. */
+function compiledPlugin<R>(transform: (this: Ctx, code: string, id: string) => R, forget: (id: string) => void) {
+  return {
+    name: 'weasel-icons:compiled',
+    enforce: 'post' as const,
+    transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
+    transform(this: Ctx, code: string, id: string) {
+      if (code.includes('icons.gen') || code.includes('@icon')) return transform.call(this, code, id);
+      // A watch rebuild of a module that named icons before must not keep its old refs.
+      forget(id);
+      return null;
+    },
+  };
 }
 
 /**
@@ -128,6 +163,11 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
     if (stripped) fail(this, stripped);
   }
 
+  function forget(id: string) {
+    if (!app) library.record(id, []);
+    else if (!dev) catalog.forget(id);
+  }
+
   async function transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
     const file = id.split('?')[0]!;
     const gens: string[] = [];
@@ -155,7 +195,7 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
       } else {
         const fresh = pkg && !seenPackages.has(pkg) ? [pkg] : [];
         fresh.forEach((d) => seenPackages.add(d));
-        const changed = tablesFrom(gens, fresh).map((t) => catalog.add(this, t)).includes(true);
+        const changed = tablesFrom(gens, fresh, catalog.holds).map((t) => catalog.add(this, t)).includes(true);
         server?.watcher.add(gens.map((g) => join(dirname(g), TABLE)));
         if (changed && server) invalidateVariants(server);
       }
@@ -163,15 +203,6 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
     return out ? { code: out.code, map: out.map } : null;
   }
 
-  // A module another plugin compiles to JS, such as a single-file component, is read once that is done.
-  const compiled = {
-    name: 'weasel-icons:compiled',
-    enforce: 'post' as const,
-    transformInclude: (id: string) => !id.startsWith('\0') && !SOURCE.test(id.split('?')[0]!),
-    transform(this: UnpluginBuildContext & UnpluginContext, code: string, id: string) {
-      return code.includes('icons.gen') || code.includes('@icon') ? transform.call(this, code, id) : null;
-    },
-  };
 
   return [
     {
@@ -208,9 +239,10 @@ export const weaselIcons: UnpluginInstance<WeaselIconsOptions, true> = createUnp
         renderChunk: lastRenderChunk,
         generateBundle,
       },
+      esbuild: { setup: (build) => (app ? undefined : guardEsbuild(build)) },
       rollup: { renderChunk: lastRenderChunk, generateBundle },
       rolldown: { renderChunk: lastRenderChunk, generateBundle },
     },
-    compiled,
+    compiledPlugin(transform, forget),
   ];
 });

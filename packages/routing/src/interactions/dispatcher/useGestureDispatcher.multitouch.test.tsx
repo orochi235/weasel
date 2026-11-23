@@ -105,7 +105,7 @@ describe('lifting a finger from a multitouch gesture', () => {
     expect(ends(log)).toEqual(['end:move:commit']);
   });
 
-  it('ends a three-finger gesture once when the fingers lift one at a time', () => {
+  it('ends a three-finger gesture once when the fingers lift one at a time, and the two left start their own', () => {
     const { log, fire } = mount();
     fire('pointerdown', 1, 0);
     fire('pointerdown', 2, 100);
@@ -114,11 +114,11 @@ describe('lifting a finger from a multitouch gesture', () => {
 
     log.length = 0;
     fire('pointerup', 3, 200);
-    expect(log).toEqual(['end:swipe:commit']);
+    expect(log).toEqual(['end:swipe:commit', 'start:zoom']);
     fire('pointermove', 2, 120);
     fire('pointerup', 2, 120);
     fire('pointerup', 1, 0);
-    expect(log).toEqual(['end:swipe:commit']);
+    expect(log).toEqual(['end:swipe:commit', 'start:zoom', 'move:zoom', 'end:zoom:commit']);
   });
 
   it('cancels the pinch when one of its pointers is canceled', () => {

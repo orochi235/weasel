@@ -1,6 +1,6 @@
 /** The node style an edit holds: the one it rewrote, if any, and the resolved style the overlay is dressed in. */
 import { useCallback, useRef, useState } from 'react';
-import { resolveTextStyle, type ResolvedTextStyle, type TextStyle } from '@weasel-js/text';
+import { resolveTextStyle, type InheritedStyle, type ResolvedTextStyle, type TextStyle } from '@weasel-js/text';
 import { applyOverlayStyle } from './overlayStyle';
 import type { UseTextEditOptions } from './textEditTypes';
 
@@ -23,6 +23,11 @@ export function useHeldNodeStyle(
     (id: string): TextStyle | undefined => nodeStyleRef.current ?? optsRef.current.getStyle(id),
     [optsRef],
   );
+  /** What node `id`'s runs inherit: the style `styleOf` reads, and its paint. */
+  const inheritedOf = useCallback(
+    (id: string): InheritedStyle => ({ style: styleOf(id), paint: optsRef.current.getPaint?.(id) }),
+    [styleOf, optsRef],
+  );
   /** Places the open edit's overlay; set by the edit for as long as it is open. */
   const placeRef = useRef<() => void>(() => {});
   /** Hold `style` as the node's, or the node's own for `null`, dress the overlay in it, and place it again. */
@@ -35,5 +40,5 @@ export function useHeldNodeStyle(
     placeRef.current();
     return base;
   }, [holdNodeStyle, optsRef]);
-  return { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode, placeRef };
+  return { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, inheritedOf, restyleNode, placeRef };
 }

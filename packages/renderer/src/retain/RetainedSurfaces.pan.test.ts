@@ -69,6 +69,15 @@ describe('a retained surface through a pan', () => {
     expect(store.lookup('a', W, H, keyAt(MX / SCALE + 0.5, 0), true, SCALE)).toEqual({ kind: 'redraw', window: GROWN });
   });
 
+  it('gives up the surface of a group drawn straight through on a fractional move to make room', () => {
+    const box = { x0: 100, y0: 100, x1: 200, y1: 150 };
+    const store = new RetainedSurfaces(webglDevice(createGLRecorder().gl), 100 * 50 * 4);
+    drawn(store, box);
+    store.beginFrame([]);
+    expect(store.lookup('a', W, H, keyAt(0.3, 0), true, SCALE)).toEqual({ kind: 'through' });
+    expect(store.reserve('b', W, H, { x: 0, y: 0, width: 100, height: 50 })).not.toBeNull();
+  });
+
   it('draws a fractional move straight through, and again once it holds a frame', () => {
     const store = new RetainedSurfaces(webglDevice(createGLRecorder().gl), Infinity);
     drawn(store, WIDE, GROWN);

@@ -1,0 +1,122 @@
+{
+ "id": "forge.vite",
+ "commit": "9a2362dfc40bfba329a811ef1e04528605c185ff",
+ "date": "2026-11-23",
+ "files": [
+  "packages/forge/src/vite/apiTable.ts",
+  "packages/forge/src/vite/ast.ts",
+  "packages/forge/src/vite/autoTitle.ts",
+  "packages/forge/src/vite/bindings.ts",
+  "packages/forge/src/vite/build.ts",
+  "packages/forge/src/vite/capture/browser.ts",
+  "packages/forge/src/vite/capture/cache.ts",
+  "packages/forge/src/vite/capture/endpoint.ts",
+  "packages/forge/src/vite/capture/entries.ts",
+  "packages/forge/src/vite/capture/payload.ts",
+  "packages/forge/src/vite/componentGraph.ts",
+  "packages/forge/src/vite/componentOf.ts",
+  "packages/forge/src/vite/componentReach.ts",
+  "packages/forge/src/vite/depsFeed.ts",
+  "packages/forge/src/vite/entries.ts",
+  "packages/forge/src/vite/folderTitles.ts",
+  "packages/forge/src/vite/foreignStories.ts",
+  "packages/forge/src/vite/forgeTest.ts",
+  "packages/forge/src/vite/history.ts",
+  "packages/forge/src/vite/html.ts",
+  "packages/forge/src/vite/index.ts",
+  "packages/forge/src/vite/indexFile.ts",
+  "packages/forge/src/vite/indexStory.ts",
+  "packages/forge/src/vite/isolateReport.ts",
+  "packages/forge/src/vite/issues/answer.ts",
+  "packages/forge/src/vite/issues/endpoint.ts",
+  "packages/forge/src/vite/moduleInfo.ts",
+  "packages/forge/src/vite/nativeExports.ts",
+  "packages/forge/src/vite/ownEntries.ts",
+  "packages/forge/src/vite/ownKeys.ts",
+  "packages/forge/src/vite/plugin.ts",
+  "packages/forge/src/vite/propControls.ts",
+  "packages/forge/src/vite/propTypes.ts",
+  "packages/forge/src/vite/servePages.ts",
+  "packages/forge/src/vite/shellTitle.ts",
+  "packages/forge/src/vite/storyGlob.ts",
+  "packages/forge/src/vite/storyIndex.ts",
+  "packages/forge/src/vite/storybookShims.ts",
+  "packages/forge/src/vite/titleReport.ts",
+  "packages/forge/src/vite/trace.ts",
+  "packages/forge/src/vite/typeDefs.ts",
+  "packages/forge/src/vite/typedoc/index.ts",
+  "packages/forge/src/vite/typedoc/json.ts",
+  "packages/forge/src/vite/typedoc/print.ts",
+  "packages/forge/src/vite/virtualModules.ts",
+  "packages/forge/src/vite/warnOnce.ts",
+  "packages/forge/src/vite/watchProbe.ts",
+  "packages/forge/src/vite/watchRecovery.ts",
+  "packages/forge/src/vite/watchSettle.ts",
+  "packages/forge/src/vite/wrappers.ts"
+ ],
+ "a": 9,
+ "b": 5,
+ "m": 3,
+ "distinct": 11,
+ "chapman": 14,
+ "unfound": 3,
+ "read": {
+  "A": 50,
+  "B": 50
+ },
+ "newCode": {
+  "since": 77,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 77,
+  "chapman": 17,
+  "unfound": 8
+ },
+ "patches": 14,
+ "verify": {
+  "ok": true,
+  "files": 36,
+  "testFiles": {
+   "failed": 0,
+   "passed": 6142,
+   "total": 6142
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 9.4,
+   "B": 8.3,
+   "match": 0.1,
+   "fix": 26.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2126507,
+  "costUsd": 6.28
+ },
+ "fixCommits": [
+  "d6ef0f5012f8bb551b8ff75ca47ef8f17401ebdf",
+  "81f97003a751fe15209829e9974cd7d469e247e1",
+  "7e3d9cf64fa6345875d16ed066c3b1484684f8ea",
+  "4f734bab97fc5609abc32f970f495d44b040a07e",
+  "553178267d08043f0d561b3540d9b2bee33fa0df",
+  "e1cc7c22c7d59a2f7f41654fd988d4520684dfe5",
+  "b1a75977e8c82bc6eadd893321db4e82fd584923",
+  "717dcf6b6ed58aeba09388e502ae5af7ca64ea40",
+  "f2787c61ba5599e5a69d79561dd97503ba9f04f7",
+  "679aa0f6f33c81cfb9071e24e5080ecc634cfd6d",
+  "844858714b238cf4c048d8d16feb4a8fdc0b56ea",
+  "02c92d306b9b1f3b86b2793321a903db64bded22",
+  "44a5e5f1c33b558a8c766c8fee3e6ed3be3e5d79",
+  "2ee470432118b16597411b1e9f0d87f4622cba19"
+ ]
+}

@@ -6153,6 +6153,7 @@
    "packages/text/src/runs/delimiterRuns.ts",
    "packages/text/src/runs/effectiveRangeStyle.ts",
    "packages/text/src/runs/flagRange.ts",
+   "packages/text/src/runs/inheritedStyle.ts",
    "packages/text/src/runs/rangeStyle.ts",
    "packages/text/src/runs/resolveRuns.ts",
    "packages/text/src/runs/smallCaps.ts",

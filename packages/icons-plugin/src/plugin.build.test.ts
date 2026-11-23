@@ -125,6 +125,30 @@ describe('weaselIcons app mode', () => {
     expect(second).not.toContain('lib-star-body');
   });
 
+  it('forgets the refs of a compiled module that stops naming icons on a rebuild', async () => {
+    const plugin = weaselIcons.vite({ mode: 'app' });
+    let named = true;
+    const sfc: Plugin = {
+      name: 'fake-sfc',
+      transform: (code, id) => (!id.endsWith('.sfc') ? null : named ? code.replace(/<\/?script>/g, '') : `export const ring = 'ring';`),
+    };
+    const entryOf = async () => {
+      const out = await build({
+        root,
+        logLevel: 'silent',
+        configFile: false,
+        resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+        plugins: [sfc, plugin],
+        build: { write: false, minify: false, rollupOptions: { input: `${root}/src/sfc.ts` } },
+      });
+      const result = Array.isArray(out) ? out[0]! : (out as Rollup.RollupOutput);
+      return result.output.find((o): o is Rollup.OutputChunk => o.type === 'chunk' && o.isEntry)!.code;
+    };
+    expect(await entryOf()).toContain('fx-ring-body');
+    named = false;
+    expect(await entryOf()).not.toContain('fx-ring-body');
+  });
+
   it('refuses a custom variant named all when constructed', () => {
     expect(() => weaselIcons.vite({ mode: 'app', variants: { all: {} } })).toThrow(/cannot be named "all"/);
   });
@@ -154,6 +178,25 @@ describe('weaselIcons in dev', () => {
       expect(used.default.some((t) => t.namespace === 'lib')).toBe(true);
       const own = (await server.ssrLoadModule('virtual:weasel-icons/fx')) as Tables;
       expect(own.default.map((t) => t.namespace)).toEqual(['fx']);
+    } finally {
+      await server.close();
+    }
+  });
+
+  it('passes over a table change whose directory is already gone', async () => {
+    const server = await createServer({
+      root,
+      logLevel: 'silent',
+      configFile: false,
+      appType: 'custom',
+      server: { middlewareMode: true, hmr: false, ws: false },
+      optimizeDeps: { noDiscovery: true, include: [] },
+      resolve: { alias: { '@weasel-js/icons': iconsSrc } },
+      plugins: [weaselIcons.vite({ mode: 'app' })],
+    });
+    try {
+      const gone = join(tmpdir(), 'weasel-icons-gone', String(Date.now()), 'icons.table.json');
+      expect(() => server.watcher.emit('change', gone)).not.toThrow();
     } finally {
       await server.close();
     }
@@ -217,5 +260,36 @@ describe('weaselIcons library mode', () => {
       plugins: [weaselIcons.esbuild({ mode: 'library' })],
     });
     expect(out.outputFiles[0]!.text).toMatch(/\/\* @icon \*\/\s*"fx:ring"/);
+  });
+
+  it('refuses an esbuild build that minifies away the annotations', async () => {
+    for (const minify of [{ minify: true }, { minifyWhitespace: true }]) {
+      await expect(
+        esbuild({
+          entryPoints: [`${root}/src/widget.ts`],
+          bundle: true,
+          write: false,
+          format: 'esm',
+          logLevel: 'silent',
+          external: ['@weasel-js/icons'],
+          plugins: [weaselIcons.esbuild({ mode: 'library' })],
+          ...minify,
+        }),
+      ).rejects.toThrow(/@icon annotation.*minify/s);
+    }
+  });
+
+  it('lets an esbuild IIFE build minify, since nothing bundles it again', async () => {
+    const out = await esbuild({
+      entryPoints: [`${root}/src/widget.ts`],
+      bundle: true,
+      write: false,
+      format: 'iife',
+      logLevel: 'silent',
+      external: ['@weasel-js/icons'],
+      plugins: [weaselIcons.esbuild({ mode: 'library' })],
+      minify: true,
+    });
+    expect(out.outputFiles[0]!.text).toContain('fx:ring');
   });
 });

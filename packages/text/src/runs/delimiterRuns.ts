@@ -7,7 +7,8 @@
 import type { RunFlag, RunGrammar, RunMarker } from '../runs';
 
 /** Each delimiter's markers, longest first. Throws for a delimiter that is not one UTF-16 unit, or is the
- *  backslash that escapes, which the reader could not find again in what the writer wrote. */
+ *  backslash that escapes, which the reader could not find again in what the writer wrote, and for a `repeat`
+ *  that is not a positive integer, which no run of delimiters could be read as. */
 export function markersByDelimiter(grammar: RunGrammar): Map<string, RunMarker[]> {
   const out = new Map<string, RunMarker[]>();
   for (const m of grammar.markers) {
@@ -16,6 +17,9 @@ export function markersByDelimiter(grammar: RunGrammar): Map<string, RunMarker[]
         + 'spell a doubled marker with `repeat` instead');
     }
     if (m.delimiter === '\\') throw new Error('run grammar: a backslash cannot be a delimiter; it escapes the delimiters');
+    if (!Number.isInteger(m.repeat) || m.repeat < 1) {
+      throw new Error(`run grammar: the ${JSON.stringify(m.delimiter)} marker's repeat ${String(m.repeat)} is not a positive integer`);
+    }
     const list = out.get(m.delimiter) ?? [];
     list.push(m);
     out.set(m.delimiter, list);

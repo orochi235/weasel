@@ -46,6 +46,8 @@ export function makeOffCtx(calls: OffCall[]): CanvasRenderingContext2D {
  * Call from `beforeEach`; pair with {@link uninstallFakeOffscreenCanvas}.
  */
 export function installFakeOffscreenCanvas(): FakeOffscreenState {
+  const g = globalThis as unknown as { OffscreenCanvas?: unknown };
+  displaced.push({ had: 'OffscreenCanvas' in g, value: g.OffscreenCanvas });
   const state: FakeOffscreenState = { last: null, calls: [] };
 
   class FakeOffscreenCanvas {
@@ -73,6 +75,13 @@ export function installFakeOffscreenCanvas(): FakeOffscreenState {
   return state;
 }
 
+/** What each install displaced, latest last. */
+const displaced: { had: boolean; value: unknown }[] = [];
+
+/** Put back the `OffscreenCanvas` the latest install displaced, a real one included. */
 export function uninstallFakeOffscreenCanvas(): void {
-  delete (globalThis as unknown as { OffscreenCanvas?: unknown }).OffscreenCanvas;
+  const g = globalThis as unknown as { OffscreenCanvas?: unknown };
+  const before = displaced.pop();
+  if (before?.had) g.OffscreenCanvas = before.value;
+  else delete g.OffscreenCanvas;
 }

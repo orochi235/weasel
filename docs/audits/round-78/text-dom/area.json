@@ -1,0 +1,99 @@
+{
+ "id": "text-dom",
+ "commit": "9a2362dfc40bfba329a811ef1e04528605c185ff",
+ "date": "2026-11-23",
+ "files": [
+  "packages/text-dom/src/armedStyle.ts",
+  "packages/text-dom/src/domOffsets.ts",
+  "packages/text-dom/src/domRuns.ts",
+  "packages/text-dom/src/editOverlay.ts",
+  "packages/text-dom/src/editSession.ts",
+  "packages/text-dom/src/heldNodeStyle.ts",
+  "packages/text-dom/src/index.ts",
+  "packages/text-dom/src/overlayBaseline.ts",
+  "packages/text-dom/src/overlayCarry.ts",
+  "packages/text-dom/src/overlayDirection.ts",
+  "packages/text-dom/src/overlayDraft.ts",
+  "packages/text-dom/src/overlayEdits.ts",
+  "packages/text-dom/src/overlayFollow.ts",
+  "packages/text-dom/src/overlayFrame.ts",
+  "packages/text-dom/src/overlayHistory.ts",
+  "packages/text-dom/src/overlayListeners.ts",
+  "packages/text-dom/src/overlayOpen.ts",
+  "packages/text-dom/src/overlayPlace.ts",
+  "packages/text-dom/src/overlayScroll.ts",
+  "packages/text-dom/src/overlaySeed.ts",
+  "packages/text-dom/src/overlaySelection.ts",
+  "packages/text-dom/src/overlayStyle.ts",
+  "packages/text-dom/src/overlayTyping.ts",
+  "packages/text-dom/src/pasteRuns.ts",
+  "packages/text-dom/src/pbt.fixture.ts",
+  "packages/text-dom/src/publishedRange.ts",
+  "packages/text-dom/src/runSplice.ts",
+  "packages/text-dom/src/runStyle.ts",
+  "packages/text-dom/src/selectionStyling.ts",
+  "packages/text-dom/src/styleShortcuts.ts",
+  "packages/text-dom/src/testing/baselineDrop.ts",
+  "packages/text-dom/src/testing/overlayDirection.ts",
+  "packages/text-dom/src/testing/overlayReady.ts",
+  "packages/text-dom/src/testing/textEditHarness.ts",
+  "packages/text-dom/src/textEditTypes.ts",
+  "packages/text-dom/src/useTextEdit.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 6.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "newCode": {
+  "since": 77,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 77,
+  "chapman": 11,
+  "unfound": 5
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1123,
+   "total": 1123
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 18.9,
+   "B": 15.6,
+   "match": 0.1,
+   "fix": 23.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2071283,
+  "costUsd": 6.47
+ },
+ "fixCommits": [
+  "491b103e72bf1310b2343806e33f7e2ca2642259",
+  "e3eb64dd4d168020e8d126f7d64e3159c13a969a",
+  "4b7a8a8f094ad92c97dfc785b9252323f004213c",
+  "eb46be15905ef144440e68af3dae87ab663ecabb",
+  "154cfab31d69bf9e1713defea1c40713b1121b60"
+ ]
+}

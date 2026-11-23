@@ -36,19 +36,19 @@ describe('a .dfont\'s sfnt resources', () => {
 
   it('hands back the first when no face is named', () => {
     const { bytes, matched } = sfntFromCollection(FORK);
-    expect(asArray(bytes)).toEqual(Array.from(REGULAR));
+    expect(asArray(bytes!)).toEqual(Array.from(REGULAR));
     expect(matched).toBe(true);
   });
 
   it('selects the one whose PostScript name matches', () => {
     const { bytes, matched } = sfntFromCollection(FORK, 'Face-Bold');
-    expect(asArray(bytes)).toEqual(Array.from(BOLD));
+    expect(asArray(bytes!)).toEqual(Array.from(BOLD));
     expect(matched).toBe(true);
   });
 
-  it('falls back to the first, and says so, when none matches', () => {
+  it('cuts out no member, and says so, when none matches', () => {
     const { bytes, matched } = sfntFromCollection(FORK, 'Face-Italic');
-    expect(asArray(bytes)).toEqual(Array.from(REGULAR));
+    expect(bytes).toBeNull();
     expect(matched).toBe(false);
   });
 
@@ -67,6 +67,6 @@ describe('a .dfont\'s sfnt resources', () => {
     const inter = new Uint8Array(readFileSync(INTER_TTF));
     const { bytes, matched } = sfntFromCollection(dataFork([{ type: 'sfnt', data: inter }]), 'Inter-Regular');
     expect(matched).toBe(true);
-    expect(new Uint8Array(bytes)).toEqual(inter);
+    expect(new Uint8Array(bytes!)).toEqual(inter);
   });
 });

@@ -266,3 +266,32 @@ it('lowers italic in an italic node over the range alone, whether or not the hos
     unmount();
   }
 });
+
+describe('useTextEdit — range styling read against the node', () => {
+  beforeEach(() => {
+    document.body.innerHTML = '';
+  });
+
+  function italicNode() {
+    const h = makeRichHarness({ a: { text: 'abcd', runs: [{ text: 'ab' }, { text: 'cd', italic: true }] } });
+    h.opts.getStyle = () => ({ fontSize: 16, fontStyle: 'italic' });
+    return h;
+  }
+
+  it('shows italic as on where every run renders italic', async () => {
+    const h = italicNode();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    await selectCharsAndSettle(getOverlay(h.container)!, 0, 4);
+    expect(result.current.effectiveStyle?.italic).toBe(true);
+  });
+
+  it('toggles italic off across runs that all render italic', async () => {
+    const h = italicNode();
+    const { result } = renderHook(() => useTextEdit(h.opts));
+    act(() => result.current.startEdit('a'));
+    await selectCharsAndSettle(getOverlay(h.container)!, 0, 4);
+    act(() => result.current.toggleStyle('italic'));
+    expect(result.current.effectiveStyle?.italic).toBe(false);
+  });
+});

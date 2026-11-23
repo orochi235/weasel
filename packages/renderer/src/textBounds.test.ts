@@ -5,6 +5,8 @@ import { mat3 } from '@weasel-js/geom';
 import type { TextDrawCommand } from './DrawCommand';
 import { textBox, textLayerBox } from './textBounds';
 import { laidOutText } from './textLayout';
+import { textCommandFromRuns, textCommandFromRunsInto } from './textCommand';
+import { evictRunsForRefill } from '@weasel-js/text';
 
 const underlined = (letterSpacing: number): TextDrawCommand => ({
   kind: 'text', x: 0, y: 0,
@@ -51,5 +53,17 @@ describe('textLayerBox', () => {
     const fresh = textLayerBox({ kind: 'text-layer', texts: [...texts] }, mat3.identity());
     expect(fresh).not.toEqual(before);
     expect(textLayerBox(layer, mat3.identity())).toEqual(fresh);
+  });
+
+  it('measures a layer again once one of its texts is refilled in place', () => {
+    const style = { fontFamily: 'inter', fontSize: 16 };
+    const cmd = textCommandFromRuns(0, 0, [{ text: 'A' }], style) as TextDrawCommand;
+    const layer = { kind: 'text-layer' as const, texts: [cmd] };
+    const before = textLayerBox(layer, mat3.identity())!;
+    evictRunsForRefill(cmd.runs);
+    textCommandFromRunsInto(cmd, 500, 0, [{ text: 'AAAA' }], style);
+    const after = textLayerBox(layer, mat3.identity())!;
+    expect(after.minX).toBeGreaterThan(before.maxX);
+    expect(after).toEqual(textLayerBox({ kind: 'text-layer', texts: [cmd] }, mat3.identity()));
   });
 });

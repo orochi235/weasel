@@ -220,3 +220,18 @@ describe('labels', () => {
       .toEqual([{ label: 'Umschalt', optional: true }]);
   });
 });
+
+describe('keyLegendFromKey — modifier keys and aliases', () => {
+  it('prints a modifier key as keyLegendsFromMods prints its modifier', () => {
+    expect(['Meta', 'Alt', 'Control', 'Shift'].map((k) => keyLegendFromKey(k, { platform: 'macos' }).label))
+      .toEqual(['⌘', '⌥', '⌃', '⇧']);
+    expect(keyLegendFromKey('Meta', { platform: 'windows' })).toEqual({ label: '⊞' });
+    expect(keyLegendFromKey('Alt', { platform: 'macos', optional: true })).toEqual({ label: '⌥', optional: true });
+  });
+
+  it('reads Esc and Space in any case, as the matcher does', () => {
+    expect(keyLegendFromKey('Esc', { platform: 'macos' })).toEqual({ label: '⎋' });
+    expect(keyLegendFromKey('space', { platform: 'macos' })).toEqual({ label: '␣' });
+    expect(keyLegendFromKey('SPACE', { platform: 'windows' })).toEqual({ label: 'Space' });
+  });
+});

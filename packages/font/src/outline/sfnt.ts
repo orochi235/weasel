@@ -82,25 +82,28 @@ function memberName(view: DataView, dirOffset: number): string | null {
 }
 
 /**
- * PostScript name (`name` table, nameID 6) of a sub-font, or `null` when it
- * carries none. PostScript names are ASCII by specification, so both the
- * Macintosh (single-byte) and Windows (UTF-16BE) encodings reduce to "take
- * every byte that isn't a zero pad".
+ * PostScript name (`name` table, nameID 6) of a sub-font, or `null` when it carries none: the first such record that
+ * lies inside the `name` table and is not empty. Unicode and Windows records are UTF-16BE; any other is read a byte
+ * a character, which is right for the ASCII the specification asks of a PostScript name.
  */
 function postScriptNameAt(view: DataView, records: readonly TableRecord[]): string | null {
   const name = records.find((r) => r.tag === 'name');
-  if (!name) return null;
+  if (!name || name.length < 6 || name.offset + name.length > view.byteLength) return null;
   const base = name.offset;
+  const end = base + name.length;
   const count = view.getUint16(base + 2);
   const stringOffset = view.getUint16(base + 4);
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < count && base + 6 + (i + 1) * 12 <= end; i++) {
     const rec = base + 6 + i * 12;
     if (view.getUint16(rec + 6) !== 6) continue; // nameID 6 === PostScript name
+    const platform = view.getUint16(rec);
     const length = view.getUint16(rec + 8);
-    const offset = view.getUint16(rec + 10);
+    const start = base + stringOffset + view.getUint16(rec + 10);
+    if (start + length > end) continue;
+    const wide = platform === 0 || platform === 3;
     let out = '';
-    for (let b = 0; b < length; b++) {
-      const code = view.getUint8(base + stringOffset + offset + b);
+    for (let b = 0; b + (wide ? 1 : 0) < length; b += wide ? 2 : 1) {
+      const code = wide ? view.getUint16(start + b) : view.getUint8(start + b);
       if (code !== 0) out += String.fromCharCode(code);
     }
     if (out.length > 0) return out;
@@ -155,20 +158,22 @@ function extractFont(source: ArrayBuffer, view: DataView, dirOffset: number): Ar
 /**
  * Standalone font bytes for one member of a collection or a `.dfont`.
  *
- * `postScriptName` selects the member; when it is absent or matches nothing,
- * the first member is returned, `matched` says which happened, and `names`
- * lists every member's PostScript name. A single font passes through
- * unchanged.
+ * `postScriptName` selects the member, and the first is returned when it is
+ * absent. When it matches nothing, an empty name included, `matched` is false
+ * and no member is cut out. `names` lists every member's PostScript name. A
+ * single font passes through unchanged.
  */
 export function sfntFromCollection(
   bytes: ArrayBuffer,
   postScriptName?: string,
-): { bytes: ArrayBuffer; matched: boolean; names: readonly (string | null)[] } {
+):
+  | { bytes: ArrayBuffer; matched: true; names: readonly (string | null)[] }
+  | { bytes: null; matched: false; names: readonly (string | null)[] } {
   const members = membersOf(bytes);
   if (!members) return { bytes, matched: true, names: [] };
   const names = members.map((m) => m.name);
-  const at = postScriptName ? names.indexOf(postScriptName) : 0;
-  return { bytes: members[Math.max(at, 0)].bytes(), matched: at >= 0, names };
+  const at = postScriptName === undefined ? 0 : names.indexOf(postScriptName);
+  return at < 0 ? { bytes: null, matched: false, names } : { bytes: members[at].bytes(), matched: true, names };
 }
 
 interface Member { name: string | null; bytes: () => ArrayBuffer }

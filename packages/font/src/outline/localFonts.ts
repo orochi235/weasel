@@ -19,7 +19,7 @@
 
 import type { FontStyle } from '../fontStyle';
 import { createOpenTypeParser } from './opentypeParser';
-import { registerFontOutlines } from './outlineRegistry';
+import { outlineCssSource, registerFontOutlines, type OutlineFaceInfo } from './outlineRegistry';
 import { cssString } from '../cssFamily';
 
 /**
@@ -81,10 +81,15 @@ function joinWeightWords(style: string): string {
  */
 export function parseFontStyle(style: string): { weight: number; style: FontStyle } {
   const s = joinWeightWords(style);
-  const italic = s.includes('italic') || s.includes('oblique');
-  const weight = WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? numberedWeight(s) ?? 400;
-  return { weight, style: italic ? 'italic' : 'normal' };
+  return { weight: weightOf(s) ?? 400, style: isSlanted(s) ? 'italic' : 'normal' };
 }
+
+/** The weight `s` names, by the substring scan {@link WEIGHT_WORDS} is ordered for. */
+function weightOf(s: string): number | undefined {
+  return WEIGHT_WORDS.find(([word]) => s.includes(word))?.[1] ?? numberedWeight(s);
+}
+
+const isSlanted = (s: string): boolean => s.includes('italic') || s.includes('oblique');
 
 /** A Japanese face's numbered weight, `W0` to `W9` (Hiragino Sans), as hundreds. */
 const NUMBERED_WEIGHT = /(?:^|[\s_-])w(\d)(?=$|[\s_-])/;
@@ -101,8 +106,7 @@ function numberedWeight(style: string): number | undefined {
  */
 function styleQualifierCount(style: string): number {
   const words = joinWeightWords(style).split(/[\s_-]+/).filter(Boolean);
-  return words.filter((w) => w !== 'italic' && w !== 'oblique' && numberedWeight(w) === undefined
-    && !WEIGHT_WORDS.some(([word]) => word === w)).length;
+  return words.filter((w) => !isSlanted(w) && weightOf(w) === undefined).length;
 }
 
 /** Options for `enableLocalFontOutlines`. */
@@ -112,6 +116,12 @@ export interface LocalFontOutlinesOptions {
    * family, which can be hundreds of registry entries.
    */
   families?: readonly string[];
+  /**
+   * Replace an outline face the app registered itself for the same variant.
+   * Defaults to false: such a face is kept, and counted in `kept`. A face an
+   * earlier call registered is always replaced.
+   */
+  replace?: boolean;
 }
 
 /** What `enableLocalFontOutlines` registered. */
@@ -120,7 +130,12 @@ export interface LocalFontOutlinesResult {
   families: readonly string[];
   /** Total faces registered across those families. */
   faces: number;
+  /** Installed faces left unregistered because the app had registered that variant itself. */
+  kept: number;
 }
+
+/** The registrations this module made, which a later call may replace whatever `replace` says. */
+const registeredHere = new WeakSet<OutlineFaceInfo>();
 
 /**
  * Ask for permission to read installed fonts, and register outline sources
@@ -159,19 +174,28 @@ export async function enableLocalFontOutlines(
   }
 
   const families = new Set<string>();
+  let kept = 0;
   for (const { font } of chosen.values()) {
-    registerFontOutlines(font.family, parseFontStyle(font.style), () => font.blob(), {
+    const variant = parseFontStyle(font.style);
+    const existing = outlineCssSource(font.family, variant.weight, variant.style)?.registration;
+    if (existing && !registeredHere.has(existing) && !opts.replace) {
+      kept++;
+      continue;
+    }
+    registerFontOutlines(font.family, variant, () => font.blob(), {
       // The PostScript name is how a member is picked out of a `.ttc`
       // collection, which is what most macOS system families ship as.
       parser: createOpenTypeParser(font.postscriptName),
       // The DOM already has every installed face; naming it avoids reading
       // the collection file a second time.
-      cssSrc: `local(${cssString(font.postscriptName)})`,
+      cssSrc: font.postscriptName ? `local(${cssString(font.postscriptName)})` : undefined,
     });
+    registeredHere.add(outlineCssSource(font.family, variant.weight, variant.style)!.registration);
     families.add(font.family);
   }
   return {
     families: [...families].sort((a, b) => a.localeCompare(b)),
-    faces: chosen.size,
+    faces: chosen.size - kept,
+    kept,
   };
 }

@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "keyLegendFromKey prints modifier keys by their raw name, disagreeing with keyLegendFromCode",
+  "Legends ignore the `Esc` / `Space` aliases the matcher accepts",
+  "describeRoute prints raw target forms as nouns (\"on a affordance:handle:nw\", \"on a selected-body\")",
+  "ROUTE_FIELD_DEFINITIONS.target documents a target form routeToSpec rejects",
+  "fixedSeat treats a `filter` on the root element as a fixed containing block",
+  "A hover `leave` binding never fires when the pointer leaves its target with a button held"
+ ],
+ "b": [
+  "A two-finger tap is timed and travel-checked from the second finger's landing, so a brief second touch during a one-finger drag or after a long-press emits `multitouchtap`",
+  "Going from 2 to 3 fingers starts a new gesture without ending the old one; going from 3 back to 2 ends it and nothing restarts it",
+  "`fixedSeat` misses `transform-style: preserve-3d` (and `offset-path`) as containing blocks for fixed descendants",
+  "`formatShortcut` drops `shift: 'optional'` only on the key itself, not on its leader steps",
+  "`describeRoute` prints target forms verbatim after \"a\", and `ROUTE_FIELD_DEFINITIONS` describes the slots inaccurately"
+ ]
+}

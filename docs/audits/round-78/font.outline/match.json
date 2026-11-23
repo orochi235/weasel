@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "The CFF check skips every `CFF ` table whose major version byte is not 1, not only CFF2",
+  "`enableLocalFontOutlines` replaces outline registrations the app already made for the same variant",
+  "The PostScript name is answered in two places, and the two can disagree",
+  "An empty PostScript name selects the collection's first member and reports a match"
+ ],
+ "b": [
+  "`FaceEmbedding.embeddable`'s doc says bit 1 always forbids embedding, but the parser allows it for OS/2 v0–2 fonts",
+  "An unmatched collection member is reported as a truncation error when the first member is damaged",
+  "`parseFontStyle` and `styleQualifierCount` decide \"is this word a weight or slant\" differently",
+  "A DOM read started after the load has settled holds the font's bytes for the life of the registration"
+ ]
+}

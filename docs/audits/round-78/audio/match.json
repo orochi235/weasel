@@ -1,0 +1,33 @@
+{
+ "pairs": [
+  [
+   4,
+   0
+  ],
+  [
+   6,
+   3
+  ]
+ ],
+ "a": [
+  "A voice's chain gain is not seeded on `.value`, so a `setGain` ramp right after `play` starts from 1 (or the last voice's level), not from the play's gain",
+  "`writeParam` anchors a ramp at `param.value`, which lags any write made earlier in the same task, so the second of two writes in one task ramps from the pre-task value",
+  "Worklet voices' `onended` (and so the consumer's `onDone`) fires synchronously inside `engine.dispose()`; an `onDone` that throws aborts the rest of dispose",
+  "A node synth voice started late (its `when` already past) skips its attack and loses part of its gate; a worklet or buffer voice plays whole",
+  "`BusHandle.setGain(v)` without a ramp is skipped while a ramp to `v` is in flight, so it cannot snap the bus to its target",
+  "`AnalyserTap.dispose()` throws when the tapped node was disconnected elsewhere first",
+  "Linear rolloff reaches 0 at `maxDistance` only when `rolloffFactor` is 1, against the option's doc",
+  "`scoreBar`'s `gain` is documented as the most one step's notes add up to, but releases crossing the bar line and mid-bar bass take it past that",
+  "`engine.analyser('')` taps the master, not the bus named ''",
+  "`patternVoicePeaks` returns a plain object keyed by bus name, so looking up a bus the pattern does not use can return an `Object.prototype` member"
+ ],
+ "b": [
+  "A bus gain step asked for during a ramp to the same value is dropped, so the slow ramp keeps running",
+  "A mute or solo toggled during a bus gain ramp snaps the bus to the ramp's end instead of resuming the ramp",
+  "A score's chord progression restarts on every cue change, because `createScore` passes the cue's bar count where `scoreBar` wants bars since the start",
+  "Linear rolloff keeps falling past `maxDistance` when `rolloffFactor` is below 1",
+  "The exported `patternLength` accepts any `stepsPerBeat` and returns NaN or a fractional length",
+  "An unknown `steal` policy is silently treated as `'oldest'`",
+  "Effect options that are not finite throw a TypeError from the AudioParam rather than the package's RangeError"
+ ]
+}

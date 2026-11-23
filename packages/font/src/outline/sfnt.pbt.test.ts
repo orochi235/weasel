@@ -39,6 +39,7 @@ function unpack(bytes: ArrayBuffer, name: string | undefined): string {
     return kind;
   }
   expect(out.matched).toBe(name === undefined || out.names.includes(name));
+  if (out.bytes === null) return kind;
   if (kind === 'collection') {
     const v = new DataView(out.bytes);
     const count = v.getUint16(4);
@@ -107,7 +108,8 @@ describe('sfntFromCollection, by name', () => {
       expect(out.names).toEqual(names);
       const at = asked === undefined ? 0 : names.indexOf(asked);
       expect(out.matched).toBe(at >= 0);
-      expect(new Uint8Array(out.bytes)).toEqual(fonts[Math.max(at, 0)]);
+      if (at < 0) expect(out.bytes).toBeNull();
+      else expect(new Uint8Array(out.bytes!)).toEqual(fonts[at]);
       t.count(at > 0 ? 'later member' : at === 0 ? 'first member' : 'no member');
     }), runs(RUNS));
     t.atLeast('later member', 20);

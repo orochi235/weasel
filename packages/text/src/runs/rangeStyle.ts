@@ -27,6 +27,7 @@ import { MIXED, deepEqual, setOwn } from '@weasel-js/registry';
 import type { Mixed } from '@weasel-js/registry';
 import type { StyledRun } from '../runs';
 import { snapToCodePoints } from './codePointCuts';
+import { inheritedValue, type InheritedStyle } from './inheritedStyle';
 
 export { MIXED };
 export type { Mixed };
@@ -115,11 +116,17 @@ function totalLength(runs: readonly StyledRun[]): number {
  * in range sets are absent (they inherit the node's `TextStyle`) — except
  * the additive flags, which read as `false`. An empty range reads as `{}`.
  * A reported `fill` is the run's own object, not a copy.
+ *
+ * Given `node`, the style and paint the runs sit in, a key whose runs differ
+ * only in leaving it to the node or setting the node's own value is not
+ * `MIXED`: it reads as that value, as it renders. So runs `undefined` and
+ * `italic: true` in an italic node read `italic: true`.
  */
 export function styleAtRange(
   runs: readonly StyledRun[],
   start: number,
   end: number,
+  node?: InheritedStyle,
 ): RangeStyle {
   // Negated `<` rather than `>=` so a non-numeric offset reads as empty
   // instead of matching every run.
@@ -128,6 +135,8 @@ export function styleAtRange(
 
   const first = new Map<StyleKey, unknown>();
   const mixed = new Set<StyleKey>();
+  const firstShown = new Map<StyleKey, unknown>();
+  const shownMixed = new Set<StyleKey>();
   let seen = false;
   let pos = 0;
 
@@ -144,6 +153,10 @@ export function styleAtRange(
       else if (!mixed.has(key) && !sameValue(key, first.get(key), value)) {
         mixed.add(key);
       }
+      if (node === undefined) continue;
+      const shown = inheritedValue(run, key, node);
+      if (!seen) firstShown.set(key, shown);
+      else if (!shownMixed.has(key) && !sameValue(key, firstShown.get(key), shown)) shownMixed.add(key);
     }
     seen = true;
   }
@@ -152,8 +165,9 @@ export function styleAtRange(
 
   const style: Record<string, unknown> = {};
   for (const key of STYLE_KEYS) {
-    if (mixed.has(key)) style[key] = MIXED;
-    else {
+    if (mixed.has(key)) {
+      style[key] = node === undefined || shownMixed.has(key) ? MIXED : firstShown.get(key);
+    } else {
       const value = first.get(key);
       if (value !== undefined) style[key] = value;
     }

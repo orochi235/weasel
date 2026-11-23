@@ -203,10 +203,12 @@ export class RetainedSurfaces {
     surface.panned = true;
     const whole = Math.abs(dx - rx) <= WHOLE_PIXEL_SLACK && Math.abs(dy - ry) <= WHOLE_PIXEL_SLACK;
     if (whole && covers(reach, rx, ry, width, height)) {
+      surface.adrift = false;
       this.composited++;
       return { kind: 'kept', pixels: pixelsOf(surface, rx, ry) };
     }
     if ((!whole || refused) && !held) {
+      surface.adrift = true;
       this.declined++;
       return { kind: 'through' };
     }

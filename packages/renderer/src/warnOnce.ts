@@ -1,12 +1,10 @@
-import { isDev } from '@weasel-js/registry';
+import { createWarnOnce } from '@weasel-js/registry';
 
-const warned = new Set<string>();
+const warn = createWarnOnce();
 
-/** Print `message` in development the first time `key` is seen. */
+/** Print `message` in development the first time `key` is seen, of the last few hundred keys. */
 export function warnOnce(key: string, message: string): void {
-  if (warned.has(key)) return;
-  warned.add(key);
-  if (isDev()) console.warn(message);
+  warn(message, key);
 }
 
 /** Warn once that no source is registered for program `id`. Shares its key

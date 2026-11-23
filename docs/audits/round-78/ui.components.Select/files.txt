@@ -1,0 +1,11 @@
+packages/ui/src/components/Select/Select.fontOptions.stories.module.css
+packages/ui/src/components/Select/Select.fontOptions.stories.tsx
+packages/ui/src/components/Select/Select.module.css
+packages/ui/src/components/Select/Select.stories.module.css
+packages/ui/src/components/Select/Select.stories.tsx
+packages/ui/src/components/Select/Select.tsx
+packages/ui/src/components/Select/alignOverTrigger.tsx
+packages/ui/src/components/Select/index.ts
+packages/ui/src/components/Select/listbox.module.css
+packages/ui/src/components/Select/optionLabels.tsx
+packages/ui/src/components/Select/selectItem.tsx

@@ -231,6 +231,14 @@ describe('run grammar delimiters', () => {
     expect(() => runsToMarkdown([{ text: '\\x', bold: true }], g)).toThrow(/backslash/);
     expect(() => markdownToRuns('\\x\\', g)).toThrow(/backslash/);
   });
+
+  it('refuses a repeat that is not a positive integer, which no delimiter run could be read as', () => {
+    for (const repeat of [0, -1, 1.5, NaN]) {
+      const g: RunGrammar = { markers: [{ delimiter: '~', repeat, flags: ['underline'] }] };
+      expect(() => markdownToRuns('a~b', g)).toThrow(/positive integer/);
+      expect(() => runsToMarkdown([{ text: 'x', underline: true }], g)).toThrow(/positive integer/);
+    }
+  });
 });
 
 describe('markdownToRuns with a marker nothing closes', () => {

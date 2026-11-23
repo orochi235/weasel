@@ -1,0 +1,82 @@
+{
+ "id": "icons-plugin",
+ "commit": "9a2362dfc40bfba329a811ef1e04528605c185ff",
+ "date": "2026-11-23",
+ "files": [
+  "packages/icons-plugin/src/annotate.ts",
+  "packages/icons-plugin/src/bundlers.ts",
+  "packages/icons-plugin/src/catalog.ts",
+  "packages/icons-plugin/src/collect.ts",
+  "packages/icons-plugin/src/index.ts",
+  "packages/icons-plugin/src/parse.ts",
+  "packages/icons-plugin/src/pbt.fixture.ts",
+  "packages/icons-plugin/src/rewrite.ts",
+  "packages/icons-plugin/src/scope.ts",
+  "packages/icons-plugin/src/tables.ts",
+  "packages/icons-plugin/src/virtual.ts",
+  "packages/icons-plugin/src/walk.ts"
+ ],
+ "a": 6,
+ "b": 6,
+ "m": 3,
+ "distinct": 9,
+ "chapman": 11.3,
+ "unfound": 2.3,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 50,
+  "changedFiles": 6,
+  "findings": 10
+ },
+ "previous": {
+  "round": 50,
+  "chapman": 10.7,
+  "unfound": 2.7
+ },
+ "patches": 12,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 6142,
+   "total": 6142
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.2,
+   "B": 4.6,
+   "match": 0.2,
+   "fix": 31.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 711499,
+  "costUsd": 4.52
+ },
+ "fixCommits": [
+  "161de0e53ac339f6ddd2980d4841e1ac28c6af18",
+  "50d4b0831849ce7501f4e8cb59f2cb778fe8bf19",
+  "bf22892341a50f7c0f8afee5d1cfc738c4b6eb1c",
+  "04da2ad6b4c911fd402aff4671bac95ab85b9eca",
+  "baf100e1b5ec331b7e5972915d8d6f48e8897d62",
+  "aa722371a3faa6dfa4b31b1ff7e0bbde16edde0e",
+  "a5c7adcd3ce423d9e12b0f6e666efceeee16b97f",
+  "792c125c1c217650e46f00989c9821321ce11c74",
+  "6eeec646a8663a26cb5dc9b09b6ac04f3eb778b9",
+  "a099c3be055c01e22ebec2ecb08da88a5a7feff3",
+  "77b9444fdc0a8b7382e1c81cc164670786636cd6",
+  "6676c159aa37ae5e4da9679a36e951a5efa62a37"
+ ]
+}

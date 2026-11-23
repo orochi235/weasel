@@ -755,6 +755,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   name more code points than the format maps (65,536 for format 4, 1,114,112 for 12 and 13), overlaps included. A CFF
   glyph whose outline holds a non-finite coordinate is refused as one glyph, which the registry warns of and serves
   from the SDF tier. A TrueType glyph's path data now keeps the line back to its contour's start before the `Z`.
+- 2026-11-23 (font, audit round 78, the fixer's call): the default outline parser refuses a `CFF ` or `CFF2` table
+  whose header names a major version other than 1 or 2, rather than letting opentype.js read a version 0 as CFF 1
+  unchecked; a `CFF2` table with a version 1 header gets the CFF 1 check.
+- 2026-11-23 (font, audit round 78, the fixer's call): `enableLocalFontOutlines` keeps an outline face the app
+  registered for the same variant rather than replacing it with the installed copy, and reports how many it kept;
+  `replace: true` restores replacing. A face an earlier call registered is always replaced.
 - 2026-11-20 (font, audit round 47): `parseBmFont` refuses an atlas with a glyph on any page but 0, naming it, since
   `registerFont` takes one atlas image per face and the renderer samples that one for every glyph. Whether the
   registry should take a URL per page instead is open.
@@ -1600,6 +1606,12 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   are rewritten as calls. In dev, a regenerated table's new glyphs reload every loaded variant, and a glyph it drops
   stays until a restart. `weaselIcons.vite()`, `.rollup()` and `.rolldown()` return two plugins, the second ordered
   `post` to read modules another plugin compiles to JS.
+- 2026-11-23 (my call, audit round 78): icons-plugin fails the build, and a dev server's start, on a table whose
+  namespace is `all` or empty, the names of `virtual:weasel-icons`'s built-in variants, as it fails a custom variant
+  named after a namespace; there is no opt-in to load such a namespace under another name.
+- 2026-11-23 (my call, audit round 78): `weaselIcons.esbuild({ mode: 'library' })` fails a build that minifies
+  whitespace (`minify` or `minifyWhitespace`), since esbuild then drops every `@icon` annotation and has no hook to
+  write them back; `minify: true` with `minifyWhitespace: false` still builds. There is no opt-in to ship unannotated refs.
 - 2026-10-19 (pass 7): The rule forbidding the `@weasel-js/ui` barrel covers site, theme-editor,
   and forge's and labkit's `src` as well as draw and chart. Files importing a name no subpath
   publishes are exempted by path in `eslint.config.js` rather than given new ui subpaths, whose
@@ -4043,3 +4055,16 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): a bus heard again partway through its own `setGain` ramp, after a mute or another
   bus's solo, ramps on to that ramp's original end, as a voice's `place` does. Stepping to the ramp's target was the
   alternative.
+
+## Audit round seventy-eight (2026-11-23): gestures
+
+- 2026-11-23 (the fixer's call): a finger lifting or canceled from a hand of three or more ends its multitouch
+  gesture and then dispatches the geometry of the fingers still down, so a two-finger binding can start on them,
+  as a finger landing does going from two to three. Leaving the remaining fingers with no gesture until another
+  lands was the alternative.
+
+## Audit round seventy-eight (2026-11-23): renderer, part two
+
+- 2026-11-23 (the fixer's call): text with no pose maps a `'bounds'` paint onto a box at its `x` and `y`, as wide as
+  its `width`, else a finite `maxWidth`, else its laid-out text, and as tall as its `height`, else its laid-out text.
+  Placing such a paint at the text's origin with no size, as `'local'`, was the alternative.

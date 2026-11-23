@@ -1,0 +1,112 @@
+{
+ "id": "renderer.part2",
+ "commit": "9a2362dfc40bfba329a811ef1e04528605c185ff",
+ "date": "2026-11-23",
+ "files": [
+  "packages/renderer/src/paintKinds.ts",
+  "packages/renderer/src/paintResources.ts",
+  "packages/renderer/src/paintScratch.ts",
+  "packages/renderer/src/paintToLocalUnits.ts",
+  "packages/renderer/src/paintedBounds.ts",
+  "packages/renderer/src/patterns-builtin.ts",
+  "packages/renderer/src/patterns/commandPaint.ts",
+  "packages/renderer/src/patterns/imagePatternId.ts",
+  "packages/renderer/src/patterns/index.ts",
+  "packages/renderer/src/patterns/patterns-builtin.ts",
+  "packages/renderer/src/patterns/rasterizeTile.ts",
+  "packages/renderer/src/patterns/resolveImage.ts",
+  "packages/renderer/src/patterns/resolveSpec.ts",
+  "packages/renderer/src/patterns/test-utils/fakeOffscreenCanvas.ts",
+  "packages/renderer/src/patterns/tileGeometry.ts",
+  "packages/renderer/src/pbt.fixture.ts",
+  "packages/renderer/src/readPixels.ts",
+  "packages/renderer/src/rendererParts.ts",
+  "packages/renderer/src/rendererTypes.ts",
+  "packages/renderer/src/retain/RetainedSurfaces.ts",
+  "packages/renderer/src/retain/TileTextures.ts",
+  "packages/renderer/src/retain/bakeTile.ts",
+  "packages/renderer/src/retain/contentBounds.ts",
+  "packages/renderer/src/retain/movesWithView.ts",
+  "packages/renderer/src/retain/retainedKey.ts",
+  "packages/renderer/src/retain/tileCull.ts",
+  "packages/renderer/src/spriteSheet.ts",
+  "packages/renderer/src/state/GroupState.ts",
+  "packages/renderer/src/state/colorMatrix.ts",
+  "packages/renderer/src/strokeLengths.ts",
+  "packages/renderer/src/targetRect.ts",
+  "packages/renderer/src/test-seams.ts",
+  "packages/renderer/src/textBounds.ts",
+  "packages/renderer/src/textCommand.ts",
+  "packages/renderer/src/textLayout.ts",
+  "packages/renderer/src/textures/registerTexture.ts",
+  "packages/renderer/src/warmPrograms.ts",
+  "packages/renderer/src/warnOnce.ts"
+ ],
+ "a": 9,
+ "b": 7,
+ "m": 1,
+ "distinct": 15,
+ "chapman": 39,
+ "unfound": 24,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 54,
+  "changedFiles": 11,
+  "findings": 4
+ },
+ "previous": {
+  "round": 54,
+  "chapman": 10.01388888888889,
+  "unfound": 1.2638888888888888
+ },
+ "patches": 16,
+ "verify": {
+  "ok": true,
+  "files": 45,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5464,
+   "total": 5464
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.2,
+   "B": 6.2,
+   "match": 0.2,
+   "fix": 37.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 3144879,
+  "costUsd": 8.46
+ },
+ "fixCommits": [
+  "92de610369e411662988e1a67c1e42dd7dbb555b",
+  "da99fd9efd4836a3d0122f917fbcaa227a3ccd1f",
+  "d5eb75f5e001ce1b34106fadad986a59c66efd45",
+  "7226f48a5ccc41b870c6330c0ac7537f688abc30",
+  "67f039f6e951b6279170e35f6a13687bb93cc0c1",
+  "638dcb050f7ea92f2774ea6f7c07c4b44f563311",
+  "b04418e72cbd03361cfe6194c87cc29def747e7d",
+  "a14c79fd0f510569ee974d89f46f73c7fe68c2de",
+  "5c9378e82190958efbaec4d83d2013edbd82f4a1",
+  "5117871d2b8940488ec191c2f6aa172aea334ff0",
+  "5abdf31c56b07e1916ab96ce7d2df12b1929e28c",
+  "7fd94226e86fa4b12684874c32b2eec9e6fab421",
+  "115e03fbdd4d2f06336e3156f99c5cc7d0f49ce8",
+  "bbfe2fc1ea535fb8f1906317c6aea0b2724577f9",
+  "7dc39e7909008de7ebfca3423893fc012dd8b07f",
+  "4da045478b06315670678fd346bcf84afc906931"
+ ]
+}

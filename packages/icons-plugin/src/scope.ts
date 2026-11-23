@@ -8,12 +8,19 @@ interface Node {
 
 type Scope = ReadonlySet<string>;
 
-const FUNCTIONS = new Set(['FunctionDeclaration', 'FunctionExpression', 'ArrowFunctionExpression']);
+const FUNCTIONS = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+  // Bodiless: an overload, a `declare function` and an abstract or overloaded method.
+  'TSDeclareFunction',
+  'TSEmptyBodyFunctionExpression',
+]);
 /** Nodes a `var` does not hoist out of. */
 const VAR_BARRIERS = new Set([...FUNCTIONS, 'ClassBody', 'StaticBlock', 'TSModuleDeclaration']);
 /** Bodies that are a `var` scope of their own, as a function body is. */
 const VAR_SCOPES = new Set(['StaticBlock', 'TSModuleBlock']);
-const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSEnumDeclaration', 'TSModuleDeclaration']);
+const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSEnumDeclaration', 'TSModuleDeclaration', 'TSImportEqualsDeclaration']);
 
 const isNode = (value: unknown): value is Node =>
   value !== null && typeof value === 'object' && typeof (value as { type?: unknown }).type === 'string';
@@ -91,7 +98,26 @@ const OPAQUE = new Set([
   'TSInterfaceDeclaration',
   'TSTypeParameterDeclaration',
   'TSTypeParameterInstantiation',
+  'TSClassImplements',
+  'TSIndexSignature',
+  'JSXClosingElement',
 ]);
+/** Keys holding a bare type, or a name that is no reference, under a node that is otherwise read. */
+const NON_VALUE_KEYS: Record<string, ReadonlySet<string>> = {
+  TSAsExpression: new Set(['typeAnnotation']),
+  TSSatisfiesExpression: new Set(['typeAnnotation']),
+  TSTypeAssertion: new Set(['typeAnnotation']),
+  TSEnumMember: new Set(['id']),
+  JSXAttribute: new Set(['name']),
+};
+
+/** The value a JSX element name reads, if any: the root of a member name, or an identifier that is not an intrinsic tag. */
+function jsxReference(name: Node): Node | undefined {
+  let n = name;
+  while (n.type === 'JSXMemberExpression') n = n.object as Node;
+  if (n.type !== 'JSXIdentifier') return undefined;
+  return n === name && /^[a-z]|-/.test(n.name as string) ? undefined : n;
+}
 const LABELED = new Set(['LabeledStatement', 'BreakStatement', 'ContinueStatement']);
 const one = (key: string): ReadonlySet<string> => new Set([key]);
 
@@ -159,6 +185,11 @@ export function unshadowedUses(
         break;
       case 'TSModuleDeclaration':
         return children(node, hidden, one('id'));
+      case 'JSXOpeningElement': {
+        const ref = jsxReference(node.name as Node);
+        if (ref && resolves(ref.name as string)) onOther(ref);
+        return children(node, hidden, one('name'));
+      }
       case 'BlockStatement':
       case 'StaticBlock':
       case 'TSModuleBlock': {
@@ -184,6 +215,7 @@ export function unshadowedUses(
         if (isNode(node.id)) return children(node, scope(hidden, [node.id.name as string]));
         break;
     }
+    if (Object.hasOwn(NON_VALUE_KEYS, node.type)) return children(node, hidden, NON_VALUE_KEYS[node.type]);
     if (KEYED.has(node.type) && !node.computed) return children(node, hidden, one('key'));
     if (LABELED.has(node.type)) return children(node, hidden, one('label'));
     children(node, hidden);

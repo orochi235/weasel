@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   7,
+   0
+  ]
+ ],
+ "a": [
+  "A text layer's cached box goes stale when one of its texts is refilled in place",
+  "A text run's stroke whose paint fails to resolve is kept unpainted, where every other painter drops it",
+  "paintToBoundsUnits converts a pattern or gradient whatever its current units",
+  "Dots tiles clip a dot wider than half the tile at its edges instead of wrapping it",
+  "createTilePattern with a fractional size draws a tile whose period differs from its canvas",
+  "A tile spec that failed to rasterize is cached as null for good",
+  "A movable retained surface drawn straight through on a fractional pan is never marked adrift, so the budget cannot free it",
+  "warmPrograms leaks its WebGL context when setup throws after the context is made",
+  "uninstallFakeOffscreenCanvas deletes the global instead of restoring what was there"
+ ],
+ "b": [
+  "warmPrograms leaks its WebGL context when building a program throws",
+  "A `'bounds'` paint of a lazily loaded kind is left unconverted while its loader runs",
+  "Pose-less text keeps a `'bounds'` tile or image pattern in `'bounds'` units",
+  "`warnOnce` keys grow without bound, in production too, for data-derived keys",
+  "The TileTextures pool is capped per size but not across sizes",
+  "`BakedTiles.begin` leaks its own scratch buffer if the opening clear throws",
+  "Unregistering a pattern texture through the public API strands its bitmap unclosed"
+ ]
+}

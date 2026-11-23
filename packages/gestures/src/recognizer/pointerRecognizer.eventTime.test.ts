@@ -87,4 +87,26 @@ describe('a multitouch tap', () => {
     h.recognizer.release(h.at(1, 0, 100 + LONG_PRESS_MS));
     expect(h.kinds).not.toContain('multitouchtap');
   });
+
+  it('is timed from the first finger to land, not the last', () => {
+    const h = harness();
+    h.handleAt(1000);
+    h.press(1, 0, 'touch', 100);
+    h.press(2, 40, 'touch', 100 + LONG_PRESS_MS);
+    h.recognizer.release(h.at(2, 40, 200 + LONG_PRESS_MS));
+    expect(h.kinds).not.toContain('multitouchtap');
+  });
+
+  it('is not one when a finger already opened a drag', () => {
+    const h = harness();
+    h.handleAt(1000);
+    h.press(1, 0, 'touch', 1000);
+    h.recognizer.move(h.at(1, 200, 1010));
+    h.press(2, 400, 'touch', 1020);
+    h.recognizer.release(h.at(2, 400, 1050));
+    h.recognizer.release(h.at(1, 200, 1060));
+    expect(h.kinds).toContain('pointerdown');
+    expect(h.kinds).not.toContain('multitouchtap');
+  });
 });
+
