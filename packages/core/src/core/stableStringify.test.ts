@@ -13,8 +13,14 @@ describe('stableStringify', () => {
   });
 
   it('writes what JSON writes for dates, undefined and functions', () => {
-    const value = { d: new Date(0), u: undefined, f: () => 1, list: [undefined, NaN] };
-    expect(stableStringify(value)).toBe(JSON.stringify({ d: new Date(0), list: [undefined, NaN] }));
+    const value = { d: new Date(0), u: undefined, f: () => 1, list: [undefined, 1] };
+    expect(stableStringify(value)).toBe(JSON.stringify({ d: new Date(0), list: [undefined, 1] }));
+  });
+
+  it('tells NaN, each infinity, and null apart', () => {
+    const written = [NaN, Infinity, -Infinity, null].map((v) => stableStringify({ a: v }));
+    expect(new Set(written).size).toBe(4);
+    expect(written[0]).toBe('{"a":{"$type":"number","value":"NaN"}}');
   });
 
   it('writes a value JSON writes nothing for as a string no JSON reads as', () => {

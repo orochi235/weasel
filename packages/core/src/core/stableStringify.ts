@@ -1,7 +1,7 @@
 /**
  * JSON with object keys sorted, so two values produce one string only when they are equal. What JSON cannot write and
- * would throw on is written with the tags `@weasel-js/devtools`' serialization uses: a bigint as
- * `{"$type":"bigint","value":"10"}`, a reference to an object that contains it as `{"$type":"cycle"}`. An object of
+ * would throw on or write as `null` is written with the tags `@weasel-js/devtools`' serialization uses: a bigint as
+ * `{"$type":"bigint","value":"10"}`, a `NaN` or infinite number as `{"$type":"number","value":"NaN"}`, a reference to an object that contains it as `{"$type":"cycle"}`. An object of
  * its own with a `$type` key is written as `{"$type":"object","value":…}`, so it never reads as a tag. A value JSON
  * writes nothing for (`undefined`, a function, a symbol) is the bare word `undefined`, which no JSON text equals.
  */
@@ -15,6 +15,7 @@ export function stableStringify(value: unknown): string {
     }
     if (v instanceof Number || v instanceof String || v instanceof Boolean || v instanceof BigInt) v = v.valueOf();
     if (typeof v === 'bigint') return { $type: 'bigint', value: v.toString() };
+    if (typeof v === 'number' && !Number.isFinite(v)) return { $type: 'number', value: String(v) };
     if (v === null || typeof v !== 'object') return v;
     if (open.has(v)) return { $type: 'cycle' };
     open.add(v);
