@@ -3,7 +3,7 @@ import type { DataEdge, DataNode, GridOptions } from '@weasel-js/diagram';
 import { getOwn } from '@weasel-js/registry';
 import type { DiagramDocument, ExportResult, WriteOptions } from '../../document';
 import { edgeStyleIn, graphOut, nodeLines, type Cluster, type GraphOut } from '../../graphWrite';
-import { titleLines } from '../common/lines';
+import { ACC_WORDS, titleLines } from '../common/lines';
 import { arrowHead, dropPorts, styleProps } from '../common/styles';
 import { mermaidIds, mermaidText } from '../common/text';
 import { BRACKETS } from '../flowchart/write';
@@ -11,7 +11,7 @@ import { BRACKETS } from '../flowchart/write';
 const ANONYMOUS = /^block-\d+$/;
 
 /** Words a block diagram reads as a keyword where a block's id would stand. */
-const BLOCK_WORDS = ['block', 'space', 'columns'];
+const BLOCK_WORDS = ['block', 'space', 'columns', ...ACC_WORDS];
 
 type Item = { node: DataNode } | { cluster: Cluster };
 
