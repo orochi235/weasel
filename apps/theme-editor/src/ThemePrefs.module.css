@@ -19,6 +19,10 @@
 }
 
 /* A token's value that refers to another: the name referred to, and the way back to its text. */
+.referenceField {
+  display: contents;
+}
+
 .reference {
   display: inline-flex;
   align-items: center;

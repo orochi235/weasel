@@ -3,7 +3,7 @@ import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
 import { layerEntries } from './entries';
-import { adoptGenerated, clearAt, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf, writeAt } from './model';
+import { adoptGenerated, clearAt, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf, tokenValueFromText, writeAt } from './model';
 
 const lookup = lookupOf(child);
 
@@ -80,6 +80,15 @@ describe('pins', () => {
     const result = derive(adopted, { mode: 'dark' }, lookup);
     expect(result.tokens['gray-800'].value).toBe('#1a1c21');
     expect(countTokens(adopted, result, adopted, { mode: 'dark' }).overridden).toBe(13);
+  });
+});
+
+describe('tokenValueFromText', () => {
+  it('keeps a list a list when its type has no list spelling, as PinRepair does', () => {
+    expect(tokenValueFromText(undefined, 'Inter, serif', ['Inter', 'sans-serif'])).toEqual(['Inter', 'serif']);
+    expect(tokenValueFromText('shadow', 'Inter, serif', ['Inter', 'sans-serif'])).toEqual(['Inter', 'serif']);
+    expect(tokenValueFromText(undefined, '0, 0, 1, 1', [0.4, 0, 0.2, 1])).toEqual([0, 0, 1, 1]);
+    expect(tokenValueFromText(undefined, 'Inter', 'Arial')).toBe('Inter');
   });
 });
 

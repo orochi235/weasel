@@ -94,13 +94,22 @@ const asNumber = (raw: string): number | null => (raw.trim() !== '' && Number.is
 export const keepNumberness = (raw: string, previous: unknown): string | number =>
   typeof previous !== 'number' ? raw : raw.trim() === '' ? previous : (asNumber(raw) ?? raw);
 
-/** Text typed over a value of DTCG `type`, in the shape a definition stores: a number stays one, a bezier four numbers. */
+/** The DTCG type `value` is spelled in as text: `type`, unless that has no spelling for the list `value` is, when four
+ *  numbers read as an ease and any other list as a font stack, so editing the text keeps it a list. */
+export function textTypeOf(type: unknown, value: unknown): string {
+  const t = typeof type === 'string' ? type : 'string';
+  if (!Array.isArray(value) || t === 'cubicBezier' || t === 'fontFamily') return t;
+  return value.length === 4 && value.every((x) => typeof x === 'number') ? 'cubicBezier' : 'fontFamily';
+}
+
+/** Text typed over `previous`, a value of DTCG `type`, in the shape a definition stores: a number stays one, a list
+ *  one in the spelling {@link textTypeOf} gives it. */
 export const tokenValueFromText = (type: string | undefined, raw: string, previous: unknown): TokenValue =>
   typeof previous === 'number'
     ? keepNumberness(raw, previous)
     : type === 'number'
       ? (asNumber(raw) ?? raw)
-      : parseTokenValue(type ?? 'string', raw);
+      : parseTokenValue(textTypeOf(type, previous), raw);
 
 function withEntry<T>(record: Readonly<Record<string, T>> | undefined, key: string, value: T): Record<string, T> {
   return { ...record, [key]: value };
@@ -115,6 +124,19 @@ export function leafAt<T>(v: Varying<T> | undefined, selection: AxisChoice): T |
     cur = cur[key];
   }
   return cur as T | undefined;
+}
+
+/** Whether `selection` names a value for every `by` on its path through `v`, so {@link writeAt} and {@link clearAt}
+ *  can edit it. One varying by an axis the theme does not declare is not, and applies at no selection. */
+export function reachableAt(v: unknown, selection: AxisChoice): boolean {
+  let cur = v;
+  while (isByAxis(cur)) {
+    const key = getOwn(selection, cur.by);
+    if (key === undefined || key === 'by') return false;
+    if (!Object.hasOwn(cur, key)) return true;
+    cur = (cur as Record<string, unknown>)[key];
+  }
+  return true;
 }
 
 /** The branch of `v` that `selection` names; throws when it names none, where writing a leaf would drop every branch. */

@@ -93,12 +93,11 @@ export function PalettePreview({ palette, constraints }: { palette: Palette; con
   const { stats, swatches } = palette;
   const hexes = swatches.map((s) => s.hex).join(' ');
 
-  const tokenJson = swatches
-    .map((s, i) => {
-      const key = JSON.stringify(`swatch-${s.name}`);
-      return `    ${key}:${' '.repeat(Math.max(1, 19 - key.length))}{ "$value": ${JSON.stringify(s.hex)} }${i === swatches.length - 1 ? '' : ','}`;
-    })
-    .join('\n');
+  const tokenLines = swatches.map((s, i) => {
+    const key = JSON.stringify(`swatch-${s.name}`);
+    return `  ${key}:${' '.repeat(Math.max(1, 19 - key.length))}{ "$value": ${JSON.stringify(s.hex)} }${i === swatches.length - 1 ? '' : ','}`;
+  });
+  const tokenJson = ['{', ...tokenLines, '}'].join('\n');
 
   return (
     <div className={styles.previewBody}>

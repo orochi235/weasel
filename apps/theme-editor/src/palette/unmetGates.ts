@@ -23,7 +23,7 @@ export function unmetGates(c: Constraints, stats: Stats): string[] {
   }
   const out: string[] = [];
   const floor = floorDegrees(c);
-  if (floor > 0 && stats.minHueGap < floor - 0.01) {
+  if (floor > 0 && stats.minHueGap < floor) {
     out.push(`hue gap reaches ${stats.minHueGap.toFixed(0)}° of the ${floor.toFixed(0)}° asked for`);
   }
   if (gateVerdict(c, stats, 'minContrast') === 'bad') {
@@ -38,7 +38,7 @@ export function unmetGates(c: Constraints, stats: Stats): string[] {
     );
   }
   const pinned = floor > 0 ? closestPins(c) : undefined;
-  if (pinned && pinned.gap < floor - 0.01) {
+  if (pinned && pinned.gap < floor) {
     out.push(`pinned ${pinned.names[0]} and ${pinned.names[1]} sit ${pinned.gap.toFixed(0)}° apart, so no hue gap can reach ${floor.toFixed(0)}°`);
   }
   return out;

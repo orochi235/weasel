@@ -1,6 +1,7 @@
 import type { Constraints } from '@weasel-js/theme/engine';
 import { PropertyField, PropertyGroup, PropertyRow } from '@weasel-js/ui/components/Properties';
 import type { ReactNode } from 'react';
+import { COUNT_RANGE } from '../presets';
 
 export type SetConstraint = <K extends keyof Constraints>(key: K, value: Constraints[K]) => void;
 
@@ -34,8 +35,8 @@ export function ConstraintsPanel({ c, onSet, fixedCount = false, setRows, held =
             control="slider"
             label="Colors"
             value={c.count}
-            min={5}
-            max={32}
+            min={COUNT_RANGE.min}
+            max={COUNT_RANGE.max}
             step={1}
             onChange={(v) => onSet('count', v)}
             onInput={(v) => onSet('count', v)}

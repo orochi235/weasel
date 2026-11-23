@@ -1289,6 +1289,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   the per-read values from its description, is open. `check:token-reads` holds every other hook's reads to its value.
 - 2026-11-22 (my call, audit round 67): a `Bar` along a curve draws no `framed` strip and does not `wrap`; it warns
   when given either rather than drawing a strip along the curve. A `framed="status"` bar there is still a `<footer>`.
+- 2026-11-23 (my call, audit round 79): in the theme editor, editing a token whose own pin varies by an axis the
+  theme does not declare replaces that pin with the typed value, and resetting it removes the pin, since such a pin
+  applies at no selection. Refusing the edit with a message was the alternative.
 - 2026-11-23 (my call, audit round 77): folding a nested row on a `Timeline` drops a key or segment selection on a
   row under it, reporting `null` to `onSelectionChange`, and a `selection` a consumer gives on a row not drawn opens
   no inspector, as Delete already deletes nothing for it. Keeping a hidden selection live in both was the alternative.

@@ -30,6 +30,11 @@ describe('unmetGates', () => {
     expect(unmetGates(c, stats)).toEqual(['distance between colors reaches 0.217 of 0.22']);
   });
 
+  it('calls a hue floor missed by a hair missed, as the generator does', () => {
+    const c = withC({ count: 6, hueFloor: 0.5, minContrast: 0, minDistance: 0, minSurfaceDistance: 0 });
+    expect(unmetGates(c, { ...STATS, minHueGap: 29.995 })).toEqual(['hue gap reaches 30° of the 30° asked for']);
+  });
+
   it('blames two pins closer than the hue floor, which no free hue can fix', () => {
     const c = withC({ count: 6, hueFloor: 0.8, minContrast: 0, minDistance: 0, minSurfaceDistance: 0, anchors: [anchor(20), anchor(30)] });
     const palette = generate(c);

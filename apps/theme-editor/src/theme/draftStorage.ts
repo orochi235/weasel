@@ -39,7 +39,8 @@ function keepHistories(keep: readonly string[]): void {
 }
 
 /** Where theme `name`'s undo history is kept, beside its draft. Saving it forgets the histories of all but the
- *  {@link KEPT_HISTORIES} themes saved most recently, and of every other theme when the browser refuses it for room. */
+ *  {@link KEPT_HISTORIES} themes saved most recently, and of every other theme when the browser refuses it for room;
+ *  refused even then, the theme keeps none either. */
 export function draftHistory(name: string): LabHistoryStore<ThemeDefinition> {
   const store = localHistoryStore<ThemeDefinition>(historyKey(name));
   return {
@@ -48,7 +49,7 @@ export function draftHistory(name: string): LabHistoryStore<ThemeDefinition> {
       keepHistories([name, ...historyOrder().filter((n) => n !== name)].slice(0, KEPT_HISTORIES));
       if (writeLocal(historyKey(name), saved)) return;
       keepHistories([name]);
-      writeLocal(historyKey(name), saved);
+      if (!writeLocal(historyKey(name), saved)) keepHistories([]);
     },
   };
 }

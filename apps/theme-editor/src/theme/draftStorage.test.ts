@@ -117,6 +117,19 @@ describe('draftHistory', () => {
     expect(kept()).toEqual(['b']);
   });
 
+  it('records no history for a theme whose history the browser refuses even alone, and drops the older one it held', () => {
+    save('a');
+    save('b');
+    const real = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key: string, value: string) {
+      if (key.endsWith('draft-history.b')) throw new DOMException('full', 'QuotaExceededError');
+      real.call(this, key, value);
+    });
+    save('b');
+    expect(kept()).toEqual([]);
+    expect(localStorage.getItem('weasel.theme-editor.draft-histories')).toBeNull();
+  });
+
   it('forgets the history of a theme no longer listed, and of a discarded one', () => {
     save('a');
     save('b');

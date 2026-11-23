@@ -6,7 +6,7 @@ import { PropertyField, PropertyGroup, PropertyPanel, PropertyRow } from '@wease
 import { TokenField } from '@weasel-js/ui/components/TokenField';
 import { useState } from 'react';
 import styles from '../ThemeEditor.module.css';
-import { tokenValueFromText } from '../theme/model';
+import { textTypeOf, tokenValueFromText } from '../theme/model';
 import { RULE_KINDS, defaultRule, ruleKind, type SemanticRowView } from '../theme/semantics';
 
 type Ramps = Readonly<Record<string, readonly string[]>>;
@@ -154,7 +154,7 @@ function RuleFields({
     <PropertyField
       kind="string"
       label="Value"
-      value={serializeTokenValue(rule.type ?? '', rule.value)}
+      value={serializeTokenValue(textTypeOf(rule.type, rule.value), rule.value)}
       onChange={(text) => onChange({ ...rule, value: tokenValueFromText(rule.type, text, rule.value) }, 'value')}
     />
   );

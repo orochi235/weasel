@@ -24,6 +24,10 @@ describe('restoring the live state', () => {
     expect(restored.c).toEqual({ ...INITIAL.c, minContrast: 3 });
   });
 
+  it('rounds a stored count into the range the count slider offers', () => {
+    expect([0, -3, 7.5, 1e6].map((count) => liveOf({ c: { count } }).c.count)).toEqual([5, 5, 8, 32]);
+  });
+
   it('takes the default for a constraint outside the values the generator reads', () => {
     const anchors = [{ name: 'red', hue: 25, lightness: 0.6 }, { name: 'bad' }];
     const restored = liveOf({ c: { order: 'random', surface: 'blue', anchors, minContrast: 3 } });
