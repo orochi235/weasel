@@ -12,7 +12,7 @@ export type PrefBoundAt = (read: PrefBoundReader) => number | undefined;
 
 /**
  * `leaf` with its `minAt` and `maxAt` read against `read` and folded into
- * `min` and `max`, whichever is tighter. A bound read is held inside the declared
+ * `min` and `max`, whichever is tighter. A bound that reads as NaN is no bound. A bound read is held inside the declared
  * ones, and a `maxAt` below the `min` gives way to it, so `min` never passes `max`.
  * The leaf itself when it has neither.
  */
@@ -20,7 +20,7 @@ export function prefBoundedNumber(leaf: PrefNumber, read: PrefBoundReader): Pref
   const { minAt, maxAt, ...rest } = leaf;
   if (minAt === undefined && maxAt === undefined) return leaf;
   const within = (n: number | undefined): number | undefined =>
-    n === undefined ? undefined : Math.min(Math.max(n, leaf.min ?? -Infinity), leaf.max ?? Infinity);
+    n === undefined || Number.isNaN(n) ? undefined : Math.min(Math.max(n, leaf.min ?? -Infinity), leaf.max ?? Infinity);
   const lo = within(minAt?.(read));
   const hi = within(maxAt?.(read));
   const min = lo === undefined ? leaf.min : leaf.min === undefined ? lo : Math.max(leaf.min, lo);

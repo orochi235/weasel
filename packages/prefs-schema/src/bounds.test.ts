@@ -31,6 +31,13 @@ describe('prefBoundedNumber', () => {
     expect([crossed.min, crossed.max]).toEqual([8, 8]);
   });
 
+  it('ignores a bound that reads as NaN, keeping the declared one', () => {
+    const leaf = num({ min: 0, max: 10, minAt: (at) => (at('size') as number) / 2, maxAt: (at) => (at('size') as number) * 2 });
+    const bounded = prefBoundedNumber(leaf, read({}));
+    expect([bounded.min, bounded.max]).toEqual([0, 10]);
+    expect(prefBoundedNumber(num({ minAt: () => Number.NaN }), read({})).min).toBeUndefined();
+  });
+
   it('sets a bound the leaf had none of', () => {
     expect(prefBoundedNumber(num({ minAt: () => 3 }), read({})).min).toBe(3);
   });
