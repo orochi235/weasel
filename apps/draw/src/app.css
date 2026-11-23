@@ -18,7 +18,7 @@
 }
 
 .wd-dock-strip {
-  padding: var(--wzl-space-2) var(--wzl-space-4);
+  --wzl-dock-gap: 0;
   background: var(--wzl-surface);
   border-bottom: 1px solid var(--wzl-border);
   font-size: 11px;

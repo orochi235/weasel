@@ -130,7 +130,8 @@
 .row {
   display: flex;
   align-items: center;
-  gap: var(--wzl-space-2);
+  /* A dock's className sets `--wzl-dock-gap` to space its bars apart differently. */
+  gap: var(--wzl-dock-gap, var(--wzl-space-2));
   min-width: 0;
 }
 

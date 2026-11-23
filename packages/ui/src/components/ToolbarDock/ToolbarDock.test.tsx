@@ -69,7 +69,7 @@ describe('ToolbarDock', () => {
     expect(screen.queryByRole('button', { name: /^Move / })).toBeNull();
   });
 
-  it('makes a movable bar’s lead a focusable handle named for moving it, grip first', () => {
+  it('makes a movable bar’s lead a focusable handle named for moving it, its name standing in for the grip', () => {
     render(<ToolbarDock docks={docks} bars={bars} layout={layout} movable />);
     const handle = screen.getByRole('button', { name: 'Move File toolbar' });
     expect(handle.parentElement).toBe(screen.getByRole('toolbar', { name: 'File' }));
@@ -77,7 +77,7 @@ describe('ToolbarDock', () => {
     expect(handle).toHaveAttribute('tabindex', '0');
     expect(handle).not.toHaveAttribute('aria-hidden');
     expect(handle).toHaveAttribute('aria-keyshortcuts', 'Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown');
-    expect(handle.firstElementChild?.tagName.toLowerCase()).toBe('svg');
+    expect(handle.querySelector('svg')).toBeNull();
     expect(handle).toHaveTextContent(/^File$/);
   });
 
