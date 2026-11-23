@@ -16,17 +16,20 @@ export function namespaceIn(genFile: string): string | undefined {
   return /scopedIcon(?:<[^>]*>)?\(\s*['"]([^'"]+)['"]\s*\)/.exec(readFileSync(genFile, 'utf8'))?.[1];
 }
 
+/** Every source table beside an icons.gen under a package's `src`, or under the package itself when it has none. */
+const packageSourceTables = (pkgDir: string) => sourceTablesUnder(existsSync(join(pkgDir, 'src')) ? join(pkgDir, 'src') : pkgDir);
+
 /**
- * The table a package directory declares through its `weaselIcons.table` field, or, for a
- * workspace package not yet built, every source table beside an icons.gen under its `src`.
+ * The table a package directory declares through its `weaselIcons.table` field, or, for a package
+ * with a `weaselIcons` field and no built table, every source table it holds.
  */
 export function declaredTables(pkgDir: string): IconTable[] {
   const pkgFile = join(pkgDir, 'package.json');
   if (!existsSync(pkgFile)) return [];
-  const table = (JSON.parse(readFileSync(pkgFile, 'utf8')) as { weaselIcons?: { table?: string } }).weaselIcons?.table;
-  if (!table) return [];
-  if (existsSync(join(pkgDir, table))) return [read(join(pkgDir, table))];
-  return sourceTablesUnder(join(pkgDir, 'src'));
+  const field = (JSON.parse(readFileSync(pkgFile, 'utf8')) as { weaselIcons?: { table?: string } }).weaselIcons;
+  if (!field) return [];
+  if (field.table && existsSync(join(pkgDir, field.table))) return [read(join(pkgDir, field.table))];
+  return packageSourceTables(pkgDir);
 }
 
 // A manifest with no name, such as a `dist/package.json` holding only `type`, does not root a package.
@@ -71,20 +74,12 @@ export function sourceTablesUnder(dir: string): IconTable[] {
  * is not built, the source tables under its `src`.
  */
 function packageTables(pkg: string): IconTable[] {
-  const linked = lstatSync(pkg).isSymbolicLink();
-  const sources = () => {
-    const real = realpathSync(pkg);
-    return sourceTablesUnder(existsSync(join(real, 'src')) ? join(real, 'src') : real);
-  };
   // A linked package's code is served from source, so its built table can lag a glyph just added.
-  if (linked) {
-    const fromSource = sources();
+  if (lstatSync(pkg).isSymbolicLink()) {
+    const fromSource = packageSourceTables(realpathSync(pkg));
     if (fromSource.length > 0) return fromSource;
   }
-  const declared = declaredTables(pkg);
-  if (declared.length > 0) return declared;
-  const declares = existsSync(join(pkg, 'package.json')) && readFileSync(join(pkg, 'package.json'), 'utf8').includes('"weaselIcons"');
-  return declares ? sources() : [];
+  return declaredTables(pkg);
 }
 
 /** The package directories a workspace root's `workspaces` field names: plain paths, and `dir/*`. */

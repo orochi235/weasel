@@ -34,6 +34,16 @@ it("reads an unbuilt package's source table where its declared one is missing", 
   expect(declaredTables(root).map((t) => t.namespace)).toEqual(['fx']);
 });
 
+it('reads the root source tables of a package that declares weaselIcons with no built table and no src', () => {
+  for (const weaselIcons of [{}, { table: './dist/icons.table.json' }]) {
+    const root = temp();
+    writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'pkg', weaselIcons }));
+    writeFileSync(join(root, 'icons.gen.ts'), `export const icon = scopedIcon<'a'>('fx');\n`);
+    writeFileSync(join(root, 'icons.table.json'), JSON.stringify({ namespace: 'fx', owner: 'pkg', icons: {} }));
+    expect(declaredTables(root).map((t) => t.namespace)).toEqual(['fx']);
+  }
+});
+
 it('walks past a package.json with no name to the package root', () => {
   const root = temp();
   mkdirSync(join(root, 'dist'));
