@@ -99,14 +99,14 @@ export function createWindowDrag(host: WindowDragHost): WindowDrag {
 
 /** The host a window is held on: its size as the last draw saw it. */
 export interface HostHold {
-  /** `b` pulled back onto the host; `b` itself before any draw has given a size. */
+  /** `b` pulled back onto the host; `b` itself before any draw has given a size with area. */
   clamp(b: WidgetBounds): WidgetBounds;
   /** Records the host's size from a draw; true when it changed to one with area, so the window should be held again. */
   resize(dims: { width: number; height: number }): boolean;
 }
 
-/** No host size until a draw supplies one, so a window never drawn is not clamped; each draw at a new size with
- *  area holds it again. A host with no area yet (before layout) places nothing. */
+/** No host size until a draw supplies one with area, so a window never drawn at a real size is not clamped; each
+ *  draw at a new size with area holds it again. A draw at no area (before layout, collapsed) is ignored. */
 export function createHostHold(): HostHold {
   let dims: { width: number; height: number } | null = null;
   return {
@@ -116,10 +116,10 @@ export function createHostHold(): HostHold {
       return { ...b, x: r.x, y: r.y };
     },
     resize(next) {
+      if (!(next.width > 0 && next.height > 0)) return false;
       const was = dims;
       dims = next;
-      const moved = !was || was.width !== next.width || was.height !== next.height;
-      return moved && next.width > 0 && next.height > 0;
+      return !was || was.width !== next.width || was.height !== next.height;
     },
   };
 }

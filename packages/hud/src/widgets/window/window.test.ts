@@ -372,6 +372,15 @@ describe('window widget stays on the host', () => {
     expect(win.bounds.x).toBe(5000);
   });
 
+  it('leaves position alone after a draw at no area, then holds it at the first size with area', () => {
+    const win = createWindow(opts);
+    win.draw({ ...ctx, dims: { width: 0, height: 0 } });
+    win.setBounds({ x: 300, y: 200, width: 200, height: 150 });
+    expect(win.bounds.x).toBe(300);
+    win.draw(ctx);
+    expect(win.bounds).toEqual({ x: 300, y: 200, width: 200, height: 150 });
+  });
+
   it('does not fight a resize drag that crosses the host edge', () => {
     const win = drawn();
     win.onPointer({ type: 'down', x: 299, y: 175, native: null });
