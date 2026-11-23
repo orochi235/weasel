@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
 import type { SampledTrack, TimelineTrack, Track } from '@weasel-js/animator';
-import { Timeline } from './Timeline';
+import { Timeline, type KeyEditorCtx } from './Timeline';
 
 const TRACK_WIDTH = 500;
 
@@ -757,11 +757,11 @@ describe('Timeline selection under tracks edited from outside', () => {
 });
 
 describe('Timeline key drags echoed through onInput', () => {
-  function Echo({ onInput }: { onInput?: (next: Track[]) => void }) {
+  function Echo({ onInput, renderKeyEditor }: { onInput?: (next: Track[]) => void; renderKeyEditor?: (ctx: KeyEditorCtx) => ReactNode }) {
     const [value, setValue] = useState(tracks);
     return (
       <Timeline
-        {...base} tracks={value} onChange={setValue}
+        {...base} tracks={value} onChange={setValue} renderKeyEditor={renderKeyEditor}
         onInput={(next) => { onInput?.(next); setValue(next); }}
       />
     );
@@ -776,6 +776,16 @@ describe('Timeline key drags echoed through onInput', () => {
     // 3px past the last preview, inside the snap radius of it.
     fireEvent.pointerMove(document, { clientX: 303, clientY: 10 });
     expect(keyTimes(onInput.mock.lastCall![0] as Track[])).toEqual([0, 606]);
+  });
+
+  it('keeps the key editor on the dragged key while its preview re-sorts it past a neighbor', () => {
+    const editor = ({ key }: KeyEditorCtx) => <span data-testid="edited">{key.t}</span>;
+    renderWithIcons(<Echo renderKeyEditor={editor} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10, altKey: true });
+    expect(screen.getByTestId('edited')).toHaveTextContent('700');
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 10, altKey: true });
+    expect(screen.getByTestId('edited')).toHaveTextContent('700');
   });
 });
 

@@ -76,7 +76,7 @@ export function Timeline(props: TimelineProps): ReactElement {
 
   const hold = useControlHold(props, { readonlyRole: false });
   const { win, bounds, setWindow } = useTimeWindow(props.window, duration, props.onWindowChange);
-  const { selection, segmentSelection, selectKey, selectSegment, dropSegment, send } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
+  const { selection, inspected, segmentSelection, selectKey, selectSegment, dropSegment, send, preview } = useKeyAndSegment(props.selection, tracks, props.onSelectionChange);
   const { expanded, toggle } = useFolds({ selection, segmentSelection, selectKey, dropSegment });
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
   const pressHold = useKeyEditsHeldByPress();
@@ -164,7 +164,7 @@ export function Timeline(props: TimelineProps): ReactElement {
               hold={laneHold}
               onExpandedChange={() => toggle(row)}
               onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}
-              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit }, props.seedKey)}
+              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit, preview }, props.seedKey)}
               onCancel={props.onCancel}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
               onSelectSegment={(keyIndex) => selectSegment({ trackPath, keyIndex })}
@@ -176,7 +176,7 @@ export function Timeline(props: TimelineProps): ReactElement {
 
       <TimelineInspector
         tracks={tracks}
-        selection={drawn(selection, rows)}
+        selection={drawn(inspected, rows)}
         segmentSelection={drawn(segmentSelection, rows)}
         renderKeyEditor={renderKeyEditor}
         edits={edits}
@@ -200,11 +200,22 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   commit: (r: KeyEdit) => void;
+  /** A key drag's preview, or `null` once it is put back. */
+  preview: (r: KeyEdit | null) => void;
 }, seed?: KeySeed): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
   return {
-    onKeyInput: (keyIndex, toMs) => report.onInput?.(moveKey(tracks, { trackPath, keyIndex }, toMs).tracks),
-    onKeyRevert: () => report.onInput?.(tracks.slice()),
+    onKeyInput: (keyIndex, toMs) => {
+      if (!report.onInput) return;
+      const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
+      report.preview(r);
+      report.onInput(r.tracks);
+    },
+    onKeyRevert: () => {
+      report.preview(null);
+      report.onInput?.(tracks.slice());
+    },
     onKeyChange: (keyIndex, toMs) => {
+      report.preview(null);
       const sel = { trackPath, keyIndex };
       if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
       report.commit(moveKey(tracks, sel, toMs));
