@@ -3964,3 +3964,8 @@ Calls the lanes made without a ruling:
   without as a form draws it: the default of the field's own leaf, and absent where no leaf describes it, as `repair`
   keeps it. The object's own `default` answers only while nothing at all is held. Reading the field from the object's
   `default`, as before, was the alternative, and showed rows for a value the form drew otherwise.
+## Audit round seventy-seven (2026-11-23): prefs-schema
+
+- 2026-11-23 (the fixer's call): a group or section's `enableIf` that reads a field of an object leaf directly in it
+  (`feature.opts.on`) spares that leaf and the way down to the field, and nothing else in it: the object's other
+  fields stay disabled with the group. Sparing the whole object, every field included, was the alternative.

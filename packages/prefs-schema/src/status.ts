@@ -13,7 +13,7 @@ import { deferEntryConditions, type PrefConditionJudge } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
-import { PREF_ENTRY, ROOT_PREF_STATUS, prefAliasStatus, prefHeldVariants, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus } from './statusAt';
+import { PREF_ENTRY, ROOT_PREF_STATUS, prefAliasStatus, prefHeldVariants, prefOwner, prefStatusIn, prefSwitchOf, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus } from './statusAt';
 import type { PrefUnion } from './union';
 
 export { PREF_CONDITION_FIELDS, prefJudge, prefReader, type PrefConditionField, type PrefConditionJudge, type PrefEntry } from './judge';
@@ -78,16 +78,19 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
   const hidden = new Set<string>();
   const active = new Set<string>();
 
-  const leaf = (node: PrefLeaf, path: string, above: PrefStatus, holds: PrefConditionJudge, entry?: string): PrefLeaf | null => {
+  const leaf = (
+    node: PrefLeaf, path: string, above: PrefStatus, holds: PrefConditionJudge, entry?: string, switchOf?: PrefOwner,
+  ): PrefLeaf | null => {
     const own = prefStatusUnder(above, node, holds);
     const status = node.kind === 'alias' && aliasOver ? prefAliasStatus(own, node as PrefAlias, aliasOver, aliasHolds ?? holds) : own;
-    return status.shown || keepHidden ? inside(node, path, status, holds, above, entry) : null;
+    return status.shown || keepHidden ? inside(node, path, status, holds, above, entry, false, switchOf) : null;
   };
 
   /** `node`, whose status is `status` in `above`, without what its own value hides: a field, or part of a list's or a
-   *  map's item. `entry` is the path of the entry it sits in, if any. */
+   *  map's item. `entry` is the path of the entry it sits in, if any, and `switchOf` as {@link PrefOwner} has it. */
   const inside = (
     node: PrefLeaf, path: string, status: PrefStatus, holds: PrefConditionJudge, above = status, entry?: string, asItem = false,
+    switchOf?: PrefOwner,
   ): PrefLeaf => {
     if (!status.shown) hidden.add(path);
     if (!status.enabled) disabled.add(path);
@@ -95,7 +98,7 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
     if (node.kind === 'action' && activeIf !== undefined && answers(activeIf, holds) && holds(activeIf, 'activeIf')) active.add(path);
     // An item's own `showIf` is never asked, so it cannot hide the switch its `enableIf` spares.
     const held = asItem ? { enableIf: node.enableIf } : node;
-    const owner: PrefOwner = entry === undefined ? { node: held, status, above } : { node: held, status, above, entry };
+    const owner = prefOwner(held, status, above, entry, switchOf);
     if (node.kind === 'object') {
       const children = members((node as PrefObject).children, path, owner, holds);
       return children === (node as PrefObject).children ? node : ({ ...node, children } as PrefLeaf);
@@ -142,8 +145,8 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
     for (const [key, child] of Object.entries(held)) {
       const at = under(prefix, key);
       const kept = isPrefLeaf(child)
-        ? leaf(child, at, prefStatusIn(owner, at, holds), holds, owner.entry)
-        : section(child, prefix, prefSectionPath(within, key), owner.status, holds, owner.entry);
+        ? leaf(child, at, prefStatusIn(owner, at, holds), holds, owner.entry, prefSwitchOf(owner, at))
+        : section(child, prefix, prefSectionPath(within, key), owner.status, holds, owner.entry, owner.switchOf);
       changed ||= kept !== child;
       if (kept !== null) setOwnPrefValue(out, key, kept);
     }
@@ -151,13 +154,13 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
   };
 
   const section = (
-    node: PrefSection, prefix: string, path: string, above: PrefStatus, holds: PrefConditionJudge, entry?: string,
+    node: PrefSection, prefix: string, path: string, above: PrefStatus, holds: PrefConditionJudge, entry?: string, switchOf?: PrefOwner,
   ): PrefSection | null => {
     const status = prefStatusUnder(above, node, holds);
     if (!status.shown && !keepHidden) return null;
     if (!status.shown) hidden.add(path);
     if (!status.enabled) disabled.add(path);
-    const kept = members(node.members, prefix, entry === undefined ? { node, status, above } : { node, status, above, entry }, holds, path);
+    const kept = members(node.members, prefix, prefOwner(node, status, above, entry, switchOf), holds, path);
     if (Object.keys(kept).length === 0 && !keepEmpty) return null;
     return kept === node.members ? node : { ...node, members: kept };
   };
@@ -202,7 +205,8 @@ export function applyPrefConditions<T extends PrefGroup | PrefSection>(
     const children: PrefGroup['children'] = {};
     for (const [key, child] of Object.entries(node.children)) {
       const at = under(path, key);
-      const kept = isPrefLeaf(child) ? walk.leaf(child, at, prefStatusIn({ node, status, above }, at, holds), holds) : group(child, at, status);
+      const owner = prefOwner(node, status, above);
+      const kept = isPrefLeaf(child) ? walk.leaf(child, at, prefStatusIn(owner, at, holds), holds, undefined, prefSwitchOf(owner, at)) : group(child, at, status);
       changed ||= kept !== child;
       if (kept !== null) setOwnPrefValue(children, key, kept);
     }
