@@ -61,6 +61,8 @@ function renderOutcome(entry: TraceLogEntry): ReactNode {
 
 export function TraceTable({ entries, live, now, showHandled, showUnhandled, empty }: TraceTableProps): ReactElement {
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(new Set());
+  // The live row's id outlives its record, so a prediction that goes away takes its open state with it.
+  if (!live && expanded.has(LIVE_ID)) setExpanded((cur) => new Set([...cur].filter((id) => id !== LIVE_ID)));
 
   const rows = entries
     .map(({ seq, record }): TraceRow => ({ id: String(seq), entry: record }))
