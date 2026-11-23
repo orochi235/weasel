@@ -2,13 +2,14 @@ import { resolveTheme, type ThemeDefinition } from '@weasel-js/theme';
 import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
+import { layerEntries } from './entries';
 import { adoptGenerated, clearAt, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf, writeAt } from './model';
 
 const lookup = lookupOf(child);
 
 describe('countTokens', () => {
   it("counts weasel's own tokens and the pins over generated ones", () => {
-    const counts = countTokens(weasel, derive(weasel, { mode: 'dark' }, lookup), weasel);
+    const counts = countTokens(weasel, derive(weasel, { mode: 'dark' }, lookup), weasel, { mode: 'dark', density: 'comfortable' });
     expect(counts).toMatchObject({ overridden: 23, total: 182 });
     expect(counts.layers).toEqual({
       seeds: { count: 1, pinned: 0 },
@@ -20,16 +21,27 @@ describe('countTokens', () => {
     });
   });
 
-  it("counts a child's own tokens only", () => {
-    const counts = countTokens(child, derive(child, { mode: 'dark' }, lookup), mergeChain(child, lookup));
+  it("totals a child's own tokens, and counts in each layer what its page lists, the inherited included", () => {
+    const merged = mergeChain(child, lookup);
+    const result = derive(child, { mode: 'dark' }, lookup);
+    const counts = countTokens(child, result, merged, { mode: 'dark' });
     expect(counts).toMatchObject({ overridden: 1, total: 2 });
-    expect(counts.layers.semantics).toEqual({ count: 1, pinned: 1 });
+    const weaselCounts = countTokens(weasel, derive(weasel, { mode: 'dark' }, lookup), weasel, { mode: 'dark' }).layers;
+    expect(counts.layers.components).toEqual(weaselCounts.components);
+    expect(counts.layers.components.count).toBe(layerEntries('components', child, result, { mode: 'dark' }, merged).length);
+    expect(counts.layers.semantics).toEqual({ count: weaselCounts.semantics.count, pinned: 1 });
     expect(counts.layers.pins).toEqual({ count: 2, pinned: 1 });
+  });
+
+  it('counts only the seeds with a value at the selection, as the seeds page lists them', () => {
+    const def = { ...weasel, seeds: { ...weasel.seeds, gap: { by: 'mode', light: 4 } } } as ThemeDefinition;
+    const at = (mode: string) => countTokens(def, derive(def, { mode }, lookup), def, { mode }).layers.seeds.count;
+    expect(at('light')).toBe(at('dark') + 1);
   });
 
   it('counts a pin only at a selection where it applies', () => {
     const def = { ...weasel, pins: { ...weasel.pins, gap: { by: 'mode', dark: { value: '4px', type: 'dimension' } } } } as ThemeDefinition;
-    const at = (mode: string) => countTokens(def, derive(def, { mode }, lookup), def).layers.pins.count;
+    const at = (mode: string) => countTokens(def, derive(def, { mode }, lookup), def, { mode }).layers.pins.count;
     expect(at('dark')).toBe(at('light') + 1);
   });
 });
@@ -37,7 +49,7 @@ describe('countTokens', () => {
 describe('names Object.prototype holds', () => {
   it('counts no token for a pin named constructor that has no value at this selection', () => {
     const def = { name: 'p', pins: { constructor: { by: 'mode', light: { value: '#ffffff', type: 'color' } } } } as ThemeDefinition;
-    const counts = countTokens(def, derive(def, { mode: 'dark' }), def);
+    const counts = countTokens(def, derive(def, { mode: 'dark' }), def, { mode: 'dark' });
     expect(counts).toMatchObject({ overridden: 0, total: 0 });
   });
 
@@ -67,7 +79,7 @@ describe('pins', () => {
     expect(Object.keys(adopted.pins!).filter((n) => n.startsWith('gray-'))).toEqual([]);
     const result = derive(adopted, { mode: 'dark' }, lookup);
     expect(result.tokens['gray-800'].value).toBe('#1a1c21');
-    expect(countTokens(adopted, result, adopted).overridden).toBe(13);
+    expect(countTokens(adopted, result, adopted, { mode: 'dark' }).overridden).toBe(13);
   });
 });
 
@@ -114,5 +126,11 @@ describe('writeAt and clearAt', () => {
     expect(writeAt(byDensity, { density: 'compact' }, 8)).toEqual({ by: 'density', compact: 8, comfy: 6 });
     expect(clearAt(byDensity, { density: 'compact' })).toEqual({ by: 'density', comfy: 6 });
     expect(clearAt({ by: 'density', comfy: 6 }, { density: 'comfy' })).toBeUndefined();
+  });
+
+  it('clear nothing, returning the variation itself, where it holds no leaf at the selection', () => {
+    const nested = { by: 'mode', dark: { by: 'density', compact: 4 } };
+    expect(clearAt(nested, { mode: 'dark', density: 'comfy' })).toBe(nested);
+    expect(clearAt(nested, { mode: 'light', density: 'compact' })).toBe(nested);
   });
 });

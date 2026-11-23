@@ -92,7 +92,7 @@ export function PaletteLab() {
               }
             />
 
-            <AnchorList anchors={anchors} onChange={setAnchors} />
+            <AnchorList anchors={anchors} onChange={setAnchors} pickFrom="the panel below" />
           </PropertyPanel>
         </aside>
 

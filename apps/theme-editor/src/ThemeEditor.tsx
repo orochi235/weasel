@@ -6,9 +6,11 @@ import { useCallback, useEffect, useState } from 'react';
 import styles from './ThemeEditor.module.css';
 import { ThemeWorkbench } from './ThemeWorkbench';
 import { bundledThemeApi, httpThemeApi, type ThemeApi } from './theme/api';
-import { clearDraft, clearDraftHistory, draftNames, loadDraft, loadLastTheme, persistLastTheme } from './theme/draftStorage';
+import { clearDraft, clearDraftHistory, draftNames, loadDraft, loadLastTheme, persistLastTheme, pruneDraftHistories } from './theme/draftStorage';
 import { starterDefinition, themeNameProblem } from './theme/starter';
 import type { StoredTheme } from '@weasel-js/theme/engine';
+
+const KEPT_DRAFT = 'the browser refused to remove the stored draft, so it would open again';
 
 interface Loaded {
   readonly api: ThemeApi;
@@ -54,13 +56,17 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
     const primary = api ?? httpThemeApi();
     primary
       .list()
-      .then((themes) => ({ api: primary, themes }))
+      .then((themes) => ({ api: primary, themes, complete: true }))
       .catch(async () => {
         const fallback = bundledThemeApi();
-        return { api: fallback, themes: await fallback.list() };
+        return { api: fallback, themes: await fallback.list(), complete: false };
       })
       .then((next) => {
-        if (live) setLoaded({ api: next.api, themes: withUnsavedDrafts(next.themes), listed: new Set(next.themes.map((t) => t.name)) });
+        if (!live) return;
+        const themes = withUnsavedDrafts(next.themes);
+        // The bundled themes stand in for a list that failed, which may name themes they lack.
+        if (next.complete) pruneDraftHistories(themes.map((t) => t.name));
+        setLoaded({ api: next.api, themes, listed: new Set(next.themes.map((t) => t.name)) });
       });
     return () => {
       live = false;
@@ -94,14 +100,14 @@ export function ThemeEditor({ api }: { readonly api?: ThemeApi }) {
   const draft = loadDraft(current.name);
   const reload = async () => {
     const fresh = await loaded.api.get(current.name);
-    await clearDraft(current.name);
+    if (!(await clearDraft(current.name))) throw new Error(KEPT_DRAFT);
     clearDraftHistory(current.name);
     replace(fresh);
     setGeneration((g) => g + 1);
   };
   const onDisk = current.hash !== '' || loaded.listed.has(current.name);
-  const discard = () => {
-    void clearDraft(current.name);
+  const discard = async () => {
+    if (!(await clearDraft(current.name))) throw new Error(KEPT_DRAFT);
     clearDraftHistory(current.name);
     setLoaded((l) => l && { ...l, themes: l.themes.filter((t) => t.name !== current.name) });
   };

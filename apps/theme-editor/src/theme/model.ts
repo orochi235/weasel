@@ -50,35 +50,32 @@ export function ownTokenNames(def: ThemeDefinition, merged: ThemeDefinition): st
 export const pinApplies = (result: DeriveResult, name: string): boolean =>
   getOwn(result.provenance, name)?.pinned === true || getOwn(result.provenance, name)?.layer === 'pins';
 
-/** Each own token counts once, under the layer that produced it; the Pins row counts the pins that apply, and how many override a generator. */
-export function countTokens(def: ThemeDefinition, result: DeriveResult, merged: ThemeDefinition): Counts {
-  const zero = () => ({ count: 0, pinned: 0 });
-  const layers: Record<LayerId, Mutable<LayerCount>> = {
-    seeds: { count: Object.keys(def.seeds ?? {}).length, pinned: 0 },
-    ramps: zero(),
-    scales: zero(),
-    semantics: zero(),
-    components: zero(),
-    pins: zero(),
-  };
-  let overridden = 0;
-  let total = 0;
-  for (const name of ownTokenNames(def, merged)) {
-    const p = getOwn(result.provenance, name);
-    if (!p) continue;
-    total += 1;
-    if (p.pinned) overridden += 1;
-    if (p.layer !== 'pins') {
-      layers[p.layer].count += 1;
-      if (p.pinned) layers[p.layer].pinned += 1;
-    }
+/** The tokens `layer`'s page lists, in definition order: every seed with a value at `selection`, as `seeds.<name>`;
+ *  each pin of the definition's own that applies; and for the rest, each token of the whole chain that `layer`
+ *  produced, since a page lists what the theme inherits beside what it owns. */
+export function layerNames(layer: LayerId, def: ThemeDefinition, result: DeriveResult, selection: AxisChoice, merged: ThemeDefinition): string[] {
+  if (layer === 'seeds') {
+    return Object.entries(def.seeds ?? {}).flatMap(([name, v]) => {
+      const leaf = leafAt(v, selection);
+      return typeof leaf === 'string' || typeof leaf === 'number' ? [`seeds.${name}`] : [];
+    });
   }
-  for (const name of Object.keys(def.pins ?? {})) {
-    if (!pinApplies(result, name)) continue;
-    layers.pins.count += 1;
-    if (getOwn(result.provenance, name)?.pinned) layers.pins.pinned += 1;
-  }
-  return { overridden, total, layers };
+  if (layer === 'pins') return Object.keys(def.pins ?? {}).filter((n) => pinApplies(result, n));
+  return ownTokenNames(merged, merged).filter((n) => getOwn(result.tokens, n) && getOwn(result.provenance, n)?.layer === layer);
+}
+
+/** Each layer counts what its page lists ({@link layerNames}); the total counts each of the definition's own tokens
+ *  once, and how many of them a pin overrides. */
+export function countTokens(def: ThemeDefinition, result: DeriveResult, merged: ThemeDefinition, selection: AxisChoice): Counts {
+  const pinnedOf = (names: readonly string[]) => names.filter((n) => getOwn(result.provenance, n)?.pinned).length;
+  const layers = Object.fromEntries(
+    LAYERS.map(({ id }) => {
+      const names = layerNames(id, def, result, selection, merged);
+      return [id, { count: names.length, pinned: id === 'seeds' ? 0 : pinnedOf(names) }];
+    }),
+  ) as Record<LayerId, LayerCount>;
+  const own = ownTokenNames(def, merged).filter((n) => getOwn(result.provenance, n));
+  return { overridden: pinnedOf(own), total: own.length, layers };
 }
 
 /** The draft as the runtime takes it, every theme it extends baked the same way. `name` scopes the rule `applyTheme` writes. */
@@ -134,13 +131,16 @@ export function writeAt<T>(v: Varying<T> | undefined, selection: AxisChoice, lea
   return { ...v, [key]: writeAt(getOwn(v, key) as Varying<T> | undefined, selection, leaf) } as Varying<T>;
 }
 
-/** `v` without its leaf at `selection`; every other branch of a `by` stays. Undefined when nothing is left. */
+/** `v` without its leaf at `selection`; every other branch of a `by` stays. Undefined when nothing is left, and `v`
+ *  itself when it holds no leaf there. */
 export function clearAt<T>(v: Varying<T> | undefined, selection: AxisChoice): Varying<T> | undefined {
   if (!isByAxis(v)) return undefined;
   const key = branchOf(v, selection);
   if (!Object.hasOwn(v, key)) return v;
+  const branch = getOwn(v, key) as Varying<T> | undefined;
+  const inner = clearAt(branch, selection);
+  if (inner === branch) return v;
   const rest: Record<string, unknown> = { ...v };
-  const inner = clearAt(getOwn(v, key) as Varying<T> | undefined, selection);
   if (inner === undefined) delete rest[key];
   else setOwn(rest, key, inner);
   return Object.keys(rest).some((k) => k !== 'by') ? (rest as Varying<T>) : undefined;

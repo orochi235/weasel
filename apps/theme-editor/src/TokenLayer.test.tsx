@@ -1,5 +1,5 @@
 import { cleanup, fireEvent, screen } from '@testing-library/react';
-import type { ThemeDefinition } from '@weasel-js/theme';
+import type { AxisChoice, ThemeDefinition } from '@weasel-js/theme';
 import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { LayerId } from './theme/model';
@@ -15,15 +15,15 @@ const tiny: ThemeDefinition = {
 };
 const lookup = lookupOf(tiny);
 
-function renderLayer(layer: LayerId, def: ThemeDefinition = tiny, highlight: readonly string[] = []) {
+function renderLayer(layer: LayerId, def: ThemeDefinition = tiny, highlight: readonly string[] = [], selection: AxisChoice = { mode: 'dark' }, within = lookup) {
   const onChange = vi.fn();
   renderWithIcons(
     <TokenLayer
       layer={layer}
       draft={def}
-      result={derive(def, { mode: 'dark' }, lookup)}
-      merged={mergeChain(def, lookup)}
-      selection={{ mode: 'dark' }}
+      result={derive(def, selection, within)}
+      merged={mergeChain(def, within)}
+      selection={selection}
       highlight={highlight}
       onChange={onChange}
     />,
@@ -132,6 +132,13 @@ describe('<TokenLayer>', () => {
     const onChange = renderLayer('pins', def);
     fireEvent.click(screen.getByRole('button', { name: 'Reset brand-ink' }));
     expect(nextDef(onChange).pins?.['brand-ink']).toEqual({ by: 'mode', light: { value: '#eeeeee', type: 'color' } });
+  });
+
+  it('records nothing when the by-axis pin has no branch at the row to reset', () => {
+    const def = { name: 'leaf', extends: 'tiny', pins: { 'brand-ink': { by: 'mode', light: { value: '#eeeeee', type: 'color' } } } } as ThemeDefinition;
+    const onChange = renderLayer('pins', def, [], { mode: 'dark' }, lookupOf(tiny, def));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset brand-ink' }));
+    expect(onChange).not.toHaveBeenCalled();
   });
 
   it('edits only the branch of a by-axis seed the row shows', () => {

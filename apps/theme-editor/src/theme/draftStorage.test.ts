@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { clearDraft, draftNames, loadDraft, parseDraft, persistDraft } from './draftStorage';
+import { clearDraft, clearDraftHistory, draftHistory, draftNames, KEPT_HISTORIES, loadDraft, parseDraft, persistDraft, pruneDraftHistories } from './draftStorage';
 
 describe('parseDraft', () => {
   const draft = { definition: { name: 'weasel', description: 'x' }, baseHash: 'h1' };
@@ -69,5 +69,61 @@ describe('loadDraft', () => {
     expect(await persistDraft({ definition: { name: 'harbor' }, baseHash: null })).toBe(false);
     expect(await clearDraft('harbor')).toBe(false);
     expect(localStorage.getItem(key)).toBe('{"definition":');
+  });
+});
+
+describe('draftHistory', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+
+  const saved = (name: string) => ({
+    state: { name },
+    history: { version: 1 as const, undoStack: [], redoStack: [], nextEntryId: 1, droppedEntries: 0 },
+  });
+  const save = (name: string) => draftHistory(name).save(saved(name));
+  const kept = () => ['a', 'b', 'c'].filter((n) => draftHistory(n).load() !== null);
+
+  it('keeps the histories of only the themes saved most recently', () => {
+    save('a');
+    save('b');
+    save('a');
+    save('c');
+    expect(KEPT_HISTORIES).toBe(2);
+    expect(kept()).toEqual(['a', 'c']);
+  });
+
+  it('finds histories saved before their order was kept', () => {
+    localStorage.setItem('weasel.theme-editor.draft-history.a', JSON.stringify(saved('a')));
+    localStorage.setItem('weasel.theme-editor.draft-history.b', JSON.stringify(saved('b')));
+    save('c');
+    expect(kept()).toHaveLength(2);
+    expect(kept()).toContain('c');
+  });
+
+  it("forgets every other theme's history when the browser refuses one for room", () => {
+    save('a');
+    const real = Storage.prototype.setItem;
+    let refused = false;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, key: string, value: string) {
+      if (key.endsWith('draft-history.b') && !refused) {
+        refused = true;
+        throw new DOMException('full', 'QuotaExceededError');
+      }
+      real.call(this, key, value);
+    });
+    save('b');
+    expect(kept()).toEqual(['b']);
+  });
+
+  it('forgets the history of a theme no longer listed, and of a discarded one', () => {
+    save('a');
+    save('b');
+    pruneDraftHistories(['b', 'c']);
+    expect(kept()).toEqual(['b']);
+    clearDraftHistory('b');
+    expect(kept()).toEqual([]);
+    expect(localStorage.getItem('weasel.theme-editor.draft-histories')).toBeNull();
   });
 });

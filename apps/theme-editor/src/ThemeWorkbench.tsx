@@ -37,7 +37,7 @@ export interface WorkbenchProps {
   readonly onSaved: (stored: StoredTheme) => void;
   readonly onReload: () => Promise<void>;
   /** Drops a theme that has no file, draft and all. */
-  readonly onDiscard: () => void;
+  readonly onDiscard: () => Promise<void>;
   /** Starts a new theme by that name; answers what is wrong with the name, or null. */
   readonly onNew: (name: string) => string | null;
 }
@@ -123,6 +123,14 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
       await onReload();
     } catch (e) {
       setReloadError(`Couldn't reload ${stored.name} from disk: ${(e as Error).message}`);
+    }
+  };
+  const discard = async () => {
+    setReloadError(null);
+    try {
+      await onDiscard();
+    } catch (e) {
+      setReloadError(`Couldn't discard ${stored.name}: ${(e as Error).message}`);
     }
   };
 
@@ -211,7 +219,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
             </p>
             <div className={styles.statusActions}>
               {baseHash === null ? (
-                <Button size="sm" onClick={onDiscard}>Discard this unsaved theme</Button>
+                <Button size="sm" onClick={discard}>Discard this unsaved theme</Button>
               ) : (
                 <Button size="sm" onClick={reload}>Discard the draft and reload from disk</Button>
               )}
@@ -241,7 +249,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     }
   };
 
-  const counts = countTokens(draft, derived.primary.result, derived.merged);
+  const counts = countTokens(draft, derived.primary.result, derived.merged, derived.primary.selection);
   // A pinned token jumps to Pins: the pin is what decides its value.
   const layerOf = (token: string): LayerId =>
     pinApplies(derived.primary.result, token) ? 'pins' : (getOwn(derived.primary.result.provenance, token)?.layer ?? 'pins');

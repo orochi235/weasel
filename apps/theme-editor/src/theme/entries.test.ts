@@ -51,7 +51,7 @@ describe('layerEntries', () => {
     const def = { ...weasel, pins: { ...weasel.pins, gap: { by: 'mode', dark: { value: '4px', type: 'dimension' } } } } as ThemeDefinition;
     for (const mode of ['dark', 'light']) {
       const result = derived(def, mode);
-      expect(layerEntries('pins', def, result, { mode }, def)).toHaveLength(countTokens(def, result, def).layers.pins.count);
+      expect(layerEntries('pins', def, result, { mode }, def)).toHaveLength(countTokens(def, result, def, { mode }).layers.pins.count);
     }
   });
 

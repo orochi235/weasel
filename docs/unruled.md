@@ -3986,3 +3986,16 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): a leaf drawn through an alias drops the target's `pair` and `heading`, which place
   the target among its own neighbors, and takes only a `pair` or `heading` the alias gives itself. Keeping the
   target's, whose `pair.with` names leaves not drawn beside the alias, was the alternative.
+## Audit round seventy-eight (2026-11-23): the theme editor
+
+- 2026-11-23 (the fixer's call): "Reload from disk" and "Discard this unsaved theme" leave the draft open and say why
+  when the browser refuses to remove the stored draft, since it would otherwise open again on the next load. Opening
+  the file anyway and leaving the stale draft stored was the alternative.
+- 2026-11-23 (the fixer's call): the theme editor keeps undo histories across a reload for only the two themes saved
+  most recently, forgets every other theme's when the browser refuses one for room, and forgets a theme's at load once
+  the server's list no longer names it. A total character budget evicting the oldest steps across themes was the
+  alternative.
+- 2026-11-23 (the fixer's call): each layer in the theme editor's rail counts what its page lists: every token of the
+  chain for ramps, scales, semantics, and components, and the seeds with a value at the selection. The header's
+  "N of M overridden" still counts the theme's own tokens. Counting only the theme's own tokens in the rail too, and
+  listing only those on the pages, was the alternative.

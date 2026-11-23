@@ -2,6 +2,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
+import { anchorFromHex } from '@weasel-js/theme/engine';
 import { crayonAnchor } from './palette/crayons';
 import { SwatchPanel } from './SwatchPanel';
 
@@ -100,5 +101,16 @@ describe('<SwatchPanel>', () => {
     const next = onChange.mock.calls[0]![0];
     expect(next).toHaveLength(2);
     expect(next[0]).toBe(crayon);
+  });
+
+  it('unpins one anchor, the swatch\'s own, when a hex pin shares its color', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const typed = anchorFromHex('#fac80a');
+    const brick = anchorFromHex('#fac80a', 'bright-yellow');
+    renderWithIcons(<SwatchPanel anchors={[typed, brick]} onChange={onChange} count={8} />);
+    await user.click(screen.getByRole('tab', { name: /^LEGO/ }));
+    await user.click(within(screen.getByRole('group', { name: 'Swatches to pin' })).getByRole('button', { name: 'Bright Yellow' }));
+    expect(onChange.mock.calls[0]![0]).toEqual([typed]);
   });
 });

@@ -52,4 +52,15 @@ describe('<AnchorList>', () => {
     await user.click(screen.getByRole('button', { name: 'Unpin red' }));
     expect(onChange).toHaveBeenCalledWith([{ ...RED, name: 'blue' }]);
   });
+
+  it('points at a color picker only where the host offers one', () => {
+    const { unmount } = renderWithIcons(<AnchorList anchors={[RED]} onChange={vi.fn()} />);
+    expect(screen.getByText('Pinned colors keep their own lightness.')).toBeInTheDocument();
+    unmount();
+    renderWithIcons(<AnchorList anchors={[]} onChange={vi.fn()} />);
+    expect(screen.getByText('Nothing pinned — every color comes from the lightness law.')).toBeInTheDocument();
+    cleanup();
+    renderWithIcons(<AnchorList anchors={[RED]} onChange={vi.fn()} pickFrom="the panel below" />);
+    expect(screen.getByText('Pinned colors keep their own lightness. Pick more from the panel below.')).toBeInTheDocument();
+  });
 });
