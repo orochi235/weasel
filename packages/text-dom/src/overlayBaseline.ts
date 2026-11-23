@@ -40,11 +40,14 @@ function cssBaseline(el: HTMLElement): number {
   const mark = document.createElement('span');
   Object.assign(mark.style, { display: 'inline-block', width: '0', height: '0', verticalAlign: 'baseline' });
   line.appendChild(mark);
+  const [o, ex, ey] = [[0, 0], [100, 0], [0, 100]].map(([x, y]) => {
+    const pin = document.createElement('span');
+    Object.assign(pin.style, { position: 'absolute', left: `${x}px`, top: `${y}px`, width: '0', height: '0' });
+    line.appendChild(pin);
+    return pin;
+  });
   parent.appendChild(line);
-  const box = line.getBoundingClientRect();
-  // Rect over layout width undoes any transform on an ancestor.
-  const scale = box.width / 100;
-  const baseline = scale > 0 ? (mark.getBoundingClientRect().top - box.top) / scale : 0;
+  const baseline = layoutY(o.getBoundingClientRect(), ex.getBoundingClientRect(), ey.getBoundingClientRect(), mark.getBoundingClientRect());
   line.remove();
   // A web font still loading is measured as its fallback; ask again later.
   if (baseline > 0 && document.fonts?.status !== 'loading') {
@@ -52,4 +55,14 @@ function cssBaseline(el: HTMLElement): number {
     CSS_BASELINES.set(key, baseline);
   }
   return baseline;
+}
+
+/** How far below `o` the point `p` sits in layout units, given where the layout points (0, 0), (100, 0) and
+ *  (0, 100) land on screen: solving for the whole affine map undoes a turn or skew on an ancestor, not only a scale. */
+function layoutY(o: DOMRect, ex: DOMRect, ey: DOMRect, p: DOMRect): number {
+  const [ax, ay] = [(ex.left - o.left) / 100, (ex.top - o.top) / 100];
+  const [bx, by] = [(ey.left - o.left) / 100, (ey.top - o.top) / 100];
+  const det = ax * by - ay * bx;
+  if (Math.abs(det) < 1e-9) return 0;
+  return (ax * (p.top - o.top) - ay * (p.left - o.left)) / det;
 }
