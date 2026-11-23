@@ -609,3 +609,15 @@ describe('Lane names on a row offset along the ruler', () => {
     expect(document.querySelector('[data-segment-index]')!.getAttribute('aria-label')).toBe('x segment into 1100 ms');
   });
 });
+
+describe('Lane nested bar under a parent that stops early', () => {
+  it('ends the bar where the timeline around it stops playing it', () => {
+    const inner = { kind: 'timeline', label: 'B', at: 200, timeline: { duration: 400, tracks: [] } };
+    const outer = { kind: 'timeline', label: 'A', at: 0, timeline: { duration: 300, tracks: [inner] } } as unknown as Track;
+    const row = buildLanes([outer], new Set(['0']))[1];
+    render(<Lane {...base} row={row} />);
+    const bar = screen.getByTestId('timeline-nested');
+    expect(bar.style.left).toBe('20%');
+    expect(bar.style.width).toBe('10%');
+  });
+});

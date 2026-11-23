@@ -121,7 +121,7 @@ export function Lane(props: LaneProps): ReactElement {
           />
         ) : (
           <>
-            {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} win={win} /> : null}
+            {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} end={row.end} win={win} /> : null}
             {row.kind === 'sampled' ? (
               <SegmentMarks
                 keys={sampledKeys} label={row.label} offset={row.offset} win={win} pct={pct} mark={mark}
@@ -204,10 +204,11 @@ function LaneLabel({ row, mark, expanded, toggleExpanded }: {
   );
 }
 
-/** A collapsed nested timeline's run on the ruler; an endless one runs off the window's end. */
-function NestedBar({ track, offset, win }: { track: TimelineTrack; offset: number; win: TimeWindow }) {
+/** A collapsed nested timeline's run on the ruler, cut where the timelines around it stop playing it; an endless one
+ *  runs off the window's end. */
+function NestedBar({ track, offset, end, win }: { track: TimelineTrack; offset: number; end: number; win: TimeWindow }) {
   const start = offset + track.at;
-  const span = Math.min(timelineSpan(track.timeline), Math.max(0, win.to - start));
+  const span = Math.min(timelineSpan(track.timeline), Math.max(0, Math.min(win.to, end) - start));
   return <div className={s.nestedBar} data-testid="timeline-nested" style={{ left: toPercent(win, start), width: spanPercent(win, span) }} />;
 }
 
