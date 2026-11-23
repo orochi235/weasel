@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import type { Logger } from 'vite';
+import { describe, expect, it, vi } from 'vitest';
 import { storyId } from '../story/ids';
 import type { IndexEntry } from '../story/types';
 import { titleReport, warnShared } from './titleReport';
@@ -45,6 +46,21 @@ describe('titleReport', () => {
 });
 
 describe('warnShared', () => {
+  it('names one file once, with the exports sharing the id, and says to rename one rather than retitle', () => {
+    const warn = vi.fn();
+    const a = entry('ui/Button', '/r/a.stories.tsx', 'Primary');
+    const b = entry('ui/Button', '/r/a.stories.tsx', 'primary');
+    expect(warnShared([a, b], '/r', { warn } as unknown as Logger)).toEqual([a]);
+    expect(warn).toHaveBeenCalledWith(
+      '[forge] story id ui-button--primary is declared by a.stories.tsx as Primary, primary; the workshop shows only the first. Rename one of the exports.',
+    );
+  });
+
+  it('lists each file once in the report when one of them declares the id twice', () => {
+    const entries = [entry('ui/Bar', '/r/a.stories.tsx', 'Lab'), entry('ui/Bar', '/r/a.stories.tsx', 'lab'), entry('ui/Bar', '/r/b.stories.tsx', 'Lab')];
+    expect(titleReport(entries, '/r').lines[0]).toBe('ui-bar--lab  declared by a.stories.tsx, b.stories.tsx');
+  });
+
   it('keeps only the first entry of a story id two files declare, as its warning says', () => {
     const first = entry('ui/Button', '/r/a.stories.tsx', 'Primary');
     const second = entry('ui/Button', '/r/b.stories.tsx', 'Primary');

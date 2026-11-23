@@ -3,21 +3,36 @@ import type { Logger } from 'vite';
 import type { IndexEntry } from '../story/types';
 import { warnOnce } from './warnOnce.ts';
 
-/** Each story id two or more entries share, with the files declaring it. Files that share a title share its ids too,
- *  so two of them exporting one name collide. */
-export function sharedIds(entries: readonly IndexEntry[], under = (file: string) => file): [string, string[]][] {
-  const files = new Map<string, string[]>();
-  for (const entry of entries) files.set(entry.id, [...(files.get(entry.id) ?? []), under(entry.file)]);
-  return [...files].filter(([, of]) => of.length > 1);
+/** A story id two or more entries share: the files declaring it, each once, and the exports that do. */
+interface SharedId {
+  id: string;
+  files: string[];
+  exports: string[];
+}
+
+/** Each story id two or more entries share. Files that share a title share its ids too, so two of them exporting one
+ *  name collide; one file collides with itself on two exports its id sanitizes alike (`Primary`, `primary`). */
+export function sharedIds(entries: readonly IndexEntry[], under = (file: string) => file): SharedId[] {
+  const byId = new Map<string, IndexEntry[]>();
+  for (const entry of entries) byId.set(entry.id, [...(byId.get(entry.id) ?? []), entry]);
+  return [...byId]
+    .filter(([, of]) => of.length > 1)
+    .map(([id, of]) => ({ id, files: [...new Set(of.map((e) => under(e.file)))], exports: of.map((e) => e.exportName) }));
+}
+
+/** Who declares a shared id, and what to change: one file's exports are renamed, two files' either way. */
+function sharedText({ files, exports }: SharedId): { by: string; fix: string } {
+  if (files.length > 1) return { by: files.join(', '), fix: 'Rename one of the exports, or retitle one file.' };
+  return { by: `${files[0]} as ${exports.join(', ')}`, fix: 'Rename one of the exports.' };
 }
 
 /** `entries` with only the first of each story id two of them share, after warning once through `logger` of each. */
 export function warnShared(entries: IndexEntry[], root: string, logger: Logger | undefined): IndexEntry[] {
   const shared = sharedIds(entries, (file) => relative(root, file));
   if (shared.length === 0) return entries;
-  for (const [id, of] of shared) {
-    const files = of.join(', ');
-    warnOnce(logger, `[forge] story id ${id} is declared by ${files}; the workshop shows only the first. Rename one of the exports, or retitle one file.`);
+  for (const one of shared) {
+    const { by, fix } = sharedText(one);
+    warnOnce(logger, `[forge] story id ${one.id} is declared by ${by}; the workshop shows only the first. ${fix}`);
   }
   const seen = new Set<string>();
   return entries.filter((entry) => !seen.has(entry.id) && seen.add(entry.id));
@@ -38,7 +53,7 @@ export function titleReport(entries: readonly IndexEntry[], root: string): { lin
   const width = [...spaced.keys()].reduce((most, file) => Math.max(most, file.length), 0);
   const lines = [
     ...[...spaced].map(([file, title]) => `${file.padEnd(width)}  '${title}'`),
-    ...shared.map(([id, of]) => `${id}  declared by ${of.join(', ')}`),
+    ...shared.map((one) => `${one.id}  declared by ${sharedText(one).by}`),
   ];
   if (spaced.size > 0) {
     lines.push(
