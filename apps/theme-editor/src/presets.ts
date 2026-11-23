@@ -71,21 +71,22 @@ export function liveOf(stored: unknown): LabState {
   return stateOf(stored);
 }
 
-/** Each stored constraint whose kind matches its default's, the default for the rest. `NaN` is stored as `null`. */
+/** Each stored constraint holding a value the generator reads, the default for the rest. `NaN` is stored as `null`. */
 function constraintsOf(stored: unknown): Constraints {
   const from = (typeof stored === 'object' && stored !== null ? stored : {}) as Record<string, unknown>;
   const out: Record<keyof Constraints, unknown> = { ...INITIAL.c };
   for (const key of Object.keys(INITIAL.c) as (keyof Constraints)[]) {
     if (!Object.hasOwn(from, key)) continue;
-    const fallback = INITIAL.c[key];
     const value = from[key];
-    const fits = Array.isArray(fallback)
-      ? Array.isArray(value)
-      : typeof value === typeof fallback && (typeof value !== 'number' || isFiniteNumber(value));
-    if (fits) out[key] = value;
+    if (key === 'anchors') out[key] = anchorsOf(value);
+    else if (key === 'order' ? value === 'hue' || value === 'farthest' : key === 'surface' ? typeof value === 'string' && HEX.test(value) : isFiniteNumber(value)) {
+      out[key] = value;
+    }
   }
   return out as unknown as Constraints;
 }
+
+const HEX = /^#[0-9a-f]{6}$/i;
 
 /** Each stored anchor with a name, a finite hue and lightness, and a chroma that is finite or absent. */
 function anchorsOf(stored: unknown): Anchor[] {
