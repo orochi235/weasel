@@ -3981,3 +3981,10 @@ Calls the lanes made without a ruling:
   (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
   spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
   sent the title to the file's auto title in the common case, where the spread carries no title.
+
+## Audit round seventy-eight (2026-11-23): gestures
+
+- 2026-11-23 (the fixer's call): a finger lifting or canceled from a hand of three or more ends its multitouch
+  gesture and then dispatches the geometry of the fingers still down, so a two-finger binding can start on them,
+  as a finger landing does going from two to three. Leaving the remaining fingers with no gesture until another
+  lands was the alternative.

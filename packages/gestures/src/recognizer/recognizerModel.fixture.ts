@@ -159,6 +159,7 @@ export function release(m: Model, s: SampleIn): { events: Expected[]; doubleClic
     m.held.delete(s.id);
     if (p.touch) {
       if (before >= 2) out.push({ kind: 'multitouch', fingers: before, end: 'commit', ...modsOf(s) });
+      if (before > 2) out.push({ kind: 'multitouch', fingers: before - 1, ...geometry(m), ...modsOf(s) });
       episodeMoved(m, s.id, { x: s.x, y: s.y });
       if (before === 2) {
         const e = m.episode;
@@ -194,6 +195,7 @@ export function cancel(m: Model, id: number): Expected[] {
   cancelHold(m, id);
   m.last = null;
   if (before >= 2) out.push({ kind: 'multitouch', fingers: before, end: 'cancel', ...modsOf(p.press) });
+  if (before > 2) out.push({ kind: 'multitouch', fingers: before - 1, ...geometry(m), ...modsOf(p.press) });
   if (p.touch) m.episode = null;
   out.push({ kind: 'pointercancel', pointerId: id, ...modsOf(p.press) });
   return out;

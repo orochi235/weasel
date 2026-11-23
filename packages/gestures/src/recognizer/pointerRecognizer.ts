@@ -270,6 +270,8 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
         hold.cancel(s.pointerId);
         held.delete(s.pointerId);
         if (rec.touch) liftFinger(before, s, sink, touches, happenedAt(s), longPressMs());
+        // The fingers still down go on as a gesture of their own, as one landing starts a new one.
+        if (before > 2) sink.dispatch(multiTouchEvent(before - 1, s, geometry()));
       }
       sink.dispatch(pointerUpEvent(s, world(s)));
       // A press still buffered never crossed the drag threshold, and nothing
@@ -294,6 +296,7 @@ export function createPointerRecognizer(opts: PointerRecognizerOptions): Pointer
       if (rec.button === 'primary') clicks.last = null;
       // A cancel carries no modifiers of its own, so these are the press's.
       if (before >= 2) sink.dispatch(multiTouchEvent(before, rec.down, { end: 'cancel' }));
+      if (before > 2) sink.dispatch(multiTouchEvent(before - 1, rec.down, geometry()));
       if (rec.touch) touches.abandon();
       sink.dispatch({ kind: 'pointercancel', pointerId, ...modifiersOf(rec.down) });
     },

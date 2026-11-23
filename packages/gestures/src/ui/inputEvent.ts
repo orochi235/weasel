@@ -284,8 +284,9 @@ export interface MultiTouchEvent extends EventModifiers {
    * view's camera anchors `zoomAt` in. Not client coords, and not world:
    * calling `clientToWorld` on it subtracts the origin a second time.
    *
-   * Present on the event a finger landing produces and on each move of a
-   * running gesture; absent on the one that ends it.
+   * Present on the event a finger landing or lifting produces (a lift leaving
+   * two or more fingers down starts their gesture afresh) and on each move of
+   * a running gesture; absent on the one that ends it.
    */
   centroid?: { x: number; y: number };
   /**
