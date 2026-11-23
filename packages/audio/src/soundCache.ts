@@ -4,6 +4,7 @@ export interface SoundHandle { readonly id: string }
 /** Decoded buffers behind opaque `SoundHandle`s. Nothing is ever evicted. */
 export interface SoundCache {
   load(url: string): Promise<SoundHandle>;
+  /** One handle per key of `urls`, in a record with no prototype. */
   loadAll(urls: Record<string, string>): Promise<Record<string, SoundHandle>>;
   decode(bytes: ArrayBuffer): Promise<SoundHandle>;
   /** Take ownership of a buffer the caller already has — a procedural synth,
@@ -62,7 +63,8 @@ export function createSoundCache(
     async loadAll(urls) {
       const names = Object.keys(urls);
       const handles = await Promise.all(names.map((n) => cache.load(urls[n])));
-      return Object.fromEntries(names.map((n, i) => [n, handles[i]]));
+      // Null-prototype: a misspelled key reads undefined, never an `Object.prototype` member.
+      return Object.assign(Object.create(null) as Record<string, SoundHandle>, Object.fromEntries(names.map((n, i) => [n, handles[i]])));
     },
     async decode(bytes) {
       return store(await ctx.decodeAudioData(bytes));
