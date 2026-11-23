@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LoupeMode } from '@weasel-js/loupe';
 import { createHud } from '../hud';
+import type { HudDrawCtx } from '../widget';
 import { createWindow } from '../widgets/window/window';
 import { createLoupeModel, type LoupeSurface } from '@weasel-js/loupe';
 import { lensAimInput } from './aimInput';
@@ -13,6 +14,7 @@ const B = { x: 0, y: 0, width: 200, height: 200 };
 const round = () => createWindow({ id: 'w', title: 'Loupe', shape: 'round', ...B });
 const at = (type: 'down' | 'move' | 'up', x: number, y: number) => ({ type, x, y, native: null });
 const shown = () => true;
+const noCtx = {} as HudDrawCtx;
 
 describe('the ring', () => {
   it('runs outside the rim, the zoom from the lower left through 6 o’clock, then the switch', () => {
@@ -63,6 +65,21 @@ describe('the zoom', () => {
     zoom.onPointer(at('move', last.x, last.y));
     expect(factor).toBe(64);
     zoom.onPointer(at('up', last.x, last.y));
+  });
+
+  it('puts the factor back when a drag is canceled, with or without a point', () => {
+    let factor = 8;
+    const zoom = createZoomTrack('z', { win: round(), round: true, shown, stops, factor: () => factor, setFactor: (f) => { factor = f; } });
+    const track = rimTrackIn(round().bounds, true, 'zoom');
+    for (const cancel of [{ type: 'cancel', native: null }, { type: 'cancel', x: 0, y: 0, native: null }] as const) {
+      const before = zoom.deps!(noCtx);
+      zoom.onPointer(at('down', track.at(0).point.x, track.at(0).point.y));
+      zoom.onPointer(at('move', track.at(1).point.x, track.at(1).point.y));
+      expect(factor).toBe(64);
+      zoom.onPointer(cancel as never);
+      expect(factor).toBe(8);
+      expect(zoom.deps!(noCtx)).toEqual(before);
+    }
   });
 
   it('leaves the lens itself to the lens', () => {
