@@ -154,6 +154,8 @@ export function createRelay({ wake }: RelayOptions): Relay {
       t = tab(tabId);
       t.panel?.disconnect();
       t.panel = port;
+      // The requests in flight were the old panel's, numbered by its transport; this one's may reuse their ids.
+      for (const f of t.frames.values()) f.asked.clear();
       wake(tabId);
     });
     port.onDisconnect.addListener(() => {

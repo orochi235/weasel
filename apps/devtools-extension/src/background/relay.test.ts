@@ -203,6 +203,19 @@ describe('the background relay', () => {
     ]);
   });
 
+  it('sends a panel that replaced another no answer for the requests the other asked', () => {
+    const { page, panel } = setup();
+    const first = panel(1);
+    const top = page(1);
+    first.postMessage(yo);
+    top.postMessage(sup(root('root-1')));
+    first.postMessage({ type: 'get-state', protocol: P, requestId: 5, rootId: 'root-1' });
+    const second = panel(1);
+    const before = second.received.length;
+    top.disconnect();
+    expect(second.received.slice(before).filter((m) => (m as { type: string }).type === 'error')).toEqual([]);
+  });
+
   it('answers a request for a frame that is not there with an error', () => {
     const { page, panel } = setup();
     const p = panel(1);
