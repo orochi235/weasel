@@ -23,8 +23,8 @@ export type PairKerning = (left: number, right: number) => number;
 
 /**
  * Read the `kern` feature's pair lookups from a single-font sfnt (not a
- * collection). `null` when the font has no GPOS table or no `kern` feature —
- * the caller then falls back to the legacy `kern` table.
+ * collection). `null` when the font has no GPOS table, no `kern` feature, or
+ * no pair lookup under one — the caller then falls back to the legacy `kern` table.
  */
 export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
   const v = new DataView(bytes);
@@ -64,6 +64,7 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
     }
     if (set.length > 0) lookupSets.push(set);
   }
+  if (lookupSets.length === 0) return null;
 
   const memo = new Map<number, number>();
   return (left, right) => {

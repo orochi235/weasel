@@ -97,6 +97,10 @@ describe('gposPairKerning', () => {
     expect(kern(2, 3)).toBe(0);
   });
 
+  it('answers null, so the legacy kern table is read, when its kern feature holds no pair lookup', () => {
+    expect(gposPairKerning(sfntWithGpos(oneLookup(0, pairPos(2, -50), 1)))).toBeNull();
+  });
+
   it('kerns a pair two scripts\' lookups both cover by one script\'s value, not their sum', () => {
     const kern = gposPairKerning(sfntWithGpos(perScriptKern(pairPos(2, -40), pairPos(2, -50))))!;
     expect(kern(1, 2)).toBe(-50);
