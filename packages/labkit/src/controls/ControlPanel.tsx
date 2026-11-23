@@ -149,7 +149,6 @@ function useShown<TC>(
 
 /** How each section of a panel folds: what `panelRows` hands a section's list, keyed by the section. */
 function sectionFold(
-  resolved: ResolvedConfig,
   gridPack: PropertyListPack,
   {
     collapse,
@@ -161,17 +160,13 @@ function sectionFold(
     'collapse' | 'collapsed' | 'onCollapse' | 'twisty'
   >,
 ) {
-  // A section that declares how it opens is foldable whether or not the lab
-  // asked for folds — there is nothing else for the declaration to mean.
-  const folds =
-    collapse !== undefined ||
-    collapsed !== undefined ||
-    onCollapse !== undefined ||
-    resolved.sections.some((s) => s.collapsed !== undefined);
+  const folds = collapse !== undefined || collapsed !== undefined || onCollapse !== undefined;
   const startsFolded = collapse === 'closed';
   return (key: string, declared?: boolean, grid: PropertyListPack = gridPack) => ({
     pack: grid,
-    collapsible: folds,
+    // A section that declares how it opens is foldable whether or not the lab
+    // asked for folds — there is nothing else for the declaration to mean.
+    collapsible: folds || declared !== undefined,
     twisty,
     defaultCollapsed: declared ?? startsFolded,
     collapsed: collapsed ? (getOwn(collapsed, key) ?? declared ?? startsFolded) : undefined,
@@ -244,7 +239,7 @@ function PanelBody<TC extends Record<string, unknown>>({
   });
 
   const gridPack = gridOf(pack);
-  const fold = sectionFold(resolved, gridPack, {
+  const fold = sectionFold(gridPack, {
     collapse,
     collapsed,
     onCollapse,
