@@ -3,10 +3,12 @@ import {
   ANY_MODS,
   type Carry,
   type InvocationCtx,
+  screenToWorld,
   startCarry,
   useAction,
   useLatest,
   useVisibleRaf,
+  viewToTransform,
 } from '@weasel-js/core';
 import {
   type ReactNode,
@@ -20,6 +22,7 @@ import {
 } from 'react';
 import { CameraContext } from '../canvas/CameraInput';
 import { frameLocalToWorld } from '../canvas/cameraView';
+import { hostBox } from '../canvas/hostBox';
 import type { WorldFrame } from '../canvas/worldSpec';
 import type { DragDropCapability, DragFeedback, PaletteItem, Point } from '../instrument/types';
 import { DragGhost } from './DragGhost';
@@ -54,6 +57,9 @@ export interface UseDragDropArgs<TS, TC> {
 export interface UseDragDropResult {
   drag: DragState | null;
   startDrag: (item: PaletteItem, e: ReactPointerEvent) => void;
+  /** Drops `item` at the center of the canvas view, as a release there would: the palette's keyboard path. Does
+   *  nothing while a drag is live or before `target` is mounted. */
+  place: (item: PaletteItem) => void;
   /** Render inside a `<CanvasStack>`: it binds the palette drop on that
    *  canvas's dispatcher, beside its pan, zoom, and tap. */
   target: ReactNode;
@@ -91,6 +97,8 @@ export function useDragDrop<TS, TC>({
   const pendingWorld = useRef<Point | null>(null);
   const carryRef = useRef<Carry | null>(null);
   const liveRef = useLatest({ capability, state, config, setState, emit });
+  /** The world point at the center of the view, set by the mounted `target`. */
+  const centerRef = useRef<(() => Point | null) | null>(null);
 
   const update = useCallback((next: DragState | null) => {
     dragRef.current = next;
@@ -167,10 +175,19 @@ export function useDragDrop<TS, TC>({
     [clearDrag, update],
   );
 
+  const place = useCallback(
+    (item: PaletteItem) => {
+      if (carryRef.current) return;
+      const world = centerRef.current?.();
+      if (world) sink.drop(world, item);
+    },
+    [sink],
+  );
+
   useEffect(() => () => carryRef.current?.cancel(), []);
 
-  const target = useMemo(() => <PaletteDropTarget sink={sink} />, [sink]);
-  return { drag, startDrag, target };
+  const target = useMemo(() => <PaletteDropTarget sink={sink} centerRef={centerRef} />, [sink]);
+  return { drag, startDrag, place, target };
 }
 
 function paletteDropAction(sink: DropSink, frame: () => WorldFrame | undefined): Action {
@@ -206,12 +223,33 @@ function paletteDropAction(sink: DropSink, frame: () => WorldFrame | undefined):
   };
 }
 
-/** Binds the palette drop on the canvas around it. Renders nothing. */
-function PaletteDropTarget({ sink }: { sink: DropSink }) {
+/** Binds the palette drop on the canvas around it, and answers `centerRef` with the world point at its view's
+ *  center while mounted. Renders nothing. */
+function PaletteDropTarget({
+  sink,
+  centerRef,
+}: {
+  sink: DropSink;
+  centerRef: { current: (() => Point | null) | null };
+}) {
   const camera = useContext(CameraContext);
+  const cameraRef = useLatest(camera);
   const frameRef = useLatest(camera?.frame);
   const action = useMemo(() => paletteDropAction(sink, () => frameRef.current), [sink, frameRef]);
   useAction(action);
+  useEffect(() => {
+    const at = (): Point | null => {
+      const cam = cameraRef.current;
+      const box = cam && hostBox(cam.element());
+      if (!cam || !box) return null;
+      const [x, y] = screenToWorld(box.width / 2, box.height / 2, viewToTransform(cam.view.get()));
+      return frameLocalToWorld({ x, y }, cam.frame);
+    };
+    centerRef.current = at;
+    return () => {
+      if (centerRef.current === at) centerRef.current = null;
+    };
+  }, [centerRef, cameraRef]);
   return null;
 }
 

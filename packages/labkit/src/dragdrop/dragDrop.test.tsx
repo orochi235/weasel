@@ -162,6 +162,23 @@ describe('DragDrop integration', () => {
     expect(latest.items.map((i) => i.id)).toEqual(['queued', 'a']);
   });
 
+  it('places an item at the center of the view when its button is pressed from the keyboard', async () => {
+    let latest: DropState = { items: [] };
+    await renderLab((s) => {
+      latest = s;
+    });
+    const palette = screen.getByRole('button', { name: 'Item A' });
+    await act(async () => {
+      fireEvent.click(palette, { detail: 1 });
+    });
+    expect(latest.items).toHaveLength(0);
+    await act(async () => {
+      fireEvent.click(palette, { detail: 0 });
+    });
+    expect(latest.items).toEqual([{ id: 'a', x: 200, y: 200 }]);
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  });
+
   it('drop outside the canvas leaves state unchanged', async () => {
     let latest: DropState = { items: [] };
     await renderLab((s) => {
