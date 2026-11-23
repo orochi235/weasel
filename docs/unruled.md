@@ -3858,3 +3858,6 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): a pattern player's (and so a score's) `start()` on a disposed engine leaves it stopped
   and does not throw, as `play()` on one drops rather than throws; `isPlaying()` reads false once the engine is disposed.
   The engine gained `disposed()` for it. Throwing from `start()` was the alternative.
+- 2026-11-22 (the fixer's call): an insert chain's crossfade that a suspension interrupts waits for the context to
+  resume and the ramp to end, so `inserts.settled()` stays pending through the suspension; a close still ends it at
+  once. Snapping the surviving link to its target and unlinking at the suspension was the alternative.

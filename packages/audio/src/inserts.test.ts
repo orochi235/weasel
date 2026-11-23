@@ -182,6 +182,28 @@ describe('insert chain transitions', () => {
     expect(direct.connectedFrom).toEqual([]);
   });
 
+  it.each(['in', 'out'] as const)('holds both routes of a splice-%s through a suspension that cuts its fade short', (kind) => {
+    const h = harness();
+    if (kind === 'out') {
+      h.chain.add(h.fx('A'));
+      h.settle();
+      h.chain.slots()[0].remove();
+    } else {
+      h.chain.add(h.fx('A'));
+    }
+    const both = [...feeds(h.fader)];
+    expect(both).toHaveLength(2);
+    h.ctx._advance(FADE / 2);
+    h.ctx._setState('suspended');
+    for (const f of [...h.timers.values()]) f();
+    expect(feeds(h.fader)).toEqual(both);
+    h.ctx._setState('running');
+    h.step();
+    expect(feeds(h.fader)).toHaveLength(1);
+    expect(h.timers.size).toBe(0);
+    expect(h.ctx._listenerCount()).toBe(0);
+  });
+
   it('crossfades a splice-out the same way, so the effect tail fades too', () => {
     const h = harness();
     h.chain.add(h.fx('A'));
