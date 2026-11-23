@@ -55,6 +55,38 @@ describe('focusedControlOwnsKey', () => {
     expect(focusedControlOwnsKey(keyOn(el('<button></button>'), 'x'))).toBe(false);
   });
 
+  it('gives each control only the key that activates it: Space to a toggle, Enter to a link', () => {
+    const spaceOnly = ['<input type="checkbox">', '<input type="radio">', '<div role="checkbox"></div>',
+      '<div role="switch"></div>', '<div role="radio"></div>'];
+    for (const html of spaceOnly) {
+      expect(focusedControlOwnsKey(keyOn(el(html), ' ')), `Space on ${html}`).toBe(true);
+      expect(focusedControlOwnsKey(keyOn(el(html), 'Enter')), `Enter on ${html}`).toBe(false);
+    }
+    for (const html of ['<a href="#x"></a>', '<span role="link"></span>']) {
+      expect(focusedControlOwnsKey(keyOn(el(html), 'Enter')), `Enter on ${html}`).toBe(true);
+      expect(focusedControlOwnsKey(keyOn(el(html), ' ')), `Space on ${html}`).toBe(false);
+    }
+  });
+
+  it('gives Enter to a checkbox or radio in a form, which submits it', () => {
+    const form = el('<form><input type="checkbox"><input type="radio"></form>');
+    document.body.appendChild(form);
+    for (const input of form.querySelectorAll('input')) {
+      const e = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+      input.dispatchEvent(e);
+      expect(focusedControlOwnsKey(e)).toBe(true);
+    }
+    form.remove();
+  });
+
+  it('gives Space and Enter to the inputs that open a picker or submit on them', () => {
+    for (const type of ['file', 'color', 'image']) {
+      for (const key of [' ', 'Enter']) {
+        expect(focusedControlOwnsKey(keyOn(el(`<input type="${type}">`), key)), `${key} on ${type}`).toBe(true);
+      }
+    }
+  });
+
   it('gives a select its type-ahead and its navigation keys', () => {
     expect(focusedControlOwnsKey(keyOn(select(), 'x'))).toBe(true);
     expect(focusedControlOwnsKey(keyOn(select(), 'X', { shiftKey: true }))).toBe(true);

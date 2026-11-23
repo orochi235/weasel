@@ -58,8 +58,8 @@ export interface GestureArgSpec {
  *  any action bound to it. */
 export interface GestureDescriptor {
   name: GestureName;
-  /** Does the route's `.target` slot apply? Targetless gestures (`wheel`,
-   *  `keyDown/Up`, `multiTouch`, `multiTouchTap`) elide it entirely in the v2 grammar. */
+  /** Does the route's `.target` slot apply? Targetless gestures (the key
+   *  gestures, `multiTouch`, `multiTouchTap`, `drop` and `paste`) elide it entirely in the v2 grammar. */
   hasTarget: boolean;
   /** Optional argument spec. Encoded as `gesture(value)` in the route string. */
   arg?: GestureArgSpec;

@@ -5,6 +5,7 @@ import type { ParsedModifiers } from './routeGrammar';
  *  `name=req` pairs joined by `&`. */
 export function canonicalModifiers(mods: ParsedModifiers): string {
   return Object.entries(mods)
+    .filter(([, req]) => req !== undefined)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([name, req]) => `${name}=${req}`)
     .join('&');

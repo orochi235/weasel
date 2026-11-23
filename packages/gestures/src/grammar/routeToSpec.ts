@@ -26,6 +26,7 @@ export function routeToSpec(parsed: ParsedRoute): GestureSpec {
 
   const mods: ModSpec = {};
   for (const [name, req] of Object.entries(parsed.modifiers)) {
+    if (req === undefined) continue;
     mods[name as keyof ModSpec] = req === 'required' ? true : 'optional';
   }
 

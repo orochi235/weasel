@@ -41,6 +41,17 @@ describe('fixedSeat', () => {
     expect(fixedSeat(from)).toEqual({ host: document.getElementById('h'), left: 12, top: 7, scale: { x: 1, y: 1 } });
   });
 
+  it('moves the corner with the scroll of a containing block that scrolls, scaled', () => {
+    const from = mount('<div data-wzl-theme="x" id="h" style="transform: scale(2); overflow: auto"><i id="from"></i></div>');
+    const host = document.getElementById('h')!;
+    Object.defineProperty(host, 'offsetWidth', { value: 100 });
+    Object.defineProperty(host, 'offsetHeight', { value: 50 });
+    host.getBoundingClientRect = () => DOMRect.fromRect({ x: 40, y: 25, width: 200, height: 100 });
+    host.scrollLeft = 10;
+    host.scrollTop = 300;
+    expect(fixedSeat(from)).toEqual({ host, left: 20, top: -575, scale: { x: 2, y: 2 } });
+  });
+
   it('answers the scale the containing block draws its fixed descendants at', () => {
     const from = mount('<div data-wzl-theme="x" id="h" style="transform: scale(2)"><i id="from"></i></div>');
     const host = document.getElementById('h')!;

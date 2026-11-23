@@ -65,11 +65,13 @@ export function fixedSeat(from: Element | null | undefined): FixedSeat {
     const rect = el.getBoundingClientRect();
     const scale = clientScaleOf(el, rect);
     // Fixed descendants are placed from the padding box, inside the border the rect includes.
-    const border = el as Partial<Pick<HTMLElement, 'clientLeft' | 'clientTop'>>;
+    const box = el as Partial<Pick<HTMLElement, 'clientLeft' | 'clientTop'>>;
+    // They scroll with a scrolling block's content. The root's rect already moves with the document's scroll.
+    const scroll = el === document.documentElement ? { scrollLeft: 0, scrollTop: 0 } : el;
     return {
       host,
-      left: rect.left + (border.clientLeft ?? 0) * scale.x,
-      top: rect.top + (border.clientTop ?? 0) * scale.y,
+      left: rect.left + ((box.clientLeft ?? 0) - scroll.scrollLeft) * scale.x,
+      top: rect.top + ((box.clientTop ?? 0) - scroll.scrollTop) * scale.y,
       scale,
     };
   }
