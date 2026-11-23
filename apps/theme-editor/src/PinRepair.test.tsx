@@ -61,6 +61,13 @@ describe('<PinRepair>', () => {
     expect(onChange.mock.calls[1]![0].pins.font).toEqual(['Oswald', 'serif']);
   });
 
+  it('flags a pin only when the error names its reference whole, not inside a longer name', () => {
+    const refs = { name: 'probe', pins: { near: '{accent}', far: '{accent-fgx}' } } as unknown as ThemeDefinition;
+    render(<PinRepair draft={refs} error="semantics.accent-fg: unknown reference {accent-fgx}." onChange={vi.fn()} />);
+    expect(screen.getAllByText('named in the error')).toHaveLength(1);
+    expect(screen.getByText('far').closest('li')).toHaveAttribute('data-suspect');
+  });
+
   it('says a pin varies by axis only when it does', () => {
     const odd = {
       name: 'probe',

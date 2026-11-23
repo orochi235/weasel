@@ -36,10 +36,14 @@ function plain(pin: unknown): { text: string; write: (text: string) => unknown }
   return inner && { text: inner.text, write: (text) => ({ ...(pin as object), value: inner.parse(text) }) };
 }
 
+/** Whether `error` names `ref` whole: `accent` is not named by `accent-fg`, nor `fg` by `seeds.fg`. */
+const mentions = (error: string, ref: string): boolean =>
+  new RegExp(`(?<![\\w.-])${ref.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?![\\w-]|\\.\\w)`).test(error);
+
 /** Whether the error names something this pin refers to: `{nope}` in the value, `nope` in the message. A reference
  *  to another of the draft's pins is not it: the error names the pin at fault too, and others refer to that one. */
 const named = (text: string, error: string, pins: ReadonlySet<string>): boolean =>
-  [...text.matchAll(/\{([^{}]+)\}/g)].some(([, ref]) => !pins.has(ref!) && error.includes(ref!));
+  [...text.matchAll(/\{([^{}]+)\}/g)].some(([, ref]) => !pins.has(ref!) && mentions(error, ref!));
 
 interface Typing {
   readonly text: string;
