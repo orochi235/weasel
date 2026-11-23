@@ -48,6 +48,7 @@ describe('reading a Mermaid architecture diagram', () => {
   it('warns of icons it has no outline for and of group icons', () => {
     expect(readArchitecture(CLOUD).warnings).toEqual([
       'Mermaid group icons were dropped: cloud.', 'Mermaid icons not built in were drawn as rounded boxes: logos:aws-lambda.',
+      'Mermaid edge sides at a {group} end were dropped; an edge meets a group anywhere on its box.',
     ]);
   });
 
