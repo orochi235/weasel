@@ -5,7 +5,7 @@ import { TokenPanel } from '@weasel-js/ui/components/TokenPanel';
 import { useEffect, useRef } from 'react';
 import styles from './ThemeEditor.module.css';
 import { layerEntries } from './theme/entries';
-import { LAYERS, keepNumberness, leafAt, tokenValueFromText, removePin, setPin, writeAt, type LayerId } from './theme/model';
+import { LAYERS, clearAt, keepNumberness, leafAt, tokenValueFromText, removePin, setPin, writeAt, type LayerId } from './theme/model';
 
 export interface TokenLayerProps {
   readonly layer: LayerId;
@@ -47,7 +47,8 @@ export function TokenLayer({ layer, draft, result, merged, selection, highlight,
       return;
     }
     if (value === null) {
-      onChange(removePin(draft, name), `pin:${name}`, `Reset ${name}`);
+      const rest = clearAt(getOwn(draft.pins ?? {}, name), selection);
+      onChange(rest === undefined ? removePin(draft, name) : setPin(draft, name, rest), `pin:${name}`, `Reset ${name}`);
       return;
     }
     const token = getOwn(result.tokens, name);

@@ -128,6 +128,18 @@ export function writeAt<T>(v: Varying<T> | undefined, selection: AxisChoice, lea
   return { ...v, [key]: writeAt(getOwn(v, key) as Varying<T> | undefined, selection, leaf) } as Varying<T>;
 }
 
+/** `v` without its leaf at `selection`; every other branch of a `by` stays. Undefined when nothing is left. */
+export function clearAt<T>(v: Varying<T> | undefined, selection: AxisChoice): Varying<T> | undefined {
+  if (!isByAxis(v)) return undefined;
+  const key = getOwn(selection, v.by);
+  if (key === undefined || key === 'by' || !Object.hasOwn(v, key)) return v;
+  const rest: Record<string, unknown> = { ...v };
+  const inner = clearAt(getOwn(v, key) as Varying<T> | undefined, selection);
+  if (inner === undefined) delete rest[key];
+  else rest[key] = inner;
+  return Object.keys(rest).some((k) => k !== 'by') ? (rest as Varying<T>) : undefined;
+}
+
 export function setPin(def: ThemeDefinition, name: string, value: Varying<PinValue>): ThemeDefinition {
   return { ...def, pins: withEntry(def.pins, name, value) };
 }
