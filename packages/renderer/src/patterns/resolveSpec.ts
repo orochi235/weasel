@@ -94,6 +94,8 @@ function build(id: string, spec: TilePatternSpec): TextureHandle | null {
   cache.get(id)?.bitmap.close();
   cache.delete(id);
   if (!bitmap) {
+    // Every id in `failed` failed under `failedUnder`.
+    if (failedUnder !== canvasNow()) failed.clear();
     failed.delete(id);
     failed.add(id);
     failedUnder = canvasNow();

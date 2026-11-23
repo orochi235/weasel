@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { ExtensionConflictError } from '@weasel-js/registry';
 import { _resetPaintDrawKindsForTests, registerPaintDrawKind, type PaintDrawKind } from './paintKinds';
 import { _resetProgramRegistryForTests, getProgramSource, type ProgramSource } from './shaders/registerProgram';
 
@@ -48,5 +49,17 @@ describe('the shader programs a paint draw kind declares', () => {
     registerPaintDrawKind(kind({ p: A }));
     expect(() => registerPaintDrawKind({ ...kind({ p: B, broken: {} as ProgramSource }), id: 'other' })).toThrow(/no source/);
     expect(getProgramSource('p')).toEqual(A);
+  });
+
+  it('refuse a program another kind id holds with other source, leaving that kind its program', () => {
+    registerPaintDrawKind(kind({ p: A }));
+    expect(() => registerPaintDrawKind({ ...kind({ p: B }), id: 'other' })).toThrow(ExtensionConflictError);
+    expect(getProgramSource('p')).toEqual(A);
+  });
+
+  it('take a program back from a kind id that has been disposed', () => {
+    registerPaintDrawKind(kind({ p: A }))();
+    registerPaintDrawKind({ ...kind({ p: B }), id: 'other' });
+    expect(getProgramSource('p')).toEqual(B);
   });
 });

@@ -4094,3 +4094,9 @@ Calls the lanes made without a ruling:
   surface point, was the alternative.
 - 2026-11-23 (the fixer's call): loupe's `nearestStopIndex` throws a `RangeError` on an empty list of stops. Answering
   `-1`, as `indexOf` does for nothing found, was the alternative.
+## Audit round seventy-nine (2026-11-23): renderer, part two
+
+- 2026-11-23 (the fixer's call): a paint kind declaring a program id that a kind of another id, registered and not yet
+  disposed, declares with other source throws `ExtensionConflictError`, as `registerProgram` does; an override under
+  the same kind id still replaces it. Letting the later kind take the program, or restoring the earlier holder's when
+  it is disposed, were the alternatives.
