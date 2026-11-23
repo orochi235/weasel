@@ -93,3 +93,39 @@ describe('tileGeometry on sizes that draw nothing', () => {
     }
   });
 });
+
+describe('dots wider than half the tile', () => {
+  it('draws a dot again past each edge it crosses', () => {
+    const { shapes } = tileGeometry({ kind: 'dots', color: 'red', size: 6, radius: 4 });
+    const centers = shapes.map((s) => (s.kind === 'circle' ? `${s.cx},${s.cy}` : s.kind)).sort();
+    expect(centers).toEqual(['-3,-3', '-3,3', '-3,9', '3,-3', '3,3', '3,9', '9,-3', '9,3', '9,9']);
+  });
+
+  it('fills the tile once one dot covers it', () => {
+    const { shapes } = tileGeometry({ kind: 'dots', color: 'red', size: 6, radius: 1000 });
+    expect(shapes).toEqual([{ kind: 'rect', x: 0, y: 0, width: 6, height: 6, color: 'red' }]);
+  });
+
+  it('draws a chunk wider than the tile again at every period it reaches', () => {
+    const s = 10;
+    const shapes = tileGeometry({ kind: 'chunks', color: 'red', size: s, chunkSize: 20, density: 50 }).shapes
+      .filter((e) => e.kind === 'ellipse');
+    const at = new Set(shapes.map((e) => `${e.cx},${e.cy}`));
+    let farthest = 0;
+    for (const e of shapes) {
+      const reach = Math.max(e.rx, e.ry);
+      for (const o of [-2 * s, -s, s, 2 * s]) {
+        const x = e.cx + o;
+        if (x - reach < s && x + reach > 0) expect(at.has(`${x},${e.cy}`)).toBe(true);
+      }
+      farthest = Math.max(farthest, Math.abs(e.cx - s / 2));
+    }
+    // Past one and a half tiles from the middle is a copy two periods out.
+    expect(farthest).toBeGreaterThan(1.5 * s);
+  });
+
+  it('fills the tile once a chunk covers it, however far it reaches', () => {
+    const { shapes } = tileGeometry({ kind: 'chunks', color: 'red', size: 4, chunkSize: 1e6, density: 1e12 });
+    expect(shapes).toEqual([{ kind: 'rect', x: 0, y: 0, width: 4, height: 4, color: 'red' }]);
+  });
+});

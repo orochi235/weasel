@@ -68,7 +68,13 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
     }
     case 'dots': {
       const r = spec.radius ?? 1;
-      return { size: s, shapes: r >= 0 ? [{ kind: 'circle', cx: s / 2, cy: s / 2, r, color }] : [] };
+      if (!(r >= 0)) return { size: s, shapes: [] };
+      if (r >= s * Math.SQRT1_2) return { size: s, shapes: [{ kind: 'rect', x: 0, y: 0, width: s, height: s, color }] };
+      const c = s / 2, shapes: TileShape[] = [];
+      for (const oy of wraps(c, r, s)) {
+        for (const ox of wraps(c, r, s)) shapes.push({ kind: 'circle', cx: c + ox, cy: c + oy, r, color });
+      }
+      return { size: s, shapes };
     }
     case 'chunks': {
       const density = spec.density ?? 0.35;
@@ -87,6 +93,11 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
         const w = chunkSize * (0.5 + rand());
         const h = chunkSize * (0.5 + rand());
         const rotation = rand() * Math.PI;
+        // A chunk this wide covers the tile from anywhere in it, in the one color every chunk shares, and
+        // copying it at every period it reaches would only multiply shapes.
+        if (Math.min(w, h) / 2 >= s * Math.SQRT2) {
+          return { size: s, shapes: [{ kind: 'rect', x: 0, y: 0, width: s, height: s, color }] };
+        }
         // A chunk crossing an edge is drawn again past the opposite one, so
         // the tile repeats without cutting it off at the seam.
         const reach = Math.max(w, h) / 2;
@@ -103,12 +114,13 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
   }
 }
 
-/** The offsets that place a copy of something at `c`, reaching `r` either
- *  side, wherever it crosses an edge of a tile `s` wide: 0 first. */
+/** The offsets, whole periods of a tile `s` wide, that place a copy of something at `c` reaching `r` either
+ *  side wherever a copy reaches into the tile: 0 first. */
 function wraps(c: number, r: number, s: number): number[] {
   const out = [0];
-  if (c - r < 0) out.push(s);
-  if (c + r > s) out.push(-s);
+  if (!(s > 0) || !Number.isFinite(r)) return out;
+  for (let o = s; c + o - r < s; o += s) out.push(o);
+  for (let o = -s; c + o + r > 0; o -= s) out.push(o);
   return out;
 }
 
