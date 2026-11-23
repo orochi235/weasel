@@ -68,6 +68,7 @@ export const toggleSnapAction: AppAction = {
 export const toggleSnappingAction: AppAction = {
   id: 'view.snapping',
   label: 'Snapping',
+  icon: icon('ui:snap'),
   group: 'view',
   defaultBinding: [{ spec: SNAPPING_KEY, opts: { id: 'view.snapping.key' } }],
   requires: ['appCommands'],
@@ -87,6 +88,8 @@ export const toggleRulersAction: AppAction = {
 export const toggleBoundToContentAction: AppAction = {
   id: 'view.boundToContent',
   label: 'Bound view to content',
+  // The view framing its content, locked there.
+  icon: { name: icon('ui:fit'), mark: icon('ui:markLock') },
   group: 'view',
   requires: ['appCommands'],
   active: (deps) => read(deps)?.boundToContent === true,
