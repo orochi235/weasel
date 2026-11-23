@@ -23,8 +23,8 @@ export type PairKerning = (left: number, right: number) => number;
 
 /**
  * Read the `kern` feature's pair lookups from a single-font sfnt (not a
- * collection). `null` when the font has no GPOS table or no `kern` feature —
- * the caller then falls back to the legacy `kern` table.
+ * collection). `null` when the font has no GPOS table, no `kern` feature, or
+ * no pair lookup under one — the caller then falls back to the legacy `kern` table.
  */
 export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
   const v = new DataView(bytes);
@@ -64,6 +64,7 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
     }
     if (set.length > 0) lookupSets.push(set);
   }
+  if (lookupSets.length === 0) return null;
 
   const memo = new Map<number, number>();
   return (left, right) => {
@@ -141,6 +142,7 @@ function lookupIndexSets(v: DataView, gpos: number, kernLookups: Map<number, num
 function pairSubtables(v: DataView, lookupList: number, index: number): number[] {
   const subtables: number[] = [];
   inRange(() => {
+    if (index >= v.getUint16(lookupList)) return;
     const lookup = lookupList + v.getUint16(lookupList + 2 + index * 2);
     const type = v.getUint16(lookup);
     const count = v.getUint16(lookup + 4);
@@ -226,6 +228,7 @@ function pairValue(v: DataView, sub: number, left: number, right: number): numbe
   const recordSize = 2 + valueSize(vf1) + valueSize(vf2);
 
   if (format === 1) {
+    if (covIndex >= v.getUint16(sub + 8)) return null;
     const pairSet = sub + v.getUint16(sub + 10 + covIndex * 2);
     let lo = 0;
     let hi = v.getUint16(pairSet) - 1;

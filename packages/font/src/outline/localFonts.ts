@@ -20,6 +20,7 @@
 import type { FontStyle } from '../fontStyle';
 import { createOpenTypeParser } from './opentypeParser';
 import { registerFontOutlines } from './outlineRegistry';
+import { cssString } from '../cssFamily';
 
 /**
  * The slice of the Local Font Access API this module uses. `queryLocalFonts`
@@ -165,7 +166,7 @@ export async function enableLocalFontOutlines(
       parser: createOpenTypeParser(font.postscriptName),
       // The DOM already has every installed face; naming it avoids reading
       // the collection file a second time.
-      cssSrc: `local(${JSON.stringify(font.postscriptName)})`,
+      cssSrc: `local(${cssString(font.postscriptName)})`,
     });
     families.add(font.family);
   }

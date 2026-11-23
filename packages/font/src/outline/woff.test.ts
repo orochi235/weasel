@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { deflateSync } from 'node:zlib';
+import { ReadableStream } from 'node:stream/web';
 import { interBytes, tablesOf } from '../pbt.fixture';
 import { createOpenTypeParser } from './opentypeParser';
 import { sfntFromWoff } from './woff';
@@ -83,6 +84,45 @@ describe('WOFF faces', () => {
   it('have their CFF table checked before opentype.js reads it', async () => {
     await expect(createOpenTypeParser()(woffOf(damagedCff()))).rejects.toThrow(/CFF table is damaged/);
   }, 5000);
+
+  it('stop inflating a table once it passes its recorded length', async () => {
+    const woff = new DataView(woffOf(interBytes()));
+    // The first table, recorded as 100 bytes, holding a stream that inflates to 64 MB.
+    const bomb = new Uint8Array(deflateSync(new Uint8Array(64 << 20)));
+    const bytes = new Uint8Array(woff.byteLength + bomb.length);
+    bytes.set(new Uint8Array(woff.buffer));
+    bytes.set(bomb, woff.byteLength);
+    const view = new DataView(bytes.buffer);
+    view.setUint32(44 + 4, woff.byteLength);
+    view.setUint32(44 + 8, bomb.length);
+    view.setUint32(44 + 12, bomb.length + 100);
+    const Real = globalThis.DecompressionStream;
+    let inflated = 0;
+    vi.stubGlobal('DecompressionStream', class {
+      readonly writable: unknown;
+      readonly readable: unknown;
+      constructor(format: CompressionFormat) {
+        const real = new Real(format);
+        this.writable = real.writable;
+        const reader = real.readable.getReader();
+        this.readable = new ReadableStream<Uint8Array>({
+          async pull(out) {
+            const r = await reader.read();
+            if (r.done) { out.close(); return; }
+            inflated += r.value.byteLength;
+            out.enqueue(r.value);
+          },
+          cancel: (reason) => reader.cancel(reason),
+        });
+      }
+    });
+    try {
+      await expect(sfntFromWoff(bytes.buffer)).rejects.toThrow(/length other than its recorded one/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(inflated).toBeLessThan(8 << 20);
+  });
 
   it('refuse a table that does not decompress', async () => {
     const woff = woffOf(interBytes());

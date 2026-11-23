@@ -22,6 +22,18 @@ describe('a .dfont\'s sfnt resources', () => {
     expect(sfntResources(FORK).map(asArray)).toEqual([Array.from(REGULAR), Array.from(BOLD)]);
   });
 
+  it('reads a type whose reference count is stored as 0xffff as holding none, as an empty type list does', () => {
+    const fork = FORK.slice(0);
+    const view = new DataView(fork);
+    const mapOffset = view.getUint32(4);
+    const typeList = mapOffset + view.getUint16(mapOffset + 24);
+    for (let t = 0; t <= view.getUint16(typeList); t++) {
+      const entry = typeList + 2 + t * 8;
+      if (String.fromCharCode(...new Uint8Array(fork, entry, 4)) === 'sfnt') view.setUint16(entry + 4, 0xffff);
+    }
+    expect(sfntResources(fork)).toEqual([]);
+  });
+
   it('hands back the first when no face is named', () => {
     const { bytes, matched } = sfntFromCollection(FORK);
     expect(asArray(bytes)).toEqual(Array.from(REGULAR));

@@ -40,6 +40,9 @@ export function isDataForkFont(bytes: ArrayBuffer): boolean {
     && mapOffset + mapLength <= bytes.byteLength;
 }
 
+/** A count the map stores less one, where an empty list reads as 0xffff. */
+const storedCount = (stored: number): number => (stored + 1) & 0xffff;
+
 const truncated = (): Error =>
   new Error('Datafork TrueType (.dfont) is truncated: a resource runs past the end of its segment.');
 
@@ -59,15 +62,14 @@ export function sfntResources(bytes: ArrayBuffer): ArrayBuffer[] {
   if (!inMap(mapOffset + 24, 2)) return [];
   const typeList = mapOffset + view.getUint16(mapOffset + 24);
   if (!inMap(typeList, 2)) return [];
-  // Counts are stored less one, so an empty list reads as 0xffff.
-  const typeCount = (view.getUint16(typeList) + 1) & 0xffff;
+  const typeCount = storedCount(view.getUint16(typeList));
 
   const out: ArrayBuffer[] = [];
   for (let t = 0; t < typeCount; t++) {
     const entry = typeList + 2 + t * TYPE_ENTRY_BYTES;
     if (!inMap(entry, TYPE_ENTRY_BYTES)) throw truncated();
     if (tagAt(view, entry) !== 'sfnt') continue;
-    const count = view.getUint16(entry + 4) + 1;
+    const count = storedCount(view.getUint16(entry + 4));
     const references = typeList + view.getUint16(entry + 6);
     for (let i = 0; i < count; i++) {
       const ref = references + i * REFERENCE_BYTES;

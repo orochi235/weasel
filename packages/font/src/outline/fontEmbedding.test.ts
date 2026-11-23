@@ -119,6 +119,24 @@ describe('fontEmbedding', () => {
     expect((await fontEmbedding('emb-locked', 400, 'normal'))!.embeddable).toBe(false);
   });
 
+  it('reads an OS/2 version 0–2 face setting Restricted beside a looser permission as the looser one', async () => {
+    const bytes = interBytes();
+    const os2 = tableOffset(bytes, 'OS/2');
+    new DataView(bytes).setUint16(os2, 2);
+    new DataView(bytes).setUint16(os2 + 8, 0x0006);
+    registerFontOutlines('emb-preview', {}, bytes);
+    expect((await fontEmbedding('emb-preview', 400, 'normal'))!.embeddable).toBe(true);
+  });
+
+  it('reads an OS/2 version 3+ face setting Restricted beside another permission as Restricted', async () => {
+    const bytes = interBytes();
+    const os2 = tableOffset(bytes, 'OS/2');
+    expect(new DataView(bytes).getUint16(os2)).toBeGreaterThanOrEqual(3);
+    new DataView(bytes).setUint16(os2 + 8, 0x0006);
+    registerFontOutlines('emb-mixed', {}, bytes);
+    expect((await fontEmbedding('emb-mixed', 400, 'normal'))!.embeddable).toBe(false);
+  });
+
   it('cuts a collection member out of its collection', async () => {
     const collection = oneMemberCollection(interBytes());
     expect(String.fromCharCode(...new Uint8Array(collection, 0, 4))).toBe('ttcf');

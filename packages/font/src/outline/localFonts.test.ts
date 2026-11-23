@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { canQueryLocalFonts, enableLocalFontOutlines, parseFontStyle } from './localFonts';
-import { glyphOutline, listFontOutlines, _resetFontOutlinesForTests } from './outlineRegistry';
+import { glyphOutline, listFontOutlines, outlineCssSource, _resetFontOutlinesForTests } from './outlineRegistry';
 
 function fontData(family: string, style: string) {
   return {
@@ -74,6 +74,12 @@ describe('enableLocalFontOutlines', () => {
   it('rejects rather than half-registering when the API is missing', async () => {
     await expect(enableLocalFontOutlines()).rejects.toThrow(/Local Font Access/);
     expect(listFontOutlines()).toEqual([]);
+  });
+
+  it('names a face to DOM text by a local() its PostScript name reads back from as CSS', async () => {
+    vi.stubGlobal('queryLocalFonts', vi.fn(async () => [{ ...fontData('Odd', 'Regular'), postscriptName: 'Odd\nName\u0001"' }]));
+    await enableLocalFontOutlines();
+    expect(outlineCssSource('Odd', 400, 'normal')).toMatchObject({ src: 'local("Odd\\a Name\u0001\\"")' });
   });
 
   it('registers a face per variant, without reading any blob', async () => {

@@ -129,7 +129,7 @@ function finiteCommand(cmd: Record<string, unknown>): boolean {
 }
 
 interface EmbedTables {
-  os2?: { fsType?: number; sCapHeight?: number };
+  os2?: { version?: number; fsType?: number; sCapHeight?: number };
   head?: { xMin: number; yMin: number; xMax: number; yMax: number };
   post?: { italicAngle?: number };
   glyf?: unknown;
@@ -147,8 +147,21 @@ const isWoff2 = (bytes: ArrayBuffer): boolean => bytes.byteLength >= 4 && new Da
 
 const finiteOr = (n: number | undefined, fallback: number): number => (Number.isFinite(n) ? n! : fallback);
 
-/** fsType bits that rule out embedding the outlines: restricted license, and bitmap embedding only. */
-const NO_OUTLINE_EMBEDDING = 0x0002 | 0x0200;
+const RESTRICTED = 0x0002;
+const BITMAP_ONLY = 0x0200;
+/** Preview & Print, and Editable. */
+const LOOSER_THAN_RESTRICTED = 0x0004 | 0x0008;
+
+/**
+ * Does `fsType` let the outlines be embedded? An OS/2 version 0–2 font may set several permission bits, and the least
+ * restrictive applies; from version 3 they are exclusive, and a font setting Restricted with another reads as Restricted.
+ */
+function outlinesEmbeddable(os2: EmbedTables['os2']): boolean {
+  const fsType = os2?.fsType ?? 0;
+  if (fsType & BITMAP_ONLY) return false;
+  if (!(fsType & RESTRICTED)) return true;
+  return (os2?.version ?? 0) < 3 && (fsType & LOOSER_THAN_RESTRICTED) !== 0;
+}
 
 /** A `name` table entry in English, or undefined; opentype.js throws for a font whose table names no platform. */
 function englishNameOf(font: import('opentype.js').Font, key: string): string | undefined {
@@ -168,7 +181,7 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent
     postScriptName: englishNameOf(font, 'postScriptName') ?? '',
     unitsPerEm: font.unitsPerEm,
     outlines: t.cff && !t.glyf ? 'cff' : 'truetype',
-    embeddable: ((t.os2?.fsType ?? 0) & NO_OUTLINE_EMBEDDING) === 0,
+    embeddable: outlinesEmbeddable(t.os2),
     glyphIndexOf(cp) {
       return font.charToGlyphIndex(String.fromCodePoint(cp)) || null;
     },
