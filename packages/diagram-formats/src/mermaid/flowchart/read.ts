@@ -8,7 +8,7 @@ import type { DataContainer, DataEdge, DataNode, EdgeStyle, LayoutDirection, Out
 import type { ImportResult } from '../../document';
 import { Membership, Warnings, graphPage } from '../../graphRead';
 import { readPageName } from '../common/lines';
-import { checkProps, dashOf, mermaidColor, nodeColors, strokeWidthOf } from '../common/styles';
+import { StyleSheet, checkProps, dashOf, mermaidColor, strokeWidthOf } from '../common/styles';
 import { textLines } from '../common/text';
 import type { LinkHead, MermaidShape } from './lex';
 import { parseFlowchart, type MermaidLink, type MermaidNodeRef, type MermaidStmt, type StyleProps } from './parse';
@@ -56,9 +56,7 @@ class MermaidReader {
   readonly nodes = new Map<string, NodeDraft>();
   readonly edges: EdgeDraft[] = [];
   readonly subgraphs = new Map<string, string | undefined>();
-  readonly classDefs = new Map<string, StyleProps>();
-  readonly styles = new Map<string, StyleProps>();
-  readonly classes = new Map<string, string[]>();
+  readonly styles = new StyleSheet(this.warnings);
   readonly linkStyles = new Map<number | 'default', StyleProps>();
   accTitle: string | undefined;
   accDescr: string | undefined;
@@ -101,7 +99,7 @@ class MermaidReader {
   }
 
   addClass(id: string, name: string): void {
-    this.classes.set(id, [...(this.classes.get(id) ?? []), name]);
+    this.styles.assign(id, name);
   }
 
   marker(head: LinkHead | undefined): MarkerRef | null {
@@ -156,13 +154,11 @@ class MermaidReader {
       } else if (s.kind === 'direction') {
         this.warnings.add('Mermaid subgraph directions were dropped; the page runs one way.');
       } else if (s.kind === 'classDef') {
-        this.checkProps(s.props);
-        for (const name of s.names) this.classDefs.set(name, [...(this.classDefs.get(name) ?? []), ...s.props]);
+        this.styles.classDef(s.names, s.props);
       } else if (s.kind === 'class') {
         for (const id of s.ids) this.addClass(id, s.className);
       } else if (s.kind === 'style') {
-        this.checkProps(s.props);
-        this.styles.set(s.id, [...(this.styles.get(s.id) ?? []), ...s.props]);
+        this.styles.style(s.id, s.props);
       } else if (s.kind === 'linkStyle') {
         if (s.curve !== undefined) this.warnings.add('Mermaid link curves (linkStyle … interpolate) were dropped.');
         this.checkProps(s.props);
@@ -180,13 +176,6 @@ class MermaidReader {
 
   checkProps(props: StyleProps): void {
     checkProps(props, this.warnings);
-  }
-
-  propsOf(id: string, isNode: boolean): Map<string, string> {
-    const props = new Map<string, string>();
-    const lists = [isNode ? this.classDefs.get('default') : undefined, ...(this.classes.get(id) ?? []).map((c) => this.classDefs.get(c)), this.styles.get(id)];
-    for (const list of lists) for (const [k, v] of list ?? []) props.set(k, v);
-    return props;
   }
 }
 
@@ -241,7 +230,7 @@ export function readFlowchart(text: string): ImportResult {
   r.walk(chart.stmts, null);
   const name = readPageName({ ...chart, ...(r.accTitle !== undefined ? { accTitle: r.accTitle } : {}), ...(r.accDescr !== undefined ? { accDescr: r.accDescr } : {}) }, r.warnings);
   const nodes: DataNode[] = [...r.nodes].map(([id, d]) => {
-    const colors = nodeColors(r.propsOf(id, true), r.warnings);
+    const colors = r.styles.colorsOf(id);
     return { id, lines: d.lines, outline: d.outline, ...(colors !== undefined ? { colors } : {}) };
   });
   const edges = r.edges.map(({ edge, index }) => {
@@ -253,7 +242,7 @@ export function readFlowchart(text: string): ImportResult {
   const containerIds = subgraphContainerIds([...r.subgraphs.keys()], r.nodes);
   const containers: DataContainer[] = [...r.subgraphs].map(([id, title]) => {
     const members = r.membership.members(id, containerIds);
-    const colors = nodeColors(r.propsOf(id, false), r.warnings);
+    const colors = r.styles.colorsOf(id, false);
     return {
       id: containerIds.get(id)!, role: 'container', label: title !== undefined ? textLines(title).filter((l) => l !== '').join(' ') : id,
       ...(members.length > 0 ? { members } : {}),

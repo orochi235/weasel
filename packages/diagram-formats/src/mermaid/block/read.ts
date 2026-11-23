@@ -154,7 +154,7 @@ export function readBlockDiagram(text: string): ImportResult {
     return { id, lines: n.lines, outline: n.outline, ...(colors !== undefined ? { colors } : {}) };
   });
   const containers: DataContainer[] = [...r.groups].map(([id, members]) => {
-    const colors = r.styles.colorsOf(id);
+    const colors = r.styles.colorsOf(id, false);
     return { id, role: 'container', ...(members.length > 0 ? { members } : {}), ...(colors !== undefined ? { colors } : {}) };
   });
   const name = readPageName(source, r.warnings);

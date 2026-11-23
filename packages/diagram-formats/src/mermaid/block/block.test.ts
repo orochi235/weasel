@@ -81,6 +81,12 @@ describe('reading a Mermaid block diagram', () => {
     expect(() => parseBlockDiagram('block-beta\n  end')).toThrow('Mermaid, line 2: "end" closes no block');
   });
 
+  it('gives `classDef default` to blocks but not to groups, as a flowchart gives it to nodes but not subgraphs', () => {
+    const read = page('block-beta\n  block:g\n    a\n  end\n  classDef default fill:#ff0000');
+    expect(read.data.nodes[0]!.colors).toEqual({ fill: '#ff0000' });
+    expect(read.data.containers![0]!.colors).toBeUndefined();
+  });
+
   it('refuses a group id given twice, or given to a block', () => {
     expect(() => readBlockDiagram('block-beta\n  block:g\n    a\n  end\n  block:g\n    b\n  end')).toThrow('Mermaid, line 5: "g" already names a group');
     expect(() => readBlockDiagram('block-beta\n  g\n  block:g\n    a\n  end')).toThrow('Mermaid, line 2: "g" already names a group');
