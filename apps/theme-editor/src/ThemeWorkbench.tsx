@@ -249,7 +249,7 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
     }
   };
 
-  const counts = countTokens(draft, derived.primary.result, derived.merged);
+  const counts = countTokens(draft, derived.primary.result, derived.merged, derived.primary.selection);
   // A pinned token jumps to Pins: the pin is what decides its value.
   const layerOf = (token: string): LayerId =>
     pinApplies(derived.primary.result, token) ? 'pins' : (getOwn(derived.primary.result.provenance, token)?.layer ?? 'pins');

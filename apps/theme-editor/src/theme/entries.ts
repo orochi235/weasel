@@ -2,7 +2,7 @@ import { getOwn } from '@weasel-js/registry';
 import { serializeTokenValue, type AxisChoice, type ThemeDefinition } from '@weasel-js/theme';
 import type { DeriveResult } from '@weasel-js/theme/engine';
 import { inferTokenType, type TokenEntry } from '@weasel-js/ui/components/TokenPanel';
-import { leafAt, ownTokenNames, pinApplies, type LayerId } from './model';
+import { layerNames, leafAt, type LayerId } from './model';
 
 const seedText = (v: string | number) => (typeof v === 'string' ? v : String(v));
 
@@ -20,20 +20,12 @@ const groupOf = (name: string) => name.split('-')[0] ?? name;
  */
 export function layerEntries(layer: LayerId, def: ThemeDefinition, result: DeriveResult, selection: AxisChoice, merged: ThemeDefinition): TokenEntry[] {
   if (layer === 'seeds') {
-    return Object.entries(def.seeds ?? {}).flatMap(([name, v]) => {
-      const leaf = leafAt(v, selection);
-      if (typeof leaf !== 'string' && typeof leaf !== 'number') return [];
-      return [{ name: `seeds.${name}`, type: inferTokenType(seedText(leaf)), group: 'seeds', value: seedText(leaf) }];
+    return layerNames(layer, def, result, selection, merged).map((name) => {
+      const value = seedText(leafAt(getOwn(def.seeds ?? {}, name.slice('seeds.'.length)), selection) as string | number);
+      return { name, type: inferTokenType(value), group: 'seeds', value };
     });
   }
-  // Components come from the whole chain, as the Ramps layer's ramps do, so an inherited one inspect jumps to is listed.
-  const names =
-    layer === 'pins'
-      ? Object.keys(def.pins ?? {}).filter((n) => pinApplies(result, n))
-      : (layer === 'components' ? Object.keys(merged.components ?? {}) : ownTokenNames(def, merged)).filter(
-          (n) => getOwn(result.provenance, n)?.layer === layer,
-        );
-  return names.flatMap((name) => {
+  return layerNames(layer, def, result, selection, merged).flatMap((name) => {
     const token = getOwn(result.tokens, name);
     if (!token) return [];
     const p = getOwn(result.provenance, name)!;
