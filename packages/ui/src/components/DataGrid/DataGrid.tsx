@@ -149,7 +149,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                 detail={renderDetail && {
                   expandable,
                   expanded: expandable && expanded.has(row.id),
-                  id: `${detailIdBase}-detail-${row.id}`,
+                  id: `${detailIdBase}-detail-${encodeURIComponent(row.id)}`,
                   render: renderDetail,
                   onToggle: () => toggleExpanded(row.id),
                 }}

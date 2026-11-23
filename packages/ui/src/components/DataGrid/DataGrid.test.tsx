@@ -246,6 +246,15 @@ describe('DataGrid detail rows', () => {
     expect(trs[1]).toHaveAttribute('data-expanded', 'true');
   });
 
+  it('links the disclosure to its detail row when the row id holds a space', () => {
+    render(<DataGrid<Row> rows={[{ ...ROWS[0]!, id: 'route 1' }]} columns={COLUMNS} renderDetail={detail} />);
+    const toggle = screen.getByRole('button', { name: 'Show details' });
+    fireEvent.click(toggle);
+    const controls = toggle.getAttribute('aria-controls')!;
+    expect(controls).not.toMatch(/\s/);
+    expect(document.getElementById(controls)).toBe(screen.getByText('detail route 1').closest('tr'));
+  });
+
   it('follows controlled expandedIds and reports toggles through onExpandedChange', () => {
     const onExpandedChange = vi.fn();
     const { rerender } = render(
