@@ -10,7 +10,12 @@
  */
 export function cssFamilyName(family: string): string {
   if (family.includes(',') || /^\s*["']/.test(family)) return family;
-  return GENERIC_FAMILIES.has(family.trim().toLowerCase()) ? family.trim() : cssString(family);
+  return isGenericFamily(family) ? family.trim() : cssString(family);
+}
+
+/** Whether `family` is a CSS generic keyword (`sans-serif`, `system-ui`, …), which names no font of its own. */
+export function isGenericFamily(family: string): boolean {
+  return GENERIC_FAMILIES.has(family.trim().toLowerCase());
 }
 
 /**
