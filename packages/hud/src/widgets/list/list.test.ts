@@ -3,6 +3,8 @@ import { exactly, measureRowList } from '@weasel-js/ui-logic';
 import type { DrawCommand, TextDrawCommand } from '@weasel-js/core/renderer';
 import { resolveTheme, weaselTheme } from '@weasel-js/theme';
 import { createList } from './list';
+import { createHud } from '../../hud';
+import { createLayerDraw } from '../../layerDraw';
 import { hudMeasureEnv } from '../../measureEnv';
 import { textWidth } from '../../menu/textWidth';
 import type { HudKeyEvent } from '../../widget';
@@ -45,6 +47,19 @@ describe('list widget', () => {
     expect(l.active).toBeNull();
     l.setRows(rows);
     expect(l.active).toBe(1);
+  });
+
+  it('rings its active row when the HUD shows focus, as on Tab, and not after a press', () => {
+    const hud = createHud();
+    const l = hud.list({ id: 'l', x: 0, y: 0, width: 200, rows, selectionMode: 'single', onActivate: () => {} });
+    const draw = createLayerDraw(hud, { defaultFont: 'D', tokens, color: () => '#000000' });
+    const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+    const rings = () => (draw(undefined, view, { ...ctx.dims, dpr: 1 }) as DrawCommand[]).filter((c) =>
+      c.kind === 'path' && c.stroke !== undefined && (c.stroke.paint as { color: string }).color === tokens['--wzl-focus-ring']).length;
+    hud.focus(l, { visible: true });
+    expect(rings()).toBe(1);
+    hud.focus(l, { visible: false });
+    expect(rings()).toBe(0);
   });
 
   it('draws each label, the selected row filled, and a swatch in its leading slot', () => {

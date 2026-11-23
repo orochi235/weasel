@@ -11,8 +11,8 @@ import type { HudListRow } from './drawList';
 export interface ListNav {
   readonly active: number | null;
   readonly hover: number | null;
-  /** The active row shows its ring: the list holds focus, and the keyboard moved last. */
-  readonly ring: boolean;
+  /** Whether the active row shows its ring: the list holds focus, and the HUD shows focus or the keyboard moved last. */
+  ring(focusVisible: boolean): boolean;
   pointer(evt: HudPointerEvent, rowAt: (x: number, y: number) => number | null): boolean;
   /** `handled` false for a key that falls through to the canvas. */
   key(evt: HudKeyEvent): { handled: boolean; changed: boolean };
@@ -44,7 +44,7 @@ export function createListNav(
   return {
     get active() { return active; },
     get hover() { return hover; },
-    get ring() { return focused && keyed; },
+    ring(focusVisible) { return focused && (keyed || focusVisible); },
     pointer(evt, rowAt) {
       switch (evt.type) {
         case 'down': {

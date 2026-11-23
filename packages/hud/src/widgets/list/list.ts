@@ -171,7 +171,7 @@ export function createList(opts: ListOptions): ListWidget {
         if (holdScroll(scrollTop) || grew) changed();
       }
       return hudItemList.draw(
-        { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring, scrollTop },
+        { rows, empty: opts.empty, mode, active: nav.active, hover: nav.hover, ring: nav.ring(ctx.focusVisible === true), scrollTop },
         { bounds, ctx, fontFamily: opts.fontFamily },
       );
     },
