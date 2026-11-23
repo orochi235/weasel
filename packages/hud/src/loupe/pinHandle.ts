@@ -58,7 +58,9 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
   const overLens = (p: Point) => {
     const b = win.bounds;
     const c = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
-    return host.round ? dist(p, c) <= b.width / 2 + BAND + 8 : win.hitTest(p.x, p.y);
+    const reach = BAND + 8;
+    if (host.round) return dist(p, c) <= b.width / 2 + reach;
+    return Math.abs(p.x - c.x) <= b.width / 2 + reach && Math.abs(p.y - c.y) <= b.height / 2 + reach;
   };
 
   const glyph = { ...(host.icons ? { icons: host.icons } : {}), ...(host.pinIcon ? { icon: host.pinIcon } : {}) };

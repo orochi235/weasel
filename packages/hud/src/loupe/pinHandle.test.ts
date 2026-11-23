@@ -115,4 +115,21 @@ describe('the loupe pin', () => {
     pin.onPointer(at('down', dock.x, dock.y));
     expect(pin.deps!(ctx)).not.toEqual(before);
   });
+
+  it('takes the pin back when dropped on a rect lens’s dock, as on a round lens’s ring', () => {
+    const win = createWindow({ id: 'w', title: 'Loupe', ...B });
+    const lens = { mode: 'follow' as LoupeAimMode, aim: { x: 0, y: 0 } };
+    const pin = createPinHandle('p', {
+      win, round: false, shown: () => true,
+      aimMode: () => lens.mode, aim: () => lens.aim,
+      pinAt: (p) => { lens.mode = 'pinned'; lens.aim = p; },
+      setAimMode: (m) => { lens.mode = m; },
+    });
+    const dock = pinDockIn(win.bounds, false);
+    pin.onPointer(at('down', dock.x, dock.y));
+    pin.onPointer(at('move', 400, 300));
+    pin.onPointer(at('move', dock.x, dock.y));
+    pin.onPointer(at('up', dock.x, dock.y));
+    expect(lens.mode).toBe('follow');
+  });
 });
