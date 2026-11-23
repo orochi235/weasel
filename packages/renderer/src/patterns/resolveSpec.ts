@@ -15,7 +15,7 @@ import {
 } from '@weasel-js/paint';
 import { setOwn } from '@weasel-js/registry';
 import {
-  ownTextureIds, registerTextureAs, textureRegistry, unregisterTexture,
+  ownTextureIds, registerTextureAs, unregisterTexture,
   type TextureHandle,
 } from '../textures/registerTexture';
 import { rasterizeTile } from './rasterizeTile';
@@ -28,8 +28,9 @@ export const PATTERN_TILE_CACHE_LIMIT = 256;
 
 const ID_PREFIX = 'pattern:';
 
-/** Texture id → handle, least recently used first. */
-const cache = new Map<string, TextureHandle>();
+/** Texture id → handle and the bitmap this module made for it, least recently used first. The bitmap is
+ *  kept here as well as in the registry, which a public `unregisterTexture` can empty under it. */
+const cache = new Map<string, { handle: TextureHandle; bitmap: ImageBitmap }>();
 
 /** The ids that could not rasterize, oldest first, under the `OffscreenCanvas` they were tried with: one
  *  installed since is tried again. Kept apart from `cache`, so a failure never takes a tile's place. */
@@ -67,7 +68,7 @@ export function resolvePatternSpec(spec: TilePatternSpec): TextureHandle | null 
   const hit = cache.get(id);
   if (hit !== undefined) {
     markUsed(id);
-    return hit;
+    return hit.handle;
   }
   if (failed.has(id)) {
     if (failedUnder === canvasNow()) return null;
@@ -90,6 +91,7 @@ function build(id: string, spec: TilePatternSpec): TextureHandle | null {
       draw: (oc) => drawTileShapes(oc, tileGeometry(spec)),
     })
     : null;
+  cache.get(id)?.bitmap.close();
   cache.delete(id);
   if (!bitmap) {
     failed.delete(id);
@@ -99,16 +101,16 @@ function build(id: string, spec: TilePatternSpec): TextureHandle | null {
     return null;
   }
   const handle = registerTextureAs(id, bitmap);
-  cache.set(id, handle);
+  cache.set(id, { handle, bitmap });
   while (cache.size > PATTERN_TILE_CACHE_LIMIT) evict(cache.keys().next().value!);
   return handle;
 }
 
 function evict(id: string): void {
+  const tile = cache.get(id);
   cache.delete(id);
-  const source = textureRegistry.get(id)?.source;
   unregisterTexture({ id });
-  if (source && 'close' in source) source.close();
+  tile?.bitmap.close();
 }
 
 function revive(id: string): void {

@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './test-utils/fakeOffscreenCanvas';
 import {
   resolvePatternSpec, resolvePaintPattern, _resetPatternSpecCacheForTests,
   PATTERN_TILE_CACHE_LIMIT,
 } from './resolveSpec';
-import { _resetTextureRegistryForTests, getTexture, textureRegistry } from '../textures/registerTexture';
+import { _resetTextureRegistryForTests, getTexture, textureRegistry, unregisterTexture } from '../textures/registerTexture';
 import type { Paint, TexturePaint, TilePaint, TilePatternSpec } from '@weasel-js/paint';
 
 const HATCH: TilePatternSpec = { kind: 'hatch', color: '#0fb5a8' };
@@ -30,6 +30,23 @@ describe('resolvePatternSpec', () => {
       expect(resolvePatternSpec({ kind: 'not-a-tile', color: `#${i}` } as unknown as TilePatternSpec)).toBeNull();
     }
     expect(textureRegistry.get(kept.id)).toBeDefined();
+  });
+
+  it('closes the bitmap of a tile unregistered through the public API once it is rebuilt', () => {
+    const handle = resolvePatternSpec(HATCH)!;
+    const first = textureRegistry.get(handle.id)!.source as ImageBitmap;
+    const close = vi.spyOn(first, 'close');
+    unregisterTexture(handle);
+    expect(getTexture(handle.id)?.source).not.toBe(first);
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the bitmap of a tile unregistered through the public API once it is evicted', () => {
+    const handle = resolvePatternSpec(HATCH)!;
+    const close = vi.spyOn(textureRegistry.get(handle.id)!.source as ImageBitmap, 'close');
+    unregisterTexture(handle);
+    for (let i = 0; i < PATTERN_TILE_CACHE_LIMIT; i++) resolvePatternSpec({ ...HATCH, color: `#${i}` });
+    expect(close).toHaveBeenCalledTimes(1);
   });
 
   it('returns the same handle for an equal spec', () => {
