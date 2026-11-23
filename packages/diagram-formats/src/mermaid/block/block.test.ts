@@ -191,3 +191,12 @@ describe('an id Mermaid reads as accessibility text', () => {
     }
   });
 });
+
+describe('a space before a block mentioned again', () => {
+  it('goes before the next new block, as Mermaid places it, on an items line as on a links line', () => {
+    for (const line of ['a b', 'a --> b']) {
+      const p = page(`block-beta\n  a\n  space\n  ${line}`);
+      expect(p.layout).toMatchObject({ options: { grid: { skips: { b: 1 } } } });
+    }
+  });
+});
