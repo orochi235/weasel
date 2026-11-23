@@ -211,11 +211,12 @@ export function createOpenTypeParser(postScriptName?: string): OutlineParser {
     const ns = await loadOpenType();
     assertOpenType2(ns);
     const parse = parserOf(ns);
-    const { bytes: single, matched, names } = sfntFromCollection(isWoff(bytes) ? await sfntFromWoff(bytes) : bytes, postScriptName);
-    if (!matched) {
+    const member = sfntFromCollection(isWoff(bytes) ? await sfntFromWoff(bytes) : bytes, postScriptName);
+    if (!member.matched) {
       throw new Error(
-        `no member of the font file is named "${postScriptName}" (it holds ${names.join(', ')})`);
+        `no member of the font file is named "${postScriptName}" (it holds ${member.names.join(', ')})`);
     }
+    const single = member.bytes;
     // A variable font's nameID 6 names its default instance, the only one whose outlines opentype.js draws.
     if (postScriptName !== undefined && tableOf(single, 'fvar')) {
       const defaultName = postScriptNameOf(single);
