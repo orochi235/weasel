@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/core/renderer';
 import { ellipseShape, lineShape } from '@weasel-js/geom';
-import { runAlong, textAlong } from './textAlong';
+import { runAlong, textAlong, textAt } from './textAlong';
 
 const turnOf = (c: DrawCommand): number => {
   const m = (c as GroupDrawCommand).transform!;
@@ -27,5 +27,14 @@ describe('textAlong', () => {
     const left = lineShape({ x: 100, y: 0 }, { x: 0, y: 0 });
     expect(runAlong(left, 0.5, 20).flip).toBe(true);
     for (const c of textAlong(left, 0.5, t)) expect(Math.abs(turnOf(c))).toBeCloseTo(0);
+  });
+
+  it('stands a short label in one piece, turned to the heading at its stop, halo first', () => {
+    const arc = ellipseShape({ center: { x: 0, y: 0 }, radiusX: 40, radiusY: 40, start: 225, end: 135, direction: 'ccw' });
+    const cmds = textAt(arc, 0, { ...t, text: '64×', halo: '#fff' });
+    expect(cmds).toHaveLength(2);
+    expect((cmds[0] as GroupDrawCommand).children).toHaveLength(8);
+    expect(turnOf(cmds[1]!)).toBeCloseTo(turnOf(cmds[0]!));
+    expect(turnOf(cmds[1]!)).toBeGreaterThan(0.5);
   });
 });

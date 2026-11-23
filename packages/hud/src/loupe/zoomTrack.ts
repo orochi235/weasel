@@ -1,4 +1,3 @@
-import { textCommandFromRuns } from '@weasel-js/core';
 import type { DrawCommand } from '@weasel-js/core/renderer';
 import { ellipsePath, polylineFromPoints, type TrackShape } from '@weasel-js/geom';
 import { nearestStopIndex } from '@weasel-js/loupe';
@@ -6,14 +5,14 @@ import { solidFill } from '@weasel-js/paint';
 import type { HudDrawCtx, HudPointerEvent, Widget } from '../widget';
 import type { WindowWidget } from '../widgets/window/window';
 import { lensTone } from './lensTone';
-import { textWidth } from '../menu/textWidth';
-import { BAND, outwardOf, ringBoundsOf, rimTrackIn } from './rimTracks';
+import { BAND, ringBoundsOf, rimTrackIn } from './rimTracks';
+import { textAt } from './textAlong';
 
 const THUMB_R = 6;
 const SAMPLES = 48;
-const LABEL_PX = 9;
-/** Px from the track's centerline to a stop's label, outward past the band. */
-const LABEL_GAP = BAND / 2 + 8;
+const LABEL_PX = 13;
+/** Px from the track to the centerline its stop labels are set along, outward past the band. */
+const LABEL_GAP = BAND / 2 + 9;
 
 /** What the zoom reads of its lens, and tells it. */
 export interface ZoomTrackHost {
@@ -55,19 +54,22 @@ export function createZoomTrack(id: string, host: ZoomTrackHost): Widget {
       const shape = track();
       const stroke = (color: string, width: number) => ({ paint: { kind: 'solid' as const, color }, width });
       const line = polylineFromPoints(Array.from({ length: SAMPLES + 1 }, (_, i) => shape.at(i / SAMPLES).point));
-      const out: DrawCommand[] = [{ kind: 'path', path: line, stroke: { ...stroke(lensTone(t, '--wzl-fg-muted'), 2), cap: 'round' } }];
+      // Everything here stands on whatever the canvas shows, so each mark is edged in the surface color.
+      const halo = lensTone(t, '--wzl-surface');
+      const out: DrawCommand[] = [
+        { kind: 'path', path: line, stroke: { ...stroke(halo, 4), cap: 'round' } },
+        { kind: 'path', path: line, stroke: { ...stroke(lensTone(t, '--wzl-fg-muted'), 2), cap: 'round' } },
+      ];
       const at = nearestStopIndex(stops, host.factor());
-      const away = outwardOf(host.round) * LABEL_GAP;
-      const font = { fontFamily: ctx.defaultFont, fontSize: LABEL_PX };
+      const labels = rimTrackIn(win.bounds, host.round, 'zoom', LABEL_GAP);
       stops.forEach((stop, i) => {
         const s = shape.at(fractionOf(i));
         const dot = { x: s.point.x - 2, y: s.point.y - 2, width: 4, height: 4 };
-        out.push({ kind: 'path', path: ellipsePath(dot), fill: solidFill(lensTone(t, '--wzl-fg-muted')) });
-        const label = `${stop}×`;
-        const lx = s.point.x + s.normal.x * away - textWidth(label, LABEL_PX, ctx.defaultFont) / 2;
-        const ly = s.point.y + s.normal.y * away - LABEL_PX / 2;
+        out.push({ kind: 'path', path: ellipsePath(dot), fill: solidFill(lensTone(t, '--wzl-fg-muted')), stroke: stroke(halo, 1) });
         const color = i === at ? lensTone(t, '--wzl-fg') : lensTone(t, '--wzl-fg-muted');
-        out.push(textCommandFromRuns(lx, ly, [{ text: label, fill: solidFill(color) }], font, undefined, LABEL_PX, 'center'));
+        out.push(...textAt(labels, fractionOf(i), {
+          text: `${stop}×`, fontFamily: ctx.defaultFont, fontSize: LABEL_PX, color, halo,
+        }));
       });
       const thumb = shape.at(fractionOf(at)).point;
       const knob = { x: thumb.x - THUMB_R, y: thumb.y - THUMB_R, width: THUMB_R * 2, height: THUMB_R * 2 };

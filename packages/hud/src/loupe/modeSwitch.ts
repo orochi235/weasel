@@ -17,8 +17,8 @@ const SEGMENTS: readonly { mode: LoupeMode; label: string }[] = [
 ];
 /** Fraction of the track left empty at each end of a segment, so the two read apart. */
 const PAD = 0.015;
-const LABEL_PX = 10;
-const ICON_PX = 12;
+const LABEL_PX = 14;
+const ICON_PX = 14;
 /** Px between a segment's icon and its caption. */
 const ICON_GAP = 3;
 

@@ -13,6 +13,8 @@ import { copyText } from '@weasel-js/react';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
 import { useIconRegistry } from '@weasel-js/icons/react';
+import { registerCanvasFont } from '@weasel-js/font';
+import { useThemeOptional } from '@weasel-js/theme/react';
 import { pref } from '@weasel-js/prefs';
 import { icon } from './icons.gen';
 import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
@@ -130,7 +132,7 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
   state: LoupeState;
   onColor: (hex: string | null) => void;
 }) {
-  const hud = useHud(canvasRef, { font: 'sans-serif' });
+  const hud = useHud(canvasRef, { font: useThemeUiFont() });
   // Unmounted, the lens reads nothing, and says so.
   useEffect(() => () => onColor(null), [onColor]);
   const pickColor = usePickColor();
@@ -142,6 +144,15 @@ function LoupeLens({ canvasRef, source, settings, state, onColor }: {
     onFactorChange: (factor) => drawPrefs().set('loupe.factor', factor),
   });
   return null;
+}
+
+/** The theme's UI face, enrolled as a canvas font so the HUD can set its text in it; the baked `sans-serif` where
+ *  the theme names none. */
+function useThemeUiFont(): string {
+  const stack = useThemeOptional()?.resolved['--wzl-font-ui'];
+  const family = stack?.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '') || 'sans-serif';
+  useEffect(() => (family === 'sans-serif' ? undefined : registerCanvasFont(family)), [family]);
+  return family;
 }
 
 const NO_LOUPE: SchemaBinding = {};
