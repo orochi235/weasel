@@ -3985,3 +3985,7 @@ Calls the lanes made without a ruling:
 
 - 2026-11-23 (the fixer's call): `watchRecovery` throws a `RangeError` for a `quietMs` of 0, a negative value, or
   `NaN`. Clamping it to a floor, or reading it as "check only as served" the way `Infinity` reads, was the alternative.
+- 2026-11-23 (the fixer's call): where TypeDoc's paths match a component's file equally well in more than one
+  package and none of them is the file's own package (by the nearest `package.json` name), the API panel shows no
+  TypeDoc comments for it. Taking the first match, as before, was the alternative, and could show another
+  component's descriptions.

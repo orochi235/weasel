@@ -1,11 +1,11 @@
 // @vitest-environment node
-import { copyFileSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ReadApi } from '../apiTable';
 import { readTypedoc, type TypedocHref, typedocSource, withTypedoc } from './index';
-import type { TdType } from './json';
+import type { TdReflection, TdType } from './json';
 import { signatureText, typeText } from './print';
 
 const FIXTURE = join(import.meta.dirname, 'fixture.json');
@@ -62,6 +62,67 @@ describe('readTypedoc', () => {
     expect(gauge.href).toBe('ref:@demo/ui/charts/Gauge');
     expect(gauge.props.get('value')).toEqual({ description: 'From 0 to 1.' });
     expect(gauge.members.size).toBe(0);
+  });
+});
+
+describe('readTypedoc in a project whose paths are relative to each package', () => {
+  let root = '';
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'forge-typedoc-packages-'));
+    for (const [dir, name] of [['ui', '@a/ui'], ['kit', '@b/kit']]) {
+      mkdirSync(join(root, dir, 'src'), { recursive: true });
+      writeFileSync(join(root, dir, 'package.json'), JSON.stringify({ name }));
+    }
+  });
+  afterEach(() => rmSync(root, { recursive: true, force: true }));
+
+  const button = (id: number, description: string): TdReflection => ({
+    id,
+    name: 'Button',
+    variant: 'declaration',
+    kind: 64,
+    sources: [{ fileName: 'src/Button.tsx' }],
+    signatures: [
+      {
+        id: id + 1,
+        name: 'Button',
+        variant: 'signature',
+        kind: 4096,
+        parameters: [
+          {
+            id: id + 2,
+            name: 'props',
+            variant: 'param',
+            kind: 32768,
+            type: {
+              type: 'reflection',
+              declaration: {
+                id: id + 3,
+                name: '__type',
+                variant: 'declaration',
+                kind: 65536,
+                children: [{ id: id + 4, name: 'label', variant: 'declaration', kind: 1024, comment: { summary: [{ kind: 'text', text: description }] } }],
+              },
+            },
+          },
+        ],
+      },
+    ],
+  });
+  const packages = (): TdReflection => ({
+    id: 0,
+    name: 'docs',
+    kind: 1,
+    children: [
+      { id: 10, name: '@a/ui', kind: 2, children: [button(11, 'The ui label.')] },
+      { id: 20, name: '@b/kit', kind: 2, children: [button(21, 'The kit label.')] },
+    ],
+  });
+
+  it("takes the component in the module named for the file's package, where two packages' paths share the suffix", () => {
+    const docs = readTypedoc(packages(), 0);
+    expect(docs.component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
+    expect(docs.component('Button', join(root, 'ui', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The ui label.');
   });
 });
 

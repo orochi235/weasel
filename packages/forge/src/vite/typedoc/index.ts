@@ -1,4 +1,5 @@
 import { readFileSync, statSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import type { ApiMember, ApiProp } from '../../story/api.ts';
 import type { ReadApi } from '../apiTable.ts';
 import { indexProject, Kind, type TdIndex, type TdReflection, type TdType, type TypedocHref } from './json.ts';
@@ -44,13 +45,7 @@ export function readTypedoc(project: unknown, mtime: number, href?: TypedocHref)
   return {
     mtime,
     component(name, file) {
-      const at = slashed(file);
-      const found = index.exports.find(
-        (e) =>
-          e.name === name &&
-          (e.kind === Kind.Variable || e.kind === Kind.Function || e.kind === Kind.Class) &&
-          e.sources?.some((s) => at.endsWith(`/${slashed(s.fileName).replace(/^\.\//, '')}`)),
-      );
+      const found = exportIn(index, name, file);
       if (!found) return null;
       const props = new Map<string, TdReflection>();
       const handle: TdType[] = [];
@@ -70,6 +65,50 @@ export function readTypedoc(project: unknown, mtime: number, href?: TypedocHref)
       };
     },
   };
+}
+
+/** How much of `at` an export's source names, as a path suffix: 0 when none does. */
+const suffixOf = (e: TdReflection, at: string): number =>
+  Math.max(
+    0,
+    ...(e.sources ?? []).map(({ fileName }) => {
+      const tail = slashed(fileName).replace(/^\.\//, '');
+      return at.endsWith(`/${tail}`) ? tail.length : 0;
+    }),
+  );
+
+/**
+ * The component export `name` declared in `file`. TypeDoc may write each package's paths relative to that package,
+ * so where two packages' files share the suffix, the one in a module named for `file`'s package is taken, else none.
+ */
+function exportIn(index: TdIndex, name: string, file: string): TdReflection | undefined {
+  const at = slashed(file);
+  const scored = index.exports
+    .filter((e) => e.name === name && (e.kind === Kind.Variable || e.kind === Kind.Function || e.kind === Kind.Class))
+    .map((e) => ({ e, suffix: suffixOf(e, at) }))
+    .filter(({ suffix }) => suffix > 0);
+  const best = Math.max(0, ...scored.map(({ suffix }) => suffix));
+  const found = scored.filter(({ suffix }) => suffix === best).map(({ e }) => e);
+  if (found.length <= 1) return found[0];
+  const pkg = packageNameOf(dirname(file));
+  const own = found.filter((e) => {
+    const [outer] = index.exportOf.get(e.id)?.modules ?? [];
+    return pkg !== undefined && (outer === pkg || outer?.startsWith(`${pkg}/`));
+  });
+  return own.length === 1 ? own[0] : undefined;
+}
+
+/** The name in the nearest `package.json` at or above `dir` that has one. */
+function packageNameOf(dir: string): string | undefined {
+  for (let at = dir; ; at = dirname(at)) {
+    try {
+      const { name } = JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')) as { name?: unknown };
+      if (typeof name === 'string') return name;
+    } catch {
+      // No manifest here, or one that does not parse: look further up.
+    }
+    if (dirname(at) === at) return undefined;
+  }
 }
 
 /** A function component's first parameter; a value's type, such as `forwardRef`'s exotic component. */
