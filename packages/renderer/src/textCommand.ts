@@ -25,6 +25,7 @@ import { isSolidPaint, type Paint } from '@weasel-js/paint';
 import type { Rect } from '@weasel-js/geom';
 import { commandFill, commandPaint } from './patterns/commandPaint';
 import { resolvePaintPattern } from './patterns/resolveSpec';
+import { noteTextRefill } from './textBounds';
 
 /** The style each command resolves into: read while its runs resolve, and
  *  kept by nothing. */
@@ -92,6 +93,7 @@ export function textCommandFromRunsInto(
   cmd.height = height;
   cmd.verticalAlign = verticalAlign;
   cmd.width = width;
+  noteTextRefill(cmd);
   return cmd;
 }
 
