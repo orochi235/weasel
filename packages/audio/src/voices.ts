@@ -2,7 +2,7 @@ import { checkFinite, checkGain, checkPoint, checkRate } from './param';
 import type { Scheduler } from './scheduler';
 import { spatialize, type SpatialOptions, type SpatialPoint } from './spatialize';
 import type { VoiceDropReason, VoiceHandle } from './types';
-import type { ChainPool } from './voiceChains';
+import type { ChainPool, VoiceOut } from './voiceChains';
 import { reportDrop, type DropWarnings } from './voiceDrops';
 import type { LiveVoice, Slots, SourceLike, Starter, VoiceOptions } from './liveVoice';
 
@@ -37,6 +37,8 @@ export interface VoicesDeps {
 interface VoiceOps {
   teardown(voice: LiveVoice, reason?: VoiceDropReason): void;
   applySpatial(voice: LiveVoice): void;
+  /** Pan `voice` explicitly, dropping its position and the distance gain that came with it. */
+  setPan(voice: LiveVoice, pan: number): void;
   poolGain(voice: LiveVoice): void;
 }
 
@@ -145,7 +147,7 @@ function startVoice(
 }
 
 function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): VoiceHandle {
-  const { teardown, applySpatial, poolGain } = ops;
+  const { teardown, applySpatial, setPan, poolGain } = ops;
   return {
     id: voice.id,
     stop(fadeMs) {
@@ -199,8 +201,7 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
     },
     setPan(value) {
       checkFinite('voice pan', value);
-      voice.position = undefined;
-      voice.out?.pan(value);
+      setPan(voice, value);
     },
     setPosition(p) {
       checkPoint('voice position', p);
@@ -243,23 +244,34 @@ export function createVoices(deps: VoicesDeps): Voices {
     voice.slots.pool.setGain(voice.slot, voice.token, voice.baseGain * voice.spatialGain);
   };
 
-  const applySpatial = (voice: LiveVoice): void => {
-    if (!voice.position || !voice.out) return;
-    const s = spatialOf(voice.position);
-    voice.spatialGain = s.gain;
-    voice.out.pan(s.pan);
+  const place = (voice: LiveVoice, out: VoiceOut, at: { gain: number; pan: number }): void => {
+    voice.spatialGain = at.gain;
+    out.pan(at.pan);
     if (!voice.fading) {
       // A level write cancels what is scheduled, so a ramp still running is rescheduled to the same end.
       const left = (voice.rampEnd - ctx.currentTime) * 1000;
-      voice.out.level(voice.baseGain * s.gain, left > 0 ? left : undefined);
+      out.level(voice.baseGain * at.gain, left > 0 ? left : undefined);
     }
     poolGain(voice);
+  };
+
+  const applySpatial = (voice: LiveVoice): void => {
+    if (!voice.position || !voice.out) return;
+    place(voice, voice.out, spatialOf(voice.position));
+  };
+
+  const setPan = (voice: LiveVoice, pan: number): void => {
+    const hadPosition = voice.position !== undefined;
+    voice.position = undefined;
+    if (!voice.out) return;
+    if (hadPosition) place(voice, voice.out, { gain: 1, pan });
+    else voice.out.pan(pan);
   };
 
   const teardown = (voice: LiveVoice, reason: VoiceDropReason = 'stopped'): void => {
     teardownVoice(voice, reason, live);
   };
-  const ops: VoiceOps = { teardown, applySpatial, poolGain };
+  const ops: VoiceOps = { teardown, applySpatial, setPan, poolGain };
 
   return {
     launch(common, starter) {
