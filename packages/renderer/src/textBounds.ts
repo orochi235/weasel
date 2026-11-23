@@ -50,17 +50,30 @@ export function textBox(cmd: TextDrawCommand, m: GlMat3): ScreenBox | null {
 
 const IDENTITY = mat3.identity();
 /** Each stroke-free layer's box in its own space, `null` for one painting nothing, with the face and text
- *  engine generations it was laid out under: a face landing or an engine registering moves its glyphs. */
+ *  engine generations and the latest refill of its texts it was laid out under. */
 const layerBoxPart = createPart(
-  (_texts: readonly TextDrawCommand[]): { generation: string; box: ScreenBox | null } => ({ generation: '', box: null }),
+  (_texts: readonly TextDrawCommand[]): { generation: string; refill: number; box: ScreenBox | null } => (
+    { generation: '', refill: -1, box: null }
+  ),
 );
+
+let refills = 0;
+const refilledAt = new WeakMap<TextDrawCommand, number>();
+
+/** Record that `cmd` was rewritten in place, so a layer holding it is measured again. */
+export function noteTextRefill(cmd: TextDrawCommand): void {
+  refilledAt.set(cmd, ++refills);
+}
 
 function layerBoxOf(texts: readonly TextDrawCommand[]): ScreenBox | null {
   const generation = `${faceGeneration()}:${textEngineGeneration()}`;
+  let refill = 0;
+  for (const t of texts) refill = Math.max(refill, refilledAt.get(t) ?? 0);
   const part = layerBoxPart(texts);
-  if (part.generation !== generation) {
+  if (part.generation !== generation || part.refill !== refill) {
     part.box = unionOf(texts, IDENTITY);
     part.generation = generation;
+    part.refill = refill;
   }
   return part.box;
 }

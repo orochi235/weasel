@@ -162,6 +162,25 @@ describe('text with no pose', () => {
     expect((cmd as TextDrawCommand).runs[0].fill?.paint).toMatchObject({ kind: 'texture' });
   });
 
+  it('places a bounds pattern against the text\'s own box', () => {
+    const paint = { ...hatch, units: 'bounds' as const, origin: { x: 5, y: 5 } };
+    const cmd = textCommand(10, 20, 'Hi', undefined, 100, 40, undefined, { fill: { paint } }) as TextDrawCommand;
+    expect(cmd.runs[0].fill?.paint).toMatchObject({ kind: 'texture', units: 'local', origin: { x: 15, y: 25 } });
+  });
+
+  it('maps a bounds gradient onto the text\'s own box, stroke included', () => {
+    const grad = {
+      kind: 'linear-gradient' as const, from: { x: 0, y: 0 }, to: { x: 1, y: 0 },
+      stops: [{ offset: 0, color: '#f00' }, { offset: 1, color: '#00f' }], units: 'bounds' as const,
+    };
+    const cmd = textCommandFromRuns(
+      10, 20, [{ text: 'Hi', fill: { paint: grad }, stroke: { paint: grad, width: 1 } }], undefined, 100, 40,
+    ) as TextDrawCommand;
+    const want = { from: { x: 10, y: 20 }, to: { x: 110, y: 20 }, units: 'local' };
+    expect(cmd.runs[0].fill?.paint).toMatchObject(want);
+    expect(cmd.runs[0].stroke?.paint).toMatchObject(want);
+  });
+
   it('swaps a run\'s tile fill and stroke in textCommandFromRuns and textCommandFromRunsInto', () => {
     const runs = [{ text: 'Hi', fill: { paint: hatch }, stroke: { paint: hatch, width: 1 } }];
     const cmd = textCommandFromRuns(0, 0, runs) as TextDrawCommand;
@@ -170,5 +189,20 @@ describe('text with no pose', () => {
     const again = textCommandFromRunsInto(cmd, 0, 0, runs);
     expect(again.runs[0].fill?.paint).toMatchObject({ kind: 'texture' });
     expect(runs[0].fill.paint).toBe(hatch);
+  });
+});
+
+describe('a run stroke whose paint cannot resolve', () => {
+  // No OffscreenCanvas here, so no tile rasterizes.
+  const unresolvable = { paint: { kind: 'hatch' as const, color: '#0a0' }, width: 2 };
+
+  it('is dropped from a pose\'s runs, as a path drops one', () => {
+    const cmd = textCommandFromPose({ x: 0, y: 0, width: 10, height: 10, text: 'x', stroke: unresolvable });
+    expect(cmd.runs[0].stroke).toBeUndefined();
+  });
+
+  it('is dropped from text with no pose', () => {
+    const cmd = textCommandFromRuns(0, 0, [{ text: 'x', stroke: unresolvable }]) as TextDrawCommand;
+    expect(cmd.runs[0].stroke).toBeUndefined();
   });
 });

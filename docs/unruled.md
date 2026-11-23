@@ -4062,3 +4062,9 @@ Calls the lanes made without a ruling:
   gesture and then dispatches the geometry of the fingers still down, so a two-finger binding can start on them,
   as a finger landing does going from two to three. Leaving the remaining fingers with no gesture until another
   lands was the alternative.
+
+## Audit round seventy-eight (2026-11-23): renderer, part two
+
+- 2026-11-23 (the fixer's call): text with no pose maps a `'bounds'` paint onto a box at its `x` and `y`, as wide as
+  its `width`, else a finite `maxWidth`, else its laid-out text, and as tall as its `height`, else its laid-out text.
+  Placing such a paint at the text's origin with no size, as `'local'`, was the alternative.

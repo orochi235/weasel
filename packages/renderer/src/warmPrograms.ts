@@ -28,12 +28,18 @@ function start(): void {
   const gl = document.createElement('canvas').getContext('webgl2');
   if (!gl) return;
   const release = () => gl.getExtension('WEBGL_lose_context')?.loseContext();
-  const device = new WebGLDevice(gl);
-  if (!device.compilesInBackground) {
+  let programs: ShaderProgram[];
+  try {
+    const device = new WebGLDevice(gl);
+    if (!device.compilesInBackground) {
+      release();
+      return;
+    }
+    programs = FIRST_FRAME_SPECS.map((spec) => buildProgram(device, spec));
+  } catch (err) {
     release();
-    return;
+    throw err;
   }
-  const programs: ShaderProgram[] = FIRST_FRAME_SPECS.map((spec) => buildProgram(device, spec));
   const poll = (): void => {
     let done = true;
     try {

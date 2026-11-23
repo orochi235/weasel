@@ -109,7 +109,12 @@ export class BakedTiles implements RendererTiles {
         this.endFrame();
       }
     };
-    run([], true);
+    try {
+      run([], true);
+    } catch (err) {
+      this.textures.free(scratch);
+      throw err;
+    }
     const cancel = () => {
       open = false;
       this.textures.free(scratch);

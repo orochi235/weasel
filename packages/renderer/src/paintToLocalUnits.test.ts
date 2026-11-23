@@ -129,6 +129,13 @@ describe('paintToBoundsUnits', () => {
     expect(paintToBoundsUnits(placed, flat)).toBe(placed);
   });
 
+  it('leaves a paint already in bounds units alone', () => {
+    const box = { x: 40, y: 90, width: 250, height: 120 };
+    const tile: TilePaint = { kind: 'hatch', color: '#000', units: 'bounds', origin: { x: 4, y: 6 } };
+    expect(paintToBoundsUnits(LINEAR, box)).toBe(LINEAR);
+    expect(paintToBoundsUnits(tile, box)).toBe(tile);
+  });
+
   it('leaves a solid fill alone', () => {
     const solid: Paint = { color: '#ff0000' };
     expect(paintToBoundsUnits(solid, { x: 0, y: 0, width: 10, height: 10 })).toBe(solid);

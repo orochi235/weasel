@@ -13,7 +13,7 @@ import { rasterizeTile } from './rasterizeTile';
 
 /** Options for `createTilePattern`. */
 export interface TilePatternOptions {
-  /** Edge length (in pixels) of the square offscreen tile. */
+  /** Edge length (in pixels) of the square offscreen tile, rounded to whole ones. */
   size: number;
   /** Paint one tile at integer-pixel coordinates `(0, 0) .. (size, size)`. */
   draw: (oc: CanvasRenderingContext2D, size: number) => void;

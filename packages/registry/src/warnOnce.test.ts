@@ -7,6 +7,13 @@ afterEach(() => {
 });
 
 describe('createWarnOnce', () => {
+  it('says each key once, given one, whatever the message', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const once = createWarnOnce();
+    once('a', 'k'); once('b', 'k'); once('a');
+    expect(warn.mock.calls).toEqual([['a'], ['a']]);
+  });
+
   it('says each message once', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const once = createWarnOnce();

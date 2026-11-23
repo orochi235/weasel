@@ -18,6 +18,14 @@ beforeEach(() => {
 afterEach(uninstallFakeOffscreenCanvas);
 
 describe('createTilePattern', () => {
+  it('rounds a fractional size, so the drawing repeats at the period its canvas holds', () => {
+    const draw = vi.fn();
+    createTilePattern({ size: 5.5, draw });
+    expect(fake.last!.width).toBe(6);
+    expect(fake.last!.height).toBe(6);
+    expect(draw.mock.calls[0][1]).toBe(6);
+  });
+
   it('invokes the draw callback exactly once with a 2D ctx and the size', () => {
     const draw = vi.fn();
     createTilePattern({ size: 8, draw });

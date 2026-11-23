@@ -12,12 +12,14 @@ export interface TileTexture {
   readonly size: number;
 }
 
-/** Freed textures kept for the next bake, per size: a fresh texture costs several reused ones. */
+/** Freed textures kept for the next bake, of every size together: a fresh texture costs several reused ones. */
 const POOL_KEPT = 16;
 
 export class TileTextures {
   private readonly live = new Map<TileTexture, GpuTarget>();
+  /** Freed textures by size, the size freed into least recently first. */
   private readonly pool = new Map<number, GpuTarget[]>();
+  private pooled = 0;
   private scratch: GpuTarget | null = null;
   /** Scratch buffers of bakes spanning several calls, each held by one until it finishes. */
   private readonly owned = new Set<GpuTarget>();
@@ -72,25 +74,45 @@ export class TileTextures {
 
   /** Keep what a scratch buffer holds, the shared one by default, as a new tile. */
   keep(size: number, scratch: GpuTarget = this.scratch!): TileTexture {
-    const target = this.pool.get(size)?.pop() ?? this.gpu.createTarget({ width: size, height: size, filter: 'linear' });
+    const target = this.takePooled(size) ?? this.gpu.createTarget({ width: size, height: size, filter: 'linear' });
     this.gpu.resolve(scratch, target, size, size, 0, 0);
     const tile: TileTexture = { kind: 'tile-texture', size };
     this.live.set(tile, target);
     return tile;
   }
 
-  /** Give `tile`'s texture back to the pool. Idempotent. */
+  private takePooled(size: number): GpuTarget | undefined {
+    const list = this.pool.get(size);
+    const target = list?.pop();
+    if (list?.length === 0) this.pool.delete(size);
+    if (target) this.pooled--;
+    return target;
+  }
+
+  /** Give `tile`'s texture back to the pool, making room by freeing one of the size freed into longest
+   *  ago. Idempotent. */
   release(tile: TileTexture): void {
     const target = this.live.get(tile);
     if (!target) return;
     this.live.delete(tile);
     const list = this.pool.get(tile.size) ?? [];
-    if (list.length < POOL_KEPT) {
-      list.push(target);
-      this.pool.set(tile.size, list);
-    } else {
-      this.gpu.deleteTarget(target);
+    this.pool.delete(tile.size);
+    if (this.pooled >= POOL_KEPT) {
+      const oldest = this.pool.entries().next().value;
+      if (!oldest) {
+        // Every pooled texture is this size already.
+        this.gpu.deleteTarget(target);
+        this.pool.set(tile.size, list);
+        return;
+      }
+      const [size, from] = oldest;
+      this.gpu.deleteTarget(from.shift()!);
+      if (from.length === 0) this.pool.delete(size);
+      this.pooled--;
     }
+    list.push(target);
+    this.pool.set(tile.size, list);
+    this.pooled++;
   }
 
   /** Free the scratch buffer, which only a frame that bakes needs. */
@@ -105,6 +127,7 @@ export class TileTextures {
     this.live.clear();
     for (const list of this.pool.values()) for (const t of list) this.gpu.deleteTarget(t);
     this.pool.clear();
+    this.pooled = 0;
     for (const t of this.owned) this.gpu.deleteTarget(t);
     this.owned.clear();
     this.dropScratch();

@@ -24,6 +24,17 @@ const out = { laid: null as unknown as LaidOutRuns, dx: 0, dy: 0 };
  * arrays to another layout once nothing files it.
  */
 export function laidOutText(cmd: TextDrawCommand): Readonly<LaidOutText> {
+  const laid = cachedLayoutRuns(cmd.runs, layoutOptsOf(cmd), 'read');
+  // Applied at upload time, not baked in: a cached layout that absorbed either
+  // offset would gain another one every frame and slide off the page.
+  out.laid = laid;
+  out.dx = cmd.x;
+  out.dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
+  return out;
+}
+
+/** The options `cmd` lays out under, overwritten by the next call. */
+export function layoutOptsOf(cmd: TextDrawCommand): Readonly<LayoutRunsOptions> {
   // Read field by field rather than through `resolveTextStyle`, which builds a
   // whole resolved style per command per frame and needs four of its fields.
   const style = cmd.style;
@@ -34,11 +45,5 @@ export function laidOutText(cmd: TextDrawCommand): Readonly<LaidOutText> {
   opts.direction = cmd.direction ?? style.direction ?? DEFAULT_TEXT_STYLE.direction;
   opts.tabSize = style.tabSize ?? DEFAULT_TEXT_STYLE.tabSize;
   opts.justify = cmd.justify;
-  const laid = cachedLayoutRuns(cmd.runs, opts, 'read');
-  // Applied at upload time, not baked in: a cached layout that absorbed either
-  // offset would gain another one every frame and slide off the page.
-  out.laid = laid;
-  out.dx = cmd.x;
-  out.dy = cmd.y + verticalAlignOffset(cmd.verticalAlign, cmd.height, laid.bounds.height);
-  return out;
+  return opts;
 }
