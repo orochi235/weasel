@@ -62,10 +62,11 @@
   text-decoration-color: var(--wzl-accent);
 }
 
-/* `variant='bare'`: no box. The focus ring moves to an outline, since there is no border to recolor. */
+/* `variant='bare'`: no box, through the same hooks as the boxed look. The focus ring moves to an outline, since
+   there is no border to recolor. */
 .bare .trigger {
-  padding: 0;
-  background: transparent;
+  padding: var(--wzl-select-pad, 0);
+  --_frame-bg: var(--wzl-select-bg, transparent);
   border: var(--wzl-select-border, 1px solid transparent);
 }
 
@@ -104,11 +105,6 @@
   gap: 0;
 }
 
-.bare.underlined .trigger,
-.bare.plain .trigger {
-  padding: 0;
-}
-
 /* A list that hangs below its trigger takes the trigger's width, so the two
    read as one control. One that opens over it is already tied to the trigger
    by its selected row — widening it to match would only add blank rule beside
@@ -141,9 +137,7 @@
 }
 
 .optionBody {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
+  composes: optionBody from './listbox.module.css';
 }
 
 .value .optionBody {
@@ -167,6 +161,18 @@
   justify-content: center;
 }
 
+/* A described row's label is matched to the value by its own box, so that box keeps to its text's width, on the
+   same edge as the row. */
+.popover[data-align='end'] .optionBody {
+  align-items: flex-end;
+  text-align: end;
+}
+
+.popover[data-align='center'] .optionBody {
+  align-items: center;
+  text-align: center;
+}
+
 .check {
   width: 10px;
   height: 10px;
@@ -183,9 +189,7 @@
 }
 
 .note {
-  display: block;
-  font-size: var(--wzl-font-size-sm);
-  color: var(--wzl-fg-subtle);
+  composes: note from './listbox.module.css';
 }
 
 .value .note {

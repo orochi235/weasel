@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState, type ReactNode, type Ref } from 'react';
+import { useContext, useLayoutEffect, useState, type ReactNode, type Ref } from 'react';
 import { useObjectRef } from 'react-aria';
 import {
   Select as RACSelect,
@@ -150,8 +150,10 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
     ...given
   } = hold.rest;
   // Dropped at run time too, for a caller the types do not reach.
-  const { value: _value, defaultValue: _defaultValue, onChange: _onChange, selectionMode: _mode, ...rest } =
-    given as typeof given & Partial<Pick<RACSelectProps<object>, 'value' | 'defaultValue' | 'onChange' | 'selectionMode'>>;
+  const {
+    value: _value, defaultValue: _defaultValue, onChange: _onChange, selectionMode: _mode,
+    isDisabled: _disabled, isOpen: _open, isInvalid: _invalid, isRequired: _required, ...rest
+  } = given as typeof given & Partial<RACSelectProps<object>>;
 
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
   // Uncontrolled, the key is held here rather than by React Aria, whose closed trigger changes it from the keyboard
@@ -165,7 +167,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   const [nudge, setNudge] = useState(NO_NUDGE);
   // React Aria's own localized placeholder, read off the trigger, for a `width='fit'` sizer given none.
   const [ownHint, setOwnHint] = useState<ReactNode>(undefined);
-  const keepsHint = width === 'fit' && placeholder === undefined && shownKey == null;
+  const keepsHint = width === 'fit' && placeholder === undefined;
   const sized = useFieldSizeClass(size, className);
   const { id: triggerId, ...field } = useRacField({ id, 'aria-label': rest['aria-label'], 'aria-labelledby': rest['aria-labelledby'], 'aria-describedby': racHeld['aria-describedby'], invalid, required, labeled: shows(label) });
 
@@ -197,7 +199,7 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
           className={`${f.frame} ${s.trigger}`}
           onPointerDown={onPress}
         >
-          <TriggerValue placeholder={placeholder} onOwnHint={keepsHint ? setOwnHint : undefined} />
+          <TriggerValue placeholder={placeholder} keyed={shownKey != null} onOwnHint={keepsHint ? setOwnHint : undefined} />
           {width === 'fit' && <FitSizer className={s.sizer} placeholder={placeholder ?? ownHint} options={options} section={SelectSection}>{children}</FitSizer>}
           {indicator === 'chevron' && <Caret className={s.chevron} />}
         </RACButton>
@@ -235,15 +237,19 @@ export function Select<T extends OptionKey = string>(props: SelectProps<T>) {
   );
 }
 
-/** The trigger's text: the selected row's label, or the placeholder, React Aria's own handed to `onOwnHint`. */
-function TriggerValue({ placeholder, onOwnHint }: { placeholder: ReactNode; onOwnHint?: (hint: ReactNode) => void }) {
+/** The trigger's text: the selected row's label, or the placeholder, React Aria's own handed to `onOwnHint`.
+ *  `keyed` says a key is selected, whether or not a row holds it. */
+function TriggerValue({ placeholder, keyed, onOwnHint }: { placeholder: ReactNode; keyed: boolean; onOwnHint?: (hint: ReactNode) => void }) {
+  const rows = useContext(SelectStateContext)?.collection.size ?? 0;
+  // A key that names no row shows the placeholder too; one that names a row shows it only until the rows are built.
+  const hinted = !keyed || rows > 0;
   return (
     <SelectValue className={s.value}>
       {({ defaultChildren, isPlaceholder }) =>
         isPlaceholder ? (
           <>
             {placeholder ?? defaultChildren}
-            {onOwnHint && <Report value={defaultChildren} to={onOwnHint} />}
+            {onOwnHint && hinted && <Report value={defaultChildren} to={onOwnHint} />}
           </>
         ) : <InTrigger.Provider value>{defaultChildren}</InTrigger.Provider>
       }

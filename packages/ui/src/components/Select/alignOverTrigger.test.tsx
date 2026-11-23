@@ -77,6 +77,18 @@ describe('AlignOverTrigger', () => {
     frame.remove();
   });
 
+  it('holds the list inside the visual viewport, as React Aria does', () => {
+    const onMeasure = vi.fn();
+    vi.stubGlobal('visualViewport', { offsetTop: 0, height: 130 });
+    try {
+      render(<Harness selected onMeasure={onMeasure} before={() => lay(document.body, 1)} />);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    // A keyboard leaves 130px of the 1000px layout viewport visible: the list's foot stops 12px short of it.
+    expect(onMeasure).toHaveBeenCalledWith({ offset: -32, crossOffset: 1 });
+  });
+
   it('lines the selected row up with the value of a right-to-left trigger', () => {
     const onMeasure = vi.fn();
     render(
