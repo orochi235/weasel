@@ -22,6 +22,7 @@ function setup(shown = true) {
     aimMode: () => lens.mode, aim: () => lens.aim,
     pinAt: (p) => { lens.mode = 'pinned'; lens.aim = p; },
     setAimMode: (m) => { lens.mode = m; },
+    keepAim: () => { const was = { ...lens }; return () => Object.assign(lens, was); },
   });
   return { pin, lens, dock: pinDockIn(win.bounds, true) };
 }
@@ -124,6 +125,7 @@ describe('the loupe pin', () => {
       aimMode: () => lens.mode, aim: () => lens.aim,
       pinAt: (p) => { lens.mode = 'pinned'; lens.aim = p; },
       setAimMode: (m) => { lens.mode = m; },
+      keepAim: () => () => {},
     });
     const dock = pinDockIn(win.bounds, false);
     pin.onPointer(at('down', dock.x, dock.y));

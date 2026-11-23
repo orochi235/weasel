@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import type { LoupeMode } from '@weasel-js/loupe';
 import { createHud } from '../hud';
 import { createWindow } from '../widgets/window/window';
-import { addLensControls } from './lensControls';
+import { createLoupeModel, type LoupeSurface } from '@weasel-js/loupe';
+import { addLensControls, addLoupeControls } from './lensControls';
 import { createModeSwitch } from './modeSwitch';
 import { RIM_GAP, rimTrackIn } from './rimTracks';
 import { createZoomTrack } from './zoomTrack';
@@ -75,7 +76,7 @@ it('shows the controls only while the pointer is near the lens', () => {
   const controls = addLensControls({
     hud, win, round: true, stops: [1, 2, 4], requestRedraw: () => {},
     mode: () => 'vector', setMode: () => {}, factor: () => 2, setFactor: () => {},
-    aimMode: () => 'follow', aim: () => ({ x: 0, y: 0 }), pinAt: () => {}, setAimMode: () => {},
+    aimMode: () => 'follow', aim: () => ({ x: 0, y: 0 }), pinAt: () => {}, setAimMode: () => {}, keepAim: () => () => {},
   });
   const ring = hud.widgets();
   expect(ring.every((w) => w.hidden)).toBe(true);
@@ -95,4 +96,25 @@ it('says it is moving only while a drag moves it', () => {
   expect(win.moving).toBe(true);
   win.onPointer(at('up', 130, 100));
   expect(win.moving).toBe(false);
+});
+
+it('puts a canceled pin drag back on the content the pin held, though the camera moved during it', () => {
+  const camera = { pan: 0 };
+  const surface: LoupeSurface = {
+    lens: () => ({ x: 0, y: 0, width: 200, height: 200 }), covers: () => false, sample: () => null,
+    hidden: () => false, gone: () => false, changed: () => {},
+    worldAt: (p) => ({ x: p.x + camera.pan, y: p.y }), pointFor: (w) => ({ x: w.x - camera.pan, y: w.y }),
+  };
+  const model = createLoupeModel({ surface });
+  const hud = createHud();
+  const win = round();
+  const controls = addLoupeControls({ hud, requestRedraw: () => {} }, win, model, true);
+  const pin = hud.widgets().find((w) => w.id === 'w:pin')!;
+  model.pinAt({ x: 400, y: 300 });
+  controls.pointerAt({ x: 100, y: 100 });
+  pin.onPointer(at('down', 400, 300));
+  pin.onPointer(at('move', 500, 350));
+  camera.pan = 50;
+  pin.onPointer({ type: 'cancel', native: null });
+  expect(model.aim).toEqual({ x: 350, y: 300 });
 });

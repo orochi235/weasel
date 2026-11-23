@@ -24,6 +24,8 @@ export interface PinHandleHost {
   aim(): Point;
   pinAt(p: Point): void;
   setAimMode(mode: LoupeAimMode): void;
+  /** Puts the aim back as it is now, when called: on the content it is pinned to, wherever the camera moves that. */
+  keepAim(): () => void;
   icons?: GlyphSource;
   /** The pin's icon; without one (or `icons`) a plain needle is drawn. */
   pinIcon?: IconSpec;
@@ -44,8 +46,9 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
   const { win } = host;
   const dock = () => pinDockIn(win.bounds, host.round);
   const pinned = () => host.aimMode() === 'pinned';
-  /** The press in hand: what it grabbed, where it began, how the lens was aimed then, and where it is dragged. */
-  let press: { from: 'dock' | 'target'; start: Point; was: LoupeAimMode; wasAim: Point; at: Point | null } | null = null;
+  /** The press in hand: what it grabbed, where it began, how the lens was aimed then and how to put that back, and
+   *  where it is dragged. */
+  let press: { from: 'dock' | 'target'; start: Point; was: LoupeAimMode; restore: () => void; at: Point | null } | null = null;
   let hovered = false;
 
   const grabbable = (p: Point): 'dock' | 'target' | null => {
@@ -100,7 +103,7 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
       if (evt.type === 'hoverleave') { hovered = false; return; }
       if (evt.type === 'down') {
         const from = p && grabbable(p);
-        press = from ? { from, start: p!, was: host.aimMode(), wasAim: host.aim(), at: null } : null;
+        press = from ? { from, start: p!, was: host.aimMode(), restore: host.keepAim(), at: null } : null;
         return;
       }
       if (!press) return;
@@ -114,8 +117,7 @@ export function createPinHandle(id: string, host: PinHandleHost): Widget {
       const was = press;
       press = null;
       if (evt.type === 'cancel' || !p) {
-        if (was.was === 'follow') host.setAimMode('follow');
-        else host.pinAt(was.wasAim);
+        was.restore();
         return;
       }
       if (!was.at) {
