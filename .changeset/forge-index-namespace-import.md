@@ -2,6 +2,8 @@
 '@weasel-js/forge': patch
 ---
 
-A story file that imports forge as a namespace (`import * as forge from '@weasel-js/forge'`, then `forge.meta(…)` and `forge.story(…)`) is indexed as a native file, so its other exports are not listed as stories and its viewports are read.
+A story file importing forge as a namespace (`forge.meta(…)`, `forge.story(…)`) is indexed as native.
+
+Its other exports are no longer listed as stories, and its viewports are read.
 
 <!-- entry: fix -->

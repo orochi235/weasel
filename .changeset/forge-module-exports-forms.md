@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-forge follows a component or a `meta`/`story` wrapper exported as an `enum`, a destructured `const` off a namespace import, or an `export * as` re-export, rather than losing it.
+forge's import tracer follows `export enum`, `export * as`, and a `const` destructured off a namespace import.
 
 <!-- entry: fix -->

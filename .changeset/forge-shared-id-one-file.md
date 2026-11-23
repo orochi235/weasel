@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-When two exports of one story file share a story id, forge's warning and `check:forge-titles` name the file once, with both exports, and say to rename one.
+When two exports of one story file share an id, the warning names the file once, with both exports, and says to rename one.
 
 <!-- entry: fix -->

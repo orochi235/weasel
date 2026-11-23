@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-forge's story index reads `tags`, `includeStories`, `excludeStories`, `isolate`, and a viewport's sides from a top-level `const`, as it already read `title`.
+The story index reads `tags`, story filters, `isolate` and viewport sides from a top-level `const`, as it reads `title`.
 
 <!-- entry: fix -->
