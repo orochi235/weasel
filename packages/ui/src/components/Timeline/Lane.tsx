@@ -130,7 +130,7 @@ export function Lane(props: LaneProps): ReactElement {
               />
             ) : null}
             <KeyMarks
-              row={row} times={times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
+              row={row} times={drag?.times ?? times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
               keyEls={keyEls} onKeyPointerDown={onKeyPointerDown} onKeyDown={onKeyDown}
             />
 

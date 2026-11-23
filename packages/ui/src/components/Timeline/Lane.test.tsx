@@ -516,6 +516,17 @@ describe('Lane segment selection', () => {
       expect(screen.getAllByTestId('timeline-key')[0]).not.toHaveAttribute('data-dragging');
     });
 
+    it('draws the drag from the keys it began from while the consumer applies its previews', () => {
+      const { rerender } = render(<Lane {...base} selection={0} row={laneOf(sampled)} />);
+      grab(0);
+      fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
+      const moved = { ...sampled, keys: [{ t: 500, value: 10 }, { t: 800, value: 0 }] } as Track;
+      rerender(<Lane {...base} selection={0} row={laneOf(moved)} />);
+      const dragged = screen.getAllByTestId('timeline-key').find((k) => k.hasAttribute('data-dragging'))!;
+      expect(dragged).toHaveStyle({ left: '0%' });
+      expect(dragged).toHaveAttribute('aria-current', 'true');
+    });
+
     it('clears the ghost on pointerup', () => {
       render(<Lane {...base} row={laneOf(sampled)} />);
       grab(1);
