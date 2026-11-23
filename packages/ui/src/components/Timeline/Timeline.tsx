@@ -8,7 +8,7 @@ import s from './Timeline.module.css';
 import { Lane, type LaneHold, type LaneProps } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
-import { buildLanes, type LaneRow } from './lanes';
+import { buildLanes, rowTimes, type LaneRow } from './lanes';
 import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 import { useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
@@ -242,11 +242,11 @@ function TransportRow({ transport, playhead, duration, hold, graph, onGraphChang
   );
 }
 
-/** Every key time on every row — what a dragged key snaps to — and either end. */
+/** Every key and event time on every row drawn — what a dragged key snaps to — and either end. */
 function snapTimesOf(rows: readonly LaneRow[], duration: number): number[] {
   const out = new Set<number>([0, duration]);
   for (const row of rows) {
-    if (row.kind === 'sampled') for (const k of (row.track as SampledTrack<unknown>).keys) out.add(k.t + row.offset);
+    for (const t of rowTimes(row)) out.add(t + row.offset);
   }
   return [...out];
 }

@@ -1,12 +1,12 @@
 import { useEffect, useId, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type ReactElement } from 'react';
-import { type EventTrack, type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
+import { type Keyframe, type SampledTrack, type TimelineTrack } from '@weasel-js/animator';
 import { DisclosureMark } from '../Disclosure';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { arrowMove } from '@weasel-js/quantity';
 import { LaneGraph } from './LaneGraph';
-import { timelineSpan, type LaneRow } from './lanes';
+import { rowTimes, timelineSpan, type LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
 import { KeyGhost, KeyMarks, SegmentMarks, type MarkHold } from './LaneMarks';
 
@@ -60,12 +60,6 @@ export interface LaneProps {
   hold?: LaneHold;
 }
 
-function entryTimes(row: LaneRow): number[] {
-  if (row.kind === 'sampled') return (row.track as SampledTrack<unknown>).keys.map((k) => k.t);
-  if (row.kind === 'event') return (row.track as EventTrack).events.map((e) => e.t);
-  return [];
-}
-
 export function Lane(props: LaneProps): ReactElement {
   const {
     row, window: win, mode, selection, onKeyInput, onKeyChange, onInsert, expanded, snapTimes,
@@ -73,7 +67,7 @@ export function Lane(props: LaneProps): ReactElement {
   } = props;
   const { onSelect, onSelectSegment, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const times = entryTimes(row);
+  const times = rowTimes(row);
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
     trackRef, window: win, offset: row.offset, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
   });

@@ -519,6 +519,15 @@ describe('Timeline', () => {
     expect(nestedKeyTimes(onChange.mock.calls[0][0] as Track[])).toEqual([300, 300]);
   });
 
+  it('snaps a dragged key to an event crossing on another row', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
+    // The event at 250 sits 125px in; dropped 3px shy of it, the key lands on it.
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerUp(document, { clientX: 122, clientY: 10 });
+    expect(((onChange.mock.calls[0][0] as Track[])[0] as SampledTrack<number>).keys.map((k) => k.t)).toEqual([250, 500]);
+  });
+
   it('deletes nothing for Delete once the selected key’s row is folded away', () => {
     const onChange = vi.fn();
     renderWithIcons(<Timeline {...base} tracks={nestedTracks()} onChange={onChange} />);
