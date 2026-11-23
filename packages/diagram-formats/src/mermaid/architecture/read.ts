@@ -105,7 +105,9 @@ export function readArchitecture(text: string): ImportResult {
   }
   for (const s of stmts) {
     if (s.kind !== 'group') continue;
-    for (let up = s.in; up !== undefined; up = r.parent.get(up)) {
+    const seen = new Set<string>();
+    for (let up = s.in; up !== undefined && !seen.has(up); up = r.parent.get(up)) {
+      seen.add(up);
       if (up === s.id) throw lineError('Mermaid', s.line, `group "${s.id}" would hold itself`);
     }
   }

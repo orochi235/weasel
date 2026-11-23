@@ -194,6 +194,13 @@ describe('writing a Mermaid block diagram', () => {
     } }] });
     expect(warnings).toContain('Mermaid block diagram links have no styles; their colors were dropped.');
   });
+
+  it('warns that a link width other than thick was dropped, and keeps a thick one quietly', () => {
+    const warned = (colors: { width: number; dash?: number[] }) => writeBlockDiagram({ pages: [{ kind: 'graph', id: 'p', width: 100, height: 100, data: {
+      nodes: [{ id: 'a' }, { id: 'b' }], edges: [{ from: 'a', to: 'b', colors }],
+    } }] }).warnings.includes('Mermaid block diagram links are thin, thick (width 3), or dotted; other widths were dropped.');
+    expect([warned({ width: 2 }), warned({ width: 6 }), warned({ width: 3, dash: [4, 4] }), warned({ width: 3 })]).toEqual([true, true, true, false]);
+  });
 });
 
 /** `text` read, with node `from` renamed `to` in its nodes and edges. */

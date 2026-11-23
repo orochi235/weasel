@@ -65,6 +65,7 @@ describe('reading a Mermaid architecture diagram', () => {
     expect(() => readArchitecture('architecture-beta\n  group a[A]\n  junction a')).toThrow('Mermaid, line 3: "a" already names');
     expect(() => readArchitecture('architecture-beta\n  group a[A] in a')).toThrow('Mermaid, line 2: group "a" would hold itself');
     expect(() => readArchitecture('architecture-beta\n  group a[A] in b\n  group b[B] in a')).toThrow('Mermaid, line 2: group "a" would hold itself');
+    expect(() => readArchitecture('architecture-beta\n  group a[A] in b\n  group b[B] in c\n  group c[C] in b')).toThrow('Mermaid, line 3: group "b" would hold itself');
   });
 });
 
@@ -167,5 +168,11 @@ describe('writing connector parts Mermaid architecture diagrams hold no place fo
     const edges = p.data.edges.map((e) => ({ ...e, endLabels: { from: '1' }, colors: { ...e.colors, stroke: '#f00', label: '#00f', width: 3 } }));
     const { warnings } = writeArchitecture({ pages: [{ ...p, data: { ...p.data, edges } }] });
     expect(warnings).toEqual(expect.arrayContaining(['Mermaid architecture diagrams have no labels at a connector\'s ends; they were dropped.', 'Mermaid architecture diagrams have no styles; colors were dropped.']));
+  });
+
+  it('warns that a dash was dropped', () => {
+    const p = page('architecture-beta\n  service a(server)\n  service b(server)\n  a:R -- L:b');
+    const edges = p.data.edges.map((e) => ({ ...e, colors: { ...e.colors, dash: [4, 4] } }));
+    expect(writeArchitecture({ pages: [{ ...p, data: { ...p.data, edges } }] }).warnings).toContain('Mermaid architecture diagrams have no styles; colors were dropped.');
   });
 });

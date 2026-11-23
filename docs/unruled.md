@@ -3926,3 +3926,9 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `setDiagramFontSize` throws a `RangeError` on a size that is not a finite number above
   0, before it writes anything, holding a hand-set size to the bound a theme's font size has. Clamping it to 1, as a
   theme step does, was the alternative.
+## Audit round seventy-five (2026-11-22): Mermaid diagrams, part one
+
+- 2026-11-22 (the fixer's call): a Mermaid class diagram throws, naming the namespace's line, on a namespace sharing a
+  class's name, as the block and architecture readers do for a name given twice. There is no override. Renaming the
+  container, as the flowchart reader does for a subgraph, was the alternative; the class writer names a namespace by
+  its id, so the renamed one would not read back under its own name.

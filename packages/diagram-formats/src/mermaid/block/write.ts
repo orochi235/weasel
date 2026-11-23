@@ -104,6 +104,8 @@ class BlockWriter {
     const warn = (m: string) => this.out.warnings.add(m);
     dropPorts(e, warn);
     if (e.colors?.stroke !== undefined || e.colors?.label !== undefined) warn('Mermaid block diagram links have no styles; their colors were dropped.');
+    const own = e.colors?.width;
+    if (own !== undefined && (dash !== undefined || own !== 3)) warn('Mermaid block diagram links are thin, thick (width 3), or dotted; other widths were dropped.');
     const end = arrowHead(markerEnd, 'block diagram', warn);
     const start = arrowHead(markerStart, 'block diagram', warn);
     const tail = end ? '>' : body === '--' ? '-' : body === '==' ? '=' : '';
