@@ -5,6 +5,7 @@ import { resolveRunFace } from '@weasel-js/text';
 import { cssFontFamilyLoading } from '@weasel-js/font';
 import { parsesAsColor } from '@weasel-js/paint';
 import { charOffsetToDomPosition } from './domRuns';
+import type { TextEditSelection } from './textEditTypes';
 
 /**
  * The loads the overlay's faces are still waiting on — the node's and each
@@ -23,12 +24,19 @@ export function holdForFaces(style: ResolvedTextStyle, runs: readonly StyledRun[
   return pending.length === 0 ? null : Promise.all(pending);
 }
 
-/** The selection an edit opens with: the whole text, a caret at its end, or a
- *  caret `caret` characters in, clamped to the text. */
-export function openingRange(overlay: HTMLElement, caret: number | 'all' | 'end'): Range {
+/** The selection an edit opens with: the whole text, a caret at its end, a
+ *  caret `caret` characters in, clamped to the text, or the range given. */
+export function openingRange(overlay: HTMLElement, caret: number | 'all' | 'end' | TextEditSelection): Range {
   const range = document.createRange();
   if (caret === 'all') {
     range.selectNodeContents(overlay);
+    return range;
+  }
+  if (typeof caret === 'object') {
+    const a = charOffsetToDomPosition(overlay, caret.start);
+    const b = charOffsetToDomPosition(overlay, caret.end);
+    if (a) range.setStart(a.node, a.offset);
+    if (a && b) range.setEnd(b.node, b.offset);
     return range;
   }
   const at = charOffsetToDomPosition(overlay, caret === 'end' ? Infinity : caret);
