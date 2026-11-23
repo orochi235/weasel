@@ -45,3 +45,13 @@ describe('isInControlWithin', () => {
     },
   );
 });
+
+describe('isInControlWithin, in another document', () => {
+  it('finds the control a target sits in', () => {
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    doc.body.innerHTML = '<div id="host"><button><i id="t"></i></button></div>';
+    expect(isInControlWithin(doc.getElementById('t'), doc.getElementById('host')!)).toBe(true);
+  });
+});

@@ -1,4 +1,5 @@
 import { isOneChar } from '@weasel-js/registry';
+import { isElement, isInputElement } from './domNode';
 import { isApplePlatform } from './platform';
 
 /** The `<input>` types a person types text into. An unknown or missing `type` is `text`. */
@@ -18,7 +19,7 @@ export function textOwnsChord(e: { ctrlKey: boolean; metaKey: boolean }, apple =
 
 /** Returns true when the target takes typed text: a text-entry input, a textarea, or a contenteditable element. */
 export function isEditableTarget(target: EventTarget | null): boolean {
-  if (!target || !(target instanceof Element)) return false;
+  if (!isElement(target)) return false;
   const tag = target.tagName;
   if (tag === 'TEXTAREA') return true;
   if (tag === 'INPUT') return TEXT_INPUT_TYPES.has((target as HTMLInputElement).type);
@@ -47,10 +48,10 @@ const ACTIVATED_BY_ENTER = ['a[href]', '[role="link"]'].join(', ');
  */
 export function activatesFocusedControl(e: KeyboardEvent): boolean {
   const t = e.target;
-  if (!(t instanceof Element) || (e.key !== ' ' && e.key !== 'Enter')) return false;
+  if (!isElement(t) || (e.key !== ' ' && e.key !== 'Enter')) return false;
   if (t.matches(ACTIVATED_BY_EITHER)) return true;
   if (e.key === ' ') return t.matches(ACTIVATED_BY_SPACE);
-  return t.matches(ACTIVATED_BY_ENTER) || (t instanceof HTMLInputElement && t.form !== null && t.matches(ACTIVATED_BY_SPACE));
+  return t.matches(ACTIVATED_BY_ENTER) || (isInputElement(t) && t.form !== null && t.matches(ACTIVATED_BY_SPACE));
 }
 
 const SELECT_NAVIGATION = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'PageUp', 'PageDown']);
@@ -58,13 +59,13 @@ const ARROWS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight']);
 
 /** A range input's unmodified navigation keys, and a radio's arrows, which move to the next in its group. */
 function stepperOwnsKey(e: KeyboardEvent): boolean {
-  if (!(e.target instanceof HTMLInputElement) || e.metaKey || e.ctrlKey || e.altKey) return false;
+  if (!isInputElement(e.target) || e.metaKey || e.ctrlKey || e.altKey) return false;
   if (e.target.type === 'range') return SELECT_NAVIGATION.has(e.key);
   return e.target.type === 'radio' && ARROWS.has(e.key);
 }
 
 function selectOwnsKey(e: KeyboardEvent): boolean {
-  if (!(e.target instanceof Element) || e.target.tagName !== 'SELECT') return false;
+  if (!isElement(e.target) || e.target.tagName !== 'SELECT') return false;
   if (e.metaKey || e.ctrlKey || e.altKey) return false;
   // A one-character `key` is a printable character, which a select reads as type-ahead.
   return SELECT_NAVIGATION.has(e.key) || isOneChar(e.key);
