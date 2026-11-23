@@ -24,6 +24,14 @@ describe('resolvePatternSpec', () => {
     expect(resolvePatternSpec(HATCH)).not.toBeNull();
   });
 
+  it('builds a tile that failed with no canvas, though another failed under the new one first', () => {
+    uninstallFakeOffscreenCanvas();
+    expect(resolvePatternSpec(HATCH)).toBeNull();
+    installFakeOffscreenCanvas();
+    expect(resolvePatternSpec({ kind: 'not-a-tile' } as unknown as TilePatternSpec)).toBeNull();
+    expect(resolvePatternSpec(HATCH)).not.toBeNull();
+  });
+
   it('keeps a tile that rasterized past any number of tiles that cannot', () => {
     const kept = resolvePatternSpec(HATCH)!;
     for (let i = 0; i <= PATTERN_TILE_CACHE_LIMIT; i++) {
