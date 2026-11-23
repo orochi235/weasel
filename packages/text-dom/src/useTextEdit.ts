@@ -57,25 +57,18 @@ export function useTextEdit(
 
   const commit = useCallback(() => {
     const id = editingId;
-    const open = overlayRef.current && draftRef.current
-      ? { overlay: overlayRef.current, draft: draftRef.current, held: nodeStyleRef.current }
-      : carriedOpen(peekCarry(id));
+    const open = openEdit(overlayRef.current, draftRef.current, nodeStyleRef.current, peekCarry(id));
     draftRef.current = null;
     if (id == null || !open) return void setEditingId(null);
     const edit = open.draft.finished(open.overlay, open.held);
-    if (edit) {
-      holdNodeStyle(null);
-      writeEdit(optsRef.current, id, edit);
-    }
+    if (edit) { holdNodeStyle(null); writeEdit(optsRef.current, id, edit); }
     setEditingId(null);
   }, [editingId, optsRef, holdNodeStyle, setEditingId, nodeStyleRef, peekCarry]);
 
   const startEdit = useCallback((id: string, opts?: StartEditOptions) => {
     initialCaretRef.current = opts?.caret ?? 'all';
-    if (editingIdRef.current !== id) {
-      if (editingIdRef.current !== null) commit();
-      draftRef.current = null;
-    }
+    if (editingIdRef.current !== null && editingIdRef.current !== id) commit();
+    if (editingIdRef.current !== id) draftRef.current = null;
     setEditingId(id);
   }, [setEditingId, editingIdRef, commit]);
 
@@ -157,12 +150,16 @@ export function useTextEdit(
   };
 }
 
-/** An edit carried while it has no container, as an overlay detached from the page that commits as one would. */
-function carriedOpen(carried: CarriedEdit | null): { overlay: HTMLElement; draft: EditDraft; held: TextStyle | null } | null {
+/** The open edit's overlay, draft and held style; or, while it has no container, the carried one's, in an overlay
+ *  detached from the page that commits as one would. */
+function openEdit(
+  overlay: HTMLElement | null, draft: EditDraft | null, held: TextStyle | null, carried: CarriedEdit | null,
+): { overlay: HTMLElement; draft: EditDraft; held: TextStyle | null } | null {
+  if (overlay && draft) return { overlay, draft, held };
   if (!carried) return null;
-  const overlay = document.createElement('div');
-  overlay.append(carried.content.cloneNode(true));
-  return { overlay, draft: carried.draft, held: carried.held };
+  const detached = document.createElement('div');
+  detached.append(carried.content.cloneNode(true));
+  return { overlay: detached, draft: carried.draft, held: carried.held };
 }
 
 /** Where the node `id` is on screen now, and the style the edit holds it in, read through the latest options. */
