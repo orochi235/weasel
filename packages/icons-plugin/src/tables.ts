@@ -18,15 +18,15 @@ export function namespaceIn(genFile: string): string | undefined {
 
 /**
  * The table a package directory declares through its `weaselIcons.table` field, or, for a
- * workspace package not yet built, the source table beside its icons.gen.
+ * workspace package not yet built, every source table beside an icons.gen under its `src`.
  */
-export function declaredTable(pkgDir: string): IconTable | undefined {
+export function declaredTables(pkgDir: string): IconTable[] {
   const pkgFile = join(pkgDir, 'package.json');
-  if (!existsSync(pkgFile)) return undefined;
+  if (!existsSync(pkgFile)) return [];
   const table = (JSON.parse(readFileSync(pkgFile, 'utf8')) as { weaselIcons?: { table?: string } }).weaselIcons?.table;
-  if (!table) return undefined;
-  if (existsSync(join(pkgDir, table))) return read(join(pkgDir, table));
-  return sourceTablesUnder(join(pkgDir, 'src'))[0];
+  if (!table) return [];
+  if (existsSync(join(pkgDir, table))) return [read(join(pkgDir, table))];
+  return sourceTablesUnder(join(pkgDir, 'src'));
 }
 
 // A manifest with no name, such as a `dist/package.json` holding only `type`, does not root a package.
@@ -81,8 +81,8 @@ function packageTables(pkg: string): IconTable[] {
     const fromSource = sources();
     if (fromSource.length > 0) return fromSource;
   }
-  const declared = declaredTable(pkg);
-  if (declared) return [declared];
+  const declared = declaredTables(pkg);
+  if (declared.length > 0) return declared;
   const declares = existsSync(join(pkg, 'package.json')) && readFileSync(join(pkg, 'package.json'), 'utf8').includes('"weaselIcons"');
   return declares ? sources() : [];
 }

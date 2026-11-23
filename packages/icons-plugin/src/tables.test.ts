@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, expect, it } from 'vitest';
-import { declaredTable, genFile, namespaceIn, packageDirFinder, reachableTables, sourceTablesUnder } from './tables';
+import { tablesFrom } from './catalog';
+import { declaredTables, genFile, namespaceIn, packageDirFinder, reachableTables, sourceTablesUnder } from './tables';
 
 const temps: string[] = [];
 afterAll(() => temps.forEach((d) => rmSync(d, { recursive: true, force: true })));
@@ -30,7 +31,7 @@ it("reads an unbuilt package's source table where its declared one is missing", 
   writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'pkg', weaselIcons: { table: './dist/icons.table.json' } }));
   writeFileSync(join(root, 'src', 'icons.gen.ts'), `export const icon = scopedIcon<'a'>('fx');\n`);
   writeFileSync(join(root, 'src', 'icons.table.json'), JSON.stringify({ namespace: 'fx', owner: 'pkg', icons: {} }));
-  expect(declaredTable(root)?.namespace).toBe('fx');
+  expect(declaredTables(root).map((t) => t.namespace)).toEqual(['fx']);
 });
 
 it('walks past a package.json with no name to the package root', () => {
@@ -92,4 +93,15 @@ it('reads the namespace of an icons.gen compiled to JavaScript, its type argumen
   writeFileSync(join(root, 'icons.gen.js'), `export const icon = scopedIcon('fx');\n`);
   expect(genFile('./icons.gen.js', join(root, 'main.js'))).toBe(join(root, 'icons.gen.js'));
   expect(namespaceIn(join(root, 'icons.gen.js'))).toBe('fx');
+});
+
+it("reads every source table of an unbuilt package, not the first one found", () => {
+  const root = temp();
+  writeFileSync(join(root, 'package.json'), JSON.stringify({ name: 'pkg', weaselIcons: { table: './dist/icons.table.json' } }));
+  for (const ns of ['fa', 'fb']) {
+    mkdirSync(join(root, 'src', ns), { recursive: true });
+    writeFileSync(join(root, 'src', ns, 'icons.gen.ts'), `export const icon = scopedIcon<'a'>('${ns}');\n`);
+    writeFileSync(join(root, 'src', ns, 'icons.table.json'), JSON.stringify({ namespace: ns, owner: 'pkg', icons: {} }));
+  }
+  expect(declaredTables(root).map((t) => t.namespace).sort()).toEqual(['fa', 'fb']);
 });

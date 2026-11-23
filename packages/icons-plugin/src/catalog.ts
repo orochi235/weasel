@@ -1,7 +1,7 @@
 import type { IconGlyph, IconTable } from '@weasel-js/icons';
 // Relative, and so bundled in: vite and tsup configs load this from source, before any dist exists.
 import { splitIconRef } from '../../icons/src/names.ts';
-import { declaredTable, tableBeside } from './tables.ts';
+import { declaredTables, tableBeside } from './tables.ts';
 import { USED, admits, subset, type VariantFilter } from './virtual.ts';
 
 /** What one transformed module read. */
@@ -24,7 +24,7 @@ export function fail(ctx: object, message: string): never {
 
 /** The tables beside each icons.gen module and declared by each package directory. */
 export function tablesFrom(gens: Iterable<string>, pkgs: Iterable<string>): IconTable[] {
-  return [...[...gens].map(tableBeside), ...[...pkgs].map(declaredTable)].filter((t): t is IconTable => t !== undefined);
+  return [...[...gens].map(tableBeside), ...[...pkgs].flatMap(declaredTables)].filter((t): t is IconTable => t !== undefined);
 }
 
 /**
