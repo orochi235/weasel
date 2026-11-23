@@ -149,7 +149,8 @@ describe('insertKey, shrunk', () => {
   it('runs an eased stretch’s easing again over each side of the new key', () => {
     const tr = { kind: 'sampled', onTick: () => {}, keys: [{ t: 0, value: 0 }, { t: 100, value: 100, easing: 'easeInQuad' }] } as unknown as Track;
     const after = insertKey([tr], [0], 50).tracks[0] as SampledTrack<number>;
-    expect(after.keys[1]).toEqual({ t: 50, value: 25 });
+    expect(after.keys[1]).toEqual({ t: 50, value: 25, easing: 'easeInQuad' });
+    expect(sampleTrack(after, 25)).toBeCloseTo(6.25, 9);
     expect(sampleTrack(tr as SampledTrack<number>, 75)).toBeCloseTo(56.25, 9);
     expect(sampleTrack(after, 75)).toBeCloseTo(43.75, 9);
   });

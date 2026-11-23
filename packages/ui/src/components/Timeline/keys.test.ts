@@ -76,6 +76,12 @@ describe('insertKey', () => {
     expect((r.tracks[0] as SampledTrack<number>).keys[1].value).toBeCloseTo(100, 6);
   });
 
+  it('gives a key inserted before the first or after the last no easing', () => {
+    const eased = { kind: 'sampled', onTick: () => {}, keys: [{ t: 100, value: 0, easing: 'easeInQuad' }, { t: 200, value: 1, easing: 'easeInQuad' }] } as unknown as Track;
+    expect((insertKey([eased], [0], 50).tracks[0] as SampledTrack<number>).keys[0]).toEqual({ t: 50, value: 0 });
+    expect((insertKey([eased], [0], 300).tracks[0] as SampledTrack<number>).keys[2]).toEqual({ t: 300, value: 1 });
+  });
+
   it('inserts into an empty track', () => {
     const r = insertKey([track([])], [0], 50);
     expect(times(r.tracks)).toEqual([50]);

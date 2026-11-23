@@ -102,7 +102,8 @@ export function moveKey(
 
 /** Insert a key at `atMs`, seeded with whatever the track already reads there,
  *  so inserting alone leaves a linear stretch's motion as it was. An eased
- *  stretch runs its easing again over each side of the new key. */
+ *  stretch runs its easing again over each side of the new key, which takes
+ *  the easing of the key after it. */
 export function insertKey(
   tracks: readonly Track[], trackPath: readonly number[], atMs: number,
 ): KeyEdit {
@@ -115,7 +116,8 @@ export function insertKey(
   const keys = st.keys.slice();
   const at = keys.findIndex((k) => k.t > t);
   const keyIndex = at === -1 ? keys.length : at;
-  keys.splice(keyIndex, 0, { t, value });
+  const easing = keyIndex > 0 ? keys[keyIndex]?.easing : undefined;
+  keys.splice(keyIndex, 0, easing === undefined ? { t, value } : { t, value, easing });
   return {
     tracks: replaceAtPath(tracks, trackPath, withKeys(track, keys)),
     selection: { trackPath, keyIndex },
