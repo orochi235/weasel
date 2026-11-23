@@ -123,6 +123,10 @@ export function AlignOverTrigger({
   // place: that one is the opening gesture and belongs to the trigger, and the
   // list keeps every release after it. Press, hold, drag and release still
   // picks a row, which is the gesture a list over its trigger is for.
+  const limits = useRef({ dragPx, holdMs });
+  useLayoutEffect(() => {
+    limits.current = { dragPx, holdMs };
+  });
   useEffect(() => {
     const doc = triggerRef.current?.ownerDocument;
     if (!doc) return;
@@ -130,8 +134,8 @@ export function AlignOverTrigger({
       doc.removeEventListener('pointerup', onUp, true);
       const press = pressRef.current;
       // React Aria opens a select on a touch's release, so that release is spent before the list exists.
-      if (!press || press.pointerType === 'touch' || performance.now() - press.at > holdMs) return;
-      if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, dragPx)) return;
+      if (!press || press.pointerType === 'touch' || performance.now() - press.at > limits.current.holdMs) return;
+      if (pastDragThreshold({ clientX: press.x, clientY: press.y }, e, limits.current.dragPx)) return;
       e.preventDefault();
       e.stopPropagation();
       // Stopped short of the row, the release also misses every document listener waiting for this pointer to
@@ -140,7 +144,7 @@ export function AlignOverTrigger({
     };
     doc.addEventListener('pointerup', onUp, true);
     return () => doc.removeEventListener('pointerup', onUp, true);
-  }, [triggerRef, pressRef, dragPx, holdMs]);
+  }, [triggerRef, pressRef]);
 
   return <span ref={markerRef} hidden />;
 }

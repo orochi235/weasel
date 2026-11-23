@@ -329,6 +329,21 @@ describe('Select', () => {
       }
     });
 
+    it('keeps every release after the opening one when the gesture settings change while open', () => {
+      const at = (dragPx: number) => (
+        <KitSettingsProvider value={{ gestures: { dragPx } }}><Select label="Color" options={OPTIONS} defaultSelectedKey="g" /></KitSettingsProvider>
+      );
+      const { rerender } = render(at(4));
+      const trigger = screen.getByRole('button', { name: /Color/ });
+      press(trigger, { clientX: 20, clientY: 10 });
+      act(() => { fireEvent.click(trigger); });
+      fireEvent(document, createEvent.pointerUp(document, { clientX: 21, clientY: 11 }));
+      rerender(at(30));
+      const second = createEvent.pointerUp(document, { clientX: 21, clientY: 11 });
+      fireEvent(document, second);
+      expect(second.defaultPrevented).toBe(false);
+    });
+
     it('keeps a release that travelled — a drag onto a row is a choice', () => {
       render(<Select label="Color" options={OPTIONS} defaultSelectedKey="g" />);
       const trigger = screen.getByRole('button', { name: /Color/ });
