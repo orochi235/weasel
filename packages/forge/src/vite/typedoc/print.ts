@@ -13,11 +13,11 @@ export function typeText(type: TdType | undefined): string {
     case 'reference':
       return `${type.name ?? ''}${type.typeArguments?.length ? `<${type.typeArguments.map(typeText).join(', ')}>` : ''}`;
     case 'union':
-      return (type.types ?? []).map(typeText).join(' | ');
+      return (type.types ?? []).map((t) => grouped(t, ['function', 'conditional'])).join(' | ');
     case 'intersection':
-      return (type.types ?? []).map((t) => grouped(t, ['union'])).join(' & ');
+      return (type.types ?? []).map((t) => grouped(t, ['union', 'function', 'conditional'])).join(' & ');
     case 'array':
-      return `${grouped(type.elementType, ['union', 'intersection', 'conditional', 'reflection'])}[]`;
+      return `${grouped(type.elementType, POSTFIX)}[]`;
     case 'tuple':
       return `[${(type.elements ?? []).map(typeText).join(', ')}]`;
     case 'namedTupleMember':
@@ -29,9 +29,9 @@ export function typeText(type: TdType | undefined): string {
     case 'query':
       return `typeof ${typeText(type.queryType)}`;
     case 'typeOperator':
-      return `${type.operator} ${typeText(type.target as TdType)}`;
+      return `${type.operator} ${grouped(type.target as TdType, ['union', 'intersection', 'function', 'conditional'])}`;
     case 'indexedAccess':
-      return `${typeText(type.objectType)}[${typeText(type.indexType)}]`;
+      return `${grouped(type.objectType, POSTFIX)}[${typeText(type.indexType)}]`;
     case 'conditional':
       return `${typeText(type.checkType)} extends ${typeText(type.extendsType)} ? ${typeText(type.trueType)} : ${typeText(type.falseType)}`;
     case 'templateLiteral':
@@ -58,15 +58,24 @@ function literalText(value: unknown): string {
   return String(value);
 }
 
+/** What binds looser than a postfix `[]` or `[K]`. */
+const POSTFIX = ['union', 'intersection', 'conditional', 'function', 'typeOperator'];
+
+/** `type`, parenthesized when its kind is one of `wrap`; a reflection printed as a signature is kind `function`. */
 function grouped(type: TdType | undefined, wrap: readonly string[]): string {
   const text = typeText(type);
-  return type && wrap.includes(type.type) ? `(${text})` : text;
+  if (!type) return text;
+  const kind = type.type === 'reflection' && isSignature(type.declaration) ? 'function' : type.type;
+  return wrap.includes(kind) ? `(${text})` : text;
 }
+
+const isSignature = (declaration: TdReflection | undefined): boolean =>
+  !!declaration?.signatures?.length && !declaration.children?.length;
 
 function reflectionText(declaration: TdReflection | undefined): string {
   if (!declaration) return '{}';
   const [signature] = declaration.signatures ?? [];
-  if (signature && !declaration.children?.length) return signatureText(signature);
+  if (signature && isSignature(declaration)) return signatureText(signature);
   const members = (declaration.children ?? []).map((c) => `${c.name}${c.flags?.isOptional ? '?' : ''}: ${typeText(c.type)}`);
   return members.length ? `{ ${members.join('; ')} }` : '{}';
 }
