@@ -99,7 +99,13 @@ export function createSpecRouter(options: SpecRouterOptions = {}): (specs: reado
     const edges: AvoidEdge[] = [];
     for (const spec of specs) {
       const edge = diagramEdgeOf(spec);
-      if (edge === null || edge.offPage !== undefined) continue;
+      if (edge === null) continue;
+      if (edge.offPage !== undefined) {
+        const label = labels.get(spec.id as string);
+        const box = label === undefined ? undefined : world.get(label.id) ?? (byId.get(label.id)!.pose as RectPose);
+        if (box !== undefined) obstacles.push({ id: label!.id, kind: 'label', edge: spec.id as string, box });
+        continue;
+      }
       const ends = Array.isArray(spec.dependsOn) ? spec.dependsOn.map((id) => byId.get(id as string)) : [];
       const [a, b] = ends;
       if (a === undefined || b === undefined) continue;

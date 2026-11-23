@@ -181,6 +181,20 @@ describe('createSpecRouter', () => {
     expect(enters).toBe(false);
   });
 
+  it('makes a split edge’s label an obstacle of its own, as the scene router does', () => {
+    seen.length = 0;
+    const data: DiagramData = {
+      ...DATA,
+      pages: [{ id: 'p1', width: 300, height: 500 }, { id: 'p2', width: 300, height: 500 }],
+      pageLayout: { gap: 40 },
+      nodes: [...DATA.nodes.filter((n) => n.id !== 'd'), { id: 'd', lines: ['d'], at: { x: 150, y: 400 }, width: 100 }],
+      edges: [{ from: 'a', to: 'b', label: 'note' }, { from: 'c', to: 'd' }],
+    };
+    createSpecRouter()(diagramScene(data, { layout: 'none' }));
+    const ab = edgeIdOf({ from: 'a', to: 'b', label: 'note' });
+    expect(seen.at(-1)!.obstacles.filter((o) => o.kind === 'label').map((o) => o.edge)).toEqual([ab]);
+  });
+
   it('leaves alone an edge whose end offers no facing port, as the scene router does', () => {
     seen.length = 0;
     const odd = { from: 'a', to: 'b', fromPort: 'nowhere' };
