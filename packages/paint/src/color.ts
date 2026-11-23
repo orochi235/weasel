@@ -27,6 +27,18 @@ import { clamp01 } from './scalar';
  * tuple is read-only: renderer hot paths call this per frame.
  */
 export function parseColor(input: string): readonly [number, number, number, number] {
+  const parsed = readColor(input);
+  if (parsed === null) throw new Error(`parseColor: unrecognized color "${input}"`);
+  return parsed;
+}
+
+/** {@link parseColor}'s reading of `input`, or null where it would throw. The tuple is read-only, as there. */
+export function tryParseColor(input: string): readonly [number, number, number, number] | null {
+  return readColor(input);
+}
+
+/** Failures are cached too, as null: a solid of `var(--accent)` is read on every frame. */
+function readColor(input: string): readonly [number, number, number, number] | null {
   const cached = CACHE.get(input);
   if (cached !== undefined) return cached;
   const result = parseColorUncached(input);
@@ -35,21 +47,12 @@ export function parseColor(input: string): readonly [number, number, number, num
   return result;
 }
 
-/** {@link parseColor}'s reading of `input`, or null where it would throw. The tuple is read-only, as there. */
-export function tryParseColor(input: string): readonly [number, number, number, number] | null {
-  try {
-    return parseColor(input);
-  } catch {
-    return null;
-  }
-}
-
-const CACHE = new Map<string, [number, number, number, number]>();
+const CACHE = new Map<string, [number, number, number, number] | null>();
 const CACHE_MAX = 1024;
 
-function parseColorUncached(input: string): [number, number, number, number] {
+function parseColorUncached(input: string): [number, number, number, number] | null {
   const s = input.trim();
-  if (s.startsWith('#')) return parseHex(s);
+  if (s.startsWith('#')) return parseHexOrNull(s);
 
   const lower = s.toLowerCase();
 
@@ -72,8 +75,7 @@ function parseColorUncached(input: string): [number, number, number, number] {
     const parsed = parseOkFunction(lower);
     if (parsed) return parsed;
   }
-
-  throw new Error(`parseColor: unrecognized color "${input}"`);
+  return null;
 }
 
 /** Whether `name` is one of CSS's named colors, in any case. */
@@ -146,9 +148,14 @@ export function rgbaToHex(rgba: readonly [number, number, number, number] | read
 }
 
 function parseHex(s: string): [number, number, number, number] {
+  const rgba = parseHexOrNull(s);
+  if (!rgba) throw new Error(`parseColor: invalid hex "${s}"`);
+  return rgba;
+}
+
+function parseHexOrNull(s: string): [number, number, number, number] | null {
   const bytes = parseHexBytes(s);
-  if (!bytes) throw new Error(`parseColor: invalid hex "${s}"`);
-  return [bytes[0] / 255, bytes[1] / 255, bytes[2] / 255, bytes[3] / 255];
+  return bytes && [bytes[0] / 255, bytes[1] / 255, bytes[2] / 255, bytes[3] / 255];
 }
 
 /** Match `name( body )` and return the trimmed body, or null. */
