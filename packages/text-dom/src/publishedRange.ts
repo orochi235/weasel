@@ -1,6 +1,6 @@
 /** The range an edit publishes: where its caret or selection is, and the styling the overlay carries across it. */
 import { useCallback, useRef, useState } from 'react';
-import { styleAtRange, type RangeStyle, type StyledRun } from '@weasel-js/text';
+import { styleAtRange, type InheritedStyle, type RangeStyle, type StyledRun } from '@weasel-js/text';
 import { domToRuns } from './domRuns';
 import { readSelectionOffsets, sameSelection } from './overlaySelection';
 import { runStyleAt } from './runSplice';
@@ -13,12 +13,14 @@ export function styleAtCaret(runs: readonly StyledRun[], at: number): RangeStyle
 
 /**
  * The published range and its styling, for an overlay `overlayRef` holds, and the style armed at the caret, which
- * any range but the caret it was armed at abandons.
+ * any range but the caret it was armed at abandons. A range is read against what the edited node's runs inherit.
  */
 export function usePublishedRange(
   overlayRef: { readonly current: HTMLElement | null },
   pendingAtRef: { readonly current: number | null },
   dropPending: () => void,
+  editingIdRef: { readonly current: string | null },
+  inheritedOf: (id: string) => InheritedStyle,
 ) {
   const [selection, setSelection] = useState<TextEditSelection | null>(null);
   const [rangeStyle, setRangeStyle] = useState<RangeStyle | null>(null);
@@ -40,8 +42,9 @@ export function usePublishedRange(
     const runs = domToRuns(overlay);
     setRangeStyle(collapsed
       ? styleAtCaret(runs, range.start)
-      : styleAtRange(runs, range.start, range.end));
-  }, [dropPending, pendingAtRef]);
+      : styleAtRange(runs, range.start, range.end,
+        editingIdRef.current === null ? undefined : inheritedOf(editingIdRef.current)));
+  }, [dropPending, pendingAtRef, editingIdRef, inheritedOf]);
 
   const syncSelection = useCallback(() => {
     const overlay = overlayRef.current;

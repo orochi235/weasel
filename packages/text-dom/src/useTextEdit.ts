@@ -39,14 +39,14 @@ export function useTextEdit(
   // `TextStyle`, and is called from event handlers rather than from render.
   const editingIdRef = useLatest(editingId);
   const overlayRef = useRef<HTMLDivElement | null>(null);
-  const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, restyleNode, placeRef } = useHeldNodeStyle(optsRef);
+  const { nodeStyle, nodeStyleRef, baseRef, holdNodeStyle, styleOf, inheritedOf, restyleNode, placeRef } = useHeldNodeStyle(optsRef);
   const follow = useOverlayFollow();
   const initialCaretRef = useRef<number | 'all' | 'end'>('all');
   const draftRef = useRef<EditDraft | null>(null);
   const { pendingStyle, pendingRef, pendingAtRef, armPending, dropPending } = usePendingStyle();
   const historyRef = useRef<OverlayHistory | null>(null);
   const { selection, rangeStyle, selectionRef, publishRange, syncSelection, clearSelection } =
-    usePublishedRange(overlayRef, pendingAtRef, dropPending);
+    usePublishedRange(overlayRef, pendingAtRef, dropPending, editingIdRef, inheritedOf);
 
   // Each way out drops the draft first: a blur `onEnd` causes reaches `commit` while the overlay is still mounted.
   const cancelEdit = useCallback(() => { draftRef.current = null; setEditingId(null); }, [setEditingId]);

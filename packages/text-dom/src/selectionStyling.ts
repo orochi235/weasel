@@ -157,7 +157,7 @@ export function useSelectionStyling(host: SelectionStylingHost) {
     // arming a second time.
     const current = range.start === range.end
       ? armedOver(styleAtCaret(runs, range.start), pendingRef.current)
-      : styleAtRange(runs, range.start, range.end);
+      : styleAtRange(runs, range.start, range.end, { style: nodeStyle });
     applyStyleToSelection(patchForToggle(current, toggle, nodeStyle));
   }, [applyStyleToSelection, editingIdRef, styleOf, pendingRef, selectionRef, overlayRef]);
 
