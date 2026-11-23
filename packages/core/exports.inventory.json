@@ -59,6 +59,7 @@
     "AnchorPair": "type",
     "AnchorScratch": "type",
     "AnchorState": "type",
+    "AnchorStateBase": "type",
     "AngleCandidate": "type",
     "AngleCollect": "type",
     "AnimateOnSetPoseOptions": "type",

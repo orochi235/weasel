@@ -26,7 +26,8 @@ export type AnchorState = AnchorStateBase & (
   }
 );
 
-interface AnchorStateBase {
+/** The fields every `AnchorState` carries, whether or not it names extensions. */
+export interface AnchorStateBase {
   /** Id of the path currently in anchor-edit mode, or `null`. Control handles
    *  are only hittable on the path that is being edited. */
   editingId: string | null;
