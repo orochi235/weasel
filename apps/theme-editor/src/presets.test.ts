@@ -46,6 +46,17 @@ describe('saved presets', () => {
     expect(savedOf(stored(storedPresets([{ name: 'mine', state: INITIAL }]))).map((p) => p.name)).toEqual(['mine']);
   });
 
+  it('drops a stored preset named like a built-in, and keeps the last of a name stored twice', () => {
+    const list = stored([
+      { name: 'Default', state: INITIAL },
+      { name: 'mine', state: { ...INITIAL, surfaceKey: 'dark' } },
+      { name: 'mine', state: { ...INITIAL, surfaceKey: 'light' } },
+    ]);
+    const restored = savedOf(list);
+    expect(restored.map((p) => p.name)).toEqual(['mine']);
+    expect(restored[0]?.state.surfaceKey).toBe('light');
+  });
+
   it('does not store built-ins, which the app already ships', () => {
     const kept = storedPresets([
       { name: 'Default', state: INITIAL, builtin: true },
