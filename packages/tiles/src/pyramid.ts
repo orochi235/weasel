@@ -102,7 +102,7 @@ export class TilePyramid<K, V, P> {
     while (per !== undefined && (2 * n + floor.length) * per > this.cache.maxBytes && level > -64) {
       const coarser = scheme.wanted(view, level - 1);
       const m = shown(coarser);
-      if (m >= n) break;
+      if (m === 0 || m >= n) break;
       level--;
       wanted = coarser;
       n = m;

@@ -260,3 +260,21 @@ describe('TilePyramid levels a scheme cannot tile', () => {
     expect(frame.draws).toHaveLength(0);
   });
 });
+
+describe('TilePyramid byte-bound coarsening', () => {
+  it('keeps the coarsest level that has tiles, under a scheme with a top', () => {
+    const topped = {
+      ...scheme,
+      parentOf: (k: PlaneTileKey) => (k.z > 0 ? scheme.parentOf(k) : null),
+      wanted: (v: PlaneTileView, z: number) => (z < 0 ? [] : scheme.wanted(v, z)),
+      levelFor: () => 0,
+    };
+    const pyramid = new TilePyramid<PlaneTileKey, PlaneTileView, number>({
+      scheme: topped, maxBytes: TILE_BYTES, bytesPerTile: TILE_BYTES, fadeMs: 0,
+      bytesOf: () => TILE_BYTES, release: () => {}, floor: () => [],
+    });
+    const frame = pyramid.run(view(0, 0, 1), 0, () => 1, budget);
+    expect(frame.level).toBe(0);
+    expect(frame.draws.length).toBeGreaterThan(0);
+  });
+});
