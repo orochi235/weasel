@@ -285,6 +285,7 @@ export function GesturesDemo() {
 
   // ── pointer routing on the canvas ───────────────────────────────────────────
   const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+    if (e.button !== 0) return;
     const m = modeRef.current;
     const p = dragPointOf(e, e.currentTarget);
     if (m === 'drag') { e.currentTarget.setPointerCapture(e.pointerId); drag.start(p, modsOf(e)); }
