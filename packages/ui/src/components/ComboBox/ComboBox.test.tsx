@@ -326,6 +326,16 @@ describe('ComboBox async surface', () => {
     expect(screen.queryByText('No parts')).toBeNull();
   });
 
+  it('keeps the popover open on a failed load under the default filter, so the error row shows', async () => {
+    const user = userEvent.setup();
+    render(<ComboBox label="Part" options={[]} emptyLabel="No parts" loadError={new Error('offline')} errorLabel="Couldn't load parts" />);
+
+    await user.tab();
+    await user.keyboard('300');
+    expect(await screen.findByText("Couldn't load parts")).toBeTruthy();
+    expect(screen.queryByText('No parts')).toBeNull();
+  });
+
   it('shows the error row above stale options when a load fails and the last rows stay', async () => {
     const user = userEvent.setup();
     render(<ComboBox label="Part" options={OPTIONS} filter="none" loadError={new Error('offline')} errorLabel="Couldn't load parts" />);
