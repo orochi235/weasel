@@ -1,6 +1,8 @@
 import { getGestureDescriptor, type GestureName } from './gestures';
 import { eventKeyName, parseKeyRoute, type ParsedKeyRoute } from './keyRouteGrammar';
 import type { ParsedRoute, PhaseAtom, ParsedModifiers, ModifierKey } from './routeGrammar';
+import { parseTargetSpec } from '../ui/matchTarget';
+import type { TargetSpec } from '../ui/spec';
 
 const MOD_NAMES: Record<ModifierKey, string> = {
   mod: 'Mod', shift: 'Shift', alt: 'Alt', ctrl: 'Ctrl', meta: 'Meta',
@@ -18,10 +20,10 @@ export const ROUTE_TERMS = {
  *  inspector UIs / docs can describe what each setting in a route table
  *  means without duplicating prose. */
 export const ROUTE_FIELD_DEFINITIONS = {
-  phases: 'Which lifecycle stage(s) a channel must be in for this route to fire. `initial` = the channel is idle; `engaged` = the channel is mid-gesture. The channel is the binding\'s own tool (`&`), any tool (`*`), or a named tool id.',
+  phases: 'Which lifecycle stage(s) a channel must be in for this route to fire. `initial` = the channel is idle; `engaged` = the channel is mid-gesture; `*` = any phase. The channel is the binding\'s own tool (`&`), any tool (`*`), or a named tool id.',
   gesture: 'The class of input event that triggers this route: a click, a drag, a keystroke, a wheel turn, content dropped or pasted, and so on.',
   arg: 'Sub-class of the gesture: the button of a drag, the direction of a wheel or pinch, the key of a keystroke, the finger count of a multitouch, the MIME globs of a drop, carry or paste, whether a hover moves or leaves. Other gestures have no arg slot.',
-  target: 'Which hit-test result the gesture must land on. `*` matches any target; `empty` matches the empty canvas; otherwise the value names a specific hit-target kind.',
+  target: 'Which hit-test result the gesture must land on. `*` matches any target; `empty` matches the empty canvas; `selected-body` and `unselected-body` match the body of a selected or unselected node; `kind:<kind>` matches a node of that kind, and `kind:<kind>:selected` only a selected one; `affordance:<kind>` matches an affordance such as a resize handle.',
   modifiers: 'Modifier keys the user must hold (`+key`) or may optionally hold (`?key`) for this route to match. Unlisted modifiers must not be held.',
 } as const;
 
@@ -59,10 +61,31 @@ function partitionModifiers(mods: ParsedModifiers): { required: string[]; option
   return { required, optional };
 }
 
+function withArticle(noun: string): string {
+  return /^[aeiou]/i.test(noun) ? `an ${noun}` : `a ${noun}`;
+}
+
+/** A route's target as a noun phrase: `kind:rect:selected` is "a selected rect". */
+function targetNoun(target: string): string {
+  const form = parseTargetSpec(target as TargetSpec);
+  if (form === null) return withArticle(target);
+  switch (form.form) {
+    case 'body':
+      return form.body === 'empty' ? 'empty canvas'
+        : form.body === 'selected-body' ? 'a selected node' : 'an unselected node';
+    case 'kind':
+      return withArticle(form.requireSelected ? `selected ${form.kind}` : form.kind);
+    case 'affordance':
+      return `the ${form.kind} affordance`;
+    case 'predicate':
+      return withArticle(target);
+  }
+}
+
 /** What a pointer leaves: the hover target, or with none the surface itself. */
 function leftClause(target: string | undefined): string {
   if (target === undefined || target === '*') return 'off the surface';
-  return target === 'empty' ? 'off empty canvas' : `off a ${target}`;
+  return `off ${targetNoun(target)}`;
 }
 
 function phaseAtomParts({ channel, phase }: PhaseAtom): RouteDescriptionPart[] {
@@ -87,14 +110,12 @@ function phasesParts(phases: readonly PhaseAtom[]): RouteDescriptionPart[] {
 function targetClause(target: string | undefined, hasTarget: boolean): string {
   if (!hasTarget || target === undefined) return '';
   if (target === '*') return ' anywhere';
-  if (target === 'empty') return ' on empty canvas';
-  return ` on a ${target}`;
+  return ` on ${targetNoun(target)}`;
 }
 
 function carryOnto(target: string | undefined): string {
   if (target === undefined || target === '*') return 'onto the canvas';
-  if (target === 'empty') return 'onto empty canvas';
-  return `onto a ${target}`;
+  return `onto ${targetNoun(target)}`;
 }
 
 /** The gesture's arg, or undefined when it is the `'*'` wildcard — which

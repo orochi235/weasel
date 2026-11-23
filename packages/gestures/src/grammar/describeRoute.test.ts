@@ -114,7 +114,7 @@ describe('describeRoute — hover', () => {
     expect(describeRoute(parseRoute('[initial] hover'))).toContain('moves the pointer');
     expect(describeRoute(parseRoute('[initial] hover'))).not.toContain(' off ');
     expect(describeRoute(parseRoute('[initial] hover(leave)'))).toContain('moves the pointer off the surface');
-    expect(describeRoute(parseRoute('[initial] hover(leave) => unselected-body'))).toContain('moves the pointer off a unselected-body');
+    expect(describeRoute(parseRoute('[initial] hover(leave) => unselected-body'))).toContain('moves the pointer off an unselected node');
   });
 
   it('says whether a button may or must be held', () => {
@@ -123,3 +123,15 @@ describe('describeRoute — hover', () => {
   });
 });
 
+
+describe('describeRoute — target forms', () => {
+  it('reads each target form as a noun phrase, not as grammar source', () => {
+    const on = (target: string) => describeRoute(parseRoute(`[initial] click => ${target}`));
+    expect(on('selected-body')).toContain('clicks on a selected node,');
+    expect(on('unselected-body')).toContain('clicks on an unselected node,');
+    expect(on('kind:rect')).toContain('clicks on a rect,');
+    expect(on('kind:ellipse:selected')).toContain('clicks on a selected ellipse,');
+    expect(on('affordance:handle:nw')).toContain('clicks on the handle:nw affordance,');
+    expect(describeRoute(parseRoute('[initial] hover(leave) => kind:image'))).toContain('off an image');
+  });
+});
