@@ -48,7 +48,7 @@ describe('<PalettePreview> stats', () => {
 describe('<PalettePreview> copy as tokens', () => {
   afterEach(cleanup);
 
-  it('copies valid JSON whatever the swatch names hold', async () => {
+  it('copies a whole token document, valid JSON whatever the swatch names hold', async () => {
     const writeText = vi.fn((_: string) => Promise.resolve());
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     const swatches = [
@@ -58,7 +58,7 @@ describe('<PalettePreview> copy as tokens', () => {
     renderWithIcons(<PalettePreview palette={{ ...palette, swatches } as unknown as Palette} constraints={DEFAULT_CONSTRAINTS} />);
     fireEvent.click(screen.getByRole('button', { name: 'Copy as tokens' }));
     await act(async () => {});
-    expect(JSON.parse(`{${writeText.mock.calls[0]![0]}}`)).toEqual({
+    expect(JSON.parse(writeText.mock.calls[0]![0])).toEqual({
       'swatch-my "brand"': { $value: '#112233' },
       'swatch-back\\slash': { $value: '#445566' },
     });
