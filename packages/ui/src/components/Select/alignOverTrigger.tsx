@@ -101,7 +101,7 @@ export function AlignOverTrigger({
     // trigger only as far as the rest of the list still fits on screen. A list
     // placed in an overlay frame is held to the frame's part of the viewport.
     const frame = popover.closest('[data-weasel-overlay-frame]');
-    const view = frame ? realRect(frame) : { top: 0, bottom: trigger.ownerDocument.documentElement.clientHeight };
+    const view = visibleSpan(trigger.ownerDocument, frame ? realRect(frame) : undefined);
     const over = shown.top + shown.height / 2 - seat.top - (row.top + row.height / 2 - box.top) - seat.height;
     const lowest = view.bottom - EDGE * scaleY - box.height - seat.bottom;
     const highest = view.top + EDGE * scaleY - seat.bottom;
@@ -121,6 +121,15 @@ export function AlignOverTrigger({
   useKeepOpeningRelease(triggerRef, pressRef);
 
   return <span ref={markerRef} hidden />;
+}
+
+/** The vertical span a list may fill: the visual viewport, as React Aria holds it to, within `frame` if given.
+ *  The visual viewport is shorter than the layout one under an on-screen keyboard or a pinch zoom. */
+function visibleSpan(doc: Document, frame?: { top: number; bottom: number }): { top: number; bottom: number } {
+  const vv = doc.defaultView?.visualViewport;
+  const top = vv ? vv.offsetTop : 0;
+  const bottom = vv ? vv.offsetTop + vv.height : doc.documentElement.clientHeight;
+  return frame ? { top: Math.max(top, frame.top), bottom: Math.min(bottom, frame.bottom) } : { top, bottom };
 }
 
 function useKeepOpeningRelease(triggerRef: RefObject<HTMLButtonElement | null>, pressRef: RefObject<Press | null>) {
