@@ -3851,3 +3851,8 @@ Calls the lanes made without a ruling:
 - 2026-11-22 (the fixer's call): `planeFloor` throws a `RangeError` for a `floorTiles` under 2 (or not a number), and
   so does a tiled layer given `floorTiles: 1`: no level holds a box straddling a tile edge in one tile a side. There is
   no override. Keeping 1 and documenting the bound as `max(floorTiles, 2)` was the alternative.
+## Audit round seventy-three (2026-11-22): the effect editor and live audio
+
+- 2026-11-22 (the fixer's call): a live audio level given as text, as a param with no `control` reads, plays as the
+  number the text spells, and text that spells none (`"440 Hz"`, `"loud"`) fails the stage, naming the level. It had
+  played at the stage type's default. Reading a leading number past a unit was the alternative.
