@@ -13,16 +13,14 @@ import {
   type PropertyRowLayout,
   type PropertySpacing,
 } from '@weasel-js/ui/components/Properties';
-import { type ReactNode, useMemo, useState } from 'react';
-import { AUTO, isAuto } from '../config/auto';
-import { applyConfigWrite, resolveAutoConfig, startAutoPathsOf } from '../config/autoConfig';
+import { type ReactNode, useMemo } from 'react';
+import { resolveAutoConfig } from '../config/autoConfig';
 import { type AutoReports, withAutoReports } from '../config/autoReports';
-import { configLeaves } from '../config/leaves';
-import { configValueAt } from '../config/path';
 import type { LeafRenderer, ResolvedConfig } from '../config/types';
 import { type ControlPack, gridOf } from './controlPack';
 import { FieldChoicesContext, useFieldChoicesOf } from './fieldChoices';
 import { useLabConfigSource } from './labSource';
+import { usePanelAuto, usePanelWrites } from './panelAuto';
 import { panelRows } from './panelRows';
 
 export type { ControlPack } from './controlPack';
@@ -129,84 +127,6 @@ export interface ControlPanelProps<TC extends Record<string, unknown>>
   className?: string;
 }
 
-type Write = (path: string, value: unknown) => void;
-
-const startSet = (resolved: ResolvedConfig): ReadonlySet<string> =>
-  new Set(startAutoPathsOf(resolved));
-
-/** What a panel's own auto set is kept for: the schema's leaf paths, and which of them start auto. */
-const schemaShape = (resolved: ResolvedConfig): string =>
-  `${Array.from(configLeaves(resolved.group))
-    .map(([path]) => path)
-    .join('\n')}\n*${startAutoPathsOf(resolved).join('\n')}`;
-
-/**
- * Which rows are unpinned, and what hands one to its resolver or takes it
- * back. An owner that tracks the set decides what a dot means; one that does
- * not gets a panel that decides for itself, because the alternative is handing
- * it a sentinel it would write into the config as though it were a value.
- */
-function usePanelAuto(
-  given: ReadonlySet<string> | undefined,
-  resolved: ResolvedConfig,
-  config: Record<string, unknown>,
-  writes: { setConfig: Write; draftConfig?: Write },
-) {
-  // A panel keeping its own set opens with the leaves its schema starts auto, as a trial does, and opens
-  // afresh on a schema of other leaves. A schema resolved anew each render keeps its pins: the set is keyed
-  // by what the schema holds, not by the object.
-  const shape = useMemo(() => schemaShape(resolved), [resolved]);
-  const [own, setOwn] = useState(() => ({ shape, paths: startSet(resolved) }));
-  if (own.shape !== shape) setOwn({ shape, paths: startSet(resolved) });
-  const ownAuto = own.paths;
-  const setOwnAuto = (fn: (prev: ReadonlySet<string>) => ReadonlySet<string>): void =>
-    setOwn((prev) => {
-      const paths = fn(prev.paths);
-      return paths === prev.paths ? prev : { shape: prev.shape, paths };
-    });
-  const mark = (path: string, next: boolean): void =>
-    setOwnAuto((prev) => {
-      if (prev.has(path) === next) return prev;
-      const now = new Set(prev);
-      if (next) now.add(path);
-      else now.delete(path);
-      return now;
-    });
-  // An owner tracking the set hears every edit as a write that pins, and a sentinel in a group's value (a
-  // reset) as unpinning that leaf; a panel tracking its own does both here, as `applyConfigWrite` says.
-  const pinning = (write: Write): Write =>
-    given
-      ? write
-      : (path, value) => {
-          // Folded into the latest set, not this render's: a reset of several leaves writes each in one event.
-          setOwnAuto((prev) => {
-            const { autoPaths } = applyConfigWrite(config, [...prev], path, value);
-            return autoPaths.length === prev.size && autoPaths.every((p) => prev.has(p))
-              ? prev
-              : new Set(autoPaths);
-          });
-          // What a write stores does not depend on the set, only on the sentinels in `value`.
-          if (!isAuto(value))
-            write(path, configValueAt(applyConfigWrite(config, [], path, value).config, path));
-        };
-  const setRowAuto = (path: string, next: boolean, value: unknown): void => {
-    if (given) {
-      writes.setConfig(path, next ? AUTO : value);
-      return;
-    }
-    mark(path, next);
-    // Pinning keeps whatever the row was showing, the same value the controlled
-    // path writes back.
-    if (!next) writes.setConfig(path, value);
-  };
-  return {
-    auto: given ?? ownAuto,
-    setRowAuto,
-    setConfig: pinning(writes.setConfig),
-    draftConfig: writes.draftConfig && pinning(writes.draftConfig),
-  };
-}
-
 /**
  * What the instrument is reading, with what it reported over that. A row draws and reports from this
  * rather than calling its own resolver against the raw config, which would disagree with the instrument
@@ -305,12 +225,13 @@ function PanelBody<TC extends Record<string, unknown>>({
   const choices = useFieldChoicesOf(resolved.group);
   const over = overGiven ?? resolved.over;
 
-  const { auto, setRowAuto, ...writes } = usePanelAuto(given, resolved, config, {
+  const autoSet = usePanelAuto(given, resolved);
+  const { auto } = autoSet;
+  const shown = useShown(resolved, config, auto, reported);
+  const { setRowAuto, ...writes } = usePanelWrites(autoSet, resolved, config, shown, {
     setConfig,
     draftConfig,
   });
-
-  const shown = useShown(resolved, config, auto, reported);
   const prefs = useLabConfigSource({
     resolved,
     config,
@@ -323,7 +244,12 @@ function PanelBody<TC extends Record<string, unknown>>({
   });
 
   const gridPack = gridOf(pack);
-  const fold = sectionFold(resolved, gridPack, { collapse, collapsed, onCollapse, twisty });
+  const fold = sectionFold(resolved, gridPack, {
+    collapse,
+    collapsed,
+    onCollapse,
+    twisty,
+  });
   const { body, lift, loosePaths } = panelRows({
     resolved,
     config,
