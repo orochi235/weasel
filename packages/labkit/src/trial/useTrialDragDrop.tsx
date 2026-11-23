@@ -54,11 +54,13 @@ export function useTrialDragDrop({
     [canvasLayers, dragDrop.drag, canvasHost],
   );
 
-  const startDrag = dragDrop.startDrag;
+  const { startDrag, place } = dragDrop;
   const palette = useMemo(
     () =>
-      paletteItems.length > 0 ? <Palette items={paletteItems} onDragStart={startDrag} /> : null,
-    [paletteItems, startDrag],
+      paletteItems.length > 0 ? (
+        <Palette items={paletteItems} onDragStart={startDrag} onPlace={place} />
+      ) : null,
+    [paletteItems, startDrag, place],
   );
   return { dragDrop, layers, palette };
 }

@@ -3873,3 +3873,11 @@ Calls the lanes made without a ruling:
   list's height, as `height` does at creation, so it clips and scrolls; one left out has it follow its rows, so
   `setBounds({ ...list.bounds, x })` now fixes the height it had. Ignoring `setBounds`'s height on a list made
   without one, as before, was the alternative.
+## Audit round seventy-three (2026-11-22): labkit.part1
+
+- 2026-11-22 (the fixer's call): a palette item activated from the keyboard (Enter or Space, a click with `detail`
+  0) drops at the world point under the center of the canvas view, through the same `onDragOver` check, event and
+  `onDrop` as a release there. There is no override. A keyboard-moved placement cursor was the alternative.
+- 2026-11-22 (the fixer's call): a lightbox opened inside another, sharing its `<LightboxLayers>`, leaves a shared
+  `below` layer where the outer one put it and raises a shared `above` layer over itself, then back over the outer
+  one when it closes. Giving the inner lightbox no shared layers at all was the alternative.

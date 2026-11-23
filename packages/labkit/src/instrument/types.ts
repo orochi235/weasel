@@ -280,7 +280,7 @@ export interface Instrument<TS = unknown, TC = unknown, TItem = unknown> {
   /** A palette to drag from onto the canvas; needs `canvas`, and throws without one. */
   dragDrop?: DragDropCapability<TS, TC>;
   /** Undo and redo, on by default: the trial snapshots `state` and `config`
-   *  together on `state.change` and `config.change`. `false` turns them off. */
+   *  together on the events `UndoCapability.snapshotOn` names. `false` turns them off. */
   undo?: UndoCapability | false;
   /** Tools this instrument offers. Declaring them gives the trial a palette
    *  region and its own tool slot. */

@@ -128,6 +128,57 @@ describe('DragDrop integration', () => {
     expect(latest.items[0]?.id).toBe('a');
   });
 
+  it('lands on a state update made since the last render rather than overwriting it', async () => {
+    let latest: DropState = { items: [] };
+    let store: { getState: () => unknown } | undefined;
+    function StoreProbe() {
+      store = useContext(LabStoreContext)?.store;
+      return null;
+    }
+    await renderSettled(
+      <Lab instruments={[testInstrument]}>
+        <StateProbe onState={(s) => (latest = s)} />
+        <StoreProbe />
+      </Lab>,
+      { wrapper: withIcons },
+    );
+    const palette = screen.getByRole('button', { name: 'Item A' });
+    await act(async () => {
+      pointerDown(palette, 0, 0);
+    });
+    await act(async () => {
+      const s = store?.getState() as {
+        trials: { id: string }[];
+        updateTrialState: (id: string, next: (prev: DropState) => DropState) => void;
+      };
+      s.updateTrialState(s.trials[0]!.id, (prev) => ({
+        items: [...prev.items, { id: 'queued', x: 0, y: 0 }],
+      }));
+      document.dispatchEvent(
+        new PointerEvent('pointerup', { pointerId: 1, bubbles: true, clientX: 250, clientY: 250 }),
+      );
+    });
+
+    expect(latest.items.map((i) => i.id)).toEqual(['queued', 'a']);
+  });
+
+  it('places an item at the center of the view when its button is pressed from the keyboard', async () => {
+    let latest: DropState = { items: [] };
+    await renderLab((s) => {
+      latest = s;
+    });
+    const palette = screen.getByRole('button', { name: 'Item A' });
+    await act(async () => {
+      fireEvent.click(palette, { detail: 1 });
+    });
+    expect(latest.items).toHaveLength(0);
+    await act(async () => {
+      fireEvent.click(palette, { detail: 0 });
+    });
+    expect(latest.items).toEqual([{ id: 'a', x: 200, y: 200 }]);
+    expect(screen.getByRole('button', { name: 'Undo' })).toBeEnabled();
+  });
+
   it('drop outside the canvas leaves state unchanged', async () => {
     let latest: DropState = { items: [] };
     await renderLab((s) => {
@@ -299,6 +350,30 @@ describe('DragDrop across trials and buttons', () => {
     await pointerUp(250, 250);
     expect(latest.items).toHaveLength(0);
     expect(screen.getByRole('button', { name: 'Undo' })).toBeDisabled();
+  });
+
+  it('shows why onDragOver refuses the drop beside the ghost', async () => {
+    const refusing = defineInstrument<DropState, Record<string, never>>({
+      ...testInstrument,
+      name: 'Refusing',
+      dragDrop: {
+        ...(testInstrument.dragDrop as NonNullable<typeof testInstrument.dragDrop>),
+        onDragOver: (world) =>
+          world.x > 200 ? { ok: false, reason: 'Slot occupied' } : { ok: true },
+      },
+    });
+    await renderLab(undefined, refusing);
+    await act(async () => {
+      pointerDown(screen.getByRole('button', { name: 'Item A' }), 0, 0);
+    });
+    const settle = () => act(() => new Promise((r) => setTimeout(r, 50)));
+    await pointerMove(250, 250);
+    await settle();
+    expect(document.querySelector('.lk-drag-ghost')?.textContent).toBe('Item A');
+    await pointerMove(450, 250);
+    await settle();
+    expect(document.querySelector('.lk-drag-ghost__reason')?.textContent).toBe('Slot occupied');
+    await pointerUp(450, 250);
   });
 
   it.each([
