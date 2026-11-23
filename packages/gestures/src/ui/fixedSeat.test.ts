@@ -113,4 +113,38 @@ describe('fixedSeat', () => {
     host.getBoundingClientRect = () => DOMRect.fromRect({ x: 40, y: 25, width: 200, height: 100 });
     expect(fixedSeat(from)).toEqual({ host, left: 44, top: 31, scale: { x: 2, y: 2 } });
   });
+
+  it.each([['transformStyle', 'preserve-3d'], ['offsetPath', 'path("M0 0 L10 10")']])(
+    'answers the corner of an ancestor whose %s is %s',
+    (prop, value) => {
+      const from = mount('<div id="a"><div data-wzl-theme="x" id="h"><i id="from"></i></div></div>');
+      const outer = document.getElementById('a')!;
+      outer.getBoundingClientRect = () => DOMRect.fromRect({ x: 12, y: 7 });
+      const real = window.getComputedStyle.bind(window);
+      vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
+        const cs = real(el);
+        return el === outer ? ({ ...cs, [prop]: value } as CSSStyleDeclaration) : cs;
+      });
+      expect(fixedSeat(from)).toMatchObject({ left: 12, top: 7 });
+    },
+  );
+
+  it.each([['filter', 'invert(1)'], ['backdropFilter', 'blur(2px)'], ['willChange', 'filter']])(
+    'seats at the viewport origin when only the root element has %s %s',
+    (prop, value) => {
+      const from = mount('<i id="from"></i>');
+      const root = document.documentElement;
+      root.getBoundingClientRect = () => DOMRect.fromRect({ x: 0, y: -300 });
+      const real = window.getComputedStyle.bind(window);
+      vi.spyOn(window, 'getComputedStyle').mockImplementation((el) => {
+        const cs = real(el);
+        return el === root ? ({ ...cs, [prop]: value } as CSSStyleDeclaration) : cs;
+      });
+      try {
+        expect(fixedSeat(from)).toMatchObject({ left: 0, top: 0 });
+      } finally {
+        delete (root as Partial<HTMLElement>).getBoundingClientRect;
+      }
+    },
+  );
 });

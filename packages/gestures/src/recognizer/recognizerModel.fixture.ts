@@ -30,10 +30,11 @@ interface Pointer {
   holdType?: 'touch' | 'pen';
   press: { clientX: number; clientY: number } & EventModifiers;
   pos: Point;
+  pressedAt: number;
   buffered: boolean;
 }
 
-interface Episode { fingers: number; joinedAt: Map<number, Point>; moved: boolean; startedAt: number }
+interface Episode { fingers: number; spent: boolean; joinedAt: Map<number, Point>; moved: boolean; startedAt: number }
 
 export interface Model {
   cfg: Config;
@@ -93,7 +94,9 @@ export interface SampleIn extends EventModifiers { id: number; x: number; y: num
 export function press(m: Model, s: SampleIn, pointerType: 'mouse' | 'touch' | 'pen'): Expected[] {
   const out: Expected[] = cancel(m, s.id);
   const touch = pointerType === 'touch';
-  m.held.set(s.id, { touch, press: { clientX: s.x, clientY: s.y, ...modsOf(s) }, pos: { x: s.x, y: s.y }, buffered: true });
+  m.held.set(s.id, {
+    touch, press: { clientX: s.x, clientY: s.y, ...modsOf(s) }, pos: { x: s.x, y: s.y }, pressedAt: happenedAt(m, s.stamp), buffered: true,
+  });
   const hand = touch ? fingers(m).length : 0;
   if (hand < 2) out.push({ kind: 'pointerdown', stage: 'press', pointerId: s.id, clientX: s.x, clientY: s.y, ...modsOf(s) });
   if (pointerType !== 'mouse' && m.held.size === 1) {
@@ -101,15 +104,19 @@ export function press(m: Model, s: SampleIn, pointerType: 'mouse' | 'touch' | 'p
     m.hold = { id: s.id, at: m.t + limits(m).longPressMs };
   }
   if (hand >= 2) {
+    const e = (m.episode ??= { fingers: 0, spent: false, joinedAt: new Map(), moved: false, startedAt: Infinity });
+    e.fingers = Math.max(e.fingers, hand);
+    for (const [id, p] of fingers(m)) {
+      if (e.joinedAt.has(id)) continue;
+      e.joinedAt.set(id, { ...p.pos });
+      e.startedAt = Math.min(e.startedAt, p.pressedAt);
+      if (!p.buffered) e.spent = true;
+    }
     for (const [id, p] of fingers(m)) {
       cancelHold(m, id);
       p.buffered = false;
     }
     m.last = null;
-    const now = happenedAt(m, s.stamp);
-    m.episode ??= { fingers: 0, joinedAt: new Map(), moved: false, startedAt: now };
-    m.episode.fingers = Math.max(m.episode.fingers, hand);
-    for (const [id, p] of fingers(m)) if (!m.episode.joinedAt.has(id)) m.episode.joinedAt.set(id, { ...p.pos });
     out.push({ kind: 'multitouch', fingers: hand, ...geometry(m), ...modsOf(s) });
   }
   return out;
@@ -152,12 +159,13 @@ export function release(m: Model, s: SampleIn): { events: Expected[]; doubleClic
     m.held.delete(s.id);
     if (p.touch) {
       if (before >= 2) out.push({ kind: 'multitouch', fingers: before, end: 'commit', ...modsOf(s) });
+      if (before > 2) out.push({ kind: 'multitouch', fingers: before - 1, ...geometry(m), ...modsOf(s) });
       episodeMoved(m, s.id, { x: s.x, y: s.y });
       if (before === 2) {
         const e = m.episode;
         m.episode = null;
         const brief = e && happenedAt(m, s.stamp) - e.startedAt < limits(m).longPressMs;
-        if (e && brief && !e.moved) out.push({ kind: 'multitouchtap', fingers: e.fingers, ...modsOf(s) });
+        if (e && brief && !e.moved && !e.spent) out.push({ kind: 'multitouchtap', fingers: e.fingers, ...modsOf(s) });
       }
     }
   }
@@ -187,6 +195,7 @@ export function cancel(m: Model, id: number): Expected[] {
   cancelHold(m, id);
   m.last = null;
   if (before >= 2) out.push({ kind: 'multitouch', fingers: before, end: 'cancel', ...modsOf(p.press) });
+  if (before > 2) out.push({ kind: 'multitouch', fingers: before - 1, ...geometry(m), ...modsOf(p.press) });
   if (p.touch) m.episode = null;
   out.push({ kind: 'pointercancel', pointerId: id, ...modsOf(p.press) });
   return out;

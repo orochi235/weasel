@@ -469,6 +469,33 @@ describe('two fingers', () => {
   });
 });
 
+describe('a hand going from three fingers to two', () => {
+  const touch = { pointerType: 'touch' };
+  const threeDown = (h: ReturnType<typeof harness>): void => {
+    h.down(1, 0, touch);
+    h.down(2, 40, touch);
+    h.down(3, 80, touch);
+  };
+
+  it('ends the three-finger gesture and offers the two still down as one of their own', () => {
+    const h = harness();
+    threeDown(h);
+    h.recognizer.release(h.at(3, 80));
+    const [end, restart] = h.events.filter((e) => e.kind === 'multitouch').slice(-2);
+    expect(end).toEqual({ kind: 'multitouch', fingers: 3, end: 'commit', ...MODS });
+    expect(restart).toMatchObject({ kind: 'multitouch', fingers: 2, spread: 40 });
+    expect(restart).not.toHaveProperty('end');
+  });
+
+  it('does the same when the third finger is canceled', () => {
+    const h = harness();
+    threeDown(h);
+    h.recognizer.cancel(3);
+    expect(h.events.slice(-3).map((e) => e.kind === 'multitouch' ? `${e.fingers}:${e.end ?? 'geometry'}` : e.kind))
+      .toEqual(['3:cancel', '2:geometry', 'pointercancel']);
+  });
+});
+
 describe('a release of a pointer that was never pressed', () => {
   it('leaves a multitouch gesture of the held fingers running', () => {
     const h = harness({ inFlight: () => [2] });

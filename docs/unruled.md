@@ -4049,3 +4049,10 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): a bus heard again partway through its own `setGain` ramp, after a mute or another
   bus's solo, ramps on to that ramp's original end, as a voice's `place` does. Stepping to the ramp's target was the
   alternative.
+
+## Audit round seventy-eight (2026-11-23): gestures
+
+- 2026-11-23 (the fixer's call): a finger lifting or canceled from a hand of three or more ends its multitouch
+  gesture and then dispatches the geometry of the fingers still down, so a two-finger binding can start on them,
+  as a finger landing does going from two to three. Leaving the remaining fingers with no gesture until another
+  lands was the alternative.

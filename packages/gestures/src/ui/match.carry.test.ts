@@ -75,6 +75,6 @@ describe('carry in the route grammar', () => {
 
   it('describes the route', () => {
     expect(describeRoute(parseRoute('[*:*] carry(lab/*)'))).toContain('carries lab/* onto the canvas');
-    expect(describeRoute(parseRoute('[*:*] carry(lab/*) => selected-body'))).toContain('carries lab/* onto a selected-body');
+    expect(describeRoute(parseRoute('[*:*] carry(lab/*) => selected-body'))).toContain('carries lab/* onto a selected node');
   });
 });
