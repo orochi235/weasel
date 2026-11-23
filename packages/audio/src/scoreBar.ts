@@ -11,7 +11,8 @@ export interface ScoreBarOptions {
   tonic?: number;
   /** Default: the engine's first bus. */
   bus?: string;
-  /** The level the notes sounding on one step add up to at most. Default 0.5. */
+  /** The level the notes starting on one step add up to at most. Releases still ringing from earlier
+   *  steps add to it, up to about 1.4 times. Default 0.5. */
   gain?: number;
   /** Chooses the order an ostinato takes a chord's tones in. Default: rising. */
   seed?: number;
