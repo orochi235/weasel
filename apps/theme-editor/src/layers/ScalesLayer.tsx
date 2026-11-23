@@ -23,7 +23,10 @@ const PARAMS = [
   { key: 'base', label: 'Base', min: 0, max: 64, step: 1 },
   { key: 'step', label: 'Step', min: 0, max: 32, step: 1 },
   { key: 'ratio', label: 'Ratio', min: 1, max: 3, step: 0.01 },
+  { key: 'factors', label: 'Factors', min: 0, max: 0, step: 0 },
 ] as const;
+
+const ruleOf = (entry: ScaleDef): string => (entry.step !== undefined ? 'linear' : entry.ratio !== undefined ? 'geometric' : 'explicit');
 
 const pxOf = (v: string | undefined): number | undefined => {
   const m = v === undefined ? null : /^(-?(?:\d+(?:\.\d+)?|\.\d+))px$/.exec(v);
@@ -54,7 +57,7 @@ function ScaleSection({
     <section className={styles.ramp} aria-label={`${name} scale`}>
       <header className={styles.rampHeader}>
         <h3 className={styles.rampTitle}>{name}</h3>
-        <span className={styles.metric}>{entry.step !== undefined ? 'linear' : 'geometric'}</span>
+        <span className={styles.metric}>{ruleOf(entry)}</span>
         {!own && (
           <span className={styles.rampActions}>
             <Button size="sm" onClick={() => onChange(setScale(draft, lookup, name, (e) => e), `own:scales.${name}`, `make ${name} own`)}>

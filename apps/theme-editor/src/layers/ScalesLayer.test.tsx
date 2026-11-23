@@ -79,4 +79,14 @@ describe('<ScalesLayer>', () => {
     render(<ScalesLayer draft={bare} derived={deriveDraft(bare, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
     expect(screen.getByText('bare has no scales.')).toBeInTheDocument();
   });
+
+  it('names an explicit-factors scale explicit and shows its factors', () => {
+    const stepped: ThemeDefinition = { name: 'stepped', scales: { space: { steps: ['xs', 'sm', 'md'], base: 4, factors: [1, 1.5, 2] } } };
+    const lookup = lookupOf(stepped);
+    render(<ScalesLayer draft={stepped} derived={deriveDraft(stepped, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
+    const space = screen.getByRole('region', { name: 'space scale' });
+    expect(within(space).getByText('explicit')).toBeInTheDocument();
+    expect(within(space).queryByText('geometric')).toBeNull();
+    expect(within(space).getByText('[1,1.5,2]')).toBeInTheDocument();
+  });
 });
