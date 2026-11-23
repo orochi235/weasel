@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { Lightbox } from './Lightbox';
 import { useLightboxControl } from './LightboxContext';
+import { LightboxLayers } from './LightboxLayers';
 
 function root(): HTMLElement {
   return document.querySelector('.lk-lightbox') as HTMLElement;
@@ -69,6 +70,64 @@ describe('Lightbox', () => {
     fireEvent.click(close);
     expect(expanded()).toBe(false);
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Expand' }));
+  });
+
+  it('keeps focus where it is inside when its layers change while open, and still returns it on close', () => {
+    const view = (n: number) => (
+      <LightboxLayers below={[]} above={Array.from({ length: n }, () => null)}>
+        <Lightbox>
+          <input aria-label="inside" />
+        </Lightbox>
+      </LightboxLayers>
+    );
+    const { rerender } = renderWithIcons(view(0));
+    const open = screen.getByRole('button', { name: 'Expand' });
+    open.focus();
+    fireEvent.click(open);
+    const inside = screen.getByLabelText('inside');
+    inside.focus();
+    rerender(view(1));
+    expect(expanded()).toBe(true);
+    expect(document.activeElement).toBe(inside);
+    fireEvent.click(screen.getByRole('button', { name: 'Close expanded view' }));
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Expand' }));
+  });
+
+  it('returns focus on close when something inside had it', () => {
+    renderWithIcons(
+      <Lightbox>
+        <input aria-label="inside" />
+      </Lightbox>,
+    );
+    const open = screen.getByRole('button', { name: 'Expand' });
+    open.focus();
+    fireEvent.click(open);
+    screen.getByLabelText('inside').focus();
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(expanded()).toBe(false);
+    expect(document.activeElement).toBe(open);
+  });
+
+  it('returns focus when it unmounts while open', () => {
+    const view = (shown: boolean) => (
+      <>
+        <button type="button">outside</button>
+        {shown ? (
+          <Lightbox expanded>
+            <div>output</div>
+          </Lightbox>
+        ) : null}
+      </>
+    );
+    const { rerender } = renderWithIcons(view(false));
+    const outside = screen.getByRole('button', { name: 'outside' });
+    outside.focus();
+    rerender(view(true));
+    expect(document.activeElement).toBe(
+      screen.getByRole('button', { name: 'Close expanded view' }),
+    );
+    rerender(view(false));
+    expect(document.activeElement).toBe(outside);
   });
 
   it('closes on Escape unless something inside handled it', () => {
