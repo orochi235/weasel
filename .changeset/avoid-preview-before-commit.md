@@ -2,6 +2,6 @@
 '@weasel-js/diagram': patch
 ---
 
-An `AvoidRouter` preview run before anything was seeded or committed routes every connector around the obstacles it is given, instead of routing none.
+An `AvoidRouter` preview made before any seed or commit routes every connector around the obstacles it is given.
 
 <!-- entry: fix -->
