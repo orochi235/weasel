@@ -250,6 +250,25 @@ describe('Timeline', () => {
     }
   });
 
+  it('keeps focus on the key that is selected once Delete removes the focused one in graph mode', () => {
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 100, value: 1 }, { t: 200, value: 2 }], onTick: () => {} },
+      ] as Track[]);
+      return <Timeline {...base} mode="graph" tracks={value} onChange={setValue} />;
+    }
+    renderWithIcons(<Host />);
+    const keys = () => [...document.querySelectorAll<SVGElement>('[data-keyframe-index]')];
+    for (const at of [2, 1]) {
+      const key = keys()[at]!;
+      key.focus();
+      fireEvent.keyDown(key, { key: 'Enter' });
+      fireEvent.keyDown(key, { key: 'Delete' });
+      expect(keys()).toHaveLength(at);
+      expect(document.activeElement).toBe(keys()[at - 1]);
+    }
+  });
+
   it('deletes the key Delete is pressed on, not another one selected', () => {
     const onChange = vi.fn();
     const three = [
