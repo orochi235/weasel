@@ -93,3 +93,30 @@ describe('an entry of a list or a map read by its path from the root', () => {
     expect(prefReader(root, { phases: [] })('phases.0.hold')).toBeUndefined();
   });
 });
+
+describe('a field of a field an object omits', () => {
+  const angle = num('Angle', { default: 0 });
+  const nib = { kind: 'object', name: 'Nib', description: '', default: { angle: 45 }, children: { angle } } as PrefObject;
+  const width = num('Width', { default: 0 });
+  const fill = {
+    kind: 'union', name: 'Fill', description: '', tag: 'type', default: { type: 'solid', width: 2 },
+    variants: { solid: { kind: 'object', name: 'Solid', description: '', default: { width: 2 }, children: { width } } },
+  } as unknown as PrefLeaf;
+  const phases = { kind: 'list', name: 'Phases', description: '', default: [7], item: num('Phase') } as PrefLeaf;
+  const style = { kind: 'object', name: 'Style', description: '', default: {}, children: { nib, fill, phases } } as PrefObject;
+  const read = prefReader({ name: '', children: { style } }, { style: {} });
+
+  it('reads through the default of the field holding it, as the form draws it', () => {
+    expect(read('style.nib')).toEqual({ angle: 45 });
+    expect(read('style.nib.angle')).toBe(45);
+  });
+
+  it('reads a union field’s variant from the union’s default', () => {
+    expect(read('style.fill.width')).toBe(2);
+    expect(read('style.fill.type')).toBe('solid');
+  });
+
+  it('reads a list field’s entries from the list’s default', () => {
+    expect(read('style.phases.0')).toBe(7);
+  });
+});

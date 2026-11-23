@@ -3981,3 +3981,8 @@ Calls the lanes made without a ruling:
   (`{ title: 'ui/A', ...shared }`) from what the spread carries when the spread is an object it can read, and takes a
   spread it cannot read (an import, a call) to set nothing. Treating that key as unknown was the alternative, and
   sent the title to the file's auto title in the common case, where the spread carries no title.
+## Audit round seventy-eight (2026-11-23): prefs-schema
+
+- 2026-11-23 (the fixer's call): a leaf drawn through an alias drops the target's `pair` and `heading`, which place
+  the target among its own neighbors, and takes only a `pair` or `heading` the alias gives itself. Keeping the
+  target's, whose `pair.with` names leaves not drawn beside the alias, was the alternative.

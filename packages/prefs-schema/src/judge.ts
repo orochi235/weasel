@@ -3,8 +3,8 @@
 import { prefConditionHolds, prefConditionReadsItem, type PrefCondition, type PrefConditionReader } from './condition';
 import type { PrefGroup, PrefSection } from './groups';
 import { isPrefLeaf, isPrefSection, prefHoldsValue, prefSectionLeaves, prefValueAt } from './helpers';
-import { prefLeavesHoldingIn, prefSchemaHolding, UNSEEN, UNSEEN_LEAF } from './holding';
-import { prefObjectBase } from './object';
+import { prefSchemaHolding } from './holding';
+import { prefObjectBase, prefObjectField } from './object';
 import { prefValueAbsent } from './leafValue';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
@@ -12,7 +12,8 @@ import type { PrefLeaf, PrefObject } from './schema';
 import { setOwn } from '@weasel-js/registry';
 import { isPrefScope, prefScopeValue } from './scope';
 import { prefOverridesLookup, prefScopedDefault, prefScopesOf } from './scopeSpec';
-import { prefShownReader, prefVariantField } from './shown';
+import { prefShownReader } from './shown';
+import { prefVariantOf, type PrefUnion } from './union';
 
 /** Every field a schema node holds a {@link PrefCondition} in. `activeIf` is an action leaf's alone. */
 export const PREF_CONDITION_FIELDS = ['showIf', 'enableIf', 'activeIf'] as const;
@@ -120,18 +121,25 @@ function leafHolding(schema: PrefGroup | PrefSection, path: string): [key: strin
 }
 
 /**
- * The field at `rest` of `value`, which `leaf` shows, as a form draws it: where the object omits it, the default of
- * the leaf describing it, and absent where none does. An object leaf's scalar is read as the object it lifts to.
+ * The field at `rest` of `value`, which `leaf` shows, as a form draws it: each field on the way read as its own leaf
+ * shows it, so where an object omits one, the default of the leaf describing it, and absent where none does. An
+ * object leaf's scalar is read as the object it lifts to.
  */
 function fieldValue(leaf: PrefLeaf, value: unknown, rest: string): unknown {
   if (leaf.kind === 'list' || leaf.kind === 'map') return entryAt(leaf as Partial<PrefList | PrefMap>, value, rest);
-  const held = leaf.kind === 'object' ? prefObjectBase(leaf as PrefObject, value) : value;
-  const field = prefValueAt(held, rest);
-  if (field !== undefined) return field;
-  const found = prefLeavesHoldingIn(leaf, rest);
-  if (found === undefined || found === UNSEEN) return undefined;
-  const describes = found.find((each) => (each.variants ?? []).every((v) => prefVariantField(v.at === '' ? held : prefValueAt(held, v.at), v.tag) === v.key));
-  return describes === undefined || describes.leaf === UNSEEN_LEAF ? undefined : unsetValue(describes.leaf);
+  if (leaf.kind === 'union') {
+    const variant = prefVariantOf(leaf as PrefUnion, value);
+    return variant === undefined ? prefValueAt(value, rest) : fieldValue(variant[1], value, rest);
+  }
+  if (leaf.kind !== 'object') return prefValueAt(value, rest);
+  const held = prefObjectBase(leaf as PrefObject, value);
+  const fields = prefSectionLeaves((leaf as PrefObject).children);
+  const found = fields.find(([key]) => key === rest) ?? fields.find(([key]) => rest.startsWith(`${key}.`));
+  if (found === undefined) return prefValueAt(held, rest);
+  const [key, field] = found;
+  const own = prefObjectField(held, key);
+  const shown = prefValueAbsent(field, own) ? unsetValue(field) : own;
+  return key === rest ? shown : fieldValue(field, shown, rest.slice(key.length + 1));
 }
 
 /** What the entry `rest` begins with holds at the rest of it, as {@link entryValue} reads it; absent where there is no such entry. */

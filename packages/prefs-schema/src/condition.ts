@@ -130,11 +130,13 @@ export function prefConditionHolds(condition: PrefCondition, read: PrefCondition
 }
 
 const warned = new Set<string>();
+const WARNED_CAP = 256;
 
 /** A test read from its group reaching a reader means the schema was not put through `resolvePrefGroupConditions`:
  *  its path would be read from the root. */
 function warnUnresolved(path: string): void {
   if (warned.has(path)) return;
+  if (warned.size >= WARNED_CAP) warned.clear();
   warned.add(path);
   console.warn(`weasel prefs: a condition reads "${path}" from its group, but nothing resolved it to a path from the root; resolve the schema with resolvePrefGroupConditions`);
 }

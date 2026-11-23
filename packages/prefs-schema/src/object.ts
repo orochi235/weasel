@@ -10,9 +10,18 @@ const isObject = isPlainObject;
  */
 export function prefObjectBase(pref: PrefObject, held: unknown): Record<string, unknown> {
   if (isObject(held)) return held;
-  const lifted = held === undefined ? undefined : pref.fromScalar?.(held);
+  const lifted = held === undefined ? undefined : prefLiftScalar(pref, held);
   if (isObject(lifted)) return lifted;
   return isObject(pref.default) ? pref.default : {};
+}
+
+/** What the leaf's `fromScalar` lifts `held` to, `undefined` where it has none or it throws: a scalar it refuses is an invalid value. */
+export function prefLiftScalar(pref: PrefObject, held: unknown): unknown {
+  try {
+    return pref.fromScalar?.(held);
+  } catch {
+    return undefined;
+  }
 }
 
 /** The value of the field `key` in `held`. A dotted key (`'nib.angle'`) names a field of a field. */

@@ -89,3 +89,19 @@ describe('prefObjectBase over a value that is not a plain object', () => {
     expect(prefObjectField([4, 8] as unknown as Record<string, unknown>, '0')).toBeUndefined();
   });
 });
+
+describe('a scalar fromScalar refuses', () => {
+  const lifting: PrefObject = {
+    ...stroke,
+    fromScalar: (held) => {
+      if (typeof held !== 'number') throw new TypeError('not a width');
+      return { paint: '#000', width: held };
+    },
+  };
+
+  it('starts from the leaf’s default, as repair reads it', () => {
+    expect(prefObjectBase(lifting, 'thick')).toEqual({ paint: '#000', width: 1 });
+    expect(prefObjectWithField(lifting, 'thick', 'width', 3)).toEqual({ paint: '#000', width: 3 });
+    expect(prefObjectBase(lifting, 4)).toEqual({ paint: '#000', width: 4 });
+  });
+});

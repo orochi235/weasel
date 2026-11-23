@@ -3,7 +3,7 @@ import { endlessAllows } from '@weasel-js/quantity';
 import { codePointFloor, getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import { prefClampNumber } from './bounds';
 import { prefSectionLeaves } from './helpers';
-import { prefObjectField, prefObjectWithField } from './object';
+import { prefLiftScalar, prefObjectField, prefObjectWithField } from './object';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import { prefVariantOf, type PrefUnion } from './union';
@@ -94,12 +94,7 @@ function repairFields(leaf: PrefObject, stored: Record<string, unknown>, validat
  */
 function repairScalar(leaf: PrefObject, stored: unknown, validators: Validators): unknown {
   if (!leaf.fromScalar) return leaf.default;
-  let lifted: unknown;
-  try {
-    lifted = leaf.fromScalar(stored);
-  } catch {
-    return leaf.default;
-  }
+  const lifted = prefLiftScalar(leaf, stored);
   if (!isPlainObject(lifted)) return leaf.default;
   const read = repairFields(leaf, lifted as Record<string, unknown>, validators);
   return read === lifted ? stored : read;
