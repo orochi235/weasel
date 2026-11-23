@@ -263,6 +263,12 @@ Owner tags, after the priority (2026-10-26):
 
 ## Selection, actions & UI panels
 
+- **(P1.5) [agent] Two lens implementations each aim their own way** (2026-11-22). labkit's lab lens
+  (`packages/labkit/src/loupe/lens/`) is a scene of nodes, a body, a reticle and a leader, with `LensAim` `pinned |
+  follow | glass`; hud's `createLoupe` is a HUD window whose aim, follow or pinned, lives in `@weasel-js/loupe`'s
+  model. The reticle, the leader and the aim modes are written twice. Closes when both lenses take their aim, its
+  modes and its reticle from one implementation.
+
 - **(P3) [maintainer] The loupe can magnify only the canvas, not the window around it** (2026-11-22). Wanted: a
   ring toggle, `Canvas | Window`, where Window magnifies everything in the tab, toolbars, panels and the lens itself
   included. A page can read those pixels only through `getDisplayMedia`; in Chromium, `preferCurrentTab` makes that a
