@@ -76,7 +76,7 @@ export function rewriteIconCalls(
   for (const node of parsed.program.body) {
     const local =
       node.type === 'ExportNamedDeclaration' && !node.source && node.exportKind !== 'type'
-        ? node.specifiers.some((e) => locals.has(nameOf(e.local) ?? ''))
+        ? node.specifiers.some((e) => e.exportKind !== 'type' && locals.has(nameOf(e.local) ?? ''))
         : node.type === 'ExportDefaultDeclaration' && node.declaration.type === 'Identifier' && locals.has(node.declaration.name);
     if (local) unfollowed('re-export');
   }

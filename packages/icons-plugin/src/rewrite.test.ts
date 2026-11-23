@@ -135,6 +135,10 @@ describe('rewriteIconCalls on imports it cannot follow', () => {
   it('says nothing about a type-only re-export', () => {
     expect(warned(`export type { CoreIconName } from './icons.gen';\n`)).toBe('');
   });
+
+  it('says nothing about a type-only re-export of the imported icon', () => {
+    expect(warned(`import { icon } from './icons.gen';\nexport { type icon };\nicon('x');\n`)).toBe('');
+  });
 });
 
 describe('rewriteIconCalls in comments and strings', () => {
@@ -265,6 +269,7 @@ describe('rewriteIconCalls on a local that shadows the import', () => {
       `namespace B { export function icon(s: string) { return s; } icon('exported'); }`,
       `namespace C { if (x) { var icon = id; } icon('var'); }`,
       `namespace D.E { let icon = id; icon('dotted'); }`,
+      `namespace F { declare function icon(n: string): string; export const a = icon('ambient'); }`,
       `icon('outside');`,
     ].join('\n');
     expect(refs(src)).toEqual(['core:outside']);

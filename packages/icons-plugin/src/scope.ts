@@ -20,7 +20,7 @@ const FUNCTIONS = new Set([
 const VAR_BARRIERS = new Set([...FUNCTIONS, 'ClassBody', 'StaticBlock', 'TSModuleDeclaration']);
 /** Bodies that are a `var` scope of their own, as a function body is. */
 const VAR_SCOPES = new Set(['StaticBlock', 'TSModuleBlock']);
-const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSEnumDeclaration', 'TSModuleDeclaration', 'TSImportEqualsDeclaration']);
+const LEXICAL_DECLARATIONS = new Set(['ClassDeclaration', 'FunctionDeclaration', 'TSDeclareFunction', 'TSEnumDeclaration', 'TSModuleDeclaration', 'TSImportEqualsDeclaration']);
 
 const isNode = (value: unknown): value is Node =>
   value !== null && typeof value === 'object' && typeof (value as { type?: unknown }).type === 'string';
