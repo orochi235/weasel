@@ -28,7 +28,7 @@ export function prefDisplayBounds(
   const ends = p.endless === undefined ? {} : { endless: p.endless };
   if (!p.unit) return { min: p.min, max: p.max, step: p.step ?? 1, ...ends, ...(p.stops ? { stops: shownStops(p.stops, (v) => v, p.min, p.max) } : {}) };
   const { toDisplay, toDisplayExact, places } = resolvePrefUnit(p.unit);
-  const backward = toDisplayExact(1) < toDisplayExact(0);
+  const backward = decreasing(p, toDisplayExact);
   const lo = p.min === undefined ? undefined : toDisplayExact(p.min);
   const hi = p.max === undefined ? undefined : toDisplayExact(p.max);
   const [low, high] = backward ? [hi, lo] : [lo, hi];
@@ -52,6 +52,19 @@ export function prefDisplayBounds(
 /** `stops` converted by `toDisplay`, held to `min` and `max` and in ascending order. */
 function shownStops(stops: readonly number[], toDisplay: (stored: number) => number, min?: number, max?: number): number[] {
   return stops.map((stop) => Math.min(max ?? Infinity, Math.max(min ?? -Infinity, toDisplay(stop)))).sort((a, b) => a - b);
+}
+
+/** Whether `exact` runs backward where the leaf sits: measured across its bounds, else at its `default`, else at stored
+ *  0 and 1, the first of those it converts to a finite, nonzero distance. */
+function decreasing(p: PrefNumber, exact: (stored: number) => number): boolean {
+  const at = p.default;
+  const spans: [number | undefined, number | undefined][] = [[p.min, p.max], [at, at === undefined ? undefined : at + (p.step ?? 1)], [0, 1]];
+  for (const [from, to] of spans) {
+    if (from === undefined || to === undefined) continue;
+    const d = exact(to) - exact(from);
+    if (Number.isFinite(d) && d !== 0) return (d < 0) !== (to < from);
+  }
+  return false;
 }
 
 /** A nonlinear unit's `step` has no one display size: it is measured at the leaf's `default`, else at an end, and

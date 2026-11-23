@@ -180,6 +180,15 @@ describe('visiblePrefSubtree', () => {
 });
 
 describe('prefDisplayBounds', () => {
+  it('orders the bounds of a decreasing unit that does not convert at stored 0 or 1', () => {
+    const unit: PrefNumberUnit = { toDisplay: (s) => -Math.log(s - 10), fromDisplay: (d) => Math.exp(-d) + 10 };
+    const leaf: PrefNumber = { kind: 'number', name: 'L', description: '', default: 50, min: 20, max: 100, endless: 'max', unit };
+    const { min, max, endless } = prefDisplayBounds(leaf);
+    expect(min).toBeCloseTo(-Math.log(90));
+    expect(max).toBeCloseTo(-Math.log(10));
+    expect(endless).toBe('min');
+  });
+
   it('sorts a unitless leaf\'s stops and holds them to its bounds, as under an identity unit', () => {
     const leaf: PrefNumber = { kind: 'number', name: 'W', description: '', default: 50, min: 0, max: 100, stops: [50, 10, 200] };
     expect(prefDisplayBounds(leaf).stops).toEqual([10, 50, 100]);
