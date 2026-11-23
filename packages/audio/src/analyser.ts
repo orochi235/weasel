@@ -103,7 +103,7 @@ export function createAnalyserTap(
     dispose() {
       if (!attached) return;
       attached = false;
-      source.disconnect(node);
+      try { source.disconnect(node); } catch { /* the edge was cut elsewhere first */ }
     },
   };
 }
