@@ -92,6 +92,7 @@ class ClassWriter {
     }
     this.lines.push(`${indent}class ${head} {`, ...body.map((b) => `${indent}  ${b}`), `${indent}}`);
     if (attributes.some((a) => a.includes('('))) this.out.warnings.add('Mermaid reads a member with parentheses as a method; such attributes read back as methods.');
+    if (methods.some((m) => !m.includes('('))) this.out.warnings.add('Mermaid reads a member without parentheses as an attribute; such methods read back as attributes.');
   }
 
   cluster(c: Cluster, indent: string): void {

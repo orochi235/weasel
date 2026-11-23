@@ -186,4 +186,8 @@ describe('writing a class box Mermaid would read back otherwise', () => {
     expect(warnings).toContain('Mermaid class members are lines of text; blank ones, and ones it reads as comments, a closing brace, or an annotation, were dropped.');
   });
 
+  it('warns that a method with no parentheses reads back as an attribute', () => {
+    const rows: DataNode['rows'] = [{ kind: 'label', text: 'Foo' }, { kind: 'divider' }, { kind: 'label', text: 'a' }, { kind: 'divider' }, { kind: 'label', text: 'run' }];
+    expect(writeClassDiagram(boxed(rows)).warnings).toContain('Mermaid reads a member without parentheses as an attribute; such methods read back as attributes.');
+  });
 });
