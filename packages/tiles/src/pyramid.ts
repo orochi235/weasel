@@ -128,11 +128,10 @@ export class TilePyramid<K, V, P> {
       if (baked > 0 && (baked >= budget.tiles || budget.clock() - start >= budget.ms)) break;
       const payload = bake(key);
       baked++;
-      if (payload !== null) this.arrive(key, payload, frame, now);
-      else {
+      if (payload === null) {
         unfinished++;
         this.defer(key, frame);
-      }
+      } else if (this.arrive(key, payload, frame, now)) unfinished++;
     }
     const pending = order.length - baked + unfinished + waiting;
 
@@ -158,17 +157,17 @@ export class TilePyramid<K, V, P> {
     else this.inFlight.set(id, { key, askedAt: frame, dirtiedAt: -1 });
   }
 
-  /** Hold a baked payload, stale if an edit met the tile while its bake was out. */
-  private arrive(key: K, payload: P, frame: number, now: number): void {
+  /** Hold a baked payload, stale if an edit met the tile while its bake was out; answers whether it was. */
+  private arrive(key: K, payload: P, frame: number, now: number): boolean {
     const id = this.opts.scheme.idOf(key);
     const tile = this.cache.put(key, payload, frame, now);
     const b = this.inFlight.get(id);
-    if (b === undefined) return;
+    if (b === undefined) return false;
     this.inFlight.delete(id);
-    if (b.dirtiedAt >= 0) {
-      tile.stale = true;
-      tile.dirtiedAt = b.dirtiedAt;
-    }
+    if (b.dirtiedAt < 0) return false;
+    tile.stale = true;
+    tile.dirtiedAt = b.dirtiedAt;
+    return true;
   }
 
   /** Forget the bakes asked for longest ago past `max`. */
@@ -219,10 +218,14 @@ export class TilePyramid<K, V, P> {
     const fine: TileDraw<K, P>[][] = [];
     const own: TileDraw<K, P>[] = [];
     const stale: K[] = [];
+    const listed = new Set<string>();
     let fading = false;
     const whole = (): Float64Array => new Float64Array(2 * scheme.dim).fill(1, scheme.dim);
     const mark = (t: HeldTile<K, P>) => {
-      if (t.stale && t.drawnAt !== frame) stale.push(t.key);
+      if (t.stale && !listed.has(t.id)) {
+        listed.add(t.id);
+        stale.push(t.key);
+      }
       t.drawnAt = frame;
     };
     const fadeOf = (t: HeldTile<K, P>): number => (fadeMs > 0 ? Math.min(1, Math.max(0, (now - t.bornAt) / fadeMs)) : 1);
@@ -235,11 +238,19 @@ export class TilePyramid<K, V, P> {
         continue;
       }
       // Missing, or fading in: something coarser underneath, and what is finer over that.
-      const anc = this.ancestorHeld(at, up, floorLevel);
-      if (anc !== null) {
+      const chain: TileDraw<K, P>[] = [];
+      for (let from = at, left = up; ;) {
+        const anc = this.ancestorHeld(from, left, floorLevel);
+        if (anc === null) break;
         mark(anc);
-        coarse.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: 1 });
+        const a = fadeOf(anc);
+        chain.push({ at, tile: anc, source: subRect(scheme, anc.key, at), alpha: a });
+        if (a >= 1) break;
+        fading = true;
+        left -= scheme.levelOf(from) - scheme.levelOf(anc.key);
+        from = anc.key;
       }
+      coarse.push(...chain.reverse());
       this.finerHeld(at, down, 1, (child, depth) => {
         mark(child);
         const a = fadeOf(child);

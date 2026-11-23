@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TileCache } from './cache';
+import { TileCache, tileMeets } from './cache';
 import { createPlaneScheme } from './scheme';
 
 describe('TileCache', () => {
@@ -25,5 +25,13 @@ describe('TileCache', () => {
     const key = { z: 0, x: 0, y: 0 };
     cache.put(key, {}, 1, 100);
     expect(cache.put(key, {}, 2, 150).bornAt).toBe(100);
+  });
+
+  it('grows a box by its pad even where the pad is smaller than a coordinate\'s precision', () => {
+    const scheme = createPlaneScheme(512);
+    const key = { z: 50, x: 2 ** 49, y: 0 };
+    const left = scheme.boundsOf(key)[0]!;
+    expect(tileMeets(scheme, key, [left - 1, 0, left, 1e-13], 1)).toBe(true);
+    expect(tileMeets(scheme, key, [left - 1, 0, left, 1e-13], 0)).toBe(false);
   });
 });
