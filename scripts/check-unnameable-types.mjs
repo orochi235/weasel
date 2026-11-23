@@ -15,10 +15,11 @@
  * `npm run check:unnameable -- --update` drops it. Run after `npm run build`.
  *
  * Paths after the flags check only the packages holding them, and `--build` builds those first (and any sibling
- * they need that has no `dist`), so a branch's own packages are checked without a full build.
+ * they need whose `dist` is missing or older than its `src`), so a branch's own packages are checked without a full
+ * build.
  */
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve as resolvePath, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
@@ -112,7 +113,7 @@ export function packagesHolding(all, paths, root = repoRoot) {
 
 /**
  * The order to build `names` in, each after the siblings `graph` says it needs; a sibling not in `names` is built too
- * when `built(sibling)` says it has no `dist`.
+ * unless `built(sibling)` says its `dist` is current.
  */
 export function buildOrder(graph, names, built) {
   const order = [];
@@ -127,6 +128,23 @@ export function buildOrder(graph, names, built) {
   for (const name of names) visit(name);
   return order;
 }
+
+/** The newest modification time of any file under `dir`, 0 for none. */
+const newestIn = (dir) => {
+  if (!existsSync(dir)) return 0;
+  let newest = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    if (entry.isFile()) newest = Math.max(newest, statSync(join(entry.parentPath, entry.name)).mtimeMs);
+  }
+  return newest;
+};
+
+/** Whether a package's `dist` holds every typed entry, each newer than everything in its `src`. */
+const builtFresh = (dir, manifest) => {
+  const entries = typedEntries(dir, manifest);
+  const src = newestIn(join(dir, 'src'));
+  return entries.length > 0 && entries.every((f) => existsSync(f) && statSync(f).mtimeMs >= src);
+};
 
 function main() {
   const args = process.argv.slice(2);
@@ -146,9 +164,10 @@ function main() {
   const checked = new Set(packages.map(({ manifest }) => manifest.name));
   const next = Object.fromEntries(Object.entries(allow).filter(([name]) => !checked.has(name)));
   if (args.includes('--build')) {
-    const dirOf = new Map(all.map(({ dir, manifest }) => [manifest.name, dir]));
+    const byName = new Map(all.map((w) => [w.manifest.name, w]));
     const graph = buildGraph(all.map(({ manifest }) => manifest));
-    for (const name of buildOrder(graph, [...checked], (n) => existsSync(join(dirOf.get(n), 'dist')))) {
+    const fresh = (name) => builtFresh(byName.get(name).dir, byName.get(name).manifest);
+    for (const name of buildOrder(graph, [...checked], fresh)) {
       console.log(`[unnameable] building ${name}`);
       const { status } = spawnSync('npm', ['run', 'build', '-w', name], { cwd: repoRoot, stdio: 'inherit' });
       if (status !== 0) {
