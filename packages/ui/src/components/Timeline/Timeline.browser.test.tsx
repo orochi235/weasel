@@ -28,3 +28,24 @@ test('marks before the window start leave the label column to its labels', () =>
   const atDisclosure = document.elementFromPoint(nestedTrack.left - 30, bar.top + bar.height / 2);
   expect(atDisclosure?.closest('[data-testid="timeline-nested"]')).toBeNull();
 });
+
+test('lanes that scroll keep their tracks as wide as the ruler', () => {
+  // The suite hides scrollbars everywhere; this test needs one that takes width.
+  const hide = [...document.querySelectorAll('style')].find((el) => el.textContent?.includes('scrollbar-width: none'));
+  if (hide) hide.disabled = true;
+  try {
+    const many = Array.from({ length: 40 }, (_, i) => (
+      { kind: 'sampled', label: `x${i}`, keys: [{ t: 0, value: 0 }, { t: 1000, value: 1 }], onTick: () => {} }
+    )) as unknown as Track[];
+    const { getAllByTestId, getByTestId } = render(
+      <div style={{ width: 600, height: 200, display: 'flex', flexDirection: 'column' }}>
+        <Timeline tracks={many} duration={1000} playhead={0} onChange={() => {}} onSeek={() => {}} />
+      </div>,
+    );
+    const ruler = getByTestId('timeline-ruler').getBoundingClientRect();
+    const track = getAllByTestId('timeline-lane-track')[0]!.getBoundingClientRect();
+    expect(track.right).toBeCloseTo(ruler.right, 0);
+  } finally {
+    if (hide) hide.disabled = false;
+  }
+});
