@@ -128,6 +128,7 @@ export type RunFlag = 'bold' | 'italic' | 'underline' | 'strikethrough' | 'overl
 export interface RunMarker {
   /** One character of one UTF-16 unit; a longer one throws. */
   delimiter: string;
+  /** A positive integer; anything else throws. */
   repeat: number;
   flags: readonly RunFlag[];
 }
