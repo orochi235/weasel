@@ -72,6 +72,21 @@ export function prefStatusIn(owner: PrefOwner, path: string, holds: PrefConditio
 
 const under = (prefix: string, key: string): string => (prefix === '' ? key : `${prefix}.${key}`);
 
+/**
+ * The keys of the variants `holds` says the union at `path` holds, every key where it names none (a judge over
+ * several values that differ, or a path through any entry). Inside the entry at `entry`, its tag is read from the
+ * entry.
+ */
+export function prefHeldVariants(union: PrefUnion, path: string, holds: PrefConditionJudge, entry?: string): string[] {
+  const keys = Object.keys(union.variants);
+  const inEntry = entry === undefined ? undefined : path === entry ? '' : path.startsWith(`${entry}.`) ? path.slice(entry.length + 1) : undefined;
+  const test = (key: string): PrefCondition => (inEntry === undefined
+    ? { path: under(path, union.tag), is: key }
+    : { from: 'item', path: under(inEntry, union.tag), is: key });
+  const held = keys.filter((key) => holds(test(key), 'showIf'));
+  return held.length === 0 ? keys : held;
+}
+
 /** The status of the field at `rest` among the members of `owner`, whose leaves' paths start at `prefix`, or `undefined` when none is there.
  *  A member keyed by all of `rest` answers ahead of one whose key only begins it. */
 function statusAmong(
@@ -117,7 +132,9 @@ function statusInside(leaf: PrefLeaf, path: string, rest: string, owner: PrefOwn
     return statusInside(item, at, rest.slice(dot + 1), { node: { enableIf: item.enableIf }, status: entry, above: status }, inItem, narrow);
   }
   if (leaf.kind !== 'union') return status;
-  for (const variant of Object.values((leaf as PrefUnion).variants)) {
+  const held = prefHeldVariants(leaf as PrefUnion, path, holds);
+  const heldFirst = Object.entries((leaf as PrefUnion).variants).sort(([a], [b]) => Number(!held.includes(a)) - Number(!held.includes(b)));
+  for (const [, variant] of heldFirst) {
     const found = statusAmong(variant.children, path, rest, owner, holds, narrow);
     if (found) return found;
   }

@@ -13,7 +13,7 @@ import { deferEntryConditions, type PrefConditionJudge } from './judge';
 import type { PrefList } from './list';
 import type { PrefMap } from './map';
 import type { PrefLeaf, PrefObject } from './schema';
-import { PREF_ENTRY, ROOT_PREF_STATUS, prefAliasStatus, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus } from './statusAt';
+import { PREF_ENTRY, ROOT_PREF_STATUS, prefAliasStatus, prefHeldVariants, prefStatusIn, prefStatusUnder, prefSectionPath, type PrefOwner, type PrefStatus } from './statusAt';
 import type { PrefUnion } from './union';
 
 export { PREF_CONDITION_FIELDS, prefJudge, prefReader, type PrefConditionField, type PrefConditionJudge, type PrefEntry } from './judge';
@@ -111,13 +111,24 @@ function leafWalk({ keepEmpty, keepHidden, inItem, aliasOver, aliasHolds, answer
     }
     if (node.kind !== 'union') return node;
     const { variants } = node as PrefUnion;
+    // Variants name their fields by the same paths, so only those of a variant the value holds are marked.
+    const holding = prefHeldVariants(node as PrefUnion, path, holds, entry);
+    const marks = [disabled, hidden, active];
+    const kept: string[][] = marks.map(() => []);
     let changed = false;
     const next: PrefUnion['variants'] = {};
     for (const [key, variant] of Object.entries(variants)) {
+      const sizes = marks.map((set) => set.size);
       const children = members(variant.children, path, owner, holds);
+      marks.forEach((set, i) => {
+        const added = [...set].slice(sizes[i]);
+        for (const each of added) set.delete(each);
+        if (holding.includes(key)) kept[i]!.push(...added);
+      });
       changed ||= children !== variant.children;
       setOwnPrefValue(next, key, children === variant.children ? variant : { ...variant, children });
     }
+    marks.forEach((set, i) => kept[i]!.forEach((each) => set.add(each)));
     return changed ? ({ ...node, variants: next } as PrefLeaf) : node;
   };
 
