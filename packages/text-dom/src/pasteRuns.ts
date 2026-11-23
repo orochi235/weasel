@@ -10,6 +10,7 @@
  * text takes them from where it lands.
  */
 
+import { getOwn } from '@weasel-js/registry';
 import { isBoldWeight, type StyledRun } from '@weasel-js/text';
 import { EMPTY_STYLE, styleStateFromElement, toRun, type StyleState } from './runStyle';
 
@@ -27,12 +28,27 @@ const BLOCKS: ReadonlySet<string> = new Set([
 
 const CELLS: ReadonlySet<string> = new Set(['TD', 'TH']);
 
-/** Whether `el` keeps its white space, given whether its parent does. */
-function keepsSpace(el: HTMLElement, inherited: boolean): boolean {
+/** How a text node's white space reaches the runs: collapsed, collapsed but for its line breaks, kept but for its
+ *  line breaks, or kept whole. */
+type SpaceMode = 'collapse' | 'breaks' | 'spaces' | 'keep';
+
+const SPACE_MODES: Readonly<Record<string, SpaceMode>> = {
+  normal: 'collapse', nowrap: 'collapse', collapse: 'collapse',
+  'pre-line': 'breaks', 'preserve-breaks': 'breaks',
+  'preserve-spaces': 'spaces',
+  pre: 'keep', 'pre-wrap': 'keep', 'break-spaces': 'keep', preserve: 'keep',
+};
+
+/** How `el` treats its white space, given how its parent does. */
+function spaceMode(el: HTMLElement, inherited: SpaceMode): SpaceMode {
   const collapse = el.style.getPropertyValue('white-space-collapse');
-  const ws = collapse || el.style.getPropertyValue('white-space');
-  if (ws === '') return el.tagName === 'PRE' || inherited;
-  return /^(pre|pre-wrap|break-spaces|preserve)\b/.test(ws);
+  const ws = (collapse || el.style.getPropertyValue('white-space')).trim().toLowerCase();
+  if (ws === '') return el.tagName === 'PRE' ? 'keep' : inherited;
+  for (const token of ws.split(/\s+/)) {
+    const mode = getOwn(SPACE_MODES, token);
+    if (mode !== undefined) return mode;
+  }
+  return inherited;
 }
 
 /** The run fields a paste keeps. Bold is read off the weight that renders: a run's own weight wins over its flag. */
@@ -78,36 +94,50 @@ export function htmlToRuns(html: string): StyledRun[] {
     onLine = false;
   };
 
-  const visit = (node: Node, style: StyleState, keep: boolean): void => {
+  const lineBreak = (style: StyleState): void => {
+    trimSpace();
+    write('\n', style);
+    onLine = false;
+  };
+  const collapsed = (data: string, style: StyleState): void => {
+    data.split(/[ \t\n\f]+/).forEach((word, i) => {
+      // The space goes in with the text node that held it, as a browser draws it.
+      // A cell's text opens after its tab, as a line's does after its start.
+      if (i > 0 && onLine && !spaced && gap.tabs === 0) { write(' ', style); spaced = true; }
+      if (word.length > 0) write(word, style);
+    });
+  };
+
+  const visit = (node: Node, style: StyleState, mode: SpaceMode): void => {
     if (node.nodeType === Node.TEXT_NODE) {
       const data = toLineFeeds((node as Text).data);
-      if (keep) { if (data.length > 0) write(data, style); return; }
-      data.split(/[ \t\n\f]+/).forEach((word, i) => {
-        // The space goes in with the text node that held it, as a browser draws it.
-        // A cell's text opens after its tab, as a line's does after its start.
-        if (i > 0 && onLine && !spaced && gap.tabs === 0) { write(' ', style); spaced = true; }
-        if (word.length > 0) write(word, style);
-      });
+      if (mode === 'keep' || mode === 'spaces') {
+        const text = mode === 'spaces' ? data.replace(/\n/g, ' ') : data;
+        if (text.length > 0) write(text, style);
+      } else if (mode === 'breaks') {
+        data.split('\n').forEach((line, i) => {
+          if (i > 0) lineBreak(style);
+          collapsed(line, style);
+        });
+      } else collapsed(data, style);
       return;
     }
     if (!(node instanceof HTMLElement) || UNSEEN.has(node.tagName)) return;
     if (node.tagName === 'BR') {
       // Chrome ends a copied fragment with one that stands for no text.
       if (node.classList.contains('Apple-interchange-newline')) return;
-      trimSpace();
-      write('\n', style);
-      onLine = false;
+      lineBreak(style);
       return;
     }
     const block = BLOCKS.has(node.tagName);
     if (block) boundary();
     if (CELLS.has(node.tagName) && node.previousElementSibling !== null) { trimSpace(); gap.tabs += 1; }
     const next = styleStateFromElement(node, style);
-    const keeps = keepsSpace(node, keep);
-    for (const child of node.childNodes) visit(child, next, keeps);
+    const childMode = spaceMode(node, mode);
+    for (const child of node.childNodes) visit(child, next, childMode);
     if (block) boundary();
   };
-  visit(body, EMPTY_STYLE, false);
+  visit(body, EMPTY_STYLE, 'collapse');
   trimSpace();
 
   // Neighbors alike in what was kept, which differed only in what was not.
