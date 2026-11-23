@@ -8,13 +8,20 @@ import type { DataGridColumn } from './DataGrid';
 import { valueOf } from './rowSort';
 import s from './DataGrid.module.css';
 
-const INTERACTIVE = 'a[href], button, input, select, textarea, label, summary, [role="button"], [contenteditable="true"]';
+const WIDGET_ROLES = [
+  'button', 'checkbox', 'combobox', 'link', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'radio',
+  'scrollbar', 'searchbox', 'slider', 'spinbutton', 'switch', 'tab', 'textbox', 'treeitem',
+];
+const INTERACTIVE = [
+  'a[href]', 'button', 'input', 'select', 'textarea', 'label', 'summary', '[contenteditable="true"]', '[tabindex]',
+  ...WIDGET_ROLES.map((r) => `[role="${r}"]`),
+].join(', ');
 
 /** Did this event start on a control inside the row rather than on the row itself? */
 function fromControl(e: MouseEvent | KeyboardEvent): boolean {
   const target = e.target as Element | null;
   const hit = target?.closest?.(INTERACTIVE);
-  return !!hit && e.currentTarget.contains(hit);
+  return !!hit && hit !== e.currentTarget && e.currentTarget.contains(hit);
 }
 
 /** A row's place in the disclosure column, on a grid that has one. */

@@ -57,7 +57,8 @@ export interface DataGridProps<Row extends { id: string }> extends HoldProps {
   /**
    * Activate a row. Makes each row focusable: a click anywhere in it, or
    * Enter/Space while it has focus, calls this. Clicks and keys landing on a
-   * control inside a cell (button, link, input, …) are left to that control.
+   * control inside a cell (a native control, an element with a widget role such
+   * as `switch` or `checkbox`, or one with a `tabindex`) are left to that control.
    */
   onRowClick?: (row: Row) => void;
   /**
@@ -148,7 +149,7 @@ export function DataGrid<Row extends { id: string }>(props: DataGridProps<Row>) 
                 detail={renderDetail && {
                   expandable,
                   expanded: expandable && expanded.has(row.id),
-                  id: `${detailIdBase}-detail-${row.id}`,
+                  id: `${detailIdBase}-detail-${encodeURIComponent(row.id)}`,
                   render: renderDetail,
                   onToggle: () => toggleExpanded(row.id),
                 }}

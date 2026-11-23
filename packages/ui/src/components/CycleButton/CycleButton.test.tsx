@@ -83,13 +83,6 @@ describe('CycleButton', () => {
     expect(button.getAttribute('aria-disabled') === 'true' || (button as HTMLButtonElement).disabled).toBe(true);
   });
 
-  it('treats a value outside the list as the first option', () => {
-    const onChange = vi.fn();
-    renderWithIcons(<Mode value={'sepia' as 'auto'} onChange={onChange} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Theme: Auto — click for Light' }));
-    expect(onChange).toHaveBeenCalledWith('light');
-  });
-
   it("runs a caller's onClick first, and a prevented one keeps the value", () => {
     const onChange = vi.fn();
     const { rerender } = renderWithIcons(
@@ -115,5 +108,27 @@ describe('CycleButton', () => {
     expect(button).toHaveAttribute('aria-describedby', 'hint');
     // @ts-expect-error the rotation draws the face
     void (<CycleButton value="auto" onChange={() => {}} options={COLOR_MODE_OPTIONS} aria-label="Theme">x</CycleButton>);
+  });
+
+  it('names no option as current for a value outside options, warns, and a click goes to the first', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const onChange = vi.fn();
+    renderWithIcons(<CycleButton value={'stale' as ColorModePreference} onChange={onChange} options={COLOR_MODE_OPTIONS} aria-label="Theme" />);
+    const button = screen.getByRole('button', { name: 'Theme — click for Auto' });
+    expect(button.querySelectorAll('svg')).toHaveLength(0);
+    fireEvent.click(button);
+    expect(onChange).toHaveBeenLastCalledWith('auto');
+    fireEvent.click(button, { shiftKey: true });
+    expect(onChange).toHaveBeenLastCalledWith('dark');
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('"stale"'));
+    warn.mockRestore();
+  });
+
+  it('stays quiet about a value outside options given allowUnlistedValue', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderWithIcons(<CycleButton value={'mixed' as ColorModePreference} onChange={() => {}} options={COLOR_MODE_OPTIONS} aria-label="Theme" allowUnlistedValue />);
+    expect(screen.getByRole('button', { name: 'Theme — click for Auto' })).toBeTruthy();
+    expect(warn).not.toHaveBeenCalled();
+    warn.mockRestore();
   });
 });

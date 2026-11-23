@@ -1,4 +1,4 @@
-import { forwardRef, type ReactElement, type ReactNode, type Ref } from 'react';
+import { forwardRef, useEffect, type ReactElement, type ReactNode, type Ref } from 'react';
 import type { ColorModePreference } from '@weasel-js/theme';
 import { Button, type ButtonBase, type ButtonVariant } from '../Button/Button';
 import { composeHandler } from '../../nativeProps';
@@ -38,22 +38,30 @@ export type CycleButtonProps<T extends string = string> = Omit<
   size?: ControlSize;
   /** Defaults to `ghost`. */
   variant?: ButtonVariant;
+  /** A `value` outside `options` (a mixed selection, say) draws no current option and a click goes to the first,
+   *  a shift-click to the last. Without this it also warns, since it is most often a stale value. */
+  allowUnlistedValue?: boolean;
 };
 
 function CycleButtonInner<T extends string = string>(
-  { value, onChange, options, 'aria-label': ariaLabel, size, variant = 'ghost', onClick, ...rest }: CycleButtonProps<T>,
+  { value, onChange, options, 'aria-label': ariaLabel, size, variant = 'ghost', allowUnlistedValue = false, onClick, ...rest }: CycleButtonProps<T>,
   ref: Ref<HTMLButtonElement>,
 ): ReactElement {
   const resolved = useControlSize(size, 'sm');
   const count = options.length;
+  const index = options.findIndex((o) => o.value === value);
+  useEffect(() => {
+    if (count > 0 && index < 0 && !allowUnlistedValue) {
+      console.warn(`weasel: CycleButton "${ariaLabel}" has the value "${value}", which none of its options holds. Pass one of them, or \`allowUnlistedValue\` if no option being current is meant.`);
+    }
+  }, [count, index, allowUnlistedValue, ariaLabel, value]);
   if (count === 0) {
     return <Button {...rest} ref={ref} variant={variant} size={resolved} iconOnly aria-label={ariaLabel} tooltip={ariaLabel} disabled />;
   }
-  const index = Math.max(0, options.findIndex((o) => o.value === value));
-  const current = options[index];
+  const current = index < 0 ? undefined : options[index];
   const next = options[(index + 1) % count];
-  const previous = options[(index - 1 + count) % count];
-  const name = `${ariaLabel}: ${current.label} — click for ${next.label}`;
+  const previous = options[index < 0 ? count - 1 : (index - 1 + count) % count];
+  const name = `${ariaLabel}${current ? `: ${current.label}` : ''} — click for ${next.label}`;
 
   return (
     <Button
@@ -66,7 +74,7 @@ function CycleButtonInner<T extends string = string>(
       tooltip={name}
       onClick={composeHandler(onClick, (event) => onChange((event.shiftKey ? previous : next).value))}
     >
-      {current.icon}
+      {current?.icon}
     </Button>
   );
 }
