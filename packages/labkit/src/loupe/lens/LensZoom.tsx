@@ -100,11 +100,7 @@ export function LensZoom<C>({
   );
   const track = zoomTrackOf(shape, size);
   return (
-    <div
-      className="lk-lens-zoom"
-      data-track={track.kind}
-      onPointerDownCapture={watchPress}
-    >
+    <div className="lk-lens-zoom" data-track={track.kind} onPointerDownCapture={watchPress}>
       {track.kind === 'arc' ? (
         <Along arc={track.arc}>{slider}</Along>
       ) : (

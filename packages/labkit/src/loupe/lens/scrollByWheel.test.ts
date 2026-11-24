@@ -75,7 +75,13 @@ it('passes over a body whose overflow went to the viewport, to the page', () => 
 const sideways = (deltaX: number) => new WheelEvent('wheel', { deltaX });
 
 it('scrolls an RTL scroller left from its right end and right from its left, and passes a wheel on at either end', () => {
-  const el = scroller({ clientWidth: 100, scrollWidth: 300, clientHeight: 100, scrollHeight: 100, scrollLeft: 0 });
+  const el = scroller({
+    clientWidth: 100,
+    scrollWidth: 300,
+    clientHeight: 100,
+    scrollHeight: 100,
+    scrollLeft: 0,
+  });
   el.style.overflowX = 'auto';
   el.style.direction = 'rtl';
   try {

@@ -2,8 +2,8 @@ import { fireEvent, screen } from '@testing-library/react';
 import { sceneToAdapter } from '@weasel-js/core';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
 import { expect, test, vi } from 'vitest';
-import { addLensOps, createLensScene } from './lensScene';
 import { LensZoom } from './LensZoom';
+import { addLensOps, createLensScene } from './lensScene';
 
 function mount() {
   const scene = createLensScene<string>();
@@ -44,4 +44,3 @@ test('another pointer lifting does not end the press', async () => {
   await Promise.resolve();
   expect(onRelease).not.toHaveBeenCalled();
 });
-
