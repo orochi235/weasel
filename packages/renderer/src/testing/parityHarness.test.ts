@@ -79,3 +79,20 @@ describe('scoped', () => {
     await expect(scoped(fake.device, 'building', () => { throw new Error('the build failed'); })).rejects.toThrow('the build failed');
   });
 });
+
+describe('openBackends, when its build scope cannot be popped', () => {
+  it('disposes both renderers and unconfigures the WebGPU canvas', async () => {
+    const recorder = createGLRecorder();
+    const fake = fakeGpuDevice();
+    const unconfigure = vi.fn();
+    const context = Object.assign(fake.context, { unconfigure });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((kind: string) =>
+      (kind === 'webgl2' ? recorder.gl : context)) as typeof HTMLCanvasElement.prototype.getContext);
+    const device = await parityDevice();
+    vi.spyOn(device, 'popErrorScope').mockRejectedValue(new DOMException('lost', 'OperationError'));
+    const dispose = vi.spyOn(WeaselRenderer.prototype, 'dispose');
+    await expect(openBackends({ width: 4, height: 4, dpr: 1 })).rejects.toThrow('lost');
+    expect(dispose).toHaveBeenCalledTimes(2);
+    expect(unconfigure).toHaveBeenCalled();
+  });
+});

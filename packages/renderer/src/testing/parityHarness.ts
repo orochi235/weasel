@@ -133,11 +133,11 @@ export async function openBackends({ width, height, dpr, antialias = false }: Pa
   glCanvas.height = Math.round(height * dpr);
   const glContext = glCanvas.getContext('webgl2', { stencil: true, antialias, preserveDrawingBuffer: true })!;
   const canvas = document.createElement('canvas');
-  const built: { gl?: WeaselRenderer } = {};
+  const built: { gl?: WeaselRenderer; gpu?: WeaselRenderer } = {};
   try {
     const b = await scoped(gpuDevice, 'building the renderer', (): Backends => {
       const gl = built.gl = new WeaselRenderer({ gl: glContext, width, height, dpr });
-      const gpu = new WeaselRenderer({ gpu: { device: gpuDevice, canvas, antialias }, width, height, dpr });
+      const gpu = built.gpu = new WeaselRenderer({ gpu: { device: gpuDevice, canvas, antialias }, width, height, dpr });
       return { gl, gpu, glContext, canvas, device: gpuDevice, width: glCanvas.width, height: glCanvas.height };
     });
     opened.push(b);
@@ -145,6 +145,10 @@ export async function openBackends({ width, height, dpr, antialias = false }: Pa
   } catch (err) {
     built.gl?.dispose();
     glContext.getExtension('WEBGL_lose_context')?.loseContext();
+    if (built.gpu) {
+      built.gpu.dispose();
+      (canvas.getContext('webgpu') as GPUCanvasContext).unconfigure();
+    }
     throw err;
   }
 }
