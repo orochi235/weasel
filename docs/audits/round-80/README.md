@@ -18,7 +18,7 @@ as applied here are `fixCommits` in `area.json`.
 | `audio` | 47 | 47/47 | 3 | 3 | 1 | 5 |   7.0 |   2.0 |  18.0 (r79) | 0 in 0 changed | 5 | 0 | 1.63M | $5.36 | $0.114 | `audit80-audio` |
 | `font.outline` | 15 | 15/15 | 2 | 1 | 0 | 3 |   5.0 |   2.0 |   6.0 (r79) | 0 in 0 changed | 4 | 0 | 1.15M | $3.71 | $0.247 | `audit80-font.outline` |
 | `forge.vite.part1` | 26 | 26/26 | 6 | 7 | 1 | 12 |  27.0 |  15.0 |   7.5 (r79) | 0 in 0 changed | 12 | 0 | 1.98M | $5.63 | $0.217 | `audit80-forge.vite.part1` |
-| `forge.vite.part2` | 25 | 25/25 | 6 | 5 | 2 | 9 |  13.0 |   4.0 |   7.5 (r79) | 0 in 0 changed | 8 | 0 | 0.61M | $4.47 | $0.179 | `audit80-forge.vite.part2`, left out: merge conflict in packages/forge/src/vite/apiTable.test.ts |
+| `forge.vite.part2` | 25 | 25/25 | 6 | 5 | 2 | 9 |  13.0 |   4.0 |   7.5 (r79) | 0 in 0 changed | 8 | 0 | 0.61M | $4.47 | $0.179 | `audit80-forge.vite.part2`, merged by hand after a conflict in packages/forge/src/vite/apiTable.test.ts |
 | `loupe` | 11 | 11/11 | 5 | 3 | 2 | 6 |   7.0 |   1.0 |   7.0 (r79) | 0 in 0 changed | 5 | 0 | 0.91M | $2.75 | $0.250 | `audit80-loupe` |
 | `renderer.part2` | 38 | 38/38 | 4 | 4 | 1 | 7 |  11.5 |   4.5 |   4.0 (r79) | 0 in 0 changed | 6 | 0 | 1.31M | $3.83 | $0.101 | `audit80-renderer.part2` |
 
