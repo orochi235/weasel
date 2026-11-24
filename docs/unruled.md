@@ -4100,3 +4100,9 @@ Calls the lanes made without a ruling:
   disposed, declares with other source throws `ExtensionConflictError`, as `registerProgram` does; an override under
   the same kind id still replaces it. Letting the later kind take the program, or restoring the earlier holder's when
   it is disposed, were the alternatives.
+
+## Audit round eighty (2026-11-23): forge's vite plugin, part two
+
+- 2026-11-23 (the fixer's call): forge's API panel gives no definition to a type name that a component's props and ref
+  use for two different declarations, since the panel shows only the name. Showing the first one found, as before, or
+  keying definitions by declaration and naming each apart, were the alternatives.
