@@ -44,6 +44,10 @@ export const urlHost = (address: string): string => {
 const socketOrigin = (req: IncomingMessage, protocol: string) =>
   new URL(`${protocol}://${urlHost(req.socket.localAddress ?? '127.0.0.1')}:${req.socket.localPort}`).origin;
 
+/** The request's own protocol, from its socket: under `middlewareMode` the host app's server may be TLS, which vite's
+ *  `server.https` does not say. */
+const protocolOf = (req: IncomingMessage): 'http' | 'https' => ((req.socket as { encrypted?: boolean }).encrypted ? 'https' : 'http');
+
 /** vite's client socket port under `server.middlewareMode` when nothing names one or hands it a server. */
 const MIDDLEWARE_HMR_PORT = 24678;
 
@@ -137,9 +141,8 @@ export function serveCapture(
     return launched;
   };
 
-  const protocol = server.config.server.https ? 'https' : 'http';
-
   const capture = async (req: IncomingMessage, res: ServerResponse) => {
+    const protocol = protocolOf(req);
     const origin = req.headers.origin;
     if (origin !== undefined && !ownOrigin(origin, req, protocol, server)) {
       return json(res, 403, { error: 'a capture is only taken for this server’s own pages' });
