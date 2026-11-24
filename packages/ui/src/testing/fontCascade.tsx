@@ -1,6 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import { act, render } from '@testing-library/react';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { fontFamilies } from '@weasel-js/font';
 import { shown } from './shown';
 import { withIcons } from './withIcons';
 
@@ -35,7 +36,7 @@ const ROOTS = '.lk-root, [data-font-probe], [style*="font-family"], body';
 const TEXT_CONTROLS =
   'select, textarea, input:not([type]), input:is([type=text], [type=search], [type=number], [type=email], [type=url], [type=tel], [type=password])';
 
-const firstFace = (el: Element) => getComputedStyle(el).fontFamily.split(',')[0]!.trim().replace(/^["']|["']$/g, '');
+const firstFace = (el: Element) => fontFamilies(getComputedStyle(el).fontFamily)[0] ?? '';
 
 /**
  * Puts the probe faces in force for the file. A theme's tokens sit on `[data-wzl-theme]` too, so the roles beat both.

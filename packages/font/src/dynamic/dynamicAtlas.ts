@@ -28,6 +28,7 @@ import { notifyGlyphReady, _clearGlyphReadySubscribers } from '../glyphReady';
 import { PAGE_SIZE, MAX_PAGES, _resetPagesForTests } from './dynamicPages';
 import { dropBakes, onPagesEmptied, requestBake, retryStarved, _resetBakeQueueForTests } from './bakeQueue';
 import { familyKey, watchFontLoads } from './fontLoads';
+import { fontFamilies } from '../cssFamily';
 import { canvasWeight, createCanvasRasterizer, BAKE_SIZE, type GlyphRasterizer } from './glyphRasterizer';
 import { addSharpSource, sharpBakesOf } from './sharpColor';
 
@@ -361,7 +362,7 @@ function refreshFamilies(families: readonly string[] | null): void {
   const dropped = new Set<BmFontChar>();
   let measured = 0;
   for (const face of faces.values()) {
-    if (keys && !face.family.split(',').some((name) => keys.has(familyKey(name)))) continue;
+    if (keys && !fontFamilies(face.family).some((name) => keys.has(name.toLowerCase()))) continue;
     collectGlyphs(face, dropped);
     measureFace(face);
     measured++;

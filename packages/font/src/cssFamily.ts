@@ -27,6 +27,51 @@ export function cssString(text: string): string {
   return `"${text.replace(/[\\"\n\r\f]/g, (c) => (c === '\\' || c === '"' ? `\\${c}` : `\\${c.charCodeAt(0).toString(16)} `))}"`;
 }
 
+/**
+ * The families of the CSS `font-family` list `list`, each as the name it denotes: quotes dropped, escapes resolved,
+ * and an unquoted name's runs of whitespace read as one space. A comma inside quotes or brackets splits nothing, and
+ * an entry that is a function such as `var()`, which only a browser resolves, comes back as written. Empty entries
+ * are dropped.
+ */
+export function fontFamilies(list: string): string[] {
+  const families: string[] = [];
+  let depth = 0;
+  let quote: string | null = null;
+  let start = 0;
+  for (let i = 0; i <= list.length; i++) {
+    const c = list[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = null;
+    } else if (c === '\\') i++;
+    else if (c === '"' || c === "'") quote = c;
+    else if (c === '(') depth++;
+    else if (c === ')') depth--;
+    else if (c === undefined || (c === ',' && depth === 0)) {
+      const family = familyOf(list.slice(start, i).trim());
+      if (family) families.push(family);
+      start = i + 1;
+    }
+  }
+  return families;
+}
+
+function familyOf(entry: string): string {
+  if (/^[\w-]+\(/.test(entry)) return entry;
+  const quoted = /^(["'])([^]*)\1$/.exec(entry);
+  return quoted ? cssUnescape(quoted[2]!) : cssUnescape(entry.replace(/\s+/g, ' '));
+}
+
+/** `text` with its CSS escapes resolved: `\X` to `X`, and `\` with up to six hex digits (and one trailing space)
+ *  to that code point. */
+export function cssUnescape(text: string): string {
+  return text.replace(/\\(?:([0-9a-fA-F]{1,6})\s?|([^]))/g, (_, hex: string | undefined, ch: string | undefined) => {
+    if (hex === undefined) return ch!;
+    const cp = parseInt(hex, 16);
+    return cp === 0 || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff) ? '\ufffd' : String.fromCodePoint(cp);
+  });
+}
+
 const GENERIC_FAMILIES: ReadonlySet<string> = new Set([
   'serif', 'sans-serif', 'monospace', 'cursive', 'fantasy', 'system-ui',
   'ui-serif', 'ui-sans-serif', 'ui-monospace', 'ui-rounded', 'math', 'emoji', 'fangsong',

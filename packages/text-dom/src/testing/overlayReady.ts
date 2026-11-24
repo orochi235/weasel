@@ -1,3 +1,5 @@
+import { fontFamilies } from '@weasel-js/font';
+
 /**
  * Wait until the edit overlay in `host` is mounted and set in its own face.
  *
@@ -22,7 +24,7 @@ export async function overlayReady(host: HTMLElement): Promise<HTMLElement> {
   await document.fonts.ready;
   await frame();
   await frame();
-  const families = css.fontFamily.split(',').map((f) => f.trim().replace(/^["']|["']$/g, ''));
+  const families = fontFamilies(css.fontFamily);
   const unloaded = [...document.fonts]
     .filter((f) => families.includes(f.family) && f.status !== 'loaded')
     .map((f) => `${f.family}: ${f.status}`);

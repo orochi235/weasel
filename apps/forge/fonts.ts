@@ -2,6 +2,7 @@ import type { GlobalDeclarations, StoryContext } from '@weasel-js/forge';
 import { defineTheme, type Theme, weaselTheme } from '@weasel-js/theme';
 import { icon } from './icons.gen';
 import { getOwn } from '@weasel-js/registry';
+import { fontFamilies } from '@weasel-js/font';
 
 /** Loads the webfonts the font table names that no system ships. */
 const GOOGLE_FONTS_HREF =
@@ -156,7 +157,7 @@ export function fontTheme(base: Theme, globals: StoryContext['globals']): Theme 
     const pins = Object.fromEntries([
       ...chosen.map(({ token, font }) => [
         token,
-        { value: font.family.split(',').map((face) => face.trim().replace(/^"|"$/g, '')), type: 'fontFamily' },
+        { value: fontFamilies(font.family), type: 'fontFamily' },
       ]),
       ...(numericLeavesOswald(chosen) ? [['font-numeric', '{font-ui}']] : []),
     ]);

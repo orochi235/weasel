@@ -565,14 +565,6 @@ these entries are what is left of them.
 
 ## Release-gate & build hygiene
 
-- **(P2) [agent] Five places split a CSS `font-family` list, four of them wrongly** (2026-11-24): draw's
-  `uiFontFamily` (`apps/draw/src/LoupeProvider.tsx`'s `firstListEntry`, with `apps/draw/src/cssUnescape.ts`) respects
-  quotes, brackets and escapes; `apps/forge/fonts.ts`, `packages/font/src/dynamic/dynamicAtlas.ts`,
-  `packages/text-dom/src/testing/overlayReady.ts` and `packages/ui/src/testing/fontCascade.tsx` each `split(',')` and
-  strip quotes their own way, so a quoted name holding a comma (`"Foo, Bar"`) or an escape comes apart. Closes when one
-  `fontFamilies(stack): string[]` in `@weasel-js/font`, built from draw's parser and `cssUnescape`, is what all five
-  call, and draw's `cssUnescape.ts` is folded into it.
-
 - **(P2) [agent] `LabLoupe.browser.test.tsx`'s "F2 opens a lens over the pointer, carries it while held, and a tap
   closes it" fails under the fleet suite's load** (2026-11-22): `expected <div class="lk-lens-interior" …> to be null`
   after the tap, in one of audit round 73's six gate runs, while two runs of the file alone on a GUI node passed on the

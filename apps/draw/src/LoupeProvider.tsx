@@ -13,10 +13,9 @@ import { copyText } from '@weasel-js/react';
 import { toast } from '@weasel-js/ui/components/Toast';
 import { type LoupeSettings, useHud, useLoupe } from '@weasel-js/hud/react';
 import { useIconRegistry } from '@weasel-js/icons/react';
-import { isGenericFamily, registerCanvasFont } from '@weasel-js/font';
+import { fontFamilies, isGenericFamily, registerCanvasFont } from '@weasel-js/font';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { pref } from '@weasel-js/prefs';
-import { cssUnescape } from './cssUnescape';
 import { icon } from './icons.gen';
 import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
 import { drawPrefs, usePref } from './prefs';
@@ -160,28 +159,8 @@ function useThemeUiFont(): string {
 /** The first family of the CSS family list `stack`, unquoted; `sans-serif` for none, or for one a function such as
  *  `var()` computes, which only a browser resolves. */
 export function uiFontFamily(stack: string | undefined): string {
-  const head = stack === undefined ? '' : firstListEntry(stack);
-  if (!head || /^[\w-]+\(/.test(head)) return 'sans-serif';
-  const quoted = /^(["'])(.*)\1$/.exec(head);
-  return quoted ? cssUnescape(quoted[2]!) : cssUnescape(head.replace(/\s+/g, ' '));
-}
-
-/** `list` up to its first comma outside quotes and brackets, trimmed. */
-function firstListEntry(list: string): string {
-  let depth = 0;
-  let quote: string | null = null;
-  let i = 0;
-  for (; i < list.length; i++) {
-    const c = list[i]!;
-    if (quote) {
-      if (c === '\\') i++;
-      else if (c === quote) quote = null;
-    } else if (c === '"' || c === "'") quote = c;
-    else if (c === '(') depth++;
-    else if (c === ')') depth--;
-    else if (c === ',' && depth === 0) break;
-  }
-  return list.slice(0, i).trim();
+  const head = stack === undefined ? undefined : fontFamilies(stack)[0];
+  return !head || /^[\w-]+\(/.test(head) ? 'sans-serif' : head;
 }
 
 const NO_LOUPE: SchemaBinding = {};
