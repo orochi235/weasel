@@ -124,6 +124,33 @@ describe('WOFF faces', () => {
     expect(inflated).toBeLessThan(8 << 20);
   });
 
+  it('refuse a table listed twice', async () => {
+    const view = new DataView(woffOf(interBytes()));
+    view.setUint32(44 + 20, view.getUint32(44));
+    await expect(sfntFromWoff(view.buffer as ArrayBuffer)).rejects.toThrow(/a table is listed twice/);
+  });
+
+  it('refuse tables sharing stored bytes', async () => {
+    const view = new DataView(woffOf(interBytes()));
+    for (const field of [4, 8, 12, 16]) view.setUint32(44 + 20 + field, view.getUint32(44 + field));
+    await expect(sfntFromWoff(view.buffer as ArrayBuffer)).rejects.toThrow(/two of its tables overlap/);
+  });
+
+  it('refuse a table recording more than its compressed data could inflate to, before inflating it', async () => {
+    const view = new DataView(woffOf(interBytes()));
+    const at = [...Array(view.getUint16(12)).keys()].map((i) => 44 + i * 20)
+      .find((rec) => view.getUint32(rec + 8) < view.getUint32(rec + 12))!;
+    view.setUint32(at + 12, view.getUint32(at + 8) * 1033);
+    const inflate = vi.fn();
+    vi.stubGlobal('DecompressionStream', class { constructor() { inflate(); throw new Error('inflated'); } });
+    try {
+      await expect(sfntFromWoff(view.buffer as ArrayBuffer)).rejects.toThrow(/a length its compressed data cannot hold/);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+    expect(inflate).not.toHaveBeenCalled();
+  });
+
   it('refuse a table that does not decompress', async () => {
     const woff = woffOf(interBytes());
     const view = new DataView(woff);

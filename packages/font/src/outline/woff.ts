@@ -6,6 +6,8 @@
 
 const WOFF_HEADER_BYTES = 44;
 const WOFF_RECORD_BYTES = 20;
+/** zlib's most a deflate stream can expand: 1032 bytes out per byte in. */
+const DEFLATE_MAX_RATIO = 1032;
 
 /** Is `bytes` a WOFF 1 file (`wOFF`)? */
 export const isWoff = (bytes: ArrayBuffer): boolean =>
@@ -21,23 +23,24 @@ export async function sfntFromWoff(bytes: ArrayBuffer): Promise<ArrayBuffer> {
   const flavor = view.getUint32(4);
   const numTables = view.getUint16(12);
   if (WOFF_HEADER_BYTES + numTables * WOFF_RECORD_BYTES > bytes.byteLength) throw damaged('its table directory is cut off');
-  const tables: { tag: number; checksum: number; data: Uint8Array }[] = [];
-  for (let i = 0; i < numTables; i++) {
+  const records = Array.from({ length: numTables }, (_, i) => {
     const at = WOFF_HEADER_BYTES + i * WOFF_RECORD_BYTES;
-    const offset = view.getUint32(at + 4);
     const compLength = view.getUint32(at + 8);
     const origLength = view.getUint32(at + 12);
-    // As opentype.js reads it: a table no shorter compressed than whole is stored whole.
-    const stored = compLength < origLength ? compLength : origLength;
-    if (offset + stored > bytes.byteLength) throw damaged('a table runs past the end of the file');
-    const raw = new Uint8Array(bytes, offset, stored);
-    const data = compLength < origLength ? await inflate(raw, origLength) : raw;
-    if (data.byteLength !== origLength) throw wrongLength();
-    tables.push({ tag: view.getUint32(at), checksum: view.getUint32(at + 16), data });
+    return {
+      tag: view.getUint32(at), offset: view.getUint32(at + 4), compLength, origLength, checksum: view.getUint32(at + 16),
+      // As opentype.js reads it: a table no shorter compressed than whole is stored whole.
+      stored: compLength < origLength ? compLength : origLength,
+    };
+  });
+  for (const r of records) if (r.offset + r.stored > bytes.byteLength) throw damaged('a table runs past the end of the file');
+  checkDistinct(records);
+  if (records.some((r) => r.compLength < r.origLength && r.origLength > r.compLength * DEFLATE_MAX_RATIO)) {
+    throw damaged('a table records a length its compressed data cannot hold');
   }
 
   let size = 12 + numTables * 16;
-  for (const t of tables) size += (t.data.byteLength + 3) & ~3;
+  for (const r of records) size += (r.origLength + 3) & ~3;
   const out = new ArrayBuffer(size);
   const o = new DataView(out);
   const entrySelector = numTables > 0 ? Math.floor(Math.log2(numTables)) : 0;
@@ -48,42 +51,53 @@ export async function sfntFromWoff(bytes: ArrayBuffer): Promise<ArrayBuffer> {
   o.setUint16(8, entrySelector);
   o.setUint16(10, numTables * 16 - searchRange);
   let at = 12 + numTables * 16;
-  tables.forEach((t, i) => {
+  for (const [i, r] of records.entries()) {
     const rec = 12 + i * 16;
-    o.setUint32(rec, t.tag);
-    o.setUint32(rec + 4, t.checksum);
+    o.setUint32(rec, r.tag);
+    o.setUint32(rec + 4, r.checksum);
     o.setUint32(rec + 8, at);
-    o.setUint32(rec + 12, t.data.byteLength);
-    new Uint8Array(out, at, t.data.byteLength).set(t.data);
-    at += (t.data.byteLength + 3) & ~3;
-  });
+    o.setUint32(rec + 12, r.origLength);
+    const raw = new Uint8Array(bytes, r.offset, r.stored);
+    const slot = new Uint8Array(out, at, r.origLength);
+    if (r.compLength < r.origLength) await inflateInto(raw, slot);
+    else slot.set(raw);
+    at += (r.origLength + 3) & ~3;
+  }
   return out;
 }
 
-/** `data` inflated, read no further than `limit` bytes: a small table can inflate without bound. */
-async function inflate(data: Uint8Array, limit: number): Promise<Uint8Array> {
-  let chunks: Uint8Array[];
+/** Refuse a table listed twice or tables sharing stored bytes, so one stored table cannot be inflated more than once. */
+function checkDistinct(records: readonly { tag: number; offset: number; stored: number }[]): void {
+  const tags = new Set<number>();
+  for (const r of records) {
+    if (tags.has(r.tag)) throw damaged('a table is listed twice');
+    tags.add(r.tag);
+  }
+  const placed = records.filter((r) => r.stored > 0).sort((a, b) => a.offset - b.offset);
+  for (let i = 1; i < placed.length; i++) {
+    if (placed[i]!.offset < placed[i - 1]!.offset + placed[i - 1]!.stored) throw damaged('two of its tables overlap');
+  }
+}
+
+/** Inflate `data` into `slot`, refusing a stream that inflates to any length but the slot's. */
+async function inflateInto(data: Uint8Array, slot: Uint8Array): Promise<void> {
   let length = 0;
   try {
     const inflater = new DecompressionStream('deflate');
     const writer = inflater.writable.getWriter();
     void writer.write(data as Uint8Array<ArrayBuffer>).then(() => writer.close()).catch(() => {});
-    chunks = [];
     const reader = inflater.readable.getReader();
     for (let r = await reader.read(); !r.done; r = await reader.read()) {
-      length += r.value.byteLength;
-      if (length > limit) {
+      if (length + r.value.byteLength > slot.byteLength) {
         void reader.cancel().catch(() => {});
+        length = Infinity;
         break;
       }
-      chunks.push(r.value);
+      slot.set(r.value, length);
+      length += r.value.byteLength;
     }
   } catch (err) {
     throw damaged(`a table does not decompress (${err instanceof Error ? err.message : String(err)})`);
   }
-  if (length > limit) throw wrongLength();
-  const out = new Uint8Array(length);
-  let at = 0;
-  for (const c of chunks) { out.set(c, at); at += c.byteLength; }
-  return out;
+  if (length !== slot.byteLength) throw wrongLength();
 }

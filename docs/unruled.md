@@ -762,6 +762,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   a table twice or whose tables share bytes, and a `.dfont` whose map names one `sfnt` resource twice or two that
   overlap, rather than copying each repeat; fonts with legitimately overlapping tables, if any exist, are refused too.
   A CFF2 table now gets the CFF 1 check's bounds and operand rules, and is refused without CharStrings or an FDArray.
+- 2026-11-23 (font, audit round 80, the fixer's call): `gposPairKerning` stops reading a GPOS table once its
+  `kern` features and LangSys tables have named more lookup and feature indexes than four per byte of the font, and
+  answers `null`, so the face kerns from its legacy `kern` table, rather than refusing the face; a damaged GPOS
+  already lost only its unreadable parts. A WOFF file is refused when it lists a table twice, two tables share
+  stored bytes, or a table records more than 1032 times its compressed length, deflate's most.
 - 2026-11-23 (font, audit round 78, the fixer's call): `enableLocalFontOutlines` keeps an outline face the app
   registered for the same variant rather than replacing it with the installed copy, and reports how many it kept;
   `replace: true` restores replacing. A face an earlier call registered is always replaced.
