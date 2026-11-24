@@ -112,6 +112,16 @@ describe('createComponentGraph', () => {
     expect(graph['ui/Menu Item']?.source).toBeNull();
   });
 
+  it("walks a helper in the component's own directory whose name starts with two dots", async () => {
+    const ws = workspace({
+      ...FILES,
+      'ui/Dialog/Dialog.tsx': `import { Shell } from './..shell';\nexport const Dialog = () => <Shell />;\n`,
+      'ui/Dialog/..shell.tsx': `import { Badge } from '@ui';\nexport const Shell = () => <Badge />;\n`,
+    });
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(ENTRIES, ws.resolve);
+    expect(graph['ui/Dialog']?.uses).toEqual(['ui/Badge']);
+  });
+
   it('gives a component with no findable source no edges, and says so with a null source', async () => {
     const ws = workspace({
       ...FILES,
