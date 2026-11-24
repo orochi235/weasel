@@ -200,7 +200,9 @@ function destructuredDefaults(tsm: typeof ts, declaration: ts.Declaration): Map<
   if (!pattern || !tsm.isObjectBindingPattern(pattern)) return defaults;
   for (const element of pattern.elements) {
     const key = element.propertyName ?? element.name;
-    if (element.initializer && tsm.isIdentifier(key)) defaults.set(key.text, element.initializer.getText());
+    if (element.initializer && (tsm.isIdentifier(key) || tsm.isStringLiteral(key) || tsm.isNumericLiteral(key))) {
+      defaults.set(key.text, element.initializer.getText());
+    }
   }
   return defaults;
 }

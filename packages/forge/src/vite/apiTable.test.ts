@@ -68,6 +68,7 @@ export const Wrapped = (_props: DomProps & { own?: boolean }) => null;
 export interface ListProps<T> { items: T[] }
 export const List = <T,>(_props: ListProps<T>) => null;
 export const Bare = () => null;
+export const Field = ({ 'aria-label': _label = 'Field' }: { 'aria-label'?: string }) => null;
 export const Clash = (_props: DomProps & OtherDom) => null;
 export const Plain = (_props: Anon & { own?: boolean }) => null;
 interface Field<T, C = T> { value?: T; onChange?: (value: C) => void }
@@ -100,9 +101,10 @@ export const Input = (_props: InputProps) => null;
     story('typedTitle', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst meta: Meta = { title: 'ui/Chart' };\nexport default meta;\n`);
     story('input', `import { Input } from './Chart';\nexport default { component: Input };\n`);
     story('plain', `import { Plain } from './Chart';\nexport default { component: Plain };\n`);
+    story('field', `import { Field } from './Chart';\nexport default { component: Field };\n`);
     story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'clash', 'none'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'clash', 'none'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -141,6 +143,10 @@ export const Input = (_props: InputProps) => null;
   it('reads a default from destructuring, else from @default', () => {
     expect(prop(api('chart'), 'count')?.default).toBe('3');
     expect(prop(api('chart'), 'size')?.default).toBe("'md'");
+  });
+
+  it('reads a default destructured from a quoted prop name', () => {
+    expect(prop(api('field'), 'aria-label')?.default).toBe("'Field'");
   });
 
   it('marks a deprecated prop', () => {
