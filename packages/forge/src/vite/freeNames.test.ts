@@ -26,4 +26,11 @@ describe('freeNames', () => {
     expect(namesIn('function C(p = Icon) { var Icon; return p; }')).toContain('Icon');
     expect(namesIn('function C(p = 1) { var Icon; return Icon; }')).not.toContain('Icon');
   });
+
+  it('takes an intrinsic or namespaced tag for no reference, and a component or member tag for one', () => {
+    const names = namesIn('const C = () => <label><svg:rect /><my-el /><Icon /><ui.Panel /></label>;');
+    for (const intrinsic of ['label', 'svg', 'rect', 'my-el']) expect(names).not.toContain(intrinsic);
+    expect(names).toContain('Icon');
+    expect(names).toContain('ui');
+  });
 });
