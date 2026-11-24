@@ -60,6 +60,9 @@
 }
 
 .slot > kbd.cap {
+  /* The key follows the unit; its legend keeps the default's ratio of type size to key height. */
+  --key-h: var(--u);
+  --key-type-size: calc(var(--u) * 0.59);
   /* A whole keyboard of bold legends reads as a wall. */
   font-weight: var(--wzl-font-weight-normal);
   /* A key let go fades back, so a tap too quick to see held still shows. */

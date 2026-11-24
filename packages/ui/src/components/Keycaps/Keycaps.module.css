@@ -2,7 +2,9 @@
 .keys,
 .key {
   --key-h: var(--wzl-control-h-xs);
-  --key-font-size: var(--wzl-font-size-sm);
+  /* The legend's type size before a function key's shrink; a KeyDiagram sets it from its unit. */
+  --key-type-size: var(--wzl-font-size-sm);
+  --key-font-size: var(--key-type-size);
 }
 
 /* A KeyBank's own box stays out of the layout unless a class gives it one. */
@@ -13,7 +15,7 @@
 /* Function-key legends print smaller, as on a real keyboard — except in a
    KeyBank, where every single-line legend prints at one size. */
 .key[data-fn]:not([data-banked]) {
-  --key-font-size: calc(var(--wzl-font-size-sm) * 0.85);
+  --key-font-size: calc(var(--key-type-size) * 0.85);
 }
 
 .keys {
