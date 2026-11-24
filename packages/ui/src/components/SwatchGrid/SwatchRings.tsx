@@ -1,6 +1,7 @@
 import { useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactElement, type ReactNode, type RefObject } from 'react';
 import { trackRun, type RunAlign, type TrackShape } from '@weasel-js/geom';
 import { getOwn } from '@weasel-js/registry';
+import { wholeColumns } from '@weasel-js/ui-input';
 import { RunScope } from '../Run';
 import { useItemLengths, useRunGap } from '../Along/useItemLengths';
 import { useInlineDirection } from '../Along/useRowRun';
@@ -82,7 +83,7 @@ export function SwatchRings({ shape, align, groups, onSelect, onAltSelect, onHov
   const { size, gap, leads } = useSwatchMetrics(root);
   const direction = useInlineDirection(root);
   // Keyed by its numbers, so the rings are rebuilt only when a palette's row count changes.
-  const rowsKey = groups.map((g) => Math.max(1, Math.ceil(g.options.length / g.columns))).join();
+  const rowsKey = groups.map((g) => Math.max(1, Math.ceil(g.options.length / wholeColumns(g.columns)))).join();
   const rows = useMemo(() => rowsKey.split(',').map(Number), [rowsKey]);
   const { plan, rings } = useMemo(() => {
     // Room is judged with every row on a ring of its own; the rings laid are then the ones the plan keeps.
@@ -123,7 +124,8 @@ interface RingGroupProps {
 
 function RingGroup({ group, rings, align, apply, hold, hover }: RingGroupProps): ReactElement {
   const root = useRef<HTMLDivElement>(null);
-  const { options, value, columns, lead, empty } = group;
+  const { options, value, lead, empty } = group;
+  const columns = wholeColumns(group.columns);
   const marks = swatchMarks(options, value);
   const tab = useSwatchStop(marks.first, options.length);
   const swatches = () => swatchesIn(root.current);
