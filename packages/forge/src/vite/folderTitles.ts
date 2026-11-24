@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { posixRelative } from './posixPath.ts';
 import type { IndexEntry } from '../story/types';
 
 /** A library whose stories are titled for the folder they sit in. Paths are relative to the repo root. */
@@ -56,7 +56,7 @@ export function folderTitleReport(
   exportsOf: (folder: string) => ReadonlySet<string>,
   root: string,
 ): { lines: string[]; ok: boolean } {
-  const under = (file: string) => relative(root, file);
+  const under = (file: string) => posixRelative(root, file);
   const titles = new Map<string, string>();
   for (const entry of entries) if (!titles.has(under(entry.file))) titles.set(under(entry.file), entry.title);
   const wrong: [string, string, string][] = [];
