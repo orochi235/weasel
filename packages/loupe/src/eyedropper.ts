@@ -66,7 +66,13 @@ export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperM
       if (disposed) return;
       opts.loupe?.aimAt(p);
       const mine = hovers.take();
-      const got = opts.sample(p);
+      let got: MaybePromise<string | null>;
+      try {
+        got = opts.sample(p);
+      } catch (err) {
+        settle(null);
+        throw err;
+      }
       if (!isPromise(got)) { settle(got); return; }
       void got.then(
         (hex) => { if (!disposed && mine()) settle(hex); },

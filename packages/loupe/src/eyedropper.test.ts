@@ -96,4 +96,18 @@ describe('eyedropper model', () => {
     expect(drop.color).toBeNull();
     expect(onPick).not.toHaveBeenCalled();
   });
+
+  it('settles on nothing, and still throws, when a hover\'s read throws at once', () => {
+    let fail = false;
+    const onColorChange = vi.fn();
+    const drop = createEyedropperModel({
+      sample: () => { if (fail) throw new Error('read failed'); return '#ff0000'; },
+      onColorChange,
+    });
+    drop.hover(at(1, 1));
+    fail = true;
+    expect(() => drop.hover(at(2, 2))).toThrow('read failed');
+    expect(drop.color).toBeNull();
+    expect(onColorChange).toHaveBeenLastCalledWith(null);
+  });
 });
