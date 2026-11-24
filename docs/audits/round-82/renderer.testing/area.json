@@ -1,0 +1,75 @@
+{
+ "id": "renderer.testing",
+ "commit": "49821d7197a006c0f9dfec5748c468c2f0ccaca6",
+ "date": "2026-11-24",
+ "files": [
+  "packages/renderer/src/testing/batch.ts",
+  "packages/renderer/src/testing/fakeGpuDevice.ts",
+  "packages/renderer/src/testing/glRecorder.ts",
+  "packages/renderer/src/testing/ownDrawPaint.ts",
+  "packages/renderer/src/testing/parityHarness.ts",
+  "packages/renderer/src/testing/rampPosition.ts",
+  "packages/renderer/src/testing/recorderCtx.ts",
+  "packages/renderer/src/testing/standInKeys.ts",
+  "packages/renderer/src/testing/stencilledEvenOdd.ts",
+  "packages/renderer/src/testing/trimClip.ts",
+  "packages/renderer/src/testing/vertexUploads.ts",
+  "packages/renderer/src/testing/wgsl.ts"
+ ],
+ "a": 5,
+ "b": 2,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 82,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 82,
+  "chapman": 8,
+  "unfound": 2
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 4,
+  "testFiles": {
+   "failed": 0,
+   "passed": 17,
+   "total": 17
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.8,
+   "B": 2.5,
+   "match": 0.1,
+   "fix": 18.7
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1065309,
+  "costUsd": 3.28
+ },
+ "fixCommits": [
+  "2d0454a636275a381e9af6bd1822a5f476ab4d17",
+  "da34e2f1f0bbb59fed35329ac2a7462d0f300b2b",
+  "a9348268f5153535f995f03feaf621c2f53e0a67",
+  "a18aef11ecd777f9a663f81fd10cb6a14cc01e36",
+  "9f286c5c9c64f3485a1e2ebcc350ff550c8b903a"
+ ]
+}

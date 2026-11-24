@@ -1,0 +1,17 @@
+{
+ "pairs": [],
+ "a": [
+  "LensZoom never hands the keys back when a press ends without a change or is canceled",
+  "A Follow lens's reticle hit box sits under the pointer, so every press goes to the lens canvas",
+  "Opening a quick lens records two undo entries",
+  "Grid toggle reports \"Grid needs…\" while the lens still draws a grid in some cells",
+  "scrollByWheel stops at a body whose overflow propagated to the viewport, scrolling nothing",
+  "A copied form control with a `form` attribute joins the trial's own form"
+ ],
+ "b": [
+  "A Split lens with two DPRs compares the base at the first DPR against the comparison at the second, and never shows either side at the other DPR",
+  "Wheel pass-through never scrolls an RTL horizontal scroller left, and claims to have scrolled it right at its end",
+  "The Pixel grid assumes a capture's bitmap is `box × dpr` pixels, where Difference resizes it to that",
+  "A click on a split seam without dragging moves the seam to the press point and records an undo entry"
+ ]
+}

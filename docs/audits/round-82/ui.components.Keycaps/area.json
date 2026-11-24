@@ -1,0 +1,92 @@
+{
+ "id": "ui.components.Keycaps",
+ "commit": "49821d7197a006c0f9dfec5748c468c2f0ccaca6",
+ "date": "2026-11-24",
+ "files": [
+  "packages/ui/src/components/Keycaps/KeyBank.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyBank.tsx",
+  "packages/ui/src/components/Keycaps/KeyDiagram.module.css",
+  "packages/ui/src/components/Keycaps/KeyDiagram.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyDiagram.tsx",
+  "packages/ui/src/components/Keycaps/KeySequence.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyboardLayout.stories.tsx",
+  "packages/ui/src/components/Keycaps/Keycap.stories.tsx",
+  "packages/ui/src/components/Keycaps/Keycap.tsx",
+  "packages/ui/src/components/Keycaps/Keycaps.module.css",
+  "packages/ui/src/components/Keycaps/Keycaps.stories.module.css",
+  "packages/ui/src/components/Keycaps/Keycaps.tsx",
+  "packages/ui/src/components/Keycaps/ShortcutKeys.stories.tsx",
+  "packages/ui/src/components/Keycaps/ShortcutKeys.tsx",
+  "packages/ui/src/components/Keycaps/index.ts",
+  "packages/ui/src/components/Keycaps/keyBankContext.ts",
+  "packages/ui/src/components/Keycaps/keyGlyph.ts",
+  "packages/ui/src/components/Keycaps/keyLegendsFromChord.ts",
+  "packages/ui/src/components/Keycaps/keyLegendsFromFormatted.ts",
+  "packages/ui/src/components/Keycaps/keyboardLayout.ts",
+  "packages/ui/src/components/Keycaps/keycapFonts.story.ts",
+  "packages/ui/src/components/Keycaps/keycapLegends.story.ts",
+  "packages/ui/src/components/Keycaps/legendFit.ts",
+  "packages/ui/src/components/Keycaps/legendIcons.ts",
+  "packages/ui/src/components/Keycaps/legendMeasure.ts",
+  "packages/ui/src/components/Keycaps/useHeldKeys.ts",
+  "packages/ui/src/components/Keycaps/useLegendFit.ts",
+  "packages/ui/src/components/Keycaps/variantIcons.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 9,
+ "unfound": 3,
+ "read": {
+  "A": 28,
+  "B": 28
+ },
+ "newCode": {
+  "since": 82,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 82,
+  "chapman": 9,
+  "unfound": 3
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1482,
+   "total": 1482
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.9,
+   "B": 3.4,
+   "match": 0.1,
+   "fix": 18.8
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1145870,
+  "costUsd": 3.63
+ },
+ "fixCommits": [
+  "c2ee681d6bb4d36081d4f38dd2ddc57d65369033",
+  "5136171ae0bce5c821b6a15b2d7829d790d517d3",
+  "65c9d56ea32981c3345395141f01597c2c0ef6e4",
+  "6824c90b273f0957962bfae56b213f30d1ffc49d",
+  "a10732a907721037c2762dd762619534c79680c8",
+  "4e80de5399777ce5dbabb8c0799d159f3f6f7564"
+ ]
+}

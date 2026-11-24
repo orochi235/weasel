@@ -7855,6 +7855,7 @@
    "packages/ui/src/overlays/portalHost.tsx",
    "packages/ui/src/pathThrough.ts",
    "packages/ui/src/pbt.fixture.ts",
+   "packages/ui/src/repeatKeys.ts",
    "packages/ui/src/revealInBox.ts",
    "packages/ui/src/rovingDrawn.bench.ts",
    "packages/ui/src/rowControls.ts",

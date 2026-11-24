@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "`--key-diagram-unit` resizes the board's pitch but not the keys, so keys overlap or float apart",
+  "`keyLegendsFromChord` draws the same modifier twice when `Mod` and its platform's key are both named",
+  "An empty chord gives one blank key instead of no keys",
+  "The icon legend's size multiple is set in two places"
+ ],
+ "b": [
+  "`--key-diagram-unit` resizes the pitch and captions but not the keys themselves",
+  "On macOS, a key pressed while Command is held stays lit forever if Command's key-down was missed",
+  "A key with no layout box (display:none) is measured at scale ≤ 0 and drags its whole bank to `minScale`"
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "An uncontrolled indeterminate Switch reports \"on\" but is left drawn \"off\"",
+  "Two shortcuts that cannot be formatted collapse into one chip with an undefined key",
+  "Spans with the same id collide as React keys in SpanStrip"
+ ],
+ "b": [
+  "SwatchRings judges room with one ring depth list and lays a different one, so a later palette's lead ring can fold onto the ring before it",
+  "Switch: an uncontrolled indeterminate switch held selected is turned off internally while `onChange` reports it on",
+  "Shortcut search drops the plus key when it is written with spaces (\"Cmd + +\")"
+ ]
+}

@@ -1,0 +1,17 @@
+{
+ "pairs": [],
+ "a": [
+  "componentOf's `assigned` ignores spreads, so the API table and the dependency graph can name different components",
+  "`module()` stores a graph built for the old root after `reset()`",
+  "freeNames treats a parameter default as shadowed by the body's `var`",
+  "componentReach decides \"outside the home directory\" by a string prefix",
+  "ast `lookup` lets an earlier key win over a later computed key",
+  "The capture page's protocol comes from `server.https`, which middleware mode does not set",
+  "repoOf drops a URL remote's port"
+ ],
+ "b": [
+  "freeNames counts JSX intrinsic and namespaced tag names as references to values",
+  "The component graph and the API table give different answers for a dotted `component` off a named import",
+  "The history cache ignores release tags added after HEAD was read"
+ ]
+}

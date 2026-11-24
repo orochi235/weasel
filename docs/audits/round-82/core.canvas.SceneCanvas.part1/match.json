@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "`layers` slot given as `undefined` drops the preset's layer, though the next merge treats `undefined` as left out",
+  "`routing` prop docs say the default classifies text; `inferredNodeRouting` has no text entry"
+ ],
+ "b": [
+  "`oneOf` and `mergeByKey` settle the same preset conflict differently: one throws, the other silently keeps a value",
+  "`layersOverPresets` treats a slot given as `undefined` as an override and drops the preset's layer",
+  "`routing` prop doc says the default classifies \"data shaped as text\", but `inferredNodeRouting` has no text entry"
+ ]
+}

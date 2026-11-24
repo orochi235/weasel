@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "A self-crossing cubic whose two crossing parameters lie on the same side of t = 0.5 is not cut at its crossing",
+  "Knife: an untouched hole belonging to an island is handed to the traced piece around it",
+  "pathToMultiPolygon: a nonzero path whose rings cross falls back to nesting by containment when the cut declines, which misreads crossing rings"
+ ],
+ "b": [
+  "knife assigns an untouched hole of an untouched island to the cut piece around it, filling the hole",
+  "cyclesOf takes shoelace area on absolute coordinates, so pieces far from the origin get wrong signs and outside cycles",
+  "groupRings orients rings by an uncentered shoelace, so small rings far from the origin nest with the wrong winding",
+  "curveFaces caps a segment at 1024 chords, silently breaking a caller's flattenTolerance",
+  "polishCrossings' Newton tolerance ignores coordinate magnitude, so nothing far from the origin is ever polished",
+  "clipper's coarsest snap grid is coarser than float32, contrary to its stated bound"
+ ]
+}

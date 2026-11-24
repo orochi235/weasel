@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "openBackends leaks the WebGPU renderer when the build scope's pop rejects",
+  "scoped() lets a popErrorScope rejection replace the error fn threw",
+  "metricCases' doc says it runs only open shapes, but it runs every shape",
+  "paintCases' explanatory docblock is attached to the StrokePaint type, not to paintCases",
+  "ownDrawRect's doc says it makes a 10x10 rect, but `size` is a parameter"
+ ],
+ "b": [
+  "createRecorderCtx draws through a second WebGLDevice whose state cache disagrees with the renderer's own",
+  "openBackends leaks the WebGPU renderer and both contexts when the error scope's pop fails after both renderers were built"
+ ]
+}

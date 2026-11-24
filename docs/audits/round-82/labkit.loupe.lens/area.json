@@ -1,0 +1,103 @@
+{
+ "id": "labkit.loupe.lens",
+ "commit": "49821d7197a006c0f9dfec5748c468c2f0ccaca6",
+ "date": "2026-11-24",
+ "files": [
+  "packages/labkit/src/loupe/lens/GridCanvas.tsx",
+  "packages/labkit/src/loupe/lens/LabLoupe.tsx",
+  "packages/labkit/src/loupe/lens/Lens.less",
+  "packages/labkit/src/loupe/lens/LensActions.tsx",
+  "packages/labkit/src/loupe/lens/LensChrome.tsx",
+  "packages/labkit/src/loupe/lens/LensOverlay.tsx",
+  "packages/labkit/src/loupe/lens/LensSlot.tsx",
+  "packages/labkit/src/loupe/lens/LensZoom.tsx",
+  "packages/labkit/src/loupe/lens/ScopeOf.tsx",
+  "packages/labkit/src/loupe/lens/cloneSource.ts",
+  "packages/labkit/src/loupe/lens/compare.ts",
+  "packages/labkit/src/loupe/lens/difference.ts",
+  "packages/labkit/src/loupe/lens/intoFrames.ts",
+  "packages/labkit/src/loupe/lens/lensActionDefs.ts",
+  "packages/labkit/src/loupe/lens/lensApi.fixture.ts",
+  "packages/labkit/src/loupe/lens/lensApi.ts",
+  "packages/labkit/src/loupe/lens/lensHitBoxes.ts",
+  "packages/labkit/src/loupe/lens/lensScene.ts",
+  "packages/labkit/src/loupe/lens/lensShapes.ts",
+  "packages/labkit/src/loupe/lens/lensSource.ts",
+  "packages/labkit/src/loupe/lens/lensTypes.ts",
+  "packages/labkit/src/loupe/lens/lensZoomTrack.ts",
+  "packages/labkit/src/loupe/lens/pixelGrid.ts",
+  "packages/labkit/src/loupe/lens/probeUnderLens.ts",
+  "packages/labkit/src/loupe/lens/reticleFollower.ts",
+  "packages/labkit/src/loupe/lens/scrollByWheel.ts",
+  "packages/labkit/src/loupe/lens/useCaptureDelay.ts",
+  "packages/labkit/src/loupe/lens/useFocusReports.ts",
+  "packages/labkit/src/loupe/lens/useFrameSchedule.ts",
+  "packages/labkit/src/loupe/lens/useLabBody.ts",
+  "packages/labkit/src/loupe/lens/useLensRemeasure.ts",
+  "packages/labkit/src/loupe/lens/useLensShapes.ts",
+  "packages/labkit/src/loupe/lens/useWheelPassThrough.ts"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 0,
+ "distinct": 10,
+ "chapman": 34,
+ "unfound": 24,
+ "read": {
+  "A": 33,
+  "B": 33
+ },
+ "newCode": {
+  "since": 82,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 82,
+  "chapman": 34,
+  "unfound": 24
+ },
+ "patches": 12,
+ "verify": {
+  "ok": true,
+  "files": 27,
+  "testFiles": {
+   "failed": 0,
+   "passed": 71,
+   "total": 71
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.1,
+   "B": 3.3,
+   "match": 0.1,
+   "fix": 24.6
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 2441070,
+  "costUsd": 6.75
+ },
+ "fixCommits": [
+  "2107e2f63cccb5f26bec95b07cc8b98ecd3e1e0e",
+  "8ff5acc3462351739c7b9ed204c595b16a97ffaa",
+  "e4839059fb4b3c55bee2c2cebf6663cd528ed858",
+  "f8d328a0633b0ae2ec19f1ccdc01a24c9031e0b1",
+  "fc9df8c18c6b82e340b364b2c8615e9588474409",
+  "4a01498f6dc4e69928c5748101ec6387e0a43ea3",
+  "99598f08a9942f97880593521248f6c0330fc189",
+  "13a40c76bb4f64a69cdabea0b63d78684afbc328",
+  "b3d5f36c46ebfbcf1737c495aa6ca87f81cbd20b",
+  "980db35b72e5d8c6206da366e730d5a5ee0ec05d",
+  "92b2bf1d2110e59535f5a265d6bcdaacdf0b8d82",
+  "40babbb815b31b365b54b92fcb621f1a579ae9dd"
+ ]
+}

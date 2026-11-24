@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "pathCrossings reports one crossing twice where another stroke passes through a vertex",
+  "flattenCubicWithArcLen / flattenQuadraticWithArcLen measure the first piece from whatever `out` ends with, not from the segment start",
+  "transformAabb gives a finite, wrong box when `m` is projective and the box straddles the eye plane"
+ ],
+ "b": [
+  "segmentCrossings misses every touch and overlap between a straight curve and a collinear line (or another straight curve)",
+  "A LengthRun control list of more than two control points (or not a multiple of `dim`) is silently mis-measured and mis-evaluated"
+ ]
+}

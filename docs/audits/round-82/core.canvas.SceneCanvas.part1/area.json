@@ -1,0 +1,106 @@
+{
+ "id": "core.canvas.SceneCanvas.part1",
+ "commit": "49821d7197a006c0f9dfec5748c468c2f0ccaca6",
+ "date": "2026-11-24",
+ "files": [
+  "packages/core/src/canvas/SceneCanvas/ActionsProviderIfRoot.tsx",
+  "packages/core/src/canvas/SceneCanvas/CanvasKitProviders.tsx",
+  "packages/core/src/canvas/SceneCanvas/DepRegistryProviderIfRoot.tsx",
+  "packages/core/src/canvas/SceneCanvas/DevHuds.tsx",
+  "packages/core/src/canvas/SceneCanvas/PointerProviderIfRoot.tsx",
+  "packages/core/src/canvas/SceneCanvas/PresetComponents.tsx",
+  "packages/core/src/canvas/SceneCanvas/SceneCanvasInput.tsx",
+  "packages/core/src/canvas/SceneCanvas/SurfaceDeclarations.tsx",
+  "packages/core/src/canvas/SceneCanvas/actionProps.ts",
+  "packages/core/src/canvas/SceneCanvas/brushOverlay.ts",
+  "packages/core/src/canvas/SceneCanvas/builtinToolSets.ts",
+  "packages/core/src/canvas/SceneCanvas/canvasPassThrough.ts",
+  "packages/core/src/canvas/SceneCanvas/contributionFrameHooks.ts",
+  "packages/core/src/canvas/SceneCanvas/coordTrace.ts",
+  "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts",
+  "packages/core/src/canvas/SceneCanvas/defaultNodeRouting.ts",
+  "packages/core/src/canvas/SceneCanvas/describePresets.ts",
+  "packages/core/src/canvas/SceneCanvas/dispatcherGestureBounds.ts",
+  "packages/core/src/canvas/SceneCanvas/features.ts",
+  "packages/core/src/canvas/SceneCanvas/geometryProps.ts",
+  "packages/core/src/canvas/SceneCanvas/ingestionProps.ts",
+  "packages/core/src/canvas/SceneCanvas/insertPreviewCommands.ts",
+  "packages/core/src/canvas/SceneCanvas/longPressProps.ts",
+  "packages/core/src/canvas/SceneCanvas/mergeLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/nodeTraits.ts",
+  "packages/core/src/canvas/SceneCanvas/pathEditHost.ts",
+  "packages/core/src/canvas/SceneCanvas/pointerProps.ts",
+  "packages/core/src/canvas/SceneCanvas/poseGeometry.ts",
+  "packages/core/src/canvas/SceneCanvas/poseRegistrars.tsx",
+  "packages/core/src/canvas/SceneCanvas/presetBuild.ts",
+  "packages/core/src/canvas/SceneCanvas/presetMerge.ts",
+  "packages/core/src/canvas/SceneCanvas/presetTraits.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/baseline.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/chrome.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/index.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/toolDriven.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/view.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/viewTools.ts",
+  "packages/core/src/canvas/SceneCanvas/props.ts",
+  "packages/core/src/canvas/SceneCanvas/sampleProps.ts",
+  "packages/core/src/canvas/SceneCanvas/scenePointQuery.ts",
+  "packages/core/src/canvas/SceneCanvas/sceneProps.ts",
+  "packages/core/src/canvas/SceneCanvas/sceneViewBounds.ts",
+  "packages/core/src/canvas/SceneCanvas/selectToolProps.ts",
+  "packages/core/src/canvas/SceneCanvas/shapeGeneratorProperties.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 2,
+ "distinct": 3,
+ "chapman": 3,
+ "unfound": 0,
+ "read": {
+  "A": 45,
+  "B": 45
+ },
+ "newCode": {
+  "since": 82,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 82,
+  "chapman": 3,
+  "unfound": 0
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2472,
+   "total": 2472
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.5,
+   "B": 2.9,
+   "match": 0.1,
+   "fix": 23.4
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1344507,
+  "costUsd": 4.08
+ },
+ "fixCommits": [
+  "d9780506069fac960304467d4add7c2342faf3ca",
+  "90cce4a44b18799320ce8ebb2b4cdeff850ab4ff",
+  "d385601ba48ae0ebda650189b05f6f75eaeeeaa6"
+ ]
+}
