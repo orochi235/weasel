@@ -24,6 +24,14 @@ const unionArea = (paths: readonly Path[]): number => {
 };
 
 describe('pathFaceArrangement', () => {
+  it('cuts small circles far from the origin as it does at the origin', () => {
+    for (const [o, r] of [[1e6, 0.01], [1e8, 0.1]]) {
+      const at = { x: o, y: o };
+      const { faces } = pathFaceArrangement([{ ...circle(0, 0, r), origin: at }, { ...circle(1.2 * r, 0, 0.8 * r), origin: at }]);
+      expect(faces.map((f) => f.sources)).toEqual([[0], [1], [0, 1]]);
+    }
+  });
+
   it('cuts two overlapping circles into three curved faces and says which touch', () => {
     const { faces, neighbors } = pathFaceArrangement([circle(0, 0, 10), circle(12, 0, 8)]);
     expect(faces.map((f) => f.sources)).toEqual([[0], [1], [0, 1]]);

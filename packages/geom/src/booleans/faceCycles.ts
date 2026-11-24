@@ -47,11 +47,12 @@ export function cyclesOf(a: Linked): Cycles {
     const c: number[] = [];
     let twice = 0;
     let h = start;
+    const ox = a.xs[a.origin[start]!]!, oy = a.ys[a.origin[start]!]!;
     do {
       cycleOf[h] = cycles.length;
       c.push(h);
       const u = a.origin[h]!, v = a.origin[h ^ 1]!;
-      twice += a.xs[u]! * a.ys[v]! - a.xs[v]! * a.ys[u]!;
+      twice += (a.xs[u]! - ox) * (a.ys[v]! - oy) - (a.xs[v]! - ox) * (a.ys[u]! - oy);
       h = a.next[h]!;
     } while (h !== start);
     cycles.push(c);
