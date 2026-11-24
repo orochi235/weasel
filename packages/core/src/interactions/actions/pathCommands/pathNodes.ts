@@ -63,7 +63,8 @@ export function pathNodesOf(
   return out;
 }
 
-/** Per node, the last path `withPath` stored and what it made of it. */
+/** Per path node, the last path `withPath` stored and what it made of it. A path node fixes its frame,
+ *  so a parent moved under an unchanged scene node needs a fresh one. */
 const lastStored = new WeakMap<object, { path: PolygonPath; shape: { pose: unknown; data: unknown } | null }>();
 
 /** `target`'s node storing `worldPath` as plain geometry at its world pose:
@@ -78,14 +79,14 @@ export function withShownPath(target: Pick<PathNode, 'shown'>, worldPath: Polygo
 
 /** `target`'s node storing `worldPath` as plain geometry, in the node's own
  *  frame, or null when it holds no editable polygon. The same object while
- *  the node and the path are, so a gesture previewing through it keeps its
+ *  `target` and the path are, so a gesture previewing through it keeps its
  *  preview's identity between frames. */
 export function withPath(target: PathNode, worldPath: PolygonPath): { pose: unknown; data: unknown } | null {
-  const held = lastStored.get(target.node);
+  const held = lastStored.get(target);
   if (held?.path === worldPath) return held.shape;
   const shown = withShownPath(target, worldPath);
   const shape = shown ? { pose: target.local(shown.pose), data: shown.data } : null;
-  lastStored.set(target.node, { path: worldPath, shape });
+  lastStored.set(target, { path: worldPath, shape });
   return shape;
 }
 
