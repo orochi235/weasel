@@ -6,6 +6,11 @@ const FILE = '/repo/packages/ui/src/Slider.stories.tsx';
 const ids = (code: string, file = FILE) => indexFile(code, file, 'ui/Auto').map((e) => [e.id, e.name]);
 
 describe('indexFile', () => {
+  it('takes the auto-title for an empty meta title, as Storybook does', () => {
+    const code = `const TITLE = '';\nexport default { title: TITLE };\nexport const A = {};\n`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.id, e.title])).toEqual([['ui-auto--a', 'ui/Auto']]);
+  });
+
   it('reads a file importing forge as a namespace as native', () => {
     const code = `
 import * as forge from '@weasel-js/forge';
