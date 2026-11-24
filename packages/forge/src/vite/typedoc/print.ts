@@ -34,7 +34,7 @@ export function typeText(type: TdType | undefined): string {
     case 'indexedAccess':
       return `${grouped(type.objectType, POSTFIX)}[${typeText(type.indexType)}]`;
     case 'conditional':
-      return `${typeText(type.checkType)} extends ${typeText(type.extendsType)} ? ${typeText(type.trueType)} : ${typeText(type.falseType)}`;
+      return `${grouped(type.checkType, ['conditional', 'function'])} extends ${grouped(type.extendsType, ['conditional'])} ? ${typeText(type.trueType)} : ${typeText(type.falseType)}`;
     case 'templateLiteral':
       return `\`${type.head ?? ''}${(type.tail ?? []).map(([t, text]) => `\${${typeText(t)}}${text}`).join('')}\``;
     case 'predicate':
