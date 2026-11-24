@@ -15,6 +15,8 @@ const GRID_COLORS: ThemeColorSpec<'line' | 'tint'> = {
 /** What the grid keeps of a capture: never its bitmap, which is the source's and good only until its next capture. */
 interface Read {
   at: LensCapture['at'];
+  /** The capture's own pixels per host px, which its bitmap's rows are laid out in, whatever the request asked. */
+  dpr: number;
   mask: Uint8Array | null;
   columns: number;
 }
@@ -65,7 +67,7 @@ export function GridCanvas<C>({
             return;
           }
           const m = maskOf(got.bitmap);
-          setRead({ at: got.at, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
+          setRead({ at: got.at, dpr: got.dpr, mask: m?.mask ?? null, columns: m?.columns ?? 0 });
         },
         () => {
           if (live) setRead(null);
@@ -86,17 +88,17 @@ export function GridCanvas<C>({
     if (el.width !== width) el.width = width;
     if (el.height !== height) el.height = height;
     ctx.setTransform(sd, 0, 0, sd, 0, 0);
-    const view = { factor, dpr, columns: read?.columns ?? 0, size: { width: w, height: h } };
     if (!read) {
       ctx.clearRect(0, 0, w, h);
       return;
     }
+    const view = { factor, dpr: read.dpr, columns: read.columns, size: { width: w, height: h } };
     // Where the lens puts the capture's first pixel, rounded to a device pixel as it is.
     const origin = {
       x: Math.round(width / 2 - read.at.x * factor * sd) / sd,
       y: Math.round(height / 2 - read.at.y * factor * sd) / sd,
     };
     drawPixelGrid(ctx, { ...view, origin }, read.mask, colors);
-  }, [colors, read, factor, dpr, sd, w, h]);
+  }, [colors, read, factor, sd, w, h]);
   return <canvas ref={attach} className="lk-lens-grid" />;
 }
