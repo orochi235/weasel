@@ -27,6 +27,11 @@ describe('keyLegendsFromChord', () => {
     expect(labels('Shift+Mod+Z', 'macos')).toEqual(['⌘', '⇧', 'Z']);
   });
 
+  it('reads an empty chord as no keys', () => {
+    expect(labels('', 'windows')).toEqual([]);
+    expect(labels('  ', 'macos')).toEqual([]);
+  });
+
   it('reads a part named like an Object.prototype member as the key, not a modifier', () => {
     expect(labels('Shift+constructor', 'windows')).toEqual(labels('Shift+x', 'windows').slice(0, -1).concat(['constructor']));
   });

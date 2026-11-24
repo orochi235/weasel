@@ -10,6 +10,7 @@ const isModifier = (part: string): part is ModifierKey => (VALID_MOD_NAMES as re
  * `KeyboardEvent.key` names it, drawn after them as written.
  */
 export function keyLegendsFromChord(chord: string, opts: KeyLegendOptions = {}): readonly KeyLegend[] {
+  if (!chord.trim()) return [];
   // A trailing `+` is the plus key itself: `Mod++`.
   const parts = chord.trim().split(/\+(?=.)/).map((part) => part.trim());
   const named = new Set(parts.map((part) => part.toLowerCase()));
