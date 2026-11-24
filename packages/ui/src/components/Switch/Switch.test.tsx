@@ -43,10 +43,12 @@ describe('Switch', () => {
 
   it('draws and announces a mixed state, and drops it when no longer indeterminate', () => {
     const { rerender } = render(<Switch indeterminate>Snap</Switch>);
-    const sw = screen.getByRole('switch');
+    // A switch has no mixed state in ARIA, so a mixed one speaks as a checkbox.
+    const sw = screen.getByRole('checkbox');
     expect(sw).toHaveAttribute('aria-checked', 'mixed');
     expect(sw.closest('label')).toHaveAttribute('data-indeterminate');
     rerender(<Switch>Snap</Switch>);
+    expect(sw).toHaveAttribute('role', 'switch');
     expect(sw).not.toHaveAttribute('aria-checked');
     expect(sw.closest('label')).not.toHaveAttribute('data-indeterminate');
   });

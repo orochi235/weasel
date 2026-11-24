@@ -4121,3 +4121,9 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): forge's API panel gives no definition to a type name that a component's props and ref
   use for two different declarations, since the panel shows only the name. Showing the first one found, as before, or
   keying definitions by declaration and naming each apart, were the alternatives.
+
+## Audit round eighty-one (2026-11-24): the component kit, part eight
+
+- 2026-11-24 (the fixer's call): an `indeterminate` `Switch` gives its input role `checkbox` with `aria-checked="mixed"`,
+  since ARIA has `switch` treat mixed as off. Keeping role `switch` and saying "mixed" in a description was the
+  alternative.
