@@ -168,7 +168,7 @@ function entry(arr: Float64Array, o: number, d: number, org: ArrayLike<number>, 
     // and can reject a ray grazing an edge that the exact test accepts.
     if (dir[j] === 0 || !Number.isFinite(dir[j])) {
       if (org[j] < lo || org[j] > hi) return -1;
-      if (dir[j] !== 0) far = 0;
+      if (dir[j] !== 0 && far > 0) far = 0;
       if (near > far) return -1;
       continue;
     }
