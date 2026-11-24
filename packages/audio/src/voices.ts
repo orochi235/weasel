@@ -280,6 +280,8 @@ export function createVoices(deps: VoicesDeps): Voices {
     launch(common, starter) {
       checkVoice(common);
       const id = nextVoiceId++;
+      const busName = common.bus ?? deps.defaultBus;
+      const slots = deps.requireSlots(busName);
 
       if (deps.disposed()) {
         warn.disposed();
@@ -292,8 +294,6 @@ export function createVoices(deps: VoicesDeps): Voices {
         return dropped(id);
       }
 
-      const busName = common.bus ?? deps.defaultBus;
-      const slots = deps.requireSlots(busName);
       const bookedAt = ctx.currentTime * 1000;
       const when = common.when ?? bookedAt;
       const baseGain = common.gain ?? 1;

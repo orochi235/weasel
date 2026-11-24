@@ -52,6 +52,19 @@ describe('a voice that never played', () => {
     expect(cb.onDone).not.toHaveBeenCalled();
   });
 
+  it('throws on an unknown bus before the context runs and after dispose, as it does once unlocked', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { engine } = engineHarness();
+    const sound = await engine.load('/a.wav');
+    const cb = callbacks();
+    expect(() => engine.play(sound, { ...cb, bus: 'sfxx' })).toThrow(/unknown bus "sfxx"/);
+    expect(() => engine.playNote({ pitch: 220, bus: 'sfxx' })).toThrow(/unknown bus "sfxx"/);
+    engine.dispose();
+    expect(() => engine.play(sound, { ...cb, bus: 'sfxx' })).toThrow(/unknown bus "sfxx"/);
+    await endOfTask();
+    expect(cb.onDrop).not.toHaveBeenCalled();
+  });
+
   it('reports `disposed` for a play after dispose, and for one still waiting at dispose', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { engine } = engineHarness();
