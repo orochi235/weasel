@@ -137,6 +137,15 @@ describe('a clone source', () => {
     expect(copied?.checked).toBe(true);
   });
 
+  it('keeps a copied control that names the trial’s form by id out of that form', () => {
+    const { slot } = setup(
+      '<p class="probe"><input name="q" value="x" form="f"><form id="f"></form></p>',
+    );
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    const form = document.getElementById('f') as HTMLFormElement;
+    expect([...form.elements].map((el) => el.closest('[data-lk-copy]') !== null)).toEqual([false]);
+  });
+
   it('starts no load or playback in its copy', () => {
     const { slot } = setup(
       '<p class="probe"><iframe src="about:blank#x"></iframe><video autoplay src="a.webm"></video></p>',
