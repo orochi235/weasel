@@ -4132,3 +4132,9 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): an `indeterminate` `Switch` gives its input role `checkbox` with `aria-checked="mixed"`,
   since ARIA has `switch` treat mixed as off. Keeping role `switch` and saying "mixed" in a description was the
   alternative.
+
+## Audit round eighty-two (2026-11-24): path booleans
+
+- 2026-11-24 (the fixer's call): `pathFaceArrangement` throws a `RangeError` for a `flattenTolerance` so fine that a
+  segment would need more than 1024 chords, naming the finest tolerance it can honor. Lifting the cap, or coarsening the
+  tolerance quietly as before, were the alternatives.

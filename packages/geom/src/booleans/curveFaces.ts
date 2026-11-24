@@ -45,6 +45,8 @@ interface Flat {
   t1: Float64Array;
 }
 
+const MAX_CHORDS = 1024;
+
 /** How many chords keep a Bézier within `tol` of its flattening: degree·(degree − 1)/8 of its largest second difference over n². */
 function chords(s: Seg, tol: number): number {
   if (s.length === 2) return 1;
@@ -53,7 +55,12 @@ function chords(s: Seg, tol: number): number {
     m = Math.max(m, Math.hypot(s[i + 2].x - 2 * s[i + 1].x + s[i].x, s[i + 2].y - 2 * s[i + 1].y + s[i].y));
   }
   const d = s.length - 1;
-  return Math.min(1024, Math.max(1, Math.ceil(Math.sqrt((d * (d - 1) * m) / (8 * tol)))));
+  const n = Math.max(1, Math.ceil(Math.sqrt((d * (d - 1) * m) / (8 * tol))));
+  if (n > MAX_CHORDS) {
+    const finest = (d * (d - 1) * m) / (8 * MAX_CHORDS * MAX_CHORDS);
+    throw new RangeError(`flattenTolerance ${tol} needs ${n} chords on one segment, past ${MAX_CHORDS}; use ${finest} or more`);
+  }
+  return n;
 }
 
 function flatten(operands: readonly Contour[][], tol: number): Flat {

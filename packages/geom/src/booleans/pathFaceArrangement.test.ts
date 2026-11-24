@@ -24,6 +24,11 @@ const unionArea = (paths: readonly Path[]): number => {
 };
 
 describe('pathFaceArrangement', () => {
+  it('refuses a flattenTolerance too fine to flatten within', () => {
+    expect(() => pathFaceArrangement([circle(0, 0, 100)], { flattenTolerance: 1e-6 })).toThrow(RangeError);
+    expect(pathFaceArrangement([circle(0, 0, 100)], { flattenTolerance: 1e-3 }).faces).toHaveLength(1);
+  });
+
   it('cuts small circles far from the origin as it does at the origin', () => {
     for (const [o, r] of [[1e6, 0.01], [1e8, 0.1]]) {
       const at = { x: o, y: o };
