@@ -3,8 +3,28 @@ import { pathToMultiPolygon, multiPolygonToPath, type MultiPolygon, type Ring } 
 import { PATH_M, PATH_L, PATH_Z } from '../commands';
 import type { RectPath, PolygonPath } from '../path';
 import { pathContainsPoint } from '../pathHitTest';
+import { clipper } from './clipper';
 
 describe('pathToMultiPolygon', () => {
+  it('leaves the overlap of two opposed crossing rings empty under nonzero, past the cut\'s segment limit', () => {
+    const n = 3000;
+    const ring = (cx: number, dir: 1 | -1) => Array.from({ length: n }, (_, i) => {
+      const a = (dir * 2 * Math.PI * i) / n;
+      return [cx + 10 * Math.cos(a), 10 * Math.sin(a)];
+    }).flat();
+    const sub = [PATH_M, ...Array<number>(n - 1).fill(PATH_L), PATH_Z];
+    const mp = pathToMultiPolygon({
+      kind: 'polygon',
+      fillRule: 'nonzero',
+      commands: new Uint8Array([...sub, ...sub]),
+      coords: new Float32Array([...ring(0, 1), ...ring(12, -1)]),
+    });
+    const path = multiPolygonToPath(clipper.union(mp));
+    expect(pathContainsPoint(path, -5, 0)).toBe(true);
+    expect(pathContainsPoint(path, 6, 0)).toBe(false);
+    expect(pathContainsPoint(path, 17, 0)).toBe(true);
+  });
+
   it('keeps a small hole in a path whose origin lies far from 0', () => {
     const mp = pathToMultiPolygon({
       kind: 'polygon',

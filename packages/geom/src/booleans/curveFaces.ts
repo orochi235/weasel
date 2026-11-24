@@ -228,7 +228,17 @@ const maskOf = (sources: readonly number[]): bigint => sources.reduce((m, i) => 
  * fewest covering inputs first, then by which, then left to right.
  */
 export function curveFaces(paths: readonly Path[], tolerance?: number, polish = true): CurveFaceSet {
-  const operands = paths.map((p) => parseContours(p));
+  const rules = paths.map((p): PathFillRule => (p.kind === 'polygon' ? p.fillRule : 'nonzero'));
+  return contourFaces(paths.map((p) => parseContours(p)), rules, tolerance, polish);
+}
+
+/** {@link curveFaces} on operands already read into contours, each filled by its own rule. */
+export function contourFaces(
+  operands: readonly Contour[][],
+  rules: readonly PathFillRule[],
+  tolerance?: number,
+  polish = true,
+): CurveFaceSet {
   const clockwise = operands.map(clockwiseFirst);
   const extent = extentOf(operands.flat()) || 1;
   if (tolerance !== undefined && !(tolerance > 0 && tolerance < Infinity)) {
@@ -237,9 +247,8 @@ export function curveFaces(paths: readonly Path[], tolerance?: number, polish = 
   const tol = tolerance ?? extent * 1e-5;
   const flat = flatten(operands, tol);
   const arr = arrangeLines(flat.lines);
-  const rules = paths.map((p): PathFillRule => (p.kind === 'polygon' ? p.fillRule : 'nonzero'));
   const first = cyclesOf(arr);
-  const winding = cycleWindings(arr, first, runsOf(arr.along, flat), paths.length);
+  const winding = cycleWindings(arr, first, runsOf(arr.along, flat), operands.length);
   const kept = bounding(arr, first, coverKeys(winding, rules, first.cycles.length));
   const c = cyclesOf(kept);
   const minArea = 1e-12 * extent * extent;
