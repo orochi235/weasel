@@ -1,4 +1,5 @@
 import { multiplier, qty } from '@weasel-js/quantity';
+import { useLatest } from '@weasel-js/react';
 import { Along } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
 import { type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef } from 'react';
@@ -42,8 +43,7 @@ export function LensZoom<C>({
   onRelease,
 }: LensZoomProps<C>) {
   const gesture = useRef(0);
-  const releaseRef = useRef(onRelease);
-  releaseRef.current = onRelease;
+  const releaseRef = useLatest(onRelease);
   const press = useRef<(() => void) | null>(null);
   useEffect(() => () => press.current?.(), []);
   const watchPress = (down: ReactPointerEvent) => {
