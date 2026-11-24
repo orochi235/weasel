@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fakeGpuDevice, type FakeGpuDevice } from './fakeGpuDevice';
 import { createGLRecorder } from './glRecorder';
+import { WeaselRenderer } from '../WeaselRenderer';
 
 const requested: FakeGpuDevice[] = [];
 vi.mock('../gpu/webgpu/requestRendererDevice', () => ({
@@ -11,7 +12,7 @@ vi.mock('../gpu/webgpu/requestRendererDevice', () => ({
   },
 }));
 
-const { openBackends, parityDevice, releaseDevice, renderEach } = await import('./parityHarness');
+const { openBackends, parityDevice, releaseDevice, renderEach, scoped } = await import('./parityHarness');
 
 afterEach(() => {
   releaseDevice();
@@ -68,5 +69,30 @@ describe('openBackends', () => {
     }) as typeof HTMLCanvasElement.prototype.getContext);
     await expect(openBackends({ width: 4, height: 4, dpr: 1 })).rejects.toThrow();
     expect(recorder.calls.some((c) => c.name === 'getExtension' && c.args[0] === 'WEBGL_lose_context')).toBe(true);
+  });
+});
+
+describe('scoped', () => {
+  it('keeps the error its function threw when the scope cannot be popped', async () => {
+    const fake = fakeGpuDevice();
+    vi.spyOn(fake.device, 'popErrorScope').mockRejectedValue(new DOMException('lost', 'OperationError'));
+    await expect(scoped(fake.device, 'building', () => { throw new Error('the build failed'); })).rejects.toThrow('the build failed');
+  });
+});
+
+describe('openBackends, when its build scope cannot be popped', () => {
+  it('disposes both renderers and unconfigures the WebGPU canvas', async () => {
+    const recorder = createGLRecorder();
+    const fake = fakeGpuDevice();
+    const unconfigure = vi.fn();
+    const context = Object.assign(fake.context, { unconfigure });
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(((kind: string) =>
+      (kind === 'webgl2' ? recorder.gl : context)) as typeof HTMLCanvasElement.prototype.getContext);
+    const device = await parityDevice();
+    vi.spyOn(device, 'popErrorScope').mockRejectedValue(new DOMException('lost', 'OperationError'));
+    const dispose = vi.spyOn(WeaselRenderer.prototype, 'dispose');
+    await expect(openBackends({ width: 4, height: 4, dpr: 1 })).rejects.toThrow('lost');
+    expect(dispose).toHaveBeenCalledTimes(2);
+    expect(unconfigure).toHaveBeenCalled();
   });
 });

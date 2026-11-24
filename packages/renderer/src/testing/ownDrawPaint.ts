@@ -18,7 +18,7 @@ export function registerOwnDrawPaint(): () => void {
   });
 }
 
-/** A 10x10 rect at `x` filled by {@link OWN_DRAW_KIND}. */
+/** A `size`-square rect at (`x`, `y`) filled by {@link OWN_DRAW_KIND}. */
 export const ownDrawRect = (x: number, y = 0, size = 10): DrawCommand => ({
   kind: 'path',
   path: { kind: 'rect', x, y, width: size, height: size },
