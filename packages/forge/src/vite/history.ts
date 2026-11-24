@@ -69,6 +69,9 @@ export function versionOf(named: string): string | null {
   return /(?:^v?|@)(\d+\.\d+\.\d+[-+.\w]*)$/.exec(tag)?.[1] ?? null;
 }
 
+/** How many commits one `git name-rev` names, keeping its command line under Windows' 32,767 characters. */
+const NAME_REV_BATCH = 500;
+
 export interface HistoryReader {
   /** The history of each of `sources`, paths relative to the vite root. A file git has never committed has none. */
   read(sources: readonly string[]): Promise<Record<string, ComponentHistory>>;
@@ -96,17 +99,22 @@ export function createHistoryReader(root: string, git: Git = runGit): HistoryRea
     const history: Record<string, ComponentHistory> = {};
     for (const [name, paths] of byPackage) {
       const refs = ['v[0-9]*', '[0-9]*', ...(name === null ? [] : [`${name}@[0-9]*`])].map((ref) => `--refs=${ref}`);
-      const commits = paths.flatMap((path) => [dates.get(path)!.createdBy, dates.get(path)!.modifiedBy]);
-      const named = (await git(['name-rev', '--tags', '--name-only', ...refs, ...commits], top)).split('\n');
-      paths.forEach((path, i) => {
-        const { created, modified } = dates.get(path)!;
+      const commits = [...new Set(paths.flatMap((path) => [dates.get(path)!.createdBy, dates.get(path)!.modifiedBy]))];
+      const named = new Map<string, string>();
+      for (let at = 0; at < commits.length; at += NAME_REV_BATCH) {
+        const batch = commits.slice(at, at + NAME_REV_BATCH);
+        const names = (await git(['name-rev', '--tags', '--name-only', ...refs, ...batch], top)).split('\n');
+        batch.forEach((commit, i) => named.set(commit, names[i] ?? ''));
+      }
+      for (const path of paths) {
+        const { created, modified, createdBy, modifiedBy } = dates.get(path)!;
         setOwn(history, inRepo.get(path)!, {
           created,
           modified,
-          introduced: versionOf(named[2 * i] ?? ''),
-          modifiedIn: versionOf(named[2 * i + 1] ?? ''),
+          introduced: versionOf(named.get(createdBy) ?? ''),
+          modifiedIn: versionOf(named.get(modifiedBy) ?? ''),
         });
-      });
+      }
     }
     return history;
   }
