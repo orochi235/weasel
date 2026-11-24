@@ -79,9 +79,9 @@ function heapPop(sc: Scratch, size: number): void {
 }
 
 /** Closed-interval overlap of the box at `arr[o]` with the query box whose
- *  mins sit at `q[qmin]` and maxes at `q[qmax]`. */
+ *  mins sit at `q[qmin]` and maxes at `q[qmax]`. A NaN or missing query coordinate meets nothing. */
 function meets(arr: Float64Array, o: number, d: number, q: ArrayLike<number>, qmin: number, qmax: number): boolean {
-  for (let j = 0; j < d; j++) if (arr[o + j] > q[qmax + j] || q[qmin + j] > arr[o + d + j]) return false;
+  for (let j = 0; j < d; j++) if (!(arr[o + j] <= q[qmax + j] && q[qmin + j] <= arr[o + d + j])) return false;
   return true;
 }
 
@@ -115,13 +115,13 @@ export function queryOverlap<K>(tree: BvhTree<K>, pool: Scratch, q: ArrayLike<nu
   }
 }
 
-/** False when the box at `arr[o]` lies wholly outside some plane. */
+/** False when the box at `arr[o]` lies wholly outside some plane, or a plane has a NaN or missing term. */
 function notOutside(arr: Float64Array, o: number, d: number, planes: readonly HalfSpace[]): boolean {
   for (let p = 0; p < planes.length; p++) {
     const { normal, offset } = planes[p];
     let v = offset;
     for (let j = 0; j < d; j++) v += normal[j] * (normal[j] >= 0 ? arr[o + d + j] : arr[o + j]);
-    if (v < 0) return false;
+    if (!(v >= 0)) return false;
   }
   return true;
 }
