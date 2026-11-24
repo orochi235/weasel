@@ -1,7 +1,7 @@
 /**
- * The answer book against a model: the last 50 configs' answers kept by recency of recording, a config's pins and
- * playhead no part of its key, a path hidden under a hidden branch, errors read as own keys only, and subscribers
- * told only of a changed answer to a config some trial holds.
+ * The answer book against a model: the last 50 configs' answers kept by recency of recording and every held config's
+ * kept beside them, a config's pins and playhead no part of its key, a path hidden under a hidden branch, errors read
+ * as own keys only, and subscribers told only of a changed answer to a config some trial holds.
  */
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
@@ -61,8 +61,10 @@ function recordOne(m: Model, r: Real, c: unknown, a: Answer): void {
   const before = m.kept.get(k)?.key ?? stableStringify({ hidden: [], errors: {} });
   m.kept.delete(k);
   m.kept.set(k, { answer: a, key: answerKey });
-  if (m.kept.size > KEPT) {
-    m.kept.delete(m.kept.keys().next().value!);
+  for (const oldest of m.kept.keys()) {
+    if (m.kept.size <= KEPT) break;
+    if (m.held.has(oldest)) continue;
+    m.kept.delete(oldest);
     t.count('evicted');
   }
   if (answerKey !== before && m.held.has(k)) m.emitted += 1;

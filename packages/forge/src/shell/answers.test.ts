@@ -55,6 +55,18 @@ describe('createAnswerBook', () => {
     expect(book.hidden('x', { n: 50 })).toBe(true);
   });
 
+  it('keeps the answer of a config a trial holds, however many newer configs are recorded', () => {
+    const book = createAnswerBook();
+    const release = book.hold({ n: 0 });
+    for (let n = 0; n < 60; n++) book.record({ configKey: stableStringify({ n }), hidden: ['x'], errors: {} });
+    expect(book.hidden('x', { n: 0 })).toBe(true);
+    expect(book.hidden('x', { n: 1 })).toBe(false);
+    expect(book.hidden('x', { n: 59 })).toBe(true);
+    release();
+    book.record({ configKey: stableStringify({ n: 60 }), hidden: ['x'], errors: {} });
+    expect(book.hidden('x', { n: 0 })).toBe(false);
+  });
+
   it('notifies subscribers when a config’s answer changes, until they unsubscribe', () => {
     const book = createAnswerBook();
     const fn = vi.fn();

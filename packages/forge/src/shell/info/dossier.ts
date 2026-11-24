@@ -2,6 +2,7 @@ import type { Instrument } from '@weasel-js/labkit';
 import { type ConfigNode, type ConfigShape, isConfigBranch, configValueAt } from '@weasel-js/labkit/config';
 import type { IndexEntry } from '../../story/types';
 import { type Libraries, TITLE_LIBRARIES } from '../../story/library';
+import { isForgePath } from '../globals';
 
 /** One prop of the story, as the dossier prints it. */
 export interface DossierArg {
@@ -35,15 +36,11 @@ export interface Dossier {
   argsPending: boolean;
 }
 
-/** The group forge hides the lab's globals in. Those are the lab's settings,
- *  not the story's props, and the dossier is about the story. */
-const GLOBALS = '$globals';
-
 /** Every visible leaf of `shape`, depth first, carrying its dotted path. */
 function leaves(shape: ConfigShape, prefix = ''): { path: string; node: ConfigNode }[] {
   const out: { path: string; node: ConfigNode }[] = [];
   for (const [key, entry] of Object.entries(shape)) {
-    if (prefix === '' && key === GLOBALS) continue;
+    if (prefix === '' && isForgePath(key)) continue;
     const path = prefix ? `${prefix}.${key}` : key;
     if (isConfigBranch(entry)) out.push(...leaves(entry.children, path));
     else if (!entry.annotations.hidden) out.push({ path, node: entry });

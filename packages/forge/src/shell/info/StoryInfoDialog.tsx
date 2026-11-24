@@ -42,7 +42,7 @@ export function StoryInfoDialog({ index, isReady, open, onOpenChange }: StoryInf
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
-      title={breadcrumb(dossier.title, dossier.name)}
+      title={breadcrumb(dossier)}
       className="fg-info-dialog"
     >
       <StoryDossier dossier={dossier} />

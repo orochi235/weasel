@@ -6,6 +6,7 @@
 import fc from 'fast-check';
 import { describe, expect, it } from 'vitest';
 import { key, runs, tally, timeoutFor } from '../pbt.fixture';
+import { indexId } from '../story/indexPages';
 import type { IndexEntry } from '../story/types';
 import { breadcrumb, crumbs, restatesTitle } from './breadcrumb';
 import { effectiveGlobals, FOLLOW_APP, FOLLOW_LAB, type GlobalDeclarations, GLOBALS_KEY, labGlobals, PLAYHEAD_KEY, storyConfig } from './globals';
@@ -89,20 +90,21 @@ describe('buildTree', () => {
 });
 
 describe('crumbs', () => {
-  it("walk the title's prefixes, ending at the story, with no `index` step after the first", () => {
+  it("walk the title's prefixes with no `index` folder after the first, ending at the story unless it is the index page", () => {
     fc.assert(
-      fc.property(title, fc.constantFrom('Primary', 'Button', 'Bar', 'index'), (t, name) => {
-        const steps = crumbs(t, name);
-        // A story named `index`, as an index page is, leaves the crumb of the folder it is.
-        if (!/(^|\/)index$/i.test(`${t}/${name}`)) expect(steps.at(-1)!.path).toBeNull();
+      fc.property(title, fc.constantFrom('Primary', 'Button', 'Bar', 'index', 'Index'), fc.boolean(), (t, name, page) => {
+        const entry = { id: page ? indexId(t) : 's0', title: t, name };
+        const steps = crumbs(entry);
+        const folders = page ? steps : steps.slice(0, -1);
+        if (!page) expect(steps.at(-1)!.path).toBeNull();
         const segments = t.split('/');
-        for (const step of steps.slice(0, -1)) {
+        for (const step of folders) {
           expect(step.path).not.toBeNull();
           expect(segments.slice(0, step.path!.split('/').length).join('/')).toBe(step.path);
           expect(step.label).toBe(step.path!.split('/').at(-1));
         }
-        expect(steps.slice(1).some((s) => s.label.toLowerCase() === 'index')).toBe(false);
-        expect(breadcrumb(t, name)).toBe(steps.map((s) => s.label).join(' > '));
+        expect(folders.slice(1).some((s) => s.label.toLowerCase() === 'index')).toBe(false);
+        expect(breadcrumb(entry)).toBe(steps.map((s) => s.label).join(' > '));
       }),
       runs(RUNS),
     );

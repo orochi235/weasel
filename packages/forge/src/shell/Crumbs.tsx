@@ -6,7 +6,7 @@ import { breadcrumb, crumbs } from './breadcrumb';
 import { revealInTree } from './treeReveal';
 
 function Crumbs({ entry }: { entry: IndexEntry }) {
-  const steps = crumbs(entry.title, entry.name);
+  const steps = crumbs(entry);
   return (
     <span className="fg-crumbs">
       {steps.map((step, i) => (
@@ -38,6 +38,6 @@ function Crumbs({ entry }: { entry: IndexEntry }) {
 /** An entry's trial title: its breadcrumb, drawn with each folder a link to that folder in the story tree. A trial
  *  someone renamed shows the name it was given. */
 export function crumbTitle(entry: IndexEntry): Pick<Instrument, 'title' | 'renderTitle'> {
-  const title = breadcrumb(entry.title, entry.name);
+  const title = breadcrumb(entry);
   return { title, renderTitle: (shown) => (shown === title ? <Crumbs entry={entry} /> : shown) };
 }

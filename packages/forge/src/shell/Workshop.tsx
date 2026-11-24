@@ -29,7 +29,7 @@ import { LoupeProvider } from './loupe/CaptureInputs';
 import { createStoryHosts, StoryHostsContext } from './storyHosts';
 import { createTrialFrames, TrialFramesContext } from './trialFrames';
 import { RoutePlayhead } from '../timeline/RoutePlayhead';
-import { type GlobalDeclarations, labGlobals } from './globals';
+import { followApp, type GlobalDeclarations, type LabChrome, labGlobals } from './globals';
 import { GlobalsToolbar, LabGlobals } from './GlobalsToolbar';
 import { GlobalsMenus } from './globalsMenu';
 import type { StoryChanges } from './storyChanges';
@@ -67,6 +67,8 @@ export interface WorkshopProps {
 }
 
 const NO_DECLARATIONS: GlobalDeclarations = {};
+/** The chrome a lab with nothing stored opens with, which the lab's globals follow until it reports its own. */
+const UNOPENED_CHROME: LabChrome = { mode: 'auto' };
 
 /**
  * Shows the story the route names when no trial shows it, once per route, so closing that trial sticks. It goes
@@ -166,7 +168,9 @@ export function Workshop(props: WorkshopProps) {
   );
   const reload = registry.reload;
   useEffect(() => changes?.subscribe(reload), [changes, reload]);
-  const [labValues, setLabValues] = useState<StoryGlobals>(() => labGlobals(declarations, undefined));
+  const [labValues, setLabValues] = useState<StoryGlobals>(() =>
+    followApp(declarations, labGlobals(declarations, undefined, UNOPENED_CHROME), UNOPENED_CHROME),
+  );
   const themeFor = config?.labTheme;
   const labTheme = useMemo(() => themeFor?.(labValues), [themeFor, labValues]);
   const [infoOpen, setInfoOpen] = useState(false);
