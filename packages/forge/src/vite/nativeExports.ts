@@ -72,14 +72,17 @@ function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: n
 const isGlobal = (node: t.Node, scope: Scope): boolean =>
   node.type === 'Identifier' && !scope.bindings.has(node.name) && !scope.imports.has(node.name);
 
-const isObjectAssign = (callee: t.Node, scope: Scope): boolean =>
-  callee.type === 'MemberExpression' &&
-  isGlobal(callee.object, scope) &&
-  callee.object.type === 'Identifier' &&
-  callee.object.name === 'Object' &&
-  !callee.computed &&
-  callee.property.type === 'Identifier' &&
-  callee.property.name === 'assign';
+/** `Object`'s methods that hand back the object they are given. */
+const PASS_THROUGH = new Set(['freeze', 'seal', 'preventExtensions']);
+
+/** What an `Object.assign` call copies from, or what a pass-through `Object` call hands back; else null. */
+function objectCallSources(node: t.CallExpression, scope: Scope): readonly t.Node[] | null {
+  const { callee } = node;
+  if (callee.type !== 'MemberExpression' || callee.computed || callee.property.type !== 'Identifier') return null;
+  if (callee.object.type !== 'Identifier' || callee.object.name !== 'Object' || !isGlobal(callee.object, scope)) return null;
+  if (callee.property.name === 'assign') return node.arguments;
+  return PASS_THROUGH.has(callee.property.name) ? node.arguments.slice(0, 1) : null;
+}
 
 /** Whether calling `fn` may hand back a story. */
 export function mayReturnStory(fn: Fn, scope: Scope, depth = 0): boolean {
@@ -93,10 +96,10 @@ export function mayCallStory(node: t.Node | undefined, scope: Scope, depth = 0):
 
 /**
  * Whether a native file's export may be what forge's `story` returned, which is all the loader takes. A call is one
- * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread or
- * `Object.assign`) or a choice is one when something it copies or chooses from is. What cannot be read stays in: an
- * import nothing resolved, a method of anything but a literal or a global, a function a call made, a chain longer
- * than it follows.
+ * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread,
+ * `Object.assign`, or `Object.freeze`) or a choice is one when something it copies or chooses from is. What cannot be
+ * read stays in: an import nothing resolved, a method of anything but a literal or a global, a function a call made,
+ * a chain longer than it follows.
  */
 export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): boolean {
   if (!node || depth > 16) return true;
@@ -113,7 +116,8 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
         : (scope.foreign?.value(node.name) ?? true);
     case 'CallExpression': {
       const { callee } = node;
-      if (isObjectAssign(callee, scope)) return node.arguments.some((arg) => mayBeStory(arg, scope, depth + 1));
+      const sources = objectCallSources(node, scope);
+      if (sources) return sources.some((arg) => mayBeStory(arg, scope, depth + 1));
       const wrapper = scope.wrappers.get(calleeName(callee) ?? '');
       if (wrapper) return wrapper === 'story';
       if (callee.type === 'MemberExpression') return !isLiteralValue(callee.object, scope.bindings) && !isGlobal(callee.object, scope);
