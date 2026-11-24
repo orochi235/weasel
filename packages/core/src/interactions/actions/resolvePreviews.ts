@@ -120,14 +120,17 @@ export function resolvePreviews<TData, TLayer extends string, TPose>(
     };
   };
 
-  const roots: PreviewNode<TData, TLayer, TPose>[] = [];
+  const candidates: PreviewNode<TData, TLayer, TPose>[] = [];
   for (const id of ids) {
     const parent = scene.get(asNodeId(id))?.parent;
     if (parent != null && ids.has(parent)) continue;
     const root = build(id);
-    if (root) roots.push(root);
+    if (root) candidates.push(root);
   }
-  return roots;
+  // A frame carries its whole subtree, so it can reach a previewed node whose parent is not previewed.
+  const nested = new Set<string>();
+  for (const root of candidates) for (const child of root.children) for (const e of flattenPreviews([child])) nested.add(e.id);
+  return candidates.filter((root) => !nested.has(root.id));
 }
 
 /** Every entry in the forest, parents before their children. */

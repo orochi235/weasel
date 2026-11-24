@@ -12,7 +12,7 @@ import { type DepName, type DepSchema } from '@weasel-js/routing';
 // `import type` — a bare `import './depSchema'` makes esbuild emit a runtime import that it
 // then drops under the package's `sideEffects: false`, warning on every build.
 import type {} from './engineDeps';
-import { compositeKey, getOwn } from '@weasel-js/registry';
+import { compositeKey, createPart, getOwn } from '@weasel-js/registry';
 
 /** The deps every standard action reads. */
 export interface StandardDeps {
@@ -83,11 +83,15 @@ const YIELDS_TO: Readonly<Record<string, string>> = {
   'clipboard.pasteEvent': 'ingest',
 };
 
+let nextIdentity = 0;
+const identityOf = createPart((_action: Action): number => nextIdentity++);
+
 /**
  * Register `actions` into the nearest `<ActionsProvider>`, in order, leaving
  * out the ids in `exclude`; a no-op without both an actions and a dep
- * registry in scope. The set is keyed by its ids, so a fresh array of the same
- * actions does not re-register.
+ * registry in scope. The set is keyed by its actions' identities, so a fresh
+ * array of the same actions does not re-register, and an action rebuilt under
+ * the same id replaces the one before it.
  */
 export function useActionSet(actions: readonly Action[], exclude?: Iterable<string>): void {
   const reg = useActionsRegistry();
@@ -96,7 +100,7 @@ export function useActionSet(actions: readonly Action[], exclude?: Iterable<stri
   const excluded = exclude ? [...exclude] : [];
   const excludedRef = useLatest(excluded);
   const excludeKey = compositeKey(excluded);
-  const actionsKey = compositeKey(actions.map((a) => a.id));
+  const actionsKey = actions.map(identityOf).join(' ');
 
   useEffect(() => {
     if (!reg || !depReg) return;

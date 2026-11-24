@@ -27,5 +27,8 @@ describe('resolveSpatialReference', () => {
   it('answers null for a malformed value', () => {
     expect(resolveSpatialReference('elsewhere', src({ x: 0, y: 0 }))).toBeNull();
     expect(resolveSpatialReference({ x: '1', y: 2 }, src(null))).toBeNull();
+    expect(resolveSpatialReference({ x: NaN, y: 2 }, src(null))).toBeNull();
+    expect(resolveSpatialReference({ x: 1, y: 2, width: Infinity, height: 4 }, src(null))).toBeNull();
+    expect(resolveSpatialReference({ x: 1, y: 2, width: 3, height: NaN }, src(null))).toBeNull();
   });
 });

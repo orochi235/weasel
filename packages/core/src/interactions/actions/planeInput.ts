@@ -326,8 +326,7 @@ function insertExtrasFromPlane(extras: unknown, m: PlaneMap): unknown {
   // Radial kinds inscribe in a square, so one scale carries a radius.
   const r = (v: unknown) => (typeof v === 'number' ? v / ((m.scale.x + m.scale.y) / 2) : v);
   const out: Record<string, unknown> = { ...e };
-  if (e['a'] && e['b']) { out['a'] = pt(e['a']); out['b'] = pt(e['b']); }
-  if (e['center']) out['center'] = pt(e['center']);
+  for (const key of ['a', 'b', 'center'] as const) if (e[key]) out[key] = pt(e[key]);
   if ('radius' in e) out['radius'] = r(e['radius']);
   if ('outerRadius' in e) out['outerRadius'] = r(e['outerRadius']);
   if (Array.isArray(e['samples'])) {

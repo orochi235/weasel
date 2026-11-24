@@ -4,7 +4,7 @@ import type { Op } from 'core/ops/types';
 import { createScene } from 'core/scene/scene';
 import type { RectPose } from 'core/scene/types';
 import { defaultCommitAdapter } from 'interactions/actions/defaultCommitAdapter';
-import { pathCopy, pathNodesOf, reshapeOps } from './pathNodes';
+import { pathCopy, pathNodesOf, reshapeOps, withPath } from './pathNodes';
 import type { AnyScene } from 'core/scene/anyScene';
 
 const line = (x0: number, y0: number, x1: number, y1: number): PolygonPath =>
@@ -58,5 +58,17 @@ describe('path nodes inside a frame', () => {
     expect(node.parent).toBe(group);
     const shown = pathInWorld((node.data as { path: PolygonPath }).path, { ...(node.pose as RectPose), x: (node.pose as RectPose).x + 90 });
     expect(boundsOfPath(shown)).toMatchObject({ x: 100, y: 10, height: 10 });
+  });
+
+  it('stores a path in the frame its parent has now, after the parent moves', () => {
+    const { scene, inner, group } = crossing(90, 0);
+    const path = line(100, 10, 100, 20);
+    const [before] = pathNodesOf(scene, [inner]);
+    const first = withPath(before, path)!;
+    scene.setPose(group, { x: 50, y: 0, width: 20, height: 100, rotation: 0 } as never);
+    const [after] = pathNodesOf(scene, [inner]);
+    expect(after.node).toBe(before.node);
+    const second = withPath(after, path)!;
+    expect((second.pose as RectPose).x).toBeCloseTo((first.pose as RectPose).x + 40);
   });
 });
