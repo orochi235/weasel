@@ -132,6 +132,11 @@ export const Made = defineStory({});
     expect(titled(`import { shared } from './shared';\nexport default { ...shared, title: 'ui/Own' };`)).toEqual([['ui/Own', 'Base']]);
   });
 
+  it('reads no value past a later getter or method of the same key, as the object holds what that one gives', () => {
+    const code = `export default { title: 'ui/A', get title() { return 'ui/B'; } };\nexport const S = { name: 'x', name() { return 'y'; } };\n`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/Auto', 'S']]);
+  });
+
   it('reads a native export that picks between values, or copies one, by what it picks from', () => {
     const code = `
 import { meta, story } from '@weasel-js/forge';

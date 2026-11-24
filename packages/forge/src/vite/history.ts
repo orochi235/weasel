@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, posix, resolve } from 'node:path';
+import { posix, resolve } from 'node:path';
+import { packageNameOf } from './packageName.ts';
 import { setOwn } from './ownKeys.ts';
 import type { ComponentHistory } from '../story/types.ts';
 
@@ -69,22 +69,8 @@ export function versionOf(named: string): string | null {
   return /(?:^v?|@)(\d+\.\d+\.\d+[-+.\w]*)$/.exec(tag)?.[1] ?? null;
 }
 
-/** The name of the package `file` belongs to: the nearest `package.json` at or under `top` that has one. */
-function packageOf(file: string, top: string): string | null {
-  for (let dir = dirname(file); dir.startsWith(top); dir = dirname(dir)) {
-    const manifest = join(dir, 'package.json');
-    if (existsSync(manifest)) {
-      try {
-        const name = (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: unknown }).name;
-        if (typeof name === 'string') return name;
-      } catch {
-        // An unreadable manifest names no package; the next one up may.
-      }
-    }
-    if (dir === top) break;
-  }
-  return null;
-}
+/** How many commits one `git name-rev` names, keeping its command line under Windows' 32,767 characters. */
+const NAME_REV_BATCH = 500;
 
 export interface HistoryReader {
   /** The history of each of `sources`, paths relative to the vite root. A file git has never committed has none. */
@@ -107,23 +93,28 @@ export function createHistoryReader(root: string, git: Git = runGit): HistoryRea
     /** Per package, the files it holds: a release is looked for among that package's tags and the unscoped ones. */
     const byPackage = new Map<string | null, string[]>();
     for (const path of dates.keys()) {
-      const name = packageOf(resolve(top, path), top);
+      const name = packageNameOf(resolve(top, path), top);
       byPackage.set(name, [...(byPackage.get(name) ?? []), path]);
     }
     const history: Record<string, ComponentHistory> = {};
     for (const [name, paths] of byPackage) {
       const refs = ['v[0-9]*', '[0-9]*', ...(name === null ? [] : [`${name}@[0-9]*`])].map((ref) => `--refs=${ref}`);
-      const commits = paths.flatMap((path) => [dates.get(path)!.createdBy, dates.get(path)!.modifiedBy]);
-      const named = (await git(['name-rev', '--tags', '--name-only', ...refs, ...commits], top)).split('\n');
-      paths.forEach((path, i) => {
-        const { created, modified } = dates.get(path)!;
+      const commits = [...new Set(paths.flatMap((path) => [dates.get(path)!.createdBy, dates.get(path)!.modifiedBy]))];
+      const named = new Map<string, string>();
+      for (let at = 0; at < commits.length; at += NAME_REV_BATCH) {
+        const batch = commits.slice(at, at + NAME_REV_BATCH);
+        const names = (await git(['name-rev', '--tags', '--name-only', ...refs, ...batch], top)).split('\n');
+        batch.forEach((commit, i) => named.set(commit, names[i] ?? ''));
+      }
+      for (const path of paths) {
+        const { created, modified, createdBy, modifiedBy } = dates.get(path)!;
         setOwn(history, inRepo.get(path)!, {
           created,
           modified,
-          introduced: versionOf(named[2 * i] ?? ''),
-          modifiedIn: versionOf(named[2 * i + 1] ?? ''),
+          introduced: versionOf(named.get(createdBy) ?? ''),
+          modifiedIn: versionOf(named.get(modifiedBy) ?? ''),
         });
-      });
+      }
     }
     return history;
   }

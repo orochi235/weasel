@@ -283,16 +283,22 @@ describe('launchCaptureBrowser', () => {
     await browser.close();
   });
 
-  it('lets the capture page reach the origins it is given as well, and still nothing else', async () => {
+  it('lets the capture page reach the origins it is given as well, fetched from Node, and still nothing else', async () => {
     const fake = fakePlaywright();
-    const browser = await launched(fake.load);
+    const fetched: string[] = [];
+    const fetchImpl = (async (input: string) => {
+      fetched.push(input);
+      return new Response('ok');
+    }) as typeof fetch;
+    const browser = await launched(fake.load, fetchImpl);
     await browser.capture('http://127.0.0.1:5173/__forge/capture.html', payload, ['https://fonts.googleapis.com', 'https://fonts.gstatic.com']);
     const [handler] = fake.routes;
-    expect(await decide(handler!, 'https://fonts.googleapis.com/css2?family=Oswald')).toBe('continue');
-    expect(await decide(handler!, 'https://fonts.gstatic.com/s/oswald/v53/face.woff2')).toBe('continue');
+    expect(await decide(handler!, 'https://fonts.googleapis.com/css2?family=Oswald')).toBe('fulfill');
+    expect(await decide(handler!, 'https://fonts.gstatic.com/s/oswald/v53/face.woff2')).toBe('fulfill');
     expect(await decide(handler!, 'http://127.0.0.1:5173/@id/virtual:forge/index.js')).toBe('continue');
     expect(await decide(handler!, 'https://fonts.example.com/face.woff2')).toBe('abort');
     expect(await decide(handler!, 'http://fonts.gstatic.com/s/face.woff2')).toBe('abort');
+    expect(fetched).toEqual(['https://fonts.googleapis.com/css2?family=Oswald', 'https://fonts.gstatic.com/s/oswald/v53/face.woff2']);
     await browser.close();
   });
 
@@ -348,23 +354,48 @@ describe('launchCaptureBrowser', () => {
     await browser.close();
   });
 
-  it('hands an allowlisted redirect to the page instead of following it from Node', async () => {
+  it.each(['http', 'https'])(
+    'follows an allowlisted redirect from Node, and aborts one leaving the allowed origins, under an %s dev server',
+    async (protocol) => {
+      const fake = fakePlaywright();
+      const fetched: { url: string; redirect?: RequestRedirect }[] = [];
+      const hops: Record<string, string> = {
+        'https://fonts.gstatic.com/s/face.woff2': '/s/v2/face.woff2',
+        'https://fonts.gstatic.com/leak': 'http://10.0.0.1/secret',
+      };
+      const fetchImpl = (async (input: string, init?: RequestInit) => {
+        fetched.push({ url: input, redirect: init?.redirect });
+        const location = hops[input];
+        return location ? new Response(null, { status: 302, headers: { location } }) : new Response('font');
+      }) as typeof fetch;
+      const browser = await launched(fake.load, fetchImpl);
+      await browser.capture(`${protocol}://127.0.0.1:5173/__forge/capture.html`, payload, ['https://fonts.gstatic.com']);
+      const [handler] = fake.routes;
+      const { decision, fulfilled } = await route(handler!, 'https://fonts.gstatic.com/s/face.woff2');
+      expect(decision).toBe('fulfill');
+      expect(fulfilled?.status).toBe(200);
+      expect(await decide(handler!, 'https://fonts.gstatic.com/leak')).toBe('abort');
+      expect(fetched).toEqual([
+        { url: 'https://fonts.gstatic.com/s/face.woff2', redirect: 'manual' },
+        { url: 'https://fonts.gstatic.com/s/v2/face.woff2', redirect: 'manual' },
+        { url: 'https://fonts.gstatic.com/leak', redirect: 'manual' },
+      ]);
+      await browser.close();
+    },
+  );
+
+  it('aborts an allowlisted request that redirects without end', async () => {
     const fake = fakePlaywright();
-    const fetched: { url: string; redirect?: RequestRedirect }[] = [];
-    const fetchImpl = (async (input: string, init?: RequestInit) => {
-      fetched.push({ url: input, redirect: init?.redirect });
-      if (init?.redirect !== 'manual') return new Response('internal');
-      return new Response(null, { status: 302, headers: { location: 'http://10.0.0.1/secret' } });
+    let fetches = 0;
+    const fetchImpl = (async () => {
+      fetches++;
+      return new Response(null, { status: 302, headers: { location: `/hop${fetches}` } });
     }) as typeof fetch;
     const browser = await launched(fake.load, fetchImpl);
     await browser.capture('https://127.0.0.1:5173/__forge/capture.html', payload, ['https://fonts.gstatic.com']);
     const [handler] = fake.routes;
-    const { decision, fulfilled } = await route(handler!, 'https://fonts.gstatic.com/s/face.woff2');
-    expect(decision).toBe('fulfill');
-    expect(fulfilled?.status).toBe(302);
-    expect(fulfilled?.headers.location).toBe('http://10.0.0.1/secret');
-    expect(fetched).toEqual([{ url: 'https://fonts.gstatic.com/s/face.woff2', redirect: 'manual' }]);
-    expect(await decide(handler!, 'http://10.0.0.1/secret')).toBe('abort');
+    expect(await decide(handler!, 'https://fonts.gstatic.com/loop')).toBe('abort');
+    expect(fetches).toBe(6);
     await browser.close();
   });
 

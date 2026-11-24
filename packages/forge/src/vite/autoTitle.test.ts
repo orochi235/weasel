@@ -44,6 +44,7 @@ describe('autoTitle', () => {
   it("titles a file no glob matches from its path under the root, by the same rules", () => {
     expect(autoTitle('/repo/elsewhere/Button/Button.stories.tsx', ROOT, ['src/**/*.stories.tsx'])).toBe('elsewhere/Button');
     expect(autoTitle('/repo/Button.stories.tsx', ROOT, [])).toBe('Button');
+    expect(autoTitle('/x/Foo.stories.tsx', '/repo/app', [])).toBe('x/Foo');
   });
 });
 

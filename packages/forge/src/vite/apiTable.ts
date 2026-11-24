@@ -1,5 +1,6 @@
 import type ts from 'typescript';
 import type { ApiInherited, ApiMember, ApiProp, ApiRef, ApiTable } from '../story/api.ts';
+import { packageNameOf } from './packageName.ts';
 import { addTypeDef, addTypeDefs, createTypeDefs } from './typeDefs.ts';
 
 /** What reading one story file's component API needs. */
@@ -118,11 +119,12 @@ function writtenType({ tsm, checker, at }: ApiReading, symbol: ts.Symbol): strin
   return checker.typeToString(type, undefined, tsm.TypeFormatFlags.NoTruncation);
 }
 
-/** The package a file is in, `@scope/name` or `name`, else the file's own name. */
+/** The package a file is in, `@scope/name` or `name`: under `node_modules` by its path, elsewhere by its nearest
+ *  manifest, else the file's own name. */
 function packageOf(file: string): string {
   const parts = file.split(/[\\/]/);
   const at = parts.lastIndexOf('node_modules');
-  if (at < 0 || at + 1 >= parts.length) return parts.at(-1) ?? file;
+  if (at < 0 || at + 1 >= parts.length) return packageNameOf(file) ?? parts.at(-1) ?? file;
   const name = parts[at + 1]!;
   return name.startsWith('@') && parts[at + 2] ? `${name}/${parts[at + 2]}` : name;
 }
@@ -136,7 +138,7 @@ function containerName(tsm: typeof ts, prop: ts.Symbol): string | undefined {
   return undefined;
 }
 
-/** What `ref` holds: the type of `current` on the ref object it accepts. */
+/** What `ref` holds: the type of `current` on the ref object it accepts, and its members but the platform's own. */
 function refOf(
   reading: ApiReading,
   prop: ts.Symbol,
@@ -157,7 +159,11 @@ function refOf(
     if (declared.length > 0 && declared.every((d) => reading.platform(d.getSourceFile().fileName))) {
       return { type: name, members: [] };
     }
-    const members = checker.getPropertiesOfType(held).map((member) => {
+    const own = (member: ts.Symbol) => {
+      const files = filesOf(member);
+      return files.length === 0 || !files.every(reading.platform);
+    };
+    const members = checker.getPropertiesOfType(held).filter(own).map((member) => {
       record(member);
       const entry = memberEntry(reading, member);
       define(member, entry.signature);

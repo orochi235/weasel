@@ -32,13 +32,13 @@ const titleFrom = (importPath: string, directory: string): string =>
 
 /**
  * The title Storybook gives a story file whose meta names none: its path under the directory of the first
- * `stories` glob that matches it. A file no glob matches is titled from its path under `root`.
+ * `stories` glob that matches it. A file no glob matches is titled from its path from `root`, less any `..`.
  */
 export function autoTitle(file: string, root: string, stories: readonly string[]): string {
   const path = posixRelative(root, file);
   const importPath = dotted(path);
   const pattern = storyGlobOf(path, stories);
-  if (pattern === undefined) return titleFrom(importPath, '.');
+  if (pattern === undefined) return titleParts(path.split('/').filter((s) => s && s !== '.' && s !== '..')).join('/');
   const directory = dotted(posixRelative(root, resolve(root, globDirectory(pattern)))).replace(/\/$/, '');
   return titleFrom(importPath, directory);
 }

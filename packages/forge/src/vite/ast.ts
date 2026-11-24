@@ -245,8 +245,9 @@ export function objectOf(
 const ABSENT = Symbol('absent');
 
 /**
- * The value `obj` holds at `key`, as an object literal evaluates: the last property naming it, or what a spread after
- * it carries, read through `bindings` and `wrappers`. A spread it cannot read is taken to set nothing.
+ * The value `obj` holds at `key`, as an object literal evaluates: the last property naming it (a method or accessor
+ * answers itself, which reads as no literal), or what a spread after it carries, read through `bindings` and
+ * `wrappers`. A spread it cannot read is taken to set nothing.
  */
 export function prop(
   obj: t.ObjectExpression | null,
@@ -272,9 +273,9 @@ function lookup(
       if (found !== ABSENT) return found;
       continue;
     }
-    if (p.type !== 'ObjectProperty' || p.computed) continue;
+    if (p.computed) continue;
     const name = p.key.type === 'Identifier' ? p.key.name : p.key.type === 'StringLiteral' ? p.key.value : null;
-    if (name === key) return p.value;
+    if (name === key) return p.type === 'ObjectProperty' ? p.value : p;
   }
   return ABSENT;
 }

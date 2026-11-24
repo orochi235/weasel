@@ -55,20 +55,35 @@ export async function captureAvailability(load: Load = loadPlaywright): Promise<
 /** Headers describing the body as it came over the wire, which Node's fetch has already decoded. */
 const WIRE_HEADERS = new Set(['content-encoding', 'content-length', 'transfer-encoding']);
 
-/** A request to an allowlisted origin, fetched from Node so its certificate is checked even when the page's
- *  context ignores certificate errors. Only GET and HEAD pass, and a redirect goes back to the page as-is, so its
- *  target meets the route guard on its own origin rather than being fetched from Node. */
-async function passThrough(route: Route, fetchImpl: typeof fetch): Promise<void> {
+/** How many redirects an allowlisted request may follow before it is aborted. */
+const MAX_REDIRECTS = 5;
+
+/**
+ * A request to an allowlisted origin, fetched from Node so its certificate is checked even when the page's context
+ * ignores certificate errors. Only GET and HEAD pass. Redirects are followed here, each hop's origin checked against
+ * `reach`, because Playwright hands a redirected request to the browser without calling the route handler again.
+ */
+async function passThrough(route: Route, reach: (origin: string) => boolean, fetchImpl: typeof fetch): Promise<void> {
   const request = route.request();
   const method = request.method();
   if (method !== 'GET' && method !== 'HEAD') return route.abort();
   try {
-    const response = await fetchImpl(request.url(), { method, headers: request.headers(), redirect: 'manual' });
-    await route.fulfill({
-      status: response.status,
-      headers: Object.fromEntries([...response.headers].filter(([name]) => !WIRE_HEADERS.has(name))),
-      body: Buffer.from(await response.arrayBuffer()),
-    });
+    let url = request.url();
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      const response = await fetchImpl(url, { method, headers: request.headers(), redirect: 'manual' });
+      const location = response.headers.get('location');
+      if (response.status >= 300 && response.status < 400 && location !== null) {
+        url = new URL(location, url).href;
+        if (!reach(new URL(url).origin)) return await route.abort();
+        continue;
+      }
+      return await route.fulfill({
+        status: response.status,
+        headers: Object.fromEntries([...response.headers].filter(([name]) => !WIRE_HEADERS.has(name))),
+        body: Buffer.from(await response.arrayBuffer()),
+      });
+    }
+    await route.abort();
   } catch {
     await route.abort();
   }
@@ -76,17 +91,18 @@ async function passThrough(route: Route, fetchImpl: typeof fetch): Promise<void>
 
 /**
  * Lets `page` reach nothing but the server `url` came from and the origins in `allow`, whatever a story or an
- * override asks it to load, and open no WebSocket but that server's own.
+ * override asks it to load, and open no WebSocket but that server's own. The server's own redirects are trusted as
+ * its proxy is: it can already fetch anything on the page's behalf.
  */
 async function guard(page: Page, url: string, allow: readonly string[], hmr: string | undefined, fetchImpl: typeof fetch): Promise<void> {
   const own = new URL(url);
   const secure = own.protocol === 'https:';
-  const reach = new Set(allow);
+  const reach = new Set([...allow, own.origin]);
   await page.route('**/*', (route) => {
     const origin = new URL(route.request().url()).origin;
     if (origin === own.origin) return route.continue();
     if (!reach.has(origin)) return route.abort();
-    return secure ? passThrough(route, fetchImpl) : route.continue();
+    return passThrough(route, (o) => reach.has(o), fetchImpl);
   });
   // Only vite's own client socket connects: closing it would have the client reload the page mid-capture.
   const sockets = new Set([`${secure ? 'wss:' : 'ws:'}//${own.host}`, ...(hmr ? [hmr] : [])]);

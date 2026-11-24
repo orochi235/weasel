@@ -52,6 +52,8 @@ export function createDepsFeed({ root, index, logError }: DepsFeedOptions): Deps
   let history: HistoryReader | null = null;
   /** The graph last served or pushed; null until a page first asks for it, so no edit rebuilds it before then. */
   let depsSent: string | null = null;
+  /** Bumped by `reset`, so a rebuild still running for the old root drops what it built. */
+  let generation = 0;
 
   const componentGraph = (): ComponentGraphBuilder => (deps ??= createComponentGraph({ root: root(), read: (file) => readFileSync(file, 'utf8') }));
 
@@ -69,9 +71,10 @@ export function createDepsFeed({ root, index, logError }: DepsFeedOptions): Deps
 
   /** Rebuilds the graph after an edit and pushes it when it changed. Edits landing while one runs share the next. */
   const rebuild = coalesced(async (server: ViteDevServer) => {
+    const started = generation;
     const graph = await graphOf(clientResolver(server));
     const json = JSON.stringify(graph);
-    if (json === depsSent) return;
+    if (started !== generation || json === depsSent) return;
     depsSent = json;
     invalidateVirtual(server, ['deps.js']);
     server.ws.send({ type: 'custom', event: 'forge:deps', data: graph });
@@ -88,6 +91,7 @@ export function createDepsFeed({ root, index, logError }: DepsFeedOptions): Deps
       if (depsSent !== null) rebuild(server);
     },
     reset() {
+      generation++;
       deps = null;
       history = null;
       depsSent = null;

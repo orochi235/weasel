@@ -110,4 +110,22 @@ describe('createHistoryReader', () => {
     };
     expect(await createHistoryReader('/nowhere', git).read(['A.tsx'])).toEqual({});
   });
+
+  it('names the commits of a large package in batches, each command line short enough for Windows', async () => {
+    const files = Array.from({ length: 700 }, (_, i) => `pkg/ui/src/C${i}.tsx`);
+    const hash = (i: number) => i.toString(16).padStart(40, '0');
+    const log = files.map((file, i) => commit(hash(i), '2026-01-01T00:00:00Z', `A\t${file}`)).reverse().join('\n');
+    const lengths: number[] = [];
+    const git: Git = async (args) => {
+      if (args[0] === 'rev-parse') return args.includes('HEAD') ? 'h1\n' : '/nowhere/repo\n\n';
+      if (args[0] === 'log') return log;
+      lengths.push(args.join(' ').length);
+      return args.filter((arg) => /^[0-9a-f]{40}$/.test(arg)).map((sha) => (sha === hash(699) ? 'v2.0.0' : 'undefined')).join('\n');
+    };
+    const history = await createHistoryReader('/nowhere/repo', git).read(files);
+    expect(Object.keys(history)).toHaveLength(700);
+    expect(history['pkg/ui/src/C699.tsx']?.introduced).toBe('2.0.0');
+    expect(history['pkg/ui/src/C0.tsx']?.introduced).toBeNull();
+    expect(Math.max(...lengths)).toBeLessThan(32_767);
+  });
 });

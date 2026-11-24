@@ -44,15 +44,23 @@ export const urlHost = (address: string): string => {
 const socketOrigin = (req: IncomingMessage, protocol: string) =>
   new URL(`${protocol}://${urlHost(req.socket.localAddress ?? '127.0.0.1')}:${req.socket.localPort}`).origin;
 
+/** vite's client socket port under `server.middlewareMode` when nothing names one or hands it a server. */
+const MIDDLEWARE_HMR_PORT = 24678;
+
 /**
  * Where vite's client opens its HMR socket for a page at `page`, as `protocol//host`, following vite's client: the
- * configured protocol, host and client port, each falling back to the page's own. Undefined when HMR is off.
+ * configured protocol, host and client port, each falling back to the page's own, or in middleware mode to vite's
+ * own port. Undefined when the socket is off.
  */
-export function hmrSocketOf(page: URL, hmr: ViteDevServer['config']['server']['hmr']): string | undefined {
-  if (hmr === false) return undefined;
-  const options = typeof hmr === 'object' ? hmr : {};
+export function hmrSocketOf(
+  page: URL,
+  { hmr, ws, middlewareMode }: Partial<Pick<ViteDevServer['config']['server'], 'hmr' | 'ws' | 'middlewareMode'>>,
+): string | undefined {
+  if (hmr === false || ws === false) return undefined;
+  const options = typeof ws === 'object' ? ws : typeof hmr === 'object' ? hmr : {};
   const protocol = options.protocol ?? (page.protocol === 'https:' ? 'wss' : 'ws');
-  const port = options.clientPort || options.port || page.port;
+  const fallback = middlewareMode && !options.server ? MIDDLEWARE_HMR_PORT : page.port;
+  const port = options.clientPort || options.port || fallback;
   const socket = new URL(`${protocol}://${options.host ?? page.hostname}${port ? `:${port}` : ''}`);
   return `${socket.protocol}//${socket.host}`;
 }
@@ -161,7 +169,7 @@ export function serveCapture(
       const page = `${socketOrigin(req, protocol)}${base}${payload.isolate ? CAPTURE_PAGES.frame : CAPTURE_PAGES.shell}`;
       const at = revision;
       try {
-        png = await result.capture(page, payload, allowOrigins(), hmrSocketOf(new URL(page), server.config.server.hmr));
+        png = await result.capture(page, payload, allowOrigins(), hmrSocketOf(new URL(page), server.config.server));
       } catch (err) {
         const message = messageOf(err);
         if (message === QUEUE_FULL) {
