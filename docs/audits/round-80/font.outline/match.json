@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "GPOS reader's feature/LangSys walk is unbounded: a crafted ~0.5 MB font hangs or exhausts memory at load",
+  "WOFF inflation is bounded only by each table's declared `origLength`, not by anything tied to the file"
+ ],
+ "b": [
+  "WOFF unpacking copies repeated and overlapping table records, which `.ttc` and `.dfont` refuse"
+ ]
+}

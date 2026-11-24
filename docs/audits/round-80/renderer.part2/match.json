@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "tileCull culls a group with its own composite by its children's box, though that composite changes the destination outside it",
+  "commandBox bounds a group with its own composite by its children, where cullDrawCommands treats it as reaching everywhere",
+  "rasterizeTile's `<canvas>` fallback always returns null, after drawing the whole tile",
+  "uninstallFakeOffscreenCanvas with no matching install deletes a real OffscreenCanvas"
+ ],
+ "b": [
+  "A group whose composite clears the destination is bounded by its children, so culling and tiles drop its clearing",
+  "textCommand / textCommandFromRuns map a `'bounds'` paint onto the wrong box for centered or right-aligned text with no width",
+  "createPaintResources.release stops at the first throwing release and drops the rest",
+  "A lazily loaded paint kind's `'bounds'` paint passes through unconverted until the kind lands"
+ ]
+}

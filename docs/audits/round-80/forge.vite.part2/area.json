@@ -1,0 +1,82 @@
+{
+ "id": "forge.vite.part2",
+ "commit": "26d31298a400369a84adda3ade6a920490bec2b6",
+ "date": "2026-11-23",
+ "files": [
+  "packages/forge/src/vite/issues/endpoint.ts",
+  "packages/forge/src/vite/moduleInfo.ts",
+  "packages/forge/src/vite/nativeExports.ts",
+  "packages/forge/src/vite/ownEntries.ts",
+  "packages/forge/src/vite/ownKeys.ts",
+  "packages/forge/src/vite/plugin.ts",
+  "packages/forge/src/vite/propControls.ts",
+  "packages/forge/src/vite/propTypes.ts",
+  "packages/forge/src/vite/servePages.ts",
+  "packages/forge/src/vite/shellTitle.ts",
+  "packages/forge/src/vite/storyGlob.ts",
+  "packages/forge/src/vite/storyIndex.ts",
+  "packages/forge/src/vite/storybookShims.ts",
+  "packages/forge/src/vite/titleReport.ts",
+  "packages/forge/src/vite/trace.ts",
+  "packages/forge/src/vite/typeDefs.ts",
+  "packages/forge/src/vite/typedoc/index.ts",
+  "packages/forge/src/vite/typedoc/json.ts",
+  "packages/forge/src/vite/typedoc/print.ts",
+  "packages/forge/src/vite/virtualModules.ts",
+  "packages/forge/src/vite/warnOnce.ts",
+  "packages/forge/src/vite/watchProbe.ts",
+  "packages/forge/src/vite/watchRecovery.ts",
+  "packages/forge/src/vite/watchSettle.ts",
+  "packages/forge/src/vite/wrappers.ts"
+ ],
+ "a": 6,
+ "b": 5,
+ "m": 2,
+ "distinct": 9,
+ "chapman": 13,
+ "unfound": 4,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 79,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 79,
+  "chapman": 11.5,
+  "unfound": 7.5
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 25,
+  "testFiles": {
+   "failed": 0,
+   "passed": 6165,
+   "total": 6165
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4,
+   "B": 8.9,
+   "match": 0.1,
+   "fix": 15.4
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "local"
+  },
+  "weightedTokens": 610376,
+  "costUsd": 4.47
+ },
+ "fixCommits": []
+}

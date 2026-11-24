@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "createDelayEffect throws on its own default time when only a short maxTime is given",
+  "patternVoicePeaks loops once per pass across a long finite tail, so a long release or hitMs hangs it",
+  "An unknown bus name is silently dropped as `locked` before unlock, but throws after it"
+ ],
+ "b": [
+  "SoundCache keeps every registered or decoded buffer for the engine's lifetime, with no way to release one",
+  "createDelayEffect throws on an explicit `maxTime` below 250 ms unless `time` is passed as well",
+  "Whether release() before a note sounds cancels it or plays a release tail depends on lookahead timing the caller cannot see"
+ ]
+}

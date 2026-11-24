@@ -1,0 +1,74 @@
+{
+ "id": "loupe",
+ "commit": "26d31298a400369a84adda3ade6a920490bec2b6",
+ "date": "2026-11-23",
+ "files": [
+  "packages/loupe/src/actionParamSchema.ts",
+  "packages/loupe/src/actions.ts",
+  "packages/loupe/src/aim.ts",
+  "packages/loupe/src/canvasSource.ts",
+  "packages/loupe/src/eyedropper.ts",
+  "packages/loupe/src/geometry.ts",
+  "packages/loupe/src/index.ts",
+  "packages/loupe/src/model.ts",
+  "packages/loupe/src/pbt.fixture.ts",
+  "packages/loupe/src/sampler.ts",
+  "packages/loupe/src/zoomStops.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7,
+ "unfound": 1,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 79,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 79,
+  "chapman": 17,
+  "unfound": 7
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 486,
+   "total": 486
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2,
+   "B": 6.8,
+   "match": 0.3,
+   "fix": 23.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "local"
+  },
+  "weightedTokens": 908631,
+  "costUsd": 2.75
+ },
+ "fixCommits": [
+  "a08eeca8a236745743a32cf305f785f0f68f46b6",
+  "2940eb6fedd42a1f8d77f993ee39d0193d1c3780",
+  "19a98fb0feefb90faa99090d866287653642b1cf",
+  "aaffe7753665f56df953e55565ba4c2d4e455395",
+  "443c80acdf914799d5a1c4e8d91d467630336ba1"
+ ]
+}

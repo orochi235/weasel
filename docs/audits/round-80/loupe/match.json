@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "`pick()` at the aim samples under a stationary lens, which `pick(p)` refuses",
+  "`holdPin` skips the hidden and covers checks every other aim entry point applies",
+  "`aimAt` while pinned returns before noticing the surface is gone",
+  "Eyedropper hover leaves the last point's color when the sampler throws synchronously",
+  "The aim holds the caller's point object by reference"
+ ],
+ "b": [
+  "The eyedropper samples a stationary lens's own pixels as artwork, which the loupe model refuses to do",
+  "`LoupeModel.pick()` with no point, and aim sampling, never check whether the lens covers the aim",
+  "`aimAt` on a pinned model returns before following a gone surface down"
+ ]
+}

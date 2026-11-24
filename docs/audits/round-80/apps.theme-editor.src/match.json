@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "Jumping to a token pinned by a parent theme opens the Pins page, which does not list it"
+ ],
+ "b": [
+  "tokensReadAt follows custom-property declarations that a later or more specific rule overrides",
+  "The declaration regex splits values that contain `;` inside a string or url",
+  "SemanticsLayer gives the drawer ramps from the last derived draft, but its rule and axes from the current draft"
+ ]
+}

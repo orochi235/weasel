@@ -1,0 +1,96 @@
+{
+ "id": "forge.vite.part1",
+ "commit": "26d31298a400369a84adda3ade6a920490bec2b6",
+ "date": "2026-11-23",
+ "files": [
+  "packages/forge/src/vite/apiTable.ts",
+  "packages/forge/src/vite/ast.ts",
+  "packages/forge/src/vite/autoTitle.ts",
+  "packages/forge/src/vite/bindings.ts",
+  "packages/forge/src/vite/build.ts",
+  "packages/forge/src/vite/capture/browser.ts",
+  "packages/forge/src/vite/capture/cache.ts",
+  "packages/forge/src/vite/capture/endpoint.ts",
+  "packages/forge/src/vite/capture/entries.ts",
+  "packages/forge/src/vite/capture/payload.ts",
+  "packages/forge/src/vite/componentGraph.ts",
+  "packages/forge/src/vite/componentOf.ts",
+  "packages/forge/src/vite/componentReach.ts",
+  "packages/forge/src/vite/depsFeed.ts",
+  "packages/forge/src/vite/entries.ts",
+  "packages/forge/src/vite/folderTitles.ts",
+  "packages/forge/src/vite/foreignStories.ts",
+  "packages/forge/src/vite/forgeTest.ts",
+  "packages/forge/src/vite/freeNames.ts",
+  "packages/forge/src/vite/history.ts",
+  "packages/forge/src/vite/html.ts",
+  "packages/forge/src/vite/index.ts",
+  "packages/forge/src/vite/indexFile.ts",
+  "packages/forge/src/vite/indexStory.ts",
+  "packages/forge/src/vite/isolateReport.ts",
+  "packages/forge/src/vite/issues/answer.ts"
+ ],
+ "a": 6,
+ "b": 7,
+ "m": 1,
+ "distinct": 12,
+ "chapman": 27,
+ "unfound": 15,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "newCode": {
+  "since": 79,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 79,
+  "chapman": 11.5,
+  "unfound": 7.5
+ },
+ "patches": 12,
+ "verify": {
+  "ok": true,
+  "files": 34,
+  "testFiles": {
+   "failed": 0,
+   "passed": 6167,
+   "total": 6167
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.9,
+   "B": 6.7,
+   "match": 0.2,
+   "fix": 26.9
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "local"
+  },
+  "weightedTokens": 1976296,
+  "costUsd": 5.63
+ },
+ "fixCommits": [
+  "3aae575da667a866d69c3ec40cd55d25c9a54131",
+  "1feb836e86b52249a72865ed6aa9188a69109748",
+  "d5dabac91531fea12c9818444f8e459d4f3e1025",
+  "dc703964a655d442672c2e270d9a2b08ddc0b363",
+  "75a87725a5bba164657b0610cbaf7fe6494892ed",
+  "9fc5cd77738aecb4d0519e682ea8acf20ad5e70e",
+  "8aac0bb2f6eede7c564614daa58d9db99628e574",
+  "a6a99edbfb247d0a452523a5e5d0407749623dbd",
+  "a0c93f30c6c64d6b7ba3170663948a92c5adb5fe",
+  "7a2c242740adeefced1fe7994f35dbe3d62b9838",
+  "0b736a8d947a7f2a33d7e76bfa0d69ba3b03d92e",
+  "0721066aa8ca0d0de4062a29df4d94e9ae2b2efb"
+ ]
+}

@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   4,
+   3
+  ]
+ ],
+ "a": [
+  "The props table and the dependency graph pick different components for the same story file",
+  "Top-level `let`/`var` bindings are read as if they were constants",
+  "Capture size check tests the unrounded box, but the viewport is rounded up",
+  "Origin check rejects pages served on a default port",
+  "freeNames skips decorators on methods",
+  "folderTitleReport passes silently when paths use backslashes"
+ ],
+ "b": [
+  "An empty meta `title` is kept as the title instead of falling back to the auto-title, unlike Storybook and unlike `id`",
+  "The HMR socket guard closes vite's own client socket whenever HMR runs on a port or host other than the page's",
+  "`freeNames` reports `import.meta` / `new.target` as references to locals named `import`, `meta`, `new`, `target`",
+  "`freeNames` skips the decorators of class methods",
+  "Inherited prop counts merge any two skipped packages whose declaring interface has the same name",
+  "A destructured default under a string-literal key is dropped from the API table",
+  "`assigned` misses a meta's `component` written under a quoted key or through `<Meta>` / `!`"
+ ]
+}

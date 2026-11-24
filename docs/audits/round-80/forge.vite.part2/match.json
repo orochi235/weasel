@@ -1,0 +1,27 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "The issues endpoint shows at most 30 issues, silently: `gh issue list` runs without `--limit`",
+  "`mayBeStory` drops an export at its depth limit, against its own rule that what cannot be read stays in",
+  "A global's identity method around a story, such as `Object.freeze(story(...))`, reads as not a story",
+  "`reflectionText` prints an inline type that has only index signatures as `{}`",
+  "An optional tuple element of a union type prints without parentheses",
+  "The silent-watcher warning always says \"a file written 5 s ago\", even with a custom probe"
+ ],
+ "b": [
+  "The issues endpoint lists at most 30 issues: `gh issue list` runs without `--limit`",
+  "A type literal's method members print as `name: unknown`",
+  "A construct signature prints as a plain call signature",
+  "`mayBeStory` drops an export once the depth cap trips, against its own \"what cannot be read stays in\"",
+  "Type definitions are keyed by bare name, so two different types sharing a name show the first one's definition"
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "uiFontFamily keeps CSS escapes in a quoted family, so the HUD registers a family name no font has",
+  "effectNodeName looks the kind up in the whole settings schema, where drawKindLabel first checks it against EFFECT_KINDS"
+ ],
+ "b": [
+  "Font holds registered at startup are never released, so each HMR re-evaluation of main.tsx stacks another hold per family"
+ ]
+}
