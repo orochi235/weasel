@@ -7,6 +7,8 @@ import s from './TrialClockDemo.module.css';
 
 const RADIUS = 160;
 
+const seconds = (elapsed: number) => `${(elapsed / 1000).toFixed(2)}s`;
+
 /** Play, pause and reverse through the trial's clock, and its time written
  *  per frame without re-rendering. */
 function Controls() {
@@ -14,7 +16,7 @@ function Controls() {
   const readout = useRef<HTMLSpanElement>(null);
   const [direction, setDirection] = useState<1 | -1>(1);
   useClockFrame((elapsed) => {
-    if (readout.current) readout.current.textContent = `${(elapsed / 1000).toFixed(2)}s`;
+    if (readout.current) readout.current.textContent = seconds(elapsed);
   });
   if (!clock) return null;
   // `rate` is 0 while paused, so the direction to resume in is kept beside it.
@@ -33,7 +35,7 @@ function Controls() {
       }}>
         {direction === 1 ? 'Reverse' : 'Forward'}
       </Button>
-      <span ref={readout} className={s.readout}>0.00s</span>
+      <span ref={readout} className={s.readout}>{seconds(clock.elapsed)}</span>
     </div>
   );
 }
