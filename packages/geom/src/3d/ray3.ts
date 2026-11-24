@@ -49,12 +49,12 @@ export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
 }
 
 /** Plane is `dot(normal, p) === offset`. Null when the ray runs parallel to the
- *  plane to within rounding, or points away from it. */
+ *  plane to within rounding, points away from it, or meets it at no finite `t`. */
 export function intersectRayPlane(ray: Ray, normal: Vec3, offset: number): number | null {
   const denom = dot(normal, ray.direction);
   if (!(Math.abs(denom) > SINGULAR_RATIO * len(normal) * len(ray.direction))) return null;
   const t = (offset - dot(normal, ray.origin)) / denom;
-  return t < 0 ? null : t;
+  return t >= 0 && t < Infinity ? t : null;
 }
 
 /**
