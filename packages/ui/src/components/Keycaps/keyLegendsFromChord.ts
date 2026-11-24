@@ -16,5 +16,7 @@ export function keyLegendsFromChord(chord: string, opts: KeyLegendOptions = {}):
   const named = new Set(parts.map((part) => part.toLowerCase()));
   const mods = VALID_MOD_NAMES.filter((name) => named.has(name)).map((name) => ({ name }));
   const keys = parts.filter((part) => !isModifier(part.toLowerCase())).map((key) => keyLegendFromKey(key, opts));
-  return [...keyLegendsFromMods(mods, opts), ...keys];
+  // `Mod` resolves to the platform's Ctrl or Meta, so naming both holds one key.
+  const legends = keyLegendsFromMods(mods, opts).filter((legend, i, all) => all.findIndex((l) => l.label === legend.label) === i);
+  return [...legends, ...keys];
 }

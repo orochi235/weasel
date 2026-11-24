@@ -32,6 +32,13 @@ describe('keyLegendsFromChord', () => {
     expect(labels('  ', 'macos')).toEqual([]);
   });
 
+  it('draws once a modifier that Mod and its platform key both name', () => {
+    expect(labels('Mod+Ctrl+F', 'windows')).toEqual(['Ctrl', 'F']);
+    expect(labels('Mod+Ctrl+F', 'macos')).toEqual(['⌘', '⌃', 'F']);
+    expect(labels('Mod+Meta+K', 'macos')).toEqual(['⌘', 'K']);
+    expect(keyLegendsFromChord('Mod+Ctrl+F', { platform: 'linux', legend: 'symbol' }).map((k) => k.label)).toEqual(['⎈', 'F']);
+  });
+
   it('reads a part named like an Object.prototype member as the key, not a modifier', () => {
     expect(labels('Shift+constructor', 'windows')).toEqual(labels('Shift+x', 'windows').slice(0, -1).concat(['constructor']));
   });
