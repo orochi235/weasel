@@ -46,7 +46,6 @@ function synthStart(
   retune();
   const stopAll = (at: number): void => { for (const n of nodes) n.stop(at); };
   voice.release = () => {
-    // Released before it sounds: from its start, as a worklet voice's release is.
     const at = Math.max(ctx.currentTime, t0);
     // Already past its gate: the release is running and the stop is booked.
     if (gate !== undefined && (at - t0) * 1000 >= gate) return;

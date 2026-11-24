@@ -264,6 +264,18 @@ describe("synthVoices: 'worklet'", () => {
     expect(onDrop).toHaveBeenCalledWith('stopped');
   });
 
+  it('cancels a voice released inside the lookahead, after the scheduler started it but before it sounds', async () => {
+    const { engine, run, posted, flush } = await harness();
+    const onDrop = vi.fn();
+    const voice = engine.playNote({ pitch: 440, when: 80, onDrop });
+    await run(25);
+    voice.release();
+    await flush();
+    expect(posted('release')).toEqual([]);
+    expect(posted('stop').map((e) => (e as { id: number }).id)).toEqual([1]);
+    expect(onDrop).toHaveBeenCalledWith('stopped');
+  });
+
   it('ends a voice the processor finished before the scheduler reached it', async () => {
     const { engine, run, node, flush } = await harness();
     const onDone = vi.fn();
