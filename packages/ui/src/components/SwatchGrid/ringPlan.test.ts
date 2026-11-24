@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 import { arcShape, lineShape, trackRun } from '@weasel-js/geom';
-import { inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings } from './ringPlan';
+import { fittedRingPlan, inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings } from './ringPlan';
 
 const center = { x: 0, y: 0 };
 
@@ -12,6 +12,15 @@ describe('ringPlan', () => {
     expect(ringPlan([2, 3], 3)).toEqual([2, 1]);
     expect(ringPlan([4, 3], 2)).toEqual([1, 1]);
     expect(ringPlan([4, 3], 1)).toEqual([1, 1]);
+  });
+});
+
+describe('fittedRingPlan', () => {
+  const arc = arcShape({ center, radius: 100, start: 270, end: 90 });
+  test("judges room on the rings it keeps, so a later palette's thick lead ring is not laid past it", () => {
+    // Every row its own ring leaves room for 3; kept as [2, 1], the lead ring lies 85 in and needs 105 of 100.
+    expect(fittedRingPlan(arc, -1, [3, 1], [0, 110], 20, 0)).toEqual([1, 1]);
+    expect(fittedRingPlan(arc, -1, [2, 3], [0, 0], 20, 0)).toEqual([2, 2]);
   });
 });
 

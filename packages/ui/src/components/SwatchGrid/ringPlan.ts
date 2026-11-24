@@ -54,6 +54,25 @@ export function ringPlan(rows: readonly number[], room: number): number[] {
   });
 }
 
+/**
+ * `ringPlan` for `rows` on `shape`, with room judged on the rings the plan keeps: a palette whose lead ring is thicker
+ * than a swatch lies deeper once an earlier palette's rows share a ring, so room is narrowed until the kept rings fit,
+ * or every palette is down to one.
+ */
+export function fittedRingPlan(
+  shape: TrackShape, sign: 1 | -1, rows: readonly number[], leads: readonly number[], size: number, gap: number,
+): number[] {
+  const depthsOf = (counts: readonly number[]) => ringDepths(ringThicknesses(counts, leads, size), gap);
+  let room = viableRings(shape, sign, depthsOf(rows), size, gap);
+  for (;;) {
+    const kept = ringPlan(rows, room);
+    const laid = kept.reduce((a, b) => a + b, 0);
+    const viable = viableRings(shape, sign, depthsOf(kept), size, gap);
+    if (viable >= laid || laid <= rows.length) return kept;
+    room = Math.max(rows.length, Math.min(viable, laid - 1));
+  }
+}
+
 /** Rings in from `shape`, their middles `depths` in, each laid from the shape's own start, or from its end under `'rtl'`.
  *  A ring that would fold lies on the last one that does not. */
 export function ringsOf(shape: TrackShape, depths: readonly number[], direction: 'ltr' | 'rtl' = 'ltr'): SwatchRing[] {
