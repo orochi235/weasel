@@ -124,7 +124,13 @@ export const Input = (_props: InputProps) => null;
       `import type { ButtonProps as A } from './pkgs/a/src/types';\nimport type { ButtonProps as B } from './pkgs/b/src/types';\nexport const Twin = (_props: A & B) => null;\n`,
     );
     story('twin', `import { Twin } from './Twin';\nexport default { component: Twin };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge', 'twin'].map((n) => at(`${n}.stories.ts`));
+    writeFileSync(at('look.ts'), `export interface Props { hue?: string }\n`);
+    writeFileSync(
+      at('Tag.ts'),
+      `import type { Props as TagLook } from './look';\ninterface Props { size?: number }\nexport const Tag = (_props: { look?: TagLook; own?: Props }) => null;\n`,
+    );
+    story('tag', `import { Tag } from './Tag';\nexport default { component: Tag };\n`);
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge', 'twin', 'tag'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -160,6 +166,13 @@ export const Input = (_props: InputProps) => null;
     const table = api('badge');
     expect(table?.props.map((p) => p.type)).toEqual(['Size', 'Tone', 'Size']);
     expect(Object.keys(table?.types ?? {})).toEqual(['Tone']);
+  });
+
+  it('defines a type imported under another name by the name the prop writes', () => {
+    const types = api('tag')?.types;
+    expect(Object.keys(types ?? {}).sort()).toEqual(['Props', 'TagLook']);
+    expect(types?.TagLook?.text).toContain('hue?: string');
+    expect(types?.Props?.text).toContain('size?: number');
   });
 
   it('defines no type from a skipped package', () => {

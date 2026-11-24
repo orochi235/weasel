@@ -229,6 +229,18 @@ describe('typeText', () => {
     expect(typeText({ type: 'union', types: [obj, nul] })).toBe('{ x: A } | null');
   });
 
+  it('groups a conditional checked or extended by a conditional, and a function it checks', () => {
+    const a: TdType = { type: 'reference', name: 'A' };
+    const b: TdType = { type: 'reference', name: 'B' };
+    const fn: TdType = { type: 'reflection', declaration: { id: 1, kind: 0, name: '__type', signatures: [{ id: 2, kind: 0, name: '__type', type: a }] } };
+    const cond: TdType = { type: 'conditional', checkType: a, extendsType: b, trueType: a, falseType: b };
+    const of = (checkType: TdType, extendsType: TdType): TdType => ({ type: 'conditional', checkType, extendsType, trueType: a, falseType: b });
+    expect(typeText(of(cond, b))).toBe('(A extends B ? A : B) extends B ? A : B');
+    expect(typeText(of(a, cond))).toBe('A extends (A extends B ? A : B) ? A : B');
+    expect(typeText(of(fn, b))).toBe('(() => A) extends B ? A : B');
+    expect(typeText(of(a, fn))).toBe('A extends () => A ? A : B');
+  });
+
   it('groups a union or a function that is an optional tuple element', () => {
     const union: TdType = { type: 'union', types: [{ type: 'intrinsic', name: 'number' }, { type: 'literal', value: null }] };
     const str: TdType = { type: 'intrinsic', name: 'string' };

@@ -1,4 +1,5 @@
-import { resolve, sep } from 'node:path';
+import { resolve } from 'node:path';
+import { posixResolve } from './posixPath.ts';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
 import { getOwn } from './ownKeys.ts';
 import type { IndexEntry } from '../story/types.ts';
@@ -71,9 +72,9 @@ function watchSources(server: ViteDevServer, { files, componentGraph, reindex, r
   if (!server.config.plugins.some((p) => p.name === WATCH_PROBE)) void warnWhenWatchIsSilent(server);
   for (const event of ['add', 'change', 'unlink'] as const) {
     server.watcher.on(event, (path) => {
-      const file = resolve(path);
+      const file = posixResolve(path);
       // A file added or deleted can change what an import resolves to, from anywhere.
-      const moved = event !== 'change' && SCRIPT.test(file) && !file.split(sep).includes('node_modules');
+      const moved = event !== 'change' && SCRIPT.test(file) && !file.split('/').includes('node_modules');
       const read = (event !== 'add' && componentGraph().invalidate(file)) || moved;
       if (moved) componentGraph().reset();
       reindex(server, file, event).then((indexed) => {

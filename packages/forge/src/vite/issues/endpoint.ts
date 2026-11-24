@@ -64,8 +64,13 @@ interface GhIssue {
   createdAt: string;
 }
 
-const isIssueList = (value: unknown): value is GhIssue[] =>
-  Array.isArray(value) && value.every((issue) => typeof issue === 'object' && issue !== null);
+const isIssue = (value: unknown): value is GhIssue => {
+  if (typeof value !== 'object' || value === null) return false;
+  const { number, title, url, createdAt } = value as Record<string, unknown>;
+  return typeof number === 'number' && typeof title === 'string' && typeof url === 'string' && typeof createdAt === 'string';
+};
+
+const isIssueList = (value: unknown): value is GhIssue[] => Array.isArray(value) && value.every(isIssue);
 
 const json = (res: ServerResponse, status: number, body: unknown) => {
   res.statusCode = status;

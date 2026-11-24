@@ -40,14 +40,16 @@ export function addTypeDefs(reading: TypeDefReading, from: ts.Node, text: string
   for (const name of names) {
     let symbol = scope.find((s) => s.getName() === name);
     if (symbol && symbol.flags & tsm.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
-    if (symbol) addTypeDef(reading, symbol, into);
+    if (symbol) addTypeDef(reading, symbol, into, name);
   }
 }
 
-/** Adds `symbol`'s definition to `into` under its name, where it is a type the project declares. */
-export function addTypeDef(reading: TypeDefReading, symbol: ts.Symbol, into: TypeDefs): void {
+/**
+ * Adds `symbol`'s definition to `into` under `name`, where it is a type the project declares: the name the text
+ * writes, which an aliased import makes differ from the symbol's own.
+ */
+export function addTypeDef(reading: TypeDefReading, symbol: ts.Symbol, into: TypeDefs, name = symbol.getName()): void {
   const { tsm, checker } = reading;
-  const name = symbol.getName();
   const declaration = symbol.getDeclarations()?.find((d) => definedBy(tsm, d));
   if (!definedBy(tsm, declaration)) return;
   const seen = into.seen.get(name);
