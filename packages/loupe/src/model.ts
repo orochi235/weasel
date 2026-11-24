@@ -104,14 +104,16 @@ export interface LoupeModel {
    *  `null` while the aim follows. Give it to {@link holdPin} to put the pin back where it was. */
   readonly pin: LoupePoint | null;
   /** Pin the aim at content point `c`, one {@link pin} gave, wherever the camera has since moved it to on the
-   *  surface. Ignored once the model is disposed. */
+   *  surface. Ignored once the model is disposed. Takes the pin even where {@link pinAt} would refuse its point, so a
+   *  pin put back is never lost, but samples its color only once the lens is shown and does not cover it. */
   holdPin(c: LoupePoint): void;
   /** Sample what the lens shows at `p`, a point inside it, and report that to
-   *  `onPick`. Omit `p` to pick at the aim point. Leaves the aim, and `color`,
-   *  alone. */
+   *  `onPick`. Omit `p` to pick at the aim point. `null` where the point sampled
+   *  stands under the lens. Leaves the aim, and `color`, alone. */
   pick(p?: LoupePoint): string | null;
   /** Sample the aim again, now: the pixels under it changed without it moving.
-   *  Reports through `onColorChange` like an aim does. Ignored while hidden. */
+   *  Reports through `onColorChange` like an aim does. Ignored while hidden or
+   *  while the lens covers the aim. */
   resample(): void;
   dispose(): void;
 }
@@ -145,18 +147,23 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   let disposed = false;
   let aimUnsampled = false;
 
-  const sampleColor = () => {
-    const hex = sampleNow(surface, aim.now());
-    if (hex === color) return;
-    color = hex;
-    opts.onColorChange?.(hex);
+  const blind = (p: LoupePoint) => surface.hidden() || surface.covers(p);
+
+  /** Samples the aim, unless nothing can see it or the lens stands over it. Whether it did. */
+  const sampleColor = (): boolean => {
+    const at = aim.now();
+    if (blind(at)) return false;
+    const hex = sampleNow(surface, at);
+    if (hex !== color) {
+      color = hex;
+      opts.onColorChange?.(hex);
+    }
+    return true;
   };
 
   const unsubscribeFrame = surface.subscribeFrame?.(() => {
     if (disposed || dead()) return;
-    if (!aimUnsampled) return;
-    aimUnsampled = false;
-    sampleColor();
+    if (aimUnsampled && sampleColor()) aimUnsampled = false;
   });
 
   const teardown = () => {
@@ -177,11 +184,10 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
 
   /** The aim moved: sample it, now or on the frame that shows it. */
   const aimed = () => {
-    if (unsubscribeFrame) aimUnsampled = true;
-    else sampleColor();
+    aimUnsampled = !!unsubscribeFrame || !sampleColor();
     surface.changed();
   };
-  const refuses = (p: LoupePoint) => disposed || dead() || surface.hidden() || surface.covers(p);
+  const refuses = (p: LoupePoint) => disposed || dead() || blind(p);
 
   return {
     get mode() { return mode; },
@@ -223,7 +229,9 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     holdPin(c) {
-      if (!disposed && !dead()) { aim.hold(c); aimed(); }
+      if (disposed || dead()) return;
+      aim.hold(c);
+      aimed();
     },
 
     pick(p) {
@@ -233,20 +241,18 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
         const rect = surface.lens();
         if (!rect) return null;
         at = loupeSourcePoint(p, rect, rect.shows ?? at, rect.factor ?? factor);
-        // The lens is part of the picture the surface presents. A point near
-        // its frame maps back underneath it, and sampling there reports the
-        // lens' own chrome as artwork.
-        if (surface.covers(at)) return null;
       }
+      // The lens is part of the picture the surface presents: sampling under it
+      // reports the lens' own chrome as artwork.
+      if (surface.covers(at)) return null;
       const hex = sampleNow(surface, at);
       if (hex !== null) opts.onPick?.(hex);
       return hex;
     },
 
     resample() {
-      if (disposed || dead() || surface.hidden()) return;
-      aimUnsampled = false;
-      sampleColor();
+      if (disposed || dead()) return;
+      if (sampleColor()) aimUnsampled = false;
     },
 
     dispose: teardown,

@@ -123,4 +123,48 @@ describe('loupe model: a pinned aim', () => {
     loupe.pin!.x = 3;
     expect(loupe.aim).toEqual({ x: 1, y: 20 });
   });
+
+  it('picks nothing at a pin the camera has panned under a stationary lens', () => {
+    const onPick = vi.fn();
+    const { surface, camera } = pannedSurface({ covers: (p) => p.x > 50 });
+    const loupe = createLoupeModel({ surface, onPick });
+    loupe.pinAt({ x: 40, y: 5 });
+    camera.pan = -20;
+    expect(loupe.pick()).toBeNull();
+    expect(onPick).not.toHaveBeenCalled();
+  });
+
+  it('holds a pin put back under the lens or while hidden, without sampling the lens for it', () => {
+    const onColorChange = vi.fn();
+    let hidden = false;
+    const { surface } = pannedSurface({ covers: (p) => p.x > 50, hidden: () => hidden });
+    const loupe = createLoupeModel({ surface, onColorChange });
+    loupe.holdPin({ x: 60, y: 5 });
+    expect(loupe.pin).toEqual({ x: 60, y: 5 });
+    hidden = true;
+    loupe.holdPin({ x: 10, y: 5 });
+    expect(loupe.pin).toEqual({ x: 10, y: 5 });
+    expect(onColorChange).not.toHaveBeenCalled();
+    hidden = false;
+    loupe.resample();
+    expect(onColorChange).toHaveBeenLastCalledWith('#000010');
+  });
+
+  it('samples a pin on a landed frame only once it is out from under the lens', () => {
+    const onColorChange = vi.fn();
+    const frames: (() => void)[] = [];
+    const { surface, camera } = pannedSurface({
+      covers: (p) => p.x > 50,
+      subscribeFrame: (fn) => { frames.push(fn); return () => undefined; },
+    });
+    const loupe = createLoupeModel({ surface, onColorChange });
+    loupe.pinAt({ x: 40, y: 5 });
+    camera.pan = -20;
+    frames.forEach((fn) => fn());
+    loupe.resample();
+    expect(onColorChange).not.toHaveBeenCalled();
+    camera.pan = 0;
+    frames.forEach((fn) => fn());
+    expect(onColorChange).toHaveBeenLastCalledWith('#000040');
+  });
 });

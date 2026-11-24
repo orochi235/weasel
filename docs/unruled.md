@@ -4094,6 +4094,11 @@ Calls the lanes made without a ruling:
   surface point, was the alternative.
 - 2026-11-23 (the fixer's call): loupe's `nearestStopIndex` throws a `RangeError` on an empty list of stops. Answering
   `-1`, as `indexOf` does for nothing found, was the alternative.
+## Audit round eighty (2026-11-23): loupe
+
+- 2026-11-23 (the fixer's call): the loupe model's `holdPin` takes the pin even over a point `pinAt` refuses (one the
+  lens covers, or any while it is hidden), so a pin put back after a canceled gesture is never lost; it samples the
+  aim only once the aim can be seen. Refusing such a pin, as `pinAt` does, was the alternative.
 ## Audit round seventy-nine (2026-11-23): renderer, part two
 
 - 2026-11-23 (the fixer's call): a paint kind declaring a program id that a kind of another id, registered and not yet
