@@ -86,8 +86,10 @@ export function createBindings(
     if (!mod) return null;
     const byTitle = titleStandIn(entry.title);
     for (const local of [entry.componentName, byTitle]) {
-      const imp = local ? mod.imports.get(local) : undefined;
-      const key = imp ? await importKey(entry.file, imp) : null;
+      // `Tabs.Panel` is the `Panel` export when `Tabs` is a namespace import, else a member of the `Tabs` import.
+      const [root, member] = local?.split('.') ?? [];
+      const imp = root ? mod.imports.get(root) : undefined;
+      const key = imp ? await importKey(entry.file, member !== undefined && imp.imported === '*' ? { ...imp, imported: member } : imp) : null;
       if (key) return key;
     }
     return null;

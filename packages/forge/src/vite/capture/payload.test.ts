@@ -28,6 +28,8 @@ describe('parsePayload', () => {
     expect(parsePayload({ ...valid, box: { width: 1e7, height: 200 } })).toEqual({ error: expect.stringContaining('box') });
     expect(parsePayload({ ...valid, box: { width: 320, height: 8193 }, dpr: 2 })).toEqual({ error: expect.stringContaining('box') });
     expect(parsePayload({ ...valid, box: { width: 320, height: 8192 }, dpr: 2 })).not.toHaveProperty('error');
+    // The viewport is the box rounded up, so a fractional box is held to its rounded size.
+    expect(parsePayload({ ...valid, box: { width: 5461.3, height: 200 }, dpr: 3 })).toEqual({ error: expect.stringContaining('box') });
   });
 
   it('rejects a payload whose dpr is out of range or whose box is empty', () => {

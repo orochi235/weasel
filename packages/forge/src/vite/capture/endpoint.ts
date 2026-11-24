@@ -42,13 +42,28 @@ export const urlHost = (address: string): string => {
  * the capture page is loaded from here, and a forged host would have Chromium screenshot someone else's page.
  */
 const socketOrigin = (req: IncomingMessage, protocol: string) =>
-  `${protocol}://${urlHost(req.socket.localAddress ?? '127.0.0.1')}:${req.socket.localPort}`;
+  new URL(`${protocol}://${urlHost(req.socket.localAddress ?? '127.0.0.1')}:${req.socket.localPort}`).origin;
+
+/**
+ * Where vite's client opens its HMR socket for a page at `page`, as `protocol//host`, following vite's client: the
+ * configured protocol, host and client port, each falling back to the page's own. Undefined when HMR is off.
+ */
+export function hmrSocketOf(page: URL, hmr: ViteDevServer['config']['server']['hmr']): string | undefined {
+  if (hmr === false) return undefined;
+  const options = typeof hmr === 'object' ? hmr : {};
+  const protocol = options.protocol ?? (page.protocol === 'https:' ? 'wss' : 'ws');
+  const port = options.clientPort || options.port || page.port;
+  const socket = new URL(`${protocol}://${options.host ?? page.hostname}${port ? `:${port}` : ''}`);
+  return `${socket.protocol}//${socket.host}`;
+}
+
+const defaultPort = (protocol: string): string => (protocol === 'https:' ? '443' : protocol === 'http:' ? '80' : '');
 
 const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 /** Whether a browser's `Origin` names this server: the address the request came in on, a loopback name for its
  *  port, or one of the URLs vite printed for it. */
-function ownOrigin(origin: string, req: IncomingMessage, protocol: string, server: ViteDevServer): boolean {
+export function ownOrigin(origin: string, req: IncomingMessage, protocol: string, server: ViteDevServer): boolean {
   let url: URL;
   try {
     url = new URL(origin);
@@ -56,7 +71,7 @@ function ownOrigin(origin: string, req: IncomingMessage, protocol: string, serve
     return false;
   }
   if (url.origin === socketOrigin(req, protocol)) return true;
-  if (url.protocol === `${protocol}:` && LOOPBACK.has(url.hostname) && url.port === String(req.socket.localPort)) return true;
+  if (url.protocol === `${protocol}:` && LOOPBACK.has(url.hostname) && (url.port || defaultPort(url.protocol)) === String(req.socket.localPort)) return true;
   const printed = [...(server.resolvedUrls?.local ?? []), ...(server.resolvedUrls?.network ?? [])];
   return printed.some((u) => new URL(u).origin === url.origin);
 }
@@ -146,7 +161,7 @@ export function serveCapture(
       const page = `${socketOrigin(req, protocol)}${base}${payload.isolate ? CAPTURE_PAGES.frame : CAPTURE_PAGES.shell}`;
       const at = revision;
       try {
-        png = await result.capture(page, payload, allowOrigins());
+        png = await result.capture(page, payload, allowOrigins(), hmrSocketOf(new URL(page), server.config.server.hmr));
       } catch (err) {
         const message = messageOf(err);
         if (message === QUEUE_FULL) {

@@ -6,6 +6,21 @@ const FILE = '/repo/packages/ui/src/Slider.stories.tsx';
 const ids = (code: string, file = FILE) => indexFile(code, file, 'ui/Auto').map((e) => [e.id, e.name]);
 
 describe('indexFile', () => {
+  it('takes the auto-title for an empty meta title, as Storybook does', () => {
+    const code = `const TITLE = '';\nexport default { title: TITLE };\nexport const A = {};\n`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.id, e.title])).toEqual([['ui-auto--a', 'ui/Auto']]);
+  });
+
+  it('reads no value from a top-level let or var the file reassigns', () => {
+    const code = `let title = 'ui/A';\ntitle = 'ui/B';\nvar kept = 'ui/C';\nexport default { title };\nexport const S = { name: kept };\n`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/Auto', 'ui/C']]);
+  });
+
+  it('names a component written as a member of an import', () => {
+    const code = `import * as Tabs from './Tabs';\nexport default { component: Tabs.Panel };\nexport const A = {};\n`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.componentName)).toEqual(['Tabs.Panel']);
+  });
+
   it('reads a file importing forge as a namespace as native', () => {
     const code = `
 import * as forge from '@weasel-js/forge';

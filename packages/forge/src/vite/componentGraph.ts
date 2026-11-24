@@ -1,4 +1,4 @@
-import { relative, sep } from 'node:path';
+import { posixRelative } from './posixPath.ts';
 import type { ViteDevServer } from 'vite';
 import { getOwn, setOwn } from './ownKeys.ts';
 import { isGallery } from '../story/tags.ts';
@@ -97,7 +97,7 @@ export function createComponentGraph({ root, read }: ComponentGraphOptions): Com
 
       const graph: ComponentGraph = {};
       for (const [title, key] of components) {
-        setOwn(graph, title, { source: key ? relative(root, fileOfKey(key)).split(sep).join('/') : null, uses: [], usedBy: [] });
+        setOwn(graph, title, { source: key ? posixRelative(root, fileOfKey(key)) : null, uses: [], usedBy: [] });
       }
       for (const [title, key] of components) {
         if (!key) continue;

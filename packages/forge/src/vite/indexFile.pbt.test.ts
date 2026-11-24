@@ -74,7 +74,7 @@ describe('indexFile', () => {
         const { code, mod } = render(m);
         let loaded: { id: string; name: string; exportName: string }[];
         try {
-          loaded = loadCsfModule(mod, m.title);
+          loaded = loadCsfModule(mod, m.title || 'auto');
         } catch (error) {
           expect(() => indexFile(code, FILE, 'auto')).toThrow(`${FILE}: ${(error as Error).message}`);
           seen.count('refused');

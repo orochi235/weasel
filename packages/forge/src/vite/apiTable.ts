@@ -32,7 +32,7 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
   };
   const defaults = declaration ? destructuredDefaults(reading.tsm, declaration) : new Map<string, string>();
   const listed: ApiProp[] = [];
-  const inherited = new Map<string, number>();
+  const inherited = new Map<string, { container: string | undefined; pkg: string; count: number }>();
   let ref: ApiRef | null = null;
   const defs = new Map<string, ApiTypeDef>();
   const define = (symbol: ts.Symbol, text: string) =>
@@ -43,8 +43,11 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
     if (RESERVED.has(name)) continue;
     const files = filesOf(prop);
     if (files.length > 0 && files.every(reading.skipped)) {
-      const from = containerName(reading.tsm, prop) ?? packageOf(files[0]!);
-      inherited.set(from, (inherited.get(from) ?? 0) + 1);
+      const container = containerName(reading.tsm, prop);
+      const pkg = packageOf(files[0]!);
+      const key = `${pkg}\0${container ?? ''}`;
+      const held = inherited.get(key) ?? { container, pkg, count: 0 };
+      inherited.set(key, { ...held, count: held.count + 1 });
       continue;
     }
     const entry = propEntry(reading, prop, defaults.get(name));
@@ -54,12 +57,22 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
   }
   return {
     props: listed,
-    inherited: [...inherited].map(([from, count]): ApiInherited => ({ from, count })),
+    inherited: inheritedRows([...inherited.values()]),
     ref,
     ...(defs.size === 0 ? {} : { types: Object.fromEntries(defs) }),
     sources: [...sources],
     ...componentOf(reading.tsm, declaration),
   };
+}
+
+/** One row per package and type the inherited props come from, named by the type, and by its package too when
+ *  another package declares a type of the same name. */
+function inheritedRows(groups: readonly { container: string | undefined; pkg: string; count: number }[]): ApiInherited[] {
+  const named = (container: string) => groups.filter((g) => g.container === container).length;
+  return groups.map(({ container, pkg, count }) => ({
+    from: container === undefined ? pkg : named(container) > 1 ? `${container} (${pkg})` : container,
+    count,
+  }));
 }
 
 function componentOf(tsm: typeof ts, declaration: ts.Declaration | undefined): Pick<ReadApi, 'component'> {
@@ -187,7 +200,9 @@ function destructuredDefaults(tsm: typeof ts, declaration: ts.Declaration): Map<
   if (!pattern || !tsm.isObjectBindingPattern(pattern)) return defaults;
   for (const element of pattern.elements) {
     const key = element.propertyName ?? element.name;
-    if (element.initializer && tsm.isIdentifier(key)) defaults.set(key.text, element.initializer.getText());
+    if (element.initializer && (tsm.isIdentifier(key) || tsm.isStringLiteral(key) || tsm.isNumericLiteral(key))) {
+      defaults.set(key.text, element.initializer.getText());
+    }
   }
   return defaults;
 }

@@ -72,7 +72,7 @@ export function parsePayload(body: unknown): CapturePayload | { error: string } 
   }
   if (typeof layout !== 'string' || !LAYOUTS.includes(layout)) return { error: `layout must be one of ${LAYOUTS.join(', ')}` };
   if (typeof dpr !== 'number' || !(dpr >= MIN_DPR && dpr <= MAX_DPR)) return { error: `dpr must be in [${MIN_DPR}, ${MAX_DPR}]` };
-  if (box.width * dpr > MAX_DEVICE_PX || box.height * dpr > MAX_DEVICE_PX) {
+  if (Math.ceil(box.width) * dpr > MAX_DEVICE_PX || Math.ceil(box.height) * dpr > MAX_DEVICE_PX) {
     return { error: `box must span at most ${MAX_DEVICE_PX} device pixels on each side at its dpr` };
   }
   if (!isRecord(scroll) || !finite(scroll.left) || !finite(scroll.top)) return { error: 'scroll must hold a finite left and top' };

@@ -30,11 +30,14 @@ export function memo<C>(component: C): C { return component; }
     mkdirSync(at('node_modules/@types/react'), { recursive: true });
     writeFileSync(at('node_modules/@types/react/dom.d.ts'), `export interface DomProps { hidden?: boolean; title?: string }\n`);
     writeFileSync(at('node_modules/@types/react/anon.d.ts'), `export type Anon = { lang?: string } & { dir?: string };\n`);
+    mkdirSync(at('node_modules/@types/react-dom'), { recursive: true });
+    writeFileSync(at('node_modules/@types/react-dom/index.d.ts'), `export interface DomProps { inert?: boolean }\n`);
     writeFileSync(
       at('Chart.ts'),
       `import { forwardRef, memo } from './react';
 import type { DomProps } from './node_modules/@types/react/dom';
 import type { Anon } from './node_modules/@types/react/anon';
+import type { DomProps as OtherDom } from './node_modules/@types/react-dom/index';
 export interface Point { x: number; y: number }
 export interface ChartHandle {
   /** Maps a plot point to the model. */
@@ -65,6 +68,8 @@ export const Wrapped = (_props: DomProps & { own?: boolean }) => null;
 export interface ListProps<T> { items: T[] }
 export const List = <T,>(_props: ListProps<T>) => null;
 export const Bare = () => null;
+export const Field = ({ 'aria-label': _label = 'Field' }: { 'aria-label'?: string }) => null;
+export const Clash = (_props: DomProps & OtherDom) => null;
 export const Plain = (_props: Anon & { own?: boolean }) => null;
 interface Field<T, C = T> { value?: T; onChange?: (value: C) => void }
 export interface InputProps extends Field<string> {
@@ -96,8 +101,12 @@ export const Input = (_props: InputProps) => null;
     story('typedTitle', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst meta: Meta = { title: 'ui/Chart' };\nexport default meta;\n`);
     story('input', `import { Input } from './Chart';\nexport default { component: Input };\n`);
     story('plain', `import { Plain } from './Chart';\nexport default { component: Plain };\n`);
+    story('field', `import { Field } from './Chart';\nexport default { component: Field };\n`);
+    story('quoted', `import { Chart } from './Chart';\nexport default { 'component': Chart };\n`);
+    story('asserted', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nexport default <Meta>{ component: Chart };\n`);
+    story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'none'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -136,6 +145,10 @@ export const Input = (_props: InputProps) => null;
   it('reads a default from destructuring, else from @default', () => {
     expect(prop(api('chart'), 'count')?.default).toBe('3');
     expect(prop(api('chart'), 'size')?.default).toBe("'md'");
+  });
+
+  it('reads a default destructured from a quoted prop name', () => {
+    expect(prop(api('field'), 'aria-label')?.default).toBe("'Field'");
   });
 
   it('marks a deprecated prop', () => {
@@ -182,6 +195,11 @@ export const Input = (_props: InputProps) => null;
     expect(api('native', 'Chart')?.ref?.type).toBe('ChartHandle');
   });
 
+  it('reads a component named under a quoted key or through a type assertion', () => {
+    expect(api('quoted')?.ref?.type).toBe('ChartHandle');
+    expect(api('asserted')?.ref?.type).toBe('ChartHandle');
+  });
+
   it("reads the title's import, not a wrapper the story file declares itself", () => {
     expect(api('wrapper', 'Chart')?.ref?.type).toBe('ChartHandle');
     expect(prop(api('wrapper'), 'shown')).toBeDefined();
@@ -204,6 +222,13 @@ export const Input = (_props: InputProps) => null;
 
   it('prints a method-shorthand prop as a function, not its return type', () => {
     expect(prop(api('input'), 'onPick')?.type).toBe('(value: string) => void');
+  });
+
+  it('counts apart inherited props whose types share a name in two packages, naming each package', () => {
+    expect(api('clash')?.inherited).toEqual([
+      { from: 'DomProps (@types/react)', count: 2 },
+      { from: 'DomProps (@types/react-dom)', count: 1 },
+    ]);
   });
 
   it('names the package an unnamed type of inherited props comes from', () => {

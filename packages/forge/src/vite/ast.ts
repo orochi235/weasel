@@ -3,7 +3,7 @@ import type * as t from '@babel/types';
 
 /**
  * A program's top-level locals by name: a variable's initializer, a function, class or enum declaration, and the
- * declarator of a variable with no initializer or a destructured one.
+ * declarator of a variable with no initializer, a destructured one, or a `let` or `var` assigned anywhere.
  */
 export type Bindings = Map<string, t.Node>;
 
@@ -21,6 +21,7 @@ export const DEFAULT_LOCAL = '*default*';
 /** `program`'s bindings, exported or not, a default export's under its own name or `DEFAULT_LOCAL`. */
 export function bindingsOf(program: t.Program): Bindings {
   const bindings: Bindings = new Map();
+  let reassigned: ReadonlySet<string> | undefined;
   for (const stmt of program.body) {
     if (stmt.type === 'ExportDefaultDeclaration') {
       const decl = stmt.declaration;
@@ -31,8 +32,9 @@ export function bindingsOf(program: t.Program): Bindings {
     const decl = stmt.type === 'ExportNamedDeclaration' ? stmt.declaration : stmt;
     if (decl?.type === 'VariableDeclaration') {
       for (const d of decl.declarations) {
-        if (d.id.type === 'Identifier' && d.init) bindings.set(d.id.name, d.init);
-        // A destructured or uninitialized local is still a local, though nothing here can read its value.
+        const fixed = decl.kind === 'const' || !(reassigned ??= assignedNames(program)).has(d.id.type === 'Identifier' ? d.id.name : '');
+        if (d.id.type === 'Identifier' && d.init && fixed) bindings.set(d.id.name, d.init);
+        // A destructured, uninitialized or reassigned local is still a local, though nothing here can read its value.
         else for (const name of patternNames(d.id)) bindings.set(name, d);
       }
     } else if ((decl?.type === 'FunctionDeclaration' || decl?.type === 'ClassDeclaration') && decl.id) {
@@ -42,6 +44,24 @@ export function bindingsOf(program: t.Program): Bindings {
     }
   }
   return bindings;
+}
+
+/** Every name `node` assigns to, `=`, `+=`, `++` or a `for…in`/`for…of` head, in whatever scope. */
+function assignedNames(node: t.Node): Set<string> {
+  const out = new Set<string>();
+  const visit = (value: unknown): void => {
+    if (Array.isArray(value)) return value.forEach(visit);
+    if (!value || typeof value !== 'object' || typeof (value as t.Node).type !== 'string') return;
+    const n = value as t.Node;
+    if (n.type === 'AssignmentExpression') for (const name of patternNames(n.left as t.LVal)) out.add(name);
+    else if (n.type === 'UpdateExpression' && n.argument.type === 'Identifier') out.add(n.argument.name);
+    else if ((n.type === 'ForInStatement' || n.type === 'ForOfStatement') && n.left.type !== 'VariableDeclaration') {
+      for (const name of patternNames(n.left)) out.add(name);
+    }
+    for (const [key, child] of Object.entries(n)) if (key !== 'loc' && !key.endsWith('Comments')) visit(child);
+  };
+  visit(node);
+  return out;
 }
 
 export function patternNames(node: t.LVal | t.ObjectProperty['value'] | null | undefined): string[] {
@@ -66,6 +86,14 @@ export function calleeName(callee: t.Node): string | undefined {
   if (callee.type === 'Identifier') return callee.name;
   if (callee.type !== 'MemberExpression' || callee.computed) return undefined;
   return callee.object.type === 'Identifier' && callee.property.type === 'Identifier' ? `${callee.object.name}.${callee.property.name}` : undefined;
+}
+
+/** The name an identifier or a chain of plain member accesses off one is written as: `Tabs` or `Tabs.Panel`. */
+export function dottedName(node: t.Node): string | undefined {
+  if (node.type === 'Identifier') return node.name;
+  if (node.type !== 'MemberExpression' || node.computed || node.property.type !== 'Identifier') return undefined;
+  const object = dottedName(node.object);
+  return object === undefined ? undefined : `${object}.${node.property.name}`;
 }
 
 /** The name `node` calls, as `calleeName` writes it, through casts and top-level `const`s. */

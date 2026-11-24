@@ -65,11 +65,19 @@ function assigned(tsm: typeof ts, checker: ts.TypeChecker, meta: ts.Symbol): ts.
         : undefined;
   while (node && !tsm.isObjectLiteralExpression(node)) {
     if (tsm.isCallExpression(node)) node = node.arguments[0];
-    else if (tsm.isParenthesizedExpression(node) || tsm.isAsExpression(node) || tsm.isSatisfiesExpression(node)) {
+    else if (
+      tsm.isParenthesizedExpression(node) ||
+      tsm.isAsExpression(node) ||
+      tsm.isSatisfiesExpression(node) ||
+      tsm.isTypeAssertionExpression(node) ||
+      tsm.isNonNullExpression(node)
+    ) {
       node = node.expression;
     } else node = undefined;
   }
-  const property = node?.properties.find((p) => p.name && tsm.isIdentifier(p.name) && p.name.text === 'component');
+  const property = [...(node?.properties ?? [])].reverse().find(
+    (p) => p.name && (tsm.isIdentifier(p.name) || tsm.isStringLiteral(p.name)) && p.name.text === 'component',
+  );
   let value: ts.Symbol | undefined;
   if (property && tsm.isShorthandPropertyAssignment(property)) value = checker.getShorthandAssignmentValueSymbol(property);
   else if (property && tsm.isPropertyAssignment(property)) value = checker.getSymbolAtLocation(property.initializer);
