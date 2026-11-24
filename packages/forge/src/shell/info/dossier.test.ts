@@ -60,10 +60,11 @@ describe('storyDossier', () => {
     ]);
   });
 
-  it('flattens a group into dotted paths and drops the lab globals', () => {
+  it('flattens a group into dotted paths and drops every key forge owns', () => {
     const nodes = {
       grid: f.group({ size: f.number(8) }),
       $globals: f.group({ mode: f.string('dark') }),
+      $playhead: f.number(0),
     };
     const dossier = storyDossier({
       entry: ENTRY,
