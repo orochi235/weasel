@@ -103,10 +103,12 @@ describe('createLoupeModel', () => {
           redraws: 0, disposals: 0,
         };
         const sampleAim = () => {
+          if (world.hidden || coversAt(world, m.aim)) { seen.count('aim blind'); return false; }
           const hex = colorAt(world, m.aim);
-          if (hex === m.color) return;
+          if (hex === m.color) return true;
           m.color = hex;
           m.colors.push(hex);
+          return true;
         };
         const teardown = () => {
           if (m.disposed) return;
@@ -125,7 +127,7 @@ describe('createLoupeModel', () => {
               if (world.hidden || coversAt(world, o.p)) { seen.count('aim ignored'); break; }
               m.aim = o.p;
               if (framed) m.unsampled = true;
-              else sampleAim();
+              else void sampleAim();
               m.redraws++;
               break;
             case 'pick': {
@@ -133,7 +135,7 @@ describe('createLoupeModel', () => {
               let want: string | null;
               if (!m.disposed && world.gone) teardown();
               if (m.disposed) want = null;
-              else if (!o.p) want = colorAt(world, m.aim);
+              else if (!o.p) want = coversAt(world, m.aim) ? null : colorAt(world, m.aim);
               else if (!world.lens) want = null;
               else {
                 const at = loupeSourcePoint(o.p, world.lens, world.lens.shows ?? m.aim, world.lens.factor ?? m.factor);
@@ -159,14 +161,13 @@ describe('createLoupeModel', () => {
             case 'resample':
               loupe.resample();
               if (!m.disposed && world.gone) teardown();
-              if (m.disposed || world.hidden) break;
-              m.unsampled = false;
-              sampleAim();
+              if (m.disposed) break;
+              if (sampleAim()) m.unsampled = false;
               break;
             case 'frame':
               for (const fn of [...frameFns]) fn();
               if (framed && !m.disposed && world.gone) teardown();
-              if (framed && !m.disposed && m.unsampled) { m.unsampled = false; sampleAim(); seen.count('landed'); }
+              if (framed && !m.disposed && m.unsampled && sampleAim()) { m.unsampled = false; seen.count('landed'); }
               break;
             case 'hide': world.hidden = o.hidden; break;
             case 'cover': world.covered = o.covered; break;
@@ -188,6 +189,6 @@ describe('createLoupeModel', () => {
         }
       }), runs(RUNS));
     for (const what of ['aim', 'pick', 'picked', 'factor', 'resample', 'aim ignored']) seen.atLeast(what, RUNS / 2);
-    for (const what of ['same factor', 'landed', 'dispose', 'gone']) seen.atLeast(what, RUNS / 10);
+    for (const what of ['same factor', 'landed', 'dispose', 'gone', 'aim blind']) seen.atLeast(what, RUNS / 10);
   }, timeoutFor(RUNS, 20));
 });

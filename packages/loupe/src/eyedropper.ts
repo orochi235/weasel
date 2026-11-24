@@ -13,6 +13,8 @@ export interface EyedropperModelOptions {
    * neighborhood of the point a click would take. Give the loupe's surface
    * the same sampler and its readout is the color that click takes — when the
    * sampler answers at once; a loupe's surface cannot wait for a promise.
+   * Over a stationary lens the eyedropper reads what the lens magnifies there,
+   * and nothing where that lies under the lens itself.
    */
   loupe?: LoupeModel;
   /** Called with the color under the pointer whenever it changes; `null`
@@ -53,6 +55,8 @@ export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperM
   const hovers = createLatest();
   let disposed = false;
 
+  const sourceFor = (p: LoupePoint) => (opts.loupe ? opts.loupe.sourceAt(p) : p);
+
   const settle = (hex: string | null) => {
     if (hex === color) return;
     color = hex;
@@ -66,7 +70,15 @@ export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperM
       if (disposed) return;
       opts.loupe?.aimAt(p);
       const mine = hovers.take();
-      const got = opts.sample(p);
+      const from = sourceFor(p);
+      if (!from) { settle(null); return; }
+      let got: MaybePromise<string | null>;
+      try {
+        got = opts.sample(from);
+      } catch (err) {
+        settle(null);
+        throw err;
+      }
       if (!isPromise(got)) { settle(got); return; }
       void got.then(
         (hex) => { if (!disposed && mine()) settle(hex); },
@@ -87,7 +99,9 @@ export function createEyedropperModel(opts: EyedropperModelOptions): EyedropperM
         if (hex !== null && !disposed) opts.onPick?.(hex);
         return hex;
       };
-      const got = opts.sample(p);
+      const from = sourceFor(p);
+      if (!from) return null;
+      const got = opts.sample(from);
       return isPromise(got) ? got.then(report) : report(got);
     },
 

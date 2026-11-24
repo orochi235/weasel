@@ -28,20 +28,21 @@ export function createLoupeAim(surface: LoupeSurface, mode: LoupeAimMode): Loupe
     );
   }
   let followed: LoupePoint = { x: 0, y: 0 };
-  const held = (p: LoupePoint) => surface.worldAt?.(p) ?? p;
+  const copy = (p: LoupePoint): LoupePoint => ({ x: p.x, y: p.y });
+  const held = (p: LoupePoint) => copy(surface.worldAt?.(p) ?? p);
   let pinned: LoupePoint | null = mode === 'pinned' ? held(followed) : null;
-  const now = () => (pinned ? (surface.pointFor?.(pinned) ?? pinned) : followed);
+  const now = () => (pinned ? (surface.pointFor?.(pinned) ?? copy(pinned)) : copy(followed));
   return {
     get mode() { return pinned ? 'pinned' : 'follow'; },
-    get pinned() { return pinned; },
+    get pinned() { return pinned && copy(pinned); },
     now,
     follow(p) {
       if (pinned) return false;
-      followed = p;
+      followed = copy(p);
       return true;
     },
     pin(p) { pinned = held(p); },
-    hold(c) { pinned = c; },
+    hold(c) { pinned = copy(c); },
     setMode(next) {
       if ((pinned !== null) === (next === 'pinned')) return false;
       if (next === 'pinned') pinned = held(followed);
