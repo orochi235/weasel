@@ -114,6 +114,30 @@ describe('createSoundCache.register', () => {
     expect(a.id).not.toBe(b.id);
   });
 
+  it('frees a handle\'s buffer, and fetches its url again on the next load', async () => {
+    const ctx = createFakeAudioContext();
+    const fetchFn = okFetch();
+    const cache = createSoundCache(ctx as never, fetchFn);
+    const loaded = await cache.load('/a.wav');
+    const made = cache.register(ctx.createBuffer(1, 8, 48000) as never);
+    cache.free(loaded);
+    cache.free(made);
+    expect(cache.buffer(loaded)).toBeNull();
+    expect(cache.buffer(made)).toBeNull();
+    const again = await cache.load('/a.wav');
+    expect(again.id).not.toBe(loaded.id);
+    expect(fetchFn).toHaveBeenCalledTimes(2);
+  });
+
+  it('clears every handle', async () => {
+    const ctx = createFakeAudioContext();
+    const cache = createSoundCache(ctx as never, okFetch());
+    const loaded = await cache.load('/a.wav');
+    const made = cache.register(ctx.createBuffer(1, 8, 48000) as never);
+    cache.clear();
+    expect([cache.buffer(loaded), cache.buffer(made)]).toEqual([null, null]);
+  });
+
   it('loadAll returns a record with no prototype, so a misspelled key reads undefined', async () => {
     const ctx = createFakeAudioContext();
     const cache = createSoundCache(ctx as never, okFetch());

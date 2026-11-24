@@ -39,6 +39,19 @@ describe('a voice that never played', () => {
     expect(warn).toHaveBeenCalled();
   });
 
+  it('reports `unready` for a sound the engine has freed', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    engine.free(sound);
+    const cb = callbacks();
+    engine.play(sound, cb);
+    tick();
+    await endOfTask();
+    expect(cb.onDrop.mock.calls).toEqual([['unready']]);
+  });
+
   it('reports `locked` when the context is not running', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { engine } = engineHarness();
