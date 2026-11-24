@@ -99,6 +99,8 @@ export function freeNames(node: t.Node): Set<string> {
     if (n.type.startsWith('TS') && !('expression' in n)) return;
     if (isFunction(n)) {
       if ((n.type === 'ObjectMethod' || n.type === 'ClassMethod') && n.computed) walk(n.key, scope);
+      if (n.type === 'ClassMethod' || n.type === 'ClassPrivateMethod') walk(n.decorators, scope);
+      for (const p of n.params) walk('decorators' in p ? p.decorators : undefined, scope);
       const own = n.type === 'FunctionExpression' && n.id ? [n.id.name] : [];
       const inner = plus(scope, [...own, ...n.params.flatMap((p) => patternNames(p.type === 'TSParameterProperty' ? p.parameter : p)), ...varNames(n.body)]);
       for (const p of n.params) pattern(p, inner);
