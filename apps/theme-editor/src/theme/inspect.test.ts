@@ -40,4 +40,31 @@ describe('tokensReadAt', () => {
     const target = document.getElementById('t')!;
     expect(tokensReadAt(target, document.querySelector('.pane')!, documentSheets())).toEqual(['button-radius', 'fg-muted', 'fg-muted-on-accent']);
   });
+
+  it('reads a declaration whose string or url holds a semicolon as one value', () => {
+    document.head.innerHTML = `<style>
+      .btn { content: "a;color:var(--wzl-danger)"; color: var(--wzl-fg); }
+    </style>`;
+    document.body.innerHTML = '<div class="pane"><button class="btn" id="t">x</button></div>';
+    expect(tokensReadAt(document.getElementById('t')!, document.querySelector('.pane')!, documentSheets())).toEqual(['fg']);
+  });
+
+  it('follows only the custom property declaration the cascade picks for the element that reads it', () => {
+    document.head.innerHTML = `<style>
+      .btn.ghost { --btn-bg: transparent; }
+      .btn { --btn-bg: var(--wzl-accent); background-color: var(--btn-bg); --btn-fg: var(--wzl-fg); color: var(--btn-fg); }
+      .panel { --btn-fg: var(--wzl-danger); }
+    </style>`;
+    document.body.innerHTML = '<div class="pane"><div class="panel"><button class="btn ghost" id="t">x</button></div></div>';
+    expect(tokensReadAt(document.getElementById('t')!, document.querySelector('.pane')!, documentSheets())).toEqual(['fg']);
+  });
+
+  it('lets a later declaration of equal specificity, or an important one, win', () => {
+    document.head.innerHTML = `<style>
+      .btn { color: var(--wzl-fg) !important; border-color: var(--wzl-border); }
+      .btn { color: var(--wzl-danger); border-color: var(--wzl-accent); }
+    </style>`;
+    document.body.innerHTML = '<div class="pane"><button class="btn" id="t">x</button></div>';
+    expect(tokensReadAt(document.getElementById('t')!, document.querySelector('.pane')!, documentSheets())).toEqual(['fg', 'accent']);
+  });
 });

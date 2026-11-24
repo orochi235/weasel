@@ -50,6 +50,13 @@ export function ownTokenNames(def: ThemeDefinition, merged: ThemeDefinition): st
 export const pinApplies = (result: DeriveResult, name: string): boolean =>
   getOwn(result.provenance, name)?.pinned === true || getOwn(result.provenance, name)?.layer === 'pins';
 
+/** The page a jump to `token` opens: Pins for a pin of the definition's own, since that page lists only those; otherwise the layer
+ *  that produced it, where an inherited pin shows beside what it overrides. */
+export function jumpLayerFor(def: ThemeDefinition, result: DeriveResult, token: string): LayerId {
+  if (pinApplies(result, token) && Object.hasOwn(def.pins ?? {}, token)) return 'pins';
+  return getOwn(result.provenance, token)?.layer ?? 'pins';
+}
+
 /** The tokens `layer`'s page lists, in definition order: every seed with a value at `selection`, as `seeds.<name>`;
  *  each pin of the definition's own that applies; and for the rest, each token of the whole chain that `layer`
  *  produced, since a page lists what the theme inherits beside what it owns. */

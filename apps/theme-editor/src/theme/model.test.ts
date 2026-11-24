@@ -3,7 +3,7 @@ import { derive, mergeChain } from '@weasel-js/theme/engine';
 import { describe, expect, it } from 'vitest';
 import { child, lookupOf, weasel } from './fixtures';
 import { layerEntries } from './entries';
-import { adoptGenerated, clearAt, countTokens, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf, tokenValueFromText, writeAt } from './model';
+import { adoptGenerated, clearAt, countTokens, jumpLayerFor, removePin, ruleSummary, runtimeTheme, setPin, setRamp, stepOf, tokenValueFromText, writeAt } from './model';
 
 const lookup = lookupOf(child);
 
@@ -141,5 +141,16 @@ describe('writeAt and clearAt', () => {
     const nested = { by: 'mode', dark: { by: 'density', compact: 4 } };
     expect(clearAt(nested, { mode: 'dark', density: 'comfy' })).toBe(nested);
     expect(clearAt(nested, { mode: 'light', density: 'compact' })).toBe(nested);
+  });
+});
+
+describe('jumpLayerFor', () => {
+  it("opens Pins for the definition's own pin and the producing layer for an inherited one", () => {
+    const result = derive(child, { mode: 'dark' }, lookup);
+    const inherited = Object.keys(weasel.pins ?? {}).find((n) => !Object.hasOwn(child.pins ?? {}, n) && result.provenance[n]?.pinned && result.provenance[n]?.layer !== 'pins')!;
+    expect(inherited).toBeDefined();
+    expect(jumpLayerFor(child, result, inherited)).toBe(result.provenance[inherited].layer);
+    expect(jumpLayerFor(child, result, 'surface')).toBe('pins');
+    expect(jumpLayerFor(weasel, derive(weasel, { mode: 'dark' }, lookup), inherited)).toBe('pins');
   });
 });
