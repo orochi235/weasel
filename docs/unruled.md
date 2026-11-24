@@ -4120,3 +4120,10 @@ Calls the lanes made without a ruling:
 - 2026-11-23 (the fixer's call): forge's API panel gives no definition to a type name that a component's props and ref
   use for two different declarations, since the panel shows only the name. Showing the first one found, as before, or
   keying definitions by declaration and naming each apart, were the alternatives.
+
+## Audit round eighty-one (2026-11-24): Badge
+
+- 2026-11-24 (the fixer's call): the badge catalog's lookups (`badgeShapeDefaults`, `badgeBaseDefaults`,
+  `badgeEffectDefaults`, `badgeShapeRendering`, `badgeEffectZone`) throw a `RangeError` naming a key no shape, base, or
+  effect has, where `Badge` itself falls back for one. Answering an empty default or a fallback, as `Badge` does, was
+  the alternative.

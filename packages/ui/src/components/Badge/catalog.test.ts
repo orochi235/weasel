@@ -34,4 +34,12 @@ describe('the badge catalog', () => {
     (badgeEffectDefaults('shadow') as Record<string, unknown>).dx = 9;
     expect(badgeEffectDefaults('shadow')).toHaveProperty('dx', 1);
   });
+
+  it('throws a RangeError naming a shape, base, or effect it does not hold', () => {
+    const bogus = 'toString' as never;
+    for (const lookup of [badgeShapeDefaults, badgeBaseDefaults, badgeEffectDefaults, badgeShapeRendering, badgeEffectZone]) {
+      expect(() => lookup(bogus)).toThrow(RangeError);
+    }
+    expect(() => badgeEffectZone('nope' as never)).toThrow('No badge effect is named "nope"');
+  });
 });
