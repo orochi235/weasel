@@ -11,6 +11,11 @@ describe('indexFile', () => {
     expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.id, e.title])).toEqual([['ui-auto--a', 'ui/Auto']]);
   });
 
+  it('reads no value from a top-level let or var the file reassigns', () => {
+    const code = `let title = 'ui/A';\ntitle = 'ui/B';\nvar kept = 'ui/C';\nexport default { title };\nexport const S = { name: kept };\n`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/Auto', 'ui/C']]);
+  });
+
   it('reads a file importing forge as a namespace as native', () => {
     const code = `
 import * as forge from '@weasel-js/forge';
