@@ -21,13 +21,12 @@ export function useHeldKeys(target?: EventTarget | null): ReadonlySet<string> {
     const up = (e: Event) => {
       const { code } = e as KeyboardEvent;
       setHeld((prev) => {
-        if (!prev.has(code)) return prev;
         const next = new Set(prev);
         next.delete(code);
         // macOS sends no key-up for a key released while Command is down, so letting go of Command
-        // lets go of everything but the other modifiers.
+        // lets go of everything but the other modifiers, whether or not Command's key-down was seen.
         if (apple && code.startsWith('Meta')) for (const c of prev) if (!MODIFIER_CODE.test(c)) next.delete(c);
-        return next;
+        return next.size === prev.size ? prev : next;
       });
     };
     const clear = () => setHeld((prev) => (prev.size === 0 ? prev : new Set()));
