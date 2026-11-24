@@ -106,4 +106,21 @@ describe('loupe model: a pinned aim', () => {
     loupe.aimAt({ x: 5, y: 5 });
     expect(onDispose).toHaveBeenCalledTimes(1);
   });
+
+  it('copies the points it is aimed and pinned at, so a reused point object moves nothing', () => {
+    const loupe = createLoupeModel({ surface: pannedSurface({ worldAt: undefined, pointFor: undefined }).surface });
+    const scratch = { x: 10, y: 20 };
+    loupe.aimAt(scratch);
+    scratch.x = 99;
+    expect(loupe.aim).toEqual({ x: 10, y: 20 });
+    loupe.holdPin(scratch);
+    scratch.x = 1;
+    expect(loupe.pin).toEqual({ x: 99, y: 20 });
+    loupe.pinAt(scratch);
+    scratch.x = 2;
+    expect(loupe.aim).toEqual({ x: 1, y: 20 });
+    loupe.aim.x = 3;
+    loupe.pin!.x = 3;
+    expect(loupe.aim).toEqual({ x: 1, y: 20 });
+  });
 });
