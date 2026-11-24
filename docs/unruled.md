@@ -4158,3 +4158,5 @@ Calls the lanes made without a ruling:
 
 - 2026-11-24 (the fixer's call): `resumeJournal` throws for a top-level journal another history opened, leaving it
   suspended. Routing it to the history that opened it, as a nested journal is routed, was the alternative.
+- 2026-11-24 (the fixer's call): `createHistory` throws a `RangeError` for `historyLimit: NaN`. Treating it as `0`, as a
+  negative limit is, or as unbounded, as an omitted one is, were the alternatives.

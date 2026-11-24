@@ -56,6 +56,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const redoStack: Entry[] = [];
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
+  if (Number.isNaN(options.historyLimit)) throw new RangeError('createHistory: historyLimit is NaN');
   const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
   const customRebuild = options.rebuildOp;
   const selection = options.selection;

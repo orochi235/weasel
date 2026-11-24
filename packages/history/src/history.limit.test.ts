@@ -46,6 +46,10 @@ describe('historyLimit', () => {
     expect(cell.x).toBe(1); // the op still applied; only the entry was evicted
   });
 
+  it('throws on a historyLimit that is not a number', () => {
+    expect(() => createHistory(null, { historyLimit: NaN })).toThrow(RangeError);
+  });
+
   it('coalescing does not evict (stack depth unchanged)', () => {
     const cell: Cell = { x: 0 };
     let t = 1000;
