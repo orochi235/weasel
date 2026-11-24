@@ -22,7 +22,7 @@ import { clearDraft, draftHistory, persistDraft, type StoredDraft } from './them
 import { EXPORTS, download, exportFile } from './theme/exportFiles';
 import { describeIssue } from './theme/issues';
 import { documentSheets, tokensReadAt } from './theme/inspect';
-import { LAYERS, adoptGenerated, countTokens, pinApplies, runtimeTheme, type LayerId } from './theme/model';
+import { LAYERS, adoptGenerated, countTokens, jumpLayerFor, runtimeTheme, type LayerId } from './theme/model';
 import { HistorySlot } from './HistorySlot';
 import { useLabHistory } from './useLabHistory';
 import { icon } from './icons.gen';
@@ -250,12 +250,9 @@ export function ThemeWorkbench({ api, themes, stored, start, onPick, onSaved, on
   };
 
   const counts = countTokens(draft, derived.primary.result, derived.merged, derived.primary.selection);
-  // A pinned token jumps to Pins: the pin is what decides its value.
-  const layerOf = (token: string): LayerId =>
-    pinApplies(derived.primary.result, token) ? 'pins' : (getOwn(derived.primary.result.provenance, token)?.layer ?? 'pins');
   const jump = (tokens: readonly string[]) => {
     if (tokens.length === 0) return;
-    setLayer(layerOf(tokens[0]));
+    setLayer(jumpLayerFor(draft, derived.primary.result, tokens[0]));
     setHighlight(tokens);
   };
   const inspect = (target: Element, pane: Element) => {
