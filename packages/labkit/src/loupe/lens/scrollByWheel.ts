@@ -34,7 +34,9 @@ function canMove(
   } else if (!SCROLLS.has(style[axis])) return false;
   // A body whose overflow went to the viewport is no scroll container itself.
   else if (el === doc.body && bodyLendsOverflow(doc)) return false;
-  return delta > 0 ? at < room - 0.5 : at > 0.5;
+  // An RTL box's scrollLeft runs from -room at its left end to 0 at its right.
+  const from = axis === 'overflowX' && style.direction === 'rtl' ? at + room : at;
+  return delta > 0 ? from < room - 0.5 : from > 0.5;
 }
 
 /** The next element out, through a shadow root's host and out of a same-origin frame, as a scroll chains. */
