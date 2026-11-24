@@ -111,6 +111,16 @@ describe('patternVoicePeaks on a step the player refuses', () => {
   });
 });
 
+describe('patternVoicePeaks on a span far longer than a pass', () => {
+  it('counts it in one step rather than laying out every pass it covers', () => {
+    const hit = { step: 0, sound: { id: 'long' } as never };
+    // A 2000 ms pass: the hit covers 5e8 passes and starts a voice on each.
+    const at = performance.now();
+    expect(patternVoicePeaks([hit], { ...base, length: 16, hitMs: () => 1e12 })).toEqual({ sfx: 500_000_000 });
+    expect(performance.now() - at).toBeLessThan(1000);
+  });
+});
+
 describe('patternVoicePeaks on a span that is not finite', () => {
   it('throws rather than hanging or reading 0 voices', () => {
     const hit = { step: 0, sound: { id: 'loop' } as never, loop: true };

@@ -53,12 +53,19 @@ export function patternVoicePeaks(
     const at = e.step * stepMs;
     return { bus: e.bus ?? opts.bus ?? 'sfx', from: at - lead, until: at + sounds };
   });
-  // Enough passes that the last one meets every tail still ringing into it.
-  const longest = spans.reduce((most, s) => Math.max(most, s.until - s.from), 0);
-  const passes = opts.loop === false ? 0 : Math.ceil(longest / passMs);
+  // Looped, a span a whole pass long or longer holds that many voices at every
+  // moment; only its remainder has to be laid against the next pass.
+  const held = new Map<string, number>();
+  const looped = opts.loop === false ? spans : spans.map((s) => {
+    const whole = Math.floor((s.until - s.from) / passMs);
+    if (!(whole >= 1)) return s;
+    held.set(s.bus, (held.get(s.bus) ?? 0) + whole);
+    return { ...s, until: Math.max(s.from, s.until - whole * passMs) };
+  });
+  const passes = opts.loop === false ? 0 : 1;
 
   const edges = new Map<string, { at: number; by: number }[]>();
-  for (const span of spans) {
+  for (const span of looped) {
     const list = edges.get(span.bus) ?? [];
     edges.set(span.bus, list);
     for (let pass = 0; pass <= passes; pass++) {
@@ -70,13 +77,13 @@ export function patternVoicePeaks(
   for (const [bus, list] of edges) {
     // A voice ending as another starts has freed its slot.
     list.sort((a, b) => a.at - b.at || a.by - b.by);
-    let held = 0;
+    let now = 0;
     let peak = 0;
     for (const edge of list) {
-      held += edge.by;
-      peak = Math.max(peak, held);
+      now += edge.by;
+      peak = Math.max(peak, now);
     }
-    peaks.push([bus, peak]);
+    peaks.push([bus, peak + (held.get(bus) ?? 0)]);
   }
   // Null-prototype: a lookup for a bus the pattern does not use reads undefined, never an `Object.prototype` member.
   return Object.assign(Object.create(null) as Record<string, number>, Object.fromEntries(peaks));
