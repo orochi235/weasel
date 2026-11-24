@@ -6,7 +6,7 @@
  */
 
 import type { Path, PathFillRule } from '../path';
-import { type Contour, type Seg, evalSeg, signedArea, subSeg } from './contourSegments';
+import { type Contour, type Seg, clockwiseFirst, evalSeg, subSeg } from './contourSegments';
 import { parseContours, extentOf } from './contours';
 import { type Along, type LineSeg, arrangeLines, linkFaces } from './arrangement';
 import { type Cycles, type Linked, cyclesOf, cycleWindings, leftmost } from './faceCycles';
@@ -201,16 +201,6 @@ function loopOf(a: Kept, flat: Flat, polish: Polish, cycle: readonly number[]): 
     if (piece) out.push(forward ? piece : piece.reverse());
   }
   return out;
-}
-
-/** Whether a contour set's largest contour turns with its fill on the right. */
-function clockwiseFirst(contours: readonly Contour[]): boolean {
-  let best = 0;
-  for (const c of contours) {
-    const a = signedArea(c);
-    if (Math.abs(a) > Math.abs(best)) best = a;
-  }
-  return best < 0;
 }
 
 /** `faceOf` for a covered cycle too thin to be a face: no neighbor across its edges, covered or not. */
