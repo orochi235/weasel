@@ -2,6 +2,8 @@
 '@weasel-js/renderer': patch
 ---
 
-`commandsBounds`, and the tiles of a tiled layer, count a group whose `composite` clears what it leaves empty (`source-in`, `destination-in`, `destination-atop`, `copy`) as reaching everywhere inside its clip, so a tile away from its children is cleared too.
+A tiled layer clears every tile a `source-in`, `destination-in`, `destination-atop`, or `copy` group reaches, not just those its children cover.
+
+`commandsBounds` counts such a group as reaching everywhere inside its own clip.
 
 <!-- entry: fix visual -->
