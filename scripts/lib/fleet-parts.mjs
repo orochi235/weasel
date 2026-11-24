@@ -41,8 +41,10 @@ export const runSuite = async ({ tree, base, scope, ontoArgs, say, jobs = [], on
   }
   say('launching 2 jobs');
   const parts = [
-    { part: 'rest', args: [...testArgs, '--scope', `${scope}-rest`, ...ontoArgs] },
-    { part: 'browser', args: [...testArgs, '--scope', 'browser', ...ontoArgs], prefix: 'browser| ' },
+    { part: 'rest', args: [...testArgs, '--scope', `${scope}-rest`, '--part', 'rest', '--icon', 'checklist',
+      '--about', 'Every test project but browser, beside the browser project run as a job of its own.', ...ontoArgs] },
+    { part: 'browser', args: [...testArgs, '--scope', 'browser', '--part', 'browser', '--icon', 'globe',
+      '--about', 'The browser project in headless Chromium, beside a job running the rest of the suite.', ...ontoArgs], prefix: 'browser| ' },
   ];
   const results = await Promise.all(parts.map(async ({ part, args, prefix }) => {
     const started = Date.now();
