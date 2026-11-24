@@ -21,4 +21,12 @@ describe('resolveCompose', () => {
     const spec = resolveCompose(SHAPES.pill, {}, { base: 'chamfered-rect', baseParams: { chamfer: undefined } });
     expect(spec.baseParams).toEqual(BASES['chamfered-rect'].defaults);
   });
+
+  it("draws the shape's own composition when the base prop names no registered base", () => {
+    const spec = resolveCompose(SHAPES.square, {}, { base: 'bogus' as never, effects: [{ type: 'shadow' }] });
+    const own = resolveCompose(SHAPES.square, {}, {});
+    expect(spec.base).toBe(own.base);
+    expect(spec.base).not.toBeNull();
+    expect(spec.fromProp).toBe(false);
+  });
 });

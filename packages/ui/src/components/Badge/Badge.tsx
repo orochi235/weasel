@@ -172,7 +172,7 @@ export const Badge = forwardRef(function Badge(props: BadgeProps, ref: Ref<HTMLE
 
   const contentRef = useRef<HTMLSpanElement>(null);
   const insets = useInsets<unknown>(
-    insetSource(shapeModule, params, composeBase, base !== undefined),
+    insetSource(shapeModule, params, composeBase, compose.fromProp),
     composeBase ? composeBaseParams : params,
     contentRef,
     composeBase ? { effects: resolvedEffects, bloat: bloat ?? 0 } : undefined,
