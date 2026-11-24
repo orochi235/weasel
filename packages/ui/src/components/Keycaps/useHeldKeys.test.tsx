@@ -43,3 +43,13 @@ it('keeps a key held through a tap of Win or Super elsewhere', () => {
   vi.spyOn(navigator, 'platform', 'get').mockReturnValue('Win32');
   expect(holdWThenTapMeta()).toEqual(['KeyW']);
 });
+
+it('lets go of the other keys with Command on macOS even when Command went down unseen', () => {
+  vi.spyOn(navigator, 'platform', 'get').mockReturnValue('MacIntel');
+  const { result } = renderHook(() => useHeldKeys());
+  act(() => {
+    fireEvent.keyDown(window, { code: 'KeyK' });
+    fireEvent.keyUp(window, { code: 'MetaLeft' });
+  });
+  expect([...result.current]).toEqual([]);
+});
