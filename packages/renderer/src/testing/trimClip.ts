@@ -164,18 +164,6 @@ const GRADIENT: CommandPaint = {
   stops: [{ offset: 0, color: '#2060ff' }, { offset: 1, color: '#ff6020' }],
 };
 
-/**
- * Every paint the clip marks and covers rather than drawing straight. Its
- * reference is the stroke rebuilt in the same paint made opaque, drawn in a
- * group of its own at the paint's alpha: the rebuilt ribbon covers some
- * ground twice at a sharp turn, which a stroke's paint must not show. Each
- * may differ by `tolerance` in a channel: the rebuilt ribbon is small enough
- * to batch, which reads a gradient off a ramp, and vertex colors interpolate
- * across triangles the two builds cut differently. Vertex colors are drawn on
- * the curve alone: where a sharp turn's quads overlap, the clipped ribbon's
- * earlier segment paints the overlap, and the rebuilt one splits it at the
- * bisector, so each shows a different anchor's color there.
- */
 /** A stroke's paint, with `anchorColors` asking for a ramp across the path's anchors. */
 type StrokePaint = Pick<CommandStroke, 'paint'> & { anchorColors?: true };
 
@@ -196,7 +184,18 @@ const PAINTS: [string, StrokePaint, CommandPaint, number, number][] = [
   ['vertex colors', { paint: { color: '#ffffff', opacity: 0.7 }, anchorColors: true }, { color: '#ffffff' }, 0.7, 3],
 ];
 
-/** One test per shape and paint, each against every trim. */
+/**
+ * One test per shape and paint, each against every trim, for every paint the
+ * clip marks and covers rather than drawing straight. Its reference is the stroke rebuilt in the same paint made opaque, drawn in a
+ * group of its own at the paint's alpha: the rebuilt ribbon covers some
+ * ground twice at a sharp turn, which a stroke's paint must not show. Each
+ * may differ by `tolerance` in a channel: the rebuilt ribbon is small enough
+ * to batch, which reads a gradient off a ramp, and vertex colors interpolate
+ * across triangles the two builds cut differently. Vertex colors are drawn on
+ * the curve alone: where a sharp turn's quads overlap, the clipped ribbon's
+ * earlier segment paints the overlap, and the rebuilt one splits it at the
+ * bisector, so each shows a different anchor's color there.
+ */
 export function paintCases(antialias: boolean): void {
   for (const [name, path, curved] of SHAPES) {
     for (const [painted, fields, opaquePaint, alpha, tolerance] of PAINTS) {
