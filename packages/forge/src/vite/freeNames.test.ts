@@ -21,4 +21,9 @@ describe('freeNames', () => {
     expect(names).not.toContain('new');
     expect(names).not.toContain('target');
   });
+
+  it('reads a parameter default in the outer scope, past a `var` of the same name in the body', () => {
+    expect(namesIn('function C(p = Icon) { var Icon; return p; }')).toContain('Icon');
+    expect(namesIn('function C(p = 1) { var Icon; return Icon; }')).not.toContain('Icon');
+  });
 });

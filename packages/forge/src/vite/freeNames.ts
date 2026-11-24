@@ -102,9 +102,10 @@ export function freeNames(node: t.Node): Set<string> {
       if (n.type === 'ClassMethod' || n.type === 'ClassPrivateMethod') walk(n.decorators, scope);
       for (const p of n.params) walk('decorators' in p ? p.decorators : undefined, scope);
       const own = n.type === 'FunctionExpression' && n.id ? [n.id.name] : [];
-      const inner = plus(scope, [...own, ...n.params.flatMap((p) => patternNames(p.type === 'TSParameterProperty' ? p.parameter : p)), ...varNames(n.body)]);
-      for (const p of n.params) pattern(p, inner);
-      walk(n.body, inner);
+      // Parameter defaults have a scope of their own, which the body's `var`s do not reach.
+      const params = plus(scope, [...own, ...n.params.flatMap((p) => patternNames(p.type === 'TSParameterProperty' ? p.parameter : p))]);
+      for (const p of n.params) pattern(p, params);
+      walk(n.body, plus(params, varNames(n.body)));
       return;
     }
     switch (n.type) {
