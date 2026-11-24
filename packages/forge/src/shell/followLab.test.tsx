@@ -1,4 +1,4 @@
-import { createMemoryAdapter } from '@weasel-js/labkit';
+import { createMemoryAdapter, interstellarTheme } from '@weasel-js/labkit';
 import { f } from '@weasel-js/labkit/config';
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { renderWithIcons } from '@weasel-js/ui/testing/withIcons';
@@ -102,6 +102,28 @@ describe('a trial pin set back to Lab', () => {
     });
     await waitFor(() => expect(mode()).toBe('dark'));
     frame.close();
+    history.replaceState(null, '', '/');
+  });
+});
+
+describe('a global that follows the app', () => {
+  it('never reaches a story or the lab theme as App itself, not even on the first render', async () => {
+    location.hash = '#/x--a';
+    const applyGlobals = vi.fn();
+    const labTheme = vi.fn((_globals: unknown) => interstellarTheme);
+    renderWithIcons(
+      <Workshop
+        index={[a]}
+        frameUrl="/frame.html"
+        importers={importers()}
+        setup={{ applyGlobals }}
+        config={{ ...following, labTheme }}
+        storage={createMemoryAdapter()}
+      />,
+    );
+    await waitFor(() => expect(applyGlobals).toHaveBeenCalled(), { timeout: 15_000 });
+    const seen = [...applyGlobals.mock.calls, ...labTheme.mock.calls].map(([globals]) => (globals as { mode?: unknown }).mode);
+    expect(seen).not.toContain(FOLLOW_APP);
     history.replaceState(null, '', '/');
   });
 });

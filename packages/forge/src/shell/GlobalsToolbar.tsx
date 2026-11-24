@@ -5,7 +5,7 @@ import { Button } from '@weasel-js/ui/components/Button';
 import { Callout } from '@weasel-js/ui/components/Callout';
 import { Icon } from '@weasel-js/ui/components/Icon';
 import { icon as glyph } from '../icons.gen';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { getOwn } from '@weasel-js/registry';
 import { isPlainObject } from '@weasel-js/core';
 import type { StoryGlobals } from '../protocol/messages';
@@ -157,6 +157,7 @@ export function LabGlobals({
   const [values] = useLabGlobals(declarations);
   const { mode } = useLabContext();
   const resolved = useMemo(() => followApp(declarations, values, { mode }), [declarations, values, mode]);
-  useEffect(() => onChange(resolved), [resolved, onChange]);
+  // Before paint, so no trial is ever drawn with the values the lab held before it opened.
+  useLayoutEffect(() => onChange(resolved), [resolved, onChange]);
   return null;
 }
