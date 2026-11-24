@@ -58,4 +58,17 @@ describe('history.resumeJournal', () => {
 
     expect(() => parent.resumeJournal(j)).toThrow();
   });
+
+  it('throws for a journal another history opened, leaving it suspended', () => {
+    const a = createHistory({ values: [] as number[] });
+    const b = createHistory({ values: [] as number[] });
+    const j = a.beginJournal({ label: 'session' });
+    j.suspend();
+
+    expect(() => b.resumeJournal(j)).toThrow(/another history/);
+    expect(j.isActive()).toBe(false);
+    expect(b.activeJournal?.()).toBeNull();
+    a.resumeJournal(j);
+    expect(a.activeJournal?.()).toBe(j);
+  });
 });

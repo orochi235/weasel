@@ -13,7 +13,7 @@ export function _refuseWhileActiveInternal(active: Journal | null, except?: Jour
   }
 }
 
-/** A journal opened inside another, to the history that journal records into. */
+/** Each journal, to the history it was opened on. */
 const OWNER = new WeakMap<Journal, History>();
 
 /** Resume `j` through the history it was opened on when that is not `by`, and say whether it did.
@@ -21,7 +21,9 @@ const OWNER = new WeakMap<Journal, History>();
 export function _resumedByOwnerInternal(j: Journal, by: History): boolean {
   const owner = OWNER.get(j);
   if (owner === undefined || owner === by) return false;
-  if (!ENCLOSING.get(j)!.isActive()) throw new Error('The journal this one was opened inside is not active');
+  const enclosing = ENCLOSING.get(j);
+  if (enclosing === undefined) throw new Error('This journal was opened on another history — resume it through that one');
+  if (!enclosing.isActive()) throw new Error('The journal this one was opened inside is not active');
   owner.resumeJournal(j);
   return true;
 }
@@ -192,7 +194,6 @@ export function createJournalInternal(
       if (state !== 'active') throw new Error('Journal is not active');
       const child = inner.beginJournal(nested);
       ENCLOSING.set(child, journal);
-      OWNER.set(child, inner);
       adopt(child);
       return child;
     },
@@ -237,6 +238,7 @@ export function createJournalInternal(
     },
   };
 
+  OWNER.set(journal, parent);
   RESUMERS.set(journal, () => {
     if (state !== 'suspended') throw new Error('Journal is not suspended');
     state = 'active';
