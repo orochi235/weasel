@@ -34,15 +34,20 @@ const SCP = /^(?:[^@\s/]+@)?(?<host>[\w.-]+):(?!\/)(?<owner>[\w.-]+)\/(?<name>[\
 const URL_FORM =
   /^(?<scheme>ssh|git|https?):\/\/(?:[^@/\s]+@)?(?<host>[\w.-]+)(?::(?<port>\d+))?\/(?<owner>[\w.-]+)\/(?<name>[\w.-]+?)(?:\.git)?\/?$/;
 
+/** Hosts that serve git and are not GitHub: GitLab, Bitbucket, and the like, at their own domains or self-hosted. */
+const NOT_GITHUB =
+  /^(?:(?:[\w-]+\.)*(?:gitlab\.com|bitbucket\.org|codeberg\.org|gitea\.com|git\.sr\.ht|dev\.azure\.com|visualstudio\.com|sourceforge\.net)|(?:gitlab|bitbucket|gitea|forgejo)(?:[.-][\w.-]+)?)$/i;
+
 /**
  * The repository a remote URL names, in either the `git@host:owner/name.git` or the URL form. A host under
  * `github.com` or named for it, such as an SSH alias `work.github.com` or `github.com-work`, is taken as github.com.
- * An HTTP(S) remote's port is its pages' port too, and kept; an SSH or git port is not the web's, and dropped.
+ * An HTTP(S) remote's port is its pages' port too, and kept; an SSH or git port is not the web's, and dropped. Any
+ * other host is taken for GitHub Enterprise, except a known git host that is not GitHub, which names no repository.
  */
 export function repoOf(remote: string): RemoteRepo | null {
   const { host: rawHost = '', owner = '', name = '', scheme = 'https', port } =
     (SCP.exec(remote.trim()) ?? URL_FORM.exec(remote.trim()))?.groups ?? {};
-  if (!rawHost) return null;
+  if (!rawHost || NOT_GITHUB.test(rawHost)) return null;
   const web = scheme === 'http' ? 'http' : 'https';
   const kept = port !== undefined && /^https?$/.test(scheme) && port !== (web === 'https' ? '443' : '80') ? `:${port}` : '';
   const host = /^(?:[\w-]+\.)*github\.com(?:[-_][\w-]+)?$/.test(rawHost) ? 'github.com' : `${rawHost}${kept}`;
