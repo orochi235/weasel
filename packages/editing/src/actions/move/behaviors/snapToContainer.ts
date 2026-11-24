@@ -7,7 +7,7 @@ import { after } from '@weasel-js/registry';
 import * as coreOps from '@weasel-js/core/ops';
 
 interface SnapState<TPose> {
-  pendingTargetId: string | null;
+  pendingTarget: SnapTarget<TPose> | null;
   cancelPending: (() => void) | null;
   committedSnap: SnapTarget<TPose> | null;
 }
@@ -21,7 +21,7 @@ let built = 0;
 function getState<TPose>(ctx: GestureContext<TPose>, key: StateKey): SnapState<TPose> {
   let s = getScratch(ctx.scratch, key) as SnapState<TPose> | undefined;
   if (!s) {
-    s = { pendingTargetId: null, cancelPending: null, committedSnap: null };
+    s = { pendingTarget: null, cancelPending: null, committedSnap: null };
     setScratch(ctx.scratch, key, s as SnapState<unknown>);
   }
   return s;
@@ -40,7 +40,7 @@ function intoDragged<TPose>(ctx: GestureContext<TPose>, snap: SnapTarget<TPose>)
 function clearTimer<TPose>(s: SnapState<TPose>) {
   s.cancelPending?.();
   s.cancelPending = null;
-  s.pendingTargetId = null;
+  s.pendingTarget = null;
 }
 
 /**
@@ -105,8 +105,10 @@ export function snapToContainer<TPose>(args: {
     // Leaving a container withdraws the target it announced, which the commit reads.
     let left: BehaviorResult<TPose> | undefined;
     if (s.committedSnap) {
+      // Staying in the committed container keeps it, at the slot under the pointer now.
       if (target && target.parentId === s.committedSnap.parentId) {
-        return snapped(ctx, s.committedSnap, originInWorld);
+        s.committedSnap = target;
+        return snapped(ctx, target, originInWorld);
       }
       s.committedSnap = null;
       left = { snap: null };
@@ -123,13 +125,15 @@ export function snapToContainer<TPose>(args: {
       return snapped(ctx, target, originInWorld);
     }
 
-    if (s.pendingTargetId === target.parentId) {
+    if (s.pendingTarget?.parentId === target.parentId) {
+      s.pendingTarget = target;
       return left;
     }
     clearTimer(s);
-    s.pendingTargetId = target.parentId;
+    s.pendingTarget = target;
     s.cancelPending = after(dwellMs, () => {
-      s.committedSnap = target;
+      s.committedSnap = s.pendingTarget;
+      s.pendingTarget = null;
       s.cancelPending = null;
       ctx.refresh?.();
     });

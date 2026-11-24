@@ -141,6 +141,23 @@ describe('snapToContainer', () => {
     expect(reparents).toEqual([['p1', 'box'], ['p3', 'box']]);
   });
 
+  it.each([['an instant container', true], ['a dwelled one', false]])('follows the slot under the pointer in %s', (_, instant) => {
+    const findTarget = (_id: string, x: number): SnapTarget<Pose> => ({ parentId: 'box', slotPose: { x: x < 10 ? 2 : 12, y: 3 } });
+    const b = snapToContainer<Pose>({ dwellMs: 500, findTarget, isInstant: () => instant });
+    const ctx = makeCtx();
+    b.onMove!(ctx, tt(1, 1));
+    ctx.pointer = { ...ctx.pointer, worldX: 15 };
+    b.onMove!(ctx, tt(1, 1));
+    vi.advanceTimersByTime(500);
+    expect(b.onMove!(ctx, tt(1, 1))).toMatchObject({ snap: { slotPose: { x: 12, y: 3 } } });
+    ctx.pointer = { ...ctx.pointer, worldX: 5 };
+    expect(b.onMove!(ctx, tt(1, 1))).toMatchObject({ snap: { slotPose: { x: 2, y: 3 } } });
+    ctx.pointer = { ...ctx.pointer, worldX: 15 };
+    b.onMove!(ctx, tt(1, 1));
+    const ops = b.onEnd!(ctx, moveEnd()) as any[];
+    expect(ops[0].args).toMatchObject({ id: 'p1', to: { x: 12, y: 3 } });
+  });
+
   it('onEnd defers (returns undefined) when no snap is active', () => {
     const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => null });
     const ctx = makeCtx();
