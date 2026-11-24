@@ -14,4 +14,11 @@ describe('freeNames', () => {
     expect(names).not.toContain('x');
   });
 
+  it('takes import.meta and new.target for no reference', () => {
+    const names = namesIn('function f() { return [import.meta.env, new.target]; }');
+    expect(names).not.toContain('import');
+    expect(names).not.toContain('meta');
+    expect(names).not.toContain('new');
+    expect(names).not.toContain('target');
+  });
 });

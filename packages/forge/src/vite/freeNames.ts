@@ -140,6 +140,7 @@ export function freeNames(node: t.Node): Set<string> {
       case 'BreakStatement':
       case 'ContinueStatement':
       case 'PrivateName':
+      case 'MetaProperty':
         return;
       default:
         return children(n, scope);
