@@ -28,11 +28,7 @@ describe('the analyser tap', () => {
       const mean = bins.reduce((a, b) => a + b, 0) / bins.length / 255;
       const b = tap.bands(n);
       expect(b.length).toBe(n);
-      for (const v of b) {
-        expect(Number.isFinite(v)).toBe(true);
-        expect(v).toBeGreaterThanOrEqual(0);
-        expect(v).toBeLessThanOrEqual(1);
-      }
+      expect(Array.from(b).filter((v) => !(Number.isFinite(v) && v >= 0 && v <= 1))).toEqual([]);
       expect(Array.from(tap.bands(bins.length))).toEqual(bins.map((x) => Math.fround(x / 255)));
       expect(tap.bands(1)[0]).toBeCloseTo(mean, 6);
       if (bins.length % n === 0) {
