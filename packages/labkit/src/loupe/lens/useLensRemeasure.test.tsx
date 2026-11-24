@@ -68,3 +68,47 @@ it('has each source look again, and the host render, when the page around the la
   expect(source.remeasure).toHaveBeenCalledTimes(2);
   outer.remove();
 });
+
+it('has each source look again, and the host render, when the lab body resizes with no window event', () => {
+  const observers: { fire: () => void; observed: Element[]; disconnected: boolean }[] = [];
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      private readonly record: (typeof observers)[number];
+      constructor(callback: () => void) {
+        this.record = { fire: callback, observed: [], disconnected: false };
+        observers.push(this.record);
+      }
+      observe(el: Element) {
+        this.record.observed.push(el);
+      }
+      unobserve() {}
+      disconnect() {
+        this.record.disconnected = true;
+      }
+    },
+  );
+  const source = { remeasure: vi.fn() };
+  const rerender = vi.fn();
+  const body = document.createElement('div');
+  const sources = [source];
+  function Host() {
+    useLensRemeasure(sources, body, rerender);
+    return null;
+  }
+  const { unmount } = render(
+    <LabContext.Provider value={{ trials: [], mode: 'dark' } as unknown as LabContextValue}>
+      <Host />
+    </LabContext.Provider>,
+  );
+  const watcher = observers.find((o) => o.observed.includes(body));
+  expect(watcher).toBeDefined();
+  source.remeasure.mockClear();
+  watcher?.fire();
+  expect(rerender).not.toHaveBeenCalled();
+  watcher?.fire();
+  expect(source.remeasure).toHaveBeenCalledTimes(1);
+  expect(rerender).toHaveBeenCalledTimes(1);
+  unmount();
+  expect(watcher?.disconnected).toBe(true);
+});
