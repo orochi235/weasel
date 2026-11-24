@@ -2,6 +2,7 @@ import { BASES, type BadgeBase } from './bases';
 import { EFFECTS, type BadgeEffect } from './effects';
 import { SHAPES } from './shapes';
 import type { BadgeShape } from './types';
+import { requireRegistryEntry } from './registryEntry';
 
 /** Every built-in `shape`, in the order a picker lists them. */
 export const BADGE_SHAPES: readonly BadgeShape[] = Object.keys(SHAPES) as BadgeShape[];
@@ -14,17 +15,17 @@ export const BADGE_EFFECTS: readonly BadgeEffect[] = Object.keys(EFFECTS) as Bad
 
 /** The params `shape` draws with where a badge's `shapeParams` sets none; empty for a shape that takes none. */
 export function badgeShapeDefaults(shape: BadgeShape): Readonly<Record<string, unknown>> {
-  return { ...SHAPES[shape].defaults };
+  return { ...requireRegistryEntry(SHAPES, shape, 'shape').defaults };
 }
 
 /** The params `base` draws with where a composed badge's `baseParams` sets none; empty for a base that takes none. */
 export function badgeBaseDefaults(base: BadgeBase): Readonly<Record<string, unknown>> {
-  return { ...BASES[base].defaults };
+  return { ...requireRegistryEntry(BASES, base, 'base').defaults };
 }
 
 /** The params `effect` draws with where its spec's `params` sets none; empty for an effect that takes none. */
 export function badgeEffectDefaults(effect: BadgeEffect): Readonly<Record<string, unknown>> {
-  return { ...EFFECTS[effect].defaults };
+  return { ...requireRegistryEntry(EFFECTS, effect, 'effect').defaults };
 }
 
 /**
@@ -33,9 +34,9 @@ export function badgeEffectDefaults(effect: BadgeEffect): Readonly<Record<string
  */
 export type BadgeShapeRendering = 'css' | 'svg' | 'composed';
 
-/** How `shape` is drawn. */
+/** How `shape` is drawn. Throws a `RangeError` for a name no shape has, as every lookup here does. */
 export function badgeShapeRendering(shape: BadgeShape): BadgeShapeRendering {
-  const entry = SHAPES[shape];
+  const entry = requireRegistryEntry(SHAPES, shape, 'shape');
   if (entry.renderMode === 'css') return 'css';
   return entry.compose ? 'composed' : 'svg';
 }
@@ -48,6 +49,6 @@ export type BadgeEffectZone = 'offset' | 'foreground' | 'background' | 'mask';
 
 /** Where `effect` acts on a composed badge. */
 export function badgeEffectZone(effect: BadgeEffect): BadgeEffectZone {
-  const entry = EFFECTS[effect];
+  const entry = requireRegistryEntry(EFFECTS, effect, 'effect');
   return entry.offsetAt ? 'offset' : (entry.zone ?? 'foreground');
 }

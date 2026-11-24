@@ -12,11 +12,13 @@ export interface ComposeSpec {
   base: BaseModule<any> | null;
   baseParams: unknown;
   effects: BadgeEffectSpec[] | undefined;
+  /** Whether `base` is the `base` prop's, rather than one the shape composes itself from. */
+  fromProp: boolean;
 }
 
 /**
- * The base and effects a badge draws: the `base` prop's with the `effects` prop, or else the
- * ones its shape composes itself from, which fall back to the `effects` prop.
+ * The base and effects a badge draws: the `base` prop's with the `effects` prop, or else, as for a
+ * `base` the registry does not hold, the ones its shape composes itself from, which fall back to the `effects` prop.
  */
 export function resolveCompose(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- as the SHAPES registry types it.
@@ -24,14 +26,15 @@ export function resolveCompose(
   shapeParams: unknown,
   own: { base?: BadgeBase; baseParams?: BadgeBaseParams[BadgeBase]; effects?: BadgeEffectSpec[] },
 ): ComposeSpec {
-  const spec = !own.base && shape.compose ? shape.compose(shapeParams) : null;
-  const key = own.base ?? (spec?.base as BadgeBase | undefined);
-  const base = registryEntry(BASES, key) ?? null;
-  const given = own.base ? own.baseParams : spec?.baseParams;
+  const ownBase = registryEntry(BASES, own.base);
+  const spec = !ownBase && shape.compose ? shape.compose(shapeParams) : null;
+  const base = ownBase ?? registryEntry(BASES, spec?.base as BadgeBase | undefined) ?? null;
+  const given = ownBase ? own.baseParams : spec?.baseParams;
   return {
     base,
     baseParams: base ? withDefaults<Record<string, unknown>>(base.defaults ?? {}, given as Record<string, unknown> | undefined) : null,
-    effects: own.base ? own.effects : (spec?.effects as BadgeEffectSpec[] | undefined) ?? own.effects,
+    effects: ownBase ? own.effects : (spec?.effects as BadgeEffectSpec[] | undefined) ?? own.effects,
+    fromProp: ownBase !== undefined,
   };
 }
 

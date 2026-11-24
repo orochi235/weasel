@@ -66,14 +66,15 @@ export function BadgeTarget(props: BadgeTargetProps) {
         onKeyDown={(e) => {
           extra?.onKeyDown?.(e);
           if (e.defaultPrevented) return;
-          onOwnKey('Enter', () => onClick?.())(e);
+          // A key clicks, as on a native button, so the caller's own onClick sees it and may cancel it.
+          onOwnKey('Enter', () => e.currentTarget.click())(e);
           // Space acts on release, as a native button does; held, it must not scroll the page.
           onOwnKey(' ', (ev) => ev.preventDefault())(e);
         }}
         onKeyUp={(e) => {
           extra?.onKeyUp?.(e);
           if (e.defaultPrevented) return;
-          onOwnKey(' ', () => onClick?.())(e);
+          onOwnKey(' ', () => e.currentTarget.click())(e);
         }}
       >
         {children}
