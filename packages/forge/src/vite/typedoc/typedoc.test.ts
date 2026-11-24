@@ -288,6 +288,14 @@ describe('typeText', () => {
     expect(typeText({ type: 'reflection', declaration: callable })).toBe('{ (x: number): string; id: string }');
   });
 
+  it('prints a construct signature with its new', () => {
+    const foo: TdType = { type: 'reference', name: 'Foo' };
+    const construct = { id: 2, kind: 16384, name: '__type', parameters: [{ id: 3, kind: 32768, name: 'x', type: { type: 'intrinsic', name: 'number' } }], type: foo };
+    expect(typeText({ type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', signatures: [construct] } })).toBe('new (x: number) => Foo');
+    const two = { id: 1, kind: 65536, name: '__type', signatures: [construct, { ...construct, parameters: [] }] };
+    expect(typeText({ type: 'reflection', declaration: two })).toBe('{ new (x: number): Foo; new (): Foo }');
+  });
+
   it('prints an inferred type with its infer, and its constraint', () => {
     const t: TdType = { type: 'reference', name: 'T' };
     const u: TdType = { type: 'reference', name: 'U' };

@@ -1,4 +1,4 @@
-import type { TdComment, TdIndex, TdPart, TdReflection, TdType, TypedocHref } from './json.ts';
+import { Kind, type TdComment, type TdIndex, type TdPart, type TdReflection, type TdType, type TypedocHref } from './json.ts';
 
 /** A type as TypeScript would print it. */
 export function typeText(type: TdType | undefined): string {
@@ -107,16 +107,17 @@ function indexSignatureText(signature: TdReflection): string {
   return `${readonly}[${key?.name ?? 'key'}: ${typeText(key?.type)}]: ${typeText(signature.type)}`;
 }
 
-/** A signature's type parameters and parameters, then `arrow` and its return type. */
+/** A signature's `new`, type parameters and parameters, then `arrow` and its return type. */
 function signatureParts(signature: TdReflection, arrow: string): string {
+  const construct = signature.kind === Kind.ConstructorSignature ? 'new ' : '';
   const generics = signature.typeParameters?.length ? `<${signature.typeParameters.map(typeParameterText).join(', ')}>` : '';
   const params = (signature.parameters ?? []).map(
     (p) => `${p.flags?.isRest ? '...' : ''}${p.name}${p.flags?.isOptional ? '?' : ''}: ${typeText(p.type)}`,
   );
-  return `${generics}(${params.join(', ')})${arrow}${typeText(signature.type)}`;
+  return `${construct}${generics}(${params.join(', ')})${arrow}${typeText(signature.type)}`;
 }
 
-/** A call signature, arrow style. */
+/** A call or construct signature, arrow style. */
 export const signatureText = (signature: TdReflection): string => signatureParts(signature, ' => ');
 
 const typeParameterText = (t: TdReflection): string =>

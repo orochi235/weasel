@@ -12,6 +12,7 @@ export const Kind = {
   Class: 128,
   Interface: 256,
   Method: 2048,
+  ConstructorSignature: 16384,
   TypeAlias: 2097152,
 } as const;
 
