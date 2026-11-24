@@ -44,13 +44,11 @@ export function resolveSpatialReference(
   if (typeof ref !== 'object' || ref === null) return null;
   if ('node' in ref) return src.nodeBounds((ref as { node: NodeId }).node);
   const r = ref as { x?: unknown; y?: unknown; width?: unknown; height?: unknown };
-  if (typeof r.x !== 'number' || typeof r.y !== 'number') return null;
-  return {
-    x: r.x,
-    y: r.y,
-    width: typeof r.width === 'number' ? r.width : 0,
-    height: typeof r.height === 'number' ? r.height : 0,
-  };
+  if (!Number.isFinite(r.x) || !Number.isFinite(r.y)) return null;
+  const width = typeof r.width === 'number' ? r.width : 0;
+  const height = typeof r.height === 'number' ? r.height : 0;
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return null;
+  return { x: r.x as number, y: r.y as number, width, height };
 }
 
 /** The sources an immediate action resolves a reference from. A click's
