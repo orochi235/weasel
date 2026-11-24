@@ -5,7 +5,7 @@
 import type { Op } from './op';
 import type { Entry, HistoryLogger } from './serialized';
 import type { HistorySelection, HistoryStep } from './historyTypes';
-import { stepOf } from './entryOps';
+import { stepOf, type Settle } from './entryOps';
 
 /** The entries a walk moved, in the order moved, and what it applied for each. */
 export interface Walked {
@@ -17,7 +17,7 @@ export interface WalkEnv {
   undoStack: Entry[];
   redoStack: Entry[];
   selection: HistorySelection | undefined;
-  applyAllOrNothing(ops: Op[], settle?: () => Op[]): boolean;
+  applyAllOrNothing(ops: Op[], settle?: Settle): boolean;
   logger: HistoryLogger;
   /** Tells the history's listeners of a step. */
   report(step: HistoryStep): void;
@@ -40,7 +40,7 @@ export function createWalk(env: WalkEnv) {
     const leaving = readSelection();
     const coalesced = entry.forwardOps !== entry.baseOps;
     const inverses = invertEntry(entry);
-    applyAllOrNothing(inverses, coalesced ? () => entry.forwardOps : undefined);
+    applyAllOrNothing(inverses, coalesced ? { ops: entry.forwardOps, inverted: false } : undefined);
     if (leaving) entry.selectionAfter = leaving;
     return inverses;
   }
@@ -49,7 +49,7 @@ export function createWalk(env: WalkEnv) {
   function stepForward(entry: Entry): void {
     const leaving = readSelection();
     const coalesced = entry.forwardOps !== entry.baseOps;
-    applyAllOrNothing(entry.forwardOps, coalesced ? () => invertEntry(entry) : undefined);
+    applyAllOrNothing(entry.forwardOps, coalesced ? { ops: [...entry.baseOps].reverse(), inverted: true } : undefined);
     if (leaving) entry.selectionBefore = leaving;
   }
 

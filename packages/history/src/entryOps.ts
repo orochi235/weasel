@@ -41,14 +41,17 @@ export function stepOf(
   return { kind, entries: entries.map((e, i) => ({ id: e.id, label: e.label, ops: e.forwardOps, applied: applied?.[i] ?? NONE })) };
 }
 
+/** Ops a failed step applies after unwinding, as `inverted` ones when their inverses are what applies. */
+export interface Settle { ops: readonly Op[]; inverted: boolean }
+
 /** Build the all-or-nothing apply a history runs every step through, against `adapter`. */
 export function createApplier(adapter: unknown, logger: HistoryLogger) {
-  /** Apply `ops` best-effort while unwinding a failed step: the throw being
-   *  unwound is the one the caller sees, so a second one is only logged. */
-  function applyUnwinding(ops: Op[]): void {
+  /** Apply `ops`, or their inverses, best-effort while unwinding a failed step: the throw
+   *  being unwound is the one the caller sees, so a second one, an `invert` included, is only logged. */
+  function applyUnwinding(ops: readonly Op[], inverted: boolean): void {
     for (const op of ops) {
       try {
-        op.apply(adapter);
+        (inverted ? op.invert() : op).apply(adapter);
       } catch (err) {
         logger.warn(`unwinding a failed step: op "${op.name ?? '?'}" threw: ${String(err)}`);
       }
@@ -65,7 +68,7 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
    *  `settle` is for a coalesced entry, whose two halves are not each
    *  other's inverse: inverting what ran lands on the other half's far side,
    *  and re-applying that half is what returns to where the step began. */
-  function applyAllOrNothing(ops: Op[], settle?: () => Op[], idle?: Op[]): boolean {
+  function applyAllOrNothing(ops: Op[], settle?: Settle, idle?: Op[]): boolean {
     let anyMutated = false;
     let done = 0;
     try {
@@ -76,8 +79,8 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
       }
     } catch (err) {
       if (done > 0) {
-        applyUnwinding(ops.slice(0, done).reverse().map((op) => op.invert()));
-        if (settle) applyUnwinding(settle());
+        applyUnwinding(ops.slice(0, done).reverse(), true);
+        if (settle) applyUnwinding(settle.ops, settle.inverted);
       }
       throw err;
     }
