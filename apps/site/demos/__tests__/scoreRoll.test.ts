@@ -44,4 +44,13 @@ describe('scoreRoll', () => {
     const urgency = notes(scoreRoll(barOf('urgency', 0), SIZE));
     expect(new Set(urgency.map((bar) => bar.x)).size).toBe(16);
   });
+
+  it('draws a silent note as the quietest, whether or not anything else sounds', () => {
+    const opacities = (gains: number[]) =>
+      scoreRoll(gains.map((gain) => ({ step: 0, pitch: { midi: 60 }, gain })), SIZE)
+        .filter((c): c is RectCommand => c.kind === 'path' && c.path.kind === 'rect')
+        .map((c) => c.fill?.paint && 'opacity' in c.fill.paint ? c.fill.paint.opacity : undefined);
+    expect(opacities([0, 0])).toEqual([0.35, 0.35]);
+    expect(opacities([0, 1])).toEqual([0.35, 1]);
+  });
 });
