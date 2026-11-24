@@ -63,9 +63,11 @@ describe('CheckboxGroup', () => {
   it('draws a mixed value as a mixed switch, which a click turns on', () => {
     const seen: string[][] = [];
     render(<Group initial={[]} seen={seen} control="switch" mixedValues={['b']} />);
-    expect(boxes('switch')[1]).toHaveAttribute('aria-checked', 'mixed');
-    expect(boxes('switch')[0]).not.toHaveAttribute('aria-checked');
-    fireEvent.click(boxes('switch')[1]!);
+    // A switch has no mixed state in ARIA, so the mixed one speaks as a checkbox.
+    const mixed = screen.getByRole('checkbox', { name: 'B' });
+    expect(mixed).toHaveAttribute('aria-checked', 'mixed');
+    expect(screen.getByRole('switch', { name: 'A' })).not.toHaveAttribute('aria-checked');
+    fireEvent.click(mixed);
     expect(seen).toEqual([['b']]);
   });
 

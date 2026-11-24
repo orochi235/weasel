@@ -19,7 +19,8 @@ export type SwitchProps = Omit<RACSwitchProps, 'children' | 'className' | 'isDis
   /** Called with the new state and the keys held as it changed, so a list of switches can solo on Alt. */
   onChange?: (isSelected: boolean, modifiers: ToggleModifiers) => void;
   className?: string;
-  /** Drawn and announced as neither on nor off, as a mixed selection is; a click turns it on. */
+  /** Drawn and announced as neither on nor off, as a mixed selection is, which a screen reader hears as a mixed
+   *  checkbox since a switch has no such state; a click turns it on. */
   indeterminate?: boolean;
   /** Receives the `<label>` the switch is drawn in. `ref` reaches the `<input>`. */
   rootRef?: Ref<HTMLLabelElement>;
@@ -41,10 +42,18 @@ export const Switch = forwardRef(function Switch(
 ) {
   const { rest: { children, className, rootRef, onChange, onClickCapture, indeterminate = false, ...rest }, rac, wrap } = useRacHold(props);
   const input = useObjectRef(ref);
-  // React Aria writes no aria-checked, so the input's own checked state speaks unless this one says mixed.
+  // ARIA gives `switch` no mixed state, so a mixed one speaks as a checkbox. React Aria writes no aria-checked, and
+  // writes its role only when the role it renders changes, so neither is put back under this.
   useEffect(() => {
-    if (indeterminate) input.current?.setAttribute('aria-checked', 'mixed');
-    else input.current?.removeAttribute('aria-checked');
+    const el = input.current;
+    if (!el) return;
+    if (indeterminate) {
+      el.setAttribute('role', 'checkbox');
+      el.setAttribute('aria-checked', 'mixed');
+    } else {
+      el.setAttribute('role', 'switch');
+      el.removeAttribute('aria-checked');
+    }
   }, [indeterminate, input]);
   // React Aria reports the new state alone; the click that changes it passes the label first, carrying its keys.
   const mods = useRef<ToggleModifiers>(modifiersOf(undefined));
@@ -63,7 +72,8 @@ export const Switch = forwardRef(function Switch(
         onClickCapture?.(e);
       }}
       onChange={(on) => {
-        onChange?.(on, mods.current);
+        // React Aria flips isSelected, which turns a mixed switch held selected off.
+        onChange?.(indeterminate || on, mods.current);
         mods.current = modifiersOf(undefined);
       }}
       className={[s.switch, className].filter(Boolean).join(' ')}

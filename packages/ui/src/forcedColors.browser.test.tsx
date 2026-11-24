@@ -58,6 +58,15 @@ describe('a chosen control still reads as chosen', () => {
     }
   });
 
+  test('a mixed switch paints its track in a system color, selected or not', () => {
+    render(<><Switch indeterminate>a</Switch><Switch indeterminate defaultSelected>b</Switch></>);
+    for (const sw of screen.getAllByRole('checkbox')) {
+      const label = sw.closest('label')!;
+      expect(bg(part(label, 'track'))).toBe(canvas());
+      expect(bg(part(label, 'thumb'))).not.toBe(canvas());
+    }
+  });
+
   test('a chosen radio draws its dot apart from its ring', () => {
     render(<RadioGroup aria-label="g" defaultValue="a"><Radio value="a">a</Radio><Radio value="b">b</Radio></RadioGroup>);
     const label = screen.getByRole('radio', { name: 'a' }).closest('label')!;

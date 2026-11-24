@@ -4127,3 +4127,8 @@ Calls the lanes made without a ruling:
   `badgeEffectDefaults`, `badgeShapeRendering`, `badgeEffectZone`) throw a `RangeError` naming a key no shape, base, or
   effect has, where `Badge` itself falls back for one. Answering an empty default or a fallback, as `Badge` does, was
   the alternative.
+## Audit round eighty-one (2026-11-24): the component kit, part eight
+
+- 2026-11-24 (the fixer's call): an `indeterminate` `Switch` gives its input role `checkbox` with `aria-checked="mixed"`,
+  since ARIA has `switch` treat mixed as off. Keeping role `switch` and saying "mixed" in a description was the
+  alternative.

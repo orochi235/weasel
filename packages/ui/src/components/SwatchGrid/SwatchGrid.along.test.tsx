@@ -80,6 +80,13 @@ describe('SwatchGrid along a curve', () => {
     expect((screen.getAllByRole('button')[0] as HTMLElement).style.getPropertyValue('--at-x')).toBe('');
   });
 
+  for (const columns of [0, -2, 2.5]) {
+    test(`reads columns={${columns}} as the flat grid does, a whole number at least 1`, () => {
+      render(<Along shape={ARCS['top, clockwise'][0]}><SwatchGrid options={options(4)} columns={columns} onSelect={() => {}} aria-label="Colors" /></Along>);
+      expect(screen.getAllByRole('button')).toHaveLength(4);
+    });
+  }
+
   test('Home and End still reach the first and last swatch', () => {
     render(<Along shape={ARCS['top, clockwise'][0]}><SwatchGrid options={options(6)} columns={3} onSelect={() => {}} aria-label="Colors" /></Along>);
     const b = (i: number) => screen.getByRole('button', { name: `c${i}` });

@@ -175,6 +175,21 @@ describe('SpanStrip', () => {
     expect(onSeek).toHaveBeenLastCalledWith(450, false);
   });
 
+  it('lets go of a hold when onSeek goes away mid-drag, and seeks on a press once it is back', () => {
+    const onSeek = vi.fn();
+    const { rerender } = render(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);
+    const rect = () => ({ left: 0, width: 200, top: 0, height: 22, right: 200, bottom: 22, x: 0, y: 0, toJSON: () => ({}) });
+    screen.getByRole('slider').getBoundingClientRect = rect;
+    fireEvent.pointerDown(screen.getByRole('slider'), { clientX: 20, pointerId: 1 });
+    rerender(<SpanStrip spans={SPANS} at={450} aria-label="lane" />);
+    fireEvent.pointerUp(screen.getByRole('meter'), { clientX: 20, pointerId: 1 });
+    rerender(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);
+    const slider = screen.getByRole('slider');
+    slider.getBoundingClientRect = rect;
+    fireEvent.pointerDown(slider, { clientX: 100, pointerId: 2 });
+    expect(onSeek).toHaveBeenLastCalledWith(500, true);
+  });
+
   it('seeks only on a primary-button press', () => {
     const onSeek = vi.fn();
     render(<SpanStrip spans={SPANS} at={450} aria-label="lane" onSeek={onSeek} />);

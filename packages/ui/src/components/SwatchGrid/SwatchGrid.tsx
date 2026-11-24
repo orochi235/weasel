@@ -46,7 +46,7 @@ export interface SwatchGridProps extends HoldProps {
   /** The swatch under the pointer or holding focus, and `null` as the pointer leaves or focus goes: for a readout
    *  naming it. */
   onHoverChange?: (option: SwatchGridOption | null) => void;
-  /** Swatches per row; also the step for ArrowUp/ArrowDown. Default 6. */
+  /** Swatches per row; also the step for ArrowUp/ArrowDown. Read as a whole number, at least 1. Default 6. */
   columns?: number;
   /** Where the last row sits in a grid when it is shorter than the rest. Default: the nearest `Along`'s, else
    *  `'start'`. On a ring the `Along`'s own decides. */

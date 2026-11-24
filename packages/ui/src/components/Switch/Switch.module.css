@@ -63,6 +63,7 @@
 
 .switch[data-indeterminate] .thumb {
   transform: translateX(6px);
+  background: var(--wzl-fg);
 }
 
 .switch[data-selected]:dir(rtl) .thumb {
@@ -107,5 +108,22 @@
 
   .switch[data-selected] .thumb {
     background: HighlightText;
+  }
+
+  .switch[data-hovered] .track,
+  .switch[data-hovered][data-selected] .track {
+    border-color: Highlight;
+  }
+
+  .switch[data-indeterminate] .track {
+    background: Canvas;
+  }
+
+  .switch[data-indeterminate]:not([data-hovered]) .track {
+    border-color: CanvasText;
+  }
+
+  .switch[data-indeterminate] .thumb {
+    background: CanvasText;
   }
 }
