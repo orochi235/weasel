@@ -3397,6 +3397,8 @@ Calls the lanes made without a ruling:
   padding, and its shape's insets add to it as they add to the default padding, so a `shield` given `padding={4}` keeps
   its point clear. Before, either one replaced the insets, so the label could run into the outline; the alternative was
   to keep that and stop a fitted base from counting insets the padding no longer held.
+  Round sixty-one ruled the reverse the same day without seeing this change, and the fitted-base measurement followed
+  it while the stylesheet kept adding; round eighty-one (2026-11-24) kept this call and measured to match it.
 ## Audit round fifty-eight (2026-11-20): LayerList
 
 - 2026-11-20 (the fixer's call): `moveLayers` throws when the move's `parentId` names no layer in the tree, or names a
@@ -3509,9 +3511,6 @@ Calls the lanes made without a ruling:
 - 2026-11-20 (the fixer's call): A badge rendered `as="span"` never runs `onClick`, including on a removable one whose
   tooltip splits the label off, where the label had run it. A span badge has no role or key handling to make a click
   reachable; running `onClick` on every span badge was the alternative.
-- 2026-11-20 (the fixer's call): A badge's `padding` prop, and padding in its `style`, replaces the shape's insets on
-  each side it sets, as it always has and as the story describes it, so a fitted base refits around the other sides
-  alone. Adding the insets to the given padding, as the size's own padding does, was the alternative.
 
 ## Audit round sixty (2026-11-20): the component kit, part eight
 

@@ -22,14 +22,10 @@ interface Measured { width: number; height: number; pad: ShapeInsets }
 const same = (a: Measured, b: Measured) =>
   a.width === b.width && a.height === b.height && SIDES.every((side) => a.pad[side] === b.pad[side]);
 
-/**
- * The padding of `badge` that its `--badge-inset-*` properties did not put there. A side given
- * `--badge-pad-<side>` is padded by that alone, which replaces the inset.
- */
+/** The padding of `badge` that its `--badge-inset-*` properties did not put there. */
 export function ownPadding(badge: HTMLElement): ShapeInsets {
   const cs = getComputedStyle(badge);
-  const inset = (name: typeof SIDES[number]) =>
-    (badge.style.getPropertyValue(`--badge-pad-${name}`) ? 0 : cssPx(badge.style.getPropertyValue(`--badge-inset-${name}`)));
+  const inset = (name: typeof SIDES[number]) => cssPx(badge.style.getPropertyValue(`--badge-inset-${name}`));
   const side = (name: typeof SIDES[number], computed: string) => Math.max(0, cssPx(computed) - inset(name));
   return {
     top: side('top', cs.paddingTop),

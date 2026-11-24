@@ -31,8 +31,8 @@ export interface BadgeOwnProps extends AppearanceProps {
   /** "Edge bloat": offset every base perimeter sample outward by N CSS px along the normal
    *  before any compose effects run. Negative values shrink the silhouette. */
   bloat?: number;
-  /** Padding in place of the badge's own, a number of px or a CSS padding: each side it sets replaces both the size's
-   *  padding and the shape's insets there, so a shaped badge's label can reach its outline. */
+  /** Padding in place of the size's own, a number of px or a CSS padding. The shape's insets add to each side it
+   *  sets, as they add to the size's padding, so the label stays clear of the outline. */
   padding?: number | string;
   /**
    * For CSS-rendered shapes (pill, plain) that fragment across line wraps, controls how the
