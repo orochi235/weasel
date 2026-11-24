@@ -1,5 +1,6 @@
 import { stepsOf, SWEEP_CAP, type Sweep } from '@weasel-js/ui-input';
 import type { ReactElement, ReactNode } from 'react';
+import { repeatKeys } from '../../repeatKeys';
 import s from './Sequence.module.css';
 
 /** Props for {@link Sequence}. */
@@ -22,18 +23,6 @@ export interface SequenceProps<A, B = undefined> {
   /** The accessible name of the list or grid. */
   'aria-label': string;
   className?: string;
-}
-
-/** A key per step, by its label, so a step's cell keeps its state as the sweep around it changes; a repeated label
- *  is told apart by how many times it came before. */
-function stepKeys<T>(steps: readonly T[], label: (value: T) => string): string[] {
-  const seen = new Map<string, number>();
-  return steps.map((value) => {
-    const name = label(value);
-    const n = seen.get(name) ?? 0;
-    seen.set(name, n + 1);
-    return `${n}:${name}`;
-  });
 }
 
 function Capped({ shown }: { shown: string | number }): ReactElement {
@@ -68,8 +57,8 @@ export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactEle
   const { sweep, across, children, layout = 'wrap', cap = SWEEP_CAP, 'aria-label': label, className } = props;
   if (across) {
     const { rows, cols } = gridSteps(sweep, across, cap);
-    const rowKeys = stepKeys(rows.steps, (v) => sweep.label(v));
-    const colKeys = stepKeys(cols.steps, (v) => across.label(v));
+    const rowKeys = repeatKeys(rows.steps, (v) => sweep.label(v));
+    const colKeys = repeatKeys(cols.steps, (v) => across.label(v));
     return (
       <div className={[s.sequence, className].filter(Boolean).join(' ')}>
         <table className={s.grid} aria-label={label}>
@@ -98,7 +87,7 @@ export function Sequence<A, B = undefined>(props: SequenceProps<A, B>): ReactEle
   }
   const rows = stepsOf(sweep, cap);
   const caption = props.caption ?? ((value: A) => sweep.label(value));
-  const keys = stepKeys(rows.steps, (v) => sweep.label(v));
+  const keys = repeatKeys(rows.steps, (v) => sweep.label(v));
   return (
     <div className={[s.sequence, className].filter(Boolean).join(' ')}>
       <ol className={s.cells} data-layout={layout} aria-label={label}>

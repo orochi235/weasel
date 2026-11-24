@@ -6,6 +6,7 @@ import type { ControlHold } from '../Disabled/controlHold';
 import { describedBy, useHoldReason } from '../Disabled/HoldReason';
 import { composeHandler, type DataAttributes } from '../../nativeProps';
 import type { SwatchGridOption } from './SwatchGrid';
+import { repeatKeys } from '../../repeatKeys';
 import s from './SwatchGrid.module.css';
 
 function nameOf(o: SwatchGridOption): string {
@@ -19,12 +20,9 @@ export function swatchId(o: SwatchGridOption): string | null {
 
 /** A React key per swatch, apart from any other child's key, with a repeated id told apart by how many came before. */
 export function swatchKeys(options: readonly SwatchGridOption[]): string[] {
-  const seen = new Map<string | null, number>();
-  return options.map((o) => {
+  return repeatKeys(options, (o) => {
     const id = swatchId(o);
-    const n = seen.get(id) ?? 0;
-    seen.set(id, n + 1);
-    return id === null ? `swatch-none:${n}` : `swatch:${n}:${id}`;
+    return id === null ? 'swatch-none' : `swatch:${id}`;
   });
 }
 

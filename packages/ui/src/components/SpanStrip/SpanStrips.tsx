@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, type ReactElement, type ReactNode } f
 import { linearScale } from '@weasel-js/scale';
 import { useElementSize } from '@weasel-js/routing/react';
 import type { Span } from '@weasel-js/ui-input';
+import { repeatKeys } from '../../repeatKeys';
 import { Ruler, type RulerTick } from '../Ruler';
 import { SpanStrip, type SpanStripProps } from './SpanStrip';
 import { atFraction } from './spanLayout';
@@ -80,11 +81,12 @@ export function SpanStrips({ rows, window: win, at, ruler, 'aria-label': label, 
   const { width } = useElementSize(rulerRef);
   const scale = useMemo(() => linearScale({ domain: [win.from, win.to], range: [0, 1] }), [win.from, win.to]);
   const ticks = ruler ? rulerTicks(win, width, ruler) : [];
+  const keys = repeatKeys(rows, (r) => r.id);
   return (
     <div ref={ref} className={className ? `${s.stack} ${className}` : s.stack}>
       <div className={s.rows} role="list" aria-label={label}>
-        {rows.map(({ id, lead, className: rowClass, ...strip }, i) => (
-          <div key={id} ref={(el) => rowAt(el, i)} role="listitem" className={rowClass ? `${s.row} ${rowClass}` : s.row}>
+        {rows.map(({ id: _id, lead, className: rowClass, ...strip }, i) => (
+          <div key={keys[i]} ref={(el) => rowAt(el, i)} role="listitem" className={rowClass ? `${s.row} ${rowClass}` : s.row}>
             <span className={s.lead}>{lead}</span>
             <SpanStrip {...strip} window={win} at={at ?? win.to} />
           </div>
