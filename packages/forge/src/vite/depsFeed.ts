@@ -38,7 +38,7 @@ export interface DepsFeedOptions {
 export interface DepsFeed {
   /** The graph builder, made on first use. */
   componentGraph(): ComponentGraphBuilder;
-  /** The `deps.js` module's source, remembered as what the page now holds. */
+  /** The `deps.js` module's source, remembered as what the page now holds; built again when `reset` lands mid-build. */
   module(resolveImport: ResolveImport): Promise<string>;
   /** After an edit, rebuilds the graph and pushes it when it changed, once a page has asked for it. */
   redeps(server: ViteDevServer): void;
@@ -83,9 +83,13 @@ export function createDepsFeed({ root, index, logError }: DepsFeedOptions): Deps
   return {
     componentGraph,
     async module(resolveImport) {
-      const graph = await graphOf(resolveImport);
-      depsSent = JSON.stringify(graph);
-      return `export default ${depsSent};\n`;
+      for (;;) {
+        const started = generation;
+        const graph = await graphOf(resolveImport);
+        if (started !== generation) continue;
+        depsSent = JSON.stringify(graph);
+        return `export default ${depsSent};\n`;
+      }
     },
     redeps(server) {
       if (depsSent !== null) rebuild(server);
