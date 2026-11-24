@@ -95,11 +95,11 @@ export function mayCallStory(node: t.Node | undefined, scope: Scope, depth = 0):
  * Whether a native file's export may be what forge's `story` returned, which is all the loader takes. A call is one
  * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread or
  * `Object.assign`) or a choice is one when something it copies or chooses from is. What cannot be read stays in: an
- * import nothing resolved, a method of anything but a literal or a global, a function a call made.
+ * import nothing resolved, a method of anything but a literal or a global, a function a call made, a chain longer
+ * than it follows.
  */
 export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): boolean {
-  if (!node) return true;
-  if (depth > 16) return false;
+  if (!node || depth > 16) return true;
   switch (node.type) {
     case 'TSSatisfiesExpression':
     case 'TSAsExpression':
