@@ -111,6 +111,10 @@ export interface LoupeModel {
    *  `onPick`. Omit `p` to pick at the aim point. `null` where the point sampled
    *  stands under the lens. Leaves the aim, and `color`, alone. */
   pick(p?: LoupePoint): string | null;
+  /** The surface point whose color the surface presents at `p`: `p` itself where the lens does not cover it, the
+   *  point the lens magnifies there where it does, and `null` where that point stands under the lens too. An
+   *  eyedropper over the same surface samples this rather than `p`. */
+  sourceAt(p: LoupePoint): LoupePoint | null;
   /** Sample the aim again, now: the pixels under it changed without it moving.
    *  Reports through `onColorChange` like an aim does. Ignored while hidden or
    *  while the lens covers the aim. */
@@ -131,6 +135,19 @@ function sampleNow(surface: LoupeSurface, p: LoupePoint): string | null {
   return hex as string | null;
 }
 
+/** Is `p` out of sight: the lens hidden, or standing over it? */
+const blind = (surface: LoupeSurface, p: LoupePoint) => surface.hidden() || surface.covers(p);
+
+/** The surface point the lens shows at `p`, a point inside it, or `null` where that is under the lens itself. */
+function throughLens(surface: LoupeSurface, p: LoupePoint, aim: LoupePoint, factor: number): LoupePoint | null {
+  const rect = surface.lens();
+  if (!rect) return null;
+  const at = loupeSourcePoint(p, rect, rect.shows ?? aim, rect.factor ?? factor);
+  // The lens is part of the picture the surface presents: sampling under it
+  // reports the lens' own chrome as artwork.
+  return surface.covers(at) ? null : at;
+}
+
 /**
  * Build the loupe's model over a surface. It holds the state a magnifier has —
  * aim, what it follows, factor, mode, color — and none of the drawing.
@@ -147,17 +164,12 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
   let disposed = false;
   let aimUnsampled = false;
 
-  const blind = (p: LoupePoint) => surface.hidden() || surface.covers(p);
-
   /** Samples the aim, unless nothing can see it or the lens stands over it. Whether it did. */
   const sampleColor = (): boolean => {
     const at = aim.now();
-    if (blind(at)) return false;
+    if (blind(surface, at)) return false;
     const hex = sampleNow(surface, at);
-    if (hex !== color) {
-      color = hex;
-      opts.onColorChange?.(hex);
-    }
+    if (hex !== color) { color = hex; opts.onColorChange?.(hex); }
     return true;
   };
 
@@ -187,7 +199,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     aimUnsampled = !!unsubscribeFrame || !sampleColor();
     surface.changed();
   };
-  const refuses = (p: LoupePoint) => disposed || dead() || blind(p);
+  const refuses = (p: LoupePoint) => disposed || dead() || blind(surface, p);
 
   return {
     get mode() { return mode; },
@@ -236,18 +248,18 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
 
     pick(p) {
       if (disposed || dead()) return null;
-      let at = aim.now();
-      if (p) {
-        const rect = surface.lens();
-        if (!rect) return null;
-        at = loupeSourcePoint(p, rect, rect.shows ?? at, rect.factor ?? factor);
-      }
-      // The lens is part of the picture the surface presents: sampling under it
-      // reports the lens' own chrome as artwork.
-      if (surface.covers(at)) return null;
+      let at: LoupePoint | null = aim.now();
+      if (p) at = throughLens(surface, p, at, factor);
+      else if (surface.covers(at)) at = null;
+      if (!at) return null;
       const hex = sampleNow(surface, at);
       if (hex !== null) opts.onPick?.(hex);
       return hex;
+    },
+
+    sourceAt(p) {
+      if (disposed || surface.hidden() || !surface.covers(p)) return { x: p.x, y: p.y };
+      return throughLens(surface, p, aim.now(), factor);
     },
 
     resample() {

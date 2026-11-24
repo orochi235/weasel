@@ -110,4 +110,25 @@ describe('eyedropper model', () => {
     expect(drop.color).toBeNull();
     expect(onColorChange).toHaveBeenLastCalledWith(null);
   });
+
+  it('reads a stationary lens through to what it magnifies, and nothing where that is under the lens itself', () => {
+    const sample = (p: { x: number; y: number }) => `#${String(Math.round(p.x)).padStart(6, '0')}`;
+    const loupe = createLoupeModel({
+      factor: 2,
+      surface: { ...surface(sample), lens: () => ({ x: 100, y: 0, width: 100, height: 100 }), covers: (p) => p.x >= 100 && p.x <= 200 },
+    });
+    loupe.aimAt(at(40, 50));
+    const onPick = vi.fn();
+    const drop = createEyedropperModel({ sample, loupe, onPick });
+    drop.hover(at(170, 50));
+    expect(drop.color).toBe('#000050');
+    expect(drop.pick(at(170, 50))).toBe('#000050');
+    expect(onPick).toHaveBeenLastCalledWith('#000050');
+    expect(loupe.sourceAt(at(30, 50))).toEqual(at(30, 50));
+    loupe.aimAt(at(95, 50));
+    drop.hover(at(190, 50));
+    expect(drop.color).toBeNull();
+    expect(drop.pick(at(190, 50))).toBeNull();
+    expect(onPick).toHaveBeenCalledTimes(1);
+  });
 });
