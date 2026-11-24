@@ -1,4 +1,4 @@
-import { useRef, type HTMLAttributes, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, type HTMLAttributes, type PointerEvent as ReactPointerEvent } from 'react';
 import { arrowMove } from '@weasel-js/quantity';
 import { clientToCanvasRect, layoutBoxOf } from '@weasel-js/routing';
 import type { Span } from '@weasel-js/ui-input';
@@ -18,6 +18,10 @@ type SeekHandlers = Pick<HTMLAttributes<HTMLDivElement>, 'onKeyDown' | 'onPointe
 export function useSpanSeek(win: Span, at: number, onSeek: ((ms: number, held: boolean) => void) | undefined): SeekHandlers {
   const held = useRef<number | null>(null);
   const began = useRef(0);
+  // Without `onSeek` no release is heard, so a hold taken before it went away would refuse every press after it.
+  useEffect(() => {
+    if (!onSeek) held.current = null;
+  }, [onSeek]);
   if (!onSeek) return {};
   const msAt = (e: ReactPointerEvent<HTMLDivElement>): number => {
     const box = layoutBoxOf(e.currentTarget);
