@@ -78,11 +78,12 @@ export interface HistoryReader {
 }
 
 /**
- * Reads component history from git, once per `HEAD`: every date comes from a commit, so nothing changes until one
- * lands. Outside a repository, or with no git to run, every read answers empty.
+ * Reads component history from git, once per `HEAD` and set of tags: every date comes from a commit and every version
+ * from a tag, so nothing changes until one of those does. Outside a repository, or with no git to run, every read
+ * answers empty.
  */
 export function createHistoryReader(root: string, git: Git = runGit): HistoryReader {
-  let cached: { head: string; sources: string; history: Record<string, ComponentHistory> } | null = null;
+  let cached: { refs: string; sources: string; history: Record<string, ComponentHistory> } | null = null;
 
   async function load(sources: readonly string[]): Promise<Record<string, ComponentHistory>> {
     const [top = '', prefix = ''] = (await git(['rev-parse', '--show-toplevel', '--show-prefix'], root)).split('\n');
@@ -122,9 +123,10 @@ export function createHistoryReader(root: string, git: Git = runGit): HistoryRea
   return {
     async read(sources) {
       try {
-        const head = (await git(['rev-parse', 'HEAD'], root)).trim();
+        // HEAD and every tag: a release tagged onto a commit already read changes no date but does change a version.
+        const refs = (await git(['rev-parse', 'HEAD', '--tags'], root)).trim();
         const key = [...sources].sort().join('\n');
-        if (cached?.head !== head || cached.sources !== key) cached = { head, sources: key, history: await load(sources) };
+        if (cached?.refs !== refs || cached.sources !== key) cached = { refs, sources: key, history: await load(sources) };
         return cached.history;
       } catch {
         return {};
