@@ -49,6 +49,26 @@ describe('forgeTest', () => {
     expect(code).toContain(`__forge_test(${JSON.stringify('With "quotes"')}, () => __forge_run("Named"), __forge_timeout);`);
   });
 
+  it('registers stories only while its own file is the one vitest collects, not inside a file that imports it', async () => {
+    const file = `${ROOT}/apps/x/Counter.stories.tsx`;
+    const code = (await transformer({ stories: ['apps/**/*.stories.tsx'] })(source, file)) ?? '';
+    const appended = code
+      .slice(source.length)
+      .split('\n')
+      .filter((line) => !line.startsWith('import '))
+      .join('\n')
+      .replace('import.meta.url', '""');
+    const registered = (collecting: string): string[] => {
+      const names: string[] = [];
+      const test = Object.assign((name: string) => void names.push(name), { skip: (name: string) => void names.push(name) });
+      const runner = { getCurrentSuite: () => ({ file: { filepath: collecting } }) };
+      new Function('__forge_test', '__forge_runner', '__forge_runStory', appended)(test, runner, () => undefined);
+      return names;
+    };
+    expect(registered(file)).toEqual(['Counter', 'With "quotes"']);
+    expect(registered(`${ROOT}/apps/x/Other.stories.tsx`)).toEqual([]);
+  });
+
   it("titles and isolates stories whose meta reaches forge through a project helper, as the workshop's index does", async () => {
     const helper = fileURLToPath(new URL('../story/define.ts', import.meta.url));
     const wrapped = `import { meta as defineMeta, story } from './helpers';

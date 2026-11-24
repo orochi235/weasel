@@ -58,7 +58,7 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
         // so a static self-import would evaluate the file a second time and register every test twice.
         const lines = [
           '',
-          `import { test as __forge_test } from "vitest";`,
+          `import { TestRunner as __forge_runner, test as __forge_test } from "vitest";`,
           `import { runStory as __forge_runStory } from "@weasel-js/forge/test";`,
           // shell.css draws the story host; frame.css still holds the boundary's fault rule.
           `import "@weasel-js/forge/shell.css";`,
@@ -72,12 +72,15 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           ...(entries[0]?.metaId === undefined ? [] : [`  metaId: ${q(entries[0].metaId)},`]),
           '};',
           'const __forge_run = async (exportName) => __forge_runStory(await import(/* @vite-ignore */ import.meta.url), exportName, __forge_file, __forge_title, __forge_options);',
+          // A story file another one imports runs its stories under its own test file only.
+          'if (__forge_runner.getCurrentSuite().file?.filepath === __forge_file) {',
           // An isolated story asks for a document of its own, which the test page is not; its reason goes in the name.
           ...entries.map((entry) =>
             entry.isolate === undefined
               ? `__forge_test(${q(entry.name)}, () => __forge_run(${q(entry.exportName)}), __forge_timeout);`
               : `__forge_test.skip(${q(`${entry.name} (isolated: ${entry.isolate})`)}, () => {});`,
           ),
+          '}',
         ];
         return { code: `${code}\n${lines.join('\n')}\n`, map: null };
       },
