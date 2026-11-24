@@ -24,7 +24,8 @@ interface Answer {
   key: string;
 }
 
-/** Keeps the last 50 configs' answers. A config it has no answer for shows every node and reports no errors.
+/** Keeps the last 50 configs' answers, and the answer for every config a trial holds. A config it has no answer for
+ *  shows every node and reports no errors.
  *  Subscribers hear of an answer only when it differs from the one kept for its config, and a trial holds that config. */
 export function createAnswerBook(): AnswerBook {
   const byConfig = new Map<string, Answer>();
@@ -41,9 +42,9 @@ export function createAnswerBook(): AnswerBook {
       const changed = key !== (byConfig.get(answers.configKey)?.key ?? UNANSWERED);
       byConfig.delete(answers.configKey);
       byConfig.set(answers.configKey, { hidden: answers.hidden, errors: answers.errors, disabled, resolved, key });
-      if (byConfig.size > KEPT_CONFIGS) {
-        const oldest = byConfig.keys().next().value;
-        if (oldest !== undefined) byConfig.delete(oldest);
+      for (const oldest of byConfig.keys()) {
+        if (byConfig.size <= KEPT_CONFIGS) break;
+        if (!held.has(oldest)) byConfig.delete(oldest);
       }
       if (changed && held.has(answers.configKey)) answered.emit();
     },
