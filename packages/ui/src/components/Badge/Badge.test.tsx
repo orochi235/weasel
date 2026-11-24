@@ -167,12 +167,22 @@ describe('Badge removable', () => {
     const label = screen.getByRole('button', { name: 'x' });
     fireEvent.click(label);
     fireEvent.keyUp(label, { key: ' ' });
-    expect(calls).toEqual(['own click', 'act', 'own up', 'act']);
+    expect(calls).toEqual(['own click', 'act', 'own up', 'own click', 'act']);
     unmount();
     calls.length = 0;
     render(<Badge href="#x" onClick={() => calls.push('act')} onRemove={() => {}} labelProps={labelProps}>y</Badge>);
     fireEvent.click(screen.getByText('y'));
     expect(calls).toEqual(['own click', 'act']);
+  });
+
+  it("lets a removable label's own onClick veto Enter and Space, as it vetoes a click", () => {
+    const act = vi.fn();
+    render(<Badge onClick={act} onRemove={() => {}} labelProps={{ onClick: (e) => e.preventDefault() }}>x</Badge>);
+    const label = screen.getByRole('button', { name: 'x' });
+    fireEvent.click(label);
+    fireEvent.keyDown(label, { key: 'Enter' });
+    fireEvent.keyUp(label, { key: ' ' });
+    expect(act).not.toHaveBeenCalled();
   });
 
   it('fires onRemove without firing wrapper onClick', () => {
