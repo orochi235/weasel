@@ -113,10 +113,14 @@ export async function scoped<T>(gpu: GPUDevice, label: string, fn: () => T | Pro
   let out: T;
   try {
     out = await fn();
-  } finally {
-    const error = await gpu.popErrorScope();
+  } catch (err) {
+    // A lost device rejects the pop too; the error `fn` threw is the one to report.
+    const error = await gpu.popErrorScope().catch(() => null);
     if (error) errors.push(`${label}: ${error.message}`);
+    throw err;
   }
+  const error = await gpu.popErrorScope();
+  if (error) errors.push(`${label}: ${error.message}`);
   return out;
 }
 

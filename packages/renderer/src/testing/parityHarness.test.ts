@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fakeGpuDevice, type FakeGpuDevice } from './fakeGpuDevice';
 import { createGLRecorder } from './glRecorder';
+import { WeaselRenderer } from '../WeaselRenderer';
 
 const requested: FakeGpuDevice[] = [];
 vi.mock('../gpu/webgpu/requestRendererDevice', () => ({
@@ -11,7 +12,7 @@ vi.mock('../gpu/webgpu/requestRendererDevice', () => ({
   },
 }));
 
-const { openBackends, parityDevice, releaseDevice, renderEach } = await import('./parityHarness');
+const { openBackends, parityDevice, releaseDevice, renderEach, scoped } = await import('./parityHarness');
 
 afterEach(() => {
   releaseDevice();
@@ -68,5 +69,13 @@ describe('openBackends', () => {
     }) as typeof HTMLCanvasElement.prototype.getContext);
     await expect(openBackends({ width: 4, height: 4, dpr: 1 })).rejects.toThrow();
     expect(recorder.calls.some((c) => c.name === 'getExtension' && c.args[0] === 'WEBGL_lose_context')).toBe(true);
+  });
+});
+
+describe('scoped', () => {
+  it('keeps the error its function threw when the scope cannot be popped', async () => {
+    const fake = fakeGpuDevice();
+    vi.spyOn(fake.device, 'popErrorScope').mockRejectedValue(new DOMException('lost', 'OperationError'));
+    await expect(scoped(fake.device, 'building', () => { throw new Error('the build failed'); })).rejects.toThrow('the build failed');
   });
 });
