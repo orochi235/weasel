@@ -99,13 +99,15 @@ export function createBindings(
     if (!mod) return null;
     const byTitle = titleStandIn(entry.title);
     for (const local of [entry.componentName, byTitle]) {
-      const [root, member] = local?.split('.') ?? [];
+      const [root, ...members] = local?.split('.') ?? [];
       const imp = root ? mod.imports.get(root) : undefined;
       if (!imp) continue;
-      const key =
-        member === undefined || imp.imported === '*'
-          ? await importKey(entry.file, member === undefined ? imp : { ...imp, imported: member })
-          : await memberKey(await importKey(entry.file, imp), member);
+      const [first, ...rest] = members;
+      let key =
+        first === undefined || imp.imported === '*'
+          ? await importKey(entry.file, first === undefined ? imp : { ...imp, imported: first })
+          : await memberKey(await importKey(entry.file, imp), first);
+      for (const member of rest) key = await memberKey(key, member);
       if (key) return key;
     }
     return null;
