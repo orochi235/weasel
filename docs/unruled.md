@@ -4149,3 +4149,8 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): `lengthTable` throws a `RangeError` for a `LengthRun` segment whose `controls` hold
   anything but one or two points, since nothing past a cubic is measured or evaluated. Measuring higher degrees was the
   alternative.
+## Audit round eighty-two (2026-11-24): labkit's lenses
+
+- 2026-11-24 (the fixer's call): a lens comparing in Split shows one pair at its first DPR, as Difference does, so both
+  sides of the seam are at the same DPR; its other DPRs show again in Swap or with no comparison. A seam inside each
+  DPR's cell, with a seam line and grab strip per cell, was the alternative.

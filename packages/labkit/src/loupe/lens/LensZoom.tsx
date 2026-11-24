@@ -1,7 +1,8 @@
 import { multiplier, qty } from '@weasel-js/quantity';
+import { useLatest } from '@weasel-js/react';
 import { Along } from '@weasel-js/ui/components/Along';
 import { Slider, type Thumb } from '@weasel-js/ui/components/Slider';
-import { useMemo, useRef } from 'react';
+import { type PointerEvent as ReactPointerEvent, useEffect, useMemo, useRef } from 'react';
 import type { LoupeShape } from '../types';
 import { FACTOR_MAX, FACTOR_MIN, FACTOR_STOPS } from './lensActionDefs';
 import { applyLensOps, setLensOps, settingsOf } from './lensScene';
@@ -42,7 +43,30 @@ export function LensZoom<C>({
   onRelease,
 }: LensZoomProps<C>) {
   const gesture = useRef(0);
-  const pressed = useRef(false);
+  const releaseRef = useLatest(onRelease);
+  const press = useRef<(() => void) | null>(null);
+  useEffect(() => () => press.current?.(), []);
+  const watchPress = (down: ReactPointerEvent) => {
+    press.current?.();
+    const view = down.currentTarget.ownerDocument.defaultView ?? window;
+    const end = (e: PointerEvent) => {
+      if (e.pointerId !== down.pointerId) return;
+      stop();
+      // After the slider's own listeners for this event, so its commit lands in the press's undo entry first.
+      queueMicrotask(() => {
+        gesture.current += 1;
+        releaseRef.current?.();
+      });
+    };
+    const stop = () => {
+      view.removeEventListener('pointerup', end, true);
+      view.removeEventListener('pointercancel', end, true);
+      press.current = null;
+    };
+    view.addEventListener('pointerup', end, true);
+    view.addEventListener('pointercancel', end, true);
+    press.current = stop;
+  };
   const thumbs = useMemo<Thumb[]>(() => [{ value: factor, valueText: times(factor) }], [factor]);
   const write = (next: Thumb[], done: boolean) => {
     const value = next[0]?.value;
@@ -56,12 +80,7 @@ export function LensZoom<C>({
         },
       );
     }
-    if (!done) return;
-    gesture.current += 1;
-    if (pressed.current) {
-      pressed.current = false;
-      onRelease?.();
-    }
+    if (done && !press.current) gesture.current += 1;
   };
   const slider = (
     <Slider
@@ -81,16 +100,7 @@ export function LensZoom<C>({
   );
   const track = zoomTrackOf(shape, size);
   return (
-    <div
-      className="lk-lens-zoom"
-      data-track={track.kind}
-      onPointerDownCapture={() => {
-        pressed.current = true;
-      }}
-      onKeyDownCapture={() => {
-        pressed.current = false;
-      }}
-    >
+    <div className="lk-lens-zoom" data-track={track.kind} onPointerDownCapture={watchPress}>
       {track.kind === 'arc' ? (
         <Along arc={track.arc}>{slider}</Along>
       ) : (

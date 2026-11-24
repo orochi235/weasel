@@ -409,6 +409,21 @@ describe('LensSlot comparisons', () => {
     expect(sides).toEqual(['base', 'compared']);
   });
 
+  it('compares the two sides at one DPR in Split, the first, however many the lens shows', () => {
+    const pixels = fakeSource('pixels', { label: (r) => `Pixels ${r.dpr}×` });
+    render(
+      <Both
+        settings={settings({ source: 'pixels', dprs: [1, 2], compare: 'b', view: 'split' })}
+        sources={{ pixels: pixels.source }}
+      />,
+    );
+    expect(pixels.attach.mock.calls.map(([, r]) => [r.dpr, r.conditions, r.size.width])).toEqual([
+      [1, null, SIZE.width],
+      [1, 'b', SIZE.width],
+    ]);
+    expect(chrome().textContent).not.toContain('Pixels 2×');
+  });
+
   it('says why Difference cannot show, with no Pixels source', () => {
     const live = fakeSource('live');
     render(

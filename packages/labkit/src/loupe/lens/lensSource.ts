@@ -136,7 +136,9 @@ export function shownSource<C>(
 }
 
 /** One request per side-by-side cell: a pixels source gets one per DPR, any
- *  other source one. Each cell takes an equal share of the interior's width. */
+ *  other source one. Each cell takes an equal share of the interior's width. A
+ *  comparison seen in Split or Difference is one pair at the first DPR, so its
+ *  two sides always show the same DPR. */
 export function requestsOf<C>(
   source: LensSource<C> | null,
   lens: LensIds,
@@ -144,7 +146,9 @@ export function requestsOf<C>(
   reticle: LoupePoint,
   size: { width: number; height: number },
 ): LensSourceRequest<C>[] {
-  const dprs = source?.produces === 'pixels' && settings.dprs.length > 0 ? settings.dprs : null;
+  const paired = settings.compare !== null && settings.view !== 'swap';
+  const dprs =
+    !paired && source?.produces === 'pixels' && settings.dprs.length > 0 ? settings.dprs : null;
   const each = dprs ?? [settings.dprs[0] ?? 1];
   return each.map((dpr) => ({
     lensId: lens.lensId,

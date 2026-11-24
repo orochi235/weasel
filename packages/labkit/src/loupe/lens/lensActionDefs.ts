@@ -303,23 +303,25 @@ function lensLifeActions<C>(api: LensActionApi<C>): Action[] {
   });
   // The lens the quick key opened, which a tap of it closes; one per host.
   let quickLens: string | null = null;
-  const openGlass = (): string | null => {
-    const lensId = api.add();
-    const ids = lensId === null ? null : lensIdsOf(scene, `${lensId}:body`);
-    const body = ids && scene.get(ids.body);
-    const reticle = ids && scene.get(ids.reticle);
-    if (lensId === null || !body || !reticle) return lensId;
-    const at = {
-      x: reticle.pose.x + reticle.pose.width / 2,
-      y: reticle.pose.y + reticle.pose.height / 2,
-    };
-    const label = 'open quick lens';
-    api.apply([
-      coreOps.setPose({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
-      ...setAimOps(scene, lensId, 'glass'),
-    ]);
-    return lensId;
-  };
+  const label = 'open quick lens';
+  // One undo step: the add, and the move onto its reticle as Glass.
+  const openGlass = (): string | null =>
+    scene.batch(label, () => {
+      const lensId = api.add();
+      const ids = lensId === null ? null : lensIdsOf(scene, `${lensId}:body`);
+      const body = ids && scene.get(ids.body);
+      const reticle = ids && scene.get(ids.reticle);
+      if (lensId === null || !body || !reticle) return lensId;
+      const at = {
+        x: reticle.pose.x + reticle.pose.width / 2,
+        y: reticle.pose.y + reticle.pose.height / 2,
+      };
+      api.apply([
+        coreOps.setPose({ id: body.id, from: body.pose, to: patchAt(body.pose, 1, at), label }),
+        ...setAimOps(scene, lensId, 'glass'),
+      ]);
+      return lensId;
+    });
   const quick: Action = {
     id: LENS_ACTION_IDS.quick,
     label: 'Quick lens',

@@ -60,7 +60,8 @@ The reticle's aim is `pinned`, `follow` or `glass`. Glass is the reticle's pose
 derived from the body (`GLASS_POSE_KEY`), so `setAimOps` switches to it by
 setting the reticle's `dependsOn` and leaves it with a transform to where the
 derived pose put it. A Glass reticle is neither painted nor given a hit box: it
-sits under its own body, which takes the pointer there. `follow` moves a Glass
+sits under its own body, which takes the pointer there. A Follow reticle is painted
+but given no hit box either, since it sits under the pointer. `follow` moves a Glass
 lens by its body (`aimedNodeOf`), and the reticle comes with it.
 
 `<LensOverlay>` paints into the surface's `top` buffer (`useSurfaceCanvas('top')`,
