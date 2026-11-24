@@ -20,6 +20,7 @@ import { fillsOpenSubpaths } from '../openFill';
 import type { Path, PolygonPath } from '../path';
 import { resolveCorners } from '../paths/corners';
 import { polygonPathFrom, worldCoords } from '../paths/pathOrigin';
+import { ringSignedArea } from '../polyline';
 import { resolveRingFill } from './ringFill';
 
 /** A `[x, y]` 2-tuple. */
@@ -137,14 +138,7 @@ export function pathToMultiPolygon(
   return resolved ? groupRings(resolved, 'nonzero') : groupRings(rings, path.fillRule);
 }
 
-/** Shoelace area of a closed ring. Sign gives the winding direction. */
-function ringSignedArea(ring: Ring): number {
-  let a = 0;
-  for (let i = 0, n = ring.length - 1; i < n; i++) {
-    a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
-  }
-  return a * 0.5;
-}
+const ringArea = (ring: Ring): number => ringSignedArea(ring.flat(), 0, ring.length - 1);
 
 type RingBox = [number, number, number, number];
 
@@ -202,7 +196,7 @@ function groupRings(rings: readonly Ring[], fillRule: 'nonzero' | 'evenodd'): Mu
   if (n === 1) return [[rings[0]]];
 
   const boxes = rings.map(ringBox);
-  const orient = rings.map((r) => (ringSignedArea(r) >= 0 ? 1 : -1));
+  const orient = rings.map((r) => (ringArea(r) >= 0 ? 1 : -1));
   const parent = new Array<number>(n).fill(-1);
   const children: number[][] = rings.map(() => []);
 

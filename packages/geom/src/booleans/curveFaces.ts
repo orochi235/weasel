@@ -6,7 +6,7 @@
  */
 
 import type { Path, PathFillRule } from '../path';
-import { type Contour, type Seg, evalSeg, signedArea, subSeg } from './contourSegments';
+import { type Contour, type Seg, clockwiseFirst, evalSeg, subSeg } from './contourSegments';
 import { parseContours, extentOf } from './contours';
 import { type Along, type LineSeg, arrangeLines, linkFaces } from './arrangement';
 import { type Cycles, type Linked, cyclesOf, cycleWindings, leftmost } from './faceCycles';
@@ -45,6 +45,8 @@ interface Flat {
   t1: Float64Array;
 }
 
+const MAX_CHORDS = 1024;
+
 /** How many chords keep a Bézier within `tol` of its flattening: degree·(degree − 1)/8 of its largest second difference over n². */
 function chords(s: Seg, tol: number): number {
   if (s.length === 2) return 1;
@@ -53,7 +55,12 @@ function chords(s: Seg, tol: number): number {
     m = Math.max(m, Math.hypot(s[i + 2].x - 2 * s[i + 1].x + s[i].x, s[i + 2].y - 2 * s[i + 1].y + s[i].y));
   }
   const d = s.length - 1;
-  return Math.min(1024, Math.max(1, Math.ceil(Math.sqrt((d * (d - 1) * m) / (8 * tol)))));
+  const n = Math.max(1, Math.ceil(Math.sqrt((d * (d - 1) * m) / (8 * tol))));
+  if (n > MAX_CHORDS) {
+    const finest = (d * (d - 1) * m) / (8 * MAX_CHORDS * MAX_CHORDS);
+    throw new RangeError(`flattenTolerance ${tol} needs ${n} chords on one segment, past ${MAX_CHORDS}; use ${finest} or more`);
+  }
+  return n;
 }
 
 function flatten(operands: readonly Contour[][], tol: number): Flat {
@@ -196,16 +203,6 @@ function loopOf(a: Kept, flat: Flat, polish: Polish, cycle: readonly number[]): 
   return out;
 }
 
-/** Whether a contour set's largest contour turns with its fill on the right. */
-function clockwiseFirst(contours: readonly Contour[]): boolean {
-  let best = 0;
-  for (const c of contours) {
-    const a = signedArea(c);
-    if (Math.abs(a) > Math.abs(best)) best = a;
-  }
-  return best < 0;
-}
-
 /** `faceOf` for a covered cycle too thin to be a face: no neighbor across its edges, covered or not. */
 const SLIVER = -2;
 
@@ -221,7 +218,17 @@ const maskOf = (sources: readonly number[]): bigint => sources.reduce((m, i) => 
  * fewest covering inputs first, then by which, then left to right.
  */
 export function curveFaces(paths: readonly Path[], tolerance?: number, polish = true): CurveFaceSet {
-  const operands = paths.map((p) => parseContours(p));
+  const rules = paths.map((p): PathFillRule => (p.kind === 'polygon' ? p.fillRule : 'nonzero'));
+  return contourFaces(paths.map((p) => parseContours(p)), rules, tolerance, polish);
+}
+
+/** {@link curveFaces} on operands already read into contours, each filled by its own rule. */
+export function contourFaces(
+  operands: readonly Contour[][],
+  rules: readonly PathFillRule[],
+  tolerance?: number,
+  polish = true,
+): CurveFaceSet {
   const clockwise = operands.map(clockwiseFirst);
   const extent = extentOf(operands.flat()) || 1;
   if (tolerance !== undefined && !(tolerance > 0 && tolerance < Infinity)) {
@@ -230,9 +237,8 @@ export function curveFaces(paths: readonly Path[], tolerance?: number, polish = 
   const tol = tolerance ?? extent * 1e-5;
   const flat = flatten(operands, tol);
   const arr = arrangeLines(flat.lines);
-  const rules = paths.map((p): PathFillRule => (p.kind === 'polygon' ? p.fillRule : 'nonzero'));
   const first = cyclesOf(arr);
-  const winding = cycleWindings(arr, first, runsOf(arr.along, flat), paths.length);
+  const winding = cycleWindings(arr, first, runsOf(arr.along, flat), operands.length);
   const kept = bounding(arr, first, coverKeys(winding, rules, first.cycles.length));
   const c = cyclesOf(kept);
   const minArea = 1e-12 * extent * extent;

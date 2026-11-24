@@ -8,6 +8,7 @@ import type { PathFillRule } from '../path';
 import type { Contour } from './contourSegments';
 import { cutContours, curveRegions } from './curveBoolean';
 import { clipper } from './clipper';
+import { contourFaces } from './curveFaces';
 import type { Ring } from './adapter';
 
 /** Whether two edges of `rings` meet anywhere, other than neighbors of one ring at their shared vertex. */
@@ -60,7 +61,7 @@ function segmentsMeet(e: { x0: number; y0: number; x1: number; y1: number }, f: 
  * The fill of `rings` under `fillRule` as rings that do not cross, filled on
  * their left, or null where nesting by containment already reads them right.
  * Where the cut cannot be made, an even-odd fill falls back to the rings'
- * exclusive or, and a nonzero one to null.
+ * exclusive or, and a nonzero one to their face arrangement.
  */
 export function resolveRingFill(rings: readonly Ring[], fillRule: PathFillRule): Ring[] | null {
   if (rings.length < (fillRule === 'evenodd' ? 1 : 2) || !ringsMeet(rings)) return null;
@@ -68,16 +69,19 @@ export function resolveRingFill(rings: readonly Ring[], fillRule: PathFillRule):
     const [nx, ny] = ring[i + 1];
     return [{ x, y }, { x: nx, y: ny }];
   }).filter(([a, b]) => a.x !== b.x || a.y !== b.y);
-  const cut = cutContours([rings.map(contour).filter((c) => c.length > 0)], [fillRule]);
+  const contours = rings.map(contour).filter((c) => c.length > 0);
+  const cut = cutContours([contours], [fillRule]);
   const regions = cut && curveRegions(cut, (inside) => (inside[0] ? 0 : -1));
-  if (regions) {
-    return (regions.get(0) ?? []).map((loop) => {
-      const ring: Ring = loop.map((s) => [s[0].x, s[0].y]);
-      ring.push([loop[0][0].x, loop[0][0].y]);
-      return ring;
-    });
+  if (regions) return (regions.get(0) ?? []).map(ringOf);
+  if (fillRule === 'evenodd') {
+    const [head, ...rest] = rings.map((ring) => [[ring]]);
+    return clipper.xor(head, ...rest).flat();
   }
-  if (fillRule !== 'evenodd') return null;
-  const [head, ...rest] = rings.map((ring) => [[ring]]);
-  return clipper.xor(head, ...rest).flat();
+  return contourFaces([contours], [fillRule], undefined, false).faces.flatMap((face) => face.loops.map(ringOf));
 }
+
+const ringOf = (loop: Contour): Ring => {
+  const ring: Ring = loop.map((s) => [s[0].x, s[0].y]);
+  ring.push([loop[0][0].x, loop[0][0].y]);
+  return ring;
+};

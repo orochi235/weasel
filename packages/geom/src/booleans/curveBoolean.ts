@@ -8,7 +8,7 @@
 import type { Path, PathFillRule, PolygonPath } from '../path';
 import { PATH_C, PATH_Q } from '../commands';
 import { resolveCorners } from '../paths/corners';
-import { type Contour, type Seg, reverseContour, signedArea } from './contourSegments';
+import { type Contour, type Seg, clockwiseFirst, reverseContour } from './contourSegments';
 import { parseContours, extentOf } from './contours';
 import { writePath } from './cutRegions';
 import { type Edge, cutEdges } from './curveEdges';
@@ -114,16 +114,6 @@ export function curveBoolean(paths: readonly Path[], keep: (inside: boolean[]) =
   if (!regions) return null;
   // Keep the first operand's turning direction, so a curve that comes through whole comes back as it went in.
   return writeLoops(regions.get(0) ?? [], cut.clockwise[0]);
-}
-
-/** Whether a contour set's largest contour turns with its fill on the right. */
-function clockwiseFirst(contours: readonly Contour[]): boolean {
-  let best = 0;
-  for (const c of contours) {
-    const a = signedArea(c);
-    if (Math.abs(a) > Math.abs(best)) best = a;
-  }
-  return best < 0;
 }
 
 /** `loop` reversed, starting at the segment that reverses its first. */

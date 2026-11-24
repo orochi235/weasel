@@ -24,6 +24,27 @@ const unionArea = (paths: readonly Path[]): number => {
 };
 
 describe('pathFaceArrangement', () => {
+  it('polishes crossings far from the origin as it does at the origin', () => {
+    for (const o of [1e4, 1e5, 1e8]) {
+      const at = { x: o, y: o };
+      const { polish } = curveFaces([{ ...circle(0, 0, 1), origin: at }, { ...circle(1.2, 0, 0.8), origin: at }]);
+      expect(polish.polished).toBe(2);
+    }
+  });
+
+  it('refuses a flattenTolerance too fine to flatten within', () => {
+    expect(() => pathFaceArrangement([circle(0, 0, 100)], { flattenTolerance: 1e-6 })).toThrow(RangeError);
+    expect(pathFaceArrangement([circle(0, 0, 100)], { flattenTolerance: 1e-3 }).faces).toHaveLength(1);
+  });
+
+  it('cuts small circles far from the origin as it does at the origin', () => {
+    for (const [o, r] of [[1e6, 0.01], [1e8, 0.1]]) {
+      const at = { x: o, y: o };
+      const { faces } = pathFaceArrangement([{ ...circle(0, 0, r), origin: at }, { ...circle(1.2 * r, 0, 0.8 * r), origin: at }]);
+      expect(faces.map((f) => f.sources)).toEqual([[0], [1], [0, 1]]);
+    }
+  });
+
   it('cuts two overlapping circles into three curved faces and says which touch', () => {
     const { faces, neighbors } = pathFaceArrangement([circle(0, 0, 10), circle(12, 0, 8)]);
     expect(faces.map((f) => f.sources)).toEqual([[0], [1], [0, 1]]);

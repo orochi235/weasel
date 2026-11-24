@@ -300,6 +300,22 @@ describe('splitPathBySegment', () => {
       expect(inside(big, 50, 50)).toBe(false);
     });
 
+    it("keeps an untouched island's own hole with the island", () => {
+      for (const rule of ['nonzero', 'evenodd'] as const) {
+        const nested = new PathBuilder()
+          .setFillRule(rule)
+          .moveTo(0, 0).lineTo(100, 0).lineTo(100, 100).lineTo(0, 100).close()
+          .moveTo(20, 20).lineTo(20, 80).lineTo(80, 80).lineTo(80, 20).close()
+          .moveTo(35, 35).lineTo(65, 35).lineTo(65, 65).lineTo(35, 65).close()
+          .moveTo(45, 45).lineTo(45, 55).lineTo(55, 55).lineTo(55, 45).close()
+          .build();
+        const pieces = splitPathBySegment(nested, { x: -10, y: 10 }, { x: 110, y: 10 })!;
+        expect(pieces.length).toBe(3);
+        expect(pieces.some((p) => inside(p, 50, 50))).toBe(false);
+        expect(pieces.filter((p) => inside(p, 40, 40))).toHaveLength(1);
+      }
+    });
+
     it('keeps contours the segment misses together in one remainder piece', () => {
       const two = new PathBuilder()
         .moveTo(0, 0).lineTo(40, 0).lineTo(40, 40).lineTo(0, 40).close()

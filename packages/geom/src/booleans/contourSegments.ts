@@ -171,3 +171,13 @@ export function endSide(f: number[], fromStart: boolean): number {
   }
   return 0;
 }
+
+/** Whether a contour set's largest contour turns with its fill on the right. */
+export function clockwiseFirst(contours: readonly Contour[]): boolean {
+  let best = 0;
+  for (const c of contours) {
+    const a = signedArea(c);
+    if (Math.abs(a) > Math.abs(best)) best = a;
+  }
+  return best < 0;
+}

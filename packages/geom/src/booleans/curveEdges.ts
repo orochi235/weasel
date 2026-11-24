@@ -87,15 +87,28 @@ const adjacent = (a: SegRef, b: SegRef): boolean => {
   return d === 1 || d === a.count - 1;
 };
 
-/** Where a cubic crosses itself, as its two parameters there, or null when it does not. */
+/**
+ * Where a cubic crosses itself, as its two parameters there, or null when it does not.
+ * In power form `a t³ + b t² + c t + d`, P(s) = P(t) with s ≠ t gives `a (σ² − π) + b σ + c = 0`
+ * for σ = s + t and π = s t; crossing it with `a` gives σ, and then π.
+ */
 function selfCrossing(seg: Seg): [number, number] | null {
   if (seg.length < 4) return null;
-  const mid = evalSeg(seg, 0.5);
-  const l = subSeg(seg, 0, 0.5, seg[0], mid);
-  const r = subSeg(seg, 0.5, 1, mid, seg[3]);
-  if (!l || !r) return null;
-  const h = segmentCrossings(l, r).find((c) => c.ta < 1 - 1e-6 || c.tb > 1e-6);
-  return h ? [h.ta / 2, 0.5 + h.tb / 2] : null;
+  const [p0, p1, p2, p3] = seg;
+  const ax = -p0.x + 3 * p1.x - 3 * p2.x + p3.x, ay = -p0.y + 3 * p1.y - 3 * p2.y + p3.y;
+  const bx = 3 * (p0.x - 2 * p1.x + p2.x), by = 3 * (p0.y - 2 * p1.y + p2.y);
+  const cx = 3 * (p1.x - p0.x), cy = 3 * (p1.y - p0.y);
+  const ab = ax * by - ay * bx, aa = ax * ax + ay * ay;
+  const scale = Math.max(aa, bx * bx + by * by, cx * cx + cy * cy);
+  if (!(Math.abs(ab) > 1e-12 * scale) || !(aa > 0)) return null;
+  const sum = -(ax * cy - ay * cx) / ab;
+  const product = sum * sum + ((bx * sum + cx) * ax + (by * sum + cy) * ay) / aa;
+  const disc = sum * sum - 4 * product;
+  if (!(disc > 0)) return null;
+  const root = Math.sqrt(disc);
+  const t1 = (sum - root) / 2, t2 = (sum + root) / 2;
+  if (t1 <= 1e-6 || t2 >= 1 - 1e-6 || t2 - t1 <= 1e-6) return null;
+  return [t1, t2];
 }
 
 /**

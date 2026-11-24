@@ -123,8 +123,10 @@ function knife(path: Path, cut: Point[], opts: SplitBySegmentOptions, budget: nu
 
   const { loops, untouched } = traceLoops(boundaries, partner, chord);
 
-  const traced = assembleRegions(loops, untouched.filter((c) => signedArea(c) < 0));
   const islands = untouched.filter((c) => signedArea(c) > 0);
+  // Islands are offered as homes too, so an untouched hole inside one stays its hole.
+  const traced = assembleRegions([...loops, ...islands], untouched.filter((c) => signedArea(c) < 0))
+    .slice(0, loops.length);
   const minArea = negligibleArea(boundaries);
   const regions: Contour[][] = traced.filter((r) => Math.abs(regionArea(r)) > minArea);
   if (islands.length > 0) {

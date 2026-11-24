@@ -4139,3 +4139,8 @@ Calls the lanes made without a ruling:
   different values throw whenever neither refines the other, even when a third preset agreeing with one of them
   refines the other; before, whether they threw hung on preset order and on which of the two was weighed. Letting the
   value the refining preset backs stand, unreported, was the alternative.
+## Audit round eighty-two (2026-11-24): path booleans
+
+- 2026-11-24 (the fixer's call): `pathFaceArrangement` throws a `RangeError` for a `flattenTolerance` so fine that a
+  segment would need more than 1024 chords, naming the finest tolerance it can honor. Lifting the cap, or coarsening the
+  tolerance quietly as before, were the alternatives.
