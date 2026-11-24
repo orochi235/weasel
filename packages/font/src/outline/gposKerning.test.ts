@@ -141,3 +141,58 @@ describe('gposPairKerning', () => {
     expect(largest).toBeLessThanOrEqual(4096);
   });
 });
+
+describe('a GPOS whose tables share one long list', () => {
+  const kern = [0x6b, 0x65, 0x72, 0x6e];
+  const lookupIndexes = (count: number) => [...u16(0), ...u16(count), ...Array.from({ length: count }, (_, i) => u16(i)).flat()];
+
+  it('reads a Feature table that many `kern` records name once', () => {
+    const records = 2000;
+    const lookups = 2000;
+    const featureList = 10;
+    const feature = 2 + records * 6;
+    const lookupList = featureList + feature + 4 + lookups * 2;
+    const gpos = [
+      ...u32(0x00010000), ...u16(0), ...u16(featureList), ...u16(lookupList),
+      ...u16(records), ...Array.from({ length: records }, () => [...kern, ...u16(feature)]).flat(),
+      ...lookupIndexes(lookups),
+      ...u16(0),
+    ];
+    const bytes = sfntWithGpos(gpos);
+    const real = DataView.prototype.getUint16;
+    let reads = 0;
+    DataView.prototype.getUint16 = function (this: DataView, at: number, littleEndian?: boolean) {
+      reads++;
+      return real.call(this, at, littleEndian);
+    };
+    try {
+      expect(gposPairKerning(bytes)).toBeNull();
+    } finally {
+      DataView.prototype.getUint16 = real;
+    }
+    expect(reads).toBeLessThan(100_000);
+  });
+
+  it('gives up on a ScriptList whose LangSys tables name long features more times than the font holds', () => {
+    const langSyses = 2000;
+    const lookups = 2000;
+    const scriptList = 10;
+    const script = 2 + 6;
+    const langSysAt = (i: number) => 4 + langSyses * 6 + i * 10;
+    const featureList = scriptList + script + langSysAt(langSyses);
+    const lookupList = featureList + 2 + 12 + 2 * (4 + lookups * 2);
+    const gpos = [
+      ...u32(0x00010000), ...u16(scriptList), ...u16(featureList), ...u16(lookupList),
+      ...u16(1), 0x6c, 0x61, 0x74, 0x6e, ...u16(script),
+      ...u16(0), ...u16(langSyses),
+      ...Array.from({ length: langSyses }, (_, i) => [0x6c, 0x61, 0x6e, 0x67, ...u16(langSysAt(i))]).flat(),
+      ...Array.from({ length: langSyses }, () => [...u16(0), ...u16(0xffff), ...u16(2), ...u16(0), ...u16(1)]).flat(),
+      ...u16(2), ...kern, ...u16(14), ...kern, ...u16(14 + 4 + lookups * 2),
+      ...lookupIndexes(lookups), ...lookupIndexes(lookups),
+      // Every lookup the one pair lookup, which kerns glyphs 1 and 2.
+      ...u16(lookups), ...Array.from({ length: lookups }, () => u16(2 + lookups * 2)).flat(),
+      ...u16(2), ...u16(0), ...u16(1), ...u16(8), ...pairPos(2, -50),
+    ];
+    expect(gposPairKerning(sfntWithGpos(gpos))).toBeNull();
+  });
+});

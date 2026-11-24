@@ -23,10 +23,19 @@ export type PairKerning = (left: number, right: number) => number;
 
 /**
  * Read the `kern` feature's pair lookups from a single-font sfnt (not a
- * collection). `null` when the font has no GPOS table, no `kern` feature, or
- * no pair lookup under one — the caller then falls back to the legacy `kern` table.
+ * collection). `null` when the font has no GPOS table, no `kern` feature, no
+ * pair lookup under one, or lists naming more lookups than its size allows — the caller then falls back to the legacy `kern` table.
  */
 export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
+  try {
+    return readPairKerning(bytes);
+  } catch (err) {
+    if (err instanceof OverBudget) return null;
+    throw err;
+  }
+}
+
+function readPairKerning(bytes: ArrayBuffer): PairKerning | null {
   const v = new DataView(bytes);
   // A WOFF's tables are compressed; opentype.js reads those, this does not.
   const version = v.byteLength >= 12 ? tag(v, 0) : '';
@@ -38,16 +47,23 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
   const featureList = gpos + v.getUint16(gpos + 6);
   const lookupList = gpos + v.getUint16(gpos + 8);
   // A list, feature, or lookup whose offsets run past the end of the font is skipped, as a subtable is below.
+  const spend = workBudget(v.byteLength);
   const kernLookups = new Map<number, number[]>();
+  const lookupsAt = new Map<number, number[]>();
   const featureCount = inRange(() => v.getUint16(featureList)) ?? 0;
   for (let i = 0; i < featureCount; i++) {
     inRange(() => {
       const rec = featureList + 2 + i * 6;
       if (tag(v, rec) !== 'kern') return;
       const feature = featureList + v.getUint16(rec + 4);
-      const count = v.getUint16(feature + 2);
-      const indexes: number[] = [];
-      for (let j = 0; j < count; j++) indexes.push(v.getUint16(feature + 4 + j * 2));
+      let indexes = lookupsAt.get(feature);
+      if (!indexes) {
+        const count = v.getUint16(feature + 2);
+        indexes = [];
+        for (let j = 0; j < count; j++) indexes.push(v.getUint16(feature + 4 + j * 2));
+        spend(count);
+        lookupsAt.set(feature, indexes);
+      }
       kernLookups.set(i, indexes);
     });
   }
@@ -55,7 +71,7 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
 
   const subtablesOf = new Map<number, number[]>();
   const lookupSets: number[][][] = [];
-  for (const indexes of lookupIndexSets(v, gpos, kernLookups)) {
+  for (const indexes of lookupIndexSets(v, gpos, kernLookups, spend)) {
     const set: number[][] = [];
     for (const index of indexes) {
       if (!subtablesOf.has(index)) subtablesOf.set(index, pairSubtables(v, lookupList, index));
@@ -84,8 +100,11 @@ export function gposPairKerning(bytes: ArrayBuffer): PairKerning | null {
  * shaper applies one script's lookups, so the sets are alternatives rather than a sum. A font whose ScriptList names
  * no `kern` feature has every `kern` feature's lookups taken as one set.
  */
-function lookupIndexSets(v: DataView, gpos: number, kernLookups: Map<number, number[]>): number[][] {
-  const scripts: { tag: string; langSyses: number[][] }[] = [];
+function lookupIndexSets(
+  v: DataView, gpos: number, kernLookups: Map<number, number[]>, spend: (steps: number) => void,
+): number[][] {
+  const scripts: { tag: string; langSysAt: number[] }[] = [];
+  const langSysesOf = new Map<number, number[]>();
   inRange(() => {
     const scriptOffset = v.getUint16(gpos + 4);
     if (scriptOffset === 0) return;
@@ -95,23 +114,17 @@ function lookupIndexSets(v: DataView, gpos: number, kernLookups: Map<number, num
       inRange(() => {
         const rec = scriptList + 2 + i * 6;
         const script = scriptList + v.getUint16(rec + 4);
-        const langSysAt: number[] = [];
-        const defaultOffset = v.getUint16(script);
-        if (defaultOffset !== 0) langSysAt.push(script + defaultOffset);
-        const langSysCount = v.getUint16(script + 2);
-        for (let j = 0; j < langSysCount; j++) langSysAt.push(script + v.getUint16(script + 4 + j * 6 + 4));
-        const langSyses: number[][] = [];
-        for (const at of langSysAt) {
-          inRange(() => {
-            const features: number[] = [];
-            const required = v.getUint16(at + 2);
-            if (required !== 0xffff) features.push(required);
-            const featureCount = v.getUint16(at + 4);
-            for (let k = 0; k < featureCount; k++) features.push(v.getUint16(at + 6 + k * 2));
-            langSyses.push(features);
-          });
+        let langSysAt = langSysesOf.get(script);
+        if (!langSysAt) {
+          langSysAt = [];
+          const defaultOffset = v.getUint16(script);
+          if (defaultOffset !== 0) langSysAt.push(script + defaultOffset);
+          const langSysCount = v.getUint16(script + 2);
+          for (let j = 0; j < langSysCount; j++) langSysAt.push(script + v.getUint16(script + 4 + j * 6 + 4));
+          spend(langSysCount);
+          langSysesOf.set(script, langSysAt);
         }
-        scripts.push({ tag: tag(v, rec), langSyses });
+        scripts.push({ tag: tag(v, rec), langSysAt });
       });
     }
   });
@@ -120,10 +133,25 @@ function lookupIndexSets(v: DataView, gpos: number, kernLookups: Map<number, num
 
   const sets: number[][] = [];
   const seen = new Set<string>();
-  for (const { langSyses } of scripts) {
-    for (const features of langSyses) {
+  const langSysSeen = new Set<number>();
+  for (const { langSysAt } of scripts) {
+    for (const at of langSysAt) {
+      if (langSysSeen.has(at)) continue;
+      langSysSeen.add(at);
+      const features = inRange(() => {
+        const features: number[] = [];
+        const required = v.getUint16(at + 2);
+        if (required !== 0xffff) features.push(required);
+        const featureCount = v.getUint16(at + 4);
+        for (let k = 0; k < featureCount; k++) features.push(v.getUint16(at + 6 + k * 2));
+        spend(featureCount);
+        return features;
+      }) ?? [];
       const lookups = new Set<number>();
-      for (const f of features) for (const l of kernLookups.get(f) ?? []) lookups.add(l);
+      for (const indexes of new Set(features.map((f) => kernLookups.get(f) ?? []))) {
+        spend(indexes.length);
+        for (const l of indexes) lookups.add(l);
+      }
       if (lookups.size === 0) continue;
       const set = [...lookups].sort((a, b) => a - b);
       const key = set.join(',');
@@ -134,8 +162,22 @@ function lookupIndexSets(v: DataView, gpos: number, kernLookups: Map<number, num
   }
   if (sets.length > 0) return sets;
   const all = new Set<number>();
-  for (const indexes of kernLookups.values()) for (const l of indexes) all.add(l);
+  for (const indexes of new Set(kernLookups.values())) for (const l of indexes) all.add(l);
   return [[...all].sort((a, b) => a - b)];
+}
+
+class OverBudget extends Error {}
+
+/**
+ * A counter of index reads that gives up once they pass what an honest font of `bytes` needs, so a small GPOS whose
+ * tables share one long list cannot hold the parser expanding it.
+ */
+function workBudget(bytes: number): (steps: number) => void {
+  let left = 4 * bytes + 0x10000;
+  return (steps) => {
+    left -= steps;
+    if (left < 0) throw new OverBudget();
+  };
 }
 
 /** The PairPos subtables of lookup `index`, extensions unwrapped. */
