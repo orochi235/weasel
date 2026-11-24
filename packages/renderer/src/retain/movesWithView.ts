@@ -1,9 +1,12 @@
 import type { Paint } from '@weasel-js/paint';
 import type { DrawCommand } from '../DrawCommand';
 import { effectsReach, type Effect } from '../effects/types';
+import { latestTextRefillIn } from '../textBounds';
 
-const withView = new WeakMap<readonly DrawCommand[], boolean>();
-const withoutView = new WeakMap<readonly DrawCommand[], boolean>();
+/** Each list's verdict, with the latest refill of its texts it was reached under. */
+type Verdict = { moves: boolean; refill: number };
+const withView = new WeakMap<readonly DrawCommand[], Verdict>();
+const withoutView = new WeakMap<readonly DrawCommand[], Verdict>();
 
 /**
  * Whether `cmds`, drawn under a transform that only translates by a whole
@@ -14,14 +17,15 @@ const withoutView = new WeakMap<readonly DrawCommand[], boolean>();
  * screen units, the default, or in world units with no view matrix to follow;
  * a group whose effects do not say how far they reach, which run over the
  * drawing buffer wherever its surface lies; and a group running a
- * `screenAnchored` effect. Memoized by array.
+ * `screenAnchored` effect. Memoized by array, until a text in it is refilled in place.
  */
 export function movesWithView(cmds: readonly DrawCommand[], hasViewMatrix: boolean): boolean {
   const memo = hasViewMatrix ? withView : withoutView;
+  const refill = latestTextRefillIn(cmds);
   const known = memo.get(cmds);
-  if (known !== undefined) return known;
+  if (known?.refill === refill) return known.moves;
   const moves = cmds.every((cmd) => commandMoves(cmd, hasViewMatrix));
-  memo.set(cmds, moves);
+  memo.set(cmds, { moves, refill });
   return moves;
 }
 
