@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "Switch's indeterminate state is not announced as mixed: `aria-checked=\"mixed\"` is invalid on role `switch`",
+  "SidebarPanel header puts actions and the close button at the leading edge, spread apart, when there is no title",
+  "Switch `indeterminate` with `isSelected` true: a click turns it off, not on as documented",
+  "useSpanSeek leaves its hold stuck when `onSeek` goes away mid-drag, and ignores every press after it comes back",
+  "A span's `ink` is ignored on its unfilled label wherever the segment is open"
+ ],
+ "b": [
+  "Forced colors leave an indeterminate Switch's track in an author color, not a system one",
+  "SwatchGrid on a ring hangs or throws with `columns={0}`"
+ ]
+}

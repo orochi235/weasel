@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "Inherited-prop rows from a skipped file outside node_modules are named and grouped by the file's basename, not its package",
+  "The capture guard does not see redirects: an allowlisted http origin, or the server's own origin, can redirect the page anywhere",
+  "In middleware mode with no HMR port set, `hmrSocketOf` names the page's port, so the guard closes vite's real HMR socket (24678) and the page reloads mid-capture",
+  "`reset()` does not stop a rebuild already running, which then marks the new root's graph as sent and pushes the old root's graph",
+  "A getter or method in an object literal does not override an earlier property of the same key in `prop`",
+  "`git name-rev` gets every component's commit SHAs as arguments, which can exceed the command-line limit in a large project"
+ ],
+ "b": [
+  "refOf lists every DOM member when a ref holds an intersection with a platform type",
+  "autoTitle keeps a `.` segment for a file outside root that no glob matches"
+ ]
+}

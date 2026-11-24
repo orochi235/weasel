@@ -1,0 +1,90 @@
+{
+ "id": "forge.vite.part2",
+ "commit": "a29c207ab347bcd2f8f1f33d7cb5d12ba4dedfda",
+ "date": "2026-11-24",
+ "files": [
+  "packages/forge/src/vite/issues/endpoint.ts",
+  "packages/forge/src/vite/moduleInfo.ts",
+  "packages/forge/src/vite/nativeExports.ts",
+  "packages/forge/src/vite/ownEntries.ts",
+  "packages/forge/src/vite/ownKeys.ts",
+  "packages/forge/src/vite/plugin.ts",
+  "packages/forge/src/vite/posixPath.ts",
+  "packages/forge/src/vite/propControls.ts",
+  "packages/forge/src/vite/propTypes.ts",
+  "packages/forge/src/vite/servePages.ts",
+  "packages/forge/src/vite/shellTitle.ts",
+  "packages/forge/src/vite/storyGlob.ts",
+  "packages/forge/src/vite/storyIndex.ts",
+  "packages/forge/src/vite/storybookShims.ts",
+  "packages/forge/src/vite/titleReport.ts",
+  "packages/forge/src/vite/trace.ts",
+  "packages/forge/src/vite/typeDefs.ts",
+  "packages/forge/src/vite/typedoc/index.ts",
+  "packages/forge/src/vite/typedoc/json.ts",
+  "packages/forge/src/vite/typedoc/print.ts",
+  "packages/forge/src/vite/virtualModules.ts",
+  "packages/forge/src/vite/warnOnce.ts",
+  "packages/forge/src/vite/watchProbe.ts",
+  "packages/forge/src/vite/watchRecovery.ts",
+  "packages/forge/src/vite/watchSettle.ts",
+  "packages/forge/src/vite/wrappers.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "newCode": {
+  "since": 81,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 81,
+  "chapman": 7,
+  "unfound": 2
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 6171,
+   "total": 6171
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1131748,
+  "costUsd": 3.43
+ },
+ "fixCommits": [
+  "bc5204f7403d051477e239b5085968397d87fcfe",
+  "966f1fc773504c3f541b4f80cde11c57c0b86892",
+  "c07f8296bc8d8fc9e9ef7f6015672f1e9346993b",
+  "df6133e151aa341211569c6608b2375d39279f32",
+  "d2e9ed11a3247eb4bcb22f0c4fec6af70ae1f36e"
+ ],
+ "conflictRepaired": true
+}

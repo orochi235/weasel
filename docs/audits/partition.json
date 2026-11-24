@@ -3442,17 +3442,18 @@
    "packages/forge/src/vite/indexFile.ts",
    "packages/forge/src/vite/indexStory.ts",
    "packages/forge/src/vite/isolateReport.ts",
-   "packages/forge/src/vite/issues/answer.ts"
+   "packages/forge/src/vite/issues/answer.ts",
+   "packages/forge/src/vite/issues/endpoint.ts"
   ]
  },
  {
   "id": "forge.vite.part2",
   "files": [
-   "packages/forge/src/vite/issues/endpoint.ts",
    "packages/forge/src/vite/moduleInfo.ts",
    "packages/forge/src/vite/nativeExports.ts",
    "packages/forge/src/vite/ownEntries.ts",
    "packages/forge/src/vite/ownKeys.ts",
+   "packages/forge/src/vite/packageName.ts",
    "packages/forge/src/vite/plugin.ts",
    "packages/forge/src/vite/posixPath.ts",
    "packages/forge/src/vite/propControls.ts",

@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "scoreRoll draws an all-silent bar at full opacity, a silent note among loud ones at the floor"
+ ],
+ "b": [
+  "visualOrder swaps adjacent same-direction pieces instead of treating them as one run",
+  "Trial clock readout shows 0.00s until the clock next moves"
+ ]
+}

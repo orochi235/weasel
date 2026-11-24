@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "A text command refilled in place under a retained group keeps compositing its old pixels",
+  "A paint kind declaring a program id that `registerProgram` already holds silently replaces it, and disposing the kind deletes it outright"
+ ],
+ "b": [
+  "A paint kind's programs silently replace a same-id program registered through `registerProgram`",
+  "A `chunks` tile with a chunk wide enough to cover it drops its `bg`"
+ ]
+}

@@ -1,0 +1,25 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   1
+  ]
+ ],
+ "a": [
+  "The stylesheet adds a shape's insets to the `padding` prop, where the prop's doc, `ownPadding` and docs/unruled.md (2026-11-20) say the prop replaces them",
+  "On a fitted base (Quatrefoil, Puzzle, OctantSpline, OctantBSpline) with a `padding` prop, the inset fit can flip between two values forever",
+  "A `padding` of one `var()` (or a non-shorthand) skips the insets entirely, yet `ownPadding` still subtracts the inset, so the fit under-reads the badge's padding",
+  "A removable button-label's keyboard activation bypasses `labelProps.onClick` and its `preventDefault` veto"
+ ],
+ "b": [
+  "The padding prop both adds to and replaces the shape's insets: CSS adds them, `ownPadding` and the prop's doc assume replacement, so a fitted base double-counts the inset",
+  "Keyboard activation of a split label skips `labelProps.onClick`, which a mouse click runs and can veto",
+  "A lone-`var()` padding (prop or `style.padding`) silently drops any per-side padding given alongside it",
+  "An out-of-registry `base` prop discards the shape's own composition and draws nothing",
+  "Catalog lookups throw on a name outside the registry, where every other lookup in the area tolerates one"
+ ]
+}

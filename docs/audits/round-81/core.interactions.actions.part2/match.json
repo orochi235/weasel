@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "resolvePreviews returns a previewed node twice when a carrying ancestor above its unpreviewed parent is also previewed",
+  "withPath's per-node cache ignores the node's frame, returning a stale local pose after the parent moves",
+  "A line insert preview with only one of `a`/`b` in extras keeps that end in the plane's world"
+ ],
+ "b": [
+  "useActionSet keys registration on action ids only, so a rebuilt action with the same id stays the stale one",
+  "resolvePreviews returns a previewed node twice when a carrying ancestor above its unpreviewed parent is also previewed",
+  "resolveSpatialReference accepts NaN / Infinity coordinates as a valid rect"
+ ]
+}

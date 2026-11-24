@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Answer book evicts the answers of configs open trials still hold",
+  "Workshop's first render gives stories and the lab theme the declarations' defaults, with `App` unresolved",
+  "A story named \"Index\" loses its own breadcrumb step",
+  "Dossier redefines the `$globals` key instead of using GLOBALS_KEY",
+  "Host globals are not reapplied when `setup` changes"
+ ],
+ "b": [
+  "The answer book's 50-config eviction drops answers for configs an open trial still holds"
+ ]
+}

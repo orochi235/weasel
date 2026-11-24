@@ -1,0 +1,98 @@
+{
+ "id": "forge.shell.part1",
+ "commit": "a29c207ab347bcd2f8f1f33d7cb5d12ba4dedfda",
+ "date": "2026-11-24",
+ "files": [
+  "packages/forge/src/shell/Crumbs.css",
+  "packages/forge/src/shell/Crumbs.tsx",
+  "packages/forge/src/shell/FrameView.tsx",
+  "packages/forge/src/shell/GlobalsToolbar.tsx",
+  "packages/forge/src/shell/IndexTrial.tsx",
+  "packages/forge/src/shell/RouteKnobs.tsx",
+  "packages/forge/src/shell/StoryBody.tsx",
+  "packages/forge/src/shell/StoryGlobalsContext.ts",
+  "packages/forge/src/shell/StoryScroller.tsx",
+  "packages/forge/src/shell/StoryTrial.tsx",
+  "packages/forge/src/shell/TrialHost.tsx",
+  "packages/forge/src/shell/Workshop.tsx",
+  "packages/forge/src/shell/a11y/A11yPanel.css",
+  "packages/forge/src/shell/a11y/A11yPanel.tsx",
+  "packages/forge/src/shell/a11y/reasons.ts",
+  "packages/forge/src/shell/answers.ts",
+  "packages/forge/src/shell/breadcrumb.ts",
+  "packages/forge/src/shell/checkShellConfig.ts",
+  "packages/forge/src/shell/dependencies.ts",
+  "packages/forge/src/shell/documentInstrument.tsx",
+  "packages/forge/src/shell/followEdits.ts",
+  "packages/forge/src/shell/frameActions.ts",
+  "packages/forge/src/shell/frameLink.ts",
+  "packages/forge/src/shell/framePool.ts",
+  "packages/forge/src/shell/globals.ts",
+  "packages/forge/src/shell/globalsMenu.tsx",
+  "packages/forge/src/shell/hostConditions.ts",
+  "packages/forge/src/shell/inViewMargin.ts",
+  "packages/forge/src/shell/index.ts",
+  "packages/forge/src/shell/info/StoryDossier.tsx",
+  "packages/forge/src/shell/info/StoryInfoDialog.tsx",
+  "packages/forge/src/shell/info/dossier.ts",
+  "packages/forge/src/shell/info/infoItem.ts",
+  "packages/forge/src/shell/instrumentCache.ts",
+  "packages/forge/src/shell/issues/IssuesPanel.tsx"
+ ],
+ "a": 5,
+ "b": 1,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 5,
+ "unfound": 0,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 81,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 81,
+  "chapman": 5,
+  "unfound": 0
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 21,
+  "testFiles": {
+   "failed": 0,
+   "passed": 260,
+   "total": 260
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1427428,
+  "costUsd": 4.14
+ },
+ "fixCommits": [
+  "5be901f320618c49b7c69b61a1f0eda9774a37de",
+  "789961186de0db5aec2ec4a8101efa58c34450bf",
+  "b1b99e8d2b18aaffb5a0ec3f5b1aab7c8305d440",
+  "18bf01c1cfce422ac6cf20c4a9b09272d7fd724c",
+  "633b2f50be85fd1adbf4f189fe9a5f0b98fe66b4"
+ ]
+}

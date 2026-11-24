@@ -1,0 +1,99 @@
+{
+ "id": "renderer.part2",
+ "commit": "a29c207ab347bcd2f8f1f33d7cb5d12ba4dedfda",
+ "date": "2026-11-24",
+ "files": [
+  "packages/renderer/src/paintKinds.ts",
+  "packages/renderer/src/paintResources.ts",
+  "packages/renderer/src/paintScratch.ts",
+  "packages/renderer/src/paintToLocalUnits.ts",
+  "packages/renderer/src/paintedBounds.ts",
+  "packages/renderer/src/patterns-builtin.ts",
+  "packages/renderer/src/patterns/commandPaint.ts",
+  "packages/renderer/src/patterns/imagePatternId.ts",
+  "packages/renderer/src/patterns/index.ts",
+  "packages/renderer/src/patterns/patterns-builtin.ts",
+  "packages/renderer/src/patterns/rasterizeTile.ts",
+  "packages/renderer/src/patterns/resolveImage.ts",
+  "packages/renderer/src/patterns/resolveSpec.ts",
+  "packages/renderer/src/patterns/test-utils/fakeOffscreenCanvas.ts",
+  "packages/renderer/src/patterns/tileGeometry.ts",
+  "packages/renderer/src/pbt.fixture.ts",
+  "packages/renderer/src/readPixels.ts",
+  "packages/renderer/src/rendererParts.ts",
+  "packages/renderer/src/rendererTypes.ts",
+  "packages/renderer/src/retain/RetainedSurfaces.ts",
+  "packages/renderer/src/retain/TileTextures.ts",
+  "packages/renderer/src/retain/bakeTile.ts",
+  "packages/renderer/src/retain/contentBounds.ts",
+  "packages/renderer/src/retain/movesWithView.ts",
+  "packages/renderer/src/retain/retainedKey.ts",
+  "packages/renderer/src/retain/tileCull.ts",
+  "packages/renderer/src/spriteSheet.ts",
+  "packages/renderer/src/state/GroupState.ts",
+  "packages/renderer/src/state/colorMatrix.ts",
+  "packages/renderer/src/strokeLengths.ts",
+  "packages/renderer/src/targetRect.ts",
+  "packages/renderer/src/test-seams.ts",
+  "packages/renderer/src/textBounds.ts",
+  "packages/renderer/src/textCommand.ts",
+  "packages/renderer/src/textLayout.ts",
+  "packages/renderer/src/textures/registerTexture.ts",
+  "packages/renderer/src/warmPrograms.ts",
+  "packages/renderer/src/warnOnce.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 38,
+  "B": 38
+ },
+ "newCode": {
+  "since": 81,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 81,
+  "chapman": 3.5,
+  "unfound": 0.5
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3144,
+   "total": 3144
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1561748,
+  "costUsd": 4.7
+ },
+ "fixCommits": [
+  "3fb8e95af80f2796635648b80186291e3fdeeec8",
+  "21c64df21d914ce37208c878cacf58904e0b3ae9",
+  "ab0285806dda233d1455410793387afb37ff9c12"
+ ]
+}

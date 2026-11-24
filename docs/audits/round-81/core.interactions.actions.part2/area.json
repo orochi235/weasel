@@ -1,0 +1,91 @@
+{
+ "id": "core.interactions.actions.part2",
+ "commit": "a29c207ab347bcd2f8f1f33d7cb5d12ba4dedfda",
+ "date": "2026-11-24",
+ "files": [
+  "packages/core/src/interactions/actions/moveOptions.ts",
+  "packages/core/src/interactions/actions/notices.ts",
+  "packages/core/src/interactions/actions/operands.ts",
+  "packages/core/src/interactions/actions/pathCommands/pathNodes.ts",
+  "packages/core/src/interactions/actions/pathGestureTags.ts",
+  "packages/core/src/interactions/actions/pbt.fixture.ts",
+  "packages/core/src/interactions/actions/pbtScene.fixture.ts",
+  "packages/core/src/interactions/actions/planeInput.ts",
+  "packages/core/src/interactions/actions/pointerState.ts",
+  "packages/core/src/interactions/actions/poseDescriptorDep.ts",
+  "packages/core/src/interactions/actions/poseFrame.ts",
+  "packages/core/src/interactions/actions/regionSelectDeps.ts",
+  "packages/core/src/interactions/actions/resizeOptions.ts",
+  "packages/core/src/interactions/actions/resolveOverlays.ts",
+  "packages/core/src/interactions/actions/resolvePreviews.ts",
+  "packages/core/src/interactions/actions/rotateOptions.ts",
+  "packages/core/src/interactions/actions/runLifecycle.ts",
+  "packages/core/src/interactions/actions/selectionSubtree.ts",
+  "packages/core/src/interactions/actions/settleWithinRounding.ts",
+  "packages/core/src/interactions/actions/snapDep.ts",
+  "packages/core/src/interactions/actions/spatialReference.ts",
+  "packages/core/src/interactions/actions/testUtils.ts",
+  "packages/core/src/interactions/actions/transform-again/memory.ts",
+  "packages/core/src/interactions/actions/transformFinish.ts",
+  "packages/core/src/interactions/actions/useActionSet.ts",
+  "packages/core/src/interactions/actions/useNotices.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 26,
+  "B": 26
+ },
+ "newCode": {
+  "since": 81,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 81,
+  "chapman": 7,
+  "unfound": 2
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2475,
+   "total": 2475
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 0,
+   "B": 0,
+   "match": 0,
+   "fix": 0
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1239341,
+  "costUsd": 3.57
+ },
+ "fixCommits": [
+  "723caa5b189f8b6bcaa54f6856113d7df88900ac",
+  "3fefd5a013a26c51aa240cbf1e18fe649dcaad75",
+  "e0c9d1d7ba76f35fe6277eaf5034e8aa212b8a76",
+  "9b8a8acbff2c2926804e67f59d66fb1c48de2c2b",
+  "438a8c150b4e4ea8e2b099830832873e3bee0233",
+  "6b1f69e84ccb0bd6be9035ace15f320ee3d14245",
+  "200506202224a4013834213b3eaacb6ef7ac7b7d"
+ ]
+}

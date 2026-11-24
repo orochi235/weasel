@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Story files are keyed by platform paths but looked up by vite's posix ids, so on Windows story updates, prop controls and through-reindexing never match",
+  "A type imported under another name gets its definition filed under the original name",
+  "A conditional type nested in a conditional's check or extends position prints without parentheses"
+ ],
+ "b": [
+  "Story files keyed by native paths are compared with vite's `/`-separated ids, so prop controls, API tables and `forge:story` never fire on Windows",
+  "`fileEventsArrive` arms a bare `setTimeout` with the caller's `waitMs`, so a long or infinite wait reports \"no events\" at once",
+  "The issues endpoint accepts any array of objects as a list of issues, then answers rows with missing fields"
+ ]
+}
