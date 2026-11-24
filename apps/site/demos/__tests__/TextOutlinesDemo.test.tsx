@@ -1,5 +1,6 @@
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { TextOutlinesDemo } from '../TextOutlinesDemo';
 
 afterEach(() => {
   cleanup();
@@ -21,7 +22,6 @@ describe('TextOutlinesDemo', () => {
     const add = vi.fn();
     Object.defineProperty(document, 'fonts', { configurable: true, value: { add } });
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { TextOutlinesDemo } = await import('../TextOutlinesDemo');
 
     render(<TextOutlinesDemo />);
     await waitFor(() => { expect(warn).toHaveBeenCalled(); });
