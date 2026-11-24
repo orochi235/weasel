@@ -67,10 +67,11 @@ describe('versionOf', () => {
 describe('createHistoryReader', () => {
   function repo(head = 'h1') {
     const calls: string[] = [];
-    const state = { head };
+    const state = { head, tags: [] as string[] };
     const git: Git = async (args) => {
       calls.push(args[0]!);
-      if (args[0] === 'rev-parse') return args.includes('HEAD') ? `${state.head}\n` : '/nowhere/repo\npkg/forge/\n';
+      if (args[0] === 'rev-parse' && args.includes('HEAD')) return [state.head, ...(args.includes('--tags') ? state.tags : []), ''].join('\n');
+      if (args[0] === 'rev-parse') return '/nowhere/repo\npkg/forge/\n';
       if (args[0] === 'log') return LOG;
       if (args[0] === 'name-rev') {
         return args
@@ -102,6 +103,15 @@ describe('createHistoryReader', () => {
     state.head = 'h2';
     await reader.read(['../ui/src/Badge.tsx']);
     expect(logs()).toBe(2);
+  });
+
+  it('reads again once a tag is added, as a release tags a commit already read', async () => {
+    const { git, calls, state } = repo();
+    const reader = createHistoryReader('/nowhere/repo/pkg/forge', git);
+    await reader.read(['../ui/src/Badge.tsx']);
+    state.tags.push('t1');
+    await reader.read(['../ui/src/Badge.tsx']);
+    expect(calls.filter((call) => call === 'log')).toHaveLength(2);
   });
 
   it('answers empty where git fails', async () => {

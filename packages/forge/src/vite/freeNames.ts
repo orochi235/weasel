@@ -18,6 +18,10 @@ const isFunction = (n: t.Node): n is t.Function =>
   n.type === 'ClassMethod' ||
   n.type === 'ClassPrivateMethod';
 
+/** A tag JSX compiles to a string, as React's transform decides: lowercase, dashed or namespaced. */
+const isIntrinsic = (name: t.Node): boolean =>
+  name.type === 'JSXNamespacedName' || (name.type === 'JSXIdentifier' && (/^[a-z]/.test(name.name) || name.name.includes('-')));
+
 const plus = (names: Names, more: Iterable<string>): Names => {
   const out = new Set(names);
   for (const name of more) out.add(name);
@@ -85,6 +89,7 @@ export function freeNames(node: t.Node): Set<string> {
       if (n.type === 'JSXMemberExpression' && k === 'property') continue;
       if ((n.type === 'ObjectProperty' || n.type === 'ClassProperty' || n.type === 'ClassAccessorProperty') && k === 'key' && !n.computed) continue;
       if (n.type === 'JSXAttribute' && k === 'name') continue;
+      if ((n.type === 'JSXOpeningElement' || n.type === 'JSXClosingElement') && k === 'name' && isIntrinsic(n.name)) continue;
       walk(child, scope);
     }
   };
@@ -102,9 +107,10 @@ export function freeNames(node: t.Node): Set<string> {
       if (n.type === 'ClassMethod' || n.type === 'ClassPrivateMethod') walk(n.decorators, scope);
       for (const p of n.params) walk('decorators' in p ? p.decorators : undefined, scope);
       const own = n.type === 'FunctionExpression' && n.id ? [n.id.name] : [];
-      const inner = plus(scope, [...own, ...n.params.flatMap((p) => patternNames(p.type === 'TSParameterProperty' ? p.parameter : p)), ...varNames(n.body)]);
-      for (const p of n.params) pattern(p, inner);
-      walk(n.body, inner);
+      // Parameter defaults have a scope of their own, which the body's `var`s do not reach.
+      const params = plus(scope, [...own, ...n.params.flatMap((p) => patternNames(p.type === 'TSParameterProperty' ? p.parameter : p))]);
+      for (const p of n.params) pattern(p, params);
+      walk(n.body, plus(params, varNames(n.body)));
       return;
     }
     switch (n.type) {
@@ -137,6 +143,7 @@ export function freeNames(node: t.Node): Set<string> {
         return walk(n.init, scope);
       case 'LabeledStatement':
         return walk(n.body, scope);
+      case 'JSXNamespacedName':
       case 'BreakStatement':
       case 'ContinueStatement':
       case 'PrivateName':

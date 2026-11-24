@@ -30,20 +30,24 @@ export interface RemoteRepo extends IssueRepo {
   ghRepo: string;
 }
 
-const SCP = /^(?:[^@\s/]+@)?([\w.-]+):(?!\/)([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/;
-const URL_FORM = /^(?:ssh|git|https?):\/\/(?:[^@/\s]+@)?([\w.-]+)(?::\d+)?\/([\w.-]+)\/([\w.-]+?)(?:\.git)?\/?$/;
+const SCP = /^(?:[^@\s/]+@)?(?<host>[\w.-]+):(?!\/)(?<owner>[\w.-]+)\/(?<name>[\w.-]+?)(?:\.git)?\/?$/;
+const URL_FORM =
+  /^(?<scheme>ssh|git|https?):\/\/(?:[^@/\s]+@)?(?<host>[\w.-]+)(?::(?<port>\d+))?\/(?<owner>[\w.-]+)\/(?<name>[\w.-]+?)(?:\.git)?\/?$/;
 
 /**
  * The repository a remote URL names, in either the `git@host:owner/name.git` or the URL form. A host under
  * `github.com` or named for it, such as an SSH alias `work.github.com` or `github.com-work`, is taken as github.com.
+ * An HTTP(S) remote's port is its pages' port too, and kept; an SSH or git port is not the web's, and dropped.
  */
 export function repoOf(remote: string): RemoteRepo | null {
-  const match = SCP.exec(remote.trim()) ?? URL_FORM.exec(remote.trim());
-  if (!match) return null;
-  const [, rawHost = '', owner = '', name = ''] = match;
-  const host = /^(?:[\w-]+\.)*github\.com(?:[-_][\w-]+)?$/.test(rawHost) ? 'github.com' : rawHost;
+  const { host: rawHost = '', owner = '', name = '', scheme = 'https', port } =
+    (SCP.exec(remote.trim()) ?? URL_FORM.exec(remote.trim()))?.groups ?? {};
+  if (!rawHost) return null;
+  const web = scheme === 'http' ? 'http' : 'https';
+  const kept = port !== undefined && /^https?$/.test(scheme) && port !== (web === 'https' ? '443' : '80') ? `:${port}` : '';
+  const host = /^(?:[\w-]+\.)*github\.com(?:[-_][\w-]+)?$/.test(rawHost) ? 'github.com' : `${rawHost}${kept}`;
   const slug = `${owner}/${name}`;
-  return { slug, url: `https://${host}/${slug}`, ghRepo: host === 'github.com' ? slug : `${host}/${slug}` };
+  return { slug, url: `${host === 'github.com' ? 'https' : web}://${host}/${slug}`, ghRepo: host === 'github.com' ? slug : `${host}/${slug}` };
 }
 
 const attempt = async (run: () => Promise<string>): Promise<string | null> => {

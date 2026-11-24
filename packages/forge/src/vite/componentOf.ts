@@ -56,7 +56,13 @@ const resolved = (tsm: typeof ts, checker: ts.TypeChecker, symbol: ts.Symbol): t
  * written, since a typed meta's property is declared by its type, not by the object.
  */
 function assigned(tsm: typeof ts, checker: ts.TypeChecker, meta: ts.Symbol): ts.Symbol | undefined {
-  const declaration = meta.getDeclarations()?.[0];
+  const value = componentIn(tsm, checker, objectOf(tsm, meta), 0);
+  return value && resolved(tsm, checker, value);
+}
+
+/** The object literal `symbol`'s declaration is initialized with, through calls and casts. */
+function objectOf(tsm: typeof ts, symbol: ts.Symbol): ts.ObjectLiteralExpression | undefined {
+  const declaration = symbol.getDeclarations()?.[0];
   let node: ts.Node | undefined =
     declaration && tsm.isVariableDeclaration(declaration)
       ? declaration.initializer
@@ -75,14 +81,38 @@ function assigned(tsm: typeof ts, checker: ts.TypeChecker, meta: ts.Symbol): ts.
       node = node.expression;
     } else node = undefined;
   }
-  const property = [...(node?.properties ?? [])].reverse().find(
-    (p) => p.name && (tsm.isIdentifier(p.name) || tsm.isStringLiteral(p.name)) && p.name.text === 'component',
-  );
-  let value: ts.Symbol | undefined;
-  if (property && tsm.isShorthandPropertyAssignment(property)) value = checker.getShorthandAssignmentValueSymbol(property);
-  else if (property && tsm.isPropertyAssignment(property)) value = checker.getSymbolAtLocation(property.initializer);
-  return value && resolved(tsm, checker, value);
+  return node;
 }
+
+/**
+ * The symbol `object` assigns `component`, as the object evaluates: the last property naming it, or what a spread
+ * after it carries. A spread it cannot read is taken to set nothing, as the story indexer takes it.
+ */
+function componentIn(
+  tsm: typeof ts,
+  checker: ts.TypeChecker,
+  object: ts.ObjectLiteralExpression | undefined,
+  depth: number,
+): ts.Symbol | undefined {
+  if (!object || depth > 16) return undefined;
+  for (const property of [...object.properties].reverse()) {
+    if (tsm.isSpreadAssignment(property)) {
+      const spread = checker.getSymbolAtLocation(property.expression);
+      const found = spread && componentIn(tsm, checker, objectOf(tsm, resolved(tsm, checker, spread)), depth + 1);
+      if (found) return found;
+      continue;
+    }
+    if (keyName(tsm, property.name) !== 'component') continue;
+    if (tsm.isShorthandPropertyAssignment(property)) return checker.getShorthandAssignmentValueSymbol(property);
+    return tsm.isPropertyAssignment(property) ? checker.getSymbolAtLocation(property.initializer) : undefined;
+  }
+  return undefined;
+}
+
+const keyName = (tsm: typeof ts, name: ts.PropertyName | undefined): string | undefined => {
+  const key = name && tsm.isComputedPropertyName(name) ? name.expression : name;
+  return key && (tsm.isIdentifier(key) || tsm.isStringLiteral(key) || tsm.isNoSubstitutionTemplateLiteral(key)) ? key.text : undefined;
+};
 
 function importNamed(tsm: typeof ts, checker: ts.TypeChecker, source: ts.SourceFile, name: string): ts.Symbol | undefined {
   for (const statement of source.statements) {

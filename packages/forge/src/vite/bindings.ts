@@ -81,15 +81,31 @@ export function createBindings(
     return target ? declaring(target, imp.imported, depth, seen) : null;
   };
 
+  /**
+   * `member` of the object `owner` declares, as the top-level binding of that name in `owner`'s file, which is how
+   * `Object.assign(Root, { Panel })` and `Tabs.Panel = Panel` are written; null when the file declares none.
+   */
+  const memberKey = async (owner: Key | null, member: string): Promise<Key | null> => {
+    const file = owner && fileOfKey(owner);
+    const mod = file ? info(file) : null;
+    if (!file || !mod) return null;
+    if (mod.refs.has(member)) return keyOf(file, member);
+    const imp = mod.imports.get(member);
+    return imp ? importKey(file, imp) : null;
+  };
+
   const componentOf = async (entry: IndexEntry): Promise<Key | null> => {
     const mod = info(entry.file);
     if (!mod) return null;
     const byTitle = titleStandIn(entry.title);
     for (const local of [entry.componentName, byTitle]) {
-      // `Tabs.Panel` is the `Panel` export when `Tabs` is a namespace import, else a member of the `Tabs` import.
       const [root, member] = local?.split('.') ?? [];
       const imp = root ? mod.imports.get(root) : undefined;
-      const key = imp ? await importKey(entry.file, member !== undefined && imp.imported === '*' ? { ...imp, imported: member } : imp) : null;
+      if (!imp) continue;
+      const key =
+        member === undefined || imp.imported === '*'
+          ? await importKey(entry.file, member === undefined ? imp : { ...imp, imported: member })
+          : await memberKey(await importKey(entry.file, imp), member);
       if (key) return key;
     }
     return null;

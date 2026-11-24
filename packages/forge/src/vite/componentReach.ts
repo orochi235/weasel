@@ -1,4 +1,4 @@
-import { dirname, relative } from 'node:path';
+import { dirname, isAbsolute, relative, sep } from 'node:path';
 import { type Bindings, fileOfKey, type Key, keyOf } from './bindings.ts';
 import type { ModuleInfo } from './moduleInfo.ts';
 
@@ -65,7 +65,8 @@ export async function componentsReachedFrom(
       if (!imp.spec.startsWith('.')) continue;
       const helper = await bindings.resolveFrom(imp.spec, file);
       if (!helper || visited.has(helper) || componentFiles.has(helper)) continue;
-      if (relative(homeDir, helper).startsWith('..')) continue;
+      const path = relative(homeDir, helper);
+      if (isAbsolute(path) || path === '..' || path.startsWith(`..${sep}`)) continue;
       visited.add(helper);
       await walkFile(helper, null);
     }

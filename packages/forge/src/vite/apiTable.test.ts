@@ -106,6 +106,11 @@ export const Input = (_props: InputProps) => null;
     story('field', `import { Field } from './Chart';\nexport default { component: Field };\n`);
     story('quoted', `import { Chart } from './Chart';\nexport default { 'component': Chart };\n`);
     story('asserted', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nexport default <Meta>{ component: Chart };\n`);
+    story('spread', `import { Chart, Box } from './Chart';\nconst base = { component: Chart };\nexport default { component: Box, ...base };\n`);
+    story(
+      'spreadTyped',
+      `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst base: Meta = { component: Chart };\nconst meta: Meta = { ...base };\nexport default meta;\n`,
+    );
     story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
     writeFileSync(at('layout.ts'), `export type Size = 'sm' | 'lg';\nexport interface LayoutProps { size?: Size }\n`);
@@ -130,7 +135,7 @@ export const Input = (_props: InputProps) => null;
       `import type { Props as TagLook } from './look';\ninterface Props { size?: number }\nexport const Tag = (_props: { look?: TagLook; own?: Props }) => null;\n`,
     );
     story('tag', `import { Tag } from './Tag';\nexport default { component: Tag };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge', 'twin', 'tag'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -239,6 +244,11 @@ export const Input = (_props: InputProps) => null;
   it('reads a component named under a quoted key or through a type assertion', () => {
     expect(api('quoted')?.ref?.type).toBe('ChartHandle');
     expect(api('asserted')?.ref?.type).toBe('ChartHandle');
+  });
+
+  it('reads a component a spread after the property assigns, as the object holds it', () => {
+    expect(api('spread')?.component?.name).toBe('Chart');
+    expect(api('spreadTyped')?.ref?.type).toBe('ChartHandle');
   });
 
   it("reads the title's import, not a wrapper the story file declares itself", () => {

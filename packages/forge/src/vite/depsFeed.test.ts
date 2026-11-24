@@ -41,4 +41,14 @@ describe('createDepsFeed', () => {
     feed.redeps(server);
     expect(builds).toHaveLength(0);
   });
+
+  it('builds deps.js again for the new root when reset lands while it builds', async () => {
+    const feed = createDepsFeed({ root: () => '/repo', index: () => [], logError: (err) => { throw err; } });
+    const served = feed.module(async () => null);
+    feed.reset();
+    builds.shift()!(graph('old.tsx'));
+    await settle();
+    builds.shift()!(graph('new.tsx'));
+    expect(await served).toContain('new.tsx');
+  });
 });

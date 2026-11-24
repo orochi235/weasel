@@ -72,7 +72,7 @@ describe('capture endpoint', () => {
   /** Where vite's client connects under middleware mode with no socket configured. */
   const MIDDLEWARE_HMR = 'ws://127.0.0.1:24678';
 
-  const start = async (base = '/', shell?: string) => {
+  const start = async (base = '/', shell?: string, tls = false) => {
     root = realpathSync(mkdtempSync(join(tmpdir(), 'forge-capture-')));
     writeFileSync(join(root, 'a.stories.tsx'), story('first'));
     if (shell) writeFileSync(join(root, 'forge.shell.tsx'), shell);
@@ -86,7 +86,9 @@ describe('capture endpoint', () => {
       optimizeDeps: { noDiscovery: true },
       logLevel: 'silent',
     });
-    http = createHttpServer(server.middlewares);
+    const middlewares = server.middlewares;
+    // A host app's TLS server, as far as the endpoint can tell: an encrypted socket, with no `server.https` in vite.
+    http = createHttpServer(tls ? (req, res) => (Object.assign(req.socket, { encrypted: true }), middlewares(req, res)) : middlewares);
     await new Promise<void>((done) => http.listen(0, '127.0.0.1', done));
     port = (http.address() as AddressInfo).port;
     url = `http://127.0.0.1:${port}${base}`;
@@ -159,6 +161,15 @@ describe('capture endpoint', () => {
     const status = await rawPost(payload, { 'Content-Type': 'application/json', Host: '203.0.113.5:1234' });
     expect(status).toBe(200);
     expect(browser.capture).toHaveBeenCalledWith(`http://127.0.0.1:${port}/__forge/capture.html`, payload, [], MIDDLEWARE_HMR);
+  });
+
+  it("loads the capture page over TLS when a host app's TLS server mounts vite in middleware mode", async () => {
+    const browser = fakeBrowser();
+    launch.mockResolvedValue(browser);
+    await start('/', undefined, true);
+    const own = `https://127.0.0.1:${port}`;
+    expect(await rawPost(payload, { 'Content-Type': 'application/json', Origin: own })).toBe(200);
+    expect(browser.capture).toHaveBeenCalledWith(`${own}/__forge/capture.html`, payload, [], expect.anything());
   });
 
   it('answers a full queue as busy, with 429, not as captures being unavailable', async () => {
