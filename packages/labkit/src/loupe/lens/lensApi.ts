@@ -220,6 +220,8 @@ export function createLensApi<C>(scene: LensScene<C>, refs: LensApiRefs<C>): Len
     unfollow: release,
     sourceAvailable: (kind: LensSourceKind) =>
       refs.sources.current[kind]?.status() ?? 'not provided',
-    openCompareMenu: (lensId) => refs.compare?.current?.(lensId),
+    ...(refs.compare && {
+      openCompareMenu: (lensId: string) => refs.compare?.current?.(lensId),
+    }),
   };
 }
