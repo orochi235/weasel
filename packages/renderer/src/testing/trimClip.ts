@@ -228,7 +228,7 @@ function pixelAt(px: Uint8Array, at: string): string {
 /** A view that stretches and shears, so a `{ px }` stroke is built in its metric. */
 const STRETCH: Affine = [0.8, 0, 0.25, 0.95, 0, 0];
 
-/** One test per open shape, translucent and opaque, each against every trim, in a stretched view. */
+/** One test per shape, translucent and opaque, each against every trim, in a stretched view. */
 export function metricCases(antialias: boolean): void {
   const [a, b, c, d] = STRETCH;
   const { scale, metric } = strokeMetricOf(a, b, c, d);
