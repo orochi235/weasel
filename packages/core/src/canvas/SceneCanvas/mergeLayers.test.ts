@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { defaultDrawOne } from '../defaultDrawOne';
-import { mergeLayersWithDefaults } from './mergeLayers';
+import { layersOverPresets, mergeLayersWithDefaults } from './mergeLayers';
 
 describe('mergeLayersWithDefaults', () => {
   it('keeps the default painter and culling under a scene field given as undefined', () => {
@@ -14,5 +14,18 @@ describe('mergeLayersWithDefaults', () => {
     const merged = mergeLayersWithDefaults({ selectionOverlay: { handles: undefined } });
     const overlay = merged.selectionOverlay as { handles?: { size: number } };
     expect(overlay.handles?.size).toBeGreaterThan(0);
+  });
+});
+
+describe('layersOverPresets', () => {
+  const grid = { layer: {} };
+
+  it("keeps a preset's layer under a slot given as undefined", () => {
+    expect(layersOverPresets({ grid } as never, { grid: undefined }))
+      .toEqual({ grid });
+  });
+
+  it("drops a preset's layer under a slot given as null", () => {
+    expect(layersOverPresets({ grid } as never, { grid: null })).toEqual({ grid: null });
   });
 });

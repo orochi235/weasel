@@ -6,13 +6,13 @@ import { isCustomEntry, type CustomLayerEntry, type LayersMap } from '../layerSl
 import type { SceneCanvasLayers } from './props';
 
 /** `<SceneCanvas layers>` laid over the enabled presets' layers: a slot the
- *  consumer names, `null` included, is theirs, and the rest are the presets'. */
+ *  consumer names, `null` included, is theirs, and the rest, one given as `undefined` among them, are the presets'. */
 export function layersOverPresets<L extends object>(
   presetLayers: Readonly<Record<string, CustomLayerEntry>>,
   user: L | undefined,
 ): L | undefined {
   if (Object.keys(presetLayers).length === 0) return user;
-  return { ...presetLayers, ...user } as L;
+  return { ...presetLayers, ...givenFields(user ?? {}) } as L;
 }
 
 /** `config` without its keys set to `undefined`: a field given as `undefined` is one left out. */

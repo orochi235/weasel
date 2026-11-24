@@ -1,4 +1,4 @@
-import { getOwn, setOwn } from '@weasel-js/registry';
+import { setOwn } from '@weasel-js/registry';
 
 /** Whether preset `a` refines preset `b`, directly or through presets between them. */
 export type RefinesRelation = (a: string, b: string) => boolean;
@@ -20,28 +20,32 @@ export function refinesRelation(direct: ReadonlyMap<string, ReadonlySet<string>>
 }
 
 /**
- * The values several presets give by key, one per key. Presets giving one key the same value agree; of two giving
- * it different values, the one refining the other wins, and two where neither refines the other throw.
+ * The values several presets give by key, one per key. Presets giving one key the same value agree. Of two giving it
+ * different values, the one refining the other wins, and two where neither refines the other throw, even when a third
+ * preset agreeing with one of them refines the other. `what` names the key in the error: a noun put before it, or
+ * the whole phrase.
  */
 export function mergeByKey<V>(
   given: readonly { preset: string; values: Readonly<Record<string, V>> | undefined }[],
   refines: RefinesRelation,
-  what: string,
+  what: string | ((key: string) => string),
 ): Record<string, V> {
-  const out: Record<string, V> = {};
-  const owner = new Map<string, string>();
+  const givers = new Map<string, { preset: string; value: V }[]>();
   for (const { preset, values } of given) {
     for (const [key, value] of Object.entries(values ?? {})) {
-      const held = owner.get(key);
-      if (held !== undefined && getOwn(out, key) !== value) {
-        if (refines(held, preset)) continue;
-        if (!refines(preset, held)) {
-          throw new Error(`[SceneCanvas] presets "${held}" and "${preset}" both give ${what} "${key}", and neither refines the other. Leave one out, or have one name the other in \`refines\`.`);
+      const prior = givers.get(key) ?? [];
+      for (const g of prior) {
+        if (g.value !== value && !refines(g.preset, preset) && !refines(preset, g.preset)) {
+          throw new Error(`[SceneCanvas] presets "${g.preset}" and "${preset}" both ${typeof what === 'string' ? `give ${what} "${key}"` : what(key)}, and neither refines the other. Leave one out, or have one name the other in \`refines\`.`);
         }
       }
-      owner.set(key, preset);
-      setOwn(out, key, value);
+      givers.set(key, [...prior, { preset, value }]);
     }
+  }
+  const out: Record<string, V> = {};
+  for (const [key, all] of givers) {
+    const top = all.find((g) => !all.some((o) => o.value !== g.value && refines(o.preset, g.preset)))!;
+    setOwn(out, key, top.value);
   }
   return out;
 }

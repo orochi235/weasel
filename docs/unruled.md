@@ -4132,3 +4132,10 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): an `indeterminate` `Switch` gives its input role `checkbox` with `aria-checked="mixed"`,
   since ARIA has `switch` treat mixed as off. Keeping role `switch` and saying "mixed" in a description was the
   alternative.
+
+## Audit round eighty-two (2026-11-24): SceneCanvas, part one
+
+- 2026-11-24 (the fixer's call): two presets giving one layer slot, tool, chrome rule, `selection` or `selectionChrome`
+  different values throw whenever neither refines the other, even when a third preset agreeing with one of them
+  refines the other; before, whether they threw hung on preset order and on which of the two was weighed. Letting the
+  value the refining preset backs stand, unreported, was the alternative.
