@@ -4132,3 +4132,9 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): an `indeterminate` `Switch` gives its input role `checkbox` with `aria-checked="mixed"`,
   since ARIA has `switch` treat mixed as off. Keeping role `switch` and saying "mixed" in a description was the
   alternative.
+
+## Audit round eighty-two (2026-11-24): labkit's lenses
+
+- 2026-11-24 (the fixer's call): a lens comparing in Split shows one pair at its first DPR, as Difference does, so both
+  sides of the seam are at the same DPR; its other DPRs show again in Swap or with no comparison. A seam inside each
+  DPR's cell, with a seam line and grab strip per cell, was the alternative.
