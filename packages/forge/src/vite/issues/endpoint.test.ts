@@ -40,6 +40,17 @@ async function get(path: string, gh: Gh): Promise<{ status: number; body: Issues
 const answering = (result: GhResult) => vi.fn<Gh>(async () => result);
 
 describe('repoOf', () => {
+  it("keeps a web remote's port in its host, and drops an SSH remote's", () => {
+    expect(repoOf('https://ghe.example.com:8443/org/app.git')).toEqual({
+      slug: 'org/app',
+      url: 'https://ghe.example.com:8443/org/app',
+      ghRepo: 'ghe.example.com:8443/org/app',
+    });
+    expect(repoOf('https://ghe.example.com:443/org/app')?.ghRepo).toBe('ghe.example.com/org/app');
+    expect(repoOf('http://ghe.example.com:8080/org/app')?.url).toBe('http://ghe.example.com:8080/org/app');
+    expect(repoOf('ssh://git@ghe.example.com:2222/org/app.git')?.ghRepo).toBe('ghe.example.com/org/app');
+  });
+
   it('reads owner and name from the scp form, a URL, and an SSH alias under github.com', () => {
     expect(repoOf('git@github.com:acme/widgets.git')).toEqual({
       slug: 'acme/widgets',
