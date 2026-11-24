@@ -132,8 +132,8 @@ export interface PaintDrawKind {
   toBoundsUnits?(fill: Paint, box: Rect): Paint;
   /**
    * Shader programs `bind` names, keyed by program id; registering the kind
-   * registers them. A kind of another id declaring one of them with other
-   * source throws `ExtensionConflictError`. Declaring them here rather than
+   * registers them. One already holding other source, from a kind of another
+   * id or from `registerProgram`, throws `ExtensionConflictError`. Declaring them here rather than
    * calling `registerProgram` at import keeps a kind loaded by
    * {@link registerPaintDrawKindLoader} free of the shader registry.
    *
@@ -156,8 +156,9 @@ export const paintDrawKindRegistry: Reflection<PaintDrawKind> = KINDS.reflection
 /** The release of each program a registered kind holds, by kind and then program id. */
 const PROGRAMS_HELD = new Map<PaintDrawKind, Map<string, () => void>>();
 
-/** Register the programs `entry` declares in place of whatever those ids hold: the kind owns them.
- *  Throws `ExtensionConflictError` for one a kind of another id declares with other source. */
+/** Register the programs `entry` declares in place of whatever another kind's registration of those ids holds:
+ *  the kind owns them. Throws `ExtensionConflictError` for one a kind of another id declares with other source,
+ *  or one registered outside any kind (`registerProgram`) with other source. */
 function holdPrograms(entry: PaintDrawKind): void {
   const declaredPrograms = Object.entries(entry.programs ?? {});
   // Every source is checked before any is registered, so a throw leaves no program behind.
@@ -171,6 +172,10 @@ function holdPrograms(entry: PaintDrawKind): void {
       const theirs = held.id === entry.id || !held.programs ? undefined : getOwn(held.programs, id);
       if (theirs && !sameProgramSource(theirs, declared)) throw new ExtensionConflictError('shader program', id);
     }
+    const have = programSourceRegistry.get(id);
+    if (have && !sameProgramSource(have, paintProgramSource(declared)) && !heldByKind(id, have)) {
+      throw new ExtensionConflictError('shader program', id);
+    }
   }
   const releases = PROGRAMS_HELD.get(entry) ?? new Map<string, () => void>();
   for (const [id, declared] of declaredPrograms) {
@@ -179,6 +184,15 @@ function holdPrograms(entry: PaintDrawKind): void {
     releases.set(id, release);
   }
   if (releases.size > 0) PROGRAMS_HELD.set(entry, releases);
+}
+
+/** Whether some registered kind declares `source` under `id`. */
+function heldByKind(id: string, source: ProgramSource): boolean {
+  for (const held of PROGRAMS_HELD.keys()) {
+    const theirs = held.programs ? getOwn(held.programs, id) : undefined;
+    if (theirs && sameProgramSource(paintProgramSource(theirs), source)) return true;
+  }
+  return false;
 }
 
 function releasePrograms(entry: PaintDrawKind): void {

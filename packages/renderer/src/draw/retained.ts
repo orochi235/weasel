@@ -6,6 +6,7 @@ import type { RetainedClip, RetainedKey } from '../retain/retainedKey';
 import { boxWithin, contentBox } from '../retain/contentBounds';
 import { boxTree, cullToTile } from '../retain/tileCull';
 import { movesWithView } from '../retain/movesWithView';
+import { latestTextRefillIn } from '../textBounds';
 import type { RetainedDraw, RetainedPixels } from '../retain/RetainedSurfaces';
 import type { DrawContext } from './drawContext';
 import { compositeOver, insideBuffer, windowProjection } from './effects';
@@ -65,6 +66,7 @@ export function drawRetainedGroup(
   if (cmd.clip) clips.push({ path: cmd.clip, transform: ctx.state.transform });
   const key: RetainedKey = {
     children: cmd.children,
+    textRefill: latestTextRefillIn(cmd.children),
     transform: ctx.state.transform,
     alpha: ctx.state.alpha,
     colorMatrix: ctx.state.colorMatrix,

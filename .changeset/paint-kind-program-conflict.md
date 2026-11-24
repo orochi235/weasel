@@ -2,6 +2,8 @@
 '@weasel-js/renderer': patch
 ---
 
-A paint kind declaring a shader program another kind declares with different source throws `ExtensionConflictError`.
+A paint kind declaring a program that `registerProgram` holds with other source throws `ExtensionConflictError`.
 
-<!-- entry: fix behavior -->
+It no longer replaces that program, or deletes it when the kind is disposed.
+
+<!-- entry: fix -->

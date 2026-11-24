@@ -1,5 +1,5 @@
 import { mat3, type GlMat3 } from '@weasel-js/geom';
-import type { TextDrawCommand, TextLayerDrawCommand } from './DrawCommand';
+import type { DrawCommand, TextDrawCommand, TextLayerDrawCommand } from './DrawCommand';
 import { screenBox, strokeReachAt, type ScreenBox } from './paintedBounds';
 import { laidOutText } from './textLayout';
 import { glyphTurn, textEngineGeneration } from '@weasel-js/text';
@@ -63,6 +63,37 @@ const refilledAt = new WeakMap<TextDrawCommand, number>();
 /** Record that `cmd` was rewritten in place, so a layer holding it is measured again. */
 export function noteTextRefill(cmd: TextDrawCommand): void {
   refilledAt.set(cmd, ++refills);
+}
+
+/** The text commands each command list draws, nested groups and layers included: read once per list, as a
+ *  retained group reads its children. */
+const textsOf = createPart((cmds: readonly DrawCommand[]): readonly TextDrawCommand[] => {
+  const out: TextDrawCommand[] = [];
+  collectTexts(cmds, out);
+  return out;
+});
+const latestPart = createPart((_cmds: readonly DrawCommand[]) => ({ checked: -1, latest: 0 }));
+
+/** The latest in-place refill (`textCommandFromRunsInto`) of any text `cmds` draw, 0 for none. Two answers that
+ *  differ mean their pixels may too, though the list and every command in it are the same objects. */
+export function latestTextRefillIn(cmds: readonly DrawCommand[]): number {
+  if (refills === 0) return 0;
+  const part = latestPart(cmds);
+  if (part.checked !== refills) {
+    let latest = 0;
+    for (const t of textsOf(cmds)) latest = Math.max(latest, refilledAt.get(t) ?? 0);
+    part.checked = refills;
+    part.latest = latest;
+  }
+  return part.latest;
+}
+
+function collectTexts(cmds: readonly DrawCommand[], out: TextDrawCommand[]): void {
+  for (const cmd of cmds) {
+    if (cmd.kind === 'text') out.push(cmd);
+    else if (cmd.kind === 'text-layer') out.push(...cmd.texts);
+    else if (cmd.kind === 'group') collectTexts(cmd.children, out);
+  }
 }
 
 function layerBoxOf(texts: readonly TextDrawCommand[]): ScreenBox | null {

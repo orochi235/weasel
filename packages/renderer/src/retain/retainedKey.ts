@@ -8,6 +8,8 @@ import type { ShaderUniform } from '../shaders/registerProgram';
  *  compare equal draw the same pixels. */
 export interface RetainedKey {
   children: readonly DrawCommand[];
+  /** The latest in-place refill of a text among `children` (`latestTextRefillIn`); absent counts as 0. */
+  textRefill?: number;
   transform: GlMat3;
   alpha: number;
   colorMatrix: Float32Array;
@@ -51,7 +53,7 @@ function keepUniforms(uniforms: Record<string, ShaderUniform>): Record<string, S
 }
 
 export function sameKey(a: RetainedKey, b: RetainedKey): boolean {
-  return a.children === b.children && a.alpha === b.alpha
+  return a.children === b.children && (a.textRefill ?? 0) === (b.textRefill ?? 0) && a.alpha === b.alpha
     && sameFloats(a.transform, b.transform) && sameFloats(a.colorMatrix, b.colorMatrix)
     && sameMatrix(a.viewMatrix, b.viewMatrix) && sameMatrix(a.screenMatrix, b.screenMatrix)
     && sameClips(a.clips, b.clips) && a.isolate === b.isolate && sameEffects(a.effects, b.effects)
@@ -65,7 +67,8 @@ export function sameKey(a: RetainedKey, b: RetainedKey): boolean {
  * `[0, 0]` for keys that compare equal.
  */
 export function keyShift(a: RetainedKey, b: RetainedKey): readonly [number, number] | null {
-  if (a.children !== b.children || a.alpha !== b.alpha || a.isolate !== b.isolate) return null;
+  if (a.children !== b.children || (a.textRefill ?? 0) !== (b.textRefill ?? 0)) return null;
+  if (a.alpha !== b.alpha || a.isolate !== b.isolate) return null;
   if (!sameFloats(a.colorMatrix, b.colorMatrix) || !sameMatrix(a.screenMatrix, b.screenMatrix)) return null;
   if (!sameEffects(a.effects, b.effects) || a.clips.length !== b.clips.length || !sameRect(a.window, b.window)) return null;
   const shift = translationBetween(a.transform, b.transform);
