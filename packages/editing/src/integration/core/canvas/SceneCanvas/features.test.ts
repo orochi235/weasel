@@ -264,6 +264,37 @@ describe('EnabledPresets.layers', () => {
   });
 });
 
+describe('preset conflicts', () => {
+  const entry = (id: string) => ({ layer: { id, label: id, draw: () => [] } });
+  // `x` refines `w` and agrees with `y`, which is unrelated to `w`: `y` and `w` still conflict.
+  const presets = (field: 'layers' | 'selection', s: unknown, t: unknown) => {
+    const give = (v: unknown) => (field === 'layers' ? { layers: { grid: v } } : { selection: v }) as Partial<FeaturePreset>;
+    return {
+      w: { id: 'w', ...give(t) } as FeaturePreset,
+      x: { id: 'x', refines: ['w'], ...give(s) } as FeaturePreset,
+      y: { id: 'y', ...give(s) } as FeaturePreset,
+    };
+  };
+
+  it('throws for two unrelated presets giving a layer slot different layers, whatever agrees with either', () => {
+    const { w, x, y } = presets('layers', entry('s'), entry('t'));
+    expect(() => resolve([x, y, w])).toThrow(/presets "y" and "w" both give layer slot "grid"/);
+    expect(() => resolve([y, x, w])).toThrow(/presets "y" and "w" both give layer slot "grid"/);
+  });
+
+  it('throws for two unrelated presets building the selection differently, whatever agrees with either', () => {
+    const { w, x, y } = presets('selection', () => null, () => null);
+    expect(() => resolve([x, y, w])).toThrow(/presets "y" and "w" both build the canvas's selection/);
+    expect(() => resolve([y, x, w])).toThrow(/presets "y" and "w" both build the canvas's selection/);
+  });
+
+  it('gives a slot to the refining preset when every preset is related', () => {
+    const { w, x } = presets('layers', entry('s'), entry('t'));
+    const v: FeaturePreset = { id: 'v', refines: ['w'], layers: { grid: x.layers!.grid! } };
+    expect(resolve([x, v, w]).layers.grid!.layer.id).toBe('s');
+  });
+});
+
 describe('presetOwnTools', () => {
   const tool = (id: string) => ({ id, label: id, bindings: [] }) as never;
 

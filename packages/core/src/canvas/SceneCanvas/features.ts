@@ -26,6 +26,7 @@ import type { PathEditExtension } from 'domains/paths/pathEditExtension';
 import type { SnapSource } from 'domains/snap/types';
 import type { SurfaceContribution } from '../surfaceContribution';
 import type { CustomLayerEntry } from '../layerSlots';
+import { getOwn } from '@weasel-js/registry';
 import { mergeByKey, refinesRelation, type RefinesRelation } from './presetMerge';
 import type { NodeRoutingEntry } from 'core/scene/NodeRouting';
 import type { NodePropertiesEntry } from 'core/scene/NodeProperties';
@@ -288,24 +289,12 @@ export function resolveFeatures(
   };
 }
 
-/** The one value `presets` give for `role`, or undefined. Of two presets giving different ones, the one refining the
- *  other wins, as in `mergeByKey`; two where neither refines the other throw. */
+/** The one value `presets` give for `role`, or undefined, settled as {@link mergeByKey} settles a key. */
 function oneOf<K extends 'selection' | 'selectionChrome'>(
   presets: readonly FeaturePreset[], refines: RefinesRelation, role: K, what: string,
 ): FeaturePreset[K] | undefined {
-  let found: { id: string; value: NonNullable<FeaturePreset[K]> } | undefined;
-  for (const p of presets) {
-    const value = p[role];
-    if (!value || found?.value === value) continue;
-    if (found) {
-      if (refines(found.id, p.id)) continue;
-      if (!refines(p.id, found.id)) {
-        throw new Error(`[SceneCanvas] presets "${found.id}" and "${p.id}" both ${what}, and neither refines the other`);
-      }
-    }
-    found = { id: p.id, value };
-  }
-  return found?.value;
+  const given = presets.map((p) => ({ preset: p.id, values: p[role] ? { [role]: p[role] } : undefined }));
+  return getOwn(mergeByKey(given, refines, () => what), role);
 }
 
 const ROTATION_HANDLE: ChromeId = 'selection.rotation-handle';
