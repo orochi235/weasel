@@ -169,13 +169,15 @@ function paintsResolved(runs: ResolvedRun[], box: Rect): ResolvedRun[] {
 function textBoxOf(cmd: TextDrawCommand): Rect {
   let width = cmd.width ?? (Number.isFinite(cmd.maxWidth) ? cmd.maxWidth : undefined);
   let height = cmd.height;
+  let x = cmd.x;
   if (width === undefined || height === undefined) {
     // Uncached: the runs are written to after this, which a cached layout of them must not see.
-    const { bounds } = layoutRuns(cmd.runs, layoutOptsOf(cmd));
+    const { lines, bounds } = layoutRuns(cmd.runs, layoutOptsOf(cmd));
+    if (width === undefined && lines.length > 0) x += Math.min(...lines.map((l) => l.x0));
     width ??= bounds.width;
     height ??= bounds.height;
   }
-  return { x: cmd.x, y: cmd.y, width, height };
+  return { x, y: cmd.y, width, height };
 }
 
 function isBounds(paint: Paint | null | undefined): boolean {
