@@ -6,9 +6,10 @@ import type { CapturePayload } from './payload.ts';
 
 /** Headless Chromium, taking screenshots of capture pages one at a time. */
 export interface CaptureBrowser {
-  /** A PNG of `url` rendering `payload`, loading nothing but `url`'s own origin and `allow`. Rejects with
+  /** A PNG of `url` rendering `payload`, loading nothing but `url`'s own origin and `allow`, and opening no WebSocket
+   *  but to `url`'s origin and `hmr`, where vite's client connects when its HMR is served elsewhere. Rejects with
    *  `QUEUE_FULL` while `QUEUE_CAP` captures are outstanding, and with `CAPTURE_CLOSED` once closed. */
-  capture(url: string, payload: CapturePayload, allow?: readonly string[]): Promise<Buffer>;
+  capture(url: string, payload: CapturePayload, allow?: readonly string[], hmr?: string): Promise<Buffer>;
   close(): Promise<void>;
 }
 
@@ -77,7 +78,7 @@ async function passThrough(route: Route, fetchImpl: typeof fetch): Promise<void>
  * Lets `page` reach nothing but the server `url` came from and the origins in `allow`, whatever a story or an
  * override asks it to load, and open no WebSocket but that server's own.
  */
-async function guard(page: Page, url: string, allow: readonly string[], fetchImpl: typeof fetch): Promise<void> {
+async function guard(page: Page, url: string, allow: readonly string[], hmr: string | undefined, fetchImpl: typeof fetch): Promise<void> {
   const own = new URL(url);
   const secure = own.protocol === 'https:';
   const reach = new Set(allow);
@@ -88,9 +89,9 @@ async function guard(page: Page, url: string, allow: readonly string[], fetchImp
     return secure ? passThrough(route, fetchImpl) : route.continue();
   });
   // Only vite's own client socket connects: closing it would have the client reload the page mid-capture.
-  const ownSocket = `${secure ? 'wss:' : 'ws:'}//${own.host}`;
+  const sockets = new Set([`${secure ? 'wss:' : 'ws:'}//${own.host}`, ...(hmr ? [hmr] : [])]);
   await page.routeWebSocket(
-    (u) => `${u.protocol}//${u.host}` !== ownSocket,
+    (u) => !sockets.has(`${u.protocol}//${u.host}`),
     (ws) => ws.close(),
   );
 }
@@ -184,8 +185,8 @@ export async function launchCaptureBrowser(
     return chromium ?? adopt(playwright.chromium.launch({ headless: true }));
   };
   const contexts = contextCache(browser);
-  const render = async (page: Page, payload: CapturePayload, url: string, allow: readonly string[]): Promise<Buffer> => {
-    await guard(page, url, allow, fetchImpl);
+  const render = async (page: Page, payload: CapturePayload, url: string, allow: readonly string[], hmr: string | undefined): Promise<Buffer> => {
+    await guard(page, url, allow, hmr, fetchImpl);
     await page.setViewportSize({ width: Math.ceil(payload.box.width), height: Math.ceil(payload.box.height) });
     await page.emulateMedia({ colorScheme: payload.colorScheme });
     await page.goto(url);
@@ -195,7 +196,7 @@ export async function launchCaptureBrowser(
   };
   /** One capture, failed and its page closed once `SHOT_DEADLINE_MS` passes, so a render that never settles cannot
    *  hold the queue. */
-  const shoot = async (url: string, payload: CapturePayload, allow: readonly string[]): Promise<Buffer> => {
+  const shoot = async (url: string, payload: CapturePayload, allow: readonly string[], hmr: string | undefined): Promise<Buffer> => {
     let page: Page | null = null;
     let late = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -206,7 +207,7 @@ export async function launchCaptureBrowser(
       const opened = await (await contexts.contextFor(payload.dpr, url.startsWith('https:'))).newPage();
       page = opened;
       if (late) throw new Error('capture timed out');
-      return render(opened, payload, url, allow);
+      return render(opened, payload, url, allow, hmr);
     })();
     try {
       return await Promise.race([work, deadline]);
@@ -222,12 +223,12 @@ export async function launchCaptureBrowser(
   adopt(Promise.resolve(first));
   arm();
   return {
-    capture(url, payload, allow = []) {
+    capture(url, payload, allow = [], hmr) {
       if (closed) return Promise.reject(new Error(CAPTURE_CLOSED));
       if (outstanding >= QUEUE_CAP) return Promise.reject(new Error(QUEUE_FULL));
       outstanding += 1;
       clearTimeout(idle);
-      const run = tail.then(() => shoot(url, payload, allow));
+      const run = tail.then(() => shoot(url, payload, allow, hmr));
       tail = run.catch(() => {});
       return run.finally(() => {
         outstanding -= 1;

@@ -320,6 +320,17 @@ describe('launchCaptureBrowser', () => {
     await browser.close();
   });
 
+  it('lets vite open its HMR socket where the server serves HMR apart from the page', async () => {
+    const fake = fakePlaywright();
+    const browser = await launched(fake.load);
+    await browser.capture('http://127.0.0.1:5173/__forge/capture.html', payload, [], 'ws://127.0.0.1:24678');
+    const [denied] = fake.sockets;
+    expect(denied!(new URL('ws://127.0.0.1:24678/'))).toBe(false);
+    expect(denied!(new URL('ws://127.0.0.1:5173/'))).toBe(false);
+    expect(denied!(new URL('ws://127.0.0.1:8080/'))).toBe(true);
+    await browser.close();
+  });
+
   it('fetches an allowlisted origin from Node under an https dev server, so its certificate is still checked', async () => {
     const fake = fakePlaywright();
     const fetched: string[] = [];

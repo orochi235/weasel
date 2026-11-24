@@ -8,7 +8,7 @@ import { createServer, type Plugin, type ViteDevServer } from 'vite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forge } from '../plugin';
 import type { CaptureBrowser } from './browser';
-import { ownOrigin, urlHost } from './endpoint';
+import { hmrSocketOf, ownOrigin, urlHost } from './endpoint';
 import type { CapturePayload } from './payload';
 
 const launch = vi.hoisted(() => vi.fn());
@@ -156,7 +156,7 @@ describe('capture endpoint', () => {
     await start();
     const status = await rawPost(payload, { 'Content-Type': 'application/json', Host: '203.0.113.5:1234' });
     expect(status).toBe(200);
-    expect(browser.capture).toHaveBeenCalledWith(`http://127.0.0.1:${port}/__forge/capture.html`, payload, []);
+    expect(browser.capture).toHaveBeenCalledWith(`http://127.0.0.1:${port}/__forge/capture.html`, payload, [], `ws://127.0.0.1:${port}`);
   });
 
   it('answers a full queue as busy, with 429, not as captures being unavailable', async () => {
@@ -212,7 +212,7 @@ describe('capture endpoint', () => {
     expect(first.headers.get('content-type')).toBe('image/png');
     const firstBytes = Buffer.from(await first.arrayBuffer());
     expect(firstBytes).toEqual(pngNumbered(1));
-    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload, []);
+    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload, [], `ws://127.0.0.1:${port}`);
 
     const again = await post(payload);
     expect(Buffer.from(await again.arrayBuffer())).toEqual(firstBytes);
@@ -256,7 +256,7 @@ describe('capture endpoint', () => {
     expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture.html`, payload, [
       'https://fonts.googleapis.com',
       'https://fonts.gstatic.com',
-    ]);
+    ], `ws://127.0.0.1:${port}`);
   });
 
   it('captures an isolated story on the frame page', async () => {
@@ -264,7 +264,7 @@ describe('capture endpoint', () => {
     launch.mockResolvedValue(browser);
     await start();
     await post({ ...payload, isolate: true });
-    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture-frame.html`, { ...payload, isolate: true }, []);
+    expect(browser.capture).toHaveBeenCalledWith(`${url}__forge/capture-frame.html`, { ...payload, isolate: true }, [], `ws://127.0.0.1:${port}`);
   });
 
   it('serves the capture pages under base', async () => {
@@ -293,5 +293,20 @@ describe('ownOrigin', () => {
     expect(ownOrigin('http://localhost', reqOn(80), 'http', server)).toBe(true);
     expect(ownOrigin('https://localhost', reqOn(443), 'https', server)).toBe(true);
     expect(ownOrigin('http://localhost', reqOn(8080), 'http', server)).toBe(false);
+  });
+});
+
+describe('hmrSocketOf', () => {
+  const page = new URL('http://127.0.0.1:5173/__forge/capture.html');
+
+  it("names the page's own origin when HMR is not configured apart", () => {
+    expect(hmrSocketOf(page, undefined)).toBe('ws://127.0.0.1:5173');
+    expect(hmrSocketOf(new URL('https://localhost/'), true)).toBe('wss://localhost');
+    expect(hmrSocketOf(page, false)).toBeUndefined();
+  });
+
+  it("follows vite's client to a configured HMR port, client port, host and protocol", () => {
+    expect(hmrSocketOf(page, { port: 24678 })).toBe('ws://127.0.0.1:24678');
+    expect(hmrSocketOf(page, { port: 24678, clientPort: 443, protocol: 'wss', host: 'dev.example' })).toBe('wss://dev.example');
   });
 });
