@@ -123,7 +123,7 @@ describe('resolvePreviews', () => {
 
     it('lists a previewed node once when a previewed frame above its parent carries it', () => {
       const { scene, parent, kid } = makeScene();
-      const grandkid = scene.add({ kind: 'mark', layer: 'main', pose: AT(4), data: { label: 'grandkid' }, parent: kid });
+      const grandkid = scene.add({ kind: 'mark', layer: 'main', pose: AT(4), data: { label: 'grandkid' }, parent: asNodeId(kid) });
       const roots = resolvePreviews([source({ [parent]: AT(50), [grandkid]: AT(6) })], scene);
       expect(roots.map((r) => r.id)).toEqual([parent]);
       expect(flattenPreviews(roots).filter((e) => e.id === grandkid)).toHaveLength(1);

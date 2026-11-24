@@ -12,7 +12,7 @@ import { type DepName, type DepSchema } from '@weasel-js/routing';
 // `import type` — a bare `import './depSchema'` makes esbuild emit a runtime import that it
 // then drops under the package's `sideEffects: false`, warning on every build.
 import type {} from './engineDeps';
-import { compositeKey, getOwn } from '@weasel-js/registry';
+import { compositeKey, createPart, getOwn } from '@weasel-js/registry';
 
 /** The deps every standard action reads. */
 export interface StandardDeps {
@@ -83,13 +83,8 @@ const YIELDS_TO: Readonly<Record<string, string>> = {
   'clipboard.pasteEvent': 'ingest',
 };
 
-const identities = new WeakMap<Action, number>();
 let nextIdentity = 0;
-function identityOf(action: Action): number {
-  let n = identities.get(action);
-  if (n === undefined) identities.set(action, (n = nextIdentity++));
-  return n;
-}
+const identityOf = createPart((_action: Action): number => nextIdentity++);
 
 /**
  * Register `actions` into the nearest `<ActionsProvider>`, in order, leaving
