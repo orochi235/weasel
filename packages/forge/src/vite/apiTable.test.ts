@@ -30,11 +30,14 @@ export function memo<C>(component: C): C { return component; }
     mkdirSync(at('node_modules/@types/react'), { recursive: true });
     writeFileSync(at('node_modules/@types/react/dom.d.ts'), `export interface DomProps { hidden?: boolean; title?: string }\n`);
     writeFileSync(at('node_modules/@types/react/anon.d.ts'), `export type Anon = { lang?: string } & { dir?: string };\n`);
+    mkdirSync(at('node_modules/@types/react-dom'), { recursive: true });
+    writeFileSync(at('node_modules/@types/react-dom/index.d.ts'), `export interface DomProps { inert?: boolean }\n`);
     writeFileSync(
       at('Chart.ts'),
       `import { forwardRef, memo } from './react';
 import type { DomProps } from './node_modules/@types/react/dom';
 import type { Anon } from './node_modules/@types/react/anon';
+import type { DomProps as OtherDom } from './node_modules/@types/react-dom/index';
 export interface Point { x: number; y: number }
 export interface ChartHandle {
   /** Maps a plot point to the model. */
@@ -65,6 +68,7 @@ export const Wrapped = (_props: DomProps & { own?: boolean }) => null;
 export interface ListProps<T> { items: T[] }
 export const List = <T,>(_props: ListProps<T>) => null;
 export const Bare = () => null;
+export const Clash = (_props: DomProps & OtherDom) => null;
 export const Plain = (_props: Anon & { own?: boolean }) => null;
 interface Field<T, C = T> { value?: T; onChange?: (value: C) => void }
 export interface InputProps extends Field<string> {
@@ -96,8 +100,9 @@ export const Input = (_props: InputProps) => null;
     story('typedTitle', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst meta: Meta = { title: 'ui/Chart' };\nexport default meta;\n`);
     story('input', `import { Input } from './Chart';\nexport default { component: Input };\n`);
     story('plain', `import { Plain } from './Chart';\nexport default { component: Plain };\n`);
+    story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'none'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'clash', 'none'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -204,6 +209,13 @@ export const Input = (_props: InputProps) => null;
 
   it('prints a method-shorthand prop as a function, not its return type', () => {
     expect(prop(api('input'), 'onPick')?.type).toBe('(value: string) => void');
+  });
+
+  it('counts apart inherited props whose types share a name in two packages, naming each package', () => {
+    expect(api('clash')?.inherited).toEqual([
+      { from: 'DomProps (@types/react)', count: 2 },
+      { from: 'DomProps (@types/react-dom)', count: 1 },
+    ]);
   });
 
   it('names the package an unnamed type of inherited props comes from', () => {
