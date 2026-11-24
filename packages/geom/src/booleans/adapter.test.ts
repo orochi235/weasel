@@ -5,6 +5,17 @@ import type { RectPath, PolygonPath } from '../path';
 import { pathContainsPoint } from '../pathHitTest';
 
 describe('pathToMultiPolygon', () => {
+  it('keeps a small hole in a path whose origin lies far from 0', () => {
+    const mp = pathToMultiPolygon({
+      kind: 'polygon',
+      fillRule: 'nonzero',
+      origin: { x: 1e9, y: 1e9 },
+      commands: new Uint8Array([PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z, PATH_M, PATH_L, PATH_L, PATH_L, PATH_Z]),
+      coords: new Float32Array([0, 0, 10, 0, 10, 10, 0, 10, 3, 3, 3, 7, 7, 7, 7, 3]),
+    });
+    expect(mp.map((polygon) => polygon.length)).toEqual([2]);
+  });
+
   it('emits a single 4-corner ring for a RectPath', () => {
     const rect: RectPath = { kind: 'rect', x: 0, y: 0, width: 10, height: 20 };
     const mp = pathToMultiPolygon(rect);
