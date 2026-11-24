@@ -78,10 +78,11 @@ export function installFakeOffscreenCanvas(): FakeOffscreenState {
 /** What each install displaced, latest last. */
 const displaced: { had: boolean; value: unknown }[] = [];
 
-/** Put back the `OffscreenCanvas` the latest install displaced, a real one included. */
+/** Put back the `OffscreenCanvas` the latest install displaced, a real one included. Nothing with no install left. */
 export function uninstallFakeOffscreenCanvas(): void {
   const g = globalThis as unknown as { OffscreenCanvas?: unknown };
   const before = displaced.pop();
-  if (before?.had) g.OffscreenCanvas = before.value;
+  if (!before) return;
+  if (before.had) g.OffscreenCanvas = before.value;
   else delete g.OffscreenCanvas;
 }
