@@ -39,19 +39,21 @@ interface Room {
 }
 
 /** Everything a fit reads from the page, read in one go so a pass over many
- *  keys lays the page out once. */
-function readRoom(kbd: HTMLElement): Room | null {
+ *  keys lays the page out once. Null for a key with no room, which a bank leaves out of its shared scale. */
+export function readRoom(kbd: HTMLElement): Room | null {
   const cs = getComputedStyle(kbd);
   const applied = cssPx(cs.getPropertyValue('--key-legend-scale')) || 1;
   const size = cssPx(cs.fontSize) / applied;
-  if (!size) return null;
+  const width = kbd.clientWidth - cssPx(cs.paddingLeft) - cssPx(cs.paddingRight);
+  const height = kbd.clientHeight - cssPx(cs.paddingTop) - cssPx(cs.paddingBottom) - ROOM_H_SLACK;
+  if (!size || width <= 0 || height <= 0) return null;
   return {
     font: `${cs.fontStyle} ${cs.fontWeight} ${size}px ${cs.fontFamily}`,
     letterSpacing: cs.letterSpacing,
     size,
     lineHeight: cssPx(cs.getPropertyValue('--key-wrap-line-height')) || 1,
-    width: kbd.clientWidth - cssPx(cs.paddingLeft) - cssPx(cs.paddingRight),
-    height: kbd.clientHeight - cssPx(cs.paddingTop) - cssPx(cs.paddingBottom) - ROOM_H_SLACK,
+    width,
+    height,
   };
 }
 
