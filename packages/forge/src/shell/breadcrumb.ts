@@ -1,3 +1,6 @@
+import { isIndexId } from '../story/indexPages';
+import type { IndexEntry } from '../story/types';
+
 /** One step of a story's place: its label, and the tree folder it names — null for the story itself. */
 export interface Crumb {
   readonly label: string;
@@ -13,18 +16,22 @@ export function restatesTitle(title: string, name: string): boolean {
 
 /** A story's place step by step: each title segment, then the story's name. An `index` segment adds nothing the
  *  one before it does not already say, so it is left out, and so is a name that restates the last segment, which
- *  then stands for the story. */
-export function crumbs(title: string, name: string): Crumb[] {
+ *  then stands for the story. A component's index page is the place its title names, with no step of its own. */
+export function crumbs(entry: Pick<IndexEntry, 'id' | 'title' | 'name'>): Crumb[] {
+  const { title, name } = entry;
   const segments = title.split('/');
-  const steps: Crumb[] = segments.map((label, i) => ({ label, path: segments.slice(0, i + 1).join('/') }));
-  if (restatesTitle(title, name)) steps[steps.length - 1] = { label: segments[segments.length - 1], path: null };
+  const steps: Crumb[] = segments
+    .map((label, i) => ({ label, path: segments.slice(0, i + 1).join('/') }))
+    .filter((step, i) => i === 0 || step.label.toLowerCase() !== 'index');
+  if (isIndexId(entry.id)) return steps;
+  if (restatesTitle(title, name) && steps.at(-1)!.path === title) steps[steps.length - 1] = { label: segments.at(-1)!, path: null };
   else steps.push({ label: name, path: null });
-  return steps.filter((step, i) => i === 0 || step.label.toLowerCase() !== 'index');
+  return steps;
 }
 
 /** A story's place as one line. */
-export function breadcrumb(title: string, name: string): string {
-  return crumbs(title, name)
+export function breadcrumb(entry: Pick<IndexEntry, 'id' | 'title' | 'name'>): string {
+  return crumbs(entry)
     .map((step) => step.label)
     .join(' > ');
 }

@@ -125,7 +125,7 @@ export function FrameView(props: FrameViewProps) {
   const pool = useContext(FramePoolContext);
   const lab = useLabContext();
   const src = `${frameUrl}#${entry.id}`;
-  const title = breadcrumb(entry.title, entry.name);
+  const title = breadcrumb(entry);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const hostRef = useRef<HTMLDivElement>(null);
   const slotRef = useRef<HTMLDivElement>(null);

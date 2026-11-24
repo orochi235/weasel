@@ -45,7 +45,7 @@ function Harness({ storage }: { storage: StorageAdapter }) {
   );
 }
 
-const trialsOf = (e: IndexEntry) => screen.queryAllByRole('region', { name: `Trial ${breadcrumb(e.title, e.name)}` });
+const trialsOf = (e: IndexEntry) => screen.queryAllByRole('region', { name: `Trial ${breadcrumb(e)}` });
 const allTrials = () => screen.queryAllByRole('region', { name: /^Trial / });
 
 /** Mounts the lab and switches the sidebar to the folder tree, which these tests exercise. */
