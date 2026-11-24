@@ -128,4 +128,14 @@ describe('dots wider than half the tile', () => {
     const { shapes } = tileGeometry({ kind: 'chunks', color: 'red', size: 4, chunkSize: 1e6, density: 1e12 });
     expect(shapes).toEqual([{ kind: 'rect', x: 0, y: 0, width: 4, height: 4, color: 'red' }]);
   });
+
+  it('keeps the background under a chunk that covers the tile', () => {
+    const { shapes } = tileGeometry({
+      kind: 'chunks', color: 'rgba(0,0,0,0.5)', bg: '#f00', size: 8, chunkSize: 40, density: 1e6,
+    });
+    expect(shapes).toEqual([
+      { kind: 'rect', x: 0, y: 0, width: 8, height: 8, color: '#f00' },
+      { kind: 'rect', x: 0, y: 0, width: 8, height: 8, color: 'rgba(0,0,0,0.5)' },
+    ]);
+  });
 });

@@ -93,10 +93,11 @@ export function tileGeometry(spec: TilePatternSpec): TileGeometry {
         const w = chunkSize * (0.5 + rand());
         const h = chunkSize * (0.5 + rand());
         const rotation = rand() * Math.PI;
-        // A chunk this wide covers the tile from anywhere in it, in the one color every chunk shares, and
-        // copying it at every period it reaches would only multiply shapes.
+        // A chunk this wide covers the tile from anywhere in it, and copying it at every period it reaches
+        // would only multiply shapes. What it covers stays under it, for a translucent color.
         if (Math.min(w, h) / 2 >= s * Math.SQRT2) {
-          return { size: s, shapes: [{ kind: 'rect', x: 0, y: 0, width: s, height: s, color }] };
+          shapes.push({ kind: 'rect', x: 0, y: 0, width: s, height: s, color });
+          return { size: s, shapes };
         }
         // A chunk crossing an edge is drawn again past the opposite one, so
         // the tile repeats without cutting it off at the seam.
