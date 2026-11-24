@@ -39,3 +39,14 @@ describe('cullToTile', () => {
     expect(right[1]).toBe(isolated);
   });
 });
+
+describe('a group whose composite clears what it leaves empty', () => {
+  it('reaches every tile, or every tile its own clip meets', () => {
+    const clearing: DrawCommand = { kind: 'group', composite: 'destination-in', children: [rect(0, 0)] };
+    const clipped: DrawCommand = {
+      kind: 'group', composite: 'copy', clip: { kind: 'rect', x: 0, y: 0, width: 40, height: 40 }, children: [rect(0, 0)],
+    };
+    const over: DrawCommand = { kind: 'group', composite: 'destination-over', children: [rect(0, 0)] };
+    expect(cullToTile(boxTree([clearing, clipped, over], I, 2), RIGHT)).toEqual([clearing]);
+  });
+});

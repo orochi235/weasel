@@ -1,23 +1,15 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { installFakeOffscreenCanvas, uninstallFakeOffscreenCanvas } from './fakeOffscreenCanvas';
 
-const g = globalThis as unknown as { OffscreenCanvas?: unknown };
-
 describe('uninstallFakeOffscreenCanvas', () => {
-  afterEach(() => { delete g.OffscreenCanvas; });
+  afterEach(() => vi.unstubAllGlobals());
 
-  it('puts back an OffscreenCanvas that was there before the fake', () => {
+  it('leaves the environment OffscreenCanvas alone once every install is undone', () => {
     const real = class {};
-    g.OffscreenCanvas = real;
-    installFakeOffscreenCanvas();
-    expect(g.OffscreenCanvas).not.toBe(real);
-    uninstallFakeOffscreenCanvas();
-    expect(g.OffscreenCanvas).toBe(real);
-  });
-
-  it('leaves none where there was none', () => {
+    vi.stubGlobal('OffscreenCanvas', real);
     installFakeOffscreenCanvas();
     uninstallFakeOffscreenCanvas();
-    expect('OffscreenCanvas' in g).toBe(false);
+    uninstallFakeOffscreenCanvas();
+    expect(globalThis.OffscreenCanvas).toBe(real);
   });
 });

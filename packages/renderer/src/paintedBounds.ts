@@ -6,6 +6,7 @@ import {
   type SpritesDrawCommand,
   type TileDrawCommand,
 } from './DrawCommand';
+import { isOwnComposite, leavesUncovered } from './effects/compositeOp';
 import { effectsReach } from './effects/types';
 import { getProgramSource } from './shaders/registerProgram';
 import { textBox, textLayerBox } from './textBounds';
@@ -30,7 +31,9 @@ export function commandBox(cmd: DrawCommand, m: GlMat3, scale: number): ScreenBo
   switch (cmd.kind) {
     case 'group': {
       const inner = cmd.transform ? mat3.multiply(m, cmd.transform) : m;
-      let box = listBox(cmd.children, inner, scale);
+      let box = cmd.composite !== undefined && isOwnComposite(cmd.composite) && !leavesUncovered(cmd.composite)
+        ? ANYWHERE
+        : listBox(cmd.children, inner, scale);
       if (cmd.effects && cmd.effects.length > 0) box = grown(box, effectsReach(cmd.effects) / scale);
       return cmd.clip ? clipped(box, pathBox(cmd.clip, undefined, inner)) : box;
     }
