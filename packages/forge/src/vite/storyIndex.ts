@@ -1,5 +1,6 @@
 import { globSync, readFileSync, statSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { basename } from 'node:path';
+import { posixResolve } from './posixPath.ts';
 import type { Logger } from 'vite';
 import { byComponent } from '../story/indexPages.ts';
 import type { IndexEntry } from '../story/types.ts';
@@ -50,7 +51,7 @@ export function createStoryIndex(options: StoryIndexOptions): StoryIndex {
   const glob = (): string[] => {
     const files = stories.flatMap((pattern) =>
       globSync(pattern, { cwd: root(), exclude: (name) => basename(String(name)) === 'node_modules' })
-        .map((f) => resolve(root(), f))
+        .map((f) => posixResolve(root(), f))
         // A failed story run leaves `__screenshots__/<file>.stories.tsx/` directories that match the globs.
         .filter((f) => statSync(f, { throwIfNoEntry: false })?.isFile() === true)
         .sort(),
