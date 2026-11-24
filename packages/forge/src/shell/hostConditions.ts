@@ -1,4 +1,3 @@
-import { useLatest } from '@weasel-js/core';
 import { type RefObject, useLayoutEffect, useRef } from 'react';
 import { createOverrides, type Overrides } from '../frame/cssVars';
 import type { FrameSetup } from '../frame/FrameController';
@@ -26,13 +25,14 @@ export function useHostConditions(
   opts: { hostId: string; globals: StoryGlobals; overrides: CssOverrides; setup: FrameSetup },
 ): RefObject<Overrides | null> {
   const { hostId, globals, overrides: persisted, setup } = opts;
-  const latest = useLatest({ setup });
+  const { cssVarsScope } = setup;
   const overridesRef = useRef<Overrides | null>(null);
+  const applied = useRef<Record<string, string>>({});
 
   useLayoutEffect(() => {
     if (!host) return;
     const scope = scopeOf(hostId);
-    const { cssVarsScope } = latest.current.setup;
+    applied.current = {};
     overridesRef.current = createOverrides(
       host.ownerDocument,
       cssVarsScope ? `${scope}, ${scope} :is(${cssVarsScope})` : scope,
@@ -41,20 +41,19 @@ export function useHostConditions(
       overridesRef.current?.dispose();
       overridesRef.current = null;
     };
-  }, [host, hostId, latest]);
+  }, [host, hostId, cssVarsScope]);
 
-  const applied = useRef<Record<string, string>>({});
   useLayoutEffect(() => {
     const overrides = overridesRef.current;
     if (!overrides) return;
     for (const name of Object.keys(applied.current)) if (!Object.hasOwn(persisted, name)) overrides.set(name, null);
     for (const [name, value] of Object.entries(persisted)) overrides.set(name, value);
     applied.current = { ...persisted };
-  }, [host, hostId, persisted]);
+  }, [host, hostId, cssVarsScope, persisted]);
 
   useLayoutEffect(
-    () => (host ? applyGlobalsTo(host, hostId, globals, latest.current.setup) : undefined),
-    [host, hostId, globals, latest],
+    () => (host ? applyGlobalsTo(host, hostId, globals, setup) : undefined),
+    [host, hostId, globals, setup],
   );
 
   return overridesRef;
