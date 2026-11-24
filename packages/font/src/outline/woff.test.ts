@@ -124,6 +124,18 @@ describe('WOFF faces', () => {
     expect(inflated).toBeLessThan(8 << 20);
   });
 
+  it('refuse a table listed twice', async () => {
+    const view = new DataView(woffOf(interBytes()));
+    view.setUint32(44 + 20, view.getUint32(44));
+    await expect(sfntFromWoff(view.buffer as ArrayBuffer)).rejects.toThrow(/a table is listed twice/);
+  });
+
+  it('refuse tables sharing stored bytes', async () => {
+    const view = new DataView(woffOf(interBytes()));
+    for (const field of [4, 8, 12, 16]) view.setUint32(44 + 20 + field, view.getUint32(44 + field));
+    await expect(sfntFromWoff(view.buffer as ArrayBuffer)).rejects.toThrow(/two of its tables overlap/);
+  });
+
   it('refuse a table that does not decompress', async () => {
     const woff = woffOf(interBytes());
     const view = new DataView(woff);

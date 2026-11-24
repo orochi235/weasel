@@ -21,19 +21,24 @@ export async function sfntFromWoff(bytes: ArrayBuffer): Promise<ArrayBuffer> {
   const flavor = view.getUint32(4);
   const numTables = view.getUint16(12);
   if (WOFF_HEADER_BYTES + numTables * WOFF_RECORD_BYTES > bytes.byteLength) throw damaged('its table directory is cut off');
-  const tables: { tag: number; checksum: number; data: Uint8Array }[] = [];
-  for (let i = 0; i < numTables; i++) {
+  const records = Array.from({ length: numTables }, (_, i) => {
     const at = WOFF_HEADER_BYTES + i * WOFF_RECORD_BYTES;
-    const offset = view.getUint32(at + 4);
     const compLength = view.getUint32(at + 8);
     const origLength = view.getUint32(at + 12);
-    // As opentype.js reads it: a table no shorter compressed than whole is stored whole.
-    const stored = compLength < origLength ? compLength : origLength;
-    if (offset + stored > bytes.byteLength) throw damaged('a table runs past the end of the file');
-    const raw = new Uint8Array(bytes, offset, stored);
-    const data = compLength < origLength ? await inflate(raw, origLength) : raw;
-    if (data.byteLength !== origLength) throw wrongLength();
-    tables.push({ tag: view.getUint32(at), checksum: view.getUint32(at + 16), data });
+    return {
+      tag: view.getUint32(at), offset: view.getUint32(at + 4), compLength, origLength, checksum: view.getUint32(at + 16),
+      // As opentype.js reads it: a table no shorter compressed than whole is stored whole.
+      stored: compLength < origLength ? compLength : origLength,
+    };
+  });
+  for (const r of records) if (r.offset + r.stored > bytes.byteLength) throw damaged('a table runs past the end of the file');
+  checkDistinct(records);
+  const tables: { tag: number; checksum: number; data: Uint8Array }[] = [];
+  for (const r of records) {
+    const raw = new Uint8Array(bytes, r.offset, r.stored);
+    const data = r.compLength < r.origLength ? await inflate(raw, r.origLength) : raw;
+    if (data.byteLength !== r.origLength) throw wrongLength();
+    tables.push({ tag: r.tag, checksum: r.checksum, data });
   }
 
   let size = 12 + numTables * 16;
@@ -58,6 +63,19 @@ export async function sfntFromWoff(bytes: ArrayBuffer): Promise<ArrayBuffer> {
     at += (t.data.byteLength + 3) & ~3;
   });
   return out;
+}
+
+/** Refuse a table listed twice or tables sharing stored bytes, so one stored table cannot be inflated more than once. */
+function checkDistinct(records: readonly { tag: number; offset: number; stored: number }[]): void {
+  const tags = new Set<number>();
+  for (const r of records) {
+    if (tags.has(r.tag)) throw damaged('a table is listed twice');
+    tags.add(r.tag);
+  }
+  const placed = records.filter((r) => r.stored > 0).sort((a, b) => a.offset - b.offset);
+  for (let i = 1; i < placed.length; i++) {
+    if (placed[i]!.offset < placed[i - 1]!.offset + placed[i - 1]!.stored) throw damaged('two of its tables overlap');
+  }
 }
 
 /** `data` inflated, read no further than `limit` bytes: a small table can inflate without bound. */
