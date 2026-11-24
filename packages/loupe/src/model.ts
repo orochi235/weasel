@@ -206,7 +206,7 @@ export function createLoupeModel(opts: LoupeModelOptions): LoupeModel {
     },
 
     aimAt(p) {
-      if (aim.mode === 'pinned' || refuses(p)) return;
+      if (refuses(p) || aim.mode === 'pinned') return;
       aim.follow(p);
       aimed();
     },

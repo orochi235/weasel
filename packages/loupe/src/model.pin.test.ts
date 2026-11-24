@@ -96,4 +96,14 @@ describe('loupe model: a pinned aim', () => {
     const { surface } = pannedSurface({ [only === 'worldAt' ? 'pointFor' : 'worldAt']: undefined });
     expect(() => createLoupeModel({ surface })).toThrow(TypeError);
   });
+
+  it('tears down on an aim while pinned once the surface is gone', () => {
+    const onDispose = vi.fn();
+    let gone = false;
+    const { surface } = pannedSurface({ gone: () => gone });
+    const loupe = createLoupeModel({ surface, aimMode: 'pinned', onDispose });
+    gone = true;
+    loupe.aimAt({ x: 5, y: 5 });
+    expect(onDispose).toHaveBeenCalledTimes(1);
+  });
 });
