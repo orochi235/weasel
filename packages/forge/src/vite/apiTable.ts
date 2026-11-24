@@ -1,5 +1,6 @@
 import type ts from 'typescript';
 import type { ApiInherited, ApiMember, ApiProp, ApiRef, ApiTable } from '../story/api.ts';
+import { packageNameOf } from './packageName.ts';
 import { addTypeDef, addTypeDefs, createTypeDefs } from './typeDefs.ts';
 
 /** What reading one story file's component API needs. */
@@ -118,11 +119,12 @@ function writtenType({ tsm, checker, at }: ApiReading, symbol: ts.Symbol): strin
   return checker.typeToString(type, undefined, tsm.TypeFormatFlags.NoTruncation);
 }
 
-/** The package a file is in, `@scope/name` or `name`, else the file's own name. */
+/** The package a file is in, `@scope/name` or `name`: under `node_modules` by its path, elsewhere by its nearest
+ *  manifest, else the file's own name. */
 function packageOf(file: string): string {
   const parts = file.split(/[\\/]/);
   const at = parts.lastIndexOf('node_modules');
-  if (at < 0 || at + 1 >= parts.length) return parts.at(-1) ?? file;
+  if (at < 0 || at + 1 >= parts.length) return packageNameOf(file) ?? parts.at(-1) ?? file;
   const name = parts[at + 1]!;
   return name.startsWith('@') && parts[at + 2] ? `${name}/${parts[at + 2]}` : name;
 }

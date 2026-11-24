@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, posix, resolve } from 'node:path';
+import { posix, resolve } from 'node:path';
+import { packageNameOf } from './packageName.ts';
 import { setOwn } from './ownKeys.ts';
 import type { ComponentHistory } from '../story/types.ts';
 
@@ -69,23 +69,6 @@ export function versionOf(named: string): string | null {
   return /(?:^v?|@)(\d+\.\d+\.\d+[-+.\w]*)$/.exec(tag)?.[1] ?? null;
 }
 
-/** The name of the package `file` belongs to: the nearest `package.json` at or under `top` that has one. */
-function packageOf(file: string, top: string): string | null {
-  for (let dir = dirname(file); dir.startsWith(top); dir = dirname(dir)) {
-    const manifest = join(dir, 'package.json');
-    if (existsSync(manifest)) {
-      try {
-        const name = (JSON.parse(readFileSync(manifest, 'utf8')) as { name?: unknown }).name;
-        if (typeof name === 'string') return name;
-      } catch {
-        // An unreadable manifest names no package; the next one up may.
-      }
-    }
-    if (dir === top) break;
-  }
-  return null;
-}
-
 export interface HistoryReader {
   /** The history of each of `sources`, paths relative to the vite root. A file git has never committed has none. */
   read(sources: readonly string[]): Promise<Record<string, ComponentHistory>>;
@@ -107,7 +90,7 @@ export function createHistoryReader(root: string, git: Git = runGit): HistoryRea
     /** Per package, the files it holds: a release is looked for among that package's tags and the unscoped ones. */
     const byPackage = new Map<string | null, string[]>();
     for (const path of dates.keys()) {
-      const name = packageOf(resolve(top, path), top);
+      const name = packageNameOf(resolve(top, path), top);
       byPackage.set(name, [...(byPackage.get(name) ?? []), path]);
     }
     const history: Record<string, ComponentHistory> = {};

@@ -112,8 +112,18 @@ export const Input = (_props: InputProps) => null;
       `import type { LayoutProps } from './layout';\ninterface Size { w: number; h: number }\nexport interface BadgeProps extends LayoutProps { icon?: Size; tone?: Tone }\ntype Tone = 'calm';\nexport const Badge = (_props: BadgeProps) => null;\n`,
     );
     story('badge', `import { Badge } from './Badge';\nexport default { component: Badge };\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge'].map((n) => at(`${n}.stories.ts`));
-    const made = await createPropReader(root, () => stories);
+    for (const pkg of ['a', 'b']) {
+      mkdirSync(at(`pkgs/${pkg}/src`), { recursive: true });
+      writeFileSync(at(`pkgs/${pkg}/package.json`), JSON.stringify({ name: `@ws/${pkg}` }));
+      writeFileSync(at(`pkgs/${pkg}/src/types.ts`), `export interface ButtonProps { ${pkg}?: boolean }\n`);
+    }
+    writeFileSync(
+      at('Twin.ts'),
+      `import type { ButtonProps as A } from './pkgs/a/src/types';\nimport type { ButtonProps as B } from './pkgs/b/src/types';\nexport const Twin = (_props: A & B) => null;\n`,
+    );
+    story('twin', `import { Twin } from './Twin';\nexport default { component: Twin };\n`);
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge', 'twin'].map((n) => at(`${n}.stories.ts`));
+    const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
   });
@@ -245,6 +255,13 @@ export const Input = (_props: InputProps) => null;
 
   it('names the package an unnamed type of inherited props comes from', () => {
     expect(api('plain')?.inherited).toEqual([{ from: '@types/react', count: 2 }]);
+  });
+
+  it('names a skipped workspace package by its manifest, not by the file the props are declared in', () => {
+    expect(api('twin')?.inherited).toEqual([
+      { from: 'ButtonProps (@ws/a)', count: 1 },
+      { from: 'ButtonProps (@ws/b)', count: 1 },
+    ]);
   });
 
   it('returns null when nothing names a component', () => {
