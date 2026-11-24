@@ -23,4 +23,13 @@ describe('visualOrder', () => {
   it('leaves a left-to-right line as it came', () => {
     expect(gids(visualOrder([[g(1, 0, false), g(2, 1, false)], [g(3, 0, false)]]))).toEqual([1, 2, 3]);
   });
+
+  it('keeps separately shaped left-to-right strings in order inside a right-to-left line', () => {
+    expect(gids(visualOrder([[g(1, 0, true)], [g(2, 0, false)], [g(3, 0, false)]]))).toEqual([2, 3, 1]);
+  });
+
+  it('reverses separately shaped right-to-left strings as one run inside a left-to-right line', () => {
+    const shaped = [[g(1, 0, false)], [g(2, 0, true), g(3, 1, true)], [g(4, 0, true), g(5, 1, true)]];
+    expect(gids(visualOrder(shaped))).toEqual([1, 5, 4, 3, 2]);
+  });
 });

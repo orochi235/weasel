@@ -27,13 +27,20 @@ function reverseClusters(run: readonly ShapedGlyph[]): ShapedGlyph[] {
 /**
  * The glyphs of separately shaped strings, given in logical order, in the order
  * a pen meets them left to right. The line reads right to left when its first
- * glyph does; an embedded run of the other direction keeps its own order.
+ * glyph does; an embedded run of the other direction keeps its own order, even
+ * when it spans several strings.
  */
 export function visualOrder(shaped: readonly (readonly ShapedGlyph[])[]): ShapedGlyph[] {
-  const pieces = shaped.filter((p) => p.length > 0).map((p) => runs(p));
-  const all = pieces.flat();
-  const rtlLine = all.length > 0 && all[0][0].rtl;
-  // Each piece's runs, then the pieces, stand in reading order; a right-to-left line reads them backward.
-  const ordered = rtlLine ? pieces.map((p) => [...p].reverse()).reverse().flat() : all;
-  return ordered.flatMap((run) => (run[0].rtl ? reverseClusters(run) : run));
+  // Each string's own runs, joined across string boundaries by direction; clusters stay per string.
+  const levels: ShapedGlyph[][][] = [];
+  for (const run of shaped.flatMap((p) => runs(p))) {
+    const last = levels.at(-1);
+    if (last && last[0][0].rtl === run[0].rtl) last.push(run);
+    else levels.push([run]);
+  }
+  const rtlLine = levels.length > 0 && levels[0][0][0].rtl;
+  const ordered = rtlLine ? [...levels].reverse() : levels;
+  return ordered.flatMap((level) =>
+    level[0][0].rtl ? [...level].reverse().flatMap(reverseClusters) : level.flat(),
+  );
 }

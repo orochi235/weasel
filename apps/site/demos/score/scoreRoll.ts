@@ -35,7 +35,7 @@ export function scoreRoll(
     });
   }
   for (const note of notes) {
-    const level = loudest > 0 ? (note.gain ?? 1) / loudest : 1;
+    const level = loudest > 0 ? (note.gain ?? 1) / loudest : 0;
     commands.push({
       kind: 'path',
       path: {
