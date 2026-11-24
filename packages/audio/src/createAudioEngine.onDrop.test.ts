@@ -39,6 +39,19 @@ describe('a voice that never played', () => {
     expect(warn).toHaveBeenCalled();
   });
 
+  it('reports `unready` for a sound the engine has freed', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { engine, tick } = engineHarness();
+    await engine.unlock();
+    const sound = await engine.load('/a.wav');
+    engine.free(sound);
+    const cb = callbacks();
+    engine.play(sound, cb);
+    tick();
+    await endOfTask();
+    expect(cb.onDrop.mock.calls).toEqual([['unready']]);
+  });
+
   it('reports `locked` when the context is not running', async () => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
     const { engine } = engineHarness();
@@ -50,6 +63,19 @@ describe('a voice that never played', () => {
     await endOfTask();
     expect(cb.onDrop.mock.calls).toEqual([['locked']]);
     expect(cb.onDone).not.toHaveBeenCalled();
+  });
+
+  it('throws on an unknown bus before the context runs and after dispose, as it does once unlocked', async () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { engine } = engineHarness();
+    const sound = await engine.load('/a.wav');
+    const cb = callbacks();
+    expect(() => engine.play(sound, { ...cb, bus: 'sfxx' })).toThrow(/unknown bus "sfxx"/);
+    expect(() => engine.playNote({ pitch: 220, bus: 'sfxx' })).toThrow(/unknown bus "sfxx"/);
+    engine.dispose();
+    expect(() => engine.play(sound, { ...cb, bus: 'sfxx' })).toThrow(/unknown bus "sfxx"/);
+    await endOfTask();
+    expect(cb.onDrop).not.toHaveBeenCalled();
   });
 
   it('reports `disposed` for a play after dispose, and for one still waiting at dispose', async () => {

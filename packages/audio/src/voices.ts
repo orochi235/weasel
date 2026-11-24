@@ -175,6 +175,13 @@ function voiceHandle(ctx: BaseAudioContext, voice: LiveVoice, ops: VoiceOps): Vo
       // A fade already ends it, and teardown would cut the fade.
       if (voice.releasing || voice.fading) return;
       voice.catchUp?.();
+      // Started ahead of its time by the scheduler's lookahead, but not yet heard: canceled, as before it started.
+      if (voice.source && !voice.canceled && ctx.currentTime * 1000 < voice.when) {
+        voice.source.onended = null;
+        teardown(voice);
+        reportDrop(voice.onDrop, 'stopped');
+        return;
+      }
       if (voice.release && voice.source && !voice.canceled) {
         // Like a fade: `onended` tears the voice down once the release is out.
         voice.releasing = true;
@@ -280,6 +287,8 @@ export function createVoices(deps: VoicesDeps): Voices {
     launch(common, starter) {
       checkVoice(common);
       const id = nextVoiceId++;
+      const busName = common.bus ?? deps.defaultBus;
+      const slots = deps.requireSlots(busName);
 
       if (deps.disposed()) {
         warn.disposed();
@@ -292,8 +301,6 @@ export function createVoices(deps: VoicesDeps): Voices {
         return dropped(id);
       }
 
-      const busName = common.bus ?? deps.defaultBus;
-      const slots = deps.requireSlots(busName);
       const bookedAt = ctx.currentTime * 1000;
       const when = common.when ?? bookedAt;
       const baseGain = common.gain ?? 1;
@@ -304,7 +311,7 @@ export function createVoices(deps: VoicesDeps): Voices {
         id, slots, slot: null, token: 0, key: common.cancelKey, onDrop: common.onDrop,
         source: null, env: null, retune: null, release: null, releasing: false,
         out: null, unbook: null, unqueue: null, catchUp: null,
-        baseGain, spatialGain: spatial.gain,
+        when, baseGain, spatialGain: spatial.gain,
         rate: common.rate ?? 1, detune: common.detune ?? 0,
         position: common.position,
         playing: true, canceled: false, fading: false, rampEnd: 0,

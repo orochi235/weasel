@@ -131,16 +131,20 @@ describe('engine.playNote', () => {
     expect(voice.isPlaying()).toBe(false);
   });
 
-  it('runs the release from the start of a note released before it sounds, as a worklet voice does', async () => {
+  it('cancels a note released inside the lookahead, after the scheduler started it but before it sounds', async () => {
     const { ctx, engine, tick } = await harness();
-    const voice = engine.playNote({ pitch: 220, when: 80, envelope: { attack: 0, decay: 200, release: 30 } });
+    const onDone = vi.fn();
+    const onDrop = vi.fn();
+    const voice = engine.playNote({ pitch: 220, when: 80, envelope: { attack: 0, release: 300 }, onDone, onDrop });
     tick();
     const osc = ctx._oscillators[0];
-    const { env } = chainOf(osc);
     voice.release();
-    expect(env.gain.holds.at(-1)).toEqual({ value: 1, at: expect.closeTo(0.08, 9) });
-    expect(env.gain.ramps.at(-1)).toEqual({ value: 0, at: expect.closeTo(0.11, 9) });
-    expect(osc.stopped.at(-1)).toBeCloseTo(0.11, 9);
+    await Promise.resolve();
+    expect(osc.stopped.at(-1)).toBeLessThanOrEqual(0.08);
+    expect(voice.isPlaying()).toBe(false);
+    expect(onDrop.mock.calls).toEqual([['stopped']]);
+    ctx._advance(500);
+    expect(onDone).not.toHaveBeenCalled();
   });
 
   it('fades a releasing note out over fadeMs rather than cutting it, and again on a second fade', async () => {

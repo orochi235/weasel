@@ -44,6 +44,8 @@ export interface AudioEngine {
   /** Play a buffer the consumer already holds — a synth, an offline render, a
    *  recording. `load` and `decode` both assume encoded bytes. */
   register(buffer: AudioBuffer): SoundHandle;
+  /** Let go of a sound's buffer: see `SoundCache.free`. `dispose()` frees every one. */
+  free(sound: SoundHandle): void;
   play(sound: SoundHandle, opts?: PlayOptions): VoiceHandle;
   /** Play a synthesized note: an oscillator with harmonic partials, or summed
    *  sines at any ratios, under an ADSR envelope and an optional filter. It is a voice like any other — same handle, same bus pool
@@ -259,6 +261,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
     loadAll: sounds.loadAll,
     decode: sounds.decode,
     register: sounds.register,
+    free: sounds.free,
     play: (sound, playOpts = {}) =>
       voices.launch(playOpts, bufferStarter(ctx, sounds, warn, sound, playOpts.loop ?? false)),
     playNote: (note) => voices.launch(note, synth.note(note)),
@@ -314,6 +317,7 @@ export function createAudioEngine(opts: AudioEngineOptions = {}): AudioEngine {
       watch.dispose();
       synth.dispose();
       patches.dispose();
+      sounds.clear();
       graph.dispose();
       graph.master.disconnect();
       if (ownsContext) void ctx.close().catch(() => undefined);

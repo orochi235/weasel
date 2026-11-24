@@ -79,6 +79,8 @@ export interface LiveVoice {
   /** A booked voice's start, run ahead of the scheduler once the audio clock
    *  has passed its time: the processor is already playing it. */
   catchUp: (() => void) | null;
+  /** When it sounds, engine ms. */
+  when: number;
   baseGain: number;
   spatialGain: number;
   rate: number;

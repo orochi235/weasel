@@ -107,7 +107,7 @@ export function createReverbEffect(ctx: BaseAudioContext, opts: ReverbEffectOpti
 
 /** Options for `createDelayEffect`. */
 export interface DelayEffectOptions {
-  /** ms. Default 250. */
+  /** ms. Default 250, or `maxTime` where that is shorter. */
   time?: number;
   /** How much of each repeat feeds the next, -1..1 exclusive. Default 0.35. */
   feedback?: number;
@@ -152,7 +152,7 @@ export function createDelayEffect(ctx: BaseAudioContext, opts: DelayEffectOption
   if (!(maxTime / 1000 > 0 && maxTime < MOST_DELAY_MS)) {
     throw new RangeError(`@weasel-js/audio: a delay's longest time ${maxTime} ms must be above 0 and below the ${MOST_DELAY_MS} a DelayNode takes`);
   }
-  const time = checkTime(opts.time ?? 250, maxTime);
+  const time = checkTime(opts.time ?? Math.min(250, maxTime), maxTime);
   let fb = checkFeedback(opts.feedback ?? 0.35);
   const delay = ctx.createDelay(maxTime / 1000);
   const loop = ctx.createGain();

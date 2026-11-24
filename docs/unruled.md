@@ -1302,6 +1302,11 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Diagram, audio, and labkit
 
+- 2026-11-23 (audit round 80, audio): a voice's `release()` before its `when` cancels it with `onDrop('stopped')`,
+  as `VoiceHandle.release`'s doc says, even once the scheduler's lookahead has started it, node and worklet alike.
+  This reverses the unreleased `4050c90ff2`, which played the release tail from the note's start in that window.
+  Why: the same call otherwise cancels or sounds depending on lookahead timing the caller cannot see.
+
 - 2026-11-20 (audit round 50, labkit.controls): a `ControlPanel` keeping its own auto set starts it afresh from
   the schema's `.initial(AUTO)` leaves when the schema's leaf paths or start-auto paths change, and keeps it across
   a schema resolved anew with the same ones. Two trials of one instrument in one mounted panel therefore share pins;
