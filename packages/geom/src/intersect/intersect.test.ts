@@ -70,6 +70,28 @@ describe('segmentCrossings', () => {
   });
 });
 
+describe('segmentCrossings between a straight curve and a line along it', () => {
+  const straight = [P(0, 0), P(0, 0), P(10, 0), P(10, 0)];
+
+  it('reports where they touch end to end', () => {
+    expect(segmentCrossings(straight, [P(10, 0), P(20, 0)])).toEqual([{ ta: 1, tb: 0, x: 10, y: 0 }]);
+  });
+
+  it('reports the ends of the stretch they share, as two lines would', () => {
+    const hits = segmentCrossings([P(0, 0), P(10, 0)], [P(5, 0), P(5, 0), P(15, 0), P(15, 0)]);
+    expect(hits).toHaveLength(2);
+    expect(hits[0]).toMatchObject({ ta: 0.5, tb: 0, x: 5, y: 0 });
+    expect(hits[1].ta).toBe(1);
+    expect(hits[1].x).toBeCloseTo(10, 9);
+    expect(cubicEvalAt(5, 0, 5, 0, 15, 0, 15, 0, hits[1].tb)[0]).toBeCloseTo(10, 9);
+  });
+
+  it('reports where two straight curves overlap', () => {
+    const hits = segmentCrossings(straight, [P(5, 0), P(8, 0), P(12, 0), P(15, 0)]);
+    expect(hits.map((h) => h.x)).toEqual([expect.closeTo(5, 9), expect.closeTo(10, 9)]);
+  });
+});
+
 describe('pathCrossings', () => {
   it('finds where two squares cross', () => {
     const a = pathFromD('M0 0 H20 V20 H0 Z');
@@ -110,6 +132,20 @@ describe('a cubic that loops over itself', () => {
     expect(pathCrossings([pathFromD('M 0 0 C 30 50 70 50 100 0')])).toHaveLength(0);
     expect(pathCrossings([pathFromD('M 0 0 C 30 50 70 -50 100 0')])).toHaveLength(0);
     expect(pathCrossings([pathFromD('M 0 0 Q 50 80 100 0')])).toHaveLength(0);
+  });
+});
+
+describe('pathCrossings at a vertex', () => {
+  it('reports a stroke passing through another path\'s vertex once', () => {
+    const hits = pathCrossings([pathFromD('M0 0 L10 0 L10 10'), pathFromD('M5 -5 L15 5')]);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ x: 10, y: 0 });
+  });
+
+  it('reports a path passing back through its own vertex once', () => {
+    // The segment 20,5 → 0,5 returns through the vertex at 10,5 between the first two segments.
+    const hits = pathCrossings([pathFromD('M0 0 L10 5 L20 0 L20 5 L0 5')]);
+    expect(hits.filter((h) => h.x === 10 && h.y === 5)).toHaveLength(1);
   });
 });
 

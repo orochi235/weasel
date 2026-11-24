@@ -244,3 +244,16 @@ describe('flatten guards', () => {
     expect(out.length).toBeLessThan(100000);
   });
 });
+
+describe('the arc-length flatteners appending after another segment', () => {
+  it('measure from the segment start, not from where out ends', () => {
+    const out = [100, 0];
+    const arc: number[] = [];
+    const cubic = flattenCubicWithArcLen(0, 50, 1, 50, 2, 50, 3, 50, DEFAULT_FLATTEN_TOLERANCE, out, arc);
+    expect(cubic).toBeCloseTo(3, 9);
+    out.push(100, 0);
+    arc.length = 0;
+    const quad = flattenQuadraticWithArcLen(0, 50, 2, 50, 4, 50, DEFAULT_FLATTEN_TOLERANCE, out, arc);
+    expect(quad).toBeCloseTo(4, 9);
+  });
+});

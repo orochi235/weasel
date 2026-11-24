@@ -3,7 +3,7 @@
 import { nearestPointOnSegment as nearestPointOnSegmentN, squaresHeld } from '../points';
 import { SINGULAR_RATIO } from '../scalar';
 import { add, dot, len, len2, scale, sub, type Vec3 } from './vec3';
-import { transformPoint, type Mat4 } from './mat4';
+import { transformPoint4, type Mat4 } from './mat4';
 
 /** A ray from `origin` along `direction`, which need not be unit length: the
  *  `t` the intersections return is in multiples of it. */
@@ -61,18 +61,26 @@ export function intersectRayPlane(ray: Ray, normal: Vec3, offset: number): numbe
  * The axis-aligned box enclosing `local` after `m`. All eight corners are
  * transformed and re-bounded, so a rotation widens the result rather than
  * rotating it — an AABB cannot represent an oriented box, and pretending
- * otherwise is how a hit test starts missing its own geometry.
+ * otherwise is how a hit test starts missing its own geometry. Under a
+ * projective `m` that puts the box partly behind the eye (corners' `w` not
+ * all of one sign, or one at 0), the image is unbounded and the box is infinite.
  */
 export function transformAabb(m: Mat4, local: Aabb): Aabb {
   let min: Vec3 = { x: Infinity, y: Infinity, z: Infinity };
   let max: Vec3 = { x: -Infinity, y: -Infinity, z: -Infinity };
+  let sign = 0;
   for (let i = 0; i < 8; i++) {
-    const corner: Vec3 = {
+    const [x, y, z, w] = transformPoint4(m, {
       x: i & 1 ? local.max.x : local.min.x,
       y: i & 2 ? local.max.y : local.min.y,
       z: i & 4 ? local.max.z : local.min.z,
-    };
-    const p = transformPoint(m, corner);
+    });
+    const s = Math.sign(w);
+    if (s === 0 || (sign !== 0 && s !== sign)) {
+      return { min: { x: -Infinity, y: -Infinity, z: -Infinity }, max: { x: Infinity, y: Infinity, z: Infinity } };
+    }
+    sign = s;
+    const p: Vec3 = w === 1 ? { x, y, z } : { x: x / w, y: y / w, z: z / w };
     min = { x: Math.min(min.x, p.x), y: Math.min(min.y, p.y), z: Math.min(min.z, p.z) };
     max = { x: Math.max(max.x, p.x), y: Math.max(max.y, p.y), z: Math.max(max.z, p.z) };
   }

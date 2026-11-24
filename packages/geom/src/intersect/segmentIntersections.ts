@@ -121,6 +121,23 @@ function collinearOverlap(p0: Point, p1: Point, q0: Point, q1: Point): SegmentCr
   return lo === hi ? [at(lo)] : [at(lo), at(hi)];
 }
 
+/** The parameter on `seg`, within flat `piece` of it, whose point lies `u` along the piece's chord. */
+function paramAlongChord(seg: Seg, piece: Piece, u: number): number {
+  if (u <= 0) return piece.t0;
+  if (u >= 1) return piece.t1;
+  if (seg.length === 2) return lerp(piece.t0, piece.t1, u);
+  const c0 = piece.pts[0], c1 = piece.pts[piece.pts.length - 1];
+  const rx = c1.x - c0.x, ry = c1.y - c0.y, rr = rx * rx + ry * ry;
+  let lo = piece.t0, hi = piece.t1;
+  for (let i = 0; i < 60 && lo < hi; i++) {
+    const mid = (lo + hi) / 2;
+    const p = evalSeg(seg, mid);
+    if (((p.x - c0.x) * rx + (p.y - c0.y) * ry) / rr < u) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}
+
 /** Newton on A(ta) − B(tb) = 0, kept inside [0, 1]. */
 function refine(a: Seg, b: Seg, ta: number, tb: number): [number, number] {
   for (let i = 0; i < 12; i++) {
@@ -159,14 +176,15 @@ export function segmentCrossings(a: Point[], b: Point[], maxHits = MAX_HITS): Se
     return [{ ta, tb, x: p.x, y: p.y }];
   }
   const out: SegmentCrossing[] = [];
-  const push = (ta: number, tb: number) => {
-    // The chord test's slack reaches past the ends, and refinement may stop before it clamps.
-    [ta, tb] = refine(a, b, Math.min(1, Math.max(0, ta)), Math.min(1, Math.max(0, tb)));
+  const add = (ta: number, tb: number) => {
     const pa = evalSeg(a, ta), pb = evalSeg(b, tb);
     if (Math.hypot(pa.x - pb.x, pa.y - pb.y) > 1e-6 * (1 + Math.abs(pa.x) + Math.abs(pa.y))) return;
     if (out.some((h) => Math.abs(h.ta - ta) < SAME_T && Math.abs(h.tb - tb) < SAME_T)) return;
     out.push({ ta, tb, x: pa.x, y: pa.y });
   };
+  // The chord test's slack reaches past the ends, and refinement may stop before it clamps.
+  const push = (ta: number, tb: number) =>
+    add(...refine(a, b, Math.min(1, Math.max(0, ta)), Math.min(1, Math.max(0, tb))));
   const stack: Array<[Piece, Piece, number]> = [[{ pts: a, t0: 0, t1: 1 }, { pts: b, t0: 0, t1: 1 }, 0]];
   while (stack.length > 0 && out.length < maxHits) {
     const [p, q, depth] = stack.pop()!;
@@ -174,7 +192,12 @@ export function segmentCrossings(a: Point[], b: Point[], maxHits = MAX_HITS): Se
     if (bp[0] > bq[2] + FLAT || bq[0] > bp[2] + FLAT || bp[1] > bq[3] + FLAT || bq[1] > bp[3] + FLAT) continue;
     const fp = flatness(p.pts), fq = flatness(q.pts);
     if ((fp <= FLAT && fq <= FLAT) || depth >= MAX_DEPTH) {
-      const uv = chordCross(p.pts[0], p.pts[p.pts.length - 1], q.pts[0], q.pts[q.pts.length - 1], 1e-6);
+      const p0 = p.pts[0], p1 = p.pts[p.pts.length - 1], q0 = q.pts[0], q1 = q.pts[q.pts.length - 1];
+      // Collinear chords have no crossing to refine toward: take the ends of the stretch they share.
+      const shared = nearlyParallel(p1.x - p0.x, p1.y - p0.y, q1.x - q0.x, q1.y - q0.y)
+        ? collinearOverlap(p0, p1, q0, q1) : [];
+      for (const h of shared) add(paramAlongChord(a, p, h.ta), paramAlongChord(b, q, h.tb));
+      const uv = shared.length === 0 ? chordCross(p0, p1, q0, q1, 1e-6) : null;
       if (uv) push(lerp(p.t0, p.t1, uv[0]), lerp(q.t0, q.t1, uv[1]));
       continue;
     }

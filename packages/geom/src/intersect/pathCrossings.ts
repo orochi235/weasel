@@ -2,7 +2,7 @@
 
 import type { Path } from '../path';
 import { segmentCrossings, segmentSelfCrossing } from './segmentIntersections';
-import { adjacentSegments, boxesNear, pathSegments, type PathSegment } from './pathSegments';
+import { boxesNear, pathSegments, type PathSegment } from './pathSegments';
 
 /** A place on a path's stroke: which segment, and how far along it. */
 export interface PathStop {
@@ -25,11 +25,15 @@ export interface PathCrossing {
 
 const END = 1e-9;
 
-/** Whether a hit between neighboring segments is just their shared end. */
-function sharedEnd(a: PathSegment, b: PathSegment, ta: number, tb: number): boolean {
-  if (!adjacentSegments(a, b)) return false;
-  return (ta > 1 - END && tb < END) || (ta < END && tb > 1 - END);
+/** `stop` on segment `seg`, with a segment's end written as the next one's start, so a joint has one name. */
+function canonical(seg: PathSegment, path: number, t: number): PathStop {
+  const next = seg.index + 1 < seg.count ? seg.index + 1 : seg.closed ? 0 : -1;
+  if (t > 1 - END && next >= 0) return { path, sub: seg.sub, index: next, t: 0 };
+  return { path, sub: seg.sub, index: seg.index, t };
 }
+
+const sameStop = (a: PathStop, b: PathStop): boolean =>
+  a.path === b.path && a.sub === b.sub && a.index === b.index && Math.abs(a.t - b.t) < END;
 
 /** Which crossings {@link pathCrossings} reports. */
 export interface PathCrossingsOptions {
@@ -47,32 +51,32 @@ export interface PathCrossingsOptions {
 export function pathCrossings(paths: readonly Path[], opts: PathCrossingsOptions = {}): PathCrossing[] {
   const segs = paths.map(pathSegments);
   const out: PathCrossing[] = [];
+  const seen: [PathStop, PathStop][] = [];
+  // A crossing at a joint is found once from each segment meeting there; report it once, and a joint of a path
+  // with itself not at all.
+  const add = (i: number, sa: PathSegment, ta: number, j: number, sb: PathSegment, tb: number, x: number, y: number) => {
+    const ca = canonical(sa, i, ta), cb = canonical(sb, j, tb);
+    if (sameStop(ca, cb)) return;
+    if (seen.some(([u, v]) => (sameStop(u, ca) && sameStop(v, cb)) || (sameStop(u, cb) && sameStop(v, ca)))) return;
+    seen.push([ca, cb]);
+    out.push({
+      x, y,
+      a: { path: i, sub: sa.sub, index: sa.index, t: ta },
+      b: { path: j, sub: sb.sub, index: sb.index, t: tb },
+    });
+  };
   for (let i = 0; i < segs.length; i++) {
     for (let j = i; j < segs.length; j++) {
       if (i === j && opts.self === false) continue;
       if (opts.of !== undefined && i !== opts.of && j !== opts.of) continue;
       for (let m = 0; m < segs[i].length; m++) {
-        const own = i === j ? segmentSelfCrossing(segs[i][m].pts) : null;
-        if (own && !sharedEnd(segs[i][m], segs[i][m], own.ta, own.tb)) {
-          const sa = segs[i][m];
-          out.push({
-            x: own.x, y: own.y,
-            a: { path: i, sub: sa.sub, index: sa.index, t: own.ta },
-            b: { path: i, sub: sa.sub, index: sa.index, t: own.tb },
-          });
-        }
+        const sa = segs[i][m];
+        const own = i === j ? segmentSelfCrossing(sa.pts) : null;
+        if (own) add(i, sa, own.ta, i, sa, own.tb, own.x, own.y);
         for (let n = i === j ? m + 1 : 0; n < segs[j].length; n++) {
-          const sa = segs[i][m], sb = segs[j][n];
+          const sb = segs[j][n];
           if (!boxesNear(sa.box, sb.box)) continue;
-          for (const h of segmentCrossings(sa.pts, sb.pts)) {
-            if (i === j && sharedEnd(sa, sb, h.ta, h.tb)) continue;
-            out.push({
-              x: h.x,
-              y: h.y,
-              a: { path: i, sub: sa.sub, index: sa.index, t: h.ta },
-              b: { path: j, sub: sb.sub, index: sb.index, t: h.tb },
-            });
-          }
+          for (const h of segmentCrossings(sa.pts, sb.pts)) add(i, sa, h.ta, j, sb, h.tb, h.x, h.y);
         }
       }
     }

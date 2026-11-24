@@ -42,6 +42,13 @@ describe('lengthTable', () => {
     expect(curved.total).toBe(4);
   });
 
+  it('throws on a curve of more than two control points, or controls not a whole number of points', () => {
+    const run = (ctl: number[]): LengthRun => ({ points: [0, 0, 10, 0], closed: false, controls: [ctl] });
+    expect(() => lengthTable([run([2, 5, 4, 5, 6, 5])], 2)).toThrow(RangeError);
+    expect(() => lengthTable([run([2, 5, 4])], 2)).toThrow(RangeError);
+    expect(() => lengthTable([run([2, 5, 4, 5])], 2)).not.toThrow();
+  });
+
   it('pen lift covers no distance', () => {
     const t = lengthTable([anchored([0, 0, 1, 0], false, 0), anchored([5, 0, 6, 0], false, 2)], 2);
     expect(t.total).toBe(2);

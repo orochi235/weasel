@@ -189,9 +189,7 @@ function flattenCubicArcRec(
   const flat = Math.max(d1, d2) <= tolerance
     && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x3, y3, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
-    const lastX = out.length >= 2 ? out[out.length - 2] : x0;
-    const lastY = out.length >= 2 ? out[out.length - 1] : y0;
-    const seg = Math.hypot(x3 - lastX, y3 - lastY);
+    const seg = Math.hypot(x3 - x0, y3 - y0);
     accum += seg;
     out.push(x3, y3);
     arcOut.push(accum);
@@ -244,9 +242,7 @@ function flattenQuadraticArcRec(
   const flat = d <= tolerance
     && (offset === 0 || edgesWithin(x0, y0, x1, y1, x2, y2, x2, y2, offset, tolerance));
   if (flat || depth >= MAX_FLATTEN_DEPTH) {
-    const lastX = out.length >= 2 ? out[out.length - 2] : x0;
-    const lastY = out.length >= 2 ? out[out.length - 1] : y0;
-    const seg = Math.hypot(x2 - lastX, y2 - lastY);
+    const seg = Math.hypot(x2 - x0, y2 - y0);
     accum += seg;
     out.push(x2, y2);
     arcOut.push(accum);

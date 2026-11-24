@@ -4144,3 +4144,8 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): `pathFaceArrangement` throws a `RangeError` for a `flattenTolerance` so fine that a
   segment would need more than 1024 chords, naming the finest tolerance it can honor. Lifting the cap, or coarsening the
   tolerance quietly as before, were the alternatives.
+## Audit round eighty-two (2026-11-24): geom, part one
+
+- 2026-11-24 (the fixer's call): `lengthTable` throws a `RangeError` for a `LengthRun` segment whose `controls` hold
+  anything but one or two points, since nothing past a cubic is measured or evaluated. Measuring higher degrees was the
+  alternative.
