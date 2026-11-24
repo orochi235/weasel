@@ -3,13 +3,13 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
 import { messageOf } from '../messageOf.ts';
-import { WATCH_RECOVERY } from './watchRecovery.ts';
+import { LONGEST_TIMER_MS, WATCH_RECOVERY } from './watchRecovery.ts';
 
 /** Starts a watch on a directory and returns what stops it. */
 export type WatchDir = (dir: string, onEvent: () => void) => () => void;
 
 export interface FileEventsOptions {
-  /** How long to wait for the report, in milliseconds. Default 5000. */
+  /** How long to wait for the report, in milliseconds; past `2 ** 31 - 1`, and at `Infinity`, it waits until the report. Default 5000. */
   waitMs?: number;
   /** Default: `fs.watch`. */
   watch?: WatchDir;
@@ -72,9 +72,11 @@ export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEve
     write();
     if (settled) return;
     rewrite = setInterval(write, REWRITE_MS);
-    deadline = setTimeout(() => settle(() => resolve(false)), waitMs);
     rewrite.unref();
-    deadline.unref();
+    if (waitMs <= LONGEST_TIMER_MS) {
+      deadline = setTimeout(() => settle(() => resolve(false)), waitMs);
+      deadline.unref();
+    }
   });
 }
 

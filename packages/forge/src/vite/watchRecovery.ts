@@ -18,7 +18,7 @@ export interface WatchRecoveryOptions {
 
 const QUIET_MS = 2000;
 // `@weasel-js/registry`'s LONGEST_TIMER_MS: vitest's config loads this file before any package is built.
-const LONGEST_TIMER_MS = 2 ** 31 - 1;
+export const LONGEST_TIMER_MS = 2 ** 31 - 1;
 const STALE_READ_MS = 60_000;
 
 const mtimeOf = (file: string): number | undefined => {

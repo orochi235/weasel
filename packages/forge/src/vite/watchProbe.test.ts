@@ -48,6 +48,18 @@ describe('fileEventsArrive', () => {
     expect(existsSync(state.dir)).toBe(false);
   });
 
+  it('waits for the report, never answering false at once, when the wait is longer than a timer holds', async () => {
+    for (const waitMs of [Infinity, 2 ** 31]) {
+      const { state, watch } = fakeWatch();
+      let answer: boolean | undefined;
+      const arrived = fileEventsArrive({ watch, waitMs }).then((a) => (answer = a));
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(answer).toBeUndefined();
+      state.report();
+      await expect(arrived).resolves.toBe(true);
+    }
+  });
+
   it('writes again while it waits, since a watch misses a write made before it has started', async () => {
     const { state, watch } = fakeWatch();
     const arrived = fileEventsArrive({ watch, waitMs: 5000 });
