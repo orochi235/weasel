@@ -162,6 +162,21 @@ describe('editing a node on a parallax plane', () => {
     expect(out.copies).toEqual([[1, 0, 0, 1, 20, 0]]);
   });
 
+  it('carries each end of a line preview into the camera\'s world, even when only one is given', () => {
+    const scene = makeScene();
+    const preview: OngoingOverlay = {
+      kind: 'insertPreview', shape: 'line', extras: { kind: 'line', a: { x: 20, y: 20 } },
+      bounds: { x: 20, y: 20, width: 20, height: 40 },
+    };
+    const action = inPlane({
+      id: 'previewOnly', label: 'Preview only',
+      invoker: { timing: 'ongoing', start: () => ({ overlay: () => preview }) },
+    } as Action, () => 'sky');
+    const handle = (action.invoker as OngoingInvoker).start(ctxOf(scene, cam(0, 0), cam(0, 0)));
+    const out = handle.overlay!() as Extract<OngoingOverlay, { kind: 'insertPreview' }>;
+    expect((out.extras as { a: unknown }).a).toEqual({ x: 60, y: 10 });
+  });
+
   it('reads no dep the wrapped action did not declare', () => {
     // The dispatcher's dev deps bag throws on an undeclared read. Rotate
     // declares neither `snap` nor `nodeAtPoint`.
