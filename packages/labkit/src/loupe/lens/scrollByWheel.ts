@@ -5,12 +5,18 @@ const HOLDS = new Set(['hidden', 'clip']);
 
 type Axis = 'overflowX' | 'overflowY';
 
-/** The viewport's overflow on `axis`: the root's, or the body's when the root's is `visible`, as CSS propagates it. */
+/** Whether the root leaves overflow `visible` on both axes, so CSS hands the body's overflow to the viewport. */
+function bodyLendsOverflow(doc: Document): boolean {
+  const view = doc.defaultView ?? window;
+  const root = view.getComputedStyle(doc.documentElement);
+  return !!doc.body && root.overflowX === 'visible' && root.overflowY === 'visible';
+}
+
+/** The viewport's overflow on `axis`: the root's, or the body's when the root lends it, as CSS propagates it. */
 function viewportOverflow(doc: Document, axis: Axis): string {
   const view = doc.defaultView ?? window;
-  const root = view.getComputedStyle(doc.documentElement)[axis];
-  if (root !== 'visible' || !doc.body) return root;
-  return view.getComputedStyle(doc.body)[axis];
+  const from = bodyLendsOverflow(doc) ? doc.body : doc.documentElement;
+  return view.getComputedStyle(from)[axis];
 }
 
 function canMove(
@@ -26,6 +32,8 @@ function canMove(
   if (el === doc.scrollingElement) {
     if (HOLDS.has(viewportOverflow(doc, axis))) return false;
   } else if (!SCROLLS.has(style[axis])) return false;
+  // A body whose overflow went to the viewport is no scroll container itself.
+  else if (el === doc.body && bodyLendsOverflow(doc)) return false;
   return delta > 0 ? at < room - 0.5 : at > 0.5;
 }
 
