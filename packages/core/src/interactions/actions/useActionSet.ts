@@ -83,11 +83,20 @@ const YIELDS_TO: Readonly<Record<string, string>> = {
   'clipboard.pasteEvent': 'ingest',
 };
 
+const identities = new WeakMap<Action, number>();
+let nextIdentity = 0;
+function identityOf(action: Action): number {
+  let n = identities.get(action);
+  if (n === undefined) identities.set(action, (n = nextIdentity++));
+  return n;
+}
+
 /**
  * Register `actions` into the nearest `<ActionsProvider>`, in order, leaving
  * out the ids in `exclude`; a no-op without both an actions and a dep
- * registry in scope. The set is keyed by its ids, so a fresh array of the same
- * actions does not re-register.
+ * registry in scope. The set is keyed by its actions' identities, so a fresh
+ * array of the same actions does not re-register, and an action rebuilt under
+ * the same id replaces the one before it.
  */
 export function useActionSet(actions: readonly Action[], exclude?: Iterable<string>): void {
   const reg = useActionsRegistry();
@@ -96,7 +105,7 @@ export function useActionSet(actions: readonly Action[], exclude?: Iterable<stri
   const excluded = exclude ? [...exclude] : [];
   const excludedRef = useLatest(excluded);
   const excludeKey = compositeKey(excluded);
-  const actionsKey = compositeKey(actions.map((a) => a.id));
+  const actionsKey = actions.map(identityOf).join(' ');
 
   useEffect(() => {
     if (!reg || !depReg) return;

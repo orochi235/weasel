@@ -78,4 +78,20 @@ describe('useActionSet', () => {
     render(<DepRegistryProvider><ActionsProvider><Probe /></ActionsProvider></DepRegistryProvider>);
     expect(reg.list().map((a) => a.id).sort()).toEqual(['a', 'b']);
   });
+
+  it('registers a rebuilt action under the same id in place of the one it replaces', () => {
+    const make = () => ({ id: 'a', label: 'a', kind: 'instant', run: () => {} }) as unknown as Action;
+    const first = make();
+    const second = make();
+    let reg!: ActionsRegistry;
+    function Probe({ actions }: { actions: readonly Action[] }) {
+      reg = useActionsRegistry()!;
+      useActionSet(actions);
+      return null;
+    }
+    const view = (actions: readonly Action[]) => <DepRegistryProvider><ActionsProvider><Probe actions={actions} /></ActionsProvider></DepRegistryProvider>;
+    const utils = render(view([first]));
+    utils.rerender(view([second]));
+    expect(reg.list()[0]).toBe(second);
+  });
 });
