@@ -3,7 +3,7 @@ import type { ScaleFit } from '../FitLabel/fitScale';
 import { pickSpelling, spellingsOf, type KeySpellings, type LegendFit } from './legendFit';
 import { cssPx } from '../../cssPx';
 import { getOwn } from '@weasel-js/registry';
-import { LEGEND_ICON_SCALE, LEGEND_ICONS } from './legendIcons';
+import { LEGEND_ICONS } from './legendIcons';
 
 /** Vertical room kept clear inside the key, for the thicker bottom border. */
 const ROOM_H_SLACK = 4;
@@ -34,6 +34,8 @@ interface Room {
   letterSpacing: string;
   size: number;
   lineHeight: number;
+  /** An icon legend's side, as a multiple of the type size: `.legendIcon` draws it at `--key-legend-icon-scale`. */
+  iconScale: number;
   width: number;
   height: number;
 }
@@ -52,6 +54,7 @@ export function readRoom(kbd: HTMLElement): Room | null {
     letterSpacing: cs.letterSpacing,
     size,
     lineHeight: cssPx(cs.getPropertyValue('--key-wrap-line-height')) || 1,
+    iconScale: cssPx(cs.getPropertyValue('--key-legend-icon-scale')) || 1,
     width,
     height,
   };
@@ -64,9 +67,9 @@ function fitForms(ctx: CanvasRenderingContext2D, room: Room, forms: readonly str
 }
 
 /** How a spelling fits `room`: a symbol the key draws as an icon is sized as that icon, not as its character. */
-export function fitForm(label: string, room: Pick<Room, 'size' | 'lineHeight' | 'width' | 'height'>, measure: (line: string) => number): LegendFit {
+export function fitForm(label: string, room: Pick<Room, 'size' | 'lineHeight' | 'iconScale' | 'width' | 'height'>, measure: (line: string) => number): LegendFit {
   if (getOwn(LEGEND_ICONS, label)) {
-    const side = room.size * LEGEND_ICON_SCALE;
+    const side = room.size * room.iconScale;
     return { label, lines: 1, scale: Math.min(room.width / side, room.height / side) };
   }
   const lines = label.split('\n');

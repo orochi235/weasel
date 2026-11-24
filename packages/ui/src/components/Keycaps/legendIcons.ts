@@ -12,6 +12,3 @@ export const LEGEND_ICONS: Readonly<Record<string, IconRef>> = {
   '⎙': icon('keyPrintScreen'), '⎀': icon('keyInsert'), '⇳': icon('keyScrollLock'), '⎉': icon('keyPause'),
   '⊞': icon('keyWindows'), '▤': icon('keyMenu'),
 };
-
-/** An icon legend's side, as a multiple of the legend's type size; `.legendIcon` in `Keycaps.module.css` draws it so. */
-export const LEGEND_ICON_SCALE = 1.25;

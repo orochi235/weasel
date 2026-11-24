@@ -101,6 +101,7 @@
   /* --key-legend-scale is set by a KeyBank, or by a key printing two lines. */
   --key-legend-size: calc(var(--key-font-size) * var(--key-legend-scale, 1));
   --key-wrap-line-height: 0.85;
+  --key-legend-icon-scale: 1.25;
   font-size: var(--key-legend-size);
   font-weight: var(--wzl-font-weight-bold);
   line-height: 1;
@@ -120,8 +121,8 @@
    so its strokes stay whole at legend sizes. */
 .legendIcon {
   flex: none;
-  width: calc(var(--key-legend-size) * 1.25);
-  height: calc(var(--key-legend-size) * 1.25);
+  width: calc(var(--key-legend-size) * var(--key-legend-icon-scale));
+  height: calc(var(--key-legend-size) * var(--key-legend-icon-scale));
 }
 
 /* The symbol's own character, for a screen reader and for copied text. */
