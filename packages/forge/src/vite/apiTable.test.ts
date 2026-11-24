@@ -102,9 +102,11 @@ export const Input = (_props: InputProps) => null;
     story('input', `import { Input } from './Chart';\nexport default { component: Input };\n`);
     story('plain', `import { Plain } from './Chart';\nexport default { component: Plain };\n`);
     story('field', `import { Field } from './Chart';\nexport default { component: Field };\n`);
+    story('quoted', `import { Chart } from './Chart';\nexport default { 'component': Chart };\n`);
+    story('asserted', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nexport default <Meta>{ component: Chart };\n`);
     story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'clash', 'none'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -191,6 +193,11 @@ export const Input = (_props: InputProps) => null;
 
   it('follows the fallback import for a meta with no component', () => {
     expect(api('native', 'Chart')?.ref?.type).toBe('ChartHandle');
+  });
+
+  it('reads a component named under a quoted key or through a type assertion', () => {
+    expect(api('quoted')?.ref?.type).toBe('ChartHandle');
+    expect(api('asserted')?.ref?.type).toBe('ChartHandle');
   });
 
   it("reads the title's import, not a wrapper the story file declares itself", () => {
