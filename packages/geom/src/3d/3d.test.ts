@@ -273,6 +273,22 @@ describe('intersectRayPlane', () => {
     expect(intersectRayPlane({ origin: { x: 0, y: 5, z: 0 }, direction: { x: 0, y: 1, z: 0 } }, { x: 0, y: 1, z: 0 }, 0)).toBeNull();
   });
 });
+describe('transformAabb under a projection', () => {
+  const viewProj = multiply(perspective(Math.PI / 2, 1, 0.1, 100), lookAt({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -1 }, { x: 0, y: 1, z: 0 }));
+
+  it('answers an infinite box when the box straddles the eye plane', () => {
+    const box = transformAabb(viewProj, { min: { x: -1, y: -1, z: -5 }, max: { x: 1, y: 1, z: 5 } });
+    expect(box.min).toEqual({ x: -Infinity, y: -Infinity, z: -Infinity });
+    expect(box.max).toEqual({ x: Infinity, y: Infinity, z: Infinity });
+  });
+
+  it('bounds a box wholly in front of the eye', () => {
+    const box = transformAabb(viewProj, { min: { x: -1, y: -1, z: -5 }, max: { x: 1, y: 1, z: -2 } });
+    expect(box.max.x).toBeCloseTo(0.5, 9);
+    expect(box.min.x).toBeCloseTo(-0.5, 9);
+  });
+});
+
 describe('transformAabb', () => {
   const unit = {
     min: { x: -0.5, y: -0.5, z: -0.5 } as Vec3,
