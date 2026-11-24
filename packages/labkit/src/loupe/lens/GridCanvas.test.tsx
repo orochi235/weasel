@@ -108,6 +108,15 @@ describe('the Pixel grid canvas', () => {
     expect(screen.getByTestId('chrome').textContent).not.toContain(GRID_NEEDS);
   });
 
+  it('keeps its plain label while one DPR’s cell draws a grid and another cannot', () => {
+    mount(
+      { source: 'pixels', factor: 8, dprs: [1, 2], readouts: ['grid'] },
+      { pixels: source('pixels').s },
+    );
+    expect(grids()).toHaveLength(1);
+    expect(screen.getByTestId('chrome').textContent).not.toContain(GRID_NEEDS);
+  });
+
   it('drops its grid, rather than rejecting unhandled, when the capture fails', async () => {
     const pixels = source('pixels');
     pixels.capture.mockRejectedValue(new Error('the context was lost'));

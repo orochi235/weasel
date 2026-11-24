@@ -49,11 +49,9 @@ export function LensChrome<C>({
   // Difference compares one pair of captures, at the first DPR.
   const labelled = difference ? shownRequests.slice(0, 1) : shownRequests;
   const labels = labelled.map((r) => shown.source?.label(r) ?? '');
-  // The grid has no meaning over a render of the DOM, or below 8× a captured pixel.
+  // The grid has no meaning over a render of the DOM, or below 8× a captured pixel; each DPR's cell decides alone.
   const gridOk =
-    shownRequests.length > 0 &&
-    shownRequests.every((r) => gridFits(shown.source?.kind ?? null, r.factor, r.dpr)) &&
-    !difference;
+    !difference && shownRequests.some((r) => gridFits(shown.source?.kind ?? null, r.factor, r.dpr));
   const at = { lensId: lens.lensId, reticle, source: shown.source?.kind ?? null };
   const fire = (id: string | undefined): void => {
     if (id === undefined) return;
