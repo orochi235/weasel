@@ -16,6 +16,11 @@ describe('indexFile', () => {
     expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/Auto', 'ui/C']]);
   });
 
+  it('names a component written as a member of an import', () => {
+    const code = `import * as Tabs from './Tabs';\nexport default { component: Tabs.Panel };\nexport const A = {};\n`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.componentName)).toEqual(['Tabs.Panel']);
+  });
+
   it('reads a file importing forge as a namespace as native', () => {
     const code = `
 import * as forge from '@weasel-js/forge';

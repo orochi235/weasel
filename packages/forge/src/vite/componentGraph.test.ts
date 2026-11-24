@@ -78,6 +78,18 @@ describe('createComponentGraph', () => {
     expect(graph['ui/Dialog']?.source).toBe('ui/Dialog/Dialog.tsx');
   });
 
+  it('follows a meta component written as a member of a namespace import to that export', async () => {
+    const ws = workspace({
+      ...FILES,
+      'stories/Footer.stories.tsx': `import * as Parts from '../ui/Dialog/Footer';\nexport default { title: 'ui/Parts', component: Parts.Footer };\n`,
+    });
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(
+      [...ENTRIES, entry('ui/Parts', 'stories/Footer.stories.tsx', { componentName: 'Parts.Footer' })],
+      ws.resolve,
+    );
+    expect(graph['ui/Parts']?.source).toBe('ui/Dialog/Footer.tsx');
+  });
+
   it('gives a component with no findable source no edges, and says so with a null source', async () => {
     const ws = workspace({
       ...FILES,

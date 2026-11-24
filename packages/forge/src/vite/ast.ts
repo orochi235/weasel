@@ -88,6 +88,14 @@ export function calleeName(callee: t.Node): string | undefined {
   return callee.object.type === 'Identifier' && callee.property.type === 'Identifier' ? `${callee.object.name}.${callee.property.name}` : undefined;
 }
 
+/** The name an identifier or a chain of plain member accesses off one is written as: `Tabs` or `Tabs.Panel`. */
+export function dottedName(node: t.Node): string | undefined {
+  if (node.type === 'Identifier') return node.name;
+  if (node.type !== 'MemberExpression' || node.computed || node.property.type !== 'Identifier') return undefined;
+  const object = dottedName(node.object);
+  return object === undefined ? undefined : `${object}.${node.property.name}`;
+}
+
 /** The name `node` calls, as `calleeName` writes it, through casts and top-level `const`s. */
 export function calleeOf(node: t.Node | undefined, bindings: Bindings, depth = 0): string | undefined {
   if (!node || depth > 16) return undefined;

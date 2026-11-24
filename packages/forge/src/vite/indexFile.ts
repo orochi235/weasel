@@ -7,6 +7,7 @@ import {
   type Bindings,
   bindingsOf,
   calleeOf,
+  dottedName,
   docOf,
   exportedName,
   isDefaultExport,
@@ -146,7 +147,7 @@ export function indexProgram(program: t.Program, file: string, autoTitle: string
   const include = storyFilter(meta, 'includeStories', bindings, wrappers);
   const exclude = storyFilter(meta, 'excludeStories', bindings, wrappers);
   const componentNode = prop(meta, 'component', bindings, wrappers);
-  const componentName = componentNode?.type === 'Identifier' ? componentNode.name : undefined;
+  const componentName = componentNode && dottedName(componentNode);
   const metaIsolate = isolateOf(meta, bindings, wrappers, 'default');
   const metaTags = tagsOf(meta, bindings, wrappers);
   const native = wrappers.has(calleeOf(metaNode, bindings) ?? '');
