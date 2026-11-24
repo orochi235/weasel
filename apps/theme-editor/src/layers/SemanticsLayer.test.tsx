@@ -81,6 +81,19 @@ describe('<SemanticsLayer>', () => {
     expect(firstDef(onChange).pins).not.toHaveProperty('fg');
   });
 
+  it('offers the ramps of the draft being edited when the derivation shown is an older one', async () => {
+    const draft: ThemeDefinition = {
+      ...weasel,
+      ramps: { ...weasel.ramps, extra: weasel.ramps!.gray },
+      semantics: { ...weasel.semantics, surface: { ramp: 'extra', step: '800', type: 'color' } },
+    };
+    const lookup = lookupOf(weasel);
+    render(<SemanticsLayer draft={draft} derived={deriveDraft(weasel, lookup, {})} lookup={lookup} highlight={[]} onChange={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: 'surface' }));
+    await userEvent.click(screen.getByRole('button', { name: /Ramp$/ }));
+    expect(within(screen.getByRole('listbox')).getByRole('option', { name: 'extra' })).toBeInTheDocument();
+  });
+
   it('stops a rule varying by mode, keeping the branch being edited', async () => {
     const onChange = renderSemantics(weasel);
     await userEvent.click(screen.getByRole('button', { name: 'surface' }));
