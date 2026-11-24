@@ -131,6 +131,12 @@ describe('createDelayEffect', () => {
     expect(() => createDelayEffect(ctx as never, { time: -5 })).toThrow(RangeError);
   });
 
+  it('opens a line shorter than 250 ms at its longest time when no time is given', () => {
+    const ctx = setup();
+    const fx = createDelayEffect(ctx as never, { maxTime: 100 });
+    expect(fx.delay.delayTime.value).toBeCloseTo(0.1);
+  });
+
   it('breaks its feedback loop on dispose', () => {
     const ctx = setup();
     const fx = createDelayEffect(ctx as never);
