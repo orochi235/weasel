@@ -135,6 +135,20 @@ describe('a cubic that loops over itself', () => {
   });
 });
 
+describe('pathCrossings at a vertex', () => {
+  it('reports a stroke passing through another path\'s vertex once', () => {
+    const hits = pathCrossings([pathFromD('M0 0 L10 0 L10 10'), pathFromD('M5 -5 L15 5')]);
+    expect(hits).toHaveLength(1);
+    expect(hits[0]).toMatchObject({ x: 10, y: 0 });
+  });
+
+  it('reports a path passing back through its own vertex once', () => {
+    // The segment 20,5 → 0,5 returns through the vertex at 10,5 between the first two segments.
+    const hits = pathCrossings([pathFromD('M0 0 L10 5 L20 0 L20 5 L0 5')]);
+    expect(hits.filter((h) => h.x === 10 && h.y === 5)).toHaveLength(1);
+  });
+});
+
 describe('pathCrossings on a closed one-cubic subpath', () => {
   it('leaves out the joint where it closes', () => {
     expect(pathCrossings([pathFromD('M 0 0 C 100 0 100 100 0 0 Z')])).toHaveLength(0);
