@@ -16,6 +16,11 @@ describe('indexFile', () => {
     expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/Auto', 'ui/C']]);
   });
 
+  it('reads a computed literal key after a plain one, as the object holds it', () => {
+    const code = "export default { title: 'ui/A', ['title']: 'ui/B' };\nexport const S = { name: 'x', [`name`]: 'y' };\n";
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/B', 'y']]);
+  });
+
   it('names a component written as a member of an import', () => {
     const code = `import * as Tabs from './Tabs';\nexport default { component: Tabs.Panel };\nexport const A = {};\n`;
     expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.componentName)).toEqual(['Tabs.Panel']);
