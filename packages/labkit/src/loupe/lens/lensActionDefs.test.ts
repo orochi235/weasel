@@ -172,6 +172,14 @@ describe('lens actions', () => {
     expect(lensesOf(api.scene)).toHaveLength(1);
   });
 
+  it('opens the quick lens as one undo step', () => {
+    const steps = api.scene.history.undoDepth();
+    press(LENS_ACTION_IDS.quick)();
+    expect(api.scene.history.undoDepth()).toBe(steps + 1);
+    api.scene.history.undo();
+    expect(lensesOf(api.scene)).toHaveLength(0);
+  });
+
   it('carries the quick lens with the pointer while its key is held, and leaves it where it was let go', () => {
     trigger(LENS_ACTION_IDS.add);
     const release = press(LENS_ACTION_IDS.quick);
