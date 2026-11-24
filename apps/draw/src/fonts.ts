@@ -79,27 +79,35 @@ function isInstalled(ctx: CanvasRenderingContext2D, baselines: readonly number[]
   }
 }
 
+/** The families {@link registerAvailableFonts} enrolled, in menu order, and the release of their holds. */
+export interface AvailableFonts {
+  readonly families: readonly string[];
+  dispose(): void;
+}
+
 /**
  * Enroll every candidate the machine actually has. Call once at startup,
- * after the baked atlas is registered. Returns the families enrolled, in menu
- * order; the picker reads the set from `listCanvasFonts()` instead.
+ * after the baked atlas is registered; the picker reads the set from
+ * `listCanvasFonts()`, not from the result.
  */
-export function registerAvailableFonts(): string[] {
+export function registerAvailableFonts(): AvailableFonts {
+  const none: AvailableFonts = { families: [], dispose: () => {} };
   const ctx = probeContext();
-  if (!ctx) return [];
+  if (!ctx) return none;
   let baselines: number[];
   try {
     baselines = PROBE_GENERICS.map((generic) => probeWidth(ctx, `72px ${generic}`));
   } catch {
-    return [];
+    return none;
   }
-  const enrolled: string[] = [];
+  const families: string[] = [];
+  const holds: (() => void)[] = [];
   for (const { family } of CANDIDATES) {
     if (!isInstalled(ctx, baselines, family)) continue;
-    registerCanvasFont(family);
-    enrolled.push(family);
+    holds.push(registerCanvasFont(family));
+    families.push(family);
   }
-  return enrolled;
+  return { families, dispose: () => { for (const release of holds.splice(0)) release(); } };
 }
 
 /** Genre of a candidate family, for menu grouping. `undefined` for anything
