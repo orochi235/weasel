@@ -65,4 +65,19 @@ describe('liftPadding', () => {
     expect(liftPadding({ padding: 'var(--chip-pad, 2px 8px)' })).toEqual({ padding: 'var(--chip-pad, 2px 8px)' });
     expect(liftPadding({ paddingBlock: 'var(--b)', paddingInline: 'var(--i)' })).toEqual({ paddingBlock: 'var(--b)', paddingInline: 'var(--i)' });
   });
+
+  it("sets a side as plain padding where a plain shorthand beside it would outrank the badge's own", () => {
+    expect(liftPadding({ padding: 'var(--p)', paddingLeft: 2 })).toEqual({ padding: 'var(--p)', paddingLeft: '2px' });
+    expect(liftPadding({ paddingTop: 0 }, 'var(--p)')).toEqual({ padding: 'var(--p)', paddingTop: '0px' });
+    expect(liftPadding({ paddingBlock: 'var(--b)', paddingTop: 1, paddingLeft: 2 })).toEqual({
+      paddingBlock: 'var(--b)', paddingTop: '1px', '--badge-pad-left': '2px',
+    });
+  });
+
+  it("lets a style's padding shorthand replace the padding prop", () => {
+    expect(liftPadding({ padding: 4 }, 'var(--p)')).toEqual({
+      '--badge-pad-top': '4px', '--badge-pad-right': '4px', '--badge-pad-bottom': '4px', '--badge-pad-left': '4px',
+    });
+  });
 });
+

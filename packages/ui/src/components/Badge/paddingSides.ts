@@ -46,25 +46,34 @@ const loneVar = (parts: string[]) => parts.length === 1 && /^var\(/i.test(parts[
 const SIDES = { paddingTop: 'top', paddingRight: 'right', paddingBottom: 'bottom', paddingLeft: 'left' } as const;
 
 /**
- * `style` with its padding moved onto the properties {@link paddingStyle} sets, so padding
- * reaches the label of a removable badge by whichever of the two it was given. A two-part
- * `paddingInline` stays as it is: which side each part pads is the text direction's to say.
+ * `style` with its padding, and the badge's `padding` prop under it, moved onto the properties
+ * {@link paddingStyle} sets, so padding reaches the label of a removable badge by whichever of the two
+ * it was given. A two-part `paddingInline` stays as it is: which side each part pads is the text
+ * direction's to say. A side that a shorthand left as plain padding covers is set as plain padding
+ * too, since that shorthand outranks the stylesheet's.
  */
-export function liftPadding(style: CSSProperties | undefined): CSSProperties {
-  if (!style) return {};
-  const { padding, paddingBlock, paddingInline, paddingTop, paddingRight, paddingBottom, paddingLeft, ...rest } = style;
-  const out: Record<string, Length> = { ...(rest as Record<string, Length>), ...(paddingStyle(padding as Length | undefined) as Record<string, Length>) };
-  const set = (side: string, value: string) => { out[`--badge-pad-${side}`] = value; };
+export function liftPadding(style: CSSProperties | undefined, padding?: Length): CSSProperties {
+  const { padding: own, paddingBlock, paddingInline, paddingTop, paddingRight, paddingBottom, paddingLeft, ...rest } = style ?? {};
+  const out: Record<string, Length> = { ...(rest as Record<string, Length>), ...(paddingStyle((own ?? padding) as Length | undefined) as Record<string, Length>) };
+  const plain = new Set<string>(out.padding !== undefined ? ['top', 'right', 'bottom', 'left'] : []);
+  const set = (side: string, value: string) => {
+    if (plain.has(side)) out[`padding${side[0].toUpperCase()}${side.slice(1)}`] = value;
+    else out[`--badge-pad-${side}`] = value;
+  };
   if (paddingBlock !== undefined) {
     const parts = parse(paddingBlock as Length);
     const [top, bottom = top] = parts;
-    if (top === undefined || loneVar(parts)) out.paddingBlock = paddingBlock as Length;
-    else { set('top', top); set('bottom', bottom); }
+    if (top === undefined || loneVar(parts)) {
+      out.paddingBlock = paddingBlock as Length;
+      plain.add('top').add('bottom');
+    } else { set('top', top); set('bottom', bottom); }
   }
   if (paddingInline !== undefined) {
     const parts = parse(paddingInline as Length);
-    if (parts.length !== 1 || loneVar(parts)) out.paddingInline = paddingInline as Length;
-    else { set('left', parts[0]); set('right', parts[0]); }
+    if (parts.length !== 1 || loneVar(parts)) {
+      out.paddingInline = paddingInline as Length;
+      plain.add('left').add('right');
+    } else { set('left', parts[0]); set('right', parts[0]); }
   }
   const sides = { paddingTop, paddingRight, paddingBottom, paddingLeft };
   for (const [prop, side] of Object.entries(SIDES) as [keyof typeof SIDES, string][]) {

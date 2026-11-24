@@ -10,7 +10,7 @@ import type { BadgeEffectSpec } from './effects';
 import { BadgeDeco } from './BadgeDeco';
 import { useCrawlPhase } from './useCrawlPhase';
 import { insetSource, resolveCompose } from './composeSpec';
-import { liftPadding, paddingStyle } from './paddingSides';
+import { liftPadding } from './paddingSides';
 import { useInsets } from './useInsets';
 import type { BadgeShape, BadgeVariant, BadgeSize } from './types';
 import { useSvgBox } from './useSvgBox';
@@ -99,9 +99,8 @@ function badgeStyle(
     ['--badge-inset-right' as never]: `${insets.right}px`,
     ['--badge-inset-bottom' as never]: `${insets.bottom}px`,
     ['--badge-inset-left' as never]: `${insets.left}px`,
-    ...paddingStyle(padding),
     ...(breakStyle !== undefined && { boxDecorationBreak: breakStyle, WebkitBoxDecorationBreak: breakStyle }),
-    ...liftPadding(override),
+    ...liftPadding(override, padding),
   };
 }
 

@@ -22,10 +22,18 @@ interface Measured { width: number; height: number; pad: ShapeInsets }
 const same = (a: Measured, b: Measured) =>
   a.width === b.width && a.height === b.height && SIDES.every((side) => a.pad[side] === b.pad[side]);
 
-/** The padding of `badge` that its `--badge-inset-*` properties did not put there. */
+const AXIS = { top: 'block', bottom: 'block', left: 'inline', right: 'inline' } as const;
+
+/**
+ * The padding of `badge` that its `--badge-inset-*` properties did not put there. Plain padding in
+ * its own `style` outranks the stylesheet that adds the insets, so a side it covers holds none.
+ */
 export function ownPadding(badge: HTMLElement): ShapeInsets {
   const cs = getComputedStyle(badge);
-  const inset = (name: typeof SIDES[number]) => cssPx(badge.style.getPropertyValue(`--badge-inset-${name}`));
+  const st = badge.style;
+  const plain = (name: typeof SIDES[number]) =>
+    [`padding-${name}`, 'padding', `padding-${AXIS[name]}`].some((prop) => st.getPropertyValue(prop) !== '');
+  const inset = (name: typeof SIDES[number]) => (plain(name) ? 0 : cssPx(st.getPropertyValue(`--badge-inset-${name}`)));
   const side = (name: typeof SIDES[number], computed: string) => Math.max(0, cssPx(computed) - inset(name));
   return {
     top: side('top', cs.paddingTop),
