@@ -5,6 +5,7 @@ import {
   type OriginProjection,
 } from '@weasel-js/core/engine';
 import { scratchKey, getScratch, setScratch } from '@weasel-js/routing';
+import { outermost } from '@weasel-js/select';
 import * as ops from '@weasel-js/core/ops';
 
 const SNAPSHOTS = scratchKey<Map<string, { id: string }>>('snapBackOrDelete.snapshots');
@@ -14,9 +15,10 @@ const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');
  * Move behavior for a drag that is only meaningful near where it started:
  * release inside `radius` and every dragged node returns to its original
  * pose; release outside it and they all either spring back anyway or are
- * deleted, per `onFreeRelease`. The distance is the first dragged node's. A
- * deletion is recorded as undoable ops with paint order preserved. An Alt-drag
- * clone released anywhere but a snap target makes no copy.
+ * deleted, per `onFreeRelease`. The distance is the first outermost dragged
+ * node's, measured in world. A deletion is recorded as undoable ops with paint
+ * order preserved. An Alt-drag clone released anywhere but a snap target makes
+ * no copy.
  */
 export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
   radius: number;
@@ -63,9 +65,10 @@ export function snapBackOrDelete<TPose>(args: {
 
     onEnd(ctx) {
       if (ctx.snap) return;
-      const id = ctx.draggedIds[0];
-      const o0 = proj.getOrigin(ctx.origin.get(id)!);
-      const o1 = proj.getOrigin(ctx.current.get(id)!);
+      const id = outermost(ctx.draggedIds, (at) => ctx.adapter.getParent(at))[0];
+      const world = (pose: TPose): TPose => ctx.frames?.toWorld(id, pose) ?? pose;
+      const o0 = proj.getOrigin(world(ctx.origin.get(id)!));
+      const o1 = proj.getOrigin(world(ctx.current.get(id)!));
       const dx = o1.x - o0.x;
       const dy = o1.y - o0.y;
       const within = dx * dx + dy * dy <= r2;
