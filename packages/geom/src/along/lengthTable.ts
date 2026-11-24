@@ -20,8 +20,9 @@ export interface LengthRun {
   /** A closed run's last anchor when it sat on the first point and was dropped, as `Polyline` carries it. */
   closeAnchor?: number;
   /** Per segment, from point `i` to the next (a closed run's closing edge last), the control
-   *  points of the curve between them, `dim` components each; empty, null or absent where
-   *  the segment is straight. A curved segment is measured by its exact arc length. */
+   *  points of the curve between them, `dim` components each: one for a quadratic, two for a
+   *  cubic; empty, null or absent where the segment is straight. `lengthTable` throws on any
+   *  other count. A curved segment is measured by its exact arc length. */
   controls?: readonly (ArrayLike<number> | null | undefined)[];
 }
 
@@ -77,6 +78,7 @@ type WithInternals = LengthTable & { [INTERNALS]?: LengthTableInternals };
  * an anchor rounded into an arc sits at the arc's midpoint.
  */
 export function lengthTable(runs: readonly LengthRun[], dim: 2 | 3, anchorSources?: Uint32Array | null): LengthTable {
+  runs.forEach(checkControls(dim));
   const runStart = new Float64Array(runs.length + 1);
   const cum: Float64Array[] = [];
   let total = 0;
@@ -181,6 +183,15 @@ export function lengthAtSegmentFraction(t: LengthTable, f: number): number {
   }
   return t.total;
 }
+
+const checkControls = (dim: number) => (run: LengthRun, r: number): void => {
+  run.controls?.forEach((ctl, i) => {
+    const len = ctl?.length ?? 0;
+    if (len !== 0 && len !== dim && len !== 2 * dim) {
+      throw new RangeError(`lengthTable: run ${r} segment ${i} has ${len} control components; a curve takes ${dim} or ${2 * dim}`);
+    }
+  });
+};
 
 /** Whether `run`, of `n` points, has a closing edge: a lone point closes only through a curve back to itself. */
 const wraps = (run: LengthRun, n: number): boolean =>
