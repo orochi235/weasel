@@ -112,3 +112,26 @@ it('has each source look again, and the host render, when the lab body resizes w
   unmount();
   expect(watcher?.disconnected).toBe(true);
 });
+
+it('hears a scroll in the window the lab body lives in', () => {
+  const frame = document.body.appendChild(document.createElement('iframe'));
+  const doc = frame.contentDocument as Document;
+  const body = doc.body.appendChild(doc.createElement('div'));
+  const source = { remeasure: vi.fn() };
+  const rerender = vi.fn();
+  const sources = [source];
+  function Host() {
+    useLensRemeasure(sources, body, rerender);
+    return null;
+  }
+  const { unmount } = render(
+    <LabContext.Provider value={{ trials: [], mode: 'dark' } as unknown as LabContextValue}>
+      <Host />
+    </LabContext.Provider>,
+  );
+  source.remeasure.mockClear();
+  doc.dispatchEvent(new Event('scroll'));
+  expect(rerender).toHaveBeenCalledTimes(1);
+  unmount();
+  frame.remove();
+});

@@ -175,6 +175,24 @@ describe('a clone source', () => {
   });
 });
 
+describe('a clone source in another document', () => {
+  it('finds its root and builds its copy in the document its slot lives in', () => {
+    const frame = document.body.appendChild(document.createElement('iframe'));
+    const doc = frame.contentDocument as Document;
+    const root = doc.body.appendChild(doc.createElement('div'));
+    root.className = 'lk-trial__body';
+    root.innerHTML = '<p class="probe">there</p>';
+    root.getBoundingClientRect = () => ({ left: 10, top: 10, width: 200, height: 100 }) as DOMRect;
+    const slot = doc.body.appendChild(doc.createElement('div'));
+    doc.elementsFromPoint = vi.fn(() => [root.firstElementChild as Element]);
+    document.elementsFromPoint = vi.fn(() => []);
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    const copy = slot.querySelector('.lk-lens-copy');
+    expect(copy?.ownerDocument).toBe(doc);
+    expect(copy?.querySelector('.probe')?.textContent).toBe('there');
+  });
+});
+
 describe('a clone source keeping its copy current', () => {
   it('sizes its copy again when a change in the trial resizes the trial', async () => {
     const { root, slot } = setup();

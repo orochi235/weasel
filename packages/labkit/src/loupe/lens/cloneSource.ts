@@ -24,7 +24,7 @@ function rootAt(slot: HTMLElement, client: LoupePoint, selector: string): HTMLEl
   const stack = probeUnderLens(
     slot,
     'beneath',
-    () => document.elementsFromPoint?.(client.x, client.y) ?? [],
+    () => slot.ownerDocument.elementsFromPoint?.(client.x, client.y) ?? [],
   );
   for (const el of stack) {
     if (el.closest(`[${COPY_ATTR}]`)) continue;
@@ -97,7 +97,7 @@ function stillCopy(copy: Element): void {
 
 /** One lens cell's copy: which root it copies, the copy itself, and what keeps it current. */
 class CloneCell {
-  readonly box = document.createElement('div');
+  readonly box: HTMLDivElement;
   private root: HTMLElement | null = null;
   private copy: Element | null = null;
   private readonly watch =
@@ -119,6 +119,7 @@ class CloneCell {
     /** Asks the source for a frame, on which it calls {@link frame}. */
     private readonly want: () => void,
   ) {
+    this.box = slot.ownerDocument.createElement('div');
     this.box.className = 'lk-lens-copy';
     this.box.setAttribute(COPY_ATTR, '');
     this.box.inert = true;

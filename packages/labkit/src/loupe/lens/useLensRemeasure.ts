@@ -34,8 +34,9 @@ export function useLensRemeasure(
       rerender();
       remeasure();
     };
-    window.addEventListener('scroll', moved, { capture: true, passive: true });
-    window.addEventListener('resize', moved);
+    const view = body.ownerDocument.defaultView ?? window;
+    view.addEventListener('scroll', moved, { capture: true, passive: true });
+    view.addEventListener('resize', moved);
     const unwatchScheme = watchColorScheme(moved);
     // A splitter or a collapsing sidebar resizes the body with no window event.
     let seen = false;
@@ -54,8 +55,8 @@ export function useLensRemeasure(
       typeof MutationObserver === 'undefined' ? null : new MutationObserver(remeasure);
     unveiled?.observe(body, { subtree: true, attributes: true, attributeFilter: ['data-pending'] });
     return () => {
-      window.removeEventListener('scroll', moved, { capture: true });
-      window.removeEventListener('resize', moved);
+      view.removeEventListener('scroll', moved, { capture: true });
+      view.removeEventListener('resize', moved);
       unwatchScheme();
       resized?.disconnect();
       unveiled?.disconnect();

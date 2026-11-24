@@ -11,7 +11,7 @@ export function useWheelPassThrough(input: HTMLElement | null, layer: HTMLElemen
     if (!input || !layer) return;
     const onWheel = (e: WheelEvent): void => {
       const hit = probeUnderLens(layer, 'beneath', () =>
-        document.elementFromPoint(e.clientX, e.clientY),
+        layer.ownerDocument.elementFromPoint(e.clientX, e.clientY),
       );
       if (!hit || layer.contains(hit)) return;
       const beneath = intoFrames(hit, e.clientX, e.clientY);
