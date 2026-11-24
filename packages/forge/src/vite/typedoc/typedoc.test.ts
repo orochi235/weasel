@@ -268,6 +268,26 @@ describe('typeText', () => {
     expect(typeText({ type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', children: [child] } })).toBe('{ readonly x?: A }');
   });
 
+  it("prints an object type's index signatures, methods, accessors, and call signatures", () => {
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    const num: TdType = { type: 'intrinsic', name: 'number' };
+    const unknown: TdType = { type: 'intrinsic', name: 'unknown' };
+    const voidType: TdType = { type: 'intrinsic', name: 'void' };
+    const param = (name: string, type: TdType) => ({ id: 9, kind: 32768, name, type });
+    const index = { id: 2, kind: 8192, name: '__index', parameters: [param('key', str)], type: num };
+    const onlyIndex: TdType = { type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', indexSignatures: [index] } };
+    expect(typeText(onlyIndex)).toBe('{ [key: string]: number }');
+    const method = { id: 3, kind: 2048, name: 'onChange', signatures: [{ id: 4, kind: 4096, name: 'onChange', parameters: [param('value', str)], type: voidType }] };
+    const getter = { id: 5, kind: 262144, name: 'size', getSignature: { id: 6, kind: 524288, name: 'size', type: num } };
+    const mixed = { id: 1, kind: 65536, name: '__type', children: [method, getter], indexSignatures: [{ ...index, type: unknown }] };
+    expect(typeText({ type: 'reflection', declaration: mixed })).toBe(
+      '{ [key: string]: unknown; onChange(value: string): void; readonly size: number }',
+    );
+    const call = { id: 7, kind: 4096, name: '__call', parameters: [param('x', num)], type: str };
+    const callable = { id: 1, kind: 65536, name: '__type', signatures: [call], children: [{ id: 8, kind: 1024, name: 'id', type: str }] };
+    expect(typeText({ type: 'reflection', declaration: callable })).toBe('{ (x: number): string; id: string }');
+  });
+
   it('prints an inferred type with its infer, and its constraint', () => {
     const t: TdType = { type: 'reference', name: 'T' };
     const u: TdType = { type: 'reference', name: 'U' };

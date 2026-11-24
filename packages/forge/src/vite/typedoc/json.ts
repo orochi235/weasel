@@ -76,6 +76,9 @@ export interface TdReflection {
   sources?: { fileName: string }[];
   children?: TdReflection[];
   signatures?: TdReflection[];
+  indexSignatures?: TdReflection[];
+  getSignature?: TdReflection;
+  setSignature?: TdReflection;
   parameters?: TdReflection[];
   typeParameters?: TdReflection[];
   /** A type parameter's constraint is its `type`. */
