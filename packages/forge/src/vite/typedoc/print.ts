@@ -24,7 +24,7 @@ export function typeText(type: TdType | undefined): string {
     case 'namedTupleMember':
       return `${type.name}${type.isOptional ? '?' : ''}: ${typeText(type.element)}`;
     case 'optional':
-      return `${typeText(type.elementType)}?`;
+      return `${grouped(type.elementType, POSTFIX)}?`;
     case 'rest':
       return `...${typeText(type.elementType)}`;
     case 'query':

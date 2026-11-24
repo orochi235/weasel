@@ -229,6 +229,13 @@ describe('typeText', () => {
     expect(typeText({ type: 'union', types: [obj, nul] })).toBe('{ x: A } | null');
   });
 
+  it('groups a union or a function that is an optional tuple element', () => {
+    const union: TdType = { type: 'union', types: [{ type: 'intrinsic', name: 'number' }, { type: 'literal', value: null }] };
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    expect(typeText({ type: 'tuple', elements: [str, { type: 'optional', elementType: union }] })).toBe('[string, (number | null)?]');
+    expect(typeText({ type: 'tuple', elements: [str, { type: 'optional', elementType: str }] })).toBe('[string, string?]');
+  });
+
   it('prints a mapped type with its modifiers and its as clause', () => {
     const k: TdType = { type: 'reference', name: 'K' };
     const keys: TdType = { type: 'typeOperator', operator: 'keyof', target: { type: 'reference', name: 'T' } };
