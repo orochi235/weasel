@@ -59,4 +59,14 @@ describe('Switch', () => {
     fireEvent.click(screen.getByRole('checkbox'));
     expect(onChange).toHaveBeenCalledWith(true, { alt: false });
   });
+
+  it('shows on after a click turns an uncontrolled indeterminate switch on', () => {
+    function Wrap() {
+      const [mixed, setMixed] = useState(true);
+      return <Switch defaultSelected indeterminate={mixed} onChange={() => setMixed(false)}>Snap</Switch>;
+    }
+    render(<Wrap />);
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect((screen.getByRole('switch') as HTMLInputElement).checked).toBe(true);
+  });
 });

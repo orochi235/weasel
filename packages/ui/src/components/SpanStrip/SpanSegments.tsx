@@ -1,4 +1,5 @@
 import type { ReactElement } from 'react';
+import { repeatKeys } from '../../repeatKeys';
 import type { PlacedSpan } from './spanLayout';
 import s from './SpanStrip.module.css';
 
@@ -29,17 +30,22 @@ function Segment({ placed }: { placed: PlacedSpan }): ReactElement {
   );
 }
 
+/** A React key per span: its `id`, which a run may repeat. */
+export const spanKeys = (placed: readonly PlacedSpan[]): string[] => repeatKeys(placed, (p) => p.span.id);
+
 /** The spans, each labeled and tinted in its color, unfilled. */
 export function SpanSegments({ placed }: { placed: readonly PlacedSpan[] }): ReactElement {
-  return <>{placed.map((p) => <Segment key={p.span.id} placed={p} />)}</>;
+  const keys = spanKeys(placed);
+  return <>{placed.map((p, i) => <Segment key={keys[i]} placed={p} />)}</>;
 }
 
 /** The same spans filled in their own colors, shown only left of the playhead. A copy, so nothing in a span's
  *  content can be reached through it: a click, focus, and assistive tech all find the one underneath. */
 export function SpanPlayed({ placed }: { placed: readonly PlacedSpan[] }): ReactElement {
+  const keys = spanKeys(placed);
   return (
     <div className={s.played} aria-hidden="true" inert>
-      {placed.map((p) => <Segment key={p.span.id} placed={p} />)}
+      {placed.map((p, i) => <Segment key={keys[i]} placed={p} />)}
     </div>
   );
 }

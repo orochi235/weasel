@@ -23,13 +23,12 @@ function keyNames(row: ShortcutRow, platform: Platform): Set<string>[] {
 }
 
 /** A query as the keys it names: split at spaces and `+`, a run of modifier glyphs split one per key (`⇧⌘Z`). A `+`
- *  standing alone or ending a part joins keys, as it does mid-typing (`Ctrl+`); it is the plus key only alone in the
- *  query or after another `+` (`Ctrl++`). */
+ *  joins keys, spaced or not, and ending the query it is ignored, as it is mid-typing (`Ctrl+`); it is the plus key
+ *  only alone in the query or after another `+` (`Ctrl++`, `Ctrl + +`). */
 function queryKeys(query: string): string[] {
   const q = query.trim();
   if (q === '+') return [foldText(q)];
-  return q.split(/\s+/)
-    .filter((part) => part !== '+')
+  return q.replace(/\s*\+\s*/g, '+').split(/\s+/)
     .map((part) => (part.endsWith('+') && !part.endsWith('++') ? part.slice(0, -1) : part))
     .flatMap((part) => keyLegendsFromFormatted(part).map((k) => foldText(k.label)))
     .filter((k) => k !== '');

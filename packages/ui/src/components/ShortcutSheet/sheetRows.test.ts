@@ -16,6 +16,8 @@ describe('rowMatches', () => {
   it('reads a `+` in key position as the plus key', () => {
     expect(rowMatches(ZOOM_IN, 'Ctrl++', 'linux')).toBe(true);
     expect(rowMatches(ZOOM_IN, '+', 'linux')).toBe(true);
+    expect(rowMatches(ZOOM_IN, 'Ctrl + +', 'linux')).toBe(true);
+    expect(rowMatches(UNDO, 'Ctrl + +', 'linux')).toBe(false);
     expect(rowMatches(UNDO, 'Ctrl++', 'linux')).toBe(false);
     expect(rowMatches(UNDO, '+', 'linux')).toBe(false);
   });

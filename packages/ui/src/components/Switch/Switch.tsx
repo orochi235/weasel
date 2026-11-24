@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useRef, type ReactNode, type Ref } from 'react';
+import { forwardRef, useEffect, useRef, useState, type ReactNode, type Ref } from 'react';
 import { useObjectRef } from 'react-aria';
 import {
   Switch as RACSwitch,
@@ -40,7 +40,10 @@ export const Switch = forwardRef(function Switch(
   props: SwitchProps,
   ref: Ref<HTMLInputElement>,
 ) {
-  const { rest: { children, className, rootRef, onChange, onClickCapture, indeterminate = false, ...rest }, rac, wrap } = useRacHold(props);
+  const { rest: { children, className, rootRef, onChange, onClickCapture, indeterminate = false, isSelected, defaultSelected = false, ...rest }, rac, wrap } = useRacHold(props);
+  // Held here rather than by React Aria, whose own flip would turn a mixed switch held selected off.
+  const [own, setOwn] = useState(defaultSelected);
+  const selected = isSelected ?? own;
   const input = useObjectRef(ref);
   // ARIA gives `switch` no mixed state, so a mixed one speaks as a checkbox. React Aria writes no aria-checked, and
   // writes its role only when the role it renders changes, so neither is put back under this.
@@ -64,6 +67,7 @@ export const Switch = forwardRef(function Switch(
       {...rest}
       {...rac}
       {...field}
+      isSelected={selected}
       ref={rootRef}
       inputRef={input}
       {...(indeterminate ? { 'data-indeterminate': '' } : {})}
@@ -72,8 +76,9 @@ export const Switch = forwardRef(function Switch(
         onClickCapture?.(e);
       }}
       onChange={(on) => {
-        // React Aria flips isSelected, which turns a mixed switch held selected off.
-        onChange?.(indeterminate || on, mods.current);
+        const next = indeterminate || on;
+        setOwn(next);
+        onChange?.(next, mods.current);
         mods.current = modifiersOf(undefined);
       }}
       className={[s.switch, className].filter(Boolean).join(' ')}

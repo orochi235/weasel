@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { PlacedSpan } from './spanLayout';
+import { spanKeys } from './SpanSegments';
 import s from './SpanStrip.module.css';
 
 const seamAt = (el: HTMLElement | null, at: number, { track, trackSpan, tracks }: PlacedSpan): void => {
@@ -11,10 +12,11 @@ const seamAt = (el: HTMLElement | null, at: number, { track, trackSpan, tracks }
 
 /** A dotted line at the end of each span that stops short of the strip's end. */
 export function SpanSeams({ placed }: { placed: readonly PlacedSpan[] }): ReactElement {
+  const keys = spanKeys(placed);
   return (
     <>
-      {placed.filter((p) => p.share > 0 && p.from + p.share < 0.999).map((p) => (
-        <span key={p.span.id} ref={(el) => seamAt(el, p.from + p.share, p)} className={s.seam} aria-hidden="true" />
+      {placed.map((p, i) => p.share > 0 && p.from + p.share < 0.999 && (
+        <span key={keys[i]} ref={(el) => seamAt(el, p.from + p.share, p)} className={s.seam} aria-hidden="true" />
       ))}
     </>
   );

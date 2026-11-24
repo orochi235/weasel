@@ -13,7 +13,7 @@ import {
   type SwatchValue,
 } from './SwatchButton';
 import type { SwatchGridOption } from './SwatchGrid';
-import { inwardSign, ringDepths, ringPlan, ringsOf, ringThicknesses, viableRings, type SwatchRing } from './ringPlan';
+import { fittedRingPlan, inwardSign, ringDepths, ringsOf, ringThicknesses, type SwatchRing } from './ringPlan';
 import s from './SwatchGrid.module.css';
 import { cssPx } from '../../cssPx';
 
@@ -86,9 +86,7 @@ export function SwatchRings({ shape, align, groups, onSelect, onAltSelect, onHov
   const rowsKey = groups.map((g) => Math.max(1, Math.ceil(g.options.length / wholeColumns(g.columns)))).join();
   const rows = useMemo(() => rowsKey.split(',').map(Number), [rowsKey]);
   const { plan, rings } = useMemo(() => {
-    // Room is judged with every row on a ring of its own; the rings laid are then the ones the plan keeps.
-    const room = viableRings(shape, inwardSign(shape, trackRun(shape)), ringDepths(ringThicknesses(rows, leads, size), gap), size, gap);
-    const kept = ringPlan(rows, room);
+    const kept = fittedRingPlan(shape, inwardSign(shape, trackRun(shape)), rows, leads, size, gap);
     return { plan: kept, rings: ringsOf(shape, ringDepths(ringThicknesses(kept, leads, size), gap), direction) };
   }, [shape, rows, leads, size, gap, direction]);
   const hold = useControlHold(own, { readonlyRole: false });

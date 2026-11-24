@@ -84,6 +84,24 @@ describe('open spans', () => {
 });
 
 describe('SpanStrip', () => {
+  it('draws two spans that share an id as two segments, without a key clash', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { container, rerender } = render(<SpanStrip spans={[{ id: 'fix', label: 'one', ms: 300 }, { id: 'fix', label: 'two', ms: 600 }, { id: 'end', label: 'end', ms: 100 }]} at={0} aria-label="lane" />);
+    rerender(<SpanStrip spans={[{ id: 'fix', label: 'two', ms: 600 }, { id: 'end', label: 'end', ms: 400 }]} at={0} aria-label="lane" />);
+    expect(error.mock.calls.filter(([m]) => String(m).includes('same key'))).toEqual([]);
+    error.mockRestore();
+    expect(container.querySelectorAll('[title="two"]').length).toBe(2);
+    expect(container.querySelectorAll('[title="one"]').length).toBe(0);
+  });
+
+  it('stacks two rows that share an id without a key clash', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    render(<SpanStrips window={{ from: 0, to: 100 }} rows={[{ id: 'r', spans: SPANS, lead: 'one', 'aria-label': 'one' }, { id: 'r', spans: SPANS, lead: 'two', 'aria-label': 'two' }]} />);
+    expect(error.mock.calls.filter(([m]) => String(m).includes('same key'))).toEqual([]);
+    error.mockRestore();
+    expect(screen.getAllByRole('listitem')).toHaveLength(2);
+  });
+
   it('is a meter without onSeek, with its value spoken', () => {
     render(<SpanStrip spans={SPANS} at={450} aria-label="lane" valueText="fixing, 2 minutes in" />);
     const meter = screen.getByRole('meter', { name: 'lane' });
