@@ -57,7 +57,7 @@ export function boxContains(box: LensHitBox, x: number, y: number): boolean {
 const IDENTITY: View = { x: 0, y: 0, scale: { x: 1, y: 1 } };
 
 /** Every body and reticle's box, through `view`, in paint order, with a split
- *  body's seam above it. Leaders and Glass reticles take no input, so they get none. */
+ *  body's seam above it. Leaders, Glass reticles and Follow reticles take no input, so they get none. */
 export function hitBoxesOf<C>(
   scene: LensScene<C>,
   selected: ReadonlySet<string>,
@@ -68,8 +68,10 @@ export function hitBoxesOf<C>(
   for (const node of scene.renderOrderNodes()) {
     const { data } = node;
     if (data.role === 'lens-leader') continue;
-    // A Glass reticle is the patch under its own body: it is not shown, and the body takes the pointer there.
-    if (data.role === 'lens-reticle' && settingsOf(scene, data.lensId)?.aim === 'glass') continue;
+    // A Glass reticle is the patch under its own body, which takes the pointer there; a Follow reticle sits under the
+    // pointer, so a box would take every press meant for the trial it is aimed at.
+    const aim = data.role === 'lens-reticle' ? settingsOf(scene, data.lensId)?.aim : undefined;
+    if (aim === 'glass' || aim === 'follow') continue;
     const p = effectivePose(scene, node);
     let rect: LoupeRect = viewRectToScreen(view, p);
     const body = data.role === 'lens-body';

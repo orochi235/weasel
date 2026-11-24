@@ -1,7 +1,7 @@
 import { type Op, sceneToAdapter } from '@weasel-js/core';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { HANDLE_SLOP, hitBoxesOf } from './lensHitBoxes';
-import { addLensOps, createLensScene } from './lensScene';
+import { addLensOps, createLensScene, setAimOps } from './lensScene';
 import { BODY_SIZE, type LensScene } from './lensTypes';
 
 let scene: LensScene<string>;
@@ -65,5 +65,10 @@ describe('hitBoxesOf', () => {
       ),
     );
     expect(hitBoxesOf(scene, new Set()).map((b) => b.round)).toEqual([false, false]);
+  });
+
+  it('gives a Follow reticle no box, since it sits under the pointer', () => {
+    apply(setAimOps(scene, 'a', 'follow'));
+    expect(hitBoxesOf(scene, new Set()).map((b) => b.role)).toEqual(['lens-body']);
   });
 });
