@@ -52,4 +52,11 @@ describe('Switch', () => {
     expect(sw).not.toHaveAttribute('aria-checked');
     expect(sw.closest('label')).not.toHaveAttribute('data-indeterminate');
   });
+
+  it('turns on from a click while indeterminate, whatever isSelected holds', () => {
+    const onChange = vi.fn();
+    render(<Switch indeterminate isSelected onChange={onChange}>Snap</Switch>);
+    fireEvent.click(screen.getByRole('checkbox'));
+    expect(onChange).toHaveBeenCalledWith(true, { alt: false });
+  });
 });

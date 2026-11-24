@@ -63,6 +63,7 @@
 
 .switch[data-indeterminate] .thumb {
   transform: translateX(6px);
+  background: var(--wzl-fg);
 }
 
 .switch[data-selected]:dir(rtl) .thumb {

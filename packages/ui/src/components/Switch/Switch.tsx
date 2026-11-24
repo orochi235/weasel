@@ -72,7 +72,8 @@ export const Switch = forwardRef(function Switch(
         onClickCapture?.(e);
       }}
       onChange={(on) => {
-        onChange?.(on, mods.current);
+        // React Aria flips isSelected, which turns a mixed switch held selected off.
+        onChange?.(indeterminate || on, mods.current);
         mods.current = modifiersOf(undefined);
       }}
       className={[s.switch, className].filter(Boolean).join(' ')}
