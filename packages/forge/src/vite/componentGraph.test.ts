@@ -90,6 +90,28 @@ describe('createComponentGraph', () => {
     expect(graph['ui/Parts']?.source).toBe('ui/Dialog/Footer.tsx');
   });
 
+  it('follows a meta component written as a member of a named import to the binding its file declares', async () => {
+    const ws = workspace({
+      ...FILES,
+      'ui/Tabs.tsx': `import { Badge } from '@ui';\nimport { Button } from './Button/Button';\nconst Panel = () => <Badge />;\nconst Root = () => <Button />;\nexport const Tabs = Object.assign(Root, { Panel });\nexport const Menu = () => null;\n`,
+      'stories/Tabs.stories.tsx': `import { Tabs } from '../ui/Tabs';\nexport default { title: 'ui/Tabs', component: Tabs };\n`,
+      'stories/Panel.stories.tsx': `import { Tabs } from '../ui/Tabs';\nexport default { title: 'ui/Tabs Panel', component: Tabs.Panel };\n`,
+      'stories/Item.stories.tsx': `import { Menu } from '../ui/Tabs';\nexport default { title: 'ui/Menu Item', component: Menu.Item };\n`,
+    });
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(
+      [
+        ...ENTRIES,
+        entry('ui/Tabs', 'stories/Tabs.stories.tsx', { componentName: 'Tabs' }),
+        entry('ui/Tabs Panel', 'stories/Panel.stories.tsx', { componentName: 'Tabs.Panel' }),
+        entry('ui/Menu Item', 'stories/Item.stories.tsx', { componentName: 'Menu.Item' }),
+      ],
+      ws.resolve,
+    );
+    expect(graph['ui/Tabs']?.uses).toEqual(['ui/Button', 'ui/Tabs Panel']);
+    expect(graph['ui/Tabs Panel']?.uses).toEqual(['ui/Badge']);
+    expect(graph['ui/Menu Item']?.source).toBeNull();
+  });
+
   it('gives a component with no findable source no edges, and says so with a null source', async () => {
     const ws = workspace({
       ...FILES,
