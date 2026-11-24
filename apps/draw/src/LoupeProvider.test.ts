@@ -9,6 +9,13 @@ describe('uiFontFamily', () => {
     expect(uiFontFamily('system-ui, sans-serif')).toBe('system-ui');
   });
 
+  it('resolves CSS escapes in the family name', () => {
+    expect(uiFontFamily('"Foo\\"s Sans", sans-serif')).toBe('Foo"s Sans');
+    expect(uiFontFamily("'O\\'Neil Grotesk', serif")).toBe("O'Neil Grotesk");
+    expect(uiFontFamily('"\\41 B", serif')).toBe('AB');
+    expect(uiFontFamily('Foo\\ Bar, serif')).toBe('Foo Bar');
+  });
+
   it('falls back to sans-serif for no list, or one a var() computes', () => {
     expect(uiFontFamily(undefined)).toBe('sans-serif');
     expect(uiFontFamily('  ')).toBe('sans-serif');

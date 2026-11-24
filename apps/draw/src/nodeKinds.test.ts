@@ -10,6 +10,11 @@ describe('effectNodeName', () => {
     expect(effectNodeName({ pathEffect: { kind: 'fromTheFuture' } })).toBeUndefined();
   });
 
+  it('does not take a settings leaf that is not an effect section as an effect name', () => {
+    expect(effectNodeName({ pathEffect: { kind: 'zigzags' } })).toBeUndefined();
+    expect(drawKindLabel('zigzags')).toBe('Zigzags');
+  });
+
   it('does not find an Object.prototype member as an effect name', () => {
     expect(effectNodeName({ pathEffect: { kind: 'toString' } })).toBeUndefined();
     expect(effectNodeName({ pathEffect: { kind: 'constructor' } })).toBeUndefined();

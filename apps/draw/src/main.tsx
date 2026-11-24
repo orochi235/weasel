@@ -51,10 +51,15 @@ registerDefaultFont('WeaselDraw');
 // Everything past the baked default comes from the machine: each candidate
 // family that's actually installed is enrolled with the kit's dynamic
 // canvas-SDF tier, which rasterizes glyphs on demand. See `./fonts`.
-registerAvailableFonts();
+const machineFonts = registerAvailableFonts();
 
 // File › Export lists core's PNG and these.
-registerDrawExports();
+const releaseExports = registerDrawExports();
+
+import.meta.hot?.dispose(() => {
+  machineFonts.dispose();
+  releaseExports();
+});
 
 // The v2 blob lands first, so the panel flags fold into what it held.
 importLegacyPrefs(drawPrefs());

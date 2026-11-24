@@ -4,7 +4,7 @@
  */
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-const registerCanvasFont = vi.fn();
+const registerCanvasFont = vi.fn((_family: string) => () => {});
 const listCanvasFonts = vi.fn(() => [] as { family: string; enrollment: string }[]);
 const enableLocalFontOutlines = vi.fn(async (_opts?: { families?: readonly string[] }) =>
   ({ families: [] as string[], faces: 0 }));
@@ -62,49 +62,59 @@ beforeEach(() => {
 describe('registerAvailableFonts', () => {
   it('enrolls only the families the machine actually has', () => {
     withInstalled(['Georgia', 'Impact']);
-    const enrolled = registerAvailableFonts();
+    const enrolled = registerAvailableFonts().families;
     expect(enrolled).toEqual(['Georgia', 'Impact']);
     expect(registerCanvasFont).toHaveBeenCalledTimes(2);
     expect(registerCanvasFont).toHaveBeenCalledWith('Georgia');
     expect(registerCanvasFont).toHaveBeenCalledWith('Impact');
   });
 
+  it('releases each hold it took when disposed, once', () => {
+    withInstalled(['Georgia', 'Impact']);
+    const releases = [vi.fn(), vi.fn()];
+    registerCanvasFont.mockReturnValueOnce(releases[0]!).mockReturnValueOnce(releases[1]!);
+    const fonts = registerAvailableFonts();
+    fonts.dispose();
+    fonts.dispose();
+    for (const release of releases) expect(release).toHaveBeenCalledTimes(1);
+  });
+
   it('enrolls nothing when the machine has none of them', () => {
     withInstalled([]);
-    expect(registerAvailableFonts()).toEqual([]);
+    expect(registerAvailableFonts().families).toEqual([]);
     expect(registerCanvasFont).not.toHaveBeenCalled();
   });
 
   it('does not enroll an absent family that document.fonts.check vouches for', () => {
     withInstalled(['Georgia']);
-    expect(registerAvailableFonts()).toEqual(['Georgia']);
+    expect(registerAvailableFonts().families).toEqual(['Georgia']);
   });
 
   it('quotes multi-word family names in the probe', () => {
     withInstalled(['Comic Sans MS', 'Times New Roman']);
-    expect(registerAvailableFonts()).toEqual(['Times New Roman', 'Comic Sans MS']);
+    expect(registerAvailableFonts().families).toEqual(['Times New Roman', 'Comic Sans MS']);
   });
 
   it('enrolls a family that measures like one generic, by its difference from another', () => {
     // Helvetica is macOS's default sans-serif, so it differs only from serif and monospace.
     withInstalled(['Helvetica'], () => GENERIC_WIDTH['sans-serif']!);
-    expect(registerAvailableFonts()).toEqual(['Helvetica']);
+    expect(registerAvailableFonts().families).toEqual(['Helvetica']);
   });
 
   it('enrolls nothing when there is no canvas to measure with', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
-    expect(registerAvailableFonts()).toEqual([]);
+    expect(registerAvailableFonts().families).toEqual([]);
   });
 
   it('treats a throwing probe as "not available" rather than failing', () => {
     withInstalled(new Error('nope'));
-    expect(() => registerAvailableFonts()).not.toThrow();
+    expect(() => registerAvailableFonts().families).not.toThrow();
     expect(registerCanvasFont).not.toHaveBeenCalled();
   });
 
   it('offers breadth: several genres survive a machine with a typical set', () => {
     withInstalled(['Georgia', 'Courier New', 'Impact', 'Comic Sans MS', 'Arial']);
-    const genres = new Set(registerAvailableFonts().map((f) => genreOf(f)));
+    const genres = new Set(registerAvailableFonts().families.map((f) => genreOf(f)));
     expect(genres).toEqual(new Set(['serif', 'mono', 'display', 'script', 'sans']));
   });
 });
