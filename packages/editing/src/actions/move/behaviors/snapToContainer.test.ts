@@ -18,7 +18,7 @@ function makeCtx(): GestureContext<Pose> {
     pointer: { worldX: 5, worldY: 5, clientX: 100, clientY: 100 },
     view: null,
     offset: (from, to) => ({ dx: to.x - from.x, dy: to.y - from.y }),
-    adapter: { getParent: (id: string) => (id === 'oldParent' ? null : 'oldParent') } as any,
+    adapter: { getParent: (id: string) => (id === 'oldParent' ? null : 'oldParent'), getPose: () => ({ x: 0, y: 0 }) } as any,
     scratch: {},
   };
 }
@@ -131,7 +131,7 @@ describe('snapToContainer', () => {
     ctx.draggedIds = ['p1', 'p2', 'p3'];
     ctx.origin.set('p2', { x: 20, y: 0 }).set('p3', { x: 40, y: 0 });
     ctx.current.set('p2', { x: 21, y: 1 }).set('p3', { x: 41, y: 1 });
-    ctx.adapter = { getParent: (id: string) => (id === 'p2' ? 'box' : id === 'oldParent' || id === 'box' ? null : 'oldParent') } as any;
+    ctx.adapter = { ...ctx.adapter, getParent: (id: string) => (id === 'p2' ? 'box' : id === 'oldParent' || id === 'box' ? null : 'oldParent') } as any;
     b.onMove!(ctx, tt(1, 1));
     const ops = b.onEnd!(ctx, translating(ctx)) as any[];
     const moves = ops.filter((op) => op.name === 'transform').map((op) => [op.args.id, op.args.to]);
@@ -156,6 +156,17 @@ describe('snapToContainer', () => {
     b.onMove!(ctx, tt(1, 1));
     const ops = b.onEnd!(ctx, moveEnd()) as any[];
     expect(ops[0].args).toMatchObject({ id: 'p1', to: { x: 12, y: 3 } });
+  });
+
+  it('undoes a snap to the pose the document held, not where a glide showed the node', () => {
+    const target: SnapTarget<Pose> = { parentId: 'box', slotPose: { x: 2, y: 3 } };
+    const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => target, isInstant: () => true });
+    const ctx = makeCtx();
+    ctx.origin.set('p1', { x: 7, y: 7 });
+    ctx.adapter = { ...ctx.adapter, getPose: () => ({ x: 4, y: 4 }) } as any;
+    b.onMove!(ctx, tt(1, 1));
+    const ops = b.onEnd!(ctx, moveEnd()) as any[];
+    expect(ops[0].args).toMatchObject({ id: 'p1', from: { x: 4, y: 4 }, to: { x: 2, y: 3 } });
   });
 
   it('onEnd defers (returns undefined) when no snap is active', () => {

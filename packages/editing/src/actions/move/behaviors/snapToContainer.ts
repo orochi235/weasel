@@ -197,7 +197,7 @@ function plantOps<TPose>(
   for (const [id, slot] of slots) {
     const to = ctx.frames ? ctx.frames.toLocalUnder(snap.parentId, slot) : slot;
     if (to === null) return null;
-    ops.push(coreOps.setPose<TPose>({ id, from: ctx.origin.get(id)!, to, label: moveLabel }));
+    ops.push(coreOps.setPose<TPose>({ id, from: ctx.adapter.getPose(id), to, label: moveLabel }));
     reparent(id);
   }
   // A node with no slot of its own lands where the preview drew it.
