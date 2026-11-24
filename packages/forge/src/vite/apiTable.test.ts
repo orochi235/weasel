@@ -112,7 +112,13 @@ export const Input = (_props: InputProps) => null;
       `import type { LayoutProps } from './layout';\ninterface Size { w: number; h: number }\nexport interface BadgeProps extends LayoutProps { icon?: Size; tone?: Tone }\ntype Tone = 'calm';\nexport const Badge = (_props: BadgeProps) => null;\n`,
     );
     story('badge', `import { Badge } from './Badge';\nexport default { component: Badge };\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge'].map((n) => at(`${n}.stories.ts`));
+    writeFileSync(at('look.ts'), `export interface Props { hue?: string }\n`);
+    writeFileSync(
+      at('Tag.ts'),
+      `import type { Props as TagLook } from './look';\ninterface Props { size?: number }\nexport const Tag = (_props: { look?: TagLook; own?: Props }) => null;\n`,
+    );
+    story('tag', `import { Tag } from './Tag';\nexport default { component: Tag };\n`);
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge', 'tag'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -148,6 +154,13 @@ export const Input = (_props: InputProps) => null;
     const table = api('badge');
     expect(table?.props.map((p) => p.type)).toEqual(['Size', 'Tone', 'Size']);
     expect(Object.keys(table?.types ?? {})).toEqual(['Tone']);
+  });
+
+  it('defines a type imported under another name by the name the prop writes', () => {
+    const types = api('tag')?.types;
+    expect(Object.keys(types ?? {}).sort()).toEqual(['Props', 'TagLook']);
+    expect(types?.TagLook?.text).toContain('hue?: string');
+    expect(types?.Props?.text).toContain('size?: number');
   });
 
   it('defines no type from a skipped package', () => {
