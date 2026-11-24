@@ -64,6 +64,7 @@ export const Chart = forwardRef<ChartHandle, ChartProps>(function Chart({ count 
 });
 export const Memo = memo(forwardRef<ChartHandle, ChartProps>(({ count = 4 }, _ref) => null));
 export const Box = forwardRef<HTMLDivElement, { tall?: boolean }>((_props, _ref) => null);
+export const Pane = forwardRef<HTMLDivElement & { reset(): void }, {}>((_props, _ref) => null);
 export const Wrapped = (_props: DomProps & { own?: boolean }) => null;
 export interface ListProps<T> { items: T[] }
 export const List = <T,>(_props: ListProps<T>) => null;
@@ -81,6 +82,7 @@ export const Input = (_props: InputProps) => null;
     story('chart', `import { Chart } from './Chart';\nexport default { component: Chart };\n`);
     story('memo', `import { Memo } from './Chart';\nconst meta = { component: Memo };\nexport default meta;\n`);
     story('box', `import { Box } from './Chart';\nexport default { component: Box };\n`);
+    story('pane', `import { Pane } from './Chart';\nexport default { component: Pane };\n`);
     story('wrapped', `import { Wrapped } from './Chart';\nexport default { component: Wrapped };\n`);
     story('list', `import { List } from './Chart';\nexport default { component: List };\n`);
     story('bare', `import { Bare } from './Chart';\nexport default { component: Bare };\n`);
@@ -122,7 +124,7 @@ export const Input = (_props: InputProps) => null;
       `import type { ButtonProps as A } from './pkgs/a/src/types';\nimport type { ButtonProps as B } from './pkgs/b/src/types';\nexport const Twin = (_props: A & B) => null;\n`,
     );
     story('twin', `import { Twin } from './Twin';\nexport default { component: Twin };\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge', 'twin'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge', 'twin'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -197,6 +199,10 @@ export const Input = (_props: InputProps) => null;
 
   it('names a platform ref type and lists nothing', () => {
     expect(api('box')?.ref).toEqual({ type: 'HTMLDivElement', members: [] });
+  });
+
+  it('lists only the members a ref adds to a platform type it is intersected with', () => {
+    expect(api('pane')?.ref?.members.map((m) => m.name)).toEqual(['reset']);
   });
 
   it('unwraps memo(forwardRef(fn)) for defaults and ref', () => {

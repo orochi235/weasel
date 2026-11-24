@@ -138,7 +138,7 @@ function containerName(tsm: typeof ts, prop: ts.Symbol): string | undefined {
   return undefined;
 }
 
-/** What `ref` holds: the type of `current` on the ref object it accepts. */
+/** What `ref` holds: the type of `current` on the ref object it accepts, and its members but the platform's own. */
 function refOf(
   reading: ApiReading,
   prop: ts.Symbol,
@@ -159,7 +159,11 @@ function refOf(
     if (declared.length > 0 && declared.every((d) => reading.platform(d.getSourceFile().fileName))) {
       return { type: name, members: [] };
     }
-    const members = checker.getPropertiesOfType(held).map((member) => {
+    const own = (member: ts.Symbol) => {
+      const files = filesOf(member);
+      return files.length === 0 || !files.every(reading.platform);
+    };
+    const members = checker.getPropertiesOfType(held).filter(own).map((member) => {
       record(member);
       const entry = memberEntry(reading, member);
       define(member, entry.signature);
