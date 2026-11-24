@@ -125,6 +125,14 @@ function moveLimit(c: Chords, p: Pass, q: Pass, tolerance: number): number {
   return best === 0 ? 0 : (MARGIN * 2 * tolerance) / best;
 }
 
+/** The largest coordinate among two segments' control points: evaluating them rounds in proportion to it. */
+function magnitude(A: Seg, B: Seg): number {
+  let m = 0;
+  for (const p of A) m = Math.max(m, Math.abs(p.x), Math.abs(p.y));
+  for (const p of B) m = Math.max(m, Math.abs(p.x), Math.abs(p.y));
+  return m;
+}
+
 /** Moving `p`'s parameter to `t` keeps it nearer its own place than halfway to either neighbor's along the segment. */
 const staysInOrder = (p: Pass, t: number): boolean => p.beside.every((b) => Math.abs(t - p.t) < Math.abs(b - p.t) / 2);
 
@@ -147,7 +155,7 @@ export function polishCrossings(a: ChordEdges, c: Chords, tolerance: number, ext
     if (p.seg === q.seg || (A.length === 2 && B.length === 2)) continue;
     if (!(p.t > 0 && p.t < 1 && q.t > 0 && q.t < 1)) continue;
     stats.crossings++;
-    const hit = solve(A, B, p.t, q.t, eps);
+    const hit = solve(A, B, p.t, q.t, Math.max(eps, 16 * Number.EPSILON * magnitude(A, B)));
     if (!hit || !staysInOrder(p, hit[0]) || !staysInOrder(q, hit[1])) continue;
     if (sine(A, B, hit[0], hit[1]) < MIN_SINE || sine(A, B, p.t, q.t) < MIN_SINE) continue;
     const pt = evalSeg(A, hit[0]);

@@ -24,6 +24,14 @@ const unionArea = (paths: readonly Path[]): number => {
 };
 
 describe('pathFaceArrangement', () => {
+  it('polishes crossings far from the origin as it does at the origin', () => {
+    for (const o of [1e4, 1e5, 1e8]) {
+      const at = { x: o, y: o };
+      const { polish } = curveFaces([{ ...circle(0, 0, 1), origin: at }, { ...circle(1.2, 0, 0.8), origin: at }]);
+      expect(polish.polished).toBe(2);
+    }
+  });
+
   it('refuses a flattenTolerance too fine to flatten within', () => {
     expect(() => pathFaceArrangement([circle(0, 0, 100)], { flattenTolerance: 1e-6 })).toThrow(RangeError);
     expect(pathFaceArrangement([circle(0, 0, 100)], { flattenTolerance: 1e-3 }).faces).toHaveLength(1);
