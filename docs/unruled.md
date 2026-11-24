@@ -4154,3 +4154,9 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a lens comparing in Split shows one pair at its first DPR, as Difference does, so both
   sides of the seam are at the same DPR; its other DPRs show again in Swap or with no comparison. A seam inside each
   DPR's cell, with a seam line and grab strip per cell, was the alternative.
+
+## Audit round eighty-three (2026-11-24): labkit's lenses
+
+- 2026-11-24 (the fixer's call): a Live lens's copy drops every `id` in it, so a trial styled by `#id` selectors shows
+  without those styles in the lens. Renaming the copy's ids and rewriting its own references, which loses the same
+  styles, or a shadow root, which loses the page's stylesheets, were the alternatives.

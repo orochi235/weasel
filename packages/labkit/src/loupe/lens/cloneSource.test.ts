@@ -154,6 +154,16 @@ describe('a clone source', () => {
     expect(slot.querySelector('iframe')?.hasAttribute('src')).toBe(false);
     expect(slot.querySelector('video')?.hasAttribute('autoplay')).toBe(false);
   });
+
+  it('leaves every id to the trial, so its lookups never land on the copy', () => {
+    const { root, slot } = setup('<p class="probe"><span id="t">own</span></p>');
+    root.id = 'body';
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    const copy = slot.querySelector('.lk-lens-copy') as Element;
+    expect(copy.querySelector('.probe span')?.textContent).toBe('own');
+    expect(copy.querySelectorAll('[id]')).toHaveLength(0);
+    expect(document.getElementById('t')?.closest('[data-lk-copy]')).toBeNull();
+  });
 });
 
 describe('a clone source keeping its copy current', () => {
