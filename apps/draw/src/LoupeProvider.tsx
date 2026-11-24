@@ -16,6 +16,7 @@ import { useIconRegistry } from '@weasel-js/icons/react';
 import { isGenericFamily, registerCanvasFont } from '@weasel-js/font';
 import { useThemeOptional } from '@weasel-js/theme/react';
 import { pref } from '@weasel-js/prefs';
+import { cssUnescape } from './cssUnescape';
 import { icon } from './icons.gen';
 import { LOUPE_FACTOR, LOUPE_MODE } from './loupePrefs';
 import { drawPrefs, usePref } from './prefs';
@@ -163,16 +164,6 @@ export function uiFontFamily(stack: string | undefined): string {
   if (!head || /^[\w-]+\(/.test(head)) return 'sans-serif';
   const quoted = /^(["'])(.*)\1$/.exec(head);
   return quoted ? cssUnescape(quoted[2]!) : cssUnescape(head.replace(/\s+/g, ' '));
-}
-
-/** `text` with its CSS escapes resolved: `\X` to `X`, and `\` with up to six hex digits (and one trailing space)
- *  to that code point. */
-function cssUnescape(text: string): string {
-  return text.replace(/\\(?:([0-9a-fA-F]{1,6})\s?|([^]))/g, (_, hex: string | undefined, ch: string | undefined) => {
-    if (hex === undefined) return ch!;
-    const cp = parseInt(hex, 16);
-    return cp === 0 || cp > 0x10ffff || (cp >= 0xd800 && cp <= 0xdfff) ? '\ufffd' : String.fromCodePoint(cp);
-  });
 }
 
 /** `list` up to its first comma outside quotes and brackets, trimmed. */
