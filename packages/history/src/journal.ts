@@ -130,7 +130,7 @@ export function createJournalInternal(
   parent: History,
   adapter: unknown,
   opts: BeginJournalOptions,
-  onClose?: () => void,
+  onClose?: (suspended: boolean) => void,
   inherited: Pick<CreateHistoryOptions, 'coalesceWindowMs' | 'now' | 'debug' | 'selection'> = {},
 ): Journal {
   const inner = createHistory(adapter, {
@@ -209,7 +209,7 @@ export function createJournalInternal(
       _journalAccessInternal(parent).record(forwardOps, baseOps, label, { selectionBefore, coalesceKey });
       state = 'closed';
       RESUMERS.delete(journal);
-      onClose?.();
+      onClose?.(false);
       bump();
     },
     cancel(): void {
@@ -221,7 +221,7 @@ export function createJournalInternal(
       inner.goto(0);
       state = 'closed';
       RESUMERS.delete(journal);
-      onClose?.();
+      onClose?.(false);
       bump();
     },
     suspend(): void {
@@ -229,7 +229,7 @@ export function createJournalInternal(
       // It would go on writing to the adapter while the history counts no journal open.
       if (openChildren().some((c) => c.isActive())) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
       state = 'suspended';
-      onClose?.();
+      onClose?.(true);
       bump();
     },
     isActive(): boolean {

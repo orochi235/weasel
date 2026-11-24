@@ -64,7 +64,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const journals = createJournalSlot(adapter, {
     coalesceWindowMs, now, debug: logger,
     ...(selection ? { selection } : {}),
-  });
+  }, clock.seal);
 
   const forks = createForks({ undoStack, redoStack, branching: options.branching ?? false, onEvict: options.onEvict, logger });
 

@@ -11,7 +11,8 @@ import type { CreateHistoryOptions, History } from './historyTypes';
 /** The options a journal's inner history inherits from its parent's. */
 export type InheritedOptions = Pick<CreateHistoryOptions, 'coalesceWindowMs' | 'now' | 'debug' | 'selection'>;
 
-export function createJournalSlot(adapter: unknown, inherited: InheritedOptions) {
+/** `seal` ends the history's coalescing run: a suspended journal's edits lie beneath its next push. */
+export function createJournalSlot(adapter: unknown, inherited: InheritedOptions, seal: () => void) {
   let active: Journal | null = null;
   return {
     /** Throws while a journal is open. */
@@ -20,7 +21,10 @@ export function createJournalSlot(adapter: unknown, inherited: InheritedOptions)
     },
     begin(history: History, opts: BeginJournalOptions): Journal {
       refuseWhileActive(active);
-      const j = createJournalInternal(history, adapter, opts, () => { active = null; }, inherited);
+      const j = createJournalInternal(history, adapter, opts, (suspended) => {
+        active = null;
+        if (suspended) seal();
+      }, inherited);
       active = j;
       return j;
     },
