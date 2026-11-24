@@ -106,7 +106,13 @@ export const Input = (_props: InputProps) => null;
     story('asserted', `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nexport default <Meta>{ component: Chart };\n`);
     story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
-    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none'].map((n) => at(`${n}.stories.ts`));
+    writeFileSync(at('layout.ts'), `export type Size = 'sm' | 'lg';\nexport interface LayoutProps { size?: Size }\n`);
+    writeFileSync(
+      at('Badge.ts'),
+      `import type { LayoutProps } from './layout';\ninterface Size { w: number; h: number }\nexport interface BadgeProps extends LayoutProps { icon?: Size; tone?: Tone }\ntype Tone = 'calm';\nexport const Badge = (_props: BadgeProps) => null;\n`,
+    );
+    story('badge', `import { Badge } from './Badge';\nexport default { component: Badge };\n`);
+    const stories = ['chart', 'memo', 'box', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'clash', 'none', 'badge'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories);
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -136,6 +142,12 @@ export const Input = (_props: InputProps) => null;
     expect(types?.Point?.text).toMatch(/^interface Point \{\s+x: number;\s+y: number;\s+\}$/);
     expect(types?.ChartHandle?.text).not.toContain('Maps a plot point');
     expect(Object.keys(types ?? {}).sort()).toEqual(['ChartHandle', 'Point', 'Weight']);
+  });
+
+  it('defines no type for a name that means two types among the props', () => {
+    const table = api('badge');
+    expect(table?.props.map((p) => p.type)).toEqual(['Size', 'Tone', 'Size']);
+    expect(Object.keys(table?.types ?? {})).toEqual(['Tone']);
   });
 
   it('defines no type from a skipped package', () => {

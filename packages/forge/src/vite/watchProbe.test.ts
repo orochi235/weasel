@@ -90,6 +90,13 @@ describe('warnWhenWatchIsSilent', () => {
     expect(warn.mock.calls[0]?.[0]).toContain('usePolling');
   });
 
+  it('claims a five-second wait only for its own probe, not for one it was handed', async () => {
+    const { server, warn } = serverWith(undefined);
+    await warnWhenWatchIsSilent(server, async () => false);
+    expect(warn.mock.calls[0]?.[0]).not.toContain('5 s ago');
+    expect(warn.mock.calls[0]?.[0]).toMatch(/^\[watch\] the watch probe found the OS file watcher reporting no changes, so/);
+  });
+
   it('says edits are found by modification time instead when the server recovers missed events', async () => {
     const { server, warn } = serverWith(undefined, [watchRecovery()]);
     await warnWhenWatchIsSilent(server, async () => false);

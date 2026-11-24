@@ -18,6 +18,12 @@ describe('IssuesPanel', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(2);
   });
 
+  it('links to the rest of the open issues when its host lists only some', () => {
+    const more = 'https://github.com/acme/widgets/issues?q=label%3Aforge%3ASlider';
+    renderWithIcons(<IssuesPanel component="Slider" storyId="slider--basic" issues={ISSUES} moreHref={more} />);
+    expect(screen.getByRole('link', { name: 'More open issues on GitHub' }).getAttribute('href')).toBe(more);
+  });
+
   it('says when the component has no open issues, when there is no tracker, and what its host says instead', () => {
     const { rerender } = renderWithIcons(<IssuesPanel component="Slider" storyId="slider--basic" issues={[]} />);
     expect(screen.getByText('No open issues for Slider.')).toBeTruthy();

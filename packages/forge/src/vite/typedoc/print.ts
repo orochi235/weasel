@@ -1,4 +1,4 @@
-import type { TdComment, TdIndex, TdPart, TdReflection, TdType, TypedocHref } from './json.ts';
+import { Kind, type TdComment, type TdIndex, type TdPart, type TdReflection, type TdType, type TypedocHref } from './json.ts';
 
 /** A type as TypeScript would print it. */
 export function typeText(type: TdType | undefined): string {
@@ -24,7 +24,7 @@ export function typeText(type: TdType | undefined): string {
     case 'namedTupleMember':
       return `${type.name}${type.isOptional ? '?' : ''}: ${typeText(type.element)}`;
     case 'optional':
-      return `${typeText(type.elementType)}?`;
+      return `${grouped(type.elementType, POSTFIX)}?`;
     case 'rest':
       return `...${typeText(type.elementType)}`;
     case 'query':
@@ -74,27 +74,51 @@ function grouped(type: TdType | undefined, wrap: readonly string[]): string {
   return wrap.includes(kind) ? `(${text})` : text;
 }
 
+/** Whether `declaration` prints as one arrow signature rather than as an object type. */
 const isSignature = (declaration: TdReflection | undefined): boolean =>
-  !!declaration?.signatures?.length && !declaration.children?.length;
+  declaration?.signatures?.length === 1 && !declaration.children?.length && !declaration.indexSignatures?.length;
 
 function reflectionText(declaration: TdReflection | undefined): string {
   if (!declaration) return '{}';
   const [signature] = declaration.signatures ?? [];
   if (signature && isSignature(declaration)) return signatureText(signature);
-  const members = (declaration.children ?? []).map(
-    (c) => `${c.flags?.isReadonly ? 'readonly ' : ''}${c.name}${c.flags?.isOptional ? '?' : ''}: ${typeText(c.type)}`,
-  );
+  const members = [
+    ...(declaration.signatures ?? []).map((s) => signatureParts(s, ': ')),
+    ...(declaration.indexSignatures ?? []).map(indexSignatureText),
+    ...(declaration.children ?? []).flatMap(memberText),
+  ];
   return members.length ? `{ ${members.join('; ')} }` : '{}';
 }
 
-/** A call signature, arrow style. */
-export function signatureText(signature: TdReflection): string {
+function memberText(member: TdReflection): string[] {
+  const optional = member.flags?.isOptional ? '?' : '';
+  if (member.signatures?.length) return member.signatures.map((s) => `${member.name}${optional}${signatureParts(s, ': ')}`);
+  const { getSignature: get, setSignature: set } = member;
+  if (get || set) {
+    const type = get ? typeText(get.type) : typeText(set?.parameters?.[0]?.type);
+    return [`${get && !set ? 'readonly ' : ''}${member.name}${optional}: ${type}`];
+  }
+  return [`${member.flags?.isReadonly ? 'readonly ' : ''}${member.name}${optional}: ${typeText(member.type)}`];
+}
+
+function indexSignatureText(signature: TdReflection): string {
+  const [key] = signature.parameters ?? [];
+  const readonly = signature.flags?.isReadonly ? 'readonly ' : '';
+  return `${readonly}[${key?.name ?? 'key'}: ${typeText(key?.type)}]: ${typeText(signature.type)}`;
+}
+
+/** A signature's `new`, type parameters and parameters, then `arrow` and its return type. */
+function signatureParts(signature: TdReflection, arrow: string): string {
+  const construct = signature.kind === Kind.ConstructorSignature ? 'new ' : '';
   const generics = signature.typeParameters?.length ? `<${signature.typeParameters.map(typeParameterText).join(', ')}>` : '';
   const params = (signature.parameters ?? []).map(
     (p) => `${p.flags?.isRest ? '...' : ''}${p.name}${p.flags?.isOptional ? '?' : ''}: ${typeText(p.type)}`,
   );
-  return `${generics}(${params.join(', ')}) => ${typeText(signature.type)}`;
+  return `${construct}${generics}(${params.join(', ')})${arrow}${typeText(signature.type)}`;
 }
+
+/** A call or construct signature, arrow style. */
+export const signatureText = (signature: TdReflection): string => signatureParts(signature, ' => ');
 
 const typeParameterText = (t: TdReflection): string =>
   `${t.name}${t.type ? ` extends ${typeText(t.type)}` : ''}${t.default ? ` = ${typeText(t.default)}` : ''}`;

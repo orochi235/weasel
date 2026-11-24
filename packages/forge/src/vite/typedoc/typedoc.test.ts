@@ -229,6 +229,13 @@ describe('typeText', () => {
     expect(typeText({ type: 'union', types: [obj, nul] })).toBe('{ x: A } | null');
   });
 
+  it('groups a union or a function that is an optional tuple element', () => {
+    const union: TdType = { type: 'union', types: [{ type: 'intrinsic', name: 'number' }, { type: 'literal', value: null }] };
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    expect(typeText({ type: 'tuple', elements: [str, { type: 'optional', elementType: union }] })).toBe('[string, (number | null)?]');
+    expect(typeText({ type: 'tuple', elements: [str, { type: 'optional', elementType: str }] })).toBe('[string, string?]');
+  });
+
   it('prints a mapped type with its modifiers and its as clause', () => {
     const k: TdType = { type: 'reference', name: 'K' };
     const keys: TdType = { type: 'typeOperator', operator: 'keyof', target: { type: 'reference', name: 'T' } };
@@ -259,6 +266,34 @@ describe('typeText', () => {
     const a: TdType = { type: 'reference', name: 'A' };
     const child = { id: 2, kind: 1024, name: 'x', type: a, flags: { isReadonly: true, isOptional: true } };
     expect(typeText({ type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', children: [child] } })).toBe('{ readonly x?: A }');
+  });
+
+  it("prints an object type's index signatures, methods, accessors, and call signatures", () => {
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    const num: TdType = { type: 'intrinsic', name: 'number' };
+    const unknown: TdType = { type: 'intrinsic', name: 'unknown' };
+    const voidType: TdType = { type: 'intrinsic', name: 'void' };
+    const param = (name: string, type: TdType) => ({ id: 9, kind: 32768, name, type });
+    const index = { id: 2, kind: 8192, name: '__index', parameters: [param('key', str)], type: num };
+    const onlyIndex: TdType = { type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', indexSignatures: [index] } };
+    expect(typeText(onlyIndex)).toBe('{ [key: string]: number }');
+    const method = { id: 3, kind: 2048, name: 'onChange', signatures: [{ id: 4, kind: 4096, name: 'onChange', parameters: [param('value', str)], type: voidType }] };
+    const getter = { id: 5, kind: 262144, name: 'size', getSignature: { id: 6, kind: 524288, name: 'size', type: num } };
+    const mixed = { id: 1, kind: 65536, name: '__type', children: [method, getter], indexSignatures: [{ ...index, type: unknown }] };
+    expect(typeText({ type: 'reflection', declaration: mixed })).toBe(
+      '{ [key: string]: unknown; onChange(value: string): void; readonly size: number }',
+    );
+    const call = { id: 7, kind: 4096, name: '__call', parameters: [param('x', num)], type: str };
+    const callable = { id: 1, kind: 65536, name: '__type', signatures: [call], children: [{ id: 8, kind: 1024, name: 'id', type: str }] };
+    expect(typeText({ type: 'reflection', declaration: callable })).toBe('{ (x: number): string; id: string }');
+  });
+
+  it('prints a construct signature with its new', () => {
+    const foo: TdType = { type: 'reference', name: 'Foo' };
+    const construct = { id: 2, kind: 16384, name: '__type', parameters: [{ id: 3, kind: 32768, name: 'x', type: { type: 'intrinsic', name: 'number' } }], type: foo };
+    expect(typeText({ type: 'reflection', declaration: { id: 1, kind: 65536, name: '__type', signatures: [construct] } })).toBe('new (x: number) => Foo');
+    const two = { id: 1, kind: 65536, name: '__type', signatures: [construct, { ...construct, parameters: [] }] };
+    expect(typeText({ type: 'reflection', declaration: two })).toBe('{ new (x: number): Foo; new (): Foo }');
   });
 
   it('prints an inferred type with its infer, and its constraint', () => {

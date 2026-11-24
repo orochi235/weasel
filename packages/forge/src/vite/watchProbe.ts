@@ -79,16 +79,15 @@ export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEve
 }
 
 const UNREPORTED = `[watch] a file written ${WAIT_MS / 1000} s ago has not been reported by the OS file watcher, `;
+const PROBED = '[watch] the watch probe found the OS file watcher reporting no changes, ';
 const FSEVENTSD = 'On macOS, look for `fseventsd` held at 100% CPU.';
 
 const SILENT =
-  UNREPORTED +
   'so an edit will not reach the page until file events arrive again. `server.watch: { usePolling: true }` serves edits ' +
   'without them, and so does the `watchRecovery()` plugin beside `watchProbe()`. ' +
   FSEVENTSD;
 
 const RECOVERING =
-  UNREPORTED +
   'so edits are found by their modification times instead: on the next request for the module, or within seconds ' +
   'once the watcher is quiet, each logged as it is served. ' +
   FSEVENTSD;
@@ -112,7 +111,8 @@ export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => 
   }
   if (arrived) return;
   const recovering = server.config.plugins.some((p) => p.name === WATCH_RECOVERY);
-  server.config.logger.warn(recovering ? RECOVERING : SILENT);
+  const lead = probe === fileEventsArrive ? UNREPORTED : PROBED;
+  server.config.logger.warn(lead + (recovering ? RECOVERING : SILENT));
 }
 
 /** Options for the `watchProbe` vite plugin. */

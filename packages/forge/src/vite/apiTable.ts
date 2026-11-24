@@ -1,6 +1,6 @@
 import type ts from 'typescript';
-import type { ApiInherited, ApiMember, ApiProp, ApiRef, ApiTable, ApiTypeDef } from '../story/api.ts';
-import { addTypeDef, addTypeDefs } from './typeDefs.ts';
+import type { ApiInherited, ApiMember, ApiProp, ApiRef, ApiTable } from '../story/api.ts';
+import { addTypeDef, addTypeDefs, createTypeDefs } from './typeDefs.ts';
 
 /** What reading one story file's component API needs. */
 export interface ApiReading {
@@ -34,7 +34,7 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
   const listed: ApiProp[] = [];
   const inherited = new Map<string, { container: string | undefined; pkg: string; count: number }>();
   let ref: ApiRef | null = null;
-  const defs = new Map<string, ApiTypeDef>();
+  const defs = createTypeDefs();
   const define = (symbol: ts.Symbol, text: string) =>
     addTypeDefs(reading, symbol.getDeclarations()?.[0] ?? reading.at, text, defs);
   for (const prop of props ? checker.getPropertiesOfType(checker.getApparentType(props)) : []) {
@@ -59,7 +59,7 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
     props: listed,
     inherited: inheritedRows([...inherited.values()]),
     ref,
-    ...(defs.size === 0 ? {} : { types: Object.fromEntries(defs) }),
+    ...(defs.defs.size === 0 ? {} : { types: Object.fromEntries(defs.defs) }),
     sources: [...sources],
     ...componentOf(reading.tsm, declaration),
   };
