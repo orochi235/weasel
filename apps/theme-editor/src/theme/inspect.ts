@@ -1,5 +1,7 @@
+import { splitTopLevel } from '@weasel-js/svg';
+
 const VAR = /var\(\s*--([\w-]+)/g;
-const DECLARATION = /([\w-]+)\s*:([^;]*)/g;
+const STRING = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g;
 const TOKEN = 'wzl-';
 
 function matches(el: Element, selector: string): boolean {
@@ -9,6 +11,13 @@ function matches(el: Element, selector: string): boolean {
     // A nested rule's `&` selector, or one the engine can't parse outside its context.
     return false;
   }
+}
+
+function declarationsOf(cssText: string): { prop: string; value: string }[] {
+  return splitTopLevel(cssText, ';').flatMap((part) => {
+    const colon = part.indexOf(':');
+    return colon < 0 ? [] : [{ prop: part.slice(0, colon).trim(), value: part.slice(colon + 1) }];
+  });
 }
 
 /**
@@ -31,8 +40,8 @@ export function tokensReadAt(target: Element, root: Element, sheets: Iterable<CS
   const visit = (rules: CSSRuleList) => {
     for (const rule of Array.from(rules)) {
       if (rule instanceof CSSStyleRule && chain.some((el) => matches(el, rule.selectorText))) {
-        for (const [, prop, value] of rule.style.cssText.matchAll(DECLARATION)) {
-          const read = Array.from(value.matchAll(VAR), (m) => m[1]);
+        for (const { prop, value } of declarationsOf(rule.style.cssText)) {
+          const read = Array.from(value.replace(STRING, '').matchAll(VAR), (m) => m[1]);
           if (!prop.startsWith('--')) reads.push(...read);
           else if (read.length > 0) holds.set(prop.slice(2), [...(holds.get(prop.slice(2)) ?? []), ...read]);
         }

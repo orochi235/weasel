@@ -40,4 +40,12 @@ describe('tokensReadAt', () => {
     const target = document.getElementById('t')!;
     expect(tokensReadAt(target, document.querySelector('.pane')!, documentSheets())).toEqual(['button-radius', 'fg-muted', 'fg-muted-on-accent']);
   });
+
+  it('reads a declaration whose string or url holds a semicolon as one value', () => {
+    document.head.innerHTML = `<style>
+      .btn { content: "a;color:var(--wzl-danger)"; color: var(--wzl-fg); }
+    </style>`;
+    document.body.innerHTML = '<div class="pane"><button class="btn" id="t">x</button></div>';
+    expect(tokensReadAt(document.getElementById('t')!, document.querySelector('.pane')!, documentSheets())).toEqual(['fg']);
+  });
 });
