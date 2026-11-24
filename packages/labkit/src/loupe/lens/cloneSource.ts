@@ -79,7 +79,7 @@ const STATE_EVENTS = ['scroll', 'input', 'change'] as const;
 /**
  * Takes the live behavior out of a copy before it is connected: a named radio would join the trial's own radio group
  * and uncheck its checked one, a control naming a form by `form` would be submitted with the trial's, an id would
- * answer the trial's own `getElementById`, `for` and `url(#…)` lookups, an iframe would load its page
+ * answer the trial's own `getElementById`, `for` and `url(#…)` lookups, a frame, object or embed would load its page
  * again, and autoplaying media would start a second time.
  */
 function stillCopy(copy: Element): void {
@@ -87,10 +87,11 @@ function stillCopy(copy: Element): void {
   for (const radio of copy.querySelectorAll<HTMLInputElement>('input[type="radio" i][name]'))
     radio.removeAttribute('name');
   for (const control of copy.querySelectorAll('[form]')) control.removeAttribute('form');
-  for (const frame of copy.querySelectorAll('iframe')) {
+  for (const frame of copy.querySelectorAll('iframe, frame, embed')) {
     frame.removeAttribute('src');
     frame.removeAttribute('srcdoc');
   }
+  for (const object of copy.querySelectorAll('object')) object.removeAttribute('data');
   for (const media of copy.querySelectorAll('[autoplay]')) media.removeAttribute('autoplay');
 }
 

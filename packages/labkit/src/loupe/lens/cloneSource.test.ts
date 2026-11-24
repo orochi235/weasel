@@ -155,6 +155,15 @@ describe('a clone source', () => {
     expect(slot.querySelector('video')?.hasAttribute('autoplay')).toBe(false);
   });
 
+  it('loads no object or embed a second time in its copy', () => {
+    const { slot } = setup(
+      '<p class="probe"><object data="a.svg"></object><embed src="b.svg"></p>',
+    );
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    expect(slot.querySelector('object')?.hasAttribute('data')).toBe(false);
+    expect(slot.querySelector('embed')?.hasAttribute('src')).toBe(false);
+  });
+
   it('leaves every id to the trial, so its lookups never land on the copy', () => {
     const { root, slot } = setup('<p class="probe"><span id="t">own</span></p>');
     root.id = 'body';
