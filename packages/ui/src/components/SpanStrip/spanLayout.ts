@@ -18,8 +18,9 @@ export interface SpanStripSpan {
   start?: number;
   /** Any CSS color, `var(--…)` included, that fills the played part of it and tints the rest. Default: the accent. */
   color?: string;
-  /** Its label's color, filled or not. Default: the foreground over the track, and whichever of black or white reads
-   *  on `color` where filled. */
+  /** Its label's color, filled or not, except where nothing follows it on its stripe: there the unfilled label runs on
+   *  past its end over the track, so it keeps the foreground. Default: the foreground over the track, and whichever of
+   *  black or white reads on `color` where filled. */
   ink?: string;
   /** How much of it the played layer fills, 0 to 1, from its start: progress inside the span, apart from where the
    *  playhead is. Default: 1. */
