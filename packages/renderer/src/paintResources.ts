@@ -2,7 +2,7 @@ import type { PaintResources } from './paintKinds';
 
 /** A {@link PaintResources} with the end of its lifetime in the owner's hands. */
 export interface OwnedPaintResources extends PaintResources {
-  /** Run every registered release, once. Idempotent. */
+  /** Run every registered release, once, rethrowing what they threw after the last. Idempotent. */
   release(): void;
 }
 
@@ -18,7 +18,16 @@ export function createPaintResources(): OwnedPaintResources {
     release() {
       const pending = releases;
       releases = null;
-      for (const release of pending ?? []) release();
+      const errors: unknown[] = [];
+      for (const release of pending ?? []) {
+        try {
+          release();
+        } catch (err) {
+          errors.push(err);
+        }
+      }
+      if (errors.length === 1) throw errors[0];
+      if (errors.length > 1) throw new AggregateError(errors, 'paint resource releases threw');
     },
   };
 }

@@ -22,4 +22,21 @@ describe('createPaintResources', () => {
     r.onRelease(late);
     expect(late).toHaveBeenCalledTimes(1);
   });
+
+  it('runs every release when an earlier one throws, and rethrows after', () => {
+    const r = createPaintResources();
+    const boom = new Error('gone');
+    const after = vi.fn();
+    r.onRelease(() => { throw boom; });
+    r.onRelease(after);
+    expect(() => r.release()).toThrow(boom);
+    expect(after).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws every error together when several releases throw', () => {
+    const r = createPaintResources();
+    r.onRelease(() => { throw new Error('a'); });
+    r.onRelease(() => { throw new Error('b'); });
+    expect(() => r.release()).toThrow(AggregateError);
+  });
 });
