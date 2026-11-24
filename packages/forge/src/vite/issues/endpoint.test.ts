@@ -70,7 +70,9 @@ describe('repoOf', () => {
 
 describe('serveIssues', () => {
   it('answers 502 with the checkout when gh prints JSON that is not a list of issues', async () => {
-    for (const stdout of ['{"message":"Not Found"}', 'null', '[null]']) {
+    const issue = { number: 12, title: 'Thumb drifts', url: 'https://github.com/acme/widgets/issues/12', createdAt: '2026-10-20T12:00:00Z' };
+    const lacking = ['[{}]', JSON.stringify([{ ...issue, url: undefined }]), JSON.stringify([{ ...issue, number: '12' }])];
+    for (const stdout of ['{"message":"Not Found"}', 'null', '[null]', ...lacking]) {
       const { status, body } = await get('/__forge/issues?component=Slider', answering({ stdout }));
       expect(status).toBe(502);
       expect(body).toMatchObject({ branch: 'slider-fix', commit: 'abc1234def', error: 'gh answered something that is not a list of issues' });
