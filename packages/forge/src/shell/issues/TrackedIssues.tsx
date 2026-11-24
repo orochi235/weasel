@@ -9,12 +9,14 @@ import { fetchIssues, type IssueReport, newIssueUrl, reopenLink } from './tracke
 import { messageOf } from '../../messageOf';
 
 /** What the panel shows of the dev server's answer: the issues, or a note in their place. */
-type Listing = { issues: readonly ForgeIssue[] } | { note: string };
+type Listing = { issues: readonly ForgeIssue[]; more?: string } | { note: string };
 
 const couldNot = (reason: string): Listing => ({ note: `Could not list issues: ${reason}` });
 
 const listingOf = (answer: IssuesAnswer): Listing =>
-  answer.issues ? { issues: answer.issues } : answer.unavailable ? { note: answer.unavailable } : couldNot(answer.error ?? 'no reason given');
+  answer.issues
+    ? { issues: answer.issues, ...(answer.more ? { more: answer.more } : {}) }
+    : answer.unavailable ? { note: answer.unavailable } : couldNot(answer.error ?? 'no reason given');
 
 const NO_KNOBS: Pick<ConfigSchema<unknown>, 'nodes'> = { nodes: {} };
 
@@ -59,7 +61,9 @@ export function TrackedIssues({ base, storyId, component }: { base: string; stor
     <IssuesPanel
       component={component}
       storyId={storyId}
-      {...('issues' in listing ? { issues: listing.issues } : { listNote: listing.note })}
+      {...('issues' in listing
+        ? { issues: listing.issues, ...(listing.more ? { moreHref: listing.more } : {}) }
+        : { listNote: listing.note })}
       {...(answer?.repo ? { onReport: report } : {})}
     />
   );

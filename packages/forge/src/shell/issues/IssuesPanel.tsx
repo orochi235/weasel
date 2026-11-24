@@ -18,29 +18,47 @@ export interface IssuesPanelProps {
   issues?: readonly ForgeIssue[];
   /** Shown in place of the list when `issues` is absent: why the tracker lists nothing, or that it is still asking. */
   listNote?: string;
+  /** Where the rest of the open issues are, when `issues` holds only some of them. */
+  moreHref?: string;
   /** Absent, the Report button stays disabled. */
   onReport?: (report: IssueReport) => void;
 }
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 
-function IssueList({ component, issues, note }: { component: string; issues?: readonly ForgeIssue[]; note?: string }) {
+interface IssueListProps {
+  component: string;
+  issues?: readonly ForgeIssue[];
+  note?: string;
+  moreHref?: string;
+}
+
+function IssueList({ component, issues, note, moreHref }: IssueListProps) {
   if (!issues) return <p className="fg-issues__note">{note ?? 'Not connected to an issue tracker.'}</p>;
   if (issues.length === 0) return <p className="fg-issues__note">No open issues for {component}.</p>;
   return (
-    <ul className="fg-issues__list">
-      {issues.map((issue) => (
-        <li key={issue.number} className="fg-issues__item">
-          <a href={issue.url} target="_blank" rel="noreferrer" className="fg-issues__link">
-            <span className={`fg-issues__number ${num.numeric}`}>#{issue.number}</span>
-            <span className="fg-issues__title">{issue.title}</span>
+    <>
+      <ul className="fg-issues__list">
+        {issues.map((issue) => (
+          <li key={issue.number} className="fg-issues__item">
+            <a href={issue.url} target="_blank" rel="noreferrer" className="fg-issues__link">
+              <span className={`fg-issues__number ${num.numeric}`}>#{issue.number}</span>
+              <span className="fg-issues__title">{issue.title}</span>
+            </a>
+            <time className={`fg-issues__opened ${num.numeric}`} dateTime={issue.opened}>
+              {dateFormat.format(new Date(issue.opened))}
+            </time>
+          </li>
+        ))}
+      </ul>
+      {moreHref ? (
+        <p className="fg-issues__note">
+          <a href={moreHref} target="_blank" rel="noreferrer">
+            More open issues on GitHub
           </a>
-          <time className={`fg-issues__opened ${num.numeric}`} dateTime={issue.opened}>
-            {dateFormat.format(new Date(issue.opened))}
-          </time>
-        </li>
-      ))}
-    </ul>
+        </p>
+      ) : null}
+    </>
   );
 }
 
@@ -80,13 +98,18 @@ function ReportForm({ component, storyId, onReport, onClose }: ReportFormProps) 
 }
 
 /** A component's open issues, and a report to open against it. */
-export function IssuesPanel({ component, storyId, issues, listNote, onReport }: IssuesPanelProps) {
+export function IssuesPanel({ component, storyId, issues, listNote, moreHref, onReport }: IssuesPanelProps) {
   const [reporting, setReporting] = useState(false);
   return (
     <div className="fg-issues">
       <section className="fg-issues__group" aria-label="Open issues">
         <h3 className="fg-issues__heading">Open</h3>
-        <IssueList component={component} {...(issues ? { issues } : {})} {...(listNote ? { note: listNote } : {})} />
+        <IssueList
+          component={component}
+          {...(issues ? { issues } : {})}
+          {...(listNote ? { note: listNote } : {})}
+          {...(moreHref ? { moreHref } : {})}
+        />
       </section>
       {reporting ? (
         <ReportForm

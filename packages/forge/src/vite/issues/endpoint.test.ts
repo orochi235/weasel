@@ -3,7 +3,7 @@ import { createServer, type IncomingMessage, type Server, type ServerResponse } 
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Git } from '../history';
-import type { IssuesAnswer } from './answer';
+import { ISSUE_LIMIT, type IssuesAnswer } from './answer';
 import { type Gh, type GhResult, repoOf, serveIssues } from './endpoint';
 
 type Handler = (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void;
@@ -114,6 +114,24 @@ describe('serveIssues', () => {
     const { status, body } = await get('/__forge/issues?component=Slider', answering({ failed: 'HTTP 502', code: 1 }));
     expect(status).toBe(502);
     expect(body.error).toBe('HTTP 502');
+  });
+
+  it('asks gh for one more than it lists, and links to the rest when there are more', async () => {
+    const many = Array.from({ length: ISSUE_LIMIT + 1 }, (_, i) => ({
+      number: i + 1,
+      title: `Issue ${i + 1}`,
+      url: `https://github.com/acme/widgets/issues/${i + 1}`,
+      createdAt: '2026-10-20T12:00:00Z',
+    }));
+    const gh = answering({ stdout: JSON.stringify(many) });
+    const { body } = await get('/__forge/issues?component=Slider', gh);
+    const args = gh.mock.calls[0]![0];
+    expect(args[args.indexOf('--limit') + 1]).toBe(String(ISSUE_LIMIT + 1));
+    expect(body.issues).toHaveLength(ISSUE_LIMIT);
+    expect(body.more).toBe('https://github.com/acme/widgets/issues?q=is%3Aissue%20is%3Aopen%20label%3A%22forge%3ASlider%22');
+    const { body: few } = await get('/__forge/issues?component=Slider', answering({ stdout: JSON.stringify(many.slice(1)) }));
+    expect(few.issues).toHaveLength(ISSUE_LIMIT);
+    expect(few.more).toBeUndefined();
   });
 
   it('refuses a request that names no component, without running gh', async () => {

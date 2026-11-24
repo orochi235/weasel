@@ -4,6 +4,9 @@ export const ISSUES_PATH = '__forge/issues';
 /** The label a component's issues carry. */
 export const issueLabel = (component: string): string => `forge:${component}`;
 
+/** The most issues an answer lists; past it, the answer links to the rest. */
+export const ISSUE_LIMIT = 100;
+
 /** An open issue filed against a component. */
 export interface ForgeIssue {
   number: number;
@@ -32,6 +35,8 @@ export interface IssuesAnswer {
   branch: string | null;
   commit: string | null;
   issues?: ForgeIssue[];
+  /** The repository's page of every open issue with the label, set when `issues` holds only the first `ISSUE_LIMIT`. */
+  more?: string;
   /** Why nothing can be listed, when that is the machine's setup rather than a fault: no `gh`, no login, no repo. */
   unavailable?: string;
   /** What went wrong when `gh` was there and failed. */

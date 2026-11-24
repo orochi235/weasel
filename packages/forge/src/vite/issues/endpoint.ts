@@ -2,7 +2,7 @@ import { execFile } from 'node:child_process';
 import type { ServerResponse } from 'node:http';
 import type { ViteDevServer } from 'vite';
 import { type Git, runGit } from '../history.ts';
-import { type ForgeIssue, ISSUES_PATH, type IssueRepo, type IssuesAnswer, issueLabel } from './answer.ts';
+import { type ForgeIssue, ISSUE_LIMIT, ISSUES_PATH, type IssueRepo, type IssuesAnswer, issueLabel } from './answer.ts';
 
 /** What one `gh` run came to: its stdout, no `gh` on the PATH, or a failure with its exit code and what it said. */
 export type GhResult = { stdout: string } | { missing: true } | { failed: string; code: number | null };
@@ -99,8 +99,10 @@ export function serveIssues(
     };
     if (!found) return { status: 200, body: { ...context, unavailable: 'This checkout’s origin is not a GitHub repository.' } };
     const fields = 'number,title,url,createdAt';
+    const label = issueLabel(component);
+    const limit = String(ISSUE_LIMIT + 1);
     const result = await gh(
-      ['issue', 'list', '-R', found.ghRepo, '--label', issueLabel(component), '--state', 'open', '--json', fields],
+      ['issue', 'list', '-R', found.ghRepo, '--label', label, '--state', 'open', '--limit', limit, '--json', fields],
       cwd,
     );
     if ('missing' in result) return { status: 200, body: { ...context, unavailable: 'The GitHub CLI (gh) is not installed.' } };
@@ -117,8 +119,12 @@ export function serveIssues(
       return { status: 502, body: { ...context, error: 'gh answered something that is not JSON' } };
     }
     if (!isIssueList(listed)) return { status: 502, body: { ...context, error: 'gh answered something that is not a list of issues' } };
-    const issues = listed.map(({ number, title, url, createdAt }): ForgeIssue => ({ number, title, url, opened: createdAt }));
-    return { status: 200, body: { ...context, issues } };
+    const issues = listed
+      .slice(0, ISSUE_LIMIT)
+      .map(({ number, title, url, createdAt }): ForgeIssue => ({ number, title, url, opened: createdAt }));
+    if (listed.length <= ISSUE_LIMIT) return { status: 200, body: { ...context, issues } };
+    const more = `${found.url}/issues?q=${encodeURIComponent(`is:issue is:open label:"${label}"`)}`;
+    return { status: 200, body: { ...context, issues, more } };
   };
 
   server.middlewares.use((req, res, next) => {
