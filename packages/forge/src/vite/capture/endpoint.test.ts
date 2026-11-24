@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
-import { createServer as createHttpServer, request, type Server } from 'node:http';
+import { createServer as createHttpServer, type IncomingMessage, request, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,7 +8,7 @@ import { createServer, type Plugin, type ViteDevServer } from 'vite';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { forge } from '../plugin';
 import type { CaptureBrowser } from './browser';
-import { urlHost } from './endpoint';
+import { ownOrigin, urlHost } from './endpoint';
 import type { CapturePayload } from './payload';
 
 const launch = vi.hoisted(() => vi.fn());
@@ -281,5 +281,17 @@ describe('capture endpoint', () => {
 
     const entry = (await server.environments.client.transformRequest('virtual:forge/capture-entry.js'))?.code ?? '';
     expect(entry).toContain('mountCapture');
+  });
+});
+
+describe('ownOrigin', () => {
+  const server = { resolvedUrls: null } as unknown as ViteDevServer;
+  const reqOn = (localPort: number, localAddress = '127.0.0.1') => ({ socket: { localAddress, localPort } }) as unknown as IncomingMessage;
+
+  it("takes a page served on its protocol's default port, whose Origin names no port", () => {
+    expect(ownOrigin('http://127.0.0.1', reqOn(80), 'http', server)).toBe(true);
+    expect(ownOrigin('http://localhost', reqOn(80), 'http', server)).toBe(true);
+    expect(ownOrigin('https://localhost', reqOn(443), 'https', server)).toBe(true);
+    expect(ownOrigin('http://localhost', reqOn(8080), 'http', server)).toBe(false);
   });
 });
