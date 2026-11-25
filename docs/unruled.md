@@ -4231,3 +4231,9 @@ Calls the lanes made without a ruling:
   alternative. `openPointerSession`'s `missedRelease` option picks either.
 - 2026-11-24 (the fixer's call): every `openPointerSession` cancels on a window blur, reporting `'blur'`, unless
   opened with `blur: false`. Leaving blur to each caller, as only carry and the dispatcher did, was the alternative.
+
+## Audit round eighty-seven (2026-11-25): routing's tools
+
+- 2026-11-25 (the fixer's call): `<SceneCanvas toolOptionValues>` wins over a store a child publishes with
+  `useToolOptionValues`, whichever mounted first; the child's store answers only when the canvas is given none. The
+  hook's doc had said both; the child's store always winning was the alternative.

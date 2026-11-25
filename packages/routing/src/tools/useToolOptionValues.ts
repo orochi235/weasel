@@ -35,14 +35,14 @@ export function useToolOptionParams(
 }
 
 /** The canvas's `toolOptionValues` dep: `values` (`<SceneCanvas toolOptionValues>`), else a store published beneath
- *  it, else one held in memory, so a canvas whose host keeps none still has its tools' options. A source a child
- *  publishes with {@link useToolOptionValues} registers later and wins. */
+ *  it with {@link useToolOptionValues}, else one held in memory, so a canvas whose host keeps none still has its
+ *  tools' options. It sits a rank over sources of its scope, so that order holds whichever mounted first. */
 export function useCanvasToolOptionValues(values: ToolOptionValues | undefined): void {
   const registry = useOptionalDepRegistry();
   const [fallback] = useState(createToolOptionValues);
   const latest = useLatest(values);
   useEffect(
-    () => registry?.register('toolOptionValues', (below) => latest.current ?? below() ?? fallback),
+    () => registry?.register('toolOptionValues', (below) => latest.current ?? below() ?? fallback, { rank: 1 }),
     [registry, fallback, latest],
   );
 }
