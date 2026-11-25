@@ -83,8 +83,8 @@ export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
   const dy = glyph.hotspot[1] - c;
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);
-  // Held to the image's whole pixels: rounding can carry a hotspot past a fractional size.
-  const pixel = (v: number): number => Math.min(Math.max(0, Math.round(v)), Math.floor(size));
+  // Held to the image's pixels, 0 to its width less one: rounding can carry a hotspot past the last.
+  const pixel = (v: number): number => Math.min(Math.max(0, Math.round(v)), Math.max(0, Math.ceil(size) - 1));
   const hx = pixel(((c + cos * dx - sin * dy) / glyph.box) * size);
   const hy = pixel(((c + sin * dx + cos * dy) / glyph.box) * size);
   const uri = `data:image/svg+xml,${encodeURIComponent(svg)}`;

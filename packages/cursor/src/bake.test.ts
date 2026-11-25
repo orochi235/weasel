@@ -24,6 +24,14 @@ describe('bakeCursor', () => {
     expect(bakeCursor(PENCIL, { size: 30 })).toContain('") 6 24,');
   });
 
+  it('holds the hotspot to a pixel inside the image', () => {
+    const corner: CursorGlyph = { ...PENCIL, hotspot: [24, 24] };
+    expect(bakeCursor(corner, { size: 24 })).toContain('") 23 23,');
+    // A one-pixel image has one pixel, at 0.
+    expect(bakeCursor(corner, { size: 1 })).toContain('") 0 0,');
+    expect(bakeCursor(corner, { size: 24.5 })).toContain('") 24 24,');
+  });
+
   it('draws a non-finite angle unrotated, where it wrote NaN into the hotspot', () => {
     expect(quantizeCursorAngle(Number.NaN)).toBe(0);
     expect(quantizeCursorAngle(Infinity)).toBe(0);

@@ -43,13 +43,15 @@ describe('bakeCursor', () => {
       expect(Number.isInteger(got.hx) && Number.isInteger(got.hy)).toBe(true);
       expect(got.hx).toBeGreaterThanOrEqual(0);
       expect(got.hy).toBeGreaterThanOrEqual(0);
-      expect(got.hx).toBeLessThanOrEqual(s);
-      expect(got.hy).toBeLessThanOrEqual(s);
+      // The last pixel is the width less one.
+      const last = Math.max(0, Math.ceil(s) - 1);
+      expect(got.hx).toBeLessThanOrEqual(last);
+      expect(got.hy).toBeLessThanOrEqual(last);
       const theta = (quantizeCursorAngle(a) / CURSOR_ANGLE_STEPS) * 2 * Math.PI;
       const c = glyph.box / 2;
       const [dx, dy] = [glyph.hotspot[0] - c, glyph.hotspot[1] - c];
       const k = s / glyph.box;
-      const inside = (v: number) => Math.min(Math.max(0, v), Math.floor(s));
+      const inside = (v: number) => Math.min(Math.max(0, v), last);
       expect(Math.abs(got.hx - inside((c + Math.cos(theta) * dx - Math.sin(theta) * dy) * k))).toBeLessThanOrEqual(0.5 + 1e-9);
       expect(Math.abs(got.hy - inside((c + Math.sin(theta) * dx + Math.cos(theta) * dy) * k))).toBeLessThanOrEqual(0.5 + 1e-9);
       expect(css).not.toMatch(/NaN|Infinity|undefined/);
@@ -98,7 +100,8 @@ describe('the painted tier', () => {
       const tx = (c + Math.cos(angle) * (glyph.hotspot[0] - c) - Math.sin(angle) * (glyph.hotspot[1] - c)) * k;
       const ty = (c + Math.sin(angle) * (glyph.hotspot[0] - c) + Math.cos(angle) * (glyph.hotspot[1] - c)) * k;
       expect(Math.abs(Math.hypot(mx - bx, my - by) - Math.hypot(tx - baked.hx, ty - baked.hy))).toBeLessThan(1e-6);
-      if (tx >= 0 && ty >= 0 && tx <= Math.floor(size) && ty <= Math.floor(size)) expect(Math.hypot(mx - bx, my - by)).toBeLessThanOrEqual(Math.SQRT1_2 + 1e-6);
+      const last = Math.max(0, Math.ceil(size) - 1);
+      if (tx >= 0 && ty >= 0 && tx <= last && ty <= last) expect(Math.hypot(mx - bx, my - by)).toBeLessThanOrEqual(Math.SQRT1_2 + 1e-6);
     }), runs(RUNS));
   }, timeoutFor(RUNS, 2));
 
