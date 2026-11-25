@@ -31,4 +31,9 @@ describe('isOneChar', () => {
     expect(isOneChar('ab')).toBe(false);
     expect(isOneChar('Enter')).toBe(false);
   });
+
+  it('reads a lone surrogate as no character', () => {
+    expect(isOneChar('\uD83D')).toBe(false);
+    expect(isOneChar('\uDE00')).toBe(false);
+  });
 });
