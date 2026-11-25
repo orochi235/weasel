@@ -181,7 +181,7 @@ function refOf(
 
 function memberEntry(reading: ApiReading, member: ts.Symbol): ApiMember {
   const { tsm, checker, at } = reading;
-  const type = checker.getTypeOfSymbolAtLocation(member, at);
+  const type = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(member, at));
   const [call] = type.getCallSignatures();
   const declarations = member.getDeclarations() ?? [];
   const entry: ApiMember = {

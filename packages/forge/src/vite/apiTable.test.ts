@@ -44,6 +44,8 @@ export interface ChartHandle {
   toModel(pt: Point): Point;
   readonly width: number;
   label: string;
+  reset?(): void;
+  note?: string;
 }
 /** How heavy a stroke is. */
 type Weight = 'thin' | 'bold';
@@ -227,6 +229,8 @@ export const Input = (_props: InputProps) => null;
       { name: 'toModel', kind: 'method', signature: '(pt: Point) => Point', readonly: false, description: 'Maps a plot point to the model.' },
       { name: 'width', kind: 'property', signature: 'number', readonly: true },
       { name: 'label', kind: 'property', signature: 'string', readonly: false },
+      { name: 'reset', kind: 'method', signature: '() => void', readonly: false },
+      { name: 'note', kind: 'property', signature: 'string', readonly: false },
     ]);
     expect(prop(table, 'ref')).toBeUndefined();
     expect(prop(table, 'key')).toBeUndefined();
