@@ -1,12 +1,12 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Op, NodeId, Scene } from '@weasel-js/core';
-import { shapeSources } from '@weasel-js/core';
+import { shapeSources, withoutPageStructure } from '@weasel-js/core';
 import { rotateOps } from './commit';
 import { storedPreviews } from './frame';
 import { captureTurn } from './session';
 
 /** The ops that turn `selected` by `angle` radians the way a rotate drag
- *  would: about the selection's center, or each node about its own. A locked node is turned too, for the caller's
+ *  would: about the selection's center, or each node about its own, leaving page structure alone. A locked node is turned too, for the caller's
  *  lock check to refuse. */
 export function rotateSelectionOps(
   scene: Scene<unknown, string, unknown>,
@@ -16,9 +16,10 @@ export function rotateSelectionOps(
   pivot: 'union' | 'each',
   label: string,
 ): Op[] {
-  const ids = shapeSources(scene, selected) as NodeId[];
+  const content = withoutPageStructure(scene, selected);
+  const ids = shapeSources(scene, content) as NodeId[];
   if (ids.length === 0 || angle === 0) return [];
-  const captured = captureTurn(scene, selected, ids, deps, pivot, 'keep');
+  const captured = captureTurn(scene, content, ids, deps, pivot, 'keep');
   if (!captured) return [];
   const { turn, originPoses, poseFrame } = captured;
   const previews = storedPreviews({ scene, turn, poseFrame, view: deps.view }, angle);

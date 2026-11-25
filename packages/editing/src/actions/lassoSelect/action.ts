@@ -17,7 +17,7 @@
  * transiently too.
  */
 
-import { gestureViewReader, gesturePlaneReader, screenTolerance, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
+import { gestureReaders, screenTolerance, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
 import { defineAction, resolveParams, setScratch } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi, LassoHitMode, LassoSelectAdapter, GestureContext, LassoSelectBehavior, LassoSelectPose } from '@weasel-js/core/engine';
@@ -81,7 +81,7 @@ export const lassoSelectAction = defineAction({
   id: 'lassoSelect',
   label: 'Lasso Select',
   eligible: { capability: 'creates-selection' },
-  requires: ['lassoSelect', 'view'],
+  requires: ['lassoSelect', 'view', 'kitSettings'],
   invoker: {
     timing: 'ongoing',
     start(ctx, opts): OngoingHandle {
@@ -94,8 +94,8 @@ export const lassoSelectAction = defineAction({
       const vertices: Point2[] = [{ x: ctx.world.x, y: ctx.world.y }];
       const behaviors = (opts?.behaviors ?? []) as LassoSelectBehavior[];
       let gesture: GestureContext<LassoSelectPose> | null = null;
-      const readView = gestureViewReader(ctx.deps);
-      const readPlane = gesturePlaneReader(ctx.deps);
+      const readers = gestureReaders(ctx.deps);
+      const { view: readView, plane: readPlane } = readers;
       if (behaviors.length > 0) {
         const pose: LassoSelectPose = {
           worldX: ctx.world.x, worldY: ctx.world.y, shiftHeld: ctx.modifiers.shift,
@@ -108,6 +108,8 @@ export const lassoSelectAction = defineAction({
           modifiers: { ...ctx.modifiers },
           pointer: pointerStateOf(ctx.world, ctx),
           view: readView(),
+          plane: readPlane(),
+          kitSettings: readers.kitSettings,
           adapter: behaviorAdapter(dep, view) as unknown as GestureContext<LassoSelectPose>['adapter'],
           scratch: {},
         };
@@ -149,6 +151,7 @@ export const lassoSelectAction = defineAction({
             g.modifiers = { ...moveCtx.modifiers };
             g.pointer = pointerStateOf(moveCtx.world, moveCtx);
             g.view = readView();
+            g.plane = readPlane();
             g.current.set('gesture', { worldX: x, worldY: y, shiftHeld: scratch.shiftHeld });
             const proposed = { vertices: scratch.vertices, shiftHeld: scratch.shiftHeld };
             for (const b of scratch.behaviors) b.onMove?.(g, proposed);

@@ -1,7 +1,7 @@
 import { ActionDisabledReason, eligibleNow, type Action, type ActionDeps, type ActionUnavailable, BETWEEN_GESTURES } from '@weasel-js/routing';
 import type { Scene } from '@weasel-js/core/engine';
 import { duplicateAction, duplicateSelection } from '../edit/duplicate';
-import { DUPLICATE_OFFSET, requiresContent, requiresOperands, lastTransform, recordTransform, type RepeatableTransform } from '@weasel-js/core';
+import { DUPLICATE_OFFSET, operandContent, requiresContent, requiresOperands, lastTransform, recordTransform, type RepeatableTransform } from '@weasel-js/core';
 import { selectionTransformAnswer, selectionTransformOps } from './transformSelection';
 import { icon } from '../../icons.gen';
 import { commitTransform } from '../lockedWrites';
@@ -29,7 +29,7 @@ function canRepeat(deps: ActionDeps, t: RepeatableTransform): true | ActionUnava
  *  afterwards, or null when nothing changed. */
 function replay(deps: ActionDeps, scene: AnyScene, t: RepeatableTransform): readonly string[] | null {
   if (t.kind === 'duplicate') return duplicateSelection(deps, t.dx, t.dy, LABEL);
-  const selected = [...deps.operands!.get()] as string[];
+  const selected = [...operandContent(deps)] as string[];
   const ops = selectionTransformOps(deps, scene, selected, t, LABEL);
   return commitTransform(deps, scene, ops, LABEL) ? selected : null;
 }

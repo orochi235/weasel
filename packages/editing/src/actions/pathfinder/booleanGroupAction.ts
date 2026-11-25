@@ -69,12 +69,11 @@ export function booleanGroupOps(
 }
 
 /** {@link booleanGroupOps} committed straight to `scene` as one undo entry. Returns the group's id, or null, as when
- *  it would rewrite a locked node. */
+ *  it would rewrite a locked node or the scene refuses the batch. */
 export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: BooleanShapeOp = 'union'): NodeId | null {
   const made = booleanGroupOps(scene, ids, op);
   if (!made || made.locked) return null;
-  scene.applyBatch(made.ops, 'Make Boolean Group', defaultCommitAdapter(scene));
-  return made.group;
+  return scene.applyBatch(made.ops, 'Make Boolean Group', defaultCommitAdapter(scene)) ? made.group : null;
 }
 
 /** Put the selection under a new boolean group, a union until its operation is changed. */
