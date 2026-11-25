@@ -15,13 +15,13 @@ function Board() {
   const scene = useScene<{ name: string }, 'main', RectPose>({
     systemLayers: [{ id: 'main' }],
     initial: [
-      { id: asNodeId('frame'), kind: 'group', layer: 'main', pose: { x: 20, y: 20, width: 160, height: 120 }, data: { name: 'frame' } },
-      { id: asNodeId('card'), kind: 'mark', layer: 'main', parent: asNodeId('frame'), pose: { x: 40, y: 40, width: 60, height: 40 }, data: { name: 'card' } },
-      { id: asNodeId('badge'), kind: 'mark', layer: 'main', parent: asNodeId('frame'), locked: true, pose: { x: 110, y: 50, width: 40, height: 40 }, data: { name: 'badge' } },
-      { id: asNodeId('note'), kind: 'mark', layer: 'main', pose: { x: 220, y: 60, width: 80, height: 50 }, data: { name: 'note' } },
+      { id: asNodeId('frame'), kind: 'group', layer: 'main', pose: { x: 14, y: 14, width: 112, height: 84 }, data: { name: 'frame' } },
+      { id: asNodeId('card'), kind: 'mark', layer: 'main', parent: asNodeId('frame'), pose: { x: 28, y: 28, width: 42, height: 28 }, data: { name: 'card' } },
+      { id: asNodeId('badge'), kind: 'mark', layer: 'main', parent: asNodeId('frame'), locked: true, pose: { x: 77, y: 35, width: 28, height: 28 }, data: { name: 'badge' } },
+      { id: asNodeId('note'), kind: 'mark', layer: 'main', pose: { x: 154, y: 42, width: 56, height: 35 }, data: { name: 'note' } },
     ],
   });
-  return <SceneCanvas scene={scene} width={340} height={260} features={FEATURES} defaultTools={TOOLS} ambient={AMBIENT} aria-label="Story board" />;
+  return <SceneCanvas scene={scene} width={240} height={180} features={FEATURES} defaultTools={TOOLS} ambient={AMBIENT} aria-label="Story board" />;
 }
 
 /** A canvas and the panel reading it, side by side. */
