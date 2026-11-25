@@ -52,6 +52,13 @@ describe('bakeCursor', () => {
     expect(svg.match(/"/g)!.length % 2).toBe(0);
   });
 
+  it('falls back to default for a blank fallback, and refuses one that is not a cursor value', () => {
+    expect(bakeCursor(PENCIL, { fallback: '' })).toMatch(/, default$/);
+    expect(bakeCursor(PENCIL, { fallback: '  ' })).toMatch(/, default$/);
+    expect(() => bakeCursor(PENCIL, { fallback: 'pointer; color: red' })).toThrow(RangeError);
+    expect(bakeCursor(PENCIL, { fallback: 'crosshair' })).toMatch(/, crosshair$/);
+  });
+
   it('percent-encodes the payload so no raw # reaches the URI', () => {
     // An unencoded '#' from a color starts a fragment and truncates the SVG.
     const css = bakeCursor(PENCIL, {});

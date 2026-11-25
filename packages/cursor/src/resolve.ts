@@ -25,7 +25,7 @@ export interface CursorGlyphSpec {
   readonly worldRadius?: number;
   /** Clockwise rotation in radians, quantized to 22.5° at bake. */
   readonly angle?: number;
-  /** Keyword drawn if the browser rejects the image. Default 'default'. */
+  /** Keyword drawn if the browser rejects the image. Default 'default', also for a blank one. */
   readonly fallback?: string;
 }
 

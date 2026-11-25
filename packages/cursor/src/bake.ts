@@ -12,7 +12,8 @@ export interface BakeOptions {
   /** Clockwise rotation in radians about the box centre, quantized to
    *  {@link CURSOR_ANGLE_STEPS} steps. Default 0. */
   readonly angle?: number;
-  /** Keyword drawn if the browser rejects the image. Default 'default'. */
+  /** Keyword drawn if the browser rejects the image. Default 'default', also for a blank one; one holding `;`, `{`
+   *  or `}` throws. */
   readonly fallback?: string;
 }
 
@@ -26,6 +27,15 @@ export function bakeSize(size: number | undefined): number {
     );
   }
   return size !== undefined && Number.isFinite(size) && size > 0 ? size : 24;
+}
+
+/** The cursor a baked image falls back to: `fallback`, or 'default' when it is missing or blank. Throws a
+ *  `RangeError` for one holding `;`, `{` or `}`, which no cursor value does: the browser would drop the whole
+ *  declaration and keep the cursor before it. */
+export function bakeFallback(fallback: string | undefined): string {
+  if (fallback === undefined || fallback.trim() === '') return 'default';
+  if (/[;{}]/.test(fallback)) throw new RangeError(`cursor fallback ${JSON.stringify(fallback)} is not a cursor value`);
+  return fallback;
 }
 
 /**
@@ -92,5 +102,5 @@ export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
   const hx = pixel(((c + cos * dx - sin * dy) / glyph.box) * size);
   const hy = pixel(((c + sin * dx + cos * dy) / glyph.box) * size);
   const uri = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-  return `url("${uri}") ${hx} ${hy}, ${opts.fallback ?? 'default'}`;
+  return `url("${uri}") ${hx} ${hy}, ${bakeFallback(opts.fallback)}`;
 }

@@ -1527,6 +1527,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   (b686c535b). It does not report them; nothing in symmetry has a place to.
 - 2026-11-11 (my call, cursor second pass): `placeCursorPath` throws a `RangeError` for a scale or move that makes a
   coordinate `NaN` or infinite (e3481a9d2), as `bakeCursor` refuses an infinite size, rather than dropping the point.
+- 2026-11-24 (my call, cursor audit 85): `bakeCursor` and `cursorFor` bake a blank fallback as `default`, as a
+  missing one, and throw a `RangeError` for one holding `;`, `{` or `}`, which no cursor value holds and which makes the
+  browser drop the whole declaration. Other strings still pass through unchecked.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
