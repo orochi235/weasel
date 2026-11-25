@@ -125,9 +125,13 @@ export interface PendingIngestItem {
 export function itemTypesFromDataTransfer(dt: DataTransfer): readonly IngestItem[] {
   const pending: PendingIngestItem[] = [];
   for (const item of Array.from(dt.items ?? [])) {
-    const mime = item.type ? normalizeMime(item.type) : '';
-    if (item.kind === 'file') pending.push({ pending: 'file', mime: mime && mime !== 'application/x-moz-file' ? mime : UNKNOWN_MIME });
-    else if (keepsString(mime)) pending.push({ pending: 'string', mime });
+    if (item.kind === 'file') {
+      const mime = item.type ? normalizeMime(item.type) : '';
+      pending.push({ pending: 'file', mime: mime && mime !== 'application/x-moz-file' ? mime : UNKNOWN_MIME });
+    } else if (item.kind === 'string') {
+      const mime = normalizeMime(item.type);
+      if (keepsString(mime)) pending.push({ pending: 'string', mime });
+    }
   }
   if (pending.length === 0 && Array.from(dt.types ?? []).includes('Files')) pending.push({ pending: 'file', mime: UNKNOWN_MIME });
   return pending as unknown as IngestItem[];
