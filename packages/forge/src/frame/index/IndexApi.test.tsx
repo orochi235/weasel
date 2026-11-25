@@ -78,7 +78,9 @@ describe('IndexApi', () => {
     act(() => point!.focus());
     const tip = screen.getByRole('tooltip');
     expect(tip).toHaveTextContent('A plot point.');
-    expect(tip.querySelector('pre')?.textContent).toBe('interface Point {\n    x: number;\n}');
+    const lines = [...(tip.querySelector('pre code')?.children ?? [])].map((line) => line.textContent);
+    expect(lines).toEqual(['interface Point {', '    x: number;', '}']);
+    expect(tip.querySelector('pre .token.keyword')?.textContent).toBe('interface');
     expect(within(entry('label')).queryByRole('img')).toBeNull();
   });
 

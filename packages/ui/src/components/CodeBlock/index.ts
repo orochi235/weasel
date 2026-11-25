@@ -1,2 +1,2 @@
-export { CodeBlock } from './CodeBlock';
-export type { CodeBlockProps, CodeLanguage } from './CodeBlock';
+export { CodeBlock, CodeText } from './CodeBlock';
+export type { CodeBlockProps, CodeLanguage, CodeTextProps } from './CodeBlock';

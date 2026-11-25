@@ -35,39 +35,61 @@ for (const lang of ['javascript', 'typescript', 'jsx', 'tsx'] as const) {
   });
 }
 
+/** Props for {@link CodeText}. */
+export interface CodeTextProps {
+  code: string;
+  /** Default `'tsx'`. */
+  language?: CodeLanguage;
+  /** Number each line in a gutter the reader cannot select. Default `false`. */
+  lineNumbers?: boolean;
+  /** Class on the `<code>`. */
+  className?: string;
+}
+
 /**
- * A block of source, syntax-highlighted, in the monospace face. Token colors come from the theme's `--wzl-code-*`
- * tokens, so a block reads in either mode and a theme can recolor it.
+ * Source, syntax-highlighted, as a `<code>` of one element a line, for a container of the caller's own: a tooltip, a
+ * table cell. Token colors come from the theme's `--wzl-code-*` tokens. Lines follow the container's `white-space`,
+ * so a `pre-wrap` container wraps them. {@link CodeBlock} is this inside a scrolling `<pre>`.
  */
-export const CodeBlock = memo(function CodeBlock({ code, language = 'tsx', lineNumbers = false, className, ...rest }: CodeBlockProps) {
+export const CodeText = memo(function CodeText({ code, language = 'tsx', lineNumbers = false, className }: CodeTextProps) {
   return (
     <Highlight code={code} language={language} theme={UNSTYLED}>
       {({ tokens, getLineProps, getTokenProps }) => {
         // The gutter holds the widest number; a custom property is the one thing set inline.
         const gutter = { '--code-gutter': `${String(tokens.length).length}ch` } as CSSProperties;
         return (
-          // It scrolls, so the keyboard has to be able to reach it to scroll it.
-          <pre className={[s.block, lineNumbers && s.numbered, className].filter(Boolean).join(' ')} tabIndex={0}
-            style={lineNumbers ? gutter : undefined} data-testid={rest['data-testid']}>
-            <code>
-              {tokens.map((line, i) => {
-                const { key: _line, className: lineClass, style: _lineStyle, ...lineProps } = getLineProps({ line });
-                // A plain token has no color, so it is text, not an element: they are a third of a schema literal's.
-                const text = line.map((token, j) => {
-                  if (token.types.length === 1 && token.types[0] === 'plain') return token.content;
-                  const { key: _token, style: _tokenStyle, ...tokenProps } = getTokenProps({ token });
-                  return <span key={j} {...tokenProps} />;
-                });
-                return (
-                  <span key={i} {...lineProps} className={`${lineClass} ${s.line}`}>
-                    {lineNumbers ? <><span className={s.lineNo} aria-hidden>{i + 1}</span><span>{text}</span></> : text}
-                  </span>
-                );
-              })}
-            </code>
-          </pre>
+          <code className={[s.tokens, lineNumbers && s.numbered, className].filter(Boolean).join(' ')}
+            style={lineNumbers ? gutter : undefined}>
+            {tokens.map((line, i) => {
+              const { key: _line, className: lineClass, style: _lineStyle, ...lineProps } = getLineProps({ line });
+              // A plain token has no color, so it is text, not an element: they are a third of a schema literal's.
+              const text = line.map((token, j) => {
+                if (token.types.length === 1 && token.types[0] === 'plain') return token.content;
+                const { key: _token, style: _tokenStyle, ...tokenProps } = getTokenProps({ token });
+                return <span key={j} {...tokenProps} />;
+              });
+              return (
+                <span key={i} {...lineProps} className={`${lineClass} ${s.line}`}>
+                  {lineNumbers ? <><span className={s.lineNo} aria-hidden>{i + 1}</span><span>{text}</span></> : text}
+                </span>
+              );
+            })}
+          </code>
         );
       }}
     </Highlight>
+  );
+});
+
+/**
+ * A block of source, syntax-highlighted, in the monospace face. Token colors come from the theme's `--wzl-code-*`
+ * tokens, so a block reads in either mode and a theme can recolor it.
+ */
+export const CodeBlock = memo(function CodeBlock({ code, language = 'tsx', lineNumbers = false, className, ...rest }: CodeBlockProps) {
+  return (
+    // It scrolls, so the keyboard has to be able to reach it to scroll it.
+    <pre className={[s.block, className].filter(Boolean).join(' ')} tabIndex={0} data-testid={rest['data-testid']}>
+      <CodeText code={code} language={language} lineNumbers={lineNumbers} />
+    </pre>
   );
 });

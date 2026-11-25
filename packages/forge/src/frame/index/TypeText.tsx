@@ -1,5 +1,6 @@
 // The component's own entry, not the barrel: the barrel would bring every weasel-ui component into each frame.
 import { Focusable, Tooltip, TooltipTrigger } from '@weasel-js/ui/components/Tooltip';
+import { CodeText } from '@weasel-js/ui/components/CodeBlock';
 import { getOwn } from '@weasel-js/registry';
 import type { ApiTypeDef } from '../../story/api';
 import { Description } from './Description';
@@ -28,7 +29,7 @@ function Defined({ name, def }: { name: string; def: ApiTypeDef }) {
       <Tooltip className="fg-index-api__tip" placement="bottom">
         {def.description ? <Description text={def.description} className="fg-index-api__tip-summary" /> : null}
         <pre className="fg-index-api__tip-def">
-          <code>{clipped(def.text)}</code>
+          <CodeText code={clipped(def.text)} language="ts" />
         </pre>
       </Tooltip>
     </TooltipTrigger>

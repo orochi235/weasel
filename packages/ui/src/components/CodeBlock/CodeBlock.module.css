@@ -11,14 +11,15 @@
   outline-offset: -1px;
 }
 
-.block code {
+.tokens {
   display: grid;
   font: inherit;
 }
 
+/* Inherits, so a `pre-wrap` container wraps a line; a `<pre>` keeps it whole. */
 .line {
   display: block;
-  white-space: pre;
+  white-space: inherit;
 }
 
 .numbered .line {
@@ -34,48 +35,48 @@
 }
 
 /* prism's token classes, which it sets on each span. */
-.block :global(.token.keyword),
-.block :global(.token.builtin),
-.block :global(.token.operator.arrow) {
+.tokens :global(.token.keyword),
+.tokens :global(.token.builtin),
+.tokens :global(.token.operator.arrow) {
   color: var(--wzl-code-keyword);
 }
 
-.block :global(.token.string),
-.block :global(.token.char),
-.block :global(.token.template-string),
-.block :global(.token.attr-value),
-.block :global(.token.regex) {
+.tokens :global(.token.string),
+.tokens :global(.token.char),
+.tokens :global(.token.template-string),
+.tokens :global(.token.attr-value),
+.tokens :global(.token.regex) {
   color: var(--wzl-code-string);
 }
 
-.block :global(.token.number) {
+.tokens :global(.token.number) {
   color: var(--wzl-code-number);
 }
 
-.block :global(.token.boolean),
-.block :global(.token.constant),
-.block :global(.token.null),
-.block :global(.token.nil) {
+.tokens :global(.token.boolean),
+.tokens :global(.token.constant),
+.tokens :global(.token.null),
+.tokens :global(.token.nil) {
   color: var(--wzl-code-constant);
 }
 
-.block :global(.token.property),
-.block :global(.token.attr-name),
-.block :global(.token.tag) {
+.tokens :global(.token.property),
+.tokens :global(.token.attr-name),
+.tokens :global(.token.tag) {
   color: var(--wzl-code-property);
 }
 
-.block :global(.token.function),
-.block :global(.token.class-name),
-.block :global(.token.maybe-class-name) {
+.tokens :global(.token.function),
+.tokens :global(.token.class-name),
+.tokens :global(.token.maybe-class-name) {
   color: var(--wzl-code-name);
 }
 
-.block :global(.token.punctuation),
-.block :global(.token.comment) {
+.tokens :global(.token.punctuation),
+.tokens :global(.token.comment) {
   color: var(--wzl-fg-muted);
 }
 
-.block :global(.token.comment) {
+.tokens :global(.token.comment) {
   font-style: italic;
 }
