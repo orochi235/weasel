@@ -93,6 +93,8 @@ export const CURSOR_MAX_CSS_PX = 128;
 function walk(d: string, see: (x: number, y: number, r: number) => void): void {
   let cx = 0;
   let cy = 0;
+  let sx = 0;
+  let sy = 0;
   for (const { cmd, args: nums } of tokenizePathData(d)) {
     if (cmd !== cmd.toUpperCase()) {
       throw new Error(`cursor glyph path uses a relative command '${cmd}': ${d}`);
@@ -102,7 +104,11 @@ function walk(d: string, see: (x: number, y: number, r: number) => void): void {
     if (arity > 0 && (nums.length === 0 || nums.length % arity !== 0)) {
       throw new Error(`cursor glyph path '${cmd}' has ${nums.length} numbers, which are not whole points: ${d}`);
     }
-    if (cmd === 'Z') continue;
+    if (cmd === 'Z') {
+      cx = sx;
+      cy = sy;
+      continue;
+    }
     if (cmd === 'A') {
       for (let i = 0; i + 7 <= nums.length; i += 7) {
         const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7) as [number, number, number, number, number, number, number];
@@ -129,6 +135,10 @@ function walk(d: string, see: (x: number, y: number, r: number) => void): void {
     for (let i = 0; i + 2 <= nums.length; i += 2) {
       cx = nums[i]!;
       cy = nums[i + 1]!;
+      if (cmd === 'M' && i === 0) {
+        sx = cx;
+        sy = cy;
+      }
       see(cx, cy, 0);
     }
   }

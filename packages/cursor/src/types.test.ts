@@ -67,6 +67,11 @@ describe('the fit guards’ arcs', () => {
     // Drawn as a radius-10 half circle about (12, 8), whose circle reaches y = -2.
     expect(haloFitsInBox(glyph(24, 'M 2 8 A 1 1 0 0 1 22 8'))).toBe(false);
   });
+
+  it('start an arc after Z from the subpath start, where SVG puts the current point', () => {
+    // From (12, 12) the arc is a small half circle; from the last vertex (12, 22.5) it would reach y = 24.3.
+    expect(haloFitsInBox(glyph(24, 'M 12 12 L 12 22.5 Z A 1 1 0 0 1 2.5 12'))).toBe(true);
+  });
 });
 
 describe('the fit guards’ dialect', () => {
