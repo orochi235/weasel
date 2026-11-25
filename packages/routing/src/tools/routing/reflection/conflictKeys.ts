@@ -105,12 +105,14 @@ export function phasesTie(e: RegistryEntry, f: RegistryEntry): boolean {
 }
 
 /** Bucket key for an entry's target slot. Predicate targets all render as
- *  the same grammar token, so they're keyed by the predicate's identity —
- *  two different functions are two different targets. */
+ *  the same grammar token, so they're keyed by the predicate function's identity:
+ *  two different functions are two different targets, and one function in two
+ *  `{ kindOf }` wrappers is one. */
 export function targetKey(entry: RegistryEntry): string {
   if (entry.target !== PREDICATE_TARGET) return entry.target ?? '';
   const spec = entry.spec as { target?: unknown };
   const pred = spec.target;
   if (typeof pred !== 'object' || pred === null) return PREDICATE_TARGET;
-  return `${PREDICATE_TARGET}${identityKeyOf(pred)}`;
+  const kindOf = (pred as { kindOf?: unknown }).kindOf;
+  return `${PREDICATE_TARGET}${identityKeyOf(typeof kindOf === 'function' ? kindOf : pred)}`;
 }
