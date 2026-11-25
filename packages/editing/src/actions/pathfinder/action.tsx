@@ -84,10 +84,11 @@ function makePathfinderAction(op: BooleanOp): Action {
       }));
     },
     enabled: (deps) => {
-      const ids = deps?.operands?.get() ?? [];
-      if (ids.length < 2) return ActionDisabledReason.SelectionRequired;
+      // The adapter's selection is what `run` acts on, so it answers both questions.
       const adapter = deps?.booleansAdapter;
-      return adapter && countOperands(adapter, [...adapter.getSelection()] as NodeId[]) >= 2 ? true : ActionDisabledReason.NotApplicable;
+      const ids = adapter ? [...adapter.getSelection()] as NodeId[] : [];
+      if (ids.length < 2) return ActionDisabledReason.SelectionRequired;
+      return countOperands(adapter!, ids) >= 2 ? true : ActionDisabledReason.NotApplicable;
     },
   };
 }

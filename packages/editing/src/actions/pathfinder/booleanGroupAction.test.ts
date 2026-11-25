@@ -86,6 +86,17 @@ describe('Make Boolean Group', () => {
 });
 
 describe('Make Boolean Group across layers', () => {
+  it('is disabled as locked while an operand is locked, as Group is, and makes nothing', () => {
+    const { scene, front } = makeScene();
+    const pinned = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 100, height: 100 }, data: { path: rect(0) }, locked: true } as never) as string;
+    const selection = selectionOf([front, pinned]);
+    expect(makeBooleanGroupAction.enabled!({ scene, operands: selection } as never)).toBe('locked');
+    const before = [...scene.roots];
+    expect(() => (makeBooleanGroupAction.invoker as ImmediateInvoker).run({ scene, operands: selection } as never, undefined as never)).not.toThrow();
+    expect(makeBooleanGroup(scene as never, [front, pinned])).toBeNull();
+    expect(scene.roots).toEqual(before);
+  });
+
   it('is not applicable for operands on more than one layer, where it would make nothing', () => {
     const { scene } = pagedScene();
     const paper = scene.add({ kind: 'mark', layer: 'paper', pose: { x: 300, y: 0, width: 10, height: 10 }, data: {} });

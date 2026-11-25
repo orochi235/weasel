@@ -1,6 +1,6 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
-import { shapeSources, uncarried, withoutPageStructure, poseDescriptorOf, nodeDescriptors, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, createTransformCommit, requiresOperands, type GeometryProjection } from '@weasel-js/core';
-import { multiply, rotate, translate, type Affine, type Rect } from '@weasel-js/geom';
+import { shapeSources, uncarried, withoutPageStructure, poseDescriptorOf, nodeDescriptors, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, requiresOperands, type GeometryProjection } from '@weasel-js/core';
+import { invert, multiply, translate, type Affine, type Rect } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
   flipPoseViaDescriptor,
@@ -14,7 +14,7 @@ import type { FlipParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
 import { FLIP_GROUP } from '../../actionGroups';
 import * as coreOps from '@weasel-js/core/ops';
-import { opsAnswer, writesLocked } from '../lockedWrites';
+import { commitTransform, transformAnswer } from '../lockedWrites';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in
@@ -23,8 +23,8 @@ import { opsAnswer, writesLocked } from '../lockedWrites';
  * so a world mirror has to be conjugated by the frame or an asymmetric shape
  * reflects across the wrong line while its pose lands correctly.
  *
- * The frame's turn comes back as the rotation on a rebased zero-size pose at
- * the pivot point, so no composition strategy has to expose one.
+ * The frame is read as where it stores three world points, as zero-size poses, so no composition strategy has
+ * to expose its affine, and a frame that shears or scales unevenly is conjugated as fully as a turned one.
  */
 function localMirror(
   axis: FlipAxis,
@@ -32,18 +32,18 @@ function localMirror(
   id: Parameters<PoseFrame<unknown>['local']>[0],
   pivotWorld: Rect,
 ): Affine | null {
-  const at = frame.local(id, {
-    x: pivotWorld.x + pivotWorld.width / 2,
-    y: pivotWorld.y + pivotWorld.height / 2,
-    width: 0,
-    height: 0,
-    rotation: 0,
-  }) as RectPose | null;
-  if (at === null) return null;
-  const theta = at.rotation ?? 0;
+  const cx = pivotWorld.x + pivotWorld.width / 2;
+  const cy = pivotWorld.y + pivotWorld.height / 2;
+  const at = (x: number, y: number) => frame.local(id, { x, y, width: 0, height: 0, rotation: 0 }) as RectPose | null;
+  const o = at(cx, cy), ex = at(cx + 1, cy), ey = at(cx, cy + 1);
+  if (o === null || ex === null || ey === null) return null;
+  // World to local about the pivot: its columns are where a unit step along each world axis lands.
+  const toLocal: Affine = [ex.x - o.x, ex.y - o.y, ey.x - o.x, ey.y - o.y, 0, 0];
+  const toWorld = invert(toLocal);
+  if (toWorld === null) return null;
   const mirror: Affine = axis === 'x' ? [-1, 0, 0, 1, 0, 0] : [1, 0, 0, -1, 0, 0];
-  const turned = multiply(multiply(rotate(theta), mirror), rotate(-theta));
-  return multiply(translate(at.x, at.y), multiply(turned, translate(-at.x, -at.y)));
+  const conjugated = multiply(multiply(toLocal, mirror), toWorld);
+  return multiply(translate(o.x, o.y), multiply(conjugated, translate(-o.x, -o.y)));
 }
 
 /**
@@ -182,17 +182,13 @@ export const flipAction = defineAction({
       const selection = deps.operands;
       const scene = deps.scene;
       if (!selection || !scene) return;
-      const ops = flipOpsFor(deps, selection, scene, params);
-      if (ops.length === 0 || writesLocked(scene, ops)) return;
-      const applyOps = createTransformCommit(deps);
-      if (applyOps) applyOps(ops, 'Flip');
-      else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, operandMethods(selection)));
+      commitTransform(deps, scene, flipOpsFor(deps, selection, scene, params), 'Flip');
     },
   },
   enabled: (deps, _at, _carried, params) => {
     const needs = requiresOperands(deps);
     if (needs !== true) return needs;
     if (!deps?.scene) return ActionDisabledReason.NotApplicable;
-    return opsAnswer(deps.scene, flipOpsFor(deps, deps.operands!, deps.scene, params));
+    return transformAnswer(deps, deps.scene, flipOpsFor(deps, deps.operands!, deps.scene, params), 'Flip');
   },
 });

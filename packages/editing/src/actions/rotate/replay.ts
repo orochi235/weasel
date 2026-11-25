@@ -6,7 +6,8 @@ import { storedPreviews } from './frame';
 import { captureTurn } from './session';
 
 /** The ops that turn `selected` by `angle` radians the way a rotate drag
- *  would: about the selection's center, or each node about its own. */
+ *  would: about the selection's center, or each node about its own. A locked node is turned too, for the caller's
+ *  lock check to refuse. */
 export function rotateSelectionOps(
   scene: Scene<unknown, string, unknown>,
   selected: readonly string[],
@@ -17,7 +18,7 @@ export function rotateSelectionOps(
 ): Op[] {
   const ids = shapeSources(scene, selected) as NodeId[];
   if (ids.length === 0 || angle === 0) return [];
-  const captured = captureTurn(scene, selected, ids, deps, pivot);
+  const captured = captureTurn(scene, selected, ids, deps, pivot, 'keep');
   if (!captured) return [];
   const { turn, originPoses, poseFrame } = captured;
   const previews = storedPreviews({ scene, turn, poseFrame, view: deps.view }, angle);

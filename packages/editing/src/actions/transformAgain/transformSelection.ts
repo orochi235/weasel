@@ -1,12 +1,11 @@
 import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/core';
 import type { AnyScene } from '@weasel-js/core/engine';
-import { commitTransformOps, finishTransformOps } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type ActionUnavailable } from '@weasel-js/routing';
 import { moveNodesOps, recordTransform, type RepeatableTransform } from '@weasel-js/core';
 import { resizeSelectionOps } from '../resize/replay';
 import { rotateSelectionOps } from '../rotate/replay';
-import { opsAnswer, writesLocked } from '../lockedWrites';
+import { commitTransform, transformAnswer } from '../lockedWrites';
 
 /** A move, rotate or resize the selection can be given: a {@link RepeatableTransform} other than a duplicate. */
 export type SelectionTransform = Exclude<RepeatableTransform, { kind: 'duplicate' }>;
@@ -30,9 +29,7 @@ export function selectionTransformOps(
 export function selectionTransformAnswer(deps: ActionDeps, t: SelectionTransform, label: string): true | ActionUnavailable {
   const { scene, operands } = deps;
   if (!scene || !operands) return ActionDisabledReason.NotApplicable;
-  const ops = selectionTransformOps(deps, scene, [...operands.get()] as string[], t, label);
-  const all = ops.length > 0 ? finishTransformOps(deps, ops, label) : null;
-  return all ? opsAnswer(scene, all) : ActionDisabledReason.NotApplicable;
+  return transformAnswer(deps, scene, selectionTransformOps(deps, scene, [...operands.get()] as string[], t, label), label);
 }
 
 /**
@@ -49,7 +46,7 @@ export function transformSelection(deps: ActionDeps, t: SelectionTransform, labe
   if (!scene || !operands) return false;
   const selected = [...operands.get()] as string[];
   const ops = selectionTransformOps(deps, scene, selected, t, label);
-  if (writesLocked(scene, ops) || !commitTransformOps(deps, ops, label)) return false;
+  if (!commitTransform(deps, scene, ops, label)) return false;
   recordTransform(scene, t, selected);
   return true;
 }

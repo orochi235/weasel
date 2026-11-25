@@ -1,6 +1,6 @@
 import type { IconRef } from '@weasel-js/icons';
 import type { OperandsDep, Scene, Op } from '@weasel-js/core';
-import { drawnBoxes, scenePoseFrame, moveEachOps, uncarried, withoutPageStructure, commitTransformOps } from '@weasel-js/core';
+import { drawnBoxes, scenePoseFrame, moveEachOps, uncarried, withoutPageStructure } from '@weasel-js/core';
 import type { DistributeAxis, DistributeMode } from './distribute';
 import { planDistribute } from './plan';
 import type { Action, ActionDeps } from '@weasel-js/routing';
@@ -8,7 +8,7 @@ import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { DistributeParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
 import { DISTRIBUTE_GROUP } from '../../actionGroups';
-import { opsAnswer, writesLocked } from '../lockedWrites';
+import { commitTransform, transformAnswer } from '../lockedWrites';
 
 const ID_FOR = { x: 'distribute.horizontal', y: 'distribute.vertical' } as const satisfies Record<DistributeAxis, string>;
 const LABEL_FOR: Record<DistributeAxis, string> = { x: 'Distribute Horizontally', y: 'Distribute Vertically' };
@@ -77,14 +77,14 @@ function makeDistributeAction(axis: DistributeAxis): Action {
         const scene = deps.scene;
         if (!selection || !scene) return;
         const ops = distributeOps(deps, selection, scene, axis, modeOf(params));
-        if (!writesLocked(scene, ops)) commitTransformOps(deps, ops, 'Distribute');
+        commitTransform(deps, scene, ops, 'Distribute');
       },
     },
     enabled: (deps, _at, _carried, params) => {
       const selection = deps?.operands;
       const scene = deps?.scene;
       if (!selection || !scene || selection.get().length < 3) return ActionDisabledReason.SelectionRequired;
-      return opsAnswer(scene, distributeOps(deps, selection, scene, axis, modeOf(params)));
+      return transformAnswer(deps, scene, distributeOps(deps, selection, scene, axis, modeOf(params)), 'Distribute');
     },
   });
 }

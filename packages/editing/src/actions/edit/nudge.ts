@@ -1,34 +1,7 @@
-import type { Scene, OperandsDep, PoseDescriptor, GeometryProjection } from '@weasel-js/core/engine';
-import type { Op } from '@weasel-js/core';
-import { poseDescriptorOf, defaultCommitAdapter, operandMethods, createTransformCommit } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { requiresContent, operandContent, moveNodesOps, nudgeSpec, NUDGE_LABEL, nudgeDelta, type NudgeDirection, recordTransform } from '@weasel-js/core';
 import { NUDGE_GROUP } from '../../actionGroups';
-import { opsAnswer, writesLocked } from '../lockedWrites';
-
-/**
- * Apply a world translation of (dx, dy) to the selected nodes and the
- * descendants that do not ride on one of them, as one undo entry labeled
- * `label` — on screen, the way a drag moves them, whatever frame each is
- * stored in. Translates through the `poseDescriptor` dep, so any pose shape
- * moves. Returns whether anything moved.
- */
-export function translateSelection(
-  selection: Pick<OperandsDep, 'get' | 'set'>,
-  scene: Scene<unknown, string, unknown>,
-  dx: number,
-  dy: number,
-  applyOps: ((ops: Op[], label: string) => boolean | void) | undefined,
-  geometryProjection: GeometryProjection | undefined,
-  d: PoseDescriptor<unknown>,
-  label = 'Nudge',
-): boolean {
-  const ops = moveNodesOps(scene, selection.get() as readonly string[], { dx, dy }, { poseDescriptor: d, geometryProjection }, label);
-  if (ops.length === 0 || writesLocked(scene, ops)) return false;
-
-  if (!applyOps) return scene.applyBatch(ops, label, defaultCommitAdapter(scene, operandMethods(selection)));
-  return applyOps(ops, label) !== false;
-}
+import { commitTransform, transformAnswer } from '../lockedWrites';
 
 /**
  * The nudge descriptor for one direction: bare arrow (magnitude='small') and
@@ -51,10 +24,9 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
         const { dx, dy } = nudgeDelta(dir, params?.magnitude);
         const selection = deps.operands;
         const scene = deps.scene;
-        const applyOps = createTransformCommit(deps);
-        const geometryProjection = deps.geometryProjection;
         if (!selection || !scene) return;
-        if (translateSelection(selection, scene, dx, dy, applyOps, geometryProjection, poseDescriptorOf(deps.poseDescriptor))) {
+        const ops = moveNodesOps(scene, selection.get() as readonly string[], { dx, dy }, deps, 'Nudge');
+        if (commitTransform(deps, scene, ops, 'Nudge')) {
           recordTransform(scene, { kind: 'translate', dx, dy }, operandContent(deps));
         }
       },
@@ -65,8 +37,7 @@ function makeNudgeAction(dir: NudgeDirection): Action & { requires: string[] } {
       if (given !== true) return given;
       if (!deps?.scene) return ActionDisabledReason.NotApplicable;
       const { dx, dy } = nudgeDelta(dir, params?.magnitude);
-      const ops = moveNodesOps(deps.scene, operandContent(deps), { dx, dy }, deps, 'Nudge');
-      return opsAnswer(deps.scene, ops);
+      return transformAnswer(deps, deps.scene, moveNodesOps(deps.scene, operandContent(deps), { dx, dy }, deps, 'Nudge'), 'Nudge');
     },
   };
 }

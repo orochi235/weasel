@@ -5,13 +5,13 @@ import {
   alignTargetBounds,
   type AlignEdge,
 } from './align';
-import { actionReferenceSources, scenePoseFrame, drawnBoxes, moveEachOps, uncarried, withoutPageStructure, commitTransformOps } from '@weasel-js/core';
+import { actionReferenceSources, scenePoseFrame, drawnBoxes, moveEachOps, uncarried, withoutPageStructure } from '@weasel-js/core';
 import type { Action, ActionDeps } from '@weasel-js/routing';
 import { ActionDisabledReason, defineAction } from '@weasel-js/routing';
 import type { AlignParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
 import { ALIGN_GROUP } from '../../actionGroups';
-import { opsAnswer, writesLocked } from '../lockedWrites';
+import { commitTransform, transformAnswer } from '../lockedWrites';
 const ID_FOR = {
   'left': 'align.left',
   'right': 'align.right',
@@ -93,14 +93,14 @@ function makeAlignAction(edge: AlignEdge): Action {
         const scene = deps.scene;
         if (!selection || !scene) return;
         const ops = alignOps(deps, selection, scene, edge, params);
-        if (!writesLocked(scene, ops)) commitTransformOps(deps, ops, 'Align');
+        commitTransform(deps, scene, ops, 'Align');
       },
     },
     enabled: (deps, _at, _carried, params) => {
       const selection = deps?.operands;
       const scene = deps?.scene;
       if (!selection || !scene || selection.get().length === 0) return ActionDisabledReason.SelectionRequired;
-      return opsAnswer(scene, alignOps(deps, selection, scene, edge, params));
+      return transformAnswer(deps, scene, alignOps(deps, selection, scene, edge, params), 'Align');
     },
   });
 }

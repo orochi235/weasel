@@ -95,6 +95,24 @@ describe('pathfinder enabled', () => {
   });
 });
 
+describe('pathfinder enabled reads the operands run acts on', () => {
+  it("answers from the adapter's selection where it differs from the operands dep", () => {
+    const rect = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as Path;
+    const adapter = {
+      ...rootsTree(),
+      getSelection: () => [asNodeId('a'), asNodeId('b')],
+      getWorldPath: () => rect,
+      compareZ: () => 0,
+      createPathNode: () => ({ id: 'new' }),
+      applyOps: () => {},
+    } as BooleansAdapter;
+    expect(pathfinderUnionAction.enabled!({ operands: { get: () => ['a'] }, booleansAdapter: adapter } as never)).toBe(true);
+    const one = { ...adapter, getSelection: () => [asNodeId('a')] };
+    expect(pathfinderUnionAction.enabled!({ operands: { get: () => ['a', 'b'] }, booleansAdapter: one } as never))
+      .toBe(ActionDisabledReason.SelectionRequired);
+  });
+});
+
 describe('Pathfinder actions and strokes', () => {
   it('reads an unfilled stroked line as its stroke, so Minus Front cuts a slot', () => {
     const paths: Record<string, Path> = {

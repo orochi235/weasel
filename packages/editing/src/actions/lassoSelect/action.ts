@@ -2,7 +2,7 @@
  * `lassoSelectAction` — ongoing Action descriptor for polygon lasso selection.
  *
  * A move adds a vertex unless it is closer than the binding's
- * `params.minVertexSpacing` (default 2 world-px) to the last one. The commit
+ * `params.minVertexSpacing` (default 2 screen px) to the last one. The commit
  * hit-tests the polygon with `dep.hitTestLasso(polygon, mode)` — `mode` from
  * the binding's `params.mode`, default `'intersect'` — falling back to the
  * polygon's AABB via `dep.hitTestArea(bounds)`. Shift extends the selection.
@@ -17,7 +17,7 @@
  * transiently too.
  */
 
-import { gestureViewReader, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
+import { gestureViewReader, gesturePlaneReader, screenTolerance, pointerStateOf, applyOpsTo, reduceBehaviorEnd, runBehaviorCancel, runBehaviorSettled, targetsOf, selectionFromHits, finiteThroughout } from '@weasel-js/core';
 import { defineAction, resolveParams, setScratch } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi, LassoHitMode, LassoSelectAdapter, GestureContext, LassoSelectBehavior, LassoSelectPose } from '@weasel-js/core/engine';
@@ -68,7 +68,7 @@ function behaviorAdapter(dep: LassoSelectDep, view: ViewApi | undefined): LassoS
   return adapter;
 }
 
-const DEFAULT_MIN_VERTEX_SPACING = 2; // world-px
+const DEFAULT_MIN_VERTEX_SPACING = 2; // screen px
 
 interface LassoScratch {
   dep: LassoSelectDep;
@@ -111,6 +111,7 @@ export const lassoSelectAction = defineAction({
       const behaviors = (opts?.behaviors ?? []) as LassoSelectBehavior[];
       let gesture: GestureContext<LassoSelectPose> | null = null;
       const readView = gestureViewReader(ctx.deps);
+      const readPlane = gesturePlaneReader(ctx.deps);
       if (behaviors.length > 0) {
         const pose: LassoSelectPose = {
           worldX: ctx.world.x, worldY: ctx.world.y, shiftHeld: ctx.modifiers.shift,
@@ -155,8 +156,8 @@ export const lassoSelectAction = defineAction({
           const last = scratch.vertices[scratch.vertices.length - 1];
           const dx = x - last.x;
           const dy = y - last.y;
-          const min = scratch.minVertexSpacing;
-          if (dx * dx + dy * dy >= min * min) {
+          const t = screenTolerance(scratch.minVertexSpacing, { view: readView(), plane: readPlane() });
+          if (t.x === 0 || t.y === 0 || (dx / t.x) ** 2 + (dy / t.y) ** 2 >= 1) {
             scratch.vertices.push({ x, y });
           }
           const g = scratch.gesture;

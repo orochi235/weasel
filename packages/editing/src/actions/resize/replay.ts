@@ -27,7 +27,7 @@ export function unitsOfBox(from: Bounds, to: Bounds): Bounds {
  *  it would resize to `units` of itself. The resize policy's expansion
  *  applies, and so do the scene's output grid and a written frame's contents
  *  held where they draw; its constraints and point snaps, which shape a
- *  pointer, do not. */
+ *  pointer, do not. A locked node is resized too, for the caller's lock check to refuse. */
 export function resizeSelectionOps(
   scene: Scene<unknown, string, unknown>,
   selected: readonly string[],
@@ -37,7 +37,7 @@ export function resizeSelectionOps(
   label: string,
 ): Op[] {
   if (selected.length === 0) return [];
-  const captured = captureResize(scene, selected as NodeId[], anchor, deps);
+  const captured = captureResize(scene, selected as NodeId[], anchor, deps, 'keep');
   if (!captured) return [];
   const { place } = captured;
   const { previews } = posesInBox(place, boxInUnits(place.box.bounds, units));
