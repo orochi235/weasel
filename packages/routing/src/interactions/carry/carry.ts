@@ -8,7 +8,7 @@ import {
   openPointerSession,
   type PointerSessionCancelReason,
 } from '../pointerSession';
-import { elementAt } from '../elementAt';
+import { containsComposed, elementAt } from '../elementAt';
 
 /** What a carry brings. `type` is what a `carry` spec's `types` globs filter. */
 export interface CarryPayload {
@@ -27,7 +27,8 @@ export interface CarryPointer {
 }
 
 /** What a carry did on a surface: came over it, moved on it, was released on
- *  it, or left it — off it, or canceled while over it. */
+ *  it, or left it — off it, or canceled while over it. A `drop` closes the carry
+ *  on that surface whether or not the surface took it; no `leave` follows. */
 export type CarryStage = 'enter' | 'move' | 'drop' | 'leave';
 
 /** An element a carry can be released on. */
@@ -85,7 +86,7 @@ function surfaceAt(x: number, y: number): CarrySurface | null {
     if (!hits.has(root)) hits.set(root, elementAt(s.element, x, y));
     const hit = hits.get(root);
     if (hit && !s.element.contains(hit)) continue;
-    if (best && s.element.contains(best.element)) continue;
+    if (best && containsComposed(s.element, best.element)) continue;
     best = s;
   }
   return best;

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { openPointerSession } from './pointerSession';
+import { heldWithin, openPointerSession } from './pointerSession';
 
 function el(): HTMLElement {
   const e = document.createElement('div');
@@ -295,5 +295,35 @@ describe('openPointerSession', () => {
     how = 'end';
     document.dispatchEvent(move(2, 0, 5, 5));
     expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('heldWithin', () => {
+  it('counts a session from an element in a shadow root inside the surface', () => {
+    const surface = el();
+    const host = document.createElement('div');
+    surface.appendChild(host);
+    const item = document.createElement('div');
+    host.attachShadow({ mode: 'open' }).appendChild(item);
+    const s = openPointerSession(item, down(), {});
+    expect(heldWithin(1, surface)).toBe(true);
+    s.cancel();
+  });
+});
+
+describe('openPointerSession from a window capture listener', () => {
+  it('does not take the press that opened it as a second press', () => {
+    const origin = el();
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    let session: ReturnType<typeof openPointerSession> | undefined;
+    const open = (e: Event) => { session = openPointerSession(origin, e as PointerEvent, { onCancel, onEnd }); };
+    window.addEventListener('pointerdown', open, true);
+    origin.dispatchEvent(down());
+    window.removeEventListener('pointerdown', open, true);
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(session?.active).toBe(true);
+    origin.dispatchEvent(down());
+    expect(onCancel).toHaveBeenCalledWith('superseded');
   });
 });

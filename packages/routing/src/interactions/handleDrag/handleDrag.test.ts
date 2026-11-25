@@ -229,6 +229,19 @@ describe('useHandleDrag', () => {
     document.body.removeChild(target);
   });
 
+  it('ends with moved true when the release lands away from the press with no move before it', () => {
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }));
+    const target = mount();
+    result.current.onPointerDown(press(target, 0, 0));
+    target.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 40 }));
+    expect(onEnd.mock.calls[0][0]).toMatchObject({ point: { x: 30, y: 40 }, moved: true });
+    result.current.onPointerDown(press(target, 0, 0));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 5, clientY: 0, buttons: 0 }));
+    expect(onEnd.mock.calls[1][0]).toMatchObject({ point: { x: 5, y: 0 }, moved: true });
+    target.remove();
+  });
+
   it('a press that never moves ends with moved false', () => {
     const onEnd = vi.fn();
     const { result } = renderHook(() =>
@@ -439,5 +452,41 @@ describe('useHandleDrag — callbacks from a later render', () => {
     target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
     expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 45 });
     scroller.remove();
+  });
+  it('counts a scroll of the transformed box that holds a fixed one, which moves it', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const holder = document.createElement('div');
+    holder.style.transform = 'translateX(0px)';
+    holder.style.overflow = 'auto';
+    document.body.appendChild(holder);
+    const target = mount();
+    target.style.position = 'fixed';
+    holder.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    holder.scrollTop = 20;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 30 });
+    holder.remove();
+  });
+
+  it('leaves out a scroll between an absolute rect and its containing block, which does not move it', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const block = document.createElement('div');
+    block.style.position = 'relative';
+    const wrapper = document.createElement('div');
+    wrapper.style.overflow = 'auto';
+    document.body.appendChild(block);
+    block.appendChild(wrapper);
+    const target = mount();
+    target.style.position = 'absolute';
+    wrapper.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    wrapper.scrollTop = 30;
+    block.scrollTop = 5;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 15 });
+    block.remove();
   });
 });
