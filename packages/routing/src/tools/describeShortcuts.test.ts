@@ -53,4 +53,8 @@ describe('describeShortcuts', () => {
     const d = describeShortcuts(actions, { tools });
     expect(d.held.map((r) => [r.label, r.shortcuts[0]!.key])).toEqual([['Hand', ' '], ['Peek', 'Z']]);
   });
+
+  it('refuses a tool set named "other", the id of the group holding tools in none', () => {
+    expect(() => describeShortcuts(actions, { tools, toolSets: [toolSet('other', ['select'], { label: 'Extras' })] })).toThrow(/other/);
+  });
 });

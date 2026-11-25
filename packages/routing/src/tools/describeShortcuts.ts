@@ -54,7 +54,8 @@ export interface DescribeShortcutsOptions {
    *  tool reads as its id. */
   tools?: Readonly<Record<string, ShortcutTool>>;
   /** The sets the tool rows are grouped by, in order. A tool in two is listed in the first; sets sharing an id are
-   *  one group, headed by the first label given. Tools in none follow under "Other tools". */
+   *  one group, headed by the first label given. Tools in none follow under "Other tools", with the id `other`, which
+   *  no set may take. */
   toolSets?: readonly ToolSet[];
 }
 
@@ -88,7 +89,10 @@ function describeTools(
       group.rows.push(toolRow(id, getOwn(tools, id)!, getOwn(keys, id)));
     }
   };
-  for (const set of sets) take(set.id, set.label ?? groupTitle(set.id), toolIdsOf([set]));
+  for (const set of sets) {
+    if (set.id === OTHER) throw new Error(`describeShortcuts: a tool set may not be named "${OTHER}", the group of tools in no set`);
+    take(set.id, set.label ?? groupTitle(set.id), toolIdsOf([set]));
+  }
   take(OTHER, sets.length === 0 ? 'Tools' : 'Other tools', shown);
   return [...groups].filter(([, g]) => g.rows.length > 0).map(([id, g]) => ({ id, ...g }));
 }
