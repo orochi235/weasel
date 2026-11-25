@@ -96,6 +96,15 @@ describe('createCursorSink', () => {
     expect(b.style.cursor).toBe('');
   });
 
+  it('with no base set, a replaced override puts back a cursor other code wrote under it', () => {
+    const { el, sink } = harness('help');
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el.style.cursor = 'wait';
+    sink.setOverride({ kind: 'css', css: 'move' });
+    sink.setOverride(null);
+    expect(el.style.cursor).toBe('wait');
+  });
+
   it('with a base, leaves the old element on the base and moves the override to the new one', () => {
     const a = { style: { cursor: '' } };
     const b = { style: { cursor: '' } };

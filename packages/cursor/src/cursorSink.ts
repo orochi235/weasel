@@ -71,7 +71,9 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     if (!el) return;
     if (override) {
       const css = cssOf(override);
-      written = { el, prior: written ? written.prior : el.style.cursor, css };
+      // Other code wrote over the sink's cursor since: that is what to put back now.
+      const prior = written && el.style.cursor === written.css ? written.prior : el.style.cursor;
+      written = { el, prior, css };
       el.style.cursor = css;
       return;
     }
