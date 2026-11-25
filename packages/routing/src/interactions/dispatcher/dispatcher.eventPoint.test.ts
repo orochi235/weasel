@@ -37,6 +37,22 @@ describe('invocation coordinates', () => {
     expect(ctx.screen).toEqual({ x: 150, y: 160 });
   });
 
+  it('fills a wheel’s ctx.screen with its client point, not its canvas-local one', () => {
+    const ctx = ctxFor(
+      { kind: 'wheel' },
+      { kind: 'wheel', deltaX: 0, deltaY: 5, clientX: 10, clientY: 20, screen: { x: 110, y: 220 }, x: 7, y: 8, ...noMods },
+    );
+    expect(ctx.screen).toEqual({ x: 110, y: 220 });
+  });
+
+  it('leaves a pinch’s ctx.screen unset without its client point', () => {
+    const ctx = ctxFor(
+      { kind: 'pinch' },
+      { kind: 'pinch', scale: 1.1, rotation: 0, clientX: 10, clientY: 20, ...noMods },
+    );
+    expect(ctx.screen).toBeUndefined();
+  });
+
   it('leaves ctx.screen unset when the event carries no client point', () => {
     const ctx = ctxFor(
       { kind: 'drag' },
