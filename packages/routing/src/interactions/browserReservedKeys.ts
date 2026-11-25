@@ -57,6 +57,10 @@ export const BROWSER_RESERVED_CHORDS: readonly ReservedChord[] = [
   ...chord(['escape'], { shift: true, platform: 'other' }, "Chrome's task manager on Windows and Linux"),
   ...chord(['delete'], { mod: true, shift: true, platform: 'other' }, 'clear browsing data on Windows and Linux'),
   ...chord(['backspace'], { mod: true, shift: true, platform: 'apple' }, 'clear browsing data on macOS'),
+  ...chord('345', { mod: true, shift: true, platform: 'apple' }, 'screenshots on macOS'),
+  ...chord([' '], { mod: true, platform: 'apple' }, 'Spotlight on macOS'),
+  ...chord('`', { mod: true, platform: 'apple' }, 'cycling the windows of an app on macOS'),
+  ...chord(['escape'], { mod: true, alt: true, platform: 'apple' }, 'Force Quit on macOS'),
 ];
 
 const lower = (k: string | readonly string[]): string[] => (typeof k === 'string' ? [k] : [...k]).map((x) => x.toLowerCase());
