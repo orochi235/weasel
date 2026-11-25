@@ -46,7 +46,7 @@ const socketOrigin = (req: IncomingMessage, protocol: string) =>
 
 /** The request's own protocol, from its socket: under `middlewareMode` the host app's server may be TLS, which vite's
  *  `server.https` does not say. */
-const protocolOf = (req: IncomingMessage): 'http' | 'https' => ((req.socket as { encrypted?: boolean }).encrypted ? 'https' : 'http');
+export const protocolOf = (req: IncomingMessage): 'http' | 'https' => ((req.socket as { encrypted?: boolean }).encrypted ? 'https' : 'http');
 
 /** vite's client socket port under `server.middlewareMode` when nothing names one or hands it a server. */
 const MIDDLEWARE_HMR_PORT = 24678;
@@ -75,7 +75,7 @@ const LOOPBACK = new Set(['localhost', '127.0.0.1', '[::1]']);
 
 /** Whether a browser's `Origin` names this server: the address the request came in on, a loopback name for its
  *  port, or one of the URLs vite printed for it. */
-export function ownOrigin(origin: string, req: IncomingMessage, protocol: string, server: ViteDevServer): boolean {
+export function ownOrigin(origin: string, req: IncomingMessage, protocol: string, server: Pick<ViteDevServer, 'resolvedUrls'>): boolean {
   let url: URL;
   try {
     url = new URL(origin);
@@ -86,6 +86,29 @@ export function ownOrigin(origin: string, req: IncomingMessage, protocol: string
   if (url.protocol === `${protocol}:` && LOOPBACK.has(url.hostname) && (url.port || defaultPort(url.protocol)) === String(req.socket.localPort)) return true;
   const printed = [...(server.resolvedUrls?.local ?? []), ...(server.resolvedUrls?.network ?? [])];
   return printed.some((u) => new URL(u).origin === url.origin);
+}
+
+/**
+ * Whether a request's `Host` could name this server, as vite's own host check asks before its middlewares answer: an
+ * IP address, `localhost` or a name under it, `server.host`, an `allowedHosts` entry, or a host vite printed. A name
+ * rebound to this machine fails it. Over HTTPS any host passes, as in vite, since a rebound name cannot present this
+ * server's certificate.
+ */
+export function ownHost(req: IncomingMessage, protocol: string, server: Pick<ViteDevServer, 'config' | 'resolvedUrls'>): boolean {
+  const host = req.headers.host;
+  const { allowedHosts, host: listening } = server.config.server;
+  if (host === undefined || protocol === 'https' || allowedHosts === true) return true;
+  let name: string;
+  try {
+    name = new URL(`http://${host}`).hostname;
+  } catch {
+    return false;
+  }
+  if (name.startsWith('[') || /^\d+\.\d+\.\d+\.\d+$/.test(name) || name === 'localhost' || name.endsWith('.localhost')) return true;
+  if (typeof listening === 'string' && name === listening.toLowerCase()) return true;
+  if (allowedHosts?.some((entry) => (entry.startsWith('.') ? name === entry.slice(1) || name.endsWith(entry) : name === entry))) return true;
+  const printed = [...(server.resolvedUrls?.local ?? []), ...(server.resolvedUrls?.network ?? [])];
+  return printed.some((u) => new URL(u).hostname === name);
 }
 
 const json = (res: ServerResponse, status: number, body: unknown) => {

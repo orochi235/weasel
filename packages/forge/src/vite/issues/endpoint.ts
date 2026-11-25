@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import type { ServerResponse } from 'node:http';
 import type { ViteDevServer } from 'vite';
+import { ownHost, ownOrigin, protocolOf } from '../capture/endpoint.ts';
 import { type Git, runGit } from '../history.ts';
 import { type ForgeIssue, ISSUE_LIMIT, ISSUES_PATH, type IssueRepo, type IssuesAnswer, issueLabel } from './answer.ts';
 
@@ -90,10 +91,11 @@ const json = (res: ServerResponse, status: number, body: unknown) => {
 /**
  * Answers a GET of `<base>__forge/issues?component=<name>` with an `IssuesAnswer`: the open issues labeled
  * `forge:<name>` in the repository `origin` names, listed by `gh` under the machine's own login, and the branch and
- * commit checked out at `root`.
+ * commit checked out at `root`. A request whose `Host` or `Origin` is not this server's is refused, since it answers
+ * ahead of vite's own host check.
  */
 export function serveIssues(
-  server: Pick<ViteDevServer, 'middlewares'>,
+  server: Pick<ViteDevServer, 'middlewares' | 'config' | 'resolvedUrls'>,
   base: string,
   root: () => string,
   { gh = runGh, git = runGit }: { gh?: Gh; git?: Git } = {},
@@ -145,6 +147,11 @@ export function serveIssues(
     const url = new URL(req.url ?? '/', 'http://forge.invalid');
     if (url.pathname !== `${base}${ISSUES_PATH}`) return next();
     if (req.method !== 'GET') return next();
+    const protocol = protocolOf(req);
+    const origin = req.headers.origin;
+    if (!ownHost(req, protocol, server) || (origin !== undefined && !ownOrigin(origin, req, protocol, server))) {
+      return json(res, 403, { error: 'issues are only listed for this server’s own pages' });
+    }
     const component = url.searchParams.get('component')?.trim();
     if (!component) return json(res, 400, { error: 'name a component: ?component=<name>' });
     answer(component).then(({ status, body }) => json(res, status, body), next);

@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, request, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Git } from '../history';
@@ -26,15 +26,32 @@ afterEach(() => {
   server = null;
 });
 
-/** Serves the endpoint at `/` with `gh` answering `result`, and answers the status and body of a GET of `path`. */
-async function get(path: string, gh: Gh): Promise<{ status: number; body: IssuesAnswer }> {
+/**
+ * Serves the endpoint at `/` with `gh` answering `result`, and answers the status and body of a GET of `path`, sent
+ * with `headers` and under vite's `allowedHosts`.
+ */
+async function get(
+  path: string,
+  gh: Gh,
+  headers: Record<string, string> = {},
+  allowedHosts?: string[] | true,
+): Promise<{ status: number; body: IssuesAnswer }> {
   let handler: Handler | null = null;
-  serveIssues({ middlewares: { use: (fn: Handler) => (handler = fn) } } as never, '/', () => '/repo', { gh, git });
+  const vite = { middlewares: { use: (fn: Handler) => (handler = fn) }, config: { server: { allowedHosts } }, resolvedUrls: null };
+  serveIssues(vite as never, '/', () => '/repo', { gh, git });
   server = createServer((req, res) => handler!(req, res, () => ((res.statusCode = 404), res.end())));
   await new Promise<void>((done) => server!.listen(0, '127.0.0.1', done));
   const { port } = server.address() as AddressInfo;
-  const res = await fetch(`http://127.0.0.1:${port}${path}`);
-  return { status: res.status, body: (await res.json()) as IssuesAnswer };
+  return new Promise((done, fail) => {
+    const req = request({ host: '127.0.0.1', port, path, headers }, (res) => {
+      let text = '';
+      res.setEncoding('utf8');
+      res.on('data', (chunk: string) => (text += chunk));
+      res.on('end', () => done({ status: res.statusCode ?? 0, body: JSON.parse(text) as IssuesAnswer }));
+    });
+    req.on('error', fail);
+    req.end();
+  });
 }
 
 const answering = (result: GhResult) => vi.fn<Gh>(async () => result);
@@ -166,5 +183,22 @@ describe('serveIssues', () => {
     const { status } = await get('/__forge/issues', gh);
     expect(status).toBe(400);
     expect(gh).not.toHaveBeenCalled();
+  });
+});
+
+describe('serveIssues for a page that is not this server', () => {
+  it('refuses a Host another name was rebound from, and a foreign Origin, without running gh', async () => {
+    const gh = answering({ stdout: '[]' });
+    expect((await get('/__forge/issues?component=Button', gh, { host: 'evil.example:5173' })).status).toBe(403);
+    expect((await get('/__forge/issues?component=Button', gh, { origin: 'http://evil.example' })).status).toBe(403);
+    expect(gh).not.toHaveBeenCalled();
+  });
+
+  it('answers a loopback name, an address, and a host vite allows', async () => {
+    const gh = answering({ stdout: '[]' });
+    expect((await get('/__forge/issues?component=Button', gh, { host: 'localhost:8080' })).status).toBe(200);
+    expect((await get('/__forge/issues?component=Button', gh, { host: '[::1]:8080' })).status).toBe(200);
+    expect((await get('/__forge/issues?component=Button', gh, { host: 'box.lan:5173' }, ['.lan'])).status).toBe(200);
+    expect((await get('/__forge/issues?component=Button', gh, { host: 'box.lan:5173' }, true)).status).toBe(200);
   });
 });
