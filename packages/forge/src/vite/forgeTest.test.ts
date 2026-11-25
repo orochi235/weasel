@@ -132,8 +132,11 @@ export const Edge = story({ isolate: 'asserts placement against the window edge'
     expect(code).toContain('__forge_test(');
   });
 
-  it('leaves a story file with no stories alone', async () => {
-    expect(await transformer({ stories: ['*.stories.tsx'] })('export const x = 1;\n', `${ROOT}/a.stories.tsx`)).toBeUndefined();
+  it('registers a skipped test for a story file with no stories, since vitest fails a file that registers none', async () => {
+    const code = (await transformer({ stories: ['*.stories.tsx'] })('export const x = 1;\n', `${ROOT}/a.stories.tsx`)) ?? '';
+    expect(code).toContain('__forge_test.skip("no stories"');
+    expect(code).toContain(`filepath === "${ROOT}/a.stories.tsx"`);
+    expect(code).not.toContain('runStory');
   });
 
   // The imports runStory reaches are appended by transform, which vite's dependency scan never runs, so a cold
