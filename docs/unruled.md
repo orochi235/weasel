@@ -4237,3 +4237,6 @@ Calls the lanes made without a ruling:
 - 2026-11-25 (the fixer's call): `<SceneCanvas toolOptionValues>` wins over a store a child publishes with
   `useToolOptionValues`, whichever mounted first; the child's store answers only when the canvas is given none. The
   hook's doc had said both; the child's store always winning was the alternative.
+- 2026-11-25 (the fixer's call): `toolOptionsPrefs` throws where two tools name one shared key as leaves of different
+  kinds (an enum and a string), since no prefs leaf takes both. Keeping the first tool's leaf, as before, was the
+  alternative.

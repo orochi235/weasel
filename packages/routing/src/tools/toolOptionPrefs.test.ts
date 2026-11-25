@@ -194,3 +194,29 @@ describe('a tool id that names the shared group', () => {
     expect(() => toolOptionsPrefs([own('sharedish')])).not.toThrow();
   });
 });
+
+describe('toolOptionsPrefs: a shared option that is not a number', () => {
+  const tool = (id: string, leaf: Record<string, unknown>) => ({
+    id,
+    options: { actionId: 'paint', prefs: { name: 'T', children: { fill: leaf } }, share: { fill: 'fill' } } as unknown as ToolOptionsSpec,
+  });
+  const sharedFill = (schema: ReturnType<typeof toolOptionsPrefs>) =>
+    (schema.children[SHARED_TOOL_OPTIONS] as unknown as { children: Record<string, Record<string, unknown>> }).children.fill;
+  const option = (value: string) => ({ value, label: value });
+  const choice = (...values: string[]) => ({ kind: 'enum', name: 'Fill', description: '', default: values[0], options: values.map(option) });
+  const text = (maxLength?: number) => ({ kind: 'string', name: 'Fill', description: '', default: '', ...(maxLength ? { maxLength } : {}) });
+
+  it("takes every tool's enum options", () => {
+    const leaf = sharedFill(toolOptionsPrefs([tool('a', choice('solid', 'none')), tool('b', choice('none', 'hatch'))]));
+    expect((leaf.options as { value: string }[]).map((o) => o.value)).toEqual(['solid', 'none', 'hatch']);
+  });
+
+  it('takes the longest maxLength, and none where any tool sets none', () => {
+    expect(sharedFill(toolOptionsPrefs([tool('a', text(4)), tool('b', text(10))])).maxLength).toBe(10);
+    expect(sharedFill(toolOptionsPrefs([tool('a', text(4)), tool('b', text())])).maxLength).toBeUndefined();
+  });
+
+  it('throws where two tools name it as different kinds', () => {
+    expect(() => toolOptionsPrefs([tool('a', choice('solid')), tool('b', text())])).toThrow(/"fill" is of kind "enum" for one tool and "string"/);
+  });
+});
