@@ -1536,16 +1536,23 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   coordinate `NaN` or infinite (e3481a9d2), as `bakeCursor` refuses an infinite size, rather than dropping the point.
 - 2026-11-24 (my call, cursor audit 85): `bakeCursor` and `cursorFor` bake a blank fallback as `default`, as a
   missing one, and throw a `RangeError` for one holding `;`, `{` or `}`, which no cursor value holds and which makes the
-  browser drop the whole declaration. Other strings still pass through unchecked.
+  browser drop the whole declaration. Since cursor audit 88 (2026-11-25) every fallback is checked: one that is not
+  a cursor keyword, optionally after `url(…)` entries with a hotspot, throws too; CSS-wide keywords such as `inherit`
+  are refused, since a cursor list cannot end in one.
 - 2026-11-25 (my call, cursor audit 86): `resolveCursor` throws that `RangeError` on every tier, a painted spec
-  included, though the painted tier never shows its fallback, so whether a spec is valid does not turn on its size.
+  included, so whether a spec is valid does not turn on its size. A painted cursor carries its fallback, which a
+  cursor sink with no painted layer shows in place of `none` (cursor audit 88).
 - 2026-11-25 (my call, cursor audit 87): `brushRing` throws a `RangeError` for an infinite radius, in either unit,
   as `bakeCursor` refuses an infinite size, where it drew the default 24 px ring; a negative or `NaN` radius still
-  falls to the default.
+  falls to the default. Minus infinity, and a finite radius whose px size overflows, throw too (cursor audit 88).
 - 2026-11-25 (my call, cursor audit 87): `bakeCursor`, `cursorFor` and `resolveCursor` throw a `RangeError` for an
   angle whose step turns a glyph that `rotationFitsInBox` refuses (a marked crosshair, the eyedropper, the swap),
   on every tier, where the baked image clipped it. Only `resize` and `rotate` are turned in the tree. Rejected: a
-  viewBox grown to the turned glyph, which shrinks the drawing at every size.
+  viewBox grown to the turned glyph, which shrinks the drawing at every size. An angle inside the first step paints such a glyph upright, as it
+  bakes (2026-11-25, cursor audit 88).
+- 2026-11-25 (my call, cursor audit 88): `resolveCursor` throws a `RangeError` for a size or world radius of
+  `Infinity`, as `cursorFor` refuses that size, where it drew the default 24 px glyph. Minus infinity is negative and
+  still draws at the default, as in `cursorFor`.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.

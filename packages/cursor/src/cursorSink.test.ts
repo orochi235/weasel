@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { createCursorSink } from './cursorSink';
+import { brushRing } from './brushRing';
 import { createPaintedCursorState } from './paintedCursorState';
+import { resolveCursor } from './resolve';
 
 const ring = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 12 } as const;
 
@@ -13,6 +15,31 @@ function harness(initial = '') {
 }
 
 describe('createCursorSink', () => {
+  it('gives the element and the painted base back on release, after any override clears', () => {
+    const { el, painted, sink } = harness('help');
+    sink.setBase(ring);
+    expect(el.style.cursor).toBe('none');
+    expect(painted.active()).toBe(true);
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    sink.release!();
+    expect(el.style.cursor).toBe('grab');
+    sink.setOverride(null);
+    expect(el.style.cursor).toBe('help');
+    expect(painted.active()).toBe(false);
+  });
+
+  it("shows a painted cursor's fallback where no painted layer draws it", () => {
+    const el = { style: { cursor: '' } };
+    const sink = createCursorSink({ element: () => el, painted: () => undefined });
+    sink.setBase(resolveCursor(brushRing(5, 'world')));
+    expect(el.style.cursor).toBe('crosshair');
+    sink.setOverride({ kind: 'painted', glyph: 'rotate', angle: 0, size: 200 });
+    expect(el.style.cursor).toBe('default');
+    const { el: drawn, sink: layered } = harness();
+    layered.setBase(resolveCursor(brushRing(5, 'world')));
+    expect(drawn.style.cursor).toBe('none');
+  });
+
   it('puts the base back when the override clears', () => {
     const { el, sink } = harness();
     sink.setBase({ kind: 'css', css: 'crosshair' });

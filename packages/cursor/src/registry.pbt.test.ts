@@ -24,7 +24,7 @@ const call = fc.record({
     fc.double({ min: 1, max: 200, noNaN: true }),
   ), { nil: undefined }),
   angle: fc.option(fc.constantFrom(0, 1, -3, Math.PI, Number.NaN, Infinity), { nil: undefined }),
-  fallback: fc.option(fc.constantFrom('default', 'crosshair', '|', ''), { nil: undefined }),
+  fallback: fc.option(fc.constantFrom('default', 'crosshair', 'url("a|b.png") 1 2, move', ''), { nil: undefined }),
 });
 
 type Outcome = { ok: string } | { threw: true };

@@ -24,5 +24,12 @@ describe('brushRing', () => {
   it('refuses an infinite radius in either unit rather than drawing it at the default size', () => {
     expect(() => brushRing(Infinity)).toThrow(RangeError);
     expect(() => brushRing(Infinity, 'world')).toThrow(RangeError);
+    expect(() => brushRing(-Infinity)).toThrow(RangeError);
+    expect(() => brushRing(-Infinity, 'world')).toThrow(RangeError);
+  });
+
+  it('refuses a finite radius whose px size overflows to infinity', () => {
+    expect(() => brushRing(1e307)).toThrow(RangeError);
+    expect(() => brushRing(-1e307)).toThrow(RangeError);
   });
 });

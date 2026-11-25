@@ -56,6 +56,15 @@ describe('bakeCursor', () => {
     expect(bakeCursor(PENCIL, { fallback: '' })).toMatch(/, default$/);
     expect(bakeCursor(PENCIL, { fallback: '  ' })).toMatch(/, default$/);
     expect(() => bakeCursor(PENCIL, { fallback: 'pointer; color: red' })).toThrow(RangeError);
+  });
+
+  it('refuses a fallback that does not end a cursor value in a keyword, which the browser would drop', () => {
+    for (const fallback of ['hand', 'url(a.png)', 'pointer, grab', 'pointer !important', '"x', 'inherit']) {
+      expect(() => bakeCursor(PENCIL, { fallback })).toThrow(RangeError);
+    }
+    for (const fallback of ['Grab', ' nwse-resize ', 'url(a.png), pointer', 'url("a,b.cur") 4 5, url(c.png) , move']) {
+      expect(bakeCursor(PENCIL, { fallback })).toMatch(new RegExp(`, ${fallback.replace(/[().*+?^$|[\]\\]/g, '\\$&')}$`));
+    }
     expect(bakeCursor(PENCIL, { fallback: 'crosshair' })).toMatch(/, crosshair$/);
   });
 

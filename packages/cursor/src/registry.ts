@@ -67,6 +67,8 @@ export type CursorForOptions = BakeOptions & CursorGlyphOptions;
  * size, angle step and fallback combinations are kept, so a size that follows a continuous value stays bounded.
  */
 export function cursorFor(name: CursorGlyphName, opts: CursorForOptions = {}): string {
+  // Before the cache, or a name like `pen+add` would find a marked pen's key and skip the check.
+  const glyph = cursorGlyph(name, { mark: opts.mark });
   const size = bakeSize(opts.size);
   const fallback = bakeFallback(opts.fallback);
   // The step index, not the raw angle: the hover pump feeds a continuously
@@ -79,7 +81,7 @@ export function cursorFor(name: CursorGlyphName, opts: CursorForOptions = {}): s
     cache.set(key, hit);
     return hit;
   }
-  const css = bakeCursor(cursorGlyph(name, { mark: opts.mark }), { size, fallback, angle: opts.angle ?? 0 });
+  const css = bakeCursor(glyph, { size, fallback, angle: opts.angle ?? 0 });
   cache.set(key, css);
   if (cache.size > CURSOR_BAKE_CACHE_LIMIT) cache.delete(cache.keys().next().value!);
   return css;

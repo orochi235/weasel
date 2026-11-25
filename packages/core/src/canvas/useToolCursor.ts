@@ -24,7 +24,7 @@ const reported = new WeakSet<object>();
 
 /**
  * Writes the active tool's cursor to `sink` as its base, and `rest` (the
- * element's own cursor) for when the tool declares none.
+ * element's own cursor) for when the tool declares none. Releases the base on unmount.
  *
  * `element` is what the sink writes to, named so the base is written again
  * when a detached surface's input element arrives a render late.
@@ -41,7 +41,8 @@ export function useToolCursor(
     ? ''
     : tier.kind === 'css'
       ? `css|${tier.css}`
-      : `${tier.glyph}|${tier.mark}|${tier.angle}|${tier.size}|${tier.worldRadius}`;
+      : `${tier.glyph}|${tier.mark}|${tier.angle}|${tier.size}|${tier.worldRadius}|${tier.fallback}`;
+  useLayoutEffect(() => () => sink.release?.(), [sink]);
   useLayoutEffect(() => {
     sink.setBase(tier ?? null, rest ?? '');
     // `tier` is a fresh object each render; the key is its identity.

@@ -18,19 +18,23 @@ export interface CursorSink {
   setBase(cursor: ResolvedCursor | null, rest?: string): void;
   /** A cursor that wins over the base while set. Null clears it. */
   setOverride(cursor: ResolvedCursor | null): void;
+  /** Gives up the base: the element gets back the cursor it showed before the sink wrote one, and the painted base
+   *  clears. An override still set keeps showing until it clears. */
+  release?(): void;
 }
 
 /** What a {@link CursorSink} writes to: an element's `cursor` style and the painted-cursor state. */
 export interface CursorSinkTarget {
   /** The element whose `cursor` style is written, read at each write. */
   element: () => { style: { cursor: string } } | null | undefined;
-  /** The painted tier's state, read at each write. */
+  /** The painted tier's state, read at each write. Without one, a painted cursor shows its fallback. */
   painted: () => PaintedCursorState | undefined;
 }
 
 /** A painted cursor is two writes: the native one gets out of the way, and
- *  the layer is told what to draw. */
-const cssOf = (cursor: ResolvedCursor): string => (cursor.kind === 'css' ? cursor.css : 'none');
+ *  the layer is told what to draw. With no layer, its fallback shows instead. */
+const cssOf = (cursor: ResolvedCursor, layer = true): string =>
+  (cursor.kind === 'css' ? cursor.css : layer ? 'none' : cursor.fallback ?? 'default');
 
 const shown = (cursor: ResolvedCursor | null): ResolvedCursor | null =>
   (cursor !== null && cssOf(cursor) !== '' ? cursor : null);
@@ -88,7 +92,8 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     const el = target.element();
     if (written && written.el !== el) giveBack();
     if (!el) return;
-    const css = override ? cssOf(override) : ownsBase ? (base ? cssOf(base) : rest) : null;
+    const layer = paintedTo !== undefined;
+    const css = override ? cssOf(override, layer) : ownsBase ? (base ? cssOf(base, layer) : rest) : null;
     if (css === null) {
       giveBack();
       return;
@@ -109,6 +114,14 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     },
     setOverride(cursor) {
       override = shown(cursor);
+      write();
+    },
+    release() {
+      if (!ownsBase) return;
+      ownsBase = false;
+      base = null;
+      rest = '';
+      paintedTo?.setBase(null);
       write();
     },
   };
