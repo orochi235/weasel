@@ -33,7 +33,7 @@ describe('step actions of a tool held on its key', () => {
 
 describe('step bindings of two tools held on keys', () => {
   it('are not reported as a conflict, as only the live tool\'s step runs', () => {
-    const tool = (id: string, key: string) => defineTool({ id, hotkey: { key }, options: brush, presentation: { label: id } });
+    const tool = (id: string, key: string) => defineTool({ id, hotkey: key, options: brush, presentation: { label: id } });
     expect(findScopedConflicts({ registry: [tool('brush', 'b'), tool('eraser', 'e')] })).toEqual([]);
   });
 });

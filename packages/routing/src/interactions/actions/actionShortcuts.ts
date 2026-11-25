@@ -7,7 +7,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { Action } from './action';
 import type { ActionItem } from './actionItems';
 import { actionBindings } from './binding';
-import { resolveParams } from './bindingOpts';
+import { resolveParams, type BindingOptions } from './bindingOpts';
 import { invokedParams } from './tuning';
 
 /** One keyboard shortcut, flattened for display: the chip a menu row draws (`ShortcutInput` in
@@ -65,7 +65,7 @@ export function actionShortcuts(
 /** {@link actionShortcuts} read from `bindings` of `action`, such as its own and those a tool declares for it. */
 export function bindingShortcuts(
   action: Action,
-  bindings: Iterable<{ spec: GestureSpec; opts?: { params?: unknown } }>,
+  bindings: Iterable<{ spec: GestureSpec; opts?: BindingOptions<object> }>,
   params?: Readonly<Record<string, unknown>>,
   kind?: 'key' | 'keyHeld',
 ): readonly ActionShortcut[] {
@@ -73,7 +73,7 @@ export function bindingShortcuts(
   const seen = new Set<string>();
   for (const { spec, opts } of bindings) {
     if (kind && spec.kind !== kind) continue;
-    if (params && !paramsMatch(invokedParams(action, resolveParams(opts?.params)), params)) continue;
+    if (params && !paramsMatch(invokedParams(action, resolveParams(opts?.params) as Record<string, unknown> | undefined), params)) continue;
     const shortcut = keySpecShortcut(spec);
     if (!shortcut) continue;
     const token = `${shortcut.key}|${shortcut.mod}|${shortcut.alt}|${shortcut.shift}`;
