@@ -46,9 +46,8 @@ function evictBranchesPast(forks: Map<number, Entry[][]>, limit: number, evict: 
 
 export function createForks(env: ForksEnv) {
   const { undoStack, redoStack, branching, branchLimit, onEvict, logger } = env;
-  /** Futures a push set aside, by the id of the entry they fork from (the
-   *  floor's for the oldest reachable state), each in time order. Only a
-   *  branching history adds to it. */
+  /** Futures a push set aside, by the id of the entry they fork from (the floor's for the oldest
+   *  reachable state), each in time order. Only a branching history adds to it. */
   const forks = new Map<number, Entry[][]>();
   /** Names the state beneath the undo stack: 0 at the start, then the id of
    *  the last undo entry evicted. */
@@ -113,9 +112,10 @@ export function createForks(env: ForksEnv) {
   return {
     forkPoint,
     retireRedo,
-    /** Evict the oldest undo entries past `limit`, reporting each. */
+    /** Evict the oldest undo entries past `limit`, reporting each, then the oldest branches past the branch cap. */
     evictPast(limit: number): void {
       while (undoStack.length > limit) evictFloor([undoStack.shift()!]);
+      evictBranchesPast(forks, branchLimit, evict);
     },
     /** Evict the undo entries older than `t`, and return them. */
     evictBefore(t: number): Entry[] {

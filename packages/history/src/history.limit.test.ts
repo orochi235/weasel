@@ -161,4 +161,23 @@ describe('undoDepth / redoDepth', () => {
     expect(history.undoDepth()).toBe(history.entries().undo.length);
     expect(history.redoDepth()).toBe(history.entries().redo.length);
   });
+
+  it('caps a restored history\'s branches on the next push, with nothing to redo', () => {
+    const cell: Cell = { x: 0 };
+    const rebuildOp = (_: string, args: unknown) => {
+      const a = args as { from: number; to: number };
+      return setX(cell, a.from, a.to);
+    };
+    const wide = createHistory(null, { branching: true, rebuildOp });
+    wide.applyOps([setX(cell, 0, 1)], 'root');
+    for (const to of [2, 3, 4]) wide.applyOps([setX(cell, to - 1, to)], `a${to}`);
+    for (let i = 0; i < 3; i++) wide.undo();
+    wide.applyOps([setX(cell, 1, 5)], 'b');
+    const onEvict = vi.fn();
+    const capped = createHistory(null, { branching: true, historyLimit: 2, onEvict, rebuildOp });
+    capped.restore(wide.serialize());
+    capped.applyOps([setX(cell, 5, 6)], 'c');
+    expect(onEvict.mock.calls.map(([e]) => e.label)).toEqual(['root', 'a2', 'a3', 'a4']);
+    expect(capped.serialize().branches ?? []).toEqual([]);
+  });
 });
