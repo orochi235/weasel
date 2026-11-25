@@ -16,7 +16,7 @@ import type { KeymapStack } from '../../keymaps/keymapStack';
 import { holdPreview, holdPreviewId } from './holdPreview';
 import type { ActionsRegistry } from './registry';
 
-function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
+function rig(opts: { enabled?: Action['enabled']; throws?: boolean; params?: () => Record<string, unknown> } = {}) {
   const dispatcher = createDispatcher();
   const shown = vi.fn();
   const hidden = vi.fn();
@@ -44,7 +44,7 @@ function rig(opts: { enabled?: Action['enabled']; throws?: boolean } = {}) {
     id: 'paths',
     label: 'Paths',
     leader: key('p'),
-    bindings: [{ spec: held('u'), actionId: holdPreviewId('unite'), opts: { params: { op: 'union' } } }],
+    bindings: [{ spec: held('u'), actionId: holdPreviewId('unite'), opts: { params: opts.params ?? { op: 'union' } } }],
     actions: [unite, holdPreview(unite), cancel],
   });
   let keymaps: () => KeymapStack | null | undefined = () => undefined;
@@ -92,6 +92,17 @@ describe('holdPreview', () => {
     expect(r.hidden).toHaveBeenCalledTimes(1);
     // With the press's deps: the release's own ctx carries none.
     expect(r.run).toHaveBeenCalledWith({ op: 'union' }, expect.objectContaining({ keymaps: expect.anything() }));
+  });
+
+  it("runs with a thunked binding param's value at the release", () => {
+    let op = 'union';
+    const r = rig({ params: () => ({ op }) });
+    r.tap('p');
+    r.send('keydown', 'u');
+    expect(r.shown).toHaveBeenCalledWith({ op: 'union' }, expect.anything());
+    op = 'intersect';
+    r.send('keyup', 'u');
+    expect(r.run).toHaveBeenCalledWith({ op: 'intersect' }, expect.anything());
   });
 
   it('takes the preview down and runs nothing when the hold is canceled', () => {
