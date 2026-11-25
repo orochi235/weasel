@@ -14,6 +14,11 @@ import { isDev } from '@weasel-js/registry';
  *  prod entirely. (Mirrors the dispatcher's own `DEV` const.) */
 const DEV = isDev();
 
+/** Members that serializers, test matchers, React, and promise checks probe on any object; none of them is a dep. */
+const PROBES = new Set(['then', 'toJSON', '$$typeof', 'asymmetricMatch', 'nodeType']);
+
+const probed = (prop: string): boolean => PROBES.has(prop) || Object.hasOwn(Object.prototype, prop);
+
 /** Build the deps bag for an action from its declared `requires`. */
 export function createActionDeps(action: Action, depRegistry: DepRegistry): ActionDeps {
   const requires = action.requires ?? [];
@@ -28,7 +33,7 @@ export function createActionDeps(action: Action, depRegistry: DepRegistry): Acti
     const declared = new Set<string>(requires);
     return new Proxy(deps as Record<string, unknown>, {
       get(target, prop, receiver) {
-        if (typeof prop === 'string' && !declared.has(prop) && prop !== 'then') {
+        if (typeof prop === 'string' && !declared.has(prop) && !probed(prop)) {
           const message =
             `[weasel:dispatcher] action "${action.id}" read deps.${prop} but did not declare it in \`requires\`. ` +
             `Add \`requires: [...'${prop}']\` to the descriptor or the dep will be undefined at runtime.`;

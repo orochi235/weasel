@@ -178,6 +178,35 @@ describe('a gesture as the last operation', () => {
     expect(doc.width).toBe(10 + 4 * 3 + 5);
   });
 
+  it("holds a UI-driven edit at the params its last update handed it", () => {
+    const { registry, store } = setup({ replays: true });
+    const invoker = registry.list().find((a) => a.id === 'stretch')!.invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('timing');
+    act(() => {
+      const handle = invoker.start({ ...ctxAt(0), params: { factor: 2 } }, { params: { factor: 2 } });
+      handle.onMove?.({ ...ctxAt(4), params: { factor: 6 } });
+      handle.onEnd?.(ctxAt(4), 'commit');
+    });
+    expect(store.get()?.values).toEqual({ factor: 6 });
+  });
+
+  it.each([
+    ['unregistered', (r: ActionsRegistry) => { r.unregister('stretch'); }],
+    ['muted', (r: ActionsRegistry) => { r.mute('stretch'); }],
+    ['refusing', (r: ActionsRegistry) => {
+      const a = r.list().find((x) => x.id === 'stretch')!;
+      r.unregister('stretch');
+      r.register({ ...a, enabled: () => 'refused' });
+    }],
+  ])('leaves a drag as it was when its action is %s by the time it is adjusted', (_, change) => {
+    const { doc, history, registry, store, drag } = setup({ replays: true });
+    drag(4, { factor: 2 });
+    act(() => { change(registry); });
+    act(() => { expect(store.adjust({ factor: 3 })).toBe(false); });
+    expect(doc.width).toBe(18);
+    expect(history.undoDepth()).toBe(1);
+  });
+
   it('ends when the active tool changes, leaving what the drag did', () => {
     const { doc, history, registry, store, drag } = setup({ replays: true });
     drag(4, { factor: 2 });

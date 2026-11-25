@@ -4238,3 +4238,12 @@ Calls the lanes made without a ruling:
   each upload under it rewrites the texels in its own alpha convention (straight for the atlas, premultiplied for the
   image); the last to upload also decides whether a registry sweep may delete it. Keeping the two in separate
   namespaces was the alternative, which would change how every draw looks a texture up.
+## Audit round eighty-six (2026-11-25): routing's actions
+
+- 2026-11-25 (the fixer's call): only a last-operation adjust writes an action's session params; a plain run, and the
+  params a gesture's handle reports from what it edited, do not. Remembering every kept run's values, which hid an
+  `under` tuning's later values, was the alternative.
+- 2026-11-25 (the fixer's call): moving a modifier role that declares no keys widens no binding, since no binding can
+  be told to have been written with `roleMods` for it; such a binding names the new key itself.
+- 2026-11-25 (the fixer's call): a binding override putting an action binding on the `'&'` channel leaves it unbound
+  with a warning, as an override that is not a route is skipped; `tune` throws, as `register` does.

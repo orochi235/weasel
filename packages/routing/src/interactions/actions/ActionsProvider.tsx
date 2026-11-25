@@ -25,13 +25,13 @@ import type { ActionDeps, WorldPoint } from './invoker';
 import { dynamicActionId, type ActionParamsOf, type InvokeParams } from './actionIds';
 import type { ImmediateParams } from '../dispatcher/inputFacts';
 import type { Dispatcher } from '../dispatcher/dispatcher';
-import { validateActionId, validateActionDefaultBinding, type ActionsRegistry, type UiOngoingControl } from './registry';
+import { validateActionBindings, validateActionId, validateActionDefaultBinding, type ActionsRegistry, type UiOngoingControl } from './registry';
 import { createMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
 import { dropKeysOf, holdsKeysNow, takeKeys } from './keyOrder';
 import { tuneAction, tunedParams, underFirst, type ActionTuning } from './tuning';
-import { overrideActionBindings, resolveBindingOverrides, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
+import { overrideActionBindings, resolveBindingOverrides, withoutOwnerChannel, type BindingOverrides, type ResolvedBindingOverrides } from './bindingOverrides';
 import { LastOperationKeeper, type LastOperationHost } from './lastOperation';
 import { showPreview } from './showPreview';
 import { heldActionId, holdingLive } from './holdPreview';
@@ -123,7 +123,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
   /** `a` under every tuning for its id from the root down to here. */
   private tuned(a: Action): Action {
     const tunings = this.tuningsOf(a.id);
-    const tuned = overrideActionBindings(tunings.length ? tuneAction(a, tunings) : a, this.overridesHere(), a);
+    const tuned = withoutOwnerChannel(overrideActionBindings(tunings.length ? tuneAction(a, tunings) : a, this.overridesHere(), a));
     return this.lastOperation.wrap(tuned, this.opHost ??= this.lastOperationHost());
   }
 
@@ -133,14 +133,16 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       history: () => (this.deps()?.get('history' as DepName) as History | undefined) ?? null,
       takeSelection: () => this.deps()?.get('selectionSnapshot')?.take() ?? null,
       paramsOf: (id, given) => tunedParams(this.tuningsOf(id), given),
+      admits: (id, params) => {
+        const a = this.resolve(id);
+        if (!a?.invoker) return false;
+        const r = this.deps();
+        return eligibleNow(a, r?.get('ruleCtx')) && checkEnabled(a, depsFor(a, r), pointOf(params), params).enabled;
+      },
       rerun: (id, params) => {
         const a = this.resolve(id);
-        if (a?.invoker?.timing !== 'immediate') return false;
-        const r = this.deps();
-        if (!eligibleNow(a, r?.get('ruleCtx'))) return false;
-        const deps = depsFor(a, r);
-        if (!checkEnabled(a, deps, pointOf(params), params).enabled) return false;
-        return a.invoker.run(deps, params) !== 'pass';
+        if (a?.invoker?.timing !== 'immediate' || !this.opHost?.admits(id, params)) return false;
+        return a.invoker.run(depsFor(a, this.deps()), params) !== 'pass';
       },
       keep: (id, params) => { for (const t of this.tuningsOf(id)) t.keep?.(params); },
     };
@@ -263,6 +265,7 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       };
     },
     tune: (id: string, tuning: ActionTuning) => {
+      if (tuning.bindings) validateActionBindings(id, tuning.bindings, 'tuning binding');
       let stack = this.tunings.get(id);
       if (!stack) this.tunings.set(id, (stack = []));
       const release = pushOwner(stack, tuning);

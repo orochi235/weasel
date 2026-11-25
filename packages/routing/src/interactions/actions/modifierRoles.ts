@@ -69,7 +69,7 @@ export function withRoleMods<S extends object>(spec: S, roles: ModifierRoles, re
     const was = declared[id].keys;
     const now = ownOf(keys, id) ?? was;
     if (now.length === was.length && now.every((k) => was.includes(k))) continue;
-    if (!was.every((k) => admitted(mods, k))) continue;
+    if (was.length === 0 || !was.every((k) => admitted(mods, k))) continue;
     for (const key of now) {
       if (key === 'mod') { allow('meta'); allow('ctrl'); } else allow(key);
     }

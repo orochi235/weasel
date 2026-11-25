@@ -11,6 +11,7 @@ import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
 import type { Action } from './action';
 import { resolveParams, type ImmediateInvoker, type OngoingHandle, type OngoingInvoker } from './invoker';
 import { runsInvoker, type ActionTuning } from './tuning';
+import { handleWith } from './handleWith';
 
 /** One operation that can still be adjusted. */
 export interface LastOperation {
@@ -54,6 +55,9 @@ export interface LastOperationHost {
   /** Run the action live for `id` here with `params`, as `trigger` would, and say whether it ran: false when none
    *  is registered, its `eligible` rule or `enabled` refuses, or it passes. */
   rerun(id: string, params: Record<string, unknown>): boolean;
+  /** Whether the action live for `id` here would run with `params`: one is registered, and neither its `eligible`
+   *  rule nor `enabled` refuses. */
+  admits(id: string, params: Record<string, unknown>): boolean;
   /** Hand `params`, which a panel change made `id`'s for the session, to each tuning of `id` that keeps them. */
   keep(id: string, params: Readonly<Record<string, unknown>>): void;
 }
@@ -271,9 +275,15 @@ export class LastOperationKeeper implements LastOperationStore {
       // Read before `start`, which may open a journal of its own that lands on this stack as one entry.
       const stack = history ? editStackOf(history) : null;
       const handle = invoker.start(ctx, opts);
-      const { onEnd, replay } = handle;
+      const { onMove, onEnd, replay } = handle;
       if (!history || !stack || !onEnd || !replay) return handle;
       const watch = watchEntry(stack);
+      // A UI-driven edit's params arrive on the ctx, the start's and then each update's in place of the last.
+      let driven = ctx.params;
+      const moved: OngoingHandle['onMove'] = (moveCtx) => {
+        if (moveCtx.params) driven = moveCtx.params;
+        onMove?.call(handle, moveCtx);
+      };
       const ended: OngoingHandle['onEnd'] = (endCtx, reason) => {
         let entry: number | null = null;
         try {
@@ -282,7 +292,7 @@ export class LastOperationKeeper implements LastOperationStore {
           entry = watch.stop().entry;
         }
         if (reason !== 'commit' || entry === null) return;
-        const resolved = { ...host.paramsOf(id, resolveParams(opts?.params)), ...handle.params?.() };
+        const resolved = { ...host.paramsOf(id, { ...resolveParams(opts?.params), ...driven }), ...handle.params?.() };
         const schema = schemaOf(resolved);
         if (!schema) return;
         const values = formValues(schema, resolved);
@@ -290,12 +300,14 @@ export class LastOperationKeeper implements LastOperationStore {
         const op = { id, label: schema.name || label, schema, values };
         const keep = (v: Readonly<Record<string, unknown>>) => host.keep(id, v);
         const rerun = (v: Record<string, unknown>) => {
-          replay.call(handle, { ...rest, ...v });
+          const params = { ...rest, ...v };
+          if (!host.admits(id, params)) return false;
+          replay.call(handle, params);
           return true;
         };
         this.hold({ op, gesture: true, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun, host });
       };
-      return withOnEnd(handle, ended);
+      return handleWith(handle, { onMove: moved, onEnd: ended });
     };
     return { ...invoker, start };
   }
@@ -309,7 +321,6 @@ export class LastOperationKeeper implements LastOperationStore {
     if (held.stack !== held.history) offs.push(held.history.observe(ended));
     const unobserve = () => { for (const off of offs) off(); };
     this.held = { ...held, unobserve };
-    this.remember(held.op.id, held.op.values);
     this.listeners.emit();
   }
 
@@ -317,23 +328,4 @@ export class LastOperationKeeper implements LastOperationStore {
     this.session.set(id, { params: { ...values } });
     this.onSession();
   }
-}
-
-/** `handle` with `onEnd` replaced and every other member read live from it, each method called on `handle` itself:
- *  a copy would split the state of a handle that keeps it on `this`, and drop a class instance's methods. */
-function withOnEnd(handle: OngoingHandle, onEnd: OngoingHandle['onEnd']): OngoingHandle {
-  const bound = new Map<PropertyKey, { of: unknown; fn: unknown }>();
-  return new Proxy(handle, {
-    get(target, key) {
-      if (key === 'onEnd') return onEnd;
-      const value: unknown = Reflect.get(target, key, target);
-      if (typeof value !== 'function') return value;
-      let hit = bound.get(key);
-      if (hit?.of !== value) {
-        hit = { of: value, fn: (value as (...args: unknown[]) => unknown).bind(target) };
-        bound.set(key, hit);
-      }
-      return hit.fn;
-    },
-  });
 }

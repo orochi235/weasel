@@ -167,7 +167,7 @@ describe('the last operation', () => {
     expect(doc.selected).toEqual(['result']);
     expect(history.undoDepth()).toBe(1);
     expect(store.get()).toBeNull();
-    expect(registry.paramsOf('widen')).toEqual({ by: 3 });
+    expect(registry.paramsOf('widen')).toEqual({});
     error.mockRestore();
   });
 
@@ -235,6 +235,18 @@ describe('the last operation', () => {
     act(() => { registry.trigger('widen'); });
     expect(doc.width).toBe(18);
     expect(registry.paramsOf('widen')).toEqual({ by: 4 });
+  });
+
+  it('sets no session params for a run nothing adjusted, so an under tuning read later still reaches the next run', () => {
+    const { doc, registry } = setup();
+    const tool = { by: 2 };
+    act(() => { registry.tune('widen', { under: true, params: () => ({ by: tool.by }) }); });
+    act(() => { registry.trigger('widen'); });
+    expect(doc.width).toBe(12);
+    tool.by = 5;
+    act(() => { registry.trigger('widen'); });
+    expect(doc.width).toBe(17);
+    expect(registry.paramsOf('widen')).toEqual({ by: 5 });
   });
 
   it('lets a tuning win over the session params', () => {

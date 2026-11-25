@@ -164,30 +164,33 @@ export function validateActionId(id: string): void {
   }
 }
 
+/** Whether `spec`'s phase names the '&' channel, its owning tool's: an action has none for it to resolve to. A bare
+ *  phase reads as that channel. */
+export function usesOwnerChannel(spec: GestureSpec): boolean {
+  const phase: PhaseSpec | undefined = spec.phase;
+  if (phase === undefined) return false;
+  const atoms: readonly PhaseAtom[] = Array.isArray(phase) ? phase : [{ channel: '&', phase }];
+  return atoms.some((atom) => atom.channel === '&');
+}
+
+const specOf = (entry: BoundGesture | GestureSpec | { spec: GestureSpec }): GestureSpec => ('kind' in entry ? entry : entry.spec) as GestureSpec;
+
+/** Throw for a binding of `id`'s that `where` names whose phase uses the '&' channel. */
+export function validateActionBindings(id: string, entries: readonly (BoundGesture | GestureSpec | { spec: GestureSpec })[], where: string): void {
+  if (!entries.some((entry) => usesOwnerChannel(specOf(entry)))) return;
+  throw new Error(
+    `weasel: action "${id}" ${where} uses '&' channel ` +
+    `which has no owning tool to resolve to. Use a named tool channel ` +
+    `(e.g. '[rect:engaged]') or '*' instead, or move this binding to ` +
+    `the tool's own Tool.bindings.`,
+  );
+}
+
 /** Reject any '&'-channel phase atom in an Action's defaultBinding —
  *  actions have no owning tool, so '&' can't resolve. Tool-side bindings
  *  (Tool.bindings) are the right place for '&' atoms. */
 export function validateActionDefaultBinding(action: Action): void {
   const gs = action.defaultBinding;
   if (!gs) return;
-  const entries: BoundGesture[] = Array.isArray(gs) ? gs : [gs as BoundGesture];
-  for (const entry of entries) {
-    const spec = ('kind' in entry ? entry : entry.spec) as GestureSpec;
-    const phase: PhaseSpec | undefined = spec.phase;
-    if (phase === undefined) continue;
-    const atoms: readonly PhaseAtom[] = Array.isArray(phase)
-      ? phase
-      : [{ channel: '&', phase: phase }];
-    for (const atom of atoms) {
-      if (atom.channel === '&') {
-        throw new Error(
-          `weasel: action "${action.id}" defaultBinding uses '&' channel ` +
-          `which has no owning tool to resolve to. Use a named tool channel ` +
-          `(e.g. '[rect:engaged]') or '*' instead, or move this binding to ` +
-          `the tool's own Tool.bindings.`,
-        );
-      }
-    }
-  }
+  validateActionBindings(action.id, Array.isArray(gs) ? gs : [gs as BoundGesture], 'defaultBinding');
 }
-
