@@ -238,10 +238,11 @@ export function createJournalInternal(
       // push, the base half the first, and undo inverts the base.
       // A session made only of one keyed run carries its key, so it continues that run on the parent.
       const { forwardOps, baseOps, coalesceKey } = _journalAccessInternal(inner).appliedOps();
-      _journalAccessInternal(parent).record(forwardOps, baseOps, label, { selectionBefore, coalesceKey });
+      // Closed first: the parent's listeners hear the push and may edit the parent in turn.
       state = 'closed';
       RESUMERS.delete(journal);
       onClose?.(false);
+      _journalAccessInternal(parent).record(forwardOps, baseOps, label, { selectionBefore, coalesceKey });
       bump();
     },
     cancel(): void {

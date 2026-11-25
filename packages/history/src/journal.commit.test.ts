@@ -76,4 +76,23 @@ describe('Journal.commit', () => {
     j.suspend();
     expect(() => j.commit('x')).toThrow();
   });
+
+  it('is closed by the time the parent tells its listeners of the new entry', () => {
+    const adapter = { values: [] as number[] };
+    const parent = createHistory(adapter);
+    const j = parent.beginJournal({ label: 'session' });
+    j.applyOps([pushOp(1)], 'a');
+    const seen: unknown[] = [];
+    parent.subscribe(() => {
+      seen.push(parent.activeJournal?.());
+      if (seen.length === 1) parent.applyOps([pushOp(2)], 'follow-up');
+    });
+
+    j.commit('session');
+
+    expect(seen[0]).toBeNull();
+    expect(adapter.values).toEqual([1, 2]);
+    expect(parent.undoDepth()).toBe(2);
+  });
 });
+
