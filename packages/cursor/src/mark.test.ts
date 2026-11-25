@@ -50,4 +50,11 @@ describe('markedGlyph', () => {
     const ops = cursorPaintOps(markedGlyph(BASE, DOT));
     expect(ops.map((o) => o.fill ?? o.stroke?.color)).toEqual([CURSOR_HALO, CURSOR_INK, CURSOR_HALO, CURSOR_INK]);
   });
+
+  it("keeps the glyph's own over layer, moved by the slot's shift, under the mark", () => {
+    const own = { role: 'ink', d: 'M 6 6 L 8 6 L 8 8 Z' } as const;
+    const out = markedGlyph({ ...BASE, over: [own] }, DOT);
+    expect(out.over).toHaveLength(2);
+    expect(out.over![0]).toEqual({ ...own, d: 'M 4 5 L 6 5 L 6 7 Z' });
+  });
 });
