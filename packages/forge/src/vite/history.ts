@@ -7,12 +7,17 @@ import type { ComponentHistory } from '../story/types.ts';
 /** Runs git in `cwd` and answers its stdout. */
 export type Git = (args: readonly string[], cwd: string) => Promise<string>;
 
-export const runGit: Git = (args, cwd) =>
-  new Promise((done, fail) => {
-    execFile('git', ['-c', 'core.quotepath=off', ...args], { cwd, maxBuffer: 1 << 30 }, (error, stdout) =>
-      error ? fail(error) : done(stdout),
-    );
-  });
+/** A git runner that fails a run lasting past `timeoutMs`, such as one waiting on a credential helper. */
+export const gitRunner =
+  (timeoutMs: number): Git =>
+  (args, cwd) =>
+    new Promise((done, fail) => {
+      execFile('git', ['-c', 'core.quotepath=off', ...args], { cwd, maxBuffer: 1 << 30, timeout: timeoutMs }, (error, stdout) =>
+        error ? fail(error) : done(stdout),
+      );
+    });
+
+export const runGit: Git = gitRunner(120_000);
 
 /** A commit header in the log `fileDates` reads: a NUL, the hash, a tab, the author date. */
 const LOG_FORMAT = '--format=%x00%H%x09%aI';

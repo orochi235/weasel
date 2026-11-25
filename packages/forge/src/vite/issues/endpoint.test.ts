@@ -1,10 +1,12 @@
 // @vitest-environment node
+import { tmpdir } from 'node:os';
 import { createServer, type IncomingMessage, request, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { withStalledCommand } from '../../testing/stalledCommand';
 import type { Git } from '../history';
 import { ISSUE_LIMIT, type IssuesAnswer } from './answer';
-import { type Gh, type GhResult, repoOf, serveIssues } from './endpoint';
+import { type Gh, ghRunner, type GhResult, repoOf, serveIssues } from './endpoint';
 
 type Handler = (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void;
 
@@ -55,6 +57,13 @@ async function get(
 }
 
 const answering = (result: GhResult) => vi.fn<Gh>(async () => result);
+
+describe('ghRunner', () => {
+  it.skipIf(process.platform === 'win32')('answers a failure when gh stalls past its timeout', async () => {
+    const result = await withStalledCommand('gh', () => ghRunner(200)(['issue', 'list'], tmpdir()));
+    expect(result).toEqual({ failed: 'gh did not answer within 0.2s', code: null });
+  });
+});
 
 describe('repoOf', () => {
   it("keeps a web remote's port in its host, and drops an SSH remote's", () => {
