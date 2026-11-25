@@ -80,6 +80,10 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
   const [announcement, setAnnouncement] = useState('');
 
   useEffect(() => () => drag.current?.cancel(), []);
+  // A bar taken away mid-drag ends its drag, as Escape would.
+  useEffect(() => {
+    if (view && !bars.some((b) => b.id === view.barId)) drag.current?.cancel();
+  }, [view, bars]);
 
   // A moved bar may be drawn afresh in its new row, or in the floating layer, so its handle is found again by the bar's mark.
   useLayoutEffect(() => {

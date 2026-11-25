@@ -127,8 +127,9 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
       <FloatingLayer layerRef={layer} layout={shown} view={view} empties={empties} drawn={drawn} attach={hosts.attach} />
       {/* Last, so each bar's own effects run once its slot has taken it in. */}
       {[...at].map(([id, orientation]) => {
-        const bar = byId.get(id)!;
-        return createPortal(<DockedBar bar={bar} orientation={orientation} movable={movable} handlers={move.handlers} setLeast={setLeast} />, hosts.host(id), id);
+        // A held move or a drag in progress may still place a bar the host has since taken away.
+        const bar = byId.get(id);
+        return bar && createPortal(<DockedBar bar={bar} orientation={orientation} movable={movable} handlers={move.handlers} setLeast={setLeast} />, hosts.host(id), id);
       })}
     </div>
   );

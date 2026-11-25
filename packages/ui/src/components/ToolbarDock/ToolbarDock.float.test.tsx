@@ -134,6 +134,19 @@ describe('tearing a bar off its dock', () => {
     expect(floating('file')).not.toHaveAttribute('data-dock-dragging');
   });
 
+  it('ends the drag, committing nothing, when the host takes the floating bar away', () => {
+    const onChange = vi.fn<(l: ToolbarLayout) => void>();
+    const layout = start([['file', 'view']]);
+    const { rerender } = render(<ToolbarDock docks={docks} bars={bars.slice(0, 2)} layout={layout} movable onLayoutChange={onChange} />);
+    press(handle('File'), [50, 15], [[50, 30], [50, 50], [300, 200]]);
+    expect(floating('file')).not.toBeNull();
+    rerender(<ToolbarDock docks={docks} bars={bars.slice(1, 2)} layout={layout} movable onLayoutChange={onChange} />);
+    expect(floating('file')).toBeNull();
+    expect(document.querySelector('[data-dock-dragging]')).toBeNull();
+    release([300, 200]);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
   it('does not float a bar dragged less than 24 px across its row', () => {
     const onChange = setup(start([['file', 'view']]));
     press(handle('File'), [50, 15], [[50, 30], [50, 50]]);
