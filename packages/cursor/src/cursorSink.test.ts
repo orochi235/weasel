@@ -15,6 +15,19 @@ function harness(initial = '') {
 }
 
 describe('createCursorSink', () => {
+  it('gives the element and the painted base back on release, after any override clears', () => {
+    const { el, painted, sink } = harness('help');
+    sink.setBase(ring);
+    expect(el.style.cursor).toBe('none');
+    expect(painted.active()).toBe(true);
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    sink.release!();
+    expect(el.style.cursor).toBe('grab');
+    sink.setOverride(null);
+    expect(el.style.cursor).toBe('help');
+    expect(painted.active()).toBe(false);
+  });
+
   it("shows a painted cursor's fallback where no painted layer draws it", () => {
     const el = { style: { cursor: '' } };
     const sink = createCursorSink({ element: () => el, painted: () => undefined });

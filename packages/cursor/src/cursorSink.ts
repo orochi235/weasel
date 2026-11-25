@@ -18,6 +18,9 @@ export interface CursorSink {
   setBase(cursor: ResolvedCursor | null, rest?: string): void;
   /** A cursor that wins over the base while set. Null clears it. */
   setOverride(cursor: ResolvedCursor | null): void;
+  /** Gives up the base: the element gets back the cursor it showed before the sink wrote one, and the painted base
+   *  clears. An override still set keeps showing until it clears. */
+  release?(): void;
 }
 
 /** What a {@link CursorSink} writes to: an element's `cursor` style and the painted-cursor state. */
@@ -111,6 +114,14 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     },
     setOverride(cursor) {
       override = shown(cursor);
+      write();
+    },
+    release() {
+      if (!ownsBase) return;
+      ownsBase = false;
+      base = null;
+      rest = '';
+      paintedTo?.setBase(null);
       write();
     },
   };

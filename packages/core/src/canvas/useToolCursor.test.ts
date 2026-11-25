@@ -18,6 +18,18 @@ describe('useToolCursor', () => {
     expect(setBase.mock.calls.at(-1)?.[0]).toMatchObject({ kind: 'painted', mark: 'remove' });
   });
 
+  it('releases the base on unmount and not between tool changes', () => {
+    const release = vi.fn();
+    const sink: CursorSink = { setBase: vi.fn(), setOverride: vi.fn(), release };
+    const { rerender, unmount } = renderHook(({ tools }) => useToolCursor(sink, tools, null, undefined), {
+      initialProps: { tools: toolsWith('crosshair') },
+    });
+    rerender({ tools: toolsWith('grab') });
+    expect(release).not.toHaveBeenCalled();
+    unmount();
+    expect(release).toHaveBeenCalledTimes(1);
+  });
+
   it('writes no tool cursor when input routes to no tool', () => {
     const setBase = vi.fn();
     const sink: CursorSink = { setBase, setOverride: vi.fn() };
