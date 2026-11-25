@@ -25,9 +25,9 @@ import type { ActionTuning } from './interactions/actions/tuning';
  * `Action.requires`, `DepRegistry.register`/`get` and `useDepSource` are all
  * keyed on.
  *
- * It declares one entry, `activeTool`, because the value and the action that
- * requires it (`tool.offhand`) are both routing's. Whoever supplies the rest
- * merges them in:
+ * It declares the deps whose value types are routing's own (`activeTool`,
+ * `menuHost`, `keymaps` and the rest below). Whoever supplies the rest merges
+ * them in:
  *
  * ```ts
  * declare module '@weasel-js/routing' {
