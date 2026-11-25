@@ -18,6 +18,12 @@ function pushOp(value: number): Op {
   } as Op;
 }
 
+interface Box { x: string }
+
+function setX(from: string, to: string): Op {
+  return { apply(a: Box) { a.x = to; }, invert: () => setX(to, from) };
+}
+
 describe('Journal.cancel', () => {
   it('rolls the scene back via inverses and pushes nothing to parent', () => {
     const adapter = { values: [10] as number[] };
@@ -84,5 +90,17 @@ describe('Journal.cancel', () => {
 
     j.cancel();
     expect(adapter.x).toBe(0);
+  });
+
+  it('unwinds its own edits and a suspended journal inside it in the order they were made', () => {
+    const box: Box = { x: '0' };
+    const outer = createHistory(box).beginJournal({ label: 'outer' });
+    const child = outer.beginJournal({ label: 'child' });
+    child.applyOps([setX('0', 'a')], 'a');
+    child.suspend();
+    outer.applyOps([setX('a', 'b')], 'b');
+
+    outer.cancel();
+    expect(box.x).toBe('0');
   });
 });

@@ -30,6 +30,8 @@ export type {
 interface JournalAccess {
   appliedOps(): ReturnType<typeof appliedHalves>;
   record(forwardOps: Op[], baseOps: Op[], label: string, options?: RecordEntryOptions): void;
+  /** Undo down to `depth` entries when deeper, past a journal still open on this history. */
+  rewind(depth: number): void;
 }
 
 const JOURNAL_ACCESS = new WeakMap<History, JournalAccess>();
@@ -168,6 +170,9 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   JOURNAL_ACCESS.set(history, {
     appliedOps: () => appliedHalves(undoStack),
     record,
+    rewind(depth) {
+      if (depth < undoStack.length) reported('goto', (into) => walkOrReturn(depth, into));
+    },
   });
   return history;
 }

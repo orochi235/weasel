@@ -97,26 +97,28 @@ export interface Journal {
   /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
    *  opened with. Throws while a journal opened inside this one is still active or suspended. */
   commit(label?: string): void;
-  /** Cancels every journal still open inside this one first, suspended ones included, the one
-   *  that edited last first. */
+  /** Cancels every journal still open inside this one, suspended ones included, the one that
+   *  edited last first, each after undoing this journal's own edits made since. */
   cancel(): void;
   /** Throws while a journal opened inside this one is active. */
   suspend(): void;
   isActive(): boolean;
 }
 
-/** The journals opened inside one, each dropped as it closes. */
-export function createChildren() {
+/** The journals opened inside one, each dropped as it closes. `depth` reads the enclosing
+ *  journal's undo depth, noted at each child's latest edit. */
+export function createChildren(depth: () => number = () => 0) {
   const children: Journal[] = [];
-  /** When each child last changed the adapter, counted in opens and edits. */
-  const lastEdit = new Map<Journal, number>();
+  /** When each child last changed the adapter, counted in opens and edits, and the depth then. */
+  const lastEdit = new Map<Journal, { at: number; depth: number }>();
   let edits = 0;
+  const touched = (child: Journal) => lastEdit.set(child, { at: ++edits, depth: depth() });
   const openChildren = (): Journal[] => children.slice();
   return {
     adopt(child: Journal): void {
       children.push(child);
-      lastEdit.set(child, ++edits);
-      const unobserve = child.observe(() => lastEdit.set(child, ++edits));
+      touched(child);
+      const unobserve = child.observe(() => touched(child));
       const unsubscribe = child.subscribe(() => {
         if (RESUMERS.has(child)) return;
         unobserve();
@@ -126,9 +128,11 @@ export function createChildren() {
       });
     },
     openChildren,
-    /** The open ones, latest edit first. Edits interleaved between suspended siblings cannot be
-     *  unwound exactly in any order. */
-    latestFirst: (): Journal[] => openChildren().sort((x, y) => lastEdit.get(y)! - lastEdit.get(x)!),
+    /** The open ones, latest edit first, each with the enclosing journal's depth at that edit. Edits
+     *  interleaved between suspended siblings cannot be unwound exactly in any order. */
+    latestFirst: (): { child: Journal; depth: number }[] => openChildren()
+      .map((child) => ({ child, ...lastEdit.get(child)! }))
+      .sort((x, y) => y.at - x.at),
   };
 }
 
@@ -162,7 +166,7 @@ export function createJournalInternal(
   type State = 'active' | 'suspended' | 'closed';
   let state: State = 'active';
   const targetId = opts.targetId;
-  const { adopt, openChildren, latestFirst } = createChildren();
+  const { adopt, openChildren, latestFirst } = createChildren(() => inner.undoDepth());
 
   const journal: Journal = {
     targetId,
@@ -222,7 +226,9 @@ export function createJournalInternal(
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
-      for (const child of latestFirst()) {
+      // Its own edits made after a child's last one are undone before that child's.
+      for (const { child, depth } of latestFirst()) {
+        _journalAccessInternal(inner).rewind(depth);
         if (!child.isActive()) RESUMERS.get(child)!();
         child.cancel();
       }
