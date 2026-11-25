@@ -2,6 +2,6 @@
 '@weasel-js/cursor': patch
 ---
 
-`rotationFitsInBox` accepts an arc whose circle stays inside the box at every angle, measuring it by its circle rather than by its bounding square's corners.
+`rotationFitsInBox` measures an arc by its circle, so a ring that stays inside the box at every angle passes.
 
 <!-- entry: fix -->

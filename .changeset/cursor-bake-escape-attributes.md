@@ -2,6 +2,6 @@
 '@weasel-js/cursor': patch
 ---
 
-`bakeCursor` escapes the path data and colors it writes into the cursor's SVG, so an accent fill such as `url("#g")` bakes a cursor the browser shows rather than silently dropping.
+`bakeCursor` escapes the path data and colors it writes into a cursor's SVG. An accent fill such as `url("#g")` now bakes a cursor that shows.
 
 <!-- entry: fix -->
