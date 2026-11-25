@@ -46,7 +46,7 @@ export function enumRows(src: RowAccess, leaf: PrefEnum, key: string, path: stri
   const current = leaf.encoding ? leaf.encoding.read(stored, siblingsOf(src, path)) : stored;
   if (leaf.readout) {
     const shown = leaf.options.find((o) => o.value === current)?.label ?? '—';
-    return [{ kind: 'item', key, label: `${leaf.name}: ${shown}`, disabled: true, run: noop }];
+    return [{ kind: 'item', key, label: `${leaf.name}: ${shown}`, ...withAccess(leaf.access), disabled: true, run: noop }];
   }
   const write = (v: string) => (leaf.encoding ? leaf.encoding.write(v, siblingsOf(src, path)) : v);
   return [

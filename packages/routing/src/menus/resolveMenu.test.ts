@@ -307,6 +307,11 @@ describe('resolveSchemaMenu: access letters', () => {
     const es = resolveSchemaMenu(menu({ grid: pref.boolean('Grid', false, { access: 'g' }) }), valued({ grid: false }));
     expect(es[0]).toMatchObject({ kind: 'item', access: 'g' });
   });
+  it('keeps an enum readout leaf letter on its one row', () => {
+    const leaf = pref.enum('Units', 'px', [{ value: 'px', label: 'px' }, { value: 'mm', label: 'mm' }], { readout: true, access: 'u' });
+    const es = resolveSchemaMenu(menu({ units: leaf }), valued({ units: 'mm' }));
+    expect(es).toEqual([expect.objectContaining({ kind: 'item', label: 'Units: mm', access: 'u' })]);
+  });
   it('gives a boolean no letter it did not declare', () => {
     const es = resolveSchemaMenu(menu({ grid: pref.boolean('Grid', false) }), valued({ grid: false }));
     expect(es[0]).not.toHaveProperty('access');

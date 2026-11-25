@@ -4190,3 +4190,8 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a branching history's `historyLimit` also caps the entries its kept branches hold
   together, evicting the oldest branch (and every branch forking from it) through `onEvict` once they exceed it. A
   separate branch limit, or bounding only the undo stack as before, were the alternatives.
+## Audit round eighty-four (2026-11-24): routing's menus
+
+- 2026-11-24 (the fixer's call): a menu leaf drawn as several rows (an action with several variants, an `actions`
+  leaf, an enum's options) puts its access letter on none of them, since one letter picks one row and the leaf names
+  no row to pick. Putting it on the first row, which runs that variant or sets that option, was the alternative.

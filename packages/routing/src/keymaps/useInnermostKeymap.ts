@@ -19,5 +19,6 @@ export function useInnermostKeymap(): OpenKeymap | null {
     });
     return () => { leaveStack?.(); leaveDeps?.(); };
   }, [deps]);
-  return useSyncExternalStore(subscribe, () => deps?.get('keymaps')?.innermost() ?? null);
+  const read = () => deps?.get('keymaps')?.innermost() ?? null;
+  return useSyncExternalStore(subscribe, read, read);
 }
