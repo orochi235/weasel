@@ -61,7 +61,7 @@ it('clears a scrollbar that takes room of its own once, by its gutter and not by
   // 15px on any machine, as a classic scrollbar does. It goes in before the form mounts: Chrome reserves nothing
   // for a box already laid out without it.
   const sheet = document.createElement('style');
-  sheet.textContent = '.classic :is(nav, [data-pref-into]) { scrollbar-width: auto !important; scrollbar-gutter: stable; } .classic ::-webkit-scrollbar { width: 15px; }';
+  sheet.textContent = '.classic :is(nav, [data-pref-into]) { scrollbar-width: auto !important; scrollbar-color: auto; scrollbar-gutter: stable; } .classic ::-webkit-scrollbar { width: 15px; }';
   document.head.append(sheet);
   try {
     const { container } = render(
