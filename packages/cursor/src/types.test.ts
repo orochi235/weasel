@@ -62,6 +62,13 @@ describe('the fit guards’ reach', () => {
   });
 });
 
+describe('the fit guards’ arcs', () => {
+  it('scale an arc too short for its chord up to half the chord, as SVG draws it', () => {
+    // Drawn as a radius-10 half circle about (12, 8), whose circle reaches y = -2.
+    expect(haloFitsInBox(glyph(24, 'M 2 8 A 1 1 0 0 1 22 8'))).toBe(false);
+  });
+});
+
 describe('the fit guards’ dialect', () => {
   it('refuses an absolute command outside M, L, A and Z rather than skipping it', () => {
     // `H 23.5` reaches past the margin; read as pairs it visits no point at all.

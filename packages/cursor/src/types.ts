@@ -107,10 +107,11 @@ function walk(d: string, see: (x: number, y: number, r: number) => void): void {
       for (let i = 0; i + 7 <= nums.length; i += 7) {
         const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7) as [number, number, number, number, number, number, number];
         if (rx !== ry) throw new Error(`cursor glyph path has an elliptical arc (${rx} by ${ry}): ${d}`);
-        const r = rx;
         const dx = x - cx;
         const dy = y - cy;
         const half = Math.hypot(dx, dy) / 2;
+        // SVG scales a radius too short for its chord up to half the chord.
+        const r = Math.max(Math.abs(rx), half);
         // Centre sits off the chord midpoint by this much, perpendicular to it.
         const off = Math.sqrt(Math.max(0, r * r - half * half));
         const sign = largeArc === sweep ? -1 : 1;
