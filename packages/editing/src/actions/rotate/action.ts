@@ -1,6 +1,6 @@
 import { defineAction, type Action } from '@weasel-js/routing';
 import type { InvocationCtx } from '@weasel-js/routing';
-import { createTransformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform } from '@weasel-js/core';
+import { createTransformPreview, finiteFrame, closeRun, runBehaviorCancel, inPlane, selectionLayer, recordTransform, forgetTransform } from '@weasel-js/core';
 import { commitRotate } from './commit';
 import { nextFrame } from './frame';
 import { beginRotate, type RotateFrame } from './session';
@@ -54,11 +54,12 @@ export const rotateAction: Action = inPlane(defineAction({
           let committed = false;
           try {
             if (reason === 'commit') {
-              committed = commitRotate(session, frame);
-              if (committed) {
+              const commit = commitRotate(session, frame);
+              committed = commit.committed;
+              if (commit.own) {
                 const pivot = session.ids.length > 1 && !session.turn.useUnionPivot ? 'each' : 'union';
                 recordTransform(session.scene, { kind: 'rotate', angle: frame.delta, pivot }, subject);
-              }
+              } else if (committed) forgetTransform(session.scene);
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
             session.snap.end();
