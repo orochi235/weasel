@@ -68,16 +68,10 @@ function shapeDelta(
   };
   for (const b of behaviors) {
     const r = b.onMove?.(gctx, proposed);
-    if (!r) continue;
-    if (r.rotation !== undefined) {
-      delta = r.rotation - originRotation;
-      proposed = { pose: syncGestureCurrent(gctx, turn, delta).get(primary), rotation: r.rotation };
-      continue;
-    }
-    if (r.pose === undefined) continue;
-    const rotation = turn.descriptorOf(primary).getRotation?.(r.pose) ?? 0;
+    if (!r || (r.rotation === undefined && r.pose === undefined)) continue;
+    const rotation = r.rotation ?? turn.descriptorOf(primary).getRotation?.(r.pose) ?? 0;
     delta = rotation - originRotation;
-    proposed = { pose: r.pose, rotation };
+    proposed = { pose: syncGestureCurrent(gctx, turn, delta).get(primary), rotation };
   }
   return delta;
 }
