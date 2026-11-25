@@ -266,6 +266,21 @@ describe('useGestureDispatcher — which drags a canvas accepts', () => {
     expect(canvas.classList.contains('weasel-dropover')).toBe(false);
   });
 
+  it('leaves a drop of a type no binding names to the page, as its dragover was', async () => {
+    const spy = vi.fn();
+    const { container } = render(<Harness><Probe actionDef={makeProbeAction([{ kind: 'drop', types: ['image/*'] }], spy)} /></Harness>);
+    const canvas = container.querySelector('canvas')!;
+    const ev = makeDropEvent({
+      dataTransfer: { items: [{ kind: 'string', type: 'text/plain', getAsString: (cb: (s: string) => void) => cb('hi') }], files: [], types: ['text/plain'] },
+      clientX: 5, clientY: 5,
+      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+    });
+    act(() => { canvas.dispatchEvent(ev); });
+    await flushMicrotasks();
+    expect(ev.defaultPrevented).toBe(false);
+    expect(spy).not.toHaveBeenCalled();
+  });
+
   // Firefox names a dragged file `application/x-moz-file` until it is dropped,
   // and a browser may name only `Files`. Neither says the file is not an image.
   it('accepts a file whose type the browser withholds until the drop', () => {

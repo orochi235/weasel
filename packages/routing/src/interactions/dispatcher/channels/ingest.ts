@@ -71,9 +71,11 @@ export function ingestInput(core: DispatchCore): {
     preview.end();
     const dt = e.dataTransfer;
     if (!dt || eventTaken(e)) return;
+    // Which surface owns the drop is settled now, on the item types, as for
+    // dragover; one no binding would take stays the page's.
+    if (!resolveDrag(e, dt).winner) return;
     e.preventDefault();
-    // Which surface owns the drop is settled now, on the item types, as for dragover.
-    if (resolveDrag(e, dt).winner) takeEvent(e);
+    takeEvent(e);
     const dropView = core.routedView();
     const w = toWorld(e.clientX, e.clientY);
     // Real modifiers forwarded (Option-drag is a copy-drag on macOS); the
