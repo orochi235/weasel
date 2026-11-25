@@ -10,7 +10,8 @@ import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import type { Action } from '../actions/action';
 import type { DispatcherChannels } from './gestureDispatcherOptions';
-import { useGestureDispatcher } from './useGestureDispatcher';
+import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDispatcher';
+import { createDispatcher } from './dispatcher';
 
 function Probe({ actions, body, channels }: {
   actions: readonly Action[];
@@ -286,5 +287,46 @@ describe('the hover channel on its own', () => {
     const fire = mount([follow('aim', aim)], () => 'empty', { pointer: false });
     fire('pointermove', { clientX: 5, clientY: 5 });
     expect(aim).not.toHaveBeenCalled();
+  });
+});
+
+describe('a hover that a modifier key dispatches', () => {
+  it('runs on the view under the pointer, not the one a drag that ended elsewhere was pinned to', () => {
+    // Pins a pressed pointer to the view it went down in, as a `ViewResolver` does.
+    const pinned = new Map<number, string | null>();
+    const viewAt = (x: number): { id: string | null } => ({ id: x >= 100 ? 'panel' : null });
+    const resolver = {
+      begin: (id: number, x: number) => { pinned.set(id, viewAt(x).id); return { id: pinned.get(id)! }; },
+      at: (id: number | null, x: number) => (id !== null && pinned.has(id) ? { id: pinned.get(id)! } : viewAt(x)),
+      end: (id: number) => { pinned.delete(id); },
+    };
+    const panel: DispatcherViewTarget = {
+      id: 'panel', dispatcher: createDispatcher(), affordanceAt: undefined, classifyTarget: undefined, clientToWorld: undefined,
+    };
+    const seen: unknown[] = [];
+    const readout = follow('readout', (p) => { seen.push(p.viewId); }, { defaultBinding: { kind: 'hover', mods: { shift: 'optional' } } });
+    function Views() {
+      const registry = useActionsRegistry();
+      const canvasRef = useRef<HTMLCanvasElement | null>(null);
+      registry?.register(readout);
+      useGestureDispatcher({
+        canvasRef, actions: registry!, entriesById: new Map(),
+        views: { targets: () => [panel], resolver },
+      });
+      return <canvas ref={canvasRef} />;
+    }
+    const { container } = render(
+      <DepRegistryProvider><ActiveToolContextProvider><ActionsProvider><Views /></ActionsProvider></ActiveToolContextProvider></DepRegistryProvider>,
+    );
+    const canvas = container.querySelector('canvas')!;
+    const fire = (on: EventTarget, type: string, x: number): void => {
+      act(() => { on.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, clientX: x, clientY: 10, buttons: type === 'pointerup' ? 0 : 1 })); });
+    };
+    fire(canvas, 'pointerdown', 150);
+    fire(document, 'pointermove', 50);
+    fire(document, 'pointerup', 50);
+    seen.length = 0;
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Shift', shiftKey: true })); });
+    expect(seen).toEqual([null]);
   });
 });
