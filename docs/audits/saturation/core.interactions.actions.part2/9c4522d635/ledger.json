@@ -1,0 +1,61 @@
+{
+ "area": "core.interactions.actions.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/interactions/actions/moveOptions.ts",
+  "packages/core/src/interactions/actions/notices.ts",
+  "packages/core/src/interactions/actions/operands.ts",
+  "packages/core/src/interactions/actions/pathCommands/pathNodes.ts",
+  "packages/core/src/interactions/actions/pathGestureTags.ts",
+  "packages/core/src/interactions/actions/pbt.fixture.ts",
+  "packages/core/src/interactions/actions/pbtScene.fixture.ts",
+  "packages/core/src/interactions/actions/planeInput.ts",
+  "packages/core/src/interactions/actions/pointerState.ts",
+  "packages/core/src/interactions/actions/poseDescriptorDep.ts",
+  "packages/core/src/interactions/actions/poseFrame.ts",
+  "packages/core/src/interactions/actions/regionSelectDeps.ts",
+  "packages/core/src/interactions/actions/resizeOptions.ts",
+  "packages/core/src/interactions/actions/resolveOverlays.ts",
+  "packages/core/src/interactions/actions/resolvePreviews.ts",
+  "packages/core/src/interactions/actions/rotateOptions.ts",
+  "packages/core/src/interactions/actions/runLifecycle.ts",
+  "packages/core/src/interactions/actions/selectionSubtree.ts",
+  "packages/core/src/interactions/actions/settleWithinRounding.ts",
+  "packages/core/src/interactions/actions/snapDep.ts",
+  "packages/core/src/interactions/actions/spatialReference.ts",
+  "packages/core/src/interactions/actions/testUtils.ts",
+  "packages/core/src/interactions/actions/transform-again/memory.ts",
+  "packages/core/src/interactions/actions/transformFinish.ts",
+  "packages/core/src/interactions/actions/useActionSet.ts",
+  "packages/core/src/interactions/actions/useNotices.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1595634,
+   "minutes": 0.11605,
+   "at": "2026-11-25T21:15:07.293Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Alignment treats a real half-unit offset as rounding error at a large world origin, because the tolerance scales with the absolute coordinate, leaving a visible misalignment when zoomed in",
+   "where": "packages/core/src/interactions/actions/settleWithinRounding.ts:8",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,84 @@
+{
+ "area": "forge.shell.part2",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/forge/src/shell/issues/TrackedIssues.tsx",
+  "packages/forge/src/shell/issues/issues.css",
+  "packages/forge/src/shell/issues/issuesSection.tsx",
+  "packages/forge/src/shell/issues/tracker.ts",
+  "packages/forge/src/shell/keptFrame.ts",
+  "packages/forge/src/shell/keys/KeysPanel.tsx",
+  "packages/forge/src/shell/keys/keyRows.ts",
+  "packages/forge/src/shell/keys/keys.css",
+  "packages/forge/src/shell/keys/keysChrome.ts",
+  "packages/forge/src/shell/labDensity.ts",
+  "packages/forge/src/shell/labHarness.ts",
+  "packages/forge/src/shell/mountWorkshop.tsx",
+  "packages/forge/src/shell/readyKey.ts",
+  "packages/forge/src/shell/revealTrial.ts",
+  "packages/forge/src/shell/routedTrial.ts",
+  "packages/forge/src/shell/shell.css",
+  "packages/forge/src/shell/storyChanges.ts",
+  "packages/forge/src/shell/storyHosts.ts",
+  "packages/forge/src/shell/storyInstrument.tsx",
+  "packages/forge/src/shell/storyLoads.ts",
+  "packages/forge/src/shell/storyMarks.ts",
+  "packages/forge/src/shell/storyShow.ts",
+  "packages/forge/src/shell/tree/StoryTree.tsx",
+  "packages/forge/src/shell/tree/buildComponents.ts",
+  "packages/forge/src/shell/tree/buildTree.ts",
+  "packages/forge/src/shell/tree/folderReveal.ts",
+  "packages/forge/src/shell/tree/openStory.ts",
+  "packages/forge/src/shell/tree/sidebarViews.ts",
+  "packages/forge/src/shell/tree/treeRows.tsx",
+  "packages/forge/src/shell/treeReveal.ts",
+  "packages/forge/src/shell/trialFrames.ts",
+  "packages/forge/src/shell/useOverflowing.ts",
+  "packages/forge/src/shell/useRoute.ts",
+  "packages/forge/src/shell/useStoryRegistry.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1640084,
+   "minutes": 0.13965,
+   "at": "2026-11-25T21:18:18.173Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "One story's preparation failure rejects the shared file promise and marks every sibling story in the file faulted, so stories that prepared fine fail to open",
+   "where": "packages/forge/src/shell/storyLoads.ts:134",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "captureHost clones and serializes the story host, so canvas bitmaps are lost and annotation exports omit the Canvas2D/WebGL artwork",
+   "where": "packages/forge/src/shell/storyMarks.ts:59 (captureHost)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

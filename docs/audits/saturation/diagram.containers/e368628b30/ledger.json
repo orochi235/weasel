@@ -1,0 +1,62 @@
+{
+ "area": "diagram.containers",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/containers/canDropInto.ts",
+  "packages/diagram/src/containers/containerActions.ts",
+  "packages/diagram/src/containers/containerLayout.ts",
+  "packages/diagram/src/containers/containerStencils.ts",
+  "packages/diagram/src/containers/containerTitle.ts",
+  "packages/diagram/src/containers/index.ts",
+  "packages/diagram/src/containers/laneBoundaryLayer.ts",
+  "packages/diagram/src/containers/laneStack.ts",
+  "packages/diagram/src/containers/layouts.ts",
+  "packages/diagram/src/containers/regionSpecs.ts",
+  "packages/diagram/src/containers/titlePose.ts",
+  "packages/diagram/src/containers/trait.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1626734,
+   "minutes": 0.12246666666666667,
+   "at": "2026-11-25T21:15:59.154Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Lane stack layout leaves a non-last lane below the lane minimum, clamping only the last lane",
+   "where": "packages/diagram/src/containers/laneStack.ts:92",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Negative header depth expands the drop body past the container, accepting drops outside it",
+   "where": "packages/diagram/src/containers/trait.ts:75",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

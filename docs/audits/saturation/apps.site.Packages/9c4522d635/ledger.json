@@ -1,0 +1,53 @@
+{
+ "area": "apps.site.Packages",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/site/Packages/Guides.tsx",
+  "apps/site/Packages/Loading.tsx",
+  "apps/site/Packages/Overview.tsx",
+  "apps/site/Packages/PackageDemos.tsx",
+  "apps/site/Packages/Packages.module.css",
+  "apps/site/Packages/Packages.tsx",
+  "apps/site/Packages/catalog.ts",
+  "apps/site/Packages/reference/Callable.tsx",
+  "apps/site/Packages/reference/ClassPage.tsx",
+  "apps/site/Packages/reference/CodeLine.tsx",
+  "apps/site/Packages/reference/FunctionPage.tsx",
+  "apps/site/Packages/reference/Members.tsx",
+  "apps/site/Packages/reference/ModuleIndex.tsx",
+  "apps/site/Packages/reference/Reference.module.css",
+  "apps/site/Packages/reference/Reference.tsx",
+  "apps/site/Packages/reference/ReferenceView.tsx",
+  "apps/site/Packages/reference/TypePage.tsx",
+  "apps/site/Packages/useLoaded.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1583634,
+   "minutes": 0.08205,
+   "at": "2026-11-25T21:13:12.294Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A successful reference response of JSON null is cached as loaded but treated as pending, so the package page stays loading forever with no error or retry",
+   "where": "apps/site/Packages/reference/Reference.tsx:25",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

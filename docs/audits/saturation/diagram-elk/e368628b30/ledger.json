@@ -1,0 +1,54 @@
+{
+ "area": "diagram-elk",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram-elk/src/elkPlan.ts",
+  "packages/diagram-elk/src/fromElk.ts",
+  "packages/diagram-elk/src/index.ts",
+  "packages/diagram-elk/src/toElk.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1645034,
+   "minutes": 0.1616,
+   "at": "2026-11-25T21:15:42.052Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A user elk.json.shapeCoords=PARENT override replaces ROOT while fromElk still treats child coordinates as absolute, misplacing nested nodes",
+   "where": "packages/diagram-elk/src/elkPlan.ts:77",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Multi-section ELK edges are concatenated in array order instead of following section links, yielding backwards segments and wrong endpoints",
+   "where": "packages/diagram-elk/src/fromElk.ts:44",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

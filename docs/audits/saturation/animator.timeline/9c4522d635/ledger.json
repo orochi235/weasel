@@ -1,0 +1,67 @@
+{
+ "area": "animator.timeline",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/animator/src/timeline/booking.ts",
+  "packages/animator/src/timeline/clip.ts",
+  "packages/animator/src/timeline/clipShape.ts",
+  "packages/animator/src/timeline/clockEstimate.ts",
+  "packages/animator/src/timeline/createTimeline.test-harness.ts",
+  "packages/animator/src/timeline/createTimeline.ts",
+  "packages/animator/src/timeline/crossings.ts",
+  "packages/animator/src/timeline/entry.ts",
+  "packages/animator/src/timeline/fireEvents.ts",
+  "packages/animator/src/timeline/index.ts",
+  "packages/animator/src/timeline/length.ts",
+  "packages/animator/src/timeline/playhead.ts",
+  "packages/animator/src/timeline/sampleTrack.ts",
+  "packages/animator/src/timeline/targetStops.ts",
+  "packages/animator/src/timeline/timeline.fixture.ts",
+  "packages/animator/src/timeline/trackHolds.ts",
+  "packages/animator/src/timeline/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17374439999999997,
+   "minutes": 0.16748333333333335,
+   "at": "2026-11-25T21:11:49.944Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A fractional or NaN loop count is accepted unvalidated and corrupts playhead lap accounting (half laps, lap ID 0.5, NaN lap count)",
+   "where": "packages/animator/src/timeline/playhead.ts:8",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A huge finite time advance on an endless timeline overflows the lap quotient to Infinity, and Infinity - Infinity leaves the loop budget NaN permanently",
+   "where": "packages/animator/src/timeline/playhead.ts:83",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

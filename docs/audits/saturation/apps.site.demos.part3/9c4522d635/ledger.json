@@ -1,0 +1,83 @@
+{
+ "area": "apps.site.demos.part3",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/site/demos/KeymapDemo.module.css",
+  "apps/site/demos/KeymapDemo.tsx",
+  "apps/site/demos/KitSettingsDemo.module.css",
+  "apps/site/demos/KitSettingsDemo.tsx",
+  "apps/site/demos/KneadLabDemo.tsx",
+  "apps/site/demos/LabLoupeDemo.tsx",
+  "apps/site/demos/LassoDemo.module.css",
+  "apps/site/demos/LassoDemo.tsx",
+  "apps/site/demos/LayerListDemo.module.css",
+  "apps/site/demos/LayerListDemo.tsx",
+  "apps/site/demos/LayeredCurveDemo.module.css",
+  "apps/site/demos/LayeredCurveDemo.tsx",
+  "apps/site/demos/LayoutDemo.module.css",
+  "apps/site/demos/LayoutDemo.tsx",
+  "apps/site/demos/LevelOfDetailDemo.tsx",
+  "apps/site/demos/Lines3dDemo.module.css",
+  "apps/site/demos/Lines3dDemo.tsx",
+  "apps/site/demos/LoupeDemo.module.css",
+  "apps/site/demos/LoupeDemo.tsx",
+  "apps/site/demos/LoupeModelDemo.module.css",
+  "apps/site/demos/LoupeModelDemo.tsx",
+  "apps/site/demos/MeasureLabDemo.module.css",
+  "apps/site/demos/MeasureLabDemo.tsx",
+  "apps/site/demos/MenuDemo.module.css",
+  "apps/site/demos/MenuDemo.tsx",
+  "apps/site/demos/MermaidKindsDemo.tsx",
+  "apps/site/demos/MinimapDemo.module.css",
+  "apps/site/demos/MinimapDemo.tsx",
+  "apps/site/demos/ModesDemo.module.css",
+  "apps/site/demos/ModesDemo.tsx",
+  "apps/site/demos/MoveSnapDemo.tsx",
+  "apps/site/demos/MultiSelectDemo.tsx",
+  "apps/site/demos/PTouchLabelDemo.module.css",
+  "apps/site/demos/PTouchLabelDemo.tsx",
+  "apps/site/demos/PageGridDemo.module.css",
+  "apps/site/demos/PageGridDemo.tsx",
+  "apps/site/demos/PaintDemo.module.css",
+  "apps/site/demos/PaintDemo.tsx",
+  "apps/site/demos/PaintKindsDemo.module.css",
+  "apps/site/demos/PaintKindsDemo.tsx",
+  "apps/site/demos/PanZoomDemo.tsx",
+  "apps/site/demos/ParallaxDemo.tsx",
+  "apps/site/demos/PathAnchorEditDemo.tsx",
+  "apps/site/demos/PathConstraintsLabDemo.module.css",
+  "apps/site/demos/PathConstraintsLabDemo.tsx",
+  "apps/site/demos/PathDirectionLabDemo.tsx",
+  "apps/site/demos/PathMotionDemo.tsx",
+  "apps/site/demos/PathPoseDemo.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1588484,
+   "minutes": 0.09141666666666666,
+   "at": "2026-11-25T21:12:52.863Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "The focus outline reads the authored pose rather than the in-progress shown pose, so it lags at the old bounds while a shape is dragged or resized",
+   "where": "apps/site/demos/ModesDemo.tsx:102",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "area": "diagram.layered",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/layered/across.ts",
+  "packages/diagram/src/layered/bands.ts",
+  "packages/diagram/src/layered/cloudFixture.ts",
+  "packages/diagram/src/layered/clusterSpans.ts",
+  "packages/diagram/src/layered/cycles.ts",
+  "packages/diagram/src/layered/expand.ts",
+  "packages/diagram/src/layered/fixtures.ts",
+  "packages/diagram/src/layered/inward.ts",
+  "packages/diagram/src/layered/level.ts",
+  "packages/diagram/src/layered/order.ts",
+  "packages/diagram/src/layered/overlaps.ts",
+  "packages/diagram/src/layered/pins.ts",
+  "packages/diagram/src/layered/place.ts",
+  "packages/diagram/src/layered/places.ts",
+  "packages/diagram/src/layered/plan.ts",
+  "packages/diagram/src/layered/rank.ts",
+  "packages/diagram/src/layered/reach.ts",
+  "packages/diagram/src/layered/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.15907839999999998,
+   "minutes": 0.11735,
+   "at": "2026-11-25T21:16:15.863Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Label row assignment rescans and filters every labeled gap per rank/label lookup, making row numbering quadratic on long labeled chains",
+   "where": "packages/diagram/src/layered/expand.ts:67",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

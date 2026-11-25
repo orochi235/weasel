@@ -1,0 +1,88 @@
+{
+ "area": "geom.paths.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/geom/src/paths/markers.ts",
+  "packages/geom/src/paths/mergeRegion.ts",
+  "packages/geom/src/paths/nearestAnchor.ts",
+  "packages/geom/src/paths/pathAt.ts",
+  "packages/geom/src/paths/pathAwayFromAnchors.ts",
+  "packages/geom/src/paths/pathData.ts",
+  "packages/geom/src/paths/pathDistance.ts",
+  "packages/geom/src/paths/pathEndExtension.ts",
+  "packages/geom/src/paths/pathFromD.ts",
+  "packages/geom/src/paths/pathInWorld.ts",
+  "packages/geom/src/paths/pathMeasure.ts",
+  "packages/geom/src/paths/pathOrigin.ts",
+  "packages/geom/src/paths/pathStructure.ts",
+  "packages/geom/src/paths/pathToD.ts",
+  "packages/geom/src/paths/poiseHandles.ts",
+  "packages/geom/src/paths/puckerBloatPath.ts",
+  "packages/geom/src/paths/reachPath.ts",
+  "packages/geom/src/paths/repeatAlongPath.ts",
+  "packages/geom/src/paths/resamplePath.ts",
+  "packages/geom/src/paths/roughenPath.ts",
+  "packages/geom/src/paths/samePolygon.ts",
+  "packages/geom/src/paths/schneiderFit.ts",
+  "packages/geom/src/paths/segmentLength.ts",
+  "packages/geom/src/paths/segmentType.ts",
+  "packages/geom/src/paths/simplifyAnchors.ts",
+  "packages/geom/src/paths/simplifyPath.ts",
+  "packages/geom/src/paths/snipPath.ts",
+  "packages/geom/src/paths/spanFit.ts",
+  "packages/geom/src/paths/spiro.ts",
+  "packages/geom/src/paths/spiroPath.ts",
+  "packages/geom/src/paths/splitByClosure.ts",
+  "packages/geom/src/paths/splitSubpaths.ts",
+  "packages/geom/src/paths/transform.ts",
+  "packages/geom/src/paths/transformPath.ts",
+  "packages/geom/src/paths/tugPathEnd.ts",
+  "packages/geom/src/paths/tweenPaths.ts",
+  "packages/geom/src/paths/winding.ts",
+  "packages/geom/src/paths/zigzagPath.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16419840000000002,
+   "minutes": 0.11905,
+   "at": "2026-11-25T21:18:54.383Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Identity affine fast path adds width to the translated x before differencing, so a rect at x=2**54 with width 1 comes out with width 0",
+   "where": "packages/geom/src/paths/transformPath.ts:23",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Synthesizing the move for an implicit subpath after close spreads the entire command and coordinate streams into constructor calls, throwing past the argument limit on large inputs",
+   "where": "packages/geom/src/paths/splitSubpaths.ts:35 (placeSubpaths)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

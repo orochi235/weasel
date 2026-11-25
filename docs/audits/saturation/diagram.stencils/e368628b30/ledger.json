@@ -1,0 +1,33 @@
+{
+ "area": "diagram.stencils",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/stencils/architecture.ts",
+  "packages/diagram/src/stencils/bpmn.ts",
+  "packages/diagram/src/stencils/c4.ts",
+  "packages/diagram/src/stencils/containers.ts",
+  "packages/diagram/src/stencils/erd.ts",
+  "packages/diagram/src/stencils/flowchart.ts",
+  "packages/diagram/src/stencils/kanban.ts",
+  "packages/diagram/src/stencils/mindMap.ts",
+  "packages/diagram/src/stencils/network.ts",
+  "packages/diagram/src/stencils/org.ts",
+  "packages/diagram/src/stencils/requirement.ts",
+  "packages/diagram/src/stencils/state.ts",
+  "packages/diagram/src/stencils/stencils.fixture.ts",
+  "packages/diagram/src/stencils/uml.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1544284,
+   "minutes": 0.09516666666666666,
+   "at": "2026-11-25T21:16:44.962Z",
+   "findings": 0
+  }
+ ],
+ "defects": []
+}

@@ -1,0 +1,89 @@
+{
+ "area": "diagram.part1",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/DiagramView.tsx",
+  "packages/diagram/src/StencilGhost.tsx",
+  "packages/diagram/src/actionParamSchema.ts",
+  "packages/diagram/src/applyEdit.ts",
+  "packages/diagram/src/batchedEdits.ts",
+  "packages/diagram/src/body.ts",
+  "packages/diagram/src/bodyFollower.ts",
+  "packages/diagram/src/bodyNode.ts",
+  "packages/diagram/src/bodyRelayout.ts",
+  "packages/diagram/src/bodyRules.ts",
+  "packages/diagram/src/buildBody.ts",
+  "packages/diagram/src/chain.ts",
+  "packages/diagram/src/chainClusters.ts",
+  "packages/diagram/src/chainRoutes.ts",
+  "packages/diagram/src/cluster.ts",
+  "packages/diagram/src/clusterBox.ts",
+  "packages/diagram/src/clusterFixture.ts",
+  "packages/diagram/src/clusterReorder.ts",
+  "packages/diagram/src/clusterTree.ts",
+  "packages/diagram/src/clusterUpgrade.ts",
+  "packages/diagram/src/connect.ts",
+  "packages/diagram/src/connectTargets.ts",
+  "packages/diagram/src/connectorTool.ts",
+  "packages/diagram/src/contribution.ts",
+  "packages/diagram/src/dataClusters.ts",
+  "packages/diagram/src/dataColors.ts",
+  "packages/diagram/src/dataContainerPlace.ts",
+  "packages/diagram/src/dataContainers.ts",
+  "packages/diagram/src/dataEdges.ts",
+  "packages/diagram/src/dataPages.ts",
+  "packages/diagram/src/dataStyles.ts",
+  "packages/diagram/src/dataTypes.ts",
+  "packages/diagram/src/diagramEditing.ts",
+  "packages/diagram/src/diagramFit.ts",
+  "packages/diagram/src/diagramTools.ts",
+  "packages/diagram/src/diagramTypes/catalog.ts",
+  "packages/diagram/src/diagramTypes/doc.ts",
+  "packages/diagram/src/diagramTypes/edge.ts",
+  "packages/diagram/src/diagramTypes/index.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1643684,
+   "minutes": 0.12931666666666666,
+   "at": "2026-11-25T21:16:30.642Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Deleting a region omits diagram descendants nested behind a plain group, since the reporting path recurses only through region children, so nested shapes and their attached connectors go unreported",
+   "where": "packages/diagram/src/diagramEditing.ts:39",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A queued batched edit is delivered to the latest onEdit callback rather than the one current when the edit was reported, misapplying it to a replaced document or dropping it",
+   "where": "packages/diagram/src/batchedEdits.ts:35",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

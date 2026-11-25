@@ -1,0 +1,616 @@
+{
+ "area": "core.canvas.SceneCanvas.part1",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/SceneCanvas/ActionsProviderIfRoot.tsx",
+  "packages/core/src/canvas/SceneCanvas/CanvasKitProviders.tsx",
+  "packages/core/src/canvas/SceneCanvas/DepRegistryProviderIfRoot.tsx",
+  "packages/core/src/canvas/SceneCanvas/DevHuds.tsx",
+  "packages/core/src/canvas/SceneCanvas/PointerProviderIfRoot.tsx",
+  "packages/core/src/canvas/SceneCanvas/PresetComponents.tsx",
+  "packages/core/src/canvas/SceneCanvas/SceneCanvasInput.tsx",
+  "packages/core/src/canvas/SceneCanvas/SurfaceDeclarations.tsx",
+  "packages/core/src/canvas/SceneCanvas/actionProps.ts",
+  "packages/core/src/canvas/SceneCanvas/brushOverlay.ts",
+  "packages/core/src/canvas/SceneCanvas/builtinToolSets.ts",
+  "packages/core/src/canvas/SceneCanvas/canvasPassThrough.ts",
+  "packages/core/src/canvas/SceneCanvas/contributionFrameHooks.ts",
+  "packages/core/src/canvas/SceneCanvas/coordTrace.ts",
+  "packages/core/src/canvas/SceneCanvas/defaultNodeProperties.ts",
+  "packages/core/src/canvas/SceneCanvas/defaultNodeRouting.ts",
+  "packages/core/src/canvas/SceneCanvas/describePresets.ts",
+  "packages/core/src/canvas/SceneCanvas/dispatcherGestureBounds.ts",
+  "packages/core/src/canvas/SceneCanvas/features.ts",
+  "packages/core/src/canvas/SceneCanvas/geometryProps.ts",
+  "packages/core/src/canvas/SceneCanvas/ingestionProps.ts",
+  "packages/core/src/canvas/SceneCanvas/insertPreviewCommands.ts",
+  "packages/core/src/canvas/SceneCanvas/longPressProps.ts",
+  "packages/core/src/canvas/SceneCanvas/mergeLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/nodeTraits.ts",
+  "packages/core/src/canvas/SceneCanvas/pathEditHost.ts",
+  "packages/core/src/canvas/SceneCanvas/pointerProps.ts",
+  "packages/core/src/canvas/SceneCanvas/poseGeometry.ts",
+  "packages/core/src/canvas/SceneCanvas/poseRegistrars.tsx",
+  "packages/core/src/canvas/SceneCanvas/presetBuild.ts",
+  "packages/core/src/canvas/SceneCanvas/presetMerge.ts",
+  "packages/core/src/canvas/SceneCanvas/presetTraits.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/baseline.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/chrome.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/index.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/toolDriven.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/view.ts",
+  "packages/core/src/canvas/SceneCanvas/presets/viewTools.ts",
+  "packages/core/src/canvas/SceneCanvas/props.ts",
+  "packages/core/src/canvas/SceneCanvas/sampleProps.ts",
+  "packages/core/src/canvas/SceneCanvas/scenePointQuery.ts",
+  "packages/core/src/canvas/SceneCanvas/sceneProps.ts",
+  "packages/core/src/canvas/SceneCanvas/sceneViewBounds.ts",
+  "packages/core/src/canvas/SceneCanvas/selectToolProps.ts",
+  "packages/core/src/canvas/SceneCanvas/shapeGeneratorProperties.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.144903,
+   "minutes": 0.21481666666666666,
+   "at": "2026-11-25T09:54:43.238Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.3468078000000003,
+   "minutes": 2.9062666666666663,
+   "at": "2026-11-25T09:57:41.806Z",
+   "findings": 5
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.2058129999999998,
+   "minutes": 2.410216666666667,
+   "at": "2026-11-25T10:00:06.481Z",
+   "findings": 5
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.5607684000000002,
+   "minutes": 4.938133333333333,
+   "at": "2026-11-25T10:05:02.832Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.8136998,
+   "minutes": 2.44735,
+   "at": "2026-11-25T10:07:29.739Z",
+   "findings": 2
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.7672104,
+   "minutes": 2.0442666666666667,
+   "at": "2026-11-25T10:09:32.449Z",
+   "findings": 3
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.9804314000000001,
+   "minutes": 2.331366666666667,
+   "at": "2026-11-25T10:11:52.387Z",
+   "findings": 3
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.7712334000000001,
+   "minutes": 2.1566666666666667,
+   "at": "2026-11-25T10:14:01.856Z",
+   "findings": 1
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.096426,
+   "minutes": 3.1562,
+   "at": "2026-11-25T10:17:11.286Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.9198862000000001,
+   "minutes": 3.037916666666667,
+   "at": "2026-11-25T10:20:13.622Z",
+   "findings": 4
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.6561804,
+   "minutes": 1.7507666666666668,
+   "at": "2026-11-25T10:21:58.725Z",
+   "findings": 1
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.6071544,
+   "minutes": 2.0205,
+   "at": "2026-11-25T10:24:00.023Z",
+   "findings": 2
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.6756688,
+   "minutes": 2.14345,
+   "at": "2026-11-25T10:26:08.688Z",
+   "findings": 1
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.9579498,
+   "minutes": 2.835316666666667,
+   "at": "2026-11-25T10:28:58.865Z",
+   "findings": 1
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.7563228,
+   "minutes": 2.4448999999999996,
+   "at": "2026-11-25T10:31:25.619Z",
+   "findings": 3
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.7696798,
+   "minutes": 2.5876,
+   "at": "2026-11-25T10:34:00.935Z",
+   "findings": 5
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 0.9478228000000002,
+   "minutes": 2.9311333333333334,
+   "at": "2026-11-25T10:36:56.861Z",
+   "findings": 2
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.5151403999999999,
+   "minutes": 1.95685,
+   "at": "2026-11-25T10:38:54.331Z",
+   "findings": 1
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 1.2377948000000003,
+   "minutes": 4.123033333333334,
+   "at": "2026-11-25T10:43:01.770Z",
+   "findings": 2
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 0.7962100000000001,
+   "minutes": 2.4691166666666664,
+   "at": "2026-11-25T10:45:29.971Z",
+   "findings": 4
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 0.6866618,
+   "minutes": 2.287680428059896,
+   "at": "2026-11-25T10:49:10.523Z",
+   "findings": 3
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.7457472,
+   "minutes": 2.61505,
+   "at": "2026-11-25T10:51:47.482Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A preset refinement cycle with conflicting layer-key values crashes key merging by dereferencing an undefined top provider instead of rejecting the cycle with the preset IDs",
+   "where": "packages/core/src/canvas/SceneCanvas/presetMerge.ts:47",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    15,
+    16,
+    18,
+    19,
+    20,
+    22
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     15,
+     16,
+     18,
+     19,
+     20,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Copy picking measures tolerance with a scalar scale, so an anisotropic copy transform rejects ink visibly within the screen grab band",
+   "where": "packages/core/src/canvas/SceneCanvas/scenePointQuery.ts:54",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Toggling any one preset re-runs every preset's build, breaking build's once-per-canvas-and-preset contract",
+   "where": "packages/core/src/canvas/SceneCanvas/presetBuild.ts:125 (usePresetBuilds, second useMemo)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    21
+   ],
+   "sources": {
+    "claude": [
+     2,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "useStableToolOptions content key collides for strings containing its separators, so stale tool options are kept",
+   "where": "packages/core/src/canvas/SceneCanvas/presetBuild.ts:141 (contentKeyOf)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    10,
+    17,
+    20,
+    22
+   ],
+   "sources": {
+    "claude": [
+     2,
+     10,
+     17,
+     20,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "describePresets attributes an included preset to the including package instead of the package that ships it",
+   "where": "packages/core/src/canvas/SceneCanvas/describePresets.ts:37 (visit)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "DevHuds.toWorld keeps the previous view id when the canvas api is missing",
+   "where": "packages/core/src/canvas/SceneCanvas/DevHuds.tsx:47 (toWorld)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    7,
+    10,
+    16,
+    20
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     7,
+     10,
+     16,
+     20
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "describePresets silently drops a second, different preset sharing an id, where the canvas throws",
+   "where": "packages/core/src/canvas/SceneCanvas/describePresets.ts:31 (describePresets)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "Insert preview loses precision far from the origin",
+   "where": "packages/core/src/canvas/SceneCanvas/insertPreviewCommands.ts:32 (insertPreviewCommands, toScreen)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A frame hook shared by two contributions has its second failure swallowed silently",
+   "where": "packages/core/src/canvas/SceneCanvas/contributionFrameHooks.ts:31 (runContributionFrameHooks)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "An image insert preview is drawn upright under a flipped view while the outlines beside it are flipped",
+   "where": "packages/core/src/canvas/SceneCanvas/insertPreviewCommands.ts:68 (insertPreviewCommands)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5,
+    6,
+    7,
+    9,
+    10,
+    12,
+    15,
+    16,
+    17,
+    20,
+    21,
+    22
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5,
+     6,
+     7,
+     9,
+     10,
+     12,
+     15,
+     16,
+     17,
+     20,
+     21,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A partial selectionOverlay.handles override drops the device-scaled default handle size",
+   "where": "packages/core/src/canvas/SceneCanvas/mergeLayers.ts:63 (mergeLayersWithDefaults)",
+   "severity": "",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    7
+   ],
+   "sources": {
+    "claude": [
+     6,
+     7
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "isAtom reports a preset whose selectionChrome is a class instance as a bundle",
+   "where": "packages/core/src/canvas/SceneCanvas/describePresets.ts:20 (filled / isAtom)",
+   "severity": "",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "Gesture bounds of an in-flight insert omit its copies, which the preview paints",
+   "where": "packages/core/src/canvas/SceneCanvas/dispatcherGestureBounds.ts:47 (dispatcherInsertBounds)",
+   "severity": "",
+   "firstOccasion": 14,
+   "sightings": [
+    14,
+    19
+   ],
+   "sources": {
+    "claude": [
+     14,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "The features.ts module doc lists editing's presets as if core ships them",
+   "where": "packages/core/src/canvas/SceneCanvas/features.ts:10 (module doc)",
+   "severity": "",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "A singular copy matrix makes the pick query's tolerance (slop) Infinity or NaN",
+   "where": "packages/core/src/canvas/SceneCanvas/scenePointQuery.ts:59 (bareQuery.inCopy)",
+   "severity": "",
+   "firstOccasion": 16,
+   "sightings": [
+    16,
+    21
+   ],
+   "sources": {
+    "claude": [
+     16,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "Two contributions declaring a view or marker with the same id collide on one React key",
+   "where": "packages/core/src/canvas/SceneCanvas/SurfaceDeclarations.tsx:16 (SurfaceDeclarations)",
+   "severity": "",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "The image insert preview is not drawn for the insert's copies, while the outlines are",
+   "where": "packages/core/src/canvas/SceneCanvas/insertPreviewCommands.ts:68 (insertPreviewCommands)",
+   "severity": "",
+   "firstOccasion": 21,
+   "sightings": [
+    21
+   ],
+   "sources": {
+    "claude": [
+     21
+    ]
+   }
+  }
+ ]
+}

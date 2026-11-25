@@ -1,0 +1,95 @@
+{
+ "area": "apps.site",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/site/App.tsx",
+  "apps/site/CommandPalette/SitePalette.tsx",
+  "apps/site/DemoDevtools.module.css",
+  "apps/site/DemoDevtools.tsx",
+  "apps/site/DemoFrame.tsx",
+  "apps/site/DevtoolsSplit.browser.module.css",
+  "apps/site/DevtoolsSplit.tsx",
+  "apps/site/Features/Features.module.css",
+  "apps/site/Features/Features.tsx",
+  "apps/site/OlderReleases.tsx",
+  "apps/site/PageBoundary.tsx",
+  "apps/site/Prose.module.css",
+  "apps/site/Prose.tsx",
+  "apps/site/ReleaseChipIcon.tsx",
+  "apps/site/ReleaseEntry.tsx",
+  "apps/site/ReleaseFilter.tsx",
+  "apps/site/ReleaseHistory.tsx",
+  "apps/site/ReleaseSection.tsx",
+  "apps/site/Releases.css",
+  "apps/site/Releases.tsx",
+  "apps/site/Shell.tsx",
+  "apps/site/SiteNav.tsx",
+  "apps/site/SiteThemeProvider.tsx",
+  "apps/site/SourceView.tsx",
+  "apps/site/WeaselDemos.tsx",
+  "apps/site/WhatsNew.module.css",
+  "apps/site/WhatsNew.tsx",
+  "apps/site/canvas-kit-demo.css",
+  "apps/site/canvasBackend.ts",
+  "apps/site/colorMode.ts",
+  "apps/site/icons.gen.ts",
+  "apps/site/icons.table.ts",
+  "apps/site/icons/frame.mjs",
+  "apps/site/icons/index.mjs",
+  "apps/site/icons/kinds.mjs",
+  "apps/site/icons/packages.mjs",
+  "apps/site/icons/planet.mjs",
+  "apps/site/isoDay.ts",
+  "apps/site/main.tsx",
+  "apps/site/registry.ts",
+  "apps/site/releaseIcons.ts",
+  "apps/site/routes.ts",
+  "apps/site/testIcons.ts",
+  "apps/site/typography.css",
+  "apps/site/useVisiblePoll.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16230340000000001,
+   "minutes": 0.09475,
+   "at": "2026-11-25T21:12:43.744Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Modified (Ctrl/Cmd) clicks on the Older Releases link are prevented and navigate the current tab instead of opening a new one",
+   "where": "apps/site/ReleaseHistory.tsx:89",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "The demo resize control resets only on double-click; Enter and Space do nothing, so keyboard users cannot reset it",
+   "where": "apps/site/DemoFrame.tsx:152",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

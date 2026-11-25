@@ -1,0 +1,64 @@
+{
+ "area": "editing.actions.insert",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/editing/src/actions/insert/action.ts",
+  "packages/editing/src/actions/insert/commit.ts",
+  "packages/editing/src/actions/insert/extras.ts",
+  "packages/editing/src/actions/insert/frame.ts",
+  "packages/editing/src/actions/insert/geometry.ts",
+  "packages/editing/src/actions/insert/lands.ts",
+  "packages/editing/src/actions/insert/live.ts",
+  "packages/editing/src/actions/insert/params.ts",
+  "packages/editing/src/actions/insert/placeAction.ts",
+  "packages/editing/src/actions/insert/repositionAction.ts",
+  "packages/editing/src/actions/insert/rotateAction.ts",
+  "packages/editing/src/actions/insert/session.ts",
+  "packages/editing/src/actions/insert/shape.ts",
+  "packages/editing/src/actions/insert/style.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1632934,
+   "minutes": 0.1255,
+   "at": "2026-11-25T21:17:08.329Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A throwing insert-parent or snap hook during insert setup leaves the original selection cleared and never restored",
+   "where": "packages/editing/src/actions/insert/session.ts:100 (beginInsert)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "The Place action's positive-size gate accepts Infinity, so it builds an infinite end coordinate and passes it to the insert adapter",
+   "where": "packages/editing/src/actions/insert/placeAction.ts:55",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

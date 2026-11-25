@@ -1,0 +1,73 @@
+{
+ "area": "editor",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/editor/src/EditorShell.tsx",
+  "packages/editor/src/TextEditDepPublisher.tsx",
+  "packages/editor/src/contextMenus.ts",
+  "packages/editor/src/editorCommands.ts",
+  "packages/editor/src/editorPrefs.tsx",
+  "packages/editor/src/fileCommands.ts",
+  "packages/editor/src/fileWarnings.ts",
+  "packages/editor/src/index.ts",
+  "packages/editor/src/menuBar.ts",
+  "packages/editor/src/paperLayer.ts",
+  "packages/editor/src/pbt.fixture.ts",
+  "packages/editor/src/sessionSaveNotice.ts",
+  "packages/editor/src/sessionStore.ts",
+  "packages/editor/src/shortcutSheet.tsx",
+  "packages/editor/src/snapshot.ts",
+  "packages/editor/src/useAutosave.ts",
+  "packages/editor/src/useDocClipboard.ts",
+  "packages/editor/src/useEditorRulers.ts",
+  "packages/editor/src/usePageFit.ts",
+  "packages/editor/src/usePageGrid.ts",
+  "packages/editor/src/usePageSettle.ts",
+  "packages/editor/src/usePages.ts",
+  "packages/editor/src/useSessionPersistence.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16454839999999998,
+   "minutes": 0.12596666666666667,
+   "at": "2026-11-25T21:17:39.068Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "writeSlots ignores flushAll's false result when deleting an old dependent, so storage can keep the old dependent beside a newly saved primary",
+   "where": "packages/editor/src/sessionStore.ts:179 (writeSlots)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Strict Mode double-invokes the state initializer calling openPrefsSync, leaving the discarded prefs store's record cache, storage subscription and version watcher open with no owner to close them",
+   "where": "packages/editor/src/editorPrefs.tsx:30",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

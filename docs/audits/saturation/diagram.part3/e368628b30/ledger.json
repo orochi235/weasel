@@ -1,0 +1,104 @@
+{
+ "area": "diagram.part3",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/labels/labels.bench.ts",
+  "packages/diagram/src/labels/place.ts",
+  "packages/diagram/src/labels/specLabels.ts",
+  "packages/diagram/src/labels/station.ts",
+  "packages/diagram/src/labels/useLabelPlacement.ts",
+  "packages/diagram/src/layered.ts",
+  "packages/diagram/src/layout.entry.ts",
+  "packages/diagram/src/layout.ts",
+  "packages/diagram/src/layoutAction.ts",
+  "packages/diagram/src/layoutFixture.ts",
+  "packages/diagram/src/layoutFrame.ts",
+  "packages/diagram/src/live.ts",
+  "packages/diagram/src/liveFixture.ts",
+  "packages/diagram/src/livePlan.ts",
+  "packages/diagram/src/liveProducers.ts",
+  "packages/diagram/src/liveRoutes.ts",
+  "packages/diagram/src/marks.ts",
+  "packages/diagram/src/mirrorSelection.ts",
+  "packages/diagram/src/moveLabelAction.ts",
+  "packages/diagram/src/offPage/endBox.ts",
+  "packages/diagram/src/offPage/follow.ts",
+  "packages/diagram/src/offPage/install.ts",
+  "packages/diagram/src/offPage/pagedFixture.ts",
+  "packages/diagram/src/offPage/split.ts",
+  "packages/diagram/src/offPage/tag.ts",
+  "packages/diagram/src/offPage/trait.ts",
+  "packages/diagram/src/offPage/useOffPageMarkers.ts",
+  "packages/diagram/src/onOutline.ts",
+  "packages/diagram/src/outline.ts",
+  "packages/diagram/src/overlays.tsx",
+  "packages/diagram/src/passOrder.ts",
+  "packages/diagram/src/payload.ts",
+  "packages/diagram/src/pbt.fixture.ts",
+  "packages/diagram/src/polyline.ts",
+  "packages/diagram/src/portAffordance.ts",
+  "packages/diagram/src/portLabels.ts",
+  "packages/diagram/src/portLayer.ts",
+  "packages/diagram/src/ports.ts",
+  "packages/diagram/src/radial.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16739340000000003,
+   "minutes": 0.14153333333333334,
+   "at": "2026-11-25T21:16:34.305Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Async layout plan survives replacement of an edge by a different-ID edge between the same nodes; sameGraph accepts stale routes keyed by the removed edge",
+   "where": "packages/diagram/src/livePlan.ts:18 (sameGraph)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Negative frame count makes easedProducer never reach progress 1, never report done, and ease outside its interval",
+   "where": "packages/diagram/src/liveProducers.ts:39 (easedProducer)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Allocating off-page references rescans the occupied prefix from A for each new reference, quadratic per split batch",
+   "where": "packages/diagram/src/offPage/split.ts:62",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

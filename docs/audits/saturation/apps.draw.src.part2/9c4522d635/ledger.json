@@ -1,0 +1,88 @@
+{
+ "area": "apps.draw.src.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/draw/src/opacityScrub/OpacityHud.module.css",
+  "apps/draw/src/opacityScrub/OpacityHud.tsx",
+  "apps/draw/src/opacityScrub/computeScrubbedPaints.ts",
+  "apps/draw/src/opacityScrub/useOpacityScrub.ts",
+  "apps/draw/src/openSession.ts",
+  "apps/draw/src/openSvg.ts",
+  "apps/draw/src/outlinesAdapter.ts",
+  "apps/draw/src/page.css",
+  "apps/draw/src/pageLayers.ts",
+  "apps/draw/src/pages/DrawPageStrip.tsx",
+  "apps/draw/src/pages/drawPages.ts",
+  "apps/draw/src/pages/pageCommands.ts",
+  "apps/draw/src/pages/pageStrip.css",
+  "apps/draw/src/paintRenderers.tsx",
+  "apps/draw/src/paperSizes.ts",
+  "apps/draw/src/pasteOmissions.ts",
+  "apps/draw/src/persistence.ts",
+  "apps/draw/src/prefs.ts",
+  "apps/draw/src/recorder.ts",
+  "apps/draw/src/recording/contribution.tsx",
+  "apps/draw/src/recording/depSchemaAugmentation.ts",
+  "apps/draw/src/recording/session.ts",
+  "apps/draw/src/recording/useRecording.ts",
+  "apps/draw/src/recordingIO.ts",
+  "apps/draw/src/registry/RegistrySelect.tsx",
+  "apps/draw/src/registry/toolEnumSource.ts",
+  "apps/draw/src/registry/types.ts",
+  "apps/draw/src/releaseCompound.ts",
+  "apps/draw/src/replay.ts",
+  "apps/draw/src/saveSvg.ts",
+  "apps/draw/src/sceneLoading.ts",
+  "apps/draw/src/sessionRecords.ts",
+  "apps/draw/src/sidebarPanels.tsx",
+  "apps/draw/src/svgCorners.ts",
+  "apps/draw/src/svgEffects.ts",
+  "apps/draw/src/svgExport.ts",
+  "apps/draw/src/svgImport.ts",
+  "apps/draw/src/svgInterop.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1628834,
+   "minutes": 0.1284,
+   "at": "2026-11-25T21:12:25.530Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Reload migration wraps the current inherit sentinel fill/stroke as a literal solid color, so children stop inheriting from their parent",
+   "where": "apps/draw/src/persistence.ts:52",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Session migration deletes the old scene's IndexedDB history and metadata records before writing the replacement scene, so a rejected write leaves the old scene without its history or filename",
+   "where": "apps/draw/src/openSession.ts:60",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

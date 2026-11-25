@@ -1,0 +1,81 @@
+{
+ "area": "diagram.effect.part1",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/effect/EffectChart.tsx",
+  "packages/diagram/src/effect/EffectEditor.tsx",
+  "packages/diagram/src/effect/audio/livePreviews.ts",
+  "packages/diagram/src/effect/audio/liveRunner.ts",
+  "packages/diagram/src/effect/audio/nodes.ts",
+  "packages/diagram/src/effect/audio/patches.ts",
+  "packages/diagram/src/effect/audio/plan.ts",
+  "packages/diagram/src/effect/audio/scope.ts",
+  "packages/diagram/src/effect/audio/stageTypes.ts",
+  "packages/diagram/src/effect/audio/useFollowAudioRunner.ts",
+  "packages/diagram/src/effect/audio/useLiveAudioRunner.ts",
+  "packages/diagram/src/effect/chainEdit.ts",
+  "packages/diagram/src/effect/check.ts",
+  "packages/diagram/src/effect/clusterEdit.ts",
+  "packages/diagram/src/effect/clusterHandlers.ts",
+  "packages/diagram/src/effect/clusterOrder.ts",
+  "packages/diagram/src/effect/clusterTitle.tsx",
+  "packages/diagram/src/effect/compact.ts",
+  "packages/diagram/src/effect/docShape.ts",
+  "packages/diagram/src/effect/draw.ts",
+  "packages/diagram/src/effect/edit.ts",
+  "packages/diagram/src/effect/editorHandlers.ts",
+  "packages/diagram/src/effect/editorMapping.ts",
+  "packages/diagram/src/effect/editorPicks.ts",
+  "packages/diagram/src/effect/editorReorder.ts",
+  "packages/diagram/src/effect/glyphs.ts",
+  "packages/diagram/src/effect/image/evaluators.ts",
+  "packages/diagram/src/effect/image/stageTypes.ts",
+  "packages/diagram/src/effect/image/testCard.ts",
+  "packages/diagram/src/effect/image/valueKinds.ts",
+  "packages/diagram/src/effect/lab/EffectLab.stories.module.css"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16343839999999998,
+   "minutes": 0.1471,
+   "at": "2026-11-25T21:16:05.643Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Recovering from a failed setter in a multi-parameter update re-applies the setters that already succeeded, so each runs twice",
+   "where": "packages/diagram/src/effect/audio/liveRunner.ts:68 (applySets)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A partially failed graph start leaves the healthy sources playing while the runner's state stays paused",
+   "where": "packages/diagram/src/effect/audio/liveRunner.ts:255",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

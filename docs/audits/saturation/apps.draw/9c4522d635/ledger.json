@@ -1,0 +1,51 @@
+{
+ "area": "apps.draw",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/draw/icons/actions.mjs",
+  "apps/draw/icons/index.mjs",
+  "apps/draw/tests-e2e/asset-editor.spec.ts",
+  "apps/draw/tests-e2e/delete-undo-zorder.spec.ts",
+  "apps/draw/tests-e2e/playwright.config.ts",
+  "apps/draw/vite-plugin-callback-source.ts",
+  "apps/draw/vite-plugin-source-index.ts",
+  "apps/draw/vite-plugin-source-index/exportInfo.ts",
+  "apps/draw/vite-plugin-trait-schemas.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-actions.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-gestures.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-node.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-ops.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract-shapes.ts",
+  "apps/draw/vite-plugin-trait-schemas/extract.ts",
+  "apps/draw/vite.config.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.15943339999999998,
+   "minutes": 0.1024,
+   "at": "2026-11-25T21:12:06.989Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Export aliases in a multiline export list are not indexed because brace lists are matched only within single lines, so the aliased name cannot be looked up",
+   "where": "apps/draw/vite-plugin-source-index/exportInfo.ts:48 (indexExports)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

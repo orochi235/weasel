@@ -1,0 +1,94 @@
+{
+ "area": "gestures",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/gestures/src/grammar/canonicalModifiers.ts",
+  "packages/gestures/src/grammar/describeRoute.ts",
+  "packages/gestures/src/grammar/gestures.ts",
+  "packages/gestures/src/grammar/keyRouteGrammar.ts",
+  "packages/gestures/src/grammar/routeGrammar.ts",
+  "packages/gestures/src/grammar/routeToSpec.ts",
+  "packages/gestures/src/grammar/specKinds.ts",
+  "packages/gestures/src/index.ts",
+  "packages/gestures/src/longPress/pressRing.ts",
+  "packages/gestures/src/longPress/pressState.ts",
+  "packages/gestures/src/pbt.fixture.ts",
+  "packages/gestures/src/recognizer/click.ts",
+  "packages/gestures/src/recognizer/longPressHold.ts",
+  "packages/gestures/src/recognizer/multiTouch.ts",
+  "packages/gestures/src/recognizer/pointerRecognizer.ts",
+  "packages/gestures/src/recognizer/pressFacts.ts",
+  "packages/gestures/src/recognizer/recognizerModel.fixture.ts",
+  "packages/gestures/src/recognizer/samples.ts",
+  "packages/gestures/src/recognizer/thresholds.ts",
+  "packages/gestures/src/ui/bodyClassification.ts",
+  "packages/gestures/src/ui/clientScale.ts",
+  "packages/gestures/src/ui/controlTarget.ts",
+  "packages/gestures/src/ui/domNode.ts",
+  "packages/gestures/src/ui/dragThreshold.ts",
+  "packages/gestures/src/ui/fixedSeat.ts",
+  "packages/gestures/src/ui/formatShortcut.ts",
+  "packages/gestures/src/ui/heldPointers.ts",
+  "packages/gestures/src/ui/historyKey.ts",
+  "packages/gestures/src/ui/ingestTypes.ts",
+  "packages/gestures/src/ui/inputEvent.ts",
+  "packages/gestures/src/ui/keyLegendFromCode.ts",
+  "packages/gestures/src/ui/keyLegendsFromMods.ts",
+  "packages/gestures/src/ui/keyLegendsFromShortcut.ts",
+  "packages/gestures/src/ui/keyLetter.ts",
+  "packages/gestures/src/ui/keyOwner.ts",
+  "packages/gestures/src/ui/keySugar.ts",
+  "packages/gestures/src/ui/match.ts",
+  "packages/gestures/src/ui/matchTarget.ts",
+  "packages/gestures/src/ui/phase.ts",
+  "packages/gestures/src/ui/platform.ts",
+  "packages/gestures/src/ui/pressButton.ts",
+  "packages/gestures/src/ui/spec.ts",
+  "packages/gestures/src/ui/specificity.ts",
+  "packages/gestures/src/ui/stylus.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1652334,
+   "minutes": 0.13146666666666668,
+   "at": "2026-11-25T21:19:04.796Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A release that is the first sample past the drag threshold still dispatches a click (or opens the context menu) from the buffered press",
+   "where": "packages/gestures/src/recognizer/pointerRecognizer.ts:280",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "focusedControlOwnsKey reads the retargeted target, so page shortcuts steal Space/arrow keys from focused shadow-root controls",
+   "where": "packages/gestures/src/ui/keyOwner.ts:88 (focusedControlOwnsKey)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

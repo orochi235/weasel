@@ -1,0 +1,47 @@
+{
+ "area": "apps.shared",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/shared/buildInfo.ts",
+  "apps/shared/chunkReload.ts",
+  "apps/shared/defaultFont.ts",
+  "apps/shared/hashRoute.ts",
+  "apps/shared/labs.ts",
+  "apps/shared/markdown.ts",
+  "apps/shared/packageDocs.ts",
+  "apps/shared/packageRoutes.ts",
+  "apps/shared/prefsRoundTrip.ts",
+  "apps/shared/reference.ts",
+  "apps/shared/releaseMajor.ts",
+  "apps/shared/releases.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1589034,
+   "minutes": 0.09581666666666666,
+   "at": "2026-11-25T21:12:39.643Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "vite:preloadError listener reloads the page on any payload, including evaluation errors thrown by a successfully fetched lazy module, interrupting app state",
+   "where": "apps/shared/chunkReload.ts:55",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

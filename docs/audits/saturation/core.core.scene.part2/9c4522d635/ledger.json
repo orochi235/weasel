@@ -1,0 +1,75 @@
+{
+ "area": "core.core.scene.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/core/scene/layoutPass.ts",
+  "packages/core/src/core/scene/layoutTypes.ts",
+  "packages/core/src/core/scene/lockGuard.ts",
+  "packages/core/src/core/scene/minSize.ts",
+  "packages/core/src/core/scene/nestedHit.ts",
+  "packages/core/src/core/scene/nodeAsShown.ts",
+  "packages/core/src/core/scene/nodeFlags.ts",
+  "packages/core/src/core/scene/nodeFnFields.ts",
+  "packages/core/src/core/scene/nodeFnTypes.ts",
+  "packages/core/src/core/scene/nodeGates.ts",
+  "packages/core/src/core/scene/nodeLod.ts",
+  "packages/core/src/core/scene/nodeMemo.ts",
+  "packages/core/src/core/scene/nodeStore.ts",
+  "packages/core/src/core/scene/nodeTypes.ts",
+  "packages/core/src/core/scene/notifier.ts",
+  "packages/core/src/core/scene/opTable.ts",
+  "packages/core/src/core/scene/outerOps.ts",
+  "packages/core/src/core/scene/outputGrid.ts",
+  "packages/core/src/core/scene/outsideReads.ts",
+  "packages/core/src/core/scene/owned.ts",
+  "packages/core/src/core/scene/pathEffects/derive.ts",
+  "packages/core/src/core/scene/pathEffects/effects.ts",
+  "packages/core/src/core/scene/pathEffects/foundHidden.ts",
+  "packages/core/src/core/scene/pathEffects/index.ts",
+  "packages/core/src/core/scene/pathEffects/source.ts",
+  "packages/core/src/core/scene/pathEffects/textAlong.ts",
+  "packages/core/src/core/scene/pathEffects/textAlongBands.ts",
+  "packages/core/src/core/scene/pathEffects/tween.ts",
+  "packages/core/src/core/scene/plyStacks.ts",
+  "packages/core/src/core/scene/poseFeed.ts",
+  "packages/core/src/core/scene/poseHold.ts",
+  "packages/core/src/core/scene/poseOverrideTypes.ts",
+  "packages/core/src/core/scene/poseOverrides.ts",
+  "packages/core/src/core/scene/posePlies.ts",
+  "packages/core/src/core/scene/poseRemovals.ts",
+  "packages/core/src/core/scene/poseSnapshot.ts",
+  "packages/core/src/core/scene/poseWrites.ts",
+  "packages/core/src/core/scene/reconcileSpecs.ts",
+  "packages/core/src/core/scene/recorder.ts",
+  "packages/core/src/core/scene/registeredOp.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1594484,
+   "minutes": 0.12925,
+   "at": "2026-11-25T21:14:25.542Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Replacing a node via spec reconciliation re-adds its unchanged descendants from their original specs, resetting live edits (e.g. a drag) to fields unchanged between spec lists",
+   "where": "packages/core/src/core/scene/reconcileSpecs.ts:54",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

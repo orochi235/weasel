@@ -1,0 +1,102 @@
+{
+ "area": "core",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/WeaselProvider.tsx",
+  "packages/core/src/affordances/annulusPaint.ts",
+  "packages/core/src/affordances/composeAffordanceLayer.ts",
+  "packages/core/src/affordances/hitAffordanceRegions.ts",
+  "packages/core/src/affordances/index.ts",
+  "packages/core/src/affordances/pathAnchors.ts",
+  "packages/core/src/affordances/types.ts",
+  "packages/core/src/icons.gen.ts",
+  "packages/core/src/icons.table.ts",
+  "packages/core/src/index.ts",
+  "packages/core/src/input/keyState.ts",
+  "packages/core/src/input/useElementEffect.ts",
+  "packages/core/src/input/useKeyModifiers.ts",
+  "packages/core/src/input/useKeyState.ts",
+  "packages/core/src/input/usePublishPointer.ts",
+  "packages/core/src/kitSettings.ts",
+  "packages/core/src/kitSettingsSchema.ts",
+  "packages/core/src/layout/index.ts",
+  "packages/core/src/layout/types.ts",
+  "packages/core/src/test-hook/createTestHook.ts",
+  "packages/core/src/test-hook/install.ts",
+  "packages/core/src/test-hook/types.ts",
+  "packages/core/src/test-hook/useTestHook.ts",
+  "packages/core/src/testing/BareCanvas.tsx",
+  "packages/core/src/testing/canvas.ts",
+  "packages/core/src/testing/canvasPixels.ts",
+  "packages/core/src/testing/matchMedia.ts",
+  "packages/core/src/tools/builtin/hand/createDragPanContribution.ts",
+  "packages/core/src/tools/builtin/hand/index.ts",
+  "packages/core/src/tools/builtin/hand/useHandTool.ts",
+  "packages/core/src/tools/builtin/index.ts",
+  "packages/core/src/tools/builtin/marquee.ts",
+  "packages/core/src/tools/builtin/throughChrome.ts",
+  "packages/core/src/tools/index.ts",
+  "packages/core/src/tools/overlayBinding.ts",
+  "packages/core/src/tools/useKeybindings.ts",
+  "packages/core/src/version.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16671339999999998,
+   "minutes": 0.121,
+   "at": "2026-11-25T21:13:47.710Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Releasing one Meta key clears held ordinary keys while the other Meta key is still down",
+   "where": "packages/core/src/input/keyState.ts:148",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "One pointer publisher's teardown clears another publisher's latest point since cleanup compares only the view ID",
+   "where": "packages/core/src/input/usePublishPointer.ts:35",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "useTestHook keeps first-render probe callbacks; rerendered replacements are never invoked by the global hook",
+   "where": "packages/core/src/test-hook/useTestHook.ts:12",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

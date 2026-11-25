@@ -1,0 +1,74 @@
+{
+ "area": "core.core.ops",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/core/ops/alreadyHolds.ts",
+  "packages/core/src/core/ops/arrange.ts",
+  "packages/core/src/core/ops/create.ts",
+  "packages/core/src/core/ops/createHistory.ts",
+  "packages/core/src/core/ops/delete.ts",
+  "packages/core/src/core/ops/index.ts",
+  "packages/core/src/core/ops/nodeFlags.ts",
+  "packages/core/src/core/ops/nodeOps.ts",
+  "packages/core/src/core/ops/registry.ts",
+  "packages/core/src/core/ops/reorder/algorithms.ts",
+  "packages/core/src/core/ops/reorder/index.ts",
+  "packages/core/src/core/ops/reorder/setChildOrder.ts",
+  "packages/core/src/core/ops/reparent.ts",
+  "packages/core/src/core/ops/select.ts",
+  "packages/core/src/core/ops/setData.ts",
+  "packages/core/src/core/ops/setDependsOn.ts",
+  "packages/core/src/core/ops/setLayer.ts",
+  "packages/core/src/core/ops/setLayout.ts",
+  "packages/core/src/core/ops/setPath.ts",
+  "packages/core/src/core/ops/setPose.ts",
+  "packages/core/src/core/ops/setText.ts",
+  "packages/core/src/core/ops/slot.ts",
+  "packages/core/src/core/ops/types.ts",
+  "packages/core/src/core/ops/writtenBy.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1644784,
+   "minutes": 0.17346666666666666,
+   "at": "2026-11-25T21:14:22.120Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Comma-joined, unescaped node-ID coalescing keys let arrangements of different node sets coalesce into one undo step",
+   "where": "packages/core/src/core/ops/arrange.ts:44",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Multi-parent order write partially applies: earlier parents stay reordered when a later parent's adapter write throws, with no preflight or rollback",
+   "where": "packages/core/src/core/ops/reorder/setChildOrder.ts:38",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

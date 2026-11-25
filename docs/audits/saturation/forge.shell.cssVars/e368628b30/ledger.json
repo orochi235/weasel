@@ -1,0 +1,65 @@
+{
+ "area": "forge.shell.cssVars",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/forge/src/shell/cssVars/CssVarsPanel.tsx",
+  "packages/forge/src/shell/cssVars/SectionJump.tsx",
+  "packages/forge/src/shell/cssVars/cssVars.css",
+  "packages/forge/src/shell/cssVars/cssVarsChrome.ts",
+  "packages/forge/src/shell/cssVars/overrides.ts",
+  "packages/forge/src/shell/cssVars/reveal.ts",
+  "packages/forge/src/shell/cssVars/saveScales.ts",
+  "packages/forge/src/shell/cssVars/saveTokens.ts",
+  "packages/forge/src/shell/cssVars/themeScales.ts",
+  "packages/forge/src/shell/cssVars/useStoryTokens.ts",
+  "packages/forge/src/shell/cssVars/useThemeSave.ts",
+  "packages/forge/src/shell/cssVars/useThemeTokens.ts",
+  "packages/forge/src/shell/cssVars/useTrialSelection.ts",
+  "packages/forge/src/shell/cssVars/useVarsEdits.ts",
+  "packages/forge/src/shell/cssVars/varsHistory.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1654534,
+   "minutes": 0.17041666666666666,
+   "at": "2026-11-25T21:18:02.712Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Pending save completing after panel remount uses stale history snapshot and resets history, overwriting newer trial edits and their undo history",
+   "where": "packages/forge/src/shell/cssVars/useThemeSave.ts:104",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "unsavedScales still returns a scale whose steps are all hand-overridden, so save writes the discarded scale and shared seeds, altering other tokens",
+   "where": "packages/forge/src/shell/cssVars/themeScales.ts:121 (unsavedScales)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

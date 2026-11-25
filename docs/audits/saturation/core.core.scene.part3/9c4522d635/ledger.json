@@ -1,0 +1,90 @@
+{
+ "area": "core.core.scene.part3",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/core/scene/renderOrder.ts",
+  "packages/core/src/core/scene/renderRank.ts",
+  "packages/core/src/core/scene/rigidFoldable.ts",
+  "packages/core/src/core/scene/sameValue.ts",
+  "packages/core/src/core/scene/scene.ts",
+  "packages/core/src/core/scene/sceneChanges.ts",
+  "packages/core/src/core/scene/sceneEdits.ts",
+  "packages/core/src/core/scene/sceneJournals.ts",
+  "packages/core/src/core/scene/sceneMutators.ts",
+  "packages/core/src/core/scene/scenePoseAdapter.ts",
+  "packages/core/src/core/scene/sceneRecording.ts",
+  "packages/core/src/core/scene/sceneRegistry.ts",
+  "packages/core/src/core/scene/sceneReplay.ts",
+  "packages/core/src/core/scene/sceneSelection.ts",
+  "packages/core/src/core/scene/sceneState.ts",
+  "packages/core/src/core/scene/sceneTouches.ts",
+  "packages/core/src/core/scene/scrollOffsets.ts",
+  "packages/core/src/core/scene/serialization.ts",
+  "packages/core/src/core/scene/serializedTypes.ts",
+  "packages/core/src/core/scene/sessionHost.ts",
+  "packages/core/src/core/scene/snapshotShape.ts",
+  "packages/core/src/core/scene/snapshotShapeError.ts",
+  "packages/core/src/core/scene/stackIndex.ts",
+  "packages/core/src/core/scene/staleReplay.ts",
+  "packages/core/src/core/scene/statedFields.ts",
+  "packages/core/src/core/scene/strategyView.ts",
+  "packages/core/src/core/scene/testing/makeScene.ts",
+  "packages/core/src/core/scene/touchJournal.ts",
+  "packages/core/src/core/scene/treeEdits.ts",
+  "packages/core/src/core/scene/treeOrder.ts",
+  "packages/core/src/core/scene/treeReads.ts",
+  "packages/core/src/core/scene/treeShape.ts",
+  "packages/core/src/core/scene/trivialScene.ts",
+  "packages/core/src/core/scene/types.ts",
+  "packages/core/src/core/scene/unionOfChildren.ts",
+  "packages/core/src/core/scene/unitScopes.ts",
+  "packages/core/src/core/scene/useEditingSession.ts",
+  "packages/core/src/core/scene/useScene.ts",
+  "packages/core/src/core/scene/useSceneOptions.ts",
+  "packages/core/src/core/scene/worldSave.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1634634,
+   "minutes": 0.15581666666666666,
+   "at": "2026-11-25T21:14:39.378Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Redo of a recorded removal deletes a source that gained an explicit dependent in an untracked edit, because the replay guard checks tree children but not dependents, leaving the dependent dangling",
+   "where": "packages/core/src/core/scene/staleReplay.ts:75",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "The snapshot reader rejects a mark saved with a null pose, which a custom pose type permits and serializeNode writes",
+   "where": "packages/core/src/core/scene/snapshotShape.ts:63",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

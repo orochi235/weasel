@@ -1,0 +1,75 @@
+{
+ "area": "diagram.avoid",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/avoid/avoid.bench.ts",
+  "packages/diagram/src/avoid/avoidFixture.ts",
+  "packages/diagram/src/avoid/dirty.ts",
+  "packages/diagram/src/avoid/dragIndex.ts",
+  "packages/diagram/src/avoid/edgeRoute.ts",
+  "packages/diagram/src/avoid/grid.ts",
+  "packages/diagram/src/avoid/hash.ts",
+  "packages/diagram/src/avoid/heap.ts",
+  "packages/diagram/src/avoid/holds.ts",
+  "packages/diagram/src/avoid/index.ts",
+  "packages/diagram/src/avoid/install.ts",
+  "packages/diagram/src/avoid/labels.ts",
+  "packages/diagram/src/avoid/nudge.ts",
+  "packages/diagram/src/avoid/obstacles.ts",
+  "packages/diagram/src/avoid/router.ts",
+  "packages/diagram/src/avoid/sceneInput.ts",
+  "packages/diagram/src/avoid/scenes.fixture.ts",
+  "packages/diagram/src/avoid/search.ts",
+  "packages/diagram/src/avoid/segments.ts",
+  "packages/diagram/src/avoid/specRoutes.ts",
+  "packages/diagram/src/avoid/stateTable.ts",
+  "packages/diagram/src/avoid/turns.ts",
+  "packages/diagram/src/avoid/types.ts",
+  "packages/diagram/src/avoid/useAvoidRouting.ts",
+  "packages/diagram/src/avoid/visibility.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1625334,
+   "minutes": 0.10685,
+   "at": "2026-11-25T21:15:57.823Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Resize with fixed top-left corner leaves preview route stale because still() compares only x and y, ignoring bounds size and port movement",
+   "where": "packages/diagram/src/avoid/install.ts:96 (still)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Exhausted preview budget returns old preview route for a now-locked connector before checking locked",
+   "where": "packages/diagram/src/avoid/router.ts:209",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,66 @@
+{
+ "area": "core.interactions.gestures",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/interactions/gestures/dragGesture/dragGesture.ts",
+  "packages/core/src/interactions/gestures/dragGesture/dragPointOf.ts",
+  "packages/core/src/interactions/gestures/dragGesture/index.ts",
+  "packages/core/src/interactions/gestures/dragRadial/dragRadial.ts",
+  "packages/core/src/interactions/gestures/dragRadial/index.ts",
+  "packages/core/src/interactions/gestures/dragRect/dragRect.ts",
+  "packages/core/src/interactions/gestures/dragRect/index.ts",
+  "packages/core/src/interactions/gestures/frames.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/index.ts",
+  "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts",
+  "packages/core/src/interactions/gestures/resizeHandles.ts",
+  "packages/core/src/interactions/gestures/shared/index.ts",
+  "packages/core/src/interactions/gestures/shared/originProjection.ts",
+  "packages/core/src/interactions/gestures/shared/screenTolerance.ts",
+  "packages/core/src/interactions/gestures/spec.ts",
+  "packages/core/src/interactions/gestures/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1638184,
+   "minutes": 0.1151,
+   "at": "2026-11-25T21:15:07.327Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Canceling in onGestureStart still calls onStart with cleared state, so reading ctx.scratch throws",
+   "where": "packages/core/src/interactions/gestures/dragGesture/dragGesture.ts:124",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A custom drag ghost keeps pointer events, so it intercepts elementFromPoint and steals its own drop",
+   "where": "packages/core/src/interactions/gestures/pointerDrag/pointerDrag.ts:123",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

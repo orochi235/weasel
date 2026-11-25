@@ -1,0 +1,78 @@
+{
+ "area": "clock",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/clock/src/clock.ts",
+  "packages/clock/src/hold.ts",
+  "packages/clock/src/index.ts",
+  "packages/clock/src/mixFollow.ts",
+  "packages/clock/src/pbt.fixture.ts",
+  "packages/clock/src/place.ts",
+  "packages/clock/src/ramp.ts",
+  "packages/clock/src/react.ts",
+  "packages/clock/src/registry.ts",
+  "packages/clock/src/speeds.ts",
+  "packages/clock/src/types.ts",
+  "packages/clock/src/useClockLoop.ts",
+  "packages/clock/src/validate.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1673184,
+   "minutes": 0.13836666666666667,
+   "at": "2026-11-25T21:13:48.756Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A rate reversal inside one frame integrates to zero displacement and misses the end of the run instead of stopping at the first endpoint reached",
+   "where": "packages/clock/src/clock.ts:176",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "An external seek across a pass boundary leaves a hold active because the hold compares only elapsed, so a later span change snaps back to the old hold target",
+   "where": "packages/clock/src/hold.ts:139",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A tiny accepted duration (Number.MIN_VALUE) makes elapsed/duration overflow to an infinite pass and a NaN phase",
+   "where": "packages/clock/src/place.ts:16",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

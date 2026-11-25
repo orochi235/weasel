@@ -1,0 +1,78 @@
+{
+ "area": "apps.devtools-extension",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/devtools-extension/manifest.ts",
+  "apps/devtools-extension/scripts/build.ts",
+  "apps/devtools-extension/scripts/gen-icons.ts",
+  "apps/devtools-extension/scripts/safari.ts",
+  "apps/devtools-extension/scripts/zip.ts",
+  "apps/devtools-extension/src/background/badge.ts",
+  "apps/devtools-extension/src/background/frames.ts",
+  "apps/devtools-extension/src/background/main.ts",
+  "apps/devtools-extension/src/background/relay.ts",
+  "apps/devtools-extension/src/background/wake.ts",
+  "apps/devtools-extension/src/browserApi.ts",
+  "apps/devtools-extension/src/content/bridge.ts",
+  "apps/devtools-extension/src/content/main.ts",
+  "apps/devtools-extension/src/content/start.ts",
+  "apps/devtools-extension/src/devtools/main.ts",
+  "apps/devtools-extension/src/envelope.ts",
+  "apps/devtools-extension/src/hookPresence.ts",
+  "apps/devtools-extension/src/panel/PanelHost.tsx",
+  "apps/devtools-extension/src/panel/main.tsx",
+  "apps/devtools-extension/src/panel/panel.css",
+  "apps/devtools-extension/src/panel/panel.module.css",
+  "apps/devtools-extension/src/panel/portTransport.ts",
+  "apps/devtools-extension/src/popup/main.ts",
+  "apps/devtools-extension/src/popup/popup.css",
+  "apps/devtools-extension/src/popup/status.ts",
+  "apps/devtools-extension/src/tabWeasel.ts",
+  "apps/devtools-extension/src/testing/fakePorts.ts",
+  "apps/devtools-extension/vite.config.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1632584,
+   "minutes": 0.1221,
+   "at": "2026-11-25T21:12:08.182Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Scheduled delayed probes from the previous page survive navigation and can repopulate the badge for the outgoing page",
+   "where": "apps/devtools-extension/src/background/badge.ts:28",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Synchronous retry inside the disconnect callback creates a second panel port that the disconnect handler then overwrites",
+   "where": "apps/devtools-extension/src/panel/portTransport.ts:87",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

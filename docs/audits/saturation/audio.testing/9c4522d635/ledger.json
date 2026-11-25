@@ -1,0 +1,49 @@
+{
+ "area": "audio.testing",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/audio/src/testing/engineHarness.ts",
+  "packages/audio/src/testing/fakeAnalyser.ts",
+  "packages/audio/src/testing/fakeAudioContext.ts",
+  "packages/audio/src/testing/fakeMediaElement.ts",
+  "packages/audio/src/testing/fakeNode.ts",
+  "packages/audio/src/testing/fakeSources.ts",
+  "packages/audio/src/testing/fakeTimers.ts",
+  "packages/audio/src/testing/fakeWorker.ts",
+  "packages/audio/src/testing/fakeWorklet.ts",
+  "packages/audio/src/testing/graphHarness.ts",
+  "packages/audio/src/testing/graphWalk.ts",
+  "packages/audio/src/testing/renderEngine.ts",
+  "packages/audio/src/testing/spectrum.ts",
+  "packages/audio/src/testing/worklet.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.15849839999999998,
+   "minutes": 0.0836,
+   "at": "2026-11-25T21:13:32.281Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "The fake context's _advance keeps incrementing currentTime and dispatching due source endings while the context is suspended",
+   "where": "packages/audio/src/testing/fakeAudioContext.ts:172 (_advance)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

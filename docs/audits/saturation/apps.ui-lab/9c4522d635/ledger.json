@@ -1,0 +1,63 @@
+{
+ "area": "apps.ui-lab",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/ui-lab/src/App.tsx",
+  "apps/ui-lab/src/app.css",
+  "apps/ui-lab/src/badge/baseParams.ts",
+  "apps/ui-lab/src/badge/compose/Compose.module.css",
+  "apps/ui-lab/src/badge/compose/ComposeInstrument.tsx",
+  "apps/ui-lab/src/badge/compose/EffectsRow.tsx",
+  "apps/ui-lab/src/badge/compose/OctantSplineEditor.module.css",
+  "apps/ui-lab/src/badge/compose/OctantSplineEditor.tsx",
+  "apps/ui-lab/src/badge/compose/PresetsPanel.tsx",
+  "apps/ui-lab/src/badge/compose/SplineRow.tsx",
+  "apps/ui-lab/src/badge/compose/composeConfig.ts",
+  "apps/ui-lab/src/badge/compose/presets.ts",
+  "apps/ui-lab/src/badge/compose/snippet.ts",
+  "apps/ui-lab/src/badge/compose/splineActions.ts",
+  "apps/ui-lab/src/badge/compose/splineAnchors.ts",
+  "apps/ui-lab/src/badge/compose/splineGeometry.ts",
+  "apps/ui-lab/src/badge/effectParams.ts",
+  "apps/ui-lab/src/badge/effects.ts",
+  "apps/ui-lab/src/badge/octants/Octants.module.css",
+  "apps/ui-lab/src/badge/octants/OctantsInstrument.tsx",
+  "apps/ui-lab/src/badge/params.ts",
+  "apps/ui-lab/src/badge/shapeParams.ts",
+  "apps/ui-lab/src/badge/shapes/Shapes.module.css",
+  "apps/ui-lab/src/badge/shapes/ShapesInstrument.tsx",
+  "apps/ui-lab/src/badge/shapes/shapesConfig.ts",
+  "apps/ui-lab/src/labTestSetup.ts",
+  "apps/ui-lab/src/main.tsx",
+  "apps/ui-lab/vite.config.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1593134,
+   "minutes": 0.10476666666666666,
+   "at": "2026-11-25T21:13:24.040Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Wheel carry keyed by anchor index survives anchor removal, so the anchor that takes the index inherits a partial notch and changes weight early",
+   "where": "apps/ui-lab/src/badge/compose/splineActions.ts:157",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

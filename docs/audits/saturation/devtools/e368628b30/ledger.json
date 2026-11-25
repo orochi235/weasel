@@ -1,0 +1,68 @@
+{
+ "area": "devtools",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/devtools/src/DevtoolsPanel.browser.module.css",
+  "packages/devtools/src/DevtoolsPanel.module.css",
+  "packages/devtools/src/DevtoolsPanel.stories.module.css",
+  "packages/devtools/src/DevtoolsPanel.stories.tsx",
+  "packages/devtools/src/DevtoolsPanel.tsx",
+  "packages/devtools/src/RootPicker.tsx",
+  "packages/devtools/src/client.ts",
+  "packages/devtools/src/history.ts",
+  "packages/devtools/src/hook.ts",
+  "packages/devtools/src/hooks.ts",
+  "packages/devtools/src/icons.gen.ts",
+  "packages/devtools/src/inPageTransport.ts",
+  "packages/devtools/src/index.ts",
+  "packages/devtools/src/mount.tsx",
+  "packages/devtools/src/protocol.ts",
+  "packages/devtools/src/tabs.ts",
+  "packages/devtools/src/testing/mountCanvas.tsx",
+  "packages/devtools/src/trace.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1628884,
+   "minutes": 0.13471666666666668,
+   "at": "2026-11-25T21:15:25.598Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A connection-level error leaves requests issued while connecting pending forever instead of rejecting them",
+   "where": "packages/devtools/src/client.ts:135",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "open() publishes 'connecting' before sending yo, so a subscriber's request() goes out before the handshake and never gets a reply",
+   "where": "packages/devtools/src/client.ts:170 (open)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,80 @@
+{
+ "area": "core.canvas.deps",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/deps/changes.ts",
+  "packages/core/src/canvas/deps/chromeRules.ts",
+  "packages/core/src/canvas/deps/colorAt.ts",
+  "packages/core/src/canvas/deps/debug.ts",
+  "packages/core/src/canvas/deps/dispatchSources.ts",
+  "packages/core/src/canvas/deps/dispatcher.ts",
+  "packages/core/src/canvas/deps/editAnchors.ts",
+  "packages/core/src/canvas/deps/enteredGroup.ts",
+  "packages/core/src/canvas/deps/geometryProjection.ts",
+  "packages/core/src/canvas/deps/hitTestArea.ts",
+  "packages/core/src/canvas/deps/index.ts",
+  "packages/core/src/canvas/deps/ingestion.ts",
+  "packages/core/src/canvas/deps/insertFactories.ts",
+  "packages/core/src/canvas/deps/insertParent.ts",
+  "packages/core/src/canvas/deps/insertSite.ts",
+  "packages/core/src/canvas/deps/inspection.ts",
+  "packages/core/src/canvas/deps/kitSettings.ts",
+  "packages/core/src/canvas/deps/layout.ts",
+  "packages/core/src/canvas/deps/modeDefaultTool.ts",
+  "packages/core/src/canvas/deps/nodeAtPoint.ts",
+  "packages/core/src/canvas/deps/operands.ts",
+  "packages/core/src/canvas/deps/pathEditCommits.ts",
+  "packages/core/src/canvas/deps/pathLeaf.ts",
+  "packages/core/src/canvas/deps/poseDescriptor.ts",
+  "packages/core/src/canvas/deps/previewPaths.ts",
+  "packages/core/src/canvas/deps/selectionSnapshot.ts",
+  "packages/core/src/canvas/deps/snap.ts",
+  "packages/core/src/canvas/deps/surface.ts",
+  "packages/core/src/canvas/deps/transformFollowers.ts",
+  "packages/core/src/canvas/deps/view.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16390839999999998,
+   "minutes": 0.13056666666666666,
+   "at": "2026-11-25T21:13:54.991Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Deleting an entered group after it was reparented enters its former parent, because the stale [X,A] fallback chain is never refreshed on reparent",
+   "where": "packages/core/src/canvas/deps/enteredGroup.ts:47",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A second show() after the canvas API getter changes skips registering on the new canvas, so the preview stays on the old canvas and the first cleanup can no longer detach it",
+   "where": "packages/core/src/canvas/deps/previewPaths.ts:23 (show)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

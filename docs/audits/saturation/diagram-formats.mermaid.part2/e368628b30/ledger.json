@@ -1,0 +1,99 @@
+{
+ "area": "diagram-formats.mermaid.part2",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram-formats/src/mermaid/kanban/parse.ts",
+  "packages/diagram-formats/src/mermaid/kanban/read.ts",
+  "packages/diagram-formats/src/mermaid/kanban/write.ts",
+  "packages/diagram-formats/src/mermaid/mindmap/parse.ts",
+  "packages/diagram-formats/src/mermaid/mindmap/read.ts",
+  "packages/diagram-formats/src/mermaid/mindmap/write.ts",
+  "packages/diagram-formats/src/mermaid/packet/read.ts",
+  "packages/diagram-formats/src/mermaid/packet/write.ts",
+  "packages/diagram-formats/src/mermaid/pie/read.ts",
+  "packages/diagram-formats/src/mermaid/pie/write.ts",
+  "packages/diagram-formats/src/mermaid/plots.fixture.ts",
+  "packages/diagram-formats/src/mermaid/quadrant/parse.ts",
+  "packages/diagram-formats/src/mermaid/quadrant/read.ts",
+  "packages/diagram-formats/src/mermaid/quadrant/write.ts",
+  "packages/diagram-formats/src/mermaid/radar/parse.ts",
+  "packages/diagram-formats/src/mermaid/radar/read.ts",
+  "packages/diagram-formats/src/mermaid/radar/write.ts",
+  "packages/diagram-formats/src/mermaid/requirement/parse.ts",
+  "packages/diagram-formats/src/mermaid/requirement/read.ts",
+  "packages/diagram-formats/src/mermaid/requirement/write.ts",
+  "packages/diagram-formats/src/mermaid/sankey/read.ts",
+  "packages/diagram-formats/src/mermaid/sankey/write.ts",
+  "packages/diagram-formats/src/mermaid/sequence/parse.ts",
+  "packages/diagram-formats/src/mermaid/sequence/read.ts",
+  "packages/diagram-formats/src/mermaid/sequence/syntax.ts",
+  "packages/diagram-formats/src/mermaid/sequence/write.ts",
+  "packages/diagram-formats/src/mermaid/state/parse.ts",
+  "packages/diagram-formats/src/mermaid/state/read.ts",
+  "packages/diagram-formats/src/mermaid/state/write.ts",
+  "packages/diagram-formats/src/mermaid/timeline/read.ts",
+  "packages/diagram-formats/src/mermaid/timeline/write.ts",
+  "packages/diagram-formats/src/mermaid/xychart/parse.ts",
+  "packages/diagram-formats/src/mermaid/xychart/read.ts",
+  "packages/diagram-formats/src/mermaid/xychart/write.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1681784,
+   "minutes": 0.15895,
+   "at": "2026-11-25T21:16:00.618Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A trailing comma bypasses the Sankey row's field-count check: csvFields drops the empty last field, so a malformed four-field row is accepted",
+   "where": "packages/diagram-formats/src/mermaid/sankey/read.ts:36 (csvFields)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A named radar curve silently ignores a repeated value for the same axis instead of raising a line-numbered error",
+   "where": "packages/diagram-formats/src/mermaid/radar/parse.ts:83",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A plain mind map node's explicit ID is dropped on write, so reimport generates a new ID without warning",
+   "where": "packages/diagram-formats/src/mermaid/mindmap/write.ts:54",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

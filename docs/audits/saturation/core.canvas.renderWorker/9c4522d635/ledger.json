@@ -1,0 +1,71 @@
+{
+ "area": "core.canvas.renderWorker",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/renderWorker/WorkerCanvasStack.tsx",
+  "packages/core/src/canvas/renderWorker/WorkerSceneView.tsx",
+  "packages/core/src/canvas/renderWorker/frameSync.ts",
+  "packages/core/src/canvas/renderWorker/frameWriter.ts",
+  "packages/core/src/canvas/renderWorker/layerRuns.ts",
+  "packages/core/src/canvas/renderWorker/liveClients.ts",
+  "packages/core/src/canvas/renderWorker/protocol.ts",
+  "packages/core/src/canvas/renderWorker/requests.ts",
+  "packages/core/src/canvas/renderWorker/sceneDiff.ts",
+  "packages/core/src/canvas/renderWorker/sceneMirror.ts",
+  "packages/core/src/canvas/renderWorker/serveSceneRender.ts",
+  "packages/core/src/canvas/renderWorker/startSceneRenderWorker.ts",
+  "packages/core/src/canvas/renderWorker/statusRelay.ts",
+  "packages/core/src/canvas/renderWorker/testing/fakeWorker.ts",
+  "packages/core/src/canvas/renderWorker/testing/sceneRender.worker.ts",
+  "packages/core/src/canvas/renderWorker/useWorkerStack.ts",
+  "packages/core/src/canvas/renderWorker/workerAnimations.ts",
+  "packages/core/src/canvas/renderWorker/workerAnimator.ts",
+  "packages/core/src/canvas/renderWorker/workerHealth.ts",
+  "packages/core/src/canvas/renderWorker/workerImages.ts",
+  "packages/core/src/canvas/renderWorker/workerStack.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1638084,
+   "minutes": 0.1449,
+   "at": "2026-11-25T21:14:03.007Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A throwing settlement callback leaves an already removed request's promise pending forever and aborts a drain before later requests",
+   "where": "packages/core/src/canvas/renderWorker/requests.ts:42",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "An image copy started before disposal still replies with a transferred bitmap after the worker is released, without closing the unused copy or catching transfer failure",
+   "where": "packages/core/src/canvas/renderWorker/workerImages.ts:84",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

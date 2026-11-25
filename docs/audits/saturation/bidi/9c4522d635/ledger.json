@@ -1,0 +1,61 @@
+{
+ "area": "bidi",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/bidi/src/__fixtures__/parseConformance.ts",
+  "packages/bidi/src/explicit.ts",
+  "packages/bidi/src/implicit.ts",
+  "packages/bidi/src/index.ts",
+  "packages/bidi/src/paragraph.ts",
+  "packages/bidi/src/pbt.fixture.ts",
+  "packages/bidi/src/reorder.ts",
+  "packages/bidi/src/resolve.ts",
+  "packages/bidi/src/sequences.ts",
+  "packages/bidi/src/tables.ts",
+  "packages/bidi/src/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1669684,
+   "minutes": 0.16901666666666668,
+   "at": "2026-11-25T21:13:40.488Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Scalar tokens with trailing junk (e.g. 0061junk) are parsed by Number.parseInt as a valid code point instead of being rejected",
+   "where": "packages/bidi/src/__fixtures__/parseConformance.ts:99",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Scalar validation accepts integers outside the Unicode scalar range instead of rejecting them",
+   "where": "packages/bidi/src/__fixtures__/parseConformance.ts:99",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

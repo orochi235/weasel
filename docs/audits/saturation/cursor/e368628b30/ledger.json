@@ -1,0 +1,47 @@
+{
+ "area": "cursor",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/cursor/src/bake.ts",
+  "packages/cursor/src/brushRing.ts",
+  "packages/cursor/src/cursorSink.ts",
+  "packages/cursor/src/glyphs.ts",
+  "packages/cursor/src/index.ts",
+  "packages/cursor/src/mark.ts",
+  "packages/cursor/src/paint.ts",
+  "packages/cursor/src/paintedCursorState.ts",
+  "packages/cursor/src/pbt.fixture.ts",
+  "packages/cursor/src/registry.ts",
+  "packages/cursor/src/resolve.ts",
+  "packages/cursor/src/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1591384,
+   "minutes": 0.12223333333333333,
+   "at": "2026-11-25T21:15:13.618Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Equality check ignores fallback, so a fallback-only update is dropped: current().cursor.fallback stays stale and subscribers are not notified",
+   "where": "packages/cursor/src/paintedCursorState.ts:63",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

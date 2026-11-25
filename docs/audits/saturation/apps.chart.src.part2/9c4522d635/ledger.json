@@ -1,0 +1,62 @@
+{
+ "area": "apps.chart.src.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/chart/src/reportFailure.ts",
+  "apps/chart/src/stencilDrop.ts",
+  "apps/chart/src/templates/TemplateDialog.tsx",
+  "apps/chart/src/templates/templateDialog.css",
+  "apps/chart/src/testIcons.ts",
+  "apps/chart/src/testing/canvasPixels.ts",
+  "apps/chart/src/testing/chartSession.ts",
+  "apps/chart/src/testing/choose.ts",
+  "apps/chart/src/testing/mountChartApp.tsx",
+  "apps/chart/src/testing/pointer.ts",
+  "apps/chart/src/testing/savedChart.ts",
+  "apps/chart/src/testing/toolName.ts",
+  "apps/chart/src/theme/StylePanel.tsx",
+  "apps/chart/src/theme/ThemePanel.tsx",
+  "apps/chart/src/theme/ThemeRoles.tsx",
+  "apps/chart/src/theme/applyChartTheme.ts",
+  "apps/chart/src/theme/stylePanel.css",
+  "apps/chart/src/theme/themeCommands.tsx",
+  "apps/chart/src/theme/themeFields.tsx",
+  "apps/chart/src/theme/themePanel.css",
+  "apps/chart/src/theme/useThemeEdit.ts",
+  "apps/chart/src/toolbar/ChartToolbar.tsx",
+  "apps/chart/src/toolbar/toolbar.css",
+  "apps/chart/src/toolbar/toolbarAssets.ts",
+  "apps/chart/src/useChartDiagram.tsx",
+  "apps/chart/src/useChartSnap.ts",
+  "apps/chart/src/workspace.css"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.15905339999999998,
+   "minutes": 0.08823333333333333,
+   "at": "2026-11-25T21:12:00.702Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Canceling a theme edit restores a recorded history index and drops redo, so it also undoes and discards an unrelated chart edit committed during the preview",
+   "where": "apps/chart/src/theme/useThemeEdit.ts:79",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

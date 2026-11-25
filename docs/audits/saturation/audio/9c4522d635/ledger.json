@@ -1,0 +1,112 @@
+{
+ "area": "audio",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/audio/src/analyser.ts",
+  "packages/audio/src/audioTime.ts",
+  "packages/audio/src/biquad.ts",
+  "packages/audio/src/buses.ts",
+  "packages/audio/src/createAudioEngine.ts",
+  "packages/audio/src/effects.ts",
+  "packages/audio/src/envelope.ts",
+  "packages/audio/src/impulse.ts",
+  "packages/audio/src/index.ts",
+  "packages/audio/src/insertPlan.ts",
+  "packages/audio/src/insertPump.ts",
+  "packages/audio/src/insertRoute.ts",
+  "packages/audio/src/insertSlot.ts",
+  "packages/audio/src/inserts.ts",
+  "packages/audio/src/lerp.ts",
+  "packages/audio/src/liveVoice.ts",
+  "packages/audio/src/oscillator.ts",
+  "packages/audio/src/param.ts",
+  "packages/audio/src/patchCheck.ts",
+  "packages/audio/src/patternLoad.ts",
+  "packages/audio/src/patternPlayer.ts",
+  "packages/audio/src/pbt.fixture.ts",
+  "packages/audio/src/periodicWave.ts",
+  "packages/audio/src/pitch.ts",
+  "packages/audio/src/resumeWatch.ts",
+  "packages/audio/src/scheduler.ts",
+  "packages/audio/src/score.ts",
+  "packages/audio/src/scoreBar.ts",
+  "packages/audio/src/scoreMood.ts",
+  "packages/audio/src/soundCache.ts",
+  "packages/audio/src/spatialize.ts",
+  "packages/audio/src/streamStarter.ts",
+  "packages/audio/src/synthStarters.ts",
+  "packages/audio/src/synthVoice.ts",
+  "packages/audio/src/tickTimer.ts",
+  "packages/audio/src/types.ts",
+  "packages/audio/src/voiceChains.ts",
+  "packages/audio/src/voiceDrops.ts",
+  "packages/audio/src/voiceKernel.ts",
+  "packages/audio/src/voicePool.ts",
+  "packages/audio/src/voices.ts",
+  "packages/audio/src/worklet/loadVoiceProcessor.ts",
+  "packages/audio/src/worklet/protocol.ts",
+  "packages/audio/src/worklet/voiceMixer.ts",
+  "packages/audio/src/worklet/voiceProcessor.gen.ts",
+  "packages/audio/src/worklet/voiceProcessor.ts",
+  "packages/audio/src/worklet/workletVoices.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16816839999999997,
+   "minutes": 0.1338,
+   "at": "2026-11-25T21:13:27.854Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "An in-flight decode stores its buffer in the sound cache after the engine's dispose has cleared it, so a disposed engine can hold newly cached buffers",
+   "where": "packages/audio/src/soundCache.ts:62",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A throwing late-event callback runs outside the try block, dropping the rest of the batch and skipping the rearm while the scheduler still counts as running, so start() cannot restore the timer",
+   "where": "packages/audio/src/scheduler.ts:95",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "An engine created on an already suspended context starts with suspendedSince false, so the first resume never sets staleFloor and elapsed voices skip the backlog check",
+   "where": "packages/audio/src/resumeWatch.ts:21",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

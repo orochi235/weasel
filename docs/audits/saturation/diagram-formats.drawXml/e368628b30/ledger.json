@@ -1,0 +1,64 @@
+{
+ "area": "diagram-formats.drawXml",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram-formats/src/drawXml/cellText.ts",
+  "packages/diagram-formats/src/drawXml/cells.ts",
+  "packages/diagram-formats/src/drawXml/format.ts",
+  "packages/diagram-formats/src/drawXml/mapping.ts",
+  "packages/diagram-formats/src/drawXml/pageCells.ts",
+  "packages/diagram-formats/src/drawXml/read.ts",
+  "packages/diagram-formats/src/drawXml/readPage.ts",
+  "packages/diagram-formats/src/drawXml/readStyle.ts",
+  "packages/diagram-formats/src/drawXml/style.ts",
+  "packages/diagram-formats/src/drawXml/write.ts",
+  "packages/diagram-formats/src/drawXml/writeEdge.ts",
+  "packages/diagram-formats/src/drawXml/writePage.ts",
+  "packages/diagram-formats/src/drawXml/writeStyle.ts",
+  "packages/diagram-formats/src/drawXml/writeXml.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1643884,
+   "minutes": 0.14418333333333333,
+   "at": "2026-11-25T21:15:42.622Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Duplicate explicit cell IDs make both output vertices take the last vertex's origin, since pageCells resolves origins by the original ID; connectors resolve ambiguously",
+   "where": "packages/diagram-formats/src/drawXml/cells.ts:89 (cellsOf)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Building the child index spreads the layer's whole existing child list for each shape, so import is quadratic in shapes per layer",
+   "where": "packages/diagram-formats/src/drawXml/pageCells.ts:88",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "area": "core.domains.paths",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/domains/paths/anchorData.ts",
+  "packages/core/src/domains/paths/anchorMarkers.ts",
+  "packages/core/src/domains/paths/anchorUnder.ts",
+  "packages/core/src/domains/paths/editablePath.ts",
+  "packages/core/src/domains/paths/index.ts",
+  "packages/core/src/domains/paths/nodeFrame.ts",
+  "packages/core/src/domains/paths/originProjection.ts",
+  "packages/core/src/domains/paths/pathEditExtension.ts",
+  "packages/core/src/domains/paths/pathEditState.ts",
+  "packages/core/src/domains/paths/pathEditingOverlayLayer.ts",
+  "packages/core/src/domains/paths/pathLayer.ts",
+  "packages/core/src/domains/paths/pathNode.ts",
+  "packages/core/src/domains/paths/pathRepresentation.ts",
+  "packages/core/src/domains/paths/pathSnap/glyphs.ts",
+  "packages/core/src/domains/paths/pathSnap/pathSnapSource.ts",
+  "packages/core/src/domains/paths/pathSnap/sceneIndex.ts",
+  "packages/core/src/domains/paths/pathSnap/snapGeometry.ts",
+  "packages/core/src/domains/paths/shapeGenerator.ts",
+  "packages/core/src/domains/paths/strokeOutline.ts",
+  "packages/core/src/domains/paths/strokeRegion.ts",
+  "packages/core/src/domains/paths/useAnchorFields.ts",
+  "packages/core/src/domains/paths/usePathEdit.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16393339999999998,
+   "minutes": 0.14125,
+   "at": "2026-11-25T21:14:50.895Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Path snap index cache key omits scroll generation, so after scrolling a container the index returns snap targets at the old positions",
+   "where": "packages/core/src/domains/paths/pathSnap/sceneIndex.ts:45",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Path snap index passes the committed node with only the shown pose to nodeSnapGeometry, so a shown data override's displayed path is ignored and snaps follow the committed outline",
+   "where": "packages/core/src/domains/paths/pathSnap/sceneIndex.ts:58",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,50 @@
+{
+ "area": "dither",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/dither/src/diffuse.ts",
+  "packages/dither/src/ditherPixels.ts",
+  "packages/dither/src/gpu/createProtectTexture.ts",
+  "packages/dither/src/gpu/deviceGrid.ts",
+  "packages/dither/src/gpu/dither.ts",
+  "packages/dither/src/gpu/frag.ts",
+  "packages/dither/src/gray.ts",
+  "packages/dither/src/index.ts",
+  "packages/dither/src/maskToRgba.ts",
+  "packages/dither/src/pbt.fixture.ts",
+  "packages/dither/src/protectMask.ts",
+  "packages/dither/src/protectRects.ts",
+  "packages/dither/src/shared.ts",
+  "packages/dither/src/testing/grayImage.ts",
+  "packages/dither/src/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1601834,
+   "minutes": 0.0947,
+   "at": "2026-11-25T21:16:52.326Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A zero-area protection mask (width 0, large height) still allocates a backing bitmap at the nonzero dimension, which can exceed the device image-size limit instead of using a 1×1 placeholder",
+   "where": "packages/dither/src/gpu/createProtectTexture.ts:21 (createProtectTexture)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

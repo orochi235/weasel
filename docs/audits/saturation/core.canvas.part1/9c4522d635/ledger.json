@@ -1,0 +1,672 @@
+{
+ "area": "core.canvas.part1",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/Canvas.tsx",
+  "packages/core/src/canvas/CanvasView.tsx",
+  "packages/core/src/canvas/CursorCoordsHud.tsx",
+  "packages/core/src/canvas/DrawCanvas.tsx",
+  "packages/core/src/canvas/GestureReason.module.css",
+  "packages/core/src/canvas/GestureReason.tsx",
+  "packages/core/src/canvas/ModalityHud.tsx",
+  "packages/core/src/canvas/NodeShape.ts",
+  "packages/core/src/canvas/PickHud.tsx",
+  "packages/core/src/canvas/SceneCanvas.tsx",
+  "packages/core/src/canvas/SceneViewCanvas.tsx",
+  "packages/core/src/canvas/SurfaceCanvas.tsx",
+  "packages/core/src/canvas/ViewMarker.tsx",
+  "packages/core/src/canvas/accentColor.ts",
+  "packages/core/src/canvas/adapterDerivedPath.ts",
+  "packages/core/src/canvas/adapterPickSource.ts",
+  "packages/core/src/canvas/affordanceAt.ts",
+  "packages/core/src/canvas/ambientContributions.tsx",
+  "packages/core/src/canvas/bestHitPicker.ts",
+  "packages/core/src/canvas/buildSceneLayer.ts",
+  "packages/core/src/canvas/buildSceneTree.ts",
+  "packages/core/src/canvas/canvasBackend.ts",
+  "packages/core/src/canvas/canvasBackendContext.ts",
+  "packages/core/src/canvas/canvasExtension.ts",
+  "packages/core/src/canvas/canvasProps.ts",
+  "packages/core/src/canvas/canvasRenderer.ts",
+  "packages/core/src/canvas/canvasViewProps.ts",
+  "packages/core/src/canvas/centersBetween.ts",
+  "packages/core/src/canvas/commandRasterizer.ts",
+  "packages/core/src/canvas/contentBounds.ts",
+  "packages/core/src/canvas/contextAttributes.ts",
+  "packages/core/src/canvas/copiesAbove.ts",
+  "packages/core/src/canvas/defaultDrawOne.ts",
+  "packages/core/src/canvas/derivedPath.ts",
+  "packages/core/src/canvas/devtoolsLabel.tsx",
+  "packages/core/src/canvas/doubleClickTarget.ts",
+  "packages/core/src/canvas/drawEnvelope.ts",
+  "packages/core/src/canvas/drawnBounds.ts",
+  "packages/core/src/canvas/gestureBounds.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.10183,
+   "minutes": 0.19706666666666667,
+   "at": "2026-11-25T08:46:41.076Z",
+   "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.678874,
+   "minutes": 3.9440666666666666,
+   "at": "2026-11-25T08:50:41.838Z",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.186293,
+   "minutes": 2.1277,
+   "at": "2026-11-25T08:52:49.560Z",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.3682059999999998,
+   "minutes": 4.63925,
+   "at": "2026-11-25T08:57:27.973Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.0963558,
+   "minutes": 3.763316666666667,
+   "at": "2026-11-25T09:01:13.865Z",
+   "findings": 1
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.8792613999999999,
+   "minutes": 3.1828666666666665,
+   "at": "2026-11-25T09:04:24.909Z",
+   "findings": 2
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.8142916,
+   "minutes": 2.6534166666666668,
+   "at": "2026-11-25T09:07:04.174Z",
+   "findings": 2
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.7590868000000001,
+   "minutes": 2.763933333333333,
+   "at": "2026-11-25T09:09:50.080Z",
+   "findings": 2
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.7593532000000001,
+   "minutes": 2.429683333333333,
+   "at": "2026-11-25T09:12:15.920Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.8171872,
+   "minutes": 2.400516666666667,
+   "at": "2026-11-25T09:14:40.008Z",
+   "findings": 4
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.060462,
+   "minutes": 3.840383333333333,
+   "at": "2026-11-25T09:18:30.488Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.9329717999999999,
+   "minutes": 3.1357999999999997,
+   "at": "2026-11-25T09:21:38.695Z",
+   "findings": 5
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.6835992,
+   "minutes": 2.2828166666666667,
+   "at": "2026-11-25T09:23:55.734Z",
+   "findings": 1
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 1.0242518,
+   "minutes": 3.7245166666666667,
+   "at": "2026-11-25T09:27:39.276Z",
+   "findings": 4
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.6845426,
+   "minutes": 2.2054666666666667,
+   "at": "2026-11-25T09:29:51.667Z",
+   "findings": 2
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.7816082000000001,
+   "minutes": 2.57505,
+   "at": "2026-11-25T09:32:26.249Z",
+   "findings": 2
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 1.0656814000000001,
+   "minutes": 3.0826000000000002,
+   "at": "2026-11-25T09:35:31.274Z",
+   "findings": 3
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 1.1827203999999998,
+   "minutes": 4.076816666666667,
+   "at": "2026-11-25T09:39:35.943Z",
+   "findings": 3
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 0.705367,
+   "minutes": 2.3128833333333336,
+   "at": "2026-11-25T09:41:54.780Z",
+   "findings": 2
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 0.9338066,
+   "minutes": 2.8349166666666665,
+   "at": "2026-11-25T09:44:44.931Z",
+   "findings": 1
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 1.0303364000000002,
+   "minutes": 3.39125,
+   "at": "2026-11-25T09:48:08.468Z",
+   "findings": 2
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.8657761999999999,
+   "minutes": 2.9585,
+   "at": "2026-11-25T09:51:06.040Z",
+   "findings": 3
+  },
+  {
+   "n": 23,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/23-claude.md",
+   "costUsd": 0.8707936000000001,
+   "minutes": 3.3269666666666664,
+   "at": "2026-11-25T09:54:25.718Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A refused unavailable backend blocks a different backend permanently on the same unopened canvas, via a backend-independent refusal set",
+   "where": "packages/core/src/canvas/canvasRenderer.ts:222 (refuse / bind guard)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Command rasterization yields negative source extents for a flipped view (negative y scale), which raster validation rejects",
+   "where": "packages/core/src/canvas/commandRasterizer.ts:46",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    23
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     23
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Content bounds include copies of a group's own box that the draw tree never draws, inflating zoom-to-fit and minimap framing",
+   "where": "packages/core/src/canvas/contentBounds.ts:32",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    14
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "buildSceneLayer's toPose shim spreads the adapter, dropping prototype methods of a class-based adapter",
+   "where": "packages/core/src/canvas/buildSceneLayer.ts:226 (buildSceneLayer, hierarchicalAdapter)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    6,
+    7,
+    8,
+    12,
+    13,
+    16,
+    21,
+    22
+   ],
+   "sources": {
+    "claude": [
+     2,
+     6,
+     7,
+     8,
+     12,
+     13,
+     16,
+     21,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Without toPose, a bare adapter's derived paths read dependencies at local poses while the toPose path composes them",
+   "where": "packages/core/src/canvas/buildSceneLayer.ts:169 (withAdapterDerivedPaths) / packages/core/src/canvas/adapterDerivedPath.ts:37 (poseOf)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    6,
+    14,
+    15,
+    18,
+    19,
+    20,
+    22
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     6,
+     14,
+     15,
+     18,
+     19,
+     20,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "watchThemeOf stops at a shadow root, so a canvas in shadow DOM never hears document theme changes",
+   "where": "packages/core/src/canvas/accentColor.ts:60 (watchThemeOf)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    22
+   ],
+   "sources": {
+    "claude": [
+     2,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "sceneContentBounds still counts a consuming container's operands when the container sits on a hidden layer and draws copies, so hidden content inflates the bounds",
+   "where": "packages/core/src/canvas/contentBounds.ts:41 (sceneContentBounds)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    9,
+    17
+   ],
+   "sources": {
+    "claude": [
+     3,
+     9,
+     17
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "The adapter pick walk picks a child id the adapter has no node for, while the paint walk skips that id and its subtree",
+   "where": "packages/core/src/canvas/adapterPickSource.ts:40 (nodeOf), :55 (order/visit)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    12,
+    14
+   ],
+   "sources": {
+    "claude": [
+     4,
+     12,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "The scene slot's objects path records debug bounds for culled nodes and records origins at the stored pose, unlike the tree path",
+   "where": "packages/core/src/canvas/buildSceneLayer.ts:245 (buildSceneLayer, cfg.objects branch)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    9,
+    10,
+    11,
+    12,
+    14,
+    17,
+    18
+   ],
+   "sources": {
+    "claude": [
+     4,
+     9,
+     10,
+     11,
+     12,
+     14,
+     17,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "A <CanvasView>'s chrome hit radii ignore the targets.*Px kit settings that the surface's chrome uses",
+   "where": "packages/core/src/canvas/affordanceAt.ts:70 (chromeAffordances)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A bare scene slot's shapes option reaches clips and LOD but not the painter lookup, so slot shapes are not painted by their painters",
+   "where": "packages/core/src/canvas/buildSceneLayer.ts:192 (buildSceneLayer, filteredDrawOne) and :247 (objects path)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "commandRasterizer assumes the page view is axis-aligned, so a rotated or skewed view rasterizes wrong",
+   "where": "packages/core/src/canvas/commandRasterizer.ts:47 (commandRasterizer)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    23
+   ],
+   "sources": {
+    "claude": [
+     8,
+     23
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "A LOD rung the painter does not paint falls back to the full paint but drops the label overlay",
+   "where": "packages/core/src/canvas/defaultDrawOne.ts:52 (defaultDrawOne)",
+   "severity": "",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    10,
+    11,
+    12,
+    23
+   ],
+   "sources": {
+    "claude": [
+     9,
+     10,
+     11,
+     12,
+     23
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "adapterPickSource picks nodes on a layer the adapter reports visible: false, which buildSceneTree never paints",
+   "where": "packages/core/src/canvas/adapterPickSource.ts:52 (adapterPickSource → order/visit)",
+   "severity": "",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "useChromeColor's changed subscription, made before the canvas element mounts, watches only <html> permanently and never re-targets the canvas's theme scope",
+   "where": "packages/core/src/canvas/accentColor.ts:65 (watchThemeOf), :85 (useChromeColor)",
+   "severity": "",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "A container's clip is built from its undrawn world pose while its paint uses drawnPose, so the clip and the drawn content disagree",
+   "where": "packages/core/src/canvas/buildSceneTree.ts:253 (visit, ownClipOf(..., pose, ...))",
+   "severity": "",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "nodeShapeEntries' doc comment states an evaluation order that contradicts the order the module actually uses",
+   "where": "packages/core/src/canvas/NodeShape.ts:271 (nodeShapeEntries)",
+   "severity": "",
+   "firstOccasion": 15,
+   "sightings": [
+    15,
+    18
+   ],
+   "sources": {
+    "claude": [
+     15,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "GestureReason places the refusal tag from the view and element rect, ignoring the canvas's clientToWorld override that the dev HUDs honor, so the tag lands in the wrong place",
+   "where": "packages/core/src/canvas/GestureReason.tsx:50 (GestureReason, surface source toCanvas)",
+   "severity": "",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "Under a rotated container, an adapter-resolved derived path gets the inherited rotation applied twice, while the scene path undoes it",
+   "where": "packages/core/src/canvas/buildSceneLayer.ts:133 (withAdapterDerivedPaths)",
+   "severity": "",
+   "firstOccasion": 17,
+   "sightings": [
+    17,
+    19
+   ],
+   "sources": {
+    "claude": [
+     17,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "Dev HUDs decide whether the pointer is in the canvas from the bounding rect, while world coordinates come from the layout box or toWorld, so the two disagree on a transformed or bordered canvas",
+   "where": "packages/core/src/canvas/PickHud.tsx:72 (PickHud onMove); packages/core/src/canvas/CursorCoordsHud.tsx:104 (CursorCoordsHud onMove)",
+   "severity": "",
+   "firstOccasion": 21,
+   "sightings": [
+    21
+   ],
+   "sources": {
+    "claude": [
+     21
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "A cfg.objects scene slot never applies level of detail, so painter LOD ladders never switch rungs there",
+   "where": "packages/core/src/canvas/buildSceneLayer.ts:256 (buildSceneLayer, cfg.objects branch)",
+   "severity": "",
+   "firstOccasion": 23,
+   "sightings": [
+    23
+   ],
+   "sources": {
+    "claude": [
+     23
+    ]
+   }
+  }
+ ]
+}

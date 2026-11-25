@@ -1,0 +1,22 @@
+{
+ "area": "apps.chart",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/chart/icons/actions.mjs",
+  "apps/chart/icons/index.mjs",
+  "apps/chart/vite.config.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1635994,
+   "minutes": 0.10185,
+   "at": "2026-11-25T21:11:46.000Z",
+   "findings": 0
+  }
+ ],
+ "defects": []
+}

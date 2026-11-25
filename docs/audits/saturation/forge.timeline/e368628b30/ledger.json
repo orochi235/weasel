@@ -1,0 +1,62 @@
+{
+ "area": "forge.timeline",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/forge/src/timeline/Playhead.stories.tsx",
+  "packages/forge/src/timeline/RoutePlayhead.tsx",
+  "packages/forge/src/timeline/StoryClock.tsx",
+  "packages/forge/src/timeline/clockSpec.ts",
+  "packages/forge/src/timeline/context.ts",
+  "packages/forge/src/timeline/declare.ts",
+  "packages/forge/src/timeline/moves.ts",
+  "packages/forge/src/timeline/playheadUrl.ts",
+  "packages/forge/src/timeline/shown.ts",
+  "packages/forge/src/timeline/transport.css",
+  "packages/forge/src/timeline/types.ts",
+  "packages/forge/src/timeline/workshopHarness.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1637884,
+   "minutes": 0.1126,
+   "at": "2026-11-25T21:18:23.932Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Returning to a timed story through an untimed route can skip fromUrl because appliedRef holds the last clocked route, so the requested t is overwritten or removed",
+   "where": "packages/forge/src/timeline/RoutePlayhead.tsx:48",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Outgoing clock's subscription writes its playhead into the incoming route's hash without checking route ownership",
+   "where": "packages/forge/src/timeline/RoutePlayhead.tsx:46",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

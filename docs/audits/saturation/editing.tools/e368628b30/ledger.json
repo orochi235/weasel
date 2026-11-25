@@ -1,0 +1,84 @@
+{
+ "area": "editing.tools",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/editing/src/tools/ellipse/index.ts",
+  "packages/editing/src/tools/ellipse/useEllipseTool.tsx",
+  "packages/editing/src/tools/eyedropper/index.ts",
+  "packages/editing/src/tools/eyedropper/useEyedropperTool.ts",
+  "packages/editing/src/tools/image/index.ts",
+  "packages/editing/src/tools/image/useImageTool.tsx",
+  "packages/editing/src/tools/lasso/index.ts",
+  "packages/editing/src/tools/lasso/useLassoTool.ts",
+  "packages/editing/src/tools/line/index.ts",
+  "packages/editing/src/tools/line/useLineTool.tsx",
+  "packages/editing/src/tools/polygon/index.ts",
+  "packages/editing/src/tools/polygon/usePolygonTool.tsx",
+  "packages/editing/src/tools/rect/index.ts",
+  "packages/editing/src/tools/rect/useRectTool.ts",
+  "packages/editing/src/tools/select/adapterPointQuery.ts",
+  "packages/editing/src/tools/select/collapseDeferred.ts",
+  "packages/editing/src/tools/select/extendPressLocked.ts",
+  "packages/editing/src/tools/select/groupEntry.ts",
+  "packages/editing/src/tools/select/index.ts",
+  "packages/editing/src/tools/select/pressDecision.ts",
+  "packages/editing/src/tools/select/selectDeep.ts",
+  "packages/editing/src/tools/select/selectPick.ts",
+  "packages/editing/src/tools/select/selectionContributions.ts",
+  "packages/editing/src/tools/select/testing/rectListAdapter.ts",
+  "packages/editing/src/tools/select/usePickerSelectTool.ts",
+  "packages/editing/src/tools/select/useSelectTool.ts",
+  "packages/editing/src/tools/shared/countOption.ts",
+  "packages/editing/src/tools/shared/insertToolOptions.ts",
+  "packages/editing/src/tools/shared/pointerFollower.ts",
+  "packages/editing/src/tools/shared/styleOptions.ts",
+  "packages/editing/src/tools/star/index.ts",
+  "packages/editing/src/tools/star/useStarTool.tsx",
+  "packages/editing/src/tools/toolOptions.ts",
+  "packages/editing/src/tools/toolSets.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16494340000000002,
+   "minutes": 0.1163,
+   "at": "2026-11-25T21:17:32.578Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Silhouette picking's fast bound expands only by pick tolerance, so clicks on visible stroke outside the pose box miss",
+   "where": "packages/editing/src/tools/select/adapterPointQuery.ts:29",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Unselected-body move/Alt-drag bindings rely on select-on-press; under a tool that doesn't select on press, dragging unselected B translates the existing selection instead",
+   "where": "packages/editing/src/tools/select/selectionContributions.ts:103",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

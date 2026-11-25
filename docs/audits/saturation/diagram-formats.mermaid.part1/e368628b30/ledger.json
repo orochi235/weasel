@@ -1,0 +1,100 @@
+{
+ "area": "diagram-formats.mermaid.part1",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram-formats/src/mermaid/architecture/parse.ts",
+  "packages/diagram-formats/src/mermaid/architecture/read.ts",
+  "packages/diagram-formats/src/mermaid/architecture/write.ts",
+  "packages/diagram-formats/src/mermaid/block/parse.ts",
+  "packages/diagram-formats/src/mermaid/block/read.ts",
+  "packages/diagram-formats/src/mermaid/block/write.ts",
+  "packages/diagram-formats/src/mermaid/c4/kinds.ts",
+  "packages/diagram-formats/src/mermaid/c4/parse.ts",
+  "packages/diagram-formats/src/mermaid/c4/read.ts",
+  "packages/diagram-formats/src/mermaid/c4/write.ts",
+  "packages/diagram-formats/src/mermaid/class/parse.ts",
+  "packages/diagram-formats/src/mermaid/class/read.ts",
+  "packages/diagram-formats/src/mermaid/class/write.ts",
+  "packages/diagram-formats/src/mermaid/common/header.ts",
+  "packages/diagram-formats/src/mermaid/common/lines.ts",
+  "packages/diagram-formats/src/mermaid/common/meta.ts",
+  "packages/diagram-formats/src/mermaid/common/number.ts",
+  "packages/diagram-formats/src/mermaid/common/styles.ts",
+  "packages/diagram-formats/src/mermaid/common/text.ts",
+  "packages/diagram-formats/src/mermaid/er/parse.ts",
+  "packages/diagram-formats/src/mermaid/er/read.ts",
+  "packages/diagram-formats/src/mermaid/er/write.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/lex.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/parse.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/read.ts",
+  "packages/diagram-formats/src/mermaid/flowchart/write.ts",
+  "packages/diagram-formats/src/mermaid/format.ts",
+  "packages/diagram-formats/src/mermaid/gantt/parse.ts",
+  "packages/diagram-formats/src/mermaid/gantt/read.ts",
+  "packages/diagram-formats/src/mermaid/gantt/write.ts",
+  "packages/diagram-formats/src/mermaid/gitgraph/parse.ts",
+  "packages/diagram-formats/src/mermaid/gitgraph/read.ts",
+  "packages/diagram-formats/src/mermaid/gitgraph/write.ts",
+  "packages/diagram-formats/src/mermaid/journey/read.ts",
+  "packages/diagram-formats/src/mermaid/journey/write.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16908840000000003,
+   "minutes": 0.1596,
+   "at": "2026-11-25T21:15:49.257Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "GitGraph export rewrites \" to ' in branch names, so distinct branches collide and reimport rejects a duplicate branch",
+   "where": "packages/diagram-formats/src/mermaid/gitgraph/write.ts:13",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Block parser accepts a dangling trailing link operator (`A B -->`) and creates an A → B edge instead of a syntax error",
+   "where": "packages/diagram-formats/src/mermaid/block/parse.ts:126",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Flowchart style grouping spreads the existing ID array for each node, making it quadratic in a shared style group's size",
+   "where": "packages/diagram-formats/src/mermaid/flowchart/write.ts:116",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

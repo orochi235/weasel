@@ -1,0 +1,34 @@
+{
+ "area": "core.barrel",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/barrel/canvas.ts",
+  "packages/core/src/barrel/chrome.ts",
+  "packages/core/src/barrel/editingSeams.ts",
+  "packages/core/src/barrel/icons.ts",
+  "packages/core/src/barrel/input.ts",
+  "packages/core/src/barrel/interactions.ts",
+  "packages/core/src/barrel/outlines.ts",
+  "packages/core/src/barrel/paint.ts",
+  "packages/core/src/barrel/paths.ts",
+  "packages/core/src/barrel/persistence.ts",
+  "packages/core/src/barrel/renderer.ts",
+  "packages/core/src/barrel/routing.ts",
+  "packages/core/src/barrel/scene.ts",
+  "packages/core/src/barrel/snap.ts",
+  "packages/core/src/barrel/viewport.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1546134,
+   "minutes": 0.0871,
+   "at": "2026-11-25T21:13:50.880Z",
+   "findings": 0
+  }
+ ],
+ "defects": []
+}

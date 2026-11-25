@@ -1,0 +1,78 @@
+{
+ "area": "audio.graph",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/audio/src/graph/createAudioGraph.ts",
+  "packages/audio/src/graph/edges.ts",
+  "packages/audio/src/graph/edits.ts",
+  "packages/audio/src/graph/errors.ts",
+  "packages/audio/src/graph/fader.ts",
+  "packages/audio/src/graph/playhead.ts",
+  "packages/audio/src/graph/processors.ts",
+  "packages/audio/src/graph/replace.ts",
+  "packages/audio/src/graph/sources.ts",
+  "packages/audio/src/graph/transport.ts",
+  "packages/audio/src/graph/types.ts",
+  "packages/audio/src/graph/validate.ts",
+  "packages/audio/src/graph/wrapper.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1671184,
+   "minutes": 0.13316666666666666,
+   "at": "2026-11-25T21:13:32.568Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Transport sets playing before startAll and never clears it on a source startup failure, so a later start is a no-op and cannot retry the failed source",
+   "where": "packages/audio/src/graph/transport.ts:47",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Outgoing ownership is dropped before the custom stop hook, so a throw strands outgoing nodes without cutting faders or disposing the def",
+   "where": "packages/audio/src/graph/wrapper.ts:106",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A throwing stop hook during graph disposal aborts edits.dispose before output disconnect and waiter settlement after torn is latched, so repeat dispose cannot complete cleanup",
+   "where": "packages/audio/src/graph/wrapper.ts:106",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

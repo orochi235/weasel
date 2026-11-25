@@ -1,0 +1,63 @@
+{
+ "area": "apps.draw.src.modality",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/draw/src/modality/chrome/ModeBreadcrumb.module.css",
+  "apps/draw/src/modality/chrome/ModeBreadcrumb.tsx",
+  "apps/draw/src/modality/chrome/ModeStatusIndicator.tsx",
+  "apps/draw/src/modality/enterModeOn.ts",
+  "apps/draw/src/modality/enteredGroup.ts",
+  "apps/draw/src/modality/index.ts",
+  "apps/draw/src/modality/machine.ts",
+  "apps/draw/src/modality/modeScope.ts",
+  "apps/draw/src/modality/pathEditHost.ts",
+  "apps/draw/src/modality/shortcuts.ts",
+  "apps/draw/src/modality/useCanvasModes.ts",
+  "apps/draw/src/modality/useModality.ts",
+  "apps/draw/src/modality/useModeId.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16351839999999998,
+   "minutes": 0.1144,
+   "at": "2026-11-25T21:12:20.988Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Initial non-normal mode starts without an active session or journal, so exit/commit/cancel are no-ops",
+   "where": "apps/draw/src/modality/machine.ts:44",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Soft-mode entry doesn't seal the coalescing group, so a mode write merged into a pre-mode entry survives discard",
+   "where": "apps/draw/src/modality/machine.ts:60",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

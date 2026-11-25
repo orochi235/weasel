@@ -1,0 +1,84 @@
+{
+ "area": "animator",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/animator/src/axisNames.ts",
+  "packages/animator/src/colorArrays.ts",
+  "packages/animator/src/colorCycle.ts",
+  "packages/animator/src/colorHelpers.ts",
+  "packages/animator/src/colorInterpolate.ts",
+  "packages/animator/src/colorRegistry.ts",
+  "packages/animator/src/createHostedAnimator.ts",
+  "packages/animator/src/elementTarget.ts",
+  "packages/animator/src/index.ts",
+  "packages/animator/src/loop.ts",
+  "packages/animator/src/observe.ts",
+  "packages/animator/src/pbt.fixture.ts",
+  "packages/animator/src/react.ts",
+  "packages/animator/src/rig/autoSkin.ts",
+  "packages/animator/src/rig/mirrorPose.ts",
+  "packages/animator/src/rig/resolveSkeleton.ts",
+  "packages/animator/src/rig/skeletonAxes.ts",
+  "packages/animator/src/rig/skeletonEdits.ts",
+  "packages/animator/src/rig/skin.ts",
+  "packages/animator/src/rig/solveIk.ts",
+  "packages/animator/src/rig/types.ts",
+  "packages/animator/src/rig/weightEdits.ts",
+  "packages/animator/src/slew.ts",
+  "packages/animator/src/stagger.ts",
+  "packages/animator/src/staggerTypes.ts",
+  "packages/animator/src/supervisor.ts",
+  "packages/animator/src/tableMoves.ts",
+  "packages/animator/src/target.ts",
+  "packages/animator/src/targetTable.ts",
+  "packages/animator/src/targetTypes.ts",
+  "packages/animator/src/trimRegistry.ts",
+  "packages/animator/src/types.ts",
+  "packages/animator/src/useAnimator.ts",
+  "packages/animator/src/useAnimatorOptions.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1732944,
+   "minutes": 0.11936666666666666,
+   "at": "2026-11-25T21:11:18.443Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A disposed hosted animator still accepts new tweens that report active but never advance, and repeated dispose() leaves them active",
+   "where": "packages/animator/src/createHostedAnimator.ts:51",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A NaN joint-weight edit propagates through clamping and normalization and drops all influence on the point, leaving an empty skin",
+   "where": "packages/animator/src/rig/weightEdits.ts:21 (setJointWeights)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

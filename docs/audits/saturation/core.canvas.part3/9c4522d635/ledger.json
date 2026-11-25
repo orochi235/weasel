@@ -1,0 +1,474 @@
+{
+ "area": "core.canvas.part3",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/pressTarget.ts",
+  "packages/core/src/canvas/publishPreviews.ts",
+  "packages/core/src/canvas/rasterReadback.ts",
+  "packages/core/src/canvas/rasterToPng.ts",
+  "packages/core/src/canvas/reach/boxes2d.ts",
+  "packages/core/src/canvas/reach/reachBoxes.ts",
+  "packages/core/src/canvas/reach/reachRec.ts",
+  "packages/core/src/canvas/reach/reachRegion.ts",
+  "packages/core/src/canvas/reach/reachTree.ts",
+  "packages/core/src/canvas/reach/reachTypes.ts",
+  "packages/core/src/canvas/reach/sceneVisibility.ts",
+  "packages/core/src/canvas/reach/tileDamage.ts",
+  "packages/core/src/canvas/reach/wideChildren.ts",
+  "packages/core/src/canvas/readCanvasPixels.ts",
+  "packages/core/src/canvas/readback.ts",
+  "packages/core/src/canvas/registerShaders.ts",
+  "packages/core/src/canvas/renderDebugSnapshot.ts",
+  "packages/core/src/canvas/renderDiagnostics.ts",
+  "packages/core/src/canvas/renderNeeds.ts",
+  "packages/core/src/canvas/renderSceneToPixels.ts",
+  "packages/core/src/canvas/renderSceneToPixelsTypes.ts",
+  "packages/core/src/canvas/sceneAdapter.ts",
+  "packages/core/src/canvas/sceneClipboard.ts",
+  "packages/core/src/canvas/sceneLayerPaint.ts",
+  "packages/core/src/canvas/scenePickIds.ts",
+  "packages/core/src/canvas/scenePickReads.ts",
+  "packages/core/src/canvas/scenePickSource.ts",
+  "packages/core/src/canvas/sceneShapes.ts",
+  "packages/core/src/canvas/sceneSlotWiring.ts",
+  "packages/core/src/canvas/sceneViewRender.ts",
+  "packages/core/src/canvas/selectRange.ts",
+  "packages/core/src/canvas/selectionChrome.ts",
+  "packages/core/src/canvas/shownNodes.ts",
+  "packages/core/src/canvas/slopsDebugLayer.ts",
+  "packages/core/src/canvas/surfaceContribution.ts",
+  "packages/core/src/canvas/testing/stubCanvasContext.ts",
+  "packages/core/src/canvas/tileHosts.ts",
+  "packages/core/src/canvas/timelineFrames.ts",
+  "packages/core/src/canvas/topmostOf.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.143168,
+   "minutes": 0.19095,
+   "at": "2026-11-25T11:24:00.391Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.3137594,
+   "minutes": 2.9995333333333334,
+   "at": "2026-11-25T11:27:04.516Z",
+   "findings": 4
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.1480828,
+   "minutes": 2.5688666666666666,
+   "at": "2026-11-25T11:29:38.720Z",
+   "findings": 6
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.9123051999999999,
+   "minutes": 3.5123666666666664,
+   "at": "2026-11-25T11:33:09.530Z",
+   "findings": 8
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.8718745999999999,
+   "minutes": 3.2126666666666663,
+   "at": "2026-11-25T11:36:22.367Z",
+   "findings": 5
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.7987787999999999,
+   "minutes": 3.1097166666666665,
+   "at": "2026-11-25T11:39:29.024Z",
+   "findings": 4
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.8365914,
+   "minutes": 3.361216666666667,
+   "at": "2026-11-25T11:42:50.771Z",
+   "findings": 7
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.8828654,
+   "minutes": 3.1921333333333335,
+   "at": "2026-11-25T11:46:02.365Z",
+   "findings": 5
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.356377,
+   "minutes": 4.459466666666667,
+   "at": "2026-11-25T11:50:30.006Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.0580626000000002,
+   "minutes": 4.2578499999999995,
+   "at": "2026-11-25T11:54:45.544Z",
+   "findings": 6
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Rendering a looped span past the timeline's duration consumes the caller's remaining laps; restore resets time but not lap counters, so playback ends a pass early",
+   "where": "packages/core/src/canvas/timelineFrames.ts:73",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "timelineFrameTimes with default includeEnd:false emits a frame for an empty interval (start == end) because the count floor forces one",
+   "where": "packages/core/src/canvas/timelineFrames.ts:52 (timelineFrameTimes)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Visibility tree keeps each node's layer tag bit from boxing time, so reordering or inserting a scene layer culls on-screen nodes",
+   "where": "packages/core/src/canvas/reach/sceneVisibility.ts:117 (SceneVisibility.tagOf)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    10
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Tile damage for a node moved to another layer is reported only to its new layer, so the old layer's tiles keep showing it",
+   "where": "packages/core/src/canvas/reach/tileDamage.ts:40 (damage callback in createSceneTileSources)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    10
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Tile damage misses regions where a container paints copies of a changed child",
+   "where": "packages/core/src/canvas/reach/reachTree.ts:83 (Tree.touched / report)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "rec.joined and queue-depth handling can recompute a record twice, at its stale depth before its new children",
+   "where": "packages/core/src/canvas/reach/reachTree.ts:170 (Tree.apply)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "WideChildren.meeting dedups by a per-container epoch stored on the record, so a reparented child can be skipped",
+   "where": "packages/core/src/canvas/reach/wideChildren.ts:68 (meeting / take)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    7,
+    10
+   ],
+   "sources": {
+    "claude": [
+     3,
+     7,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A tile source's damage queue grows without bound for a layer that stops reading it",
+   "where": "packages/core/src/canvas/reach/tileDamage.ts:44-47 (createSceneTileSources)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    9,
+    10
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     9,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "wireSceneSlotToScene builds a fresh scene-wide reach tree for tiles on every call",
+   "where": "packages/core/src/canvas/sceneSlotWiring.ts:85 (wireSceneSlotToScene)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "Paste in a non-composing scene leaves a pasted group's children behind at their old position instead of moving them with the group",
+   "where": "packages/core/src/canvas/sceneClipboard.ts:259 (pasteSceneSnapshot ridesPastedFrame / placed), :78 (poseFor)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "Wide-container childrenMeeting ignores the children argument it is given",
+   "where": "packages/core/src/canvas/reach/reachTree.ts:204 (Tree.childrenMeeting)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "WebGPU readback: an earlier region read that resolves late overwrites last with stale pixels",
+   "where": "packages/core/src/canvas/readback.ts:86 (createCanvasReader.region)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    6,
+    7
+   ],
+   "sources": {
+    "claude": [
+     4,
+     6,
+     7
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "stubCanvasContext replaces HTMLCanvasElement prototype methods with no way to restore them",
+   "where": "packages/core/src/canvas/testing/stubCanvasContext.ts:5 (stubCanvasContext)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5,
+    8
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5,
+     8
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "readGl positions the read using the canvas height instead of the drawing buffer's height, so the region it reads is offset when the two differ",
+   "where": "packages/core/src/canvas/readback.ts:51, :83 (readGl, createCanvasReader)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    7
+   ],
+   "sources": {
+    "claude": [
+     5,
+     7
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "Asking a tile source for a layer's damage queue twice creates a second queue and orphans the first, which keeps collecting damage nothing drains",
+   "where": "packages/core/src/canvas/reach/tileDamage.ts:42 (returned per-layer function)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    10
+   ],
+   "sources": {
+    "claude": [
+     7,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "debugSnapshotArgs lets an explicit `annotations: undefined` override its default of true",
+   "where": "packages/core/src/canvas/renderDebugSnapshot.ts:52 (debugSnapshotArgs)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    8,
+    9
+   ],
+   "sources": {
+    "claude": [
+     7,
+     8,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "Pasting a multi-level cluster into a container on a higher layer throws",
+   "where": "packages/core/src/canvas/sceneClipboard.ts:268 (pasteSceneSnapshot, layerOf)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    10
+   ],
+   "sources": {
+    "claude": [
+     8,
+     10
+    ]
+   }
+  }
+ ]
+}

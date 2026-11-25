@@ -1,0 +1,122 @@
+{
+ "area": "geom.part1",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/geom/src/3d/along3.ts",
+  "packages/geom/src/3d/index.ts",
+  "packages/geom/src/3d/mat4.ts",
+  "packages/geom/src/3d/portCurve3.ts",
+  "packages/geom/src/3d/ray3.ts",
+  "packages/geom/src/3d/vec3.ts",
+  "packages/geom/src/affine.ts",
+  "packages/geom/src/affineFit.ts",
+  "packages/geom/src/along/along.bench.ts",
+  "packages/geom/src/along/arcLookup.ts",
+  "packages/geom/src/along/bezier.ts",
+  "packages/geom/src/along/curvePosition.ts",
+  "packages/geom/src/along/lengthTable.ts",
+  "packages/geom/src/along/pathTable.ts",
+  "packages/geom/src/along/positions.ts",
+  "packages/geom/src/angle.ts",
+  "packages/geom/src/box.ts",
+  "packages/geom/src/bvh/bvh.ts",
+  "packages/geom/src/bvh/bvhQuery.ts",
+  "packages/geom/src/bvh/bvhTree.ts",
+  "packages/geom/src/bvh/settledCache.ts",
+  "packages/geom/src/commands.ts",
+  "packages/geom/src/curve.ts",
+  "packages/geom/src/curves/anchorHandles.ts",
+  "packages/geom/src/curves/bezierCubic.ts",
+  "packages/geom/src/curves/bezierQuadratic.ts",
+  "packages/geom/src/curves/curvatureSource.ts",
+  "packages/geom/src/curves/index.ts",
+  "packages/geom/src/curves/nurbs.ts",
+  "packages/geom/src/curves/spiro.ts",
+  "packages/geom/src/curves/types.ts",
+  "packages/geom/src/easingSpec.ts",
+  "packages/geom/src/easings.ts",
+  "packages/geom/src/flatten.ts",
+  "packages/geom/src/glMat3.ts",
+  "packages/geom/src/index.ts",
+  "packages/geom/src/intersect/pathCrossings.ts",
+  "packages/geom/src/intersect/pathSegments.ts",
+  "packages/geom/src/intersect/segmentIntersections.ts",
+  "packages/geom/src/intersect/writeSubpaths.ts",
+  "packages/geom/src/meanScale.ts",
+  "packages/geom/src/nd/index.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1724484,
+   "minutes": 0.16583333333333333,
+   "at": "2026-11-25T21:18:42.779Z",
+   "findings": 4
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Inverting a finite uniform scale like 1e200 returns a zero linear matrix: the determinant overflows, its reciprocal is zero, and the conditioning check passes on the zero candidate",
+   "where": "packages/geom/src/affine.ts:54",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Affine fit returns null for distinct points after a large common translation because the spread check scales with the squared absolute centroid",
+   "where": "packages/geom/src/affineFit.ts:27",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "meanScale returns infinity (or underflows) for large or small equal finite scales because the intermediate product overflows",
+   "where": "packages/geom/src/meanScale.ts:16 (meanScale)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "cubicBezierEasing returns progress far too small near a flat x endpoint because the absolute x-error threshold accepts the initial guess",
+   "where": "packages/geom/src/easingSpec.ts:48 (cubicBezierEasing)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

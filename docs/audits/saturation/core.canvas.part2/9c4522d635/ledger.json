@@ -1,0 +1,562 @@
+{
+ "area": "core.canvas.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/hostAnchor.ts",
+  "packages/core/src/canvas/hud.module.css",
+  "packages/core/src/canvas/inheritedPaints.ts",
+  "packages/core/src/canvas/inkBoxes.ts",
+  "packages/core/src/canvas/insertPreviewExtent.ts",
+  "packages/core/src/canvas/kitRequirements.ts",
+  "packages/core/src/canvas/layerHover.ts",
+  "packages/core/src/canvas/layerOrder.ts",
+  "packages/core/src/canvas/layerSample.ts",
+  "packages/core/src/canvas/layerSlots.ts",
+  "packages/core/src/canvas/lod/ladder.ts",
+  "packages/core/src/canvas/lod/lodBox.ts",
+  "packages/core/src/canvas/lod/lodState.ts",
+  "packages/core/src/canvas/lod/lodWalk.ts",
+  "packages/core/src/canvas/mountedCanvases.ts",
+  "packages/core/src/canvas/nodeOutline.ts",
+  "packages/core/src/canvas/nodeShapeRegistry.ts",
+  "packages/core/src/canvas/nodeShapeTypes.ts",
+  "packages/core/src/canvas/overChildren.ts",
+  "packages/core/src/canvas/overlayRoleStrokes.ts",
+  "packages/core/src/canvas/ownClip.ts",
+  "packages/core/src/canvas/paintCull.ts",
+  "packages/core/src/canvas/paintOverrides.ts",
+  "packages/core/src/canvas/paintStandIns.ts",
+  "packages/core/src/canvas/paintedCursorLayer.ts",
+  "packages/core/src/canvas/pasteOnPages.ts",
+  "packages/core/src/canvas/pasteShape.ts",
+  "packages/core/src/canvas/pathOverlay.ts",
+  "packages/core/src/canvas/pbt.fixture.ts",
+  "packages/core/src/canvas/pickIndex/nodeBroadBox.ts",
+  "packages/core/src/canvas/pickIndex/pickIndexFixture.ts",
+  "packages/core/src/canvas/pickIndex/scenePickIndex.ts",
+  "packages/core/src/canvas/pickReach.ts",
+  "packages/core/src/canvas/pickWalk.ts",
+  "packages/core/src/canvas/pixelPick.ts",
+  "packages/core/src/canvas/pixelRenderRect.ts",
+  "packages/core/src/canvas/pixelScale.ts",
+  "packages/core/src/canvas/planeClips.ts",
+  "packages/core/src/canvas/poseRotation.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.14374299999999998,
+   "minutes": 0.23045,
+   "at": "2026-11-25T10:52:05.578Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.2007038,
+   "minutes": 3.0037166666666666,
+   "at": "2026-11-25T10:55:10.055Z",
+   "findings": 6
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.0654396,
+   "minutes": 2.130133333333333,
+   "at": "2026-11-25T10:57:17.924Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.7150877999999999,
+   "minutes": 2.7239,
+   "at": "2026-11-25T11:00:01.426Z",
+   "findings": 4
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.6457264,
+   "minutes": 2.5859,
+   "at": "2026-11-25T11:02:36.645Z",
+   "findings": 6
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.5931196,
+   "minutes": 2.57035,
+   "at": "2026-11-25T11:05:10.929Z",
+   "findings": 5
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.49005119999999996,
+   "minutes": 1.9622000000000002,
+   "at": "2026-11-25T11:07:08.725Z",
+   "findings": 4
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.8821802000000001,
+   "minutes": 2.67755,
+   "at": "2026-11-25T11:09:49.443Z",
+   "findings": 5
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.5478118000000001,
+   "minutes": 2.2278333333333333,
+   "at": "2026-11-25T11:12:03.178Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.5726554000000001,
+   "minutes": 2.1688666666666663,
+   "at": "2026-11-25T11:14:13.380Z",
+   "findings": 6
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.5474898000000001,
+   "minutes": 2.1862,
+   "at": "2026-11-25T11:16:24.620Z",
+   "findings": 5
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.5445916,
+   "minutes": 1.9907,
+   "at": "2026-11-25T11:18:24.122Z",
+   "findings": 6
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.5168146,
+   "minutes": 1.9397000000000002,
+   "at": "2026-11-25T11:20:20.565Z",
+   "findings": 5
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.8639312,
+   "minutes": 3.3939,
+   "at": "2026-11-25T11:23:44.262Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A numeric component after a wildcard in a contribution requirement (e.g. core: '1.x.7') is silently dropped, so the range passes at 1.8.0 instead of being rejected as unreadable",
+   "where": "packages/core/src/canvas/kitRequirements.ts:68",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Finite validated source width and scale can multiply to infinite or over-limit pixel dimensions that reach canvas sizing and buffer allocation unchecked",
+   "where": "packages/core/src/canvas/pixelRenderRect.ts:28",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A fitted insert extent reports lands' full size on an axis where its geometry has no extent",
+   "where": "packages/core/src/canvas/insertPreviewExtent.ts:64 (fitted)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     5,
+     6,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "collapsedAbove is documented as the nearest collapsed ancestor but implemented as the outermost",
+   "where": "packages/core/src/canvas/lod/lodState.ts:17 (LodState.collapsedAbove), :50 (createLodState)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    6,
+    13
+   ],
+   "sources": {
+    "claude": [
+     2,
+     6,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "after: '' counts as an anchor in the both-anchors check but not in placement",
+   "where": "packages/core/src/canvas/layerOrder.ts:47 (composeOrderedLayers)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "The default registry's id-conflict check does not see the built-in shapes it already holds",
+   "where": "packages/core/src/canvas/nodeShapeRegistry.ts:122 (createNodeShapes → register)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "byCollapse caches a ladder for every distinct collapseBelowPx with no bound on its size",
+   "where": "packages/core/src/canvas/lod/lodWalk.ts:59, :79 (collapseRungs)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "checkPixelRenderRect's doc says it imports nothing, but it imports @weasel-js/registry",
+   "where": "packages/core/src/canvas/pixelRenderRect.ts:1",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A scene layer's LOD record outlives the layer's walks, so stale picks answer rungOf/skips for nodes the view no longer draws that way",
+   "where": "packages/core/src/canvas/lod/lodState.ts:42 (createLodState find, begin/end)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    6,
+    7
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     6,
+     7
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "paintLodBox memoizes the box fill without keying on inherited, so an 'inherit' fill goes stale",
+   "where": "packages/core/src/canvas/lod/lodBox.ts:33 (paintLodBox)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5,
+     6,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "Painted cursor averages signed view scales, so a mirrored view shrinks or hides a world-sized cursor",
+   "where": "packages/core/src/canvas/paintedCursorLayer.ts:86 (createPaintedCursorLayer draw)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    12,
+    13
+   ],
+   "sources": {
+    "claude": [
+     4,
+     12,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "The pick index rebuilds only when the scene or markers change, so it goes stale when painters or outside geometry change",
+   "where": "packages/core/src/canvas/pickIndex/scenePickIndex.ts:113 (PickIndex.source → changesSince), :82 (current)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "resetNodeShapesForTests leaves the memoized evaluation order still serving the painters it removed",
+   "where": "packages/core/src/canvas/nodeShapeRegistry.ts:113 (resetNodeShapesForTests)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    10,
+    11
+   ],
+   "sources": {
+    "claude": [
+     5,
+     10,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "clipboardFault names the wrong item when a parent chain runs into a loop the item is not part of",
+   "where": "packages/core/src/canvas/pasteShape.ts:44 (clipboardFault)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "Under a zero-scale view a ladder sized Infinity picks the coarsest rung instead of the finest",
+   "where": "packages/core/src/canvas/lod/lodWalk.ts:139 (createLodWalk pick)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "Non-finite sides/points in an insert preview's extras reach the polygon/star path builders as NaN",
+   "where": "packages/core/src/canvas/insertPreviewExtent.ts:103 (extentOf, polygon / star cases)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "satisfiesRange rejects an empty range as invalid, where npm reads it as '*'",
+   "where": "packages/core/src/canvas/kitRequirements.ts:139 (satisfiesRange)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    8,
+    10,
+    12
+   ],
+   "sources": {
+    "claude": [
+     7,
+     8,
+     10,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "A node lod naming the same rung twice resolves prev to the first occurrence, breaking hysteresis",
+   "where": "packages/core/src/canvas/lod/lodWalk.ts:136 (createLodWalk → pick)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    14
+   ],
+   "sources": {
+    "claude": [
+     8,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "A group never reads its painter's ladder, so groups only ever get collapseBelowPx rungs",
+   "where": "packages/core/src/canvas/lod/lodWalk.ts:127 (createLodWalk pick)",
+   "severity": "",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    11,
+    12
+   ],
+   "sources": {
+    "claude": [
+     10,
+     11,
+     12
+    ]
+   }
+  }
+ ]
+}

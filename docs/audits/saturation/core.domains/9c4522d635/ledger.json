@@ -1,0 +1,84 @@
+{
+ "area": "core.domains",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/domains/chrome-caps/conditions.ts",
+  "packages/core/src/domains/chrome-caps/defaults.ts",
+  "packages/core/src/domains/chrome-caps/index.ts",
+  "packages/core/src/domains/chrome-caps/resolve.ts",
+  "packages/core/src/domains/chrome-caps/types.ts",
+  "packages/core/src/domains/chrome-caps/useChromeCaps.ts",
+  "packages/core/src/domains/chrome-caps/useHoverTracking.ts",
+  "packages/core/src/domains/ingestion/contentHandlers.ts",
+  "packages/core/src/domains/ingestion/index.ts",
+  "packages/core/src/domains/ingestion/openFilePicker.ts",
+  "packages/core/src/domains/ingestion/placement.ts",
+  "packages/core/src/domains/ingestion/useCanvasIngestion.ts",
+  "packages/core/src/domains/longPress/longPressFeedback.ts",
+  "packages/core/src/domains/modes/modeLayers.ts",
+  "packages/core/src/domains/modes/modeTriggers.ts",
+  "packages/core/src/domains/pathEffects/effectSources.ts",
+  "packages/core/src/domains/pathEffects/hiddenSources.ts",
+  "packages/core/src/domains/pathEffects/index.ts",
+  "packages/core/src/domains/pathEffects/readSource.ts",
+  "packages/core/src/domains/pathEffects/useEffectSourcesLayer.ts",
+  "packages/core/src/domains/poseRun/index.ts",
+  "packages/core/src/domains/poseRun/usePoseRun.ts",
+  "packages/core/src/domains/presentation/index.ts",
+  "packages/core/src/domains/presentation/presentationContribution.ts",
+  "packages/core/src/domains/presentation/presentationStep.ts",
+  "packages/core/src/domains/selection/enteredGroupFrame.ts",
+  "packages/core/src/domains/selection/enteredGroupScope.ts",
+  "packages/core/src/domains/selection/enteredOperands.ts",
+  "packages/core/src/domains/viewports/aim.ts",
+  "packages/core/src/domains/viewports/index.ts",
+  "packages/core/src/domains/viewports/viewMarker.ts",
+  "packages/core/src/domains/viewports/viewMarkerDrag.ts",
+  "packages/core/src/domains/viewports/viewResolver.ts",
+  "packages/core/src/domains/viewports/viewportLayer.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1641084,
+   "minutes": 0.14848333333333333,
+   "at": "2026-11-25T21:14:42.798Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Imperative ingest of a cross-realm File fails instanceof and reaches handlers as a bare File without IngestItem kind or mime",
+   "where": "packages/core/src/domains/ingestion/useCanvasIngestion.ts:106",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "stop after a scene switch commits the old scene's preview poses into the new scene, writing A's pose into B",
+   "where": "packages/core/src/domains/poseRun/usePoseRun.ts:118 (usePoseRun stop/commit)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

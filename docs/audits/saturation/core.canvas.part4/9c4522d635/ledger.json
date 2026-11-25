@@ -1,0 +1,737 @@
+{
+ "area": "core.canvas.part4",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/trimOverrides.ts",
+  "packages/core/src/canvas/useCanvasElements.ts",
+  "packages/core/src/canvas/useCanvasHandle.ts",
+  "packages/core/src/canvas/useCanvasPaint.ts",
+  "packages/core/src/canvas/useCanvasRenderer.ts",
+  "packages/core/src/canvas/useCanvasSurface.ts",
+  "packages/core/src/canvas/useCanvasView.ts",
+  "packages/core/src/canvas/useClientToWorld.ts",
+  "packages/core/src/canvas/useExtraLayers.ts",
+  "packages/core/src/canvas/useFrameLoop.ts",
+  "packages/core/src/canvas/useHitObserver.ts",
+  "packages/core/src/canvas/useHostAnchor.ts",
+  "packages/core/src/canvas/useInFlightBounds.ts",
+  "packages/core/src/canvas/useLateContentRedraw.ts",
+  "packages/core/src/canvas/useLayerStack.ts",
+  "packages/core/src/canvas/usePaintedCursor.ts",
+  "packages/core/src/canvas/useRedrawOn.ts",
+  "packages/core/src/canvas/useSceneAdapter.ts",
+  "packages/core/src/canvas/useSceneLayersKey.ts",
+  "packages/core/src/canvas/useSurfaceInput.ts",
+  "packages/core/src/canvas/useSurfaceSize.ts",
+  "packages/core/src/canvas/useToolCursor.ts",
+  "packages/core/src/canvas/useViewAim.ts",
+  "packages/core/src/canvas/useViewClientMaps.ts",
+  "packages/core/src/canvas/useViewDispatcher.ts",
+  "packages/core/src/canvas/useViewHelpers.ts",
+  "packages/core/src/canvas/useViewLayerGate.ts",
+  "packages/core/src/canvas/useViewNesting.ts",
+  "packages/core/src/canvas/useViewOwnDeps.ts",
+  "packages/core/src/canvas/useViewPicking.ts",
+  "packages/core/src/canvas/useViewRegistrySurface.ts",
+  "packages/core/src/canvas/viewInputs.tsx",
+  "packages/core/src/canvas/viewMarkers.ts",
+  "packages/core/src/canvas/viewRegistry.tsx",
+  "packages/core/src/canvas/viewSnap.ts",
+  "packages/core/src/canvas/warmRender.ts",
+  "packages/core/src/canvas/wrapNodeOutput.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.14300300000000002,
+   "minutes": 0.18073333333333333,
+   "at": "2026-11-25T11:55:01.139Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.069769,
+   "minutes": 2.579816666666667,
+   "at": "2026-11-25T11:57:39.964Z",
+   "findings": 4
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.9460706000000001,
+   "minutes": 1.6576166666666665,
+   "at": "2026-11-25T11:59:19.477Z",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.686704,
+   "minutes": 2.5055166666666664,
+   "at": "2026-11-25T12:01:49.866Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.7734862,
+   "minutes": 2.7019333333333333,
+   "at": "2026-11-25T12:04:32.040Z",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.5652548000000001,
+   "minutes": 1.93105,
+   "at": "2026-11-25T12:06:27.960Z",
+   "findings": 4
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.6767428,
+   "minutes": 2.3159666666666667,
+   "at": "2026-11-25T12:08:46.972Z",
+   "findings": 3
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.9581622,
+   "minutes": 3.0761166666666666,
+   "at": "2026-11-25T12:11:51.593Z",
+   "findings": 5
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.5110066,
+   "minutes": 1.7854999999999999,
+   "at": "2026-11-25T12:13:38.783Z",
+   "findings": 2
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.6441674000000002,
+   "minutes": 2.07825,
+   "at": "2026-11-25T12:15:43.534Z",
+   "findings": 2
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.5708744000000001,
+   "minutes": 1.64945,
+   "at": "2026-11-25T12:17:22.560Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.658163,
+   "minutes": 2.28115,
+   "at": "2026-11-25T12:19:39.484Z",
+   "findings": 4
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.5193194000000003,
+   "minutes": 4.885666666666667,
+   "at": "2026-11-25T12:24:32.682Z",
+   "findings": 8
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.630729,
+   "minutes": 2.3672666666666666,
+   "at": "2026-11-25T12:26:54.777Z",
+   "findings": 3
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.7042904,
+   "minutes": 2.279533333333333,
+   "at": "2026-11-25T12:29:11.607Z",
+   "findings": 3
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.519641,
+   "minutes": 1.9489,
+   "at": "2026-11-25T12:31:08.597Z",
+   "findings": 2
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 0.5476638,
+   "minutes": 2.069166666666667,
+   "at": "2026-11-25T12:33:12.805Z",
+   "findings": 3
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.5550632,
+   "minutes": 1.9085166666666666,
+   "at": "2026-11-25T12:35:07.377Z",
+   "findings": 2
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 0.8000526,
+   "minutes": 2.745833333333333,
+   "at": "2026-11-25T12:37:52.193Z",
+   "findings": 4
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 0.661803,
+   "minutes": 1.8755333333333333,
+   "at": "2026-11-25T12:39:44.784Z",
+   "findings": 3
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 0.6335734,
+   "minutes": 2.092233333333333,
+   "at": "2026-11-25T12:41:50.374Z",
+   "findings": 3
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.7310004000000001,
+   "minutes": 2.0721666666666665,
+   "at": "2026-11-25T12:43:54.764Z",
+   "findings": 3
+  },
+  {
+   "n": 23,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/23-claude.md",
+   "costUsd": 0.6889466,
+   "minutes": 2.21975,
+   "at": "2026-11-25T12:46:08.009Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Cyclic view parents make drawnLayers()/layerIsPainted recurse unguarded and overflow the stack",
+   "where": "packages/core/src/canvas/useViewNesting.ts:85",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    3,
+    10,
+    16
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     3,
+     10,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Explicit width 0 is treated as unresolved, so neither the collapse nor the restore fires onResize",
+   "where": "packages/core/src/canvas/useSurfaceSize.ts:37",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A view's hit-test of the layers it paints is gated by the surface's layerVisibility, but the view's paint ignores it, so hits and paint disagree",
+   "where": "packages/core/src/canvas/useExtraLayers.ts:63 (hitTestExtrasIn), via packages/core/src/canvas/useViewPicking.ts:56 (affordanceAt)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4,
+    6,
+    7,
+    9,
+    13,
+    18
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4,
+     6,
+     7,
+     9,
+     13,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Root view markers are memoized on the registry version while a marker's target is read live, so a marker retargeted to or from the root paints in the wrong frame",
+   "where": "packages/core/src/canvas/useLayerStack.ts:78 (useComposedLayers), packages/core/src/canvas/viewMarkers.ts:61 (markerLayers)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    13
+   ],
+   "sources": {
+    "claude": [
+     2,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "useHostAnchor never recomputes when resolveHost starts naming a different element while a host is already resolved",
+   "where": "packages/core/src/canvas/useHostAnchor.ts:41 (resolve / recompute), :80 (watch effect)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A nested view with a missing parent derives its camera against the surface but its rect collapses to nothing, so camera and rect disagree",
+   "where": "packages/core/src/canvas/useViewNesting.ts:47 (derivedAt) vs :37 (rectAt)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A static cursor spec that resolveCursor rejects throws out of the canvas render, while the thunk form's throw is caught",
+   "where": "packages/core/src/canvas/useToolCursor.ts:10 (resolveToolsCursor)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    15,
+    22
+   ],
+   "sources": {
+    "claude": [
+     3,
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A resize commit whose in-place paint fails schedules no retry and also suppresses the commit path's retry, so the frame stays unpainted",
+   "where": "packages/core/src/canvas/useCanvasSurface.ts:70 (usePaintOnResize)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    12,
+    13
+   ],
+   "sources": {
+    "claude": [
+     4,
+     12,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A marker skipped for a duplicate id is never registered later, so it does not take over when the holder leaves the way a duplicate view does",
+   "where": "packages/core/src/canvas/viewMarkers.ts:52 (registerMarker)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    7,
+    10,
+    11,
+    12,
+    14,
+    16,
+    17,
+    19,
+    20,
+    22,
+    23
+   ],
+   "sources": {
+    "claude": [
+     5,
+     7,
+     10,
+     11,
+     12,
+     14,
+     16,
+     17,
+     19,
+     20,
+     22,
+     23
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "The shader-source watcher splits program ids on '|', so a program id that contains '|' never triggers a repaint",
+   "where": "packages/core/src/canvas/useCanvasRenderer.ts:55 (useRedrawOnShaderSource)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    11,
+    12,
+    13,
+    15
+   ],
+   "sources": {
+    "claude": [
+     5,
+     11,
+     12,
+     13,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A resize with viewBounds paints one frame in place with the old, unclamped view before the reclamp runs",
+   "where": "packages/core/src/canvas/useCanvasSurface.ts:68 (usePaintOnResize), packages/core/src/canvas/useCanvasView.ts:178 (useReclampOnResize)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "A view's hit test of registered/slot layers is given the surface's chrome-caps predicate while its paint uses the view's, so hits and paint disagree on chrome layers",
+   "where": "packages/core/src/canvas/useExtraLayers.ts:63 (hitTestExtrasIn)",
+   "severity": "",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    7,
+    9,
+    13,
+    18,
+    21
+   ],
+   "sources": {
+    "claude": [
+     6,
+     7,
+     9,
+     13,
+     18,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "Re-registering a layer object already held by another owner moves it to the top of draw and hit order, and it stays there after that owner releases it",
+   "where": "packages/core/src/canvas/useExtraLayers.ts:37 (registerLayer)",
+   "severity": "",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    12,
+    17
+   ],
+   "sources": {
+    "claude": [
+     6,
+     12,
+     17
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "With onCommit: 'paint', the first commit is painted through the raw paint function, bypassing the frame loop",
+   "where": "packages/core/src/canvas/useCanvasSurface.ts:61 (useCanvasSurface → useRedrawOnCommit)",
+   "severity": "",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    8,
+    14,
+    15,
+    17,
+    19,
+    20,
+    21,
+    23
+   ],
+   "sources": {
+    "claude": [
+     6,
+     8,
+     14,
+     15,
+     17,
+     19,
+     20,
+     21,
+     23
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "The duplicate-marker check reads the id only at registration, so a props thunk whose id later changes to one already held bypasses it",
+   "where": "packages/core/src/canvas/viewMarkers.ts:62 (registerMarker)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "While its host is unresolved, useHostAnchor recomputes on every attribute change anywhere in the document",
+   "where": "packages/core/src/canvas/useHostAnchor.ts:96 (useHostAnchor, second effect)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "useHostAnchor's first paint shows no position, contrary to its doc",
+   "where": "packages/core/src/canvas/useHostAnchor.ts:77 (useHostAnchor, first effect)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "A view that both follows another view and is nested in a parent skips the parent's layer gate",
+   "where": "packages/core/src/canvas/useViewNesting.ts:96 (layerIsPainted), :86 (drawnLayers)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    21
+   ],
+   "sources": {
+    "claude": [
+     8,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "Client-to-world conversion returns the client point unchanged when there is no element",
+   "where": "packages/core/src/canvas/useClientToWorld.ts:20 (useClientToWorld)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "Hit-testing of registered and slot layers ignores the order set by layerOrder, so the topmost painted layer is not tested first",
+   "where": "packages/core/src/canvas/useExtraLayers.ts:61 (hitTestExtrasIn)",
+   "severity": "",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "A CanvasView's view dep drops contentBounds, animate, decay and recenter, so Fit Content, coasting pans and animated zoom do nothing inside a view",
+   "where": "packages/core/src/canvas/useViewOwnDeps.ts:16-21 (viewApi)",
+   "severity": "",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A frame with no renderer still opens a debug frame and records its layers",
+   "where": "packages/core/src/canvas/useCanvasPaint.ts:107-118 (paint)",
+   "severity": "",
+   "firstOccasion": 13,
+   "sightings": [
+    13,
+    19,
+    22
+   ],
+   "sources": {
+    "claude": [
+     13,
+     19,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "When a view's registration rebuilds, its id passes to a duplicate view waiting behind it",
+   "where": "packages/core/src/canvas/viewRegistry.tsx:186-196 (register / unregister)",
+   "severity": "",
+   "firstOccasion": 13,
+   "sightings": [
+    13,
+    14,
+    20
+   ],
+   "sources": {
+    "claude": [
+     13,
+     14,
+     20
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "After a frame throws and the next frame does not land, no retry is scheduled, so a later throw leaves the frame unpainted",
+   "where": "packages/core/src/canvas/useFrameLoop.ts:79 (runPaint)",
+   "severity": "",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
+  }
+ ]
+}

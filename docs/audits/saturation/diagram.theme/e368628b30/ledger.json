@@ -1,0 +1,45 @@
+{
+ "area": "diagram.theme",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/theme/applyTheme.ts",
+  "packages/diagram/src/theme/fromTokens.ts",
+  "packages/diagram/src/theme/resolve.ts",
+  "packages/diagram/src/theme/styleField.ts",
+  "packages/diagram/src/theme/themeEdit.ts",
+  "packages/diagram/src/theme/themeFile.ts",
+  "packages/diagram/src/theme/themeFixture.ts",
+  "packages/diagram/src/theme/themeWrites.ts",
+  "packages/diagram/src/theme/themes.ts",
+  "packages/diagram/src/theme/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1590784,
+   "minutes": 0.11678333333333334,
+   "at": "2026-11-25T21:16:51.832Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A theme that changes only the font family skips body relayout, so text is drawn into boxes measured for the old face",
+   "where": "packages/diagram/src/theme/applyTheme.ts:50 (writeAll)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

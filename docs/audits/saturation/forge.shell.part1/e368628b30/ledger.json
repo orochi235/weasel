@@ -1,0 +1,85 @@
+{
+ "area": "forge.shell.part1",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/forge/src/shell/Crumbs.css",
+  "packages/forge/src/shell/Crumbs.tsx",
+  "packages/forge/src/shell/FrameView.tsx",
+  "packages/forge/src/shell/GlobalsToolbar.tsx",
+  "packages/forge/src/shell/IndexTrial.tsx",
+  "packages/forge/src/shell/RouteKnobs.tsx",
+  "packages/forge/src/shell/StoryBody.tsx",
+  "packages/forge/src/shell/StoryGlobalsContext.ts",
+  "packages/forge/src/shell/StoryScroller.tsx",
+  "packages/forge/src/shell/StoryTrial.tsx",
+  "packages/forge/src/shell/TrialHost.tsx",
+  "packages/forge/src/shell/Workshop.tsx",
+  "packages/forge/src/shell/a11y/A11yPanel.css",
+  "packages/forge/src/shell/a11y/A11yPanel.tsx",
+  "packages/forge/src/shell/a11y/reasons.ts",
+  "packages/forge/src/shell/answers.ts",
+  "packages/forge/src/shell/breadcrumb.ts",
+  "packages/forge/src/shell/checkShellConfig.ts",
+  "packages/forge/src/shell/dependencies.ts",
+  "packages/forge/src/shell/documentInstrument.tsx",
+  "packages/forge/src/shell/followEdits.ts",
+  "packages/forge/src/shell/frameActions.ts",
+  "packages/forge/src/shell/frameLink.ts",
+  "packages/forge/src/shell/framePool.ts",
+  "packages/forge/src/shell/globals.ts",
+  "packages/forge/src/shell/globalsMenu.tsx",
+  "packages/forge/src/shell/hostConditions.ts",
+  "packages/forge/src/shell/inViewMargin.ts",
+  "packages/forge/src/shell/index.ts",
+  "packages/forge/src/shell/info/StoryDossier.tsx",
+  "packages/forge/src/shell/info/StoryInfoDialog.tsx",
+  "packages/forge/src/shell/info/dossier.ts",
+  "packages/forge/src/shell/info/infoItem.ts",
+  "packages/forge/src/shell/instrumentCache.ts",
+  "packages/forge/src/shell/issues/IssuesPanel.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1639334,
+   "minutes": 0.12405,
+   "at": "2026-11-25T21:18:09.344Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "An import fault leaves the queued and pending accessibility audits untouched, so the panel stays on Checking with Re-check disabled until the link closes",
+   "where": "packages/forge/src/shell/frameLink.ts:193",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Stripping Forge-owned config keys reuses the previous object when own keys differ but values read undefined, exposing stale keys and suppressing frame updates",
+   "where": "packages/forge/src/shell/globals.ts:148",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

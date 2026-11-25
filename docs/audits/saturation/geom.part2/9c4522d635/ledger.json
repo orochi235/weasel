@@ -1,0 +1,121 @@
+{
+ "area": "geom.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/geom/src/nearest.ts",
+  "packages/geom/src/niceStep.ts",
+  "packages/geom/src/openFill.ts",
+  "packages/geom/src/outlineSegments.ts",
+  "packages/geom/src/outputGrid.ts",
+  "packages/geom/src/path.ts",
+  "packages/geom/src/pathHitTest.ts",
+  "packages/geom/src/pathSubpaths.ts",
+  "packages/geom/src/pbt.fixture.ts",
+  "packages/geom/src/place.ts",
+  "packages/geom/src/points.ts",
+  "packages/geom/src/points2.ts",
+  "packages/geom/src/polyRoots.ts",
+  "packages/geom/src/polyline.ts",
+  "packages/geom/src/portCurve.ts",
+  "packages/geom/src/portCurve2.ts",
+  "packages/geom/src/poseFrame.ts",
+  "packages/geom/src/poseRotation.ts",
+  "packages/geom/src/pxExtent.ts",
+  "packages/geom/src/scalar.ts",
+  "packages/geom/src/screenBand.ts",
+  "packages/geom/src/snap/flat.ts",
+  "packages/geom/src/snap/pathSnap.ts",
+  "packages/geom/src/snap/resolve.ts",
+  "packages/geom/src/snap/segmentFeatures.ts",
+  "packages/geom/src/snap/stepLine.ts",
+  "packages/geom/src/spline/catmullRom.ts",
+  "packages/geom/src/spline/interpolation.ts",
+  "packages/geom/src/spline/monotone.ts",
+  "packages/geom/src/track/arc.ts",
+  "packages/geom/src/track/ellipse.ts",
+  "packages/geom/src/track/path.ts",
+  "packages/geom/src/track/pathData.ts",
+  "packages/geom/src/track/place.ts",
+  "packages/geom/src/track/run.ts",
+  "packages/geom/src/track/shape.ts",
+  "packages/geom/src/track/shift.ts",
+  "packages/geom/src/track/slice.ts",
+  "packages/geom/src/typedArrayJson.ts",
+  "packages/geom/src/view.ts",
+  "packages/geom/src/viewToMat3.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1724084,
+   "minutes": 0.13911666666666667,
+   "at": "2026-11-25T21:18:47.740Z",
+   "findings": 4
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A JSON-compatible object whose toJSON returns itself overflows the tagger stack (RangeError) because toJSON is reinvoked indefinitely",
+   "where": "packages/geom/src/typedArrayJson.ts:126 (tagTypedArrays)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A zero-length arc or ellipse slice collapses to the original center instead of the selected station on the curve",
+   "where": "packages/geom/src/track/slice.ts:21",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Squared-distance overflow makes cubic nearest-point search return the wrong point when candidates all compare as infinity",
+   "where": "packages/geom/src/nearest.ts:62",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Squared pixel-radius comparison overflows to Infinity vs Infinity and accepts a point outside the radius",
+   "where": "packages/geom/src/pxExtent.ts:74 (withinPxRadius)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,76 @@
+{
+ "area": "core.core.pages",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/core/pages/fitViewToPage.ts",
+  "packages/core/src/core/pages/legacyPages.ts",
+  "packages/core/src/core/pages/pageClip.ts",
+  "packages/core/src/core/pages/pageEdits.ts",
+  "packages/core/src/core/pages/pageNodes.ts",
+  "packages/core/src/core/pages/pagePlacement.ts",
+  "packages/core/src/core/pages/pageRunLayout.ts",
+  "packages/core/src/core/pages/pagedFixture.ts",
+  "packages/core/src/core/pages/pages.ts",
+  "packages/core/src/core/pages/pagesLayer.ts",
+  "packages/core/src/core/pages/placeOnPages.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1688934,
+   "minutes": 0.16143333333333335,
+   "at": "2026-11-25T21:14:21.431Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A removed root ID passes the placement filter because s.get(id)?.parent == null accepts undefined, and placement throws later while measuring its pose",
+   "where": "packages/core/src/core/pages/placeOnPages.ts:99 (placeOnPages)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Page edits pass unvalidated dimensions such as NaN width to layoutPages, putting NaN into later page positions and building layouts the migration validator rejects",
+   "where": "packages/core/src/core/pages/pageEdits.ts:174",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "When two pages overlap a box by the same positive area, the tiebreak goes by span and picks the later page instead of the documented earlier one",
+   "where": "packages/core/src/core/pages/pages.ts:109 (overlap score)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

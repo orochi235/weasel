@@ -1,0 +1,100 @@
+{
+ "area": "apps.theme-editor.src",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/theme-editor/src/AnchorList.tsx",
+  "apps/theme-editor/src/App.tsx",
+  "apps/theme-editor/src/HistorySlot.tsx",
+  "apps/theme-editor/src/LayerRail.tsx",
+  "apps/theme-editor/src/PaletteLab.module.css",
+  "apps/theme-editor/src/PaletteLab.tsx",
+  "apps/theme-editor/src/PalettePreview.tsx",
+  "apps/theme-editor/src/PinIcon.tsx",
+  "apps/theme-editor/src/PinRepair.tsx",
+  "apps/theme-editor/src/PresetBar.tsx",
+  "apps/theme-editor/src/SwatchPanel.tsx",
+  "apps/theme-editor/src/ThemeEditor.module.css",
+  "apps/theme-editor/src/ThemeEditor.tsx",
+  "apps/theme-editor/src/ThemePrefs.module.css",
+  "apps/theme-editor/src/ThemePrefs.tsx",
+  "apps/theme-editor/src/ThemePreview.tsx",
+  "apps/theme-editor/src/ThemeWorkbench.tsx",
+  "apps/theme-editor/src/TokenLayer.tsx",
+  "apps/theme-editor/src/TokenReference.tsx",
+  "apps/theme-editor/src/app.css",
+  "apps/theme-editor/src/historyStorage.ts",
+  "apps/theme-editor/src/icons.gen.ts",
+  "apps/theme-editor/src/labTestSetup.ts",
+  "apps/theme-editor/src/layers/RampsLayer.tsx",
+  "apps/theme-editor/src/layers/ScalesLayer.tsx",
+  "apps/theme-editor/src/layers/SemanticDrawer.tsx",
+  "apps/theme-editor/src/layers/SemanticsLayer.tsx",
+  "apps/theme-editor/src/main.tsx",
+  "apps/theme-editor/src/palette/ConstraintsPanel.tsx",
+  "apps/theme-editor/src/palette/copicColors.ts",
+  "apps/theme-editor/src/palette/crayons.ts",
+  "apps/theme-editor/src/palette/legoColors.ts",
+  "apps/theme-editor/src/palette/unmetGates.ts",
+  "apps/theme-editor/src/presets.ts",
+  "apps/theme-editor/src/theme/api.ts",
+  "apps/theme-editor/src/theme/draft.ts",
+  "apps/theme-editor/src/theme/draftStorage.ts",
+  "apps/theme-editor/src/theme/entries.ts",
+  "apps/theme-editor/src/theme/exportFiles.ts",
+  "apps/theme-editor/src/theme/fixtures.ts",
+  "apps/theme-editor/src/theme/inspect.ts",
+  "apps/theme-editor/src/theme/issues.ts",
+  "apps/theme-editor/src/theme/model.ts",
+  "apps/theme-editor/src/theme/ramps.ts",
+  "apps/theme-editor/src/theme/scales.ts",
+  "apps/theme-editor/src/theme/semantics.ts",
+  "apps/theme-editor/src/theme/starter.ts",
+  "apps/theme-editor/src/useFlash.ts",
+  "apps/theme-editor/src/useLabHistory.ts",
+  "apps/theme-editor/src/usePrefsHistory.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1628134,
+   "minutes": 0.10606666666666667,
+   "at": "2026-11-25T21:13:20.455Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Inspector ignores inline declarations, so it reports a stylesheet token that has lost the cascade to an inline style",
+   "where": "apps/theme-editor/src/theme/inspect.ts:74",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Reload completion increments a generation shared by every workbench key, so a pending reload of theme A remounts theme B's workbench and drops its local state",
+   "where": "apps/theme-editor/src/ThemeEditor.tsx:106",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

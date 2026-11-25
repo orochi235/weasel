@@ -1,0 +1,75 @@
+{
+ "area": "apps.chart.src.pipeline",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/chart/src/pipeline/ParamPanel.tsx",
+  "apps/chart/src/pipeline/PipelineWorkspace.tsx",
+  "apps/chart/src/pipeline/StagePalette.tsx",
+  "apps/chart/src/pipeline/pipelineAudio.ts",
+  "apps/chart/src/pipeline/pipelineClusters.ts",
+  "apps/chart/src/pipeline/pipelineCommands.ts",
+  "apps/chart/src/pipeline/pipelineLook.ts",
+  "apps/chart/src/pipeline/pipelinePages.ts",
+  "apps/chart/src/pipeline/pipelineRun.ts",
+  "apps/chart/src/pipeline/usePipelineDoc.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1678384,
+   "minutes": 0.13915,
+   "at": "2026-11-25T21:12:04.663Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Autosave persists an uncommitted slider preview, so reopening loads it as document content",
+   "where": "apps/chart/src/pipeline/usePipelineDoc.ts:58",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A source-image pick resolved after unmount allocates a bitmap that is never closed, because the ticket is taken after the picker await",
+   "where": "apps/chart/src/pipeline/pipelineRun.ts:130 (chooseImage)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Run and Step on an audio-only graph drive the empty image runner and never start or advance the audio graph",
+   "where": "apps/chart/src/pipeline/pipelineRun.ts:69",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

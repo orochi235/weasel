@@ -1,0 +1,74 @@
+{
+ "area": "core.domains.snap",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/domains/snap/angle2d.ts",
+  "packages/core/src/domains/snap/debugCandidates.ts",
+  "packages/core/src/domains/snap/gather.ts",
+  "packages/core/src/domains/snap/inputSubspace.ts",
+  "packages/core/src/domains/snap/lazySession.ts",
+  "packages/core/src/domains/snap/marks.ts",
+  "packages/core/src/domains/snap/outcomeStore.ts",
+  "packages/core/src/domains/snap/pointSnap.ts",
+  "packages/core/src/domains/snap/probes2d.ts",
+  "packages/core/src/domains/snap/readoutDep.ts",
+  "packages/core/src/domains/snap/readoutDraw.ts",
+  "packages/core/src/domains/snap/readoutLayer.ts",
+  "packages/core/src/domains/snap/registry.ts",
+  "packages/core/src/domains/snap/resizeBox.ts",
+  "packages/core/src/domains/snap/roles.ts",
+  "packages/core/src/domains/snap/rotationSource.ts",
+  "packages/core/src/domains/snap/sceneReads.ts",
+  "packages/core/src/domains/snap/sceneSession2d.ts",
+  "packages/core/src/domains/snap/screen.ts",
+  "packages/core/src/domains/snap/session2d.ts",
+  "packages/core/src/domains/snap/spanSnap.ts",
+  "packages/core/src/domains/snap/stepAngles.ts",
+  "packages/core/src/domains/snap/testing/sessionDep.ts",
+  "packages/core/src/domains/snap/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16322840000000002,
+   "minutes": 0.12321666666666667,
+   "at": "2026-11-25T21:14:52.034Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Point candidate origin exclusion tolerance is one world unit at large coordinates, removing distinct candidates several screen pixels apart",
+   "where": "packages/core/src/domains/snap/gather.ts:115",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Rotation candidate cache keys ignore shown-pose override generation, so rotate snaps to an obsolete target angle",
+   "where": "packages/core/src/domains/snap/rotationSource.ts:16",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

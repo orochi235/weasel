@@ -1,0 +1,74 @@
+{
+ "area": "diagram.part2",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/diagramTypes/types.ts",
+  "packages/diagram/src/diagramViewProps.ts",
+  "packages/diagram/src/edge.ts",
+  "packages/diagram/src/edgeEndLayer.ts",
+  "packages/diagram/src/edgeId.ts",
+  "packages/diagram/src/edgeLabel.ts",
+  "packages/diagram/src/edgeStroke.ts",
+  "packages/diagram/src/edgeTrait.ts",
+  "packages/diagram/src/effect-audio.entry.ts",
+  "packages/diagram/src/effect.entry.ts",
+  "packages/diagram/src/entryMemo.ts",
+  "packages/diagram/src/faceCapCenter.ts",
+  "packages/diagram/src/faceMeasure.ts",
+  "packages/diagram/src/faceRemeasure.ts",
+  "packages/diagram/src/firstSight.ts",
+  "packages/diagram/src/fitContainers.ts",
+  "packages/diagram/src/footprint.ts",
+  "packages/diagram/src/force.bench.ts",
+  "packages/diagram/src/force.ts",
+  "packages/diagram/src/force3.ts",
+  "packages/diagram/src/forceClusters.ts",
+  "packages/diagram/src/forceTerms.ts",
+  "packages/diagram/src/fromData.ts",
+  "packages/diagram/src/graph.ts",
+  "packages/diagram/src/grid.ts",
+  "packages/diagram/src/headerClick.ts",
+  "packages/diagram/src/icons.gen.ts",
+  "packages/diagram/src/icons.table.ts",
+  "packages/diagram/src/imageRelease.ts",
+  "packages/diagram/src/index.ts",
+  "packages/diagram/src/itemDrop.ts",
+  "packages/diagram/src/itemDropTarget.ts",
+  "packages/diagram/src/keyedIndex.ts",
+  "packages/diagram/src/label.ts",
+  "packages/diagram/src/labelCommands.ts",
+  "packages/diagram/src/labelDragLayer.ts",
+  "packages/diagram/src/labelTrait.ts",
+  "packages/diagram/src/labels/fit.ts",
+  "packages/diagram/src/labels/install.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1595384,
+   "minutes": 0.10245,
+   "at": "2026-11-25T21:16:30.453Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Item drop reuses a cached canDrop verdict from a different pointer position within the same target, container and insertion index, so a drop is accepted at a refused position (or refused at an accepted one)",
+   "where": "packages/diagram/src/itemDrop.ts:105",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

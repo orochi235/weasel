@@ -1,0 +1,83 @@
+{
+ "area": "apps.site.demos.part5",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/site/demos/SceneDemo.tsx",
+  "apps/site/demos/SceneLabDemo.tsx",
+  "apps/site/demos/SceneScrollerDemo.module.css",
+  "apps/site/demos/SceneScrollerDemo.tsx",
+  "apps/site/demos/ScopedGridDemo.tsx",
+  "apps/site/demos/ScoreDemo.module.css",
+  "apps/site/demos/ScoreDemo.tsx",
+  "apps/site/demos/ScrollingGridDemo.tsx",
+  "apps/site/demos/SegmentTypeLabDemo.tsx",
+  "apps/site/demos/SelectDemo.module.css",
+  "apps/site/demos/SelectDemo.tsx",
+  "apps/site/demos/SelectionPanelDemo.tsx",
+  "apps/site/demos/SequenceDiagramDemo.tsx",
+  "apps/site/demos/ShapeBuilderLabDemo.tsx",
+  "apps/site/demos/ShapeToolsDemo.tsx",
+  "apps/site/demos/SharedBrushSizeDemo.tsx",
+  "apps/site/demos/SkinDemo.tsx",
+  "apps/site/demos/SliceDemo.tsx",
+  "apps/site/demos/SlideNavigationDemo.tsx",
+  "apps/site/demos/SmallCapsDemo.tsx",
+  "apps/site/demos/SnipLabDemo.tsx",
+  "apps/site/demos/SpacingHintsLabDemo.tsx",
+  "apps/site/demos/SpiroLabDemo.tsx",
+  "apps/site/demos/StickyNotesDemo.tsx",
+  "apps/site/demos/StorageDemo.module.css",
+  "apps/site/demos/StorageDemo.tsx",
+  "apps/site/demos/StreamingDemo.module.css",
+  "apps/site/demos/StreamingDemo.tsx",
+  "apps/site/demos/StrokeAndFillDemo.tsx",
+  "apps/site/demos/StrokeMarkersDemo.tsx",
+  "apps/site/demos/StrokeTrimLabDemo.module.css",
+  "apps/site/demos/StrokeTrimLabDemo.tsx",
+  "apps/site/demos/StrokeWidthLabDemo.tsx",
+  "apps/site/demos/SvgDemo.module.css",
+  "apps/site/demos/SvgDemo.tsx",
+  "apps/site/demos/SwapDemo.tsx",
+  "apps/site/demos/SymmetryLabDemo.tsx",
+  "apps/site/demos/TextDemo.tsx",
+  "apps/site/demos/TextDomDemo.module.css",
+  "apps/site/demos/TextDomDemo.tsx",
+  "apps/site/demos/TextOutlinesDemo.module.css",
+  "apps/site/demos/TextOutlinesDemo.tsx",
+  "apps/site/demos/TextScriptDemo.module.css",
+  "apps/site/demos/TextScriptDemo.tsx",
+  "apps/site/demos/TextShapingDemo.module.css",
+  "apps/site/demos/TextShapingDemo.tsx",
+  "apps/site/demos/ThemeDemo.module.css",
+  "apps/site/demos/ThemeDemo.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.15865839999999998,
+   "minutes": 0.08163333333333334,
+   "at": "2026-11-25T21:12:58.974Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Play ignores a rejected audio unlock: the demo stays labeled stopped, shows no error, and leaves an unhandled rejection",
+   "where": "apps/site/demos/ScoreDemo.tsx:83",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

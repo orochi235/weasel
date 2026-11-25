@@ -1,0 +1,65 @@
+{
+ "area": "font.outline",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/font/src/outline/OutlineFace.ts",
+  "packages/font/src/outline/cffCheck.ts",
+  "packages/font/src/outline/closeContours.ts",
+  "packages/font/src/outline/cmapCheck.ts",
+  "packages/font/src/outline/dataFork.ts",
+  "packages/font/src/outline/fontEmbedding.ts",
+  "packages/font/src/outline/fontFiles.fixture.ts",
+  "packages/font/src/outline/gposKerning.ts",
+  "packages/font/src/outline/localFonts.ts",
+  "packages/font/src/outline/opentypeParser.ts",
+  "packages/font/src/outline/outlineRegistry.ts",
+  "packages/font/src/outline/sfnt.ts",
+  "packages/font/src/outline/tag.ts",
+  "packages/font/src/outline/woff.ts",
+  "packages/font/src/outline/writtenFont.fixture.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1655634,
+   "minutes": 0.15428333333333333,
+   "at": "2026-11-25T21:17:48.092Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A subscriber reacting to the synchronous loading update reenters beginLoad before slot.load is set, which parses the source twice and publishes readiness twice",
+   "where": "packages/font/src/outline/outlineRegistry.ts:277 (beginLoad)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "CFF2 outlines (font.tables.cff2) are reported as truetype by embeddingOf, which misroutes PDF and SVG font embedding",
+   "where": "packages/font/src/outline/opentypeParser.ts:185 (embeddingOf)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

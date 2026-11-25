@@ -1,0 +1,47 @@
+{
+ "area": "forge.story",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/forge/src/story/Counter.stories.tsx",
+  "packages/forge/src/story/api.ts",
+  "packages/forge/src/story/declarationEmit.fixture.ts",
+  "packages/forge/src/story/define.ts",
+  "packages/forge/src/story/ids.ts",
+  "packages/forge/src/story/indexBundle.ts",
+  "packages/forge/src/story/indexPages.ts",
+  "packages/forge/src/story/library.ts",
+  "packages/forge/src/story/load.ts",
+  "packages/forge/src/story/native.ts",
+  "packages/forge/src/story/tags.ts",
+  "packages/forge/src/story/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1601884,
+   "minutes": 0.11668333333333333,
+   "at": "2026-11-25T21:18:19.019Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A missing indexed export is silently dropped from its component page while its entry still feeds shared tags, gallery/lab IDs and descriptions, so the index appears loaded with no stories",
+   "where": "packages/forge/src/story/indexBundle.ts:80",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

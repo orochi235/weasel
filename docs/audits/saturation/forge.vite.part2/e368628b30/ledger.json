@@ -1,0 +1,76 @@
+{
+ "area": "forge.vite.part2",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/forge/src/vite/moduleInfo.ts",
+  "packages/forge/src/vite/nativeExports.ts",
+  "packages/forge/src/vite/ownEntries.ts",
+  "packages/forge/src/vite/ownKeys.ts",
+  "packages/forge/src/vite/packageName.ts",
+  "packages/forge/src/vite/plugin.ts",
+  "packages/forge/src/vite/posixPath.ts",
+  "packages/forge/src/vite/propControls.ts",
+  "packages/forge/src/vite/propTypes.ts",
+  "packages/forge/src/vite/servePages.ts",
+  "packages/forge/src/vite/shellTitle.ts",
+  "packages/forge/src/vite/storyGlob.ts",
+  "packages/forge/src/vite/storyIndex.ts",
+  "packages/forge/src/vite/storybookShims.ts",
+  "packages/forge/src/vite/titleReport.ts",
+  "packages/forge/src/vite/trace.ts",
+  "packages/forge/src/vite/typeDefs.ts",
+  "packages/forge/src/vite/typedoc/index.ts",
+  "packages/forge/src/vite/typedoc/json.ts",
+  "packages/forge/src/vite/typedoc/print.ts",
+  "packages/forge/src/vite/virtualModules.ts",
+  "packages/forge/src/vite/warnOnce.ts",
+  "packages/forge/src/vite/watchProbe.ts",
+  "packages/forge/src/vite/watchRecovery.ts",
+  "packages/forge/src/vite/watchSettle.ts",
+  "packages/forge/src/vite/wrappers.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1648384,
+   "minutes": 0.12353333333333333,
+   "at": "2026-11-25T21:18:33.235Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Watcher recovery treats a deleted served file (stat returns no mtime) like an untracked file, so the stale module stays in place and the story is never removed",
+   "where": "packages/forge/src/vite/watchRecovery.ts:86 (missed)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "An in-flight wrapper resolution in settle can restore a story file removed by a concurrent unlink, inserting it back as an empty entry or overwriting a newer wrapper decision",
+   "where": "packages/forge/src/vite/storyIndex.ts:105 (settle)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

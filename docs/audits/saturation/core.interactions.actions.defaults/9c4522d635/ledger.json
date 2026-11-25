@@ -1,0 +1,67 @@
+{
+ "area": "core.interactions.actions.defaults",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/interactions/actions/defaults/cancelAll.ts",
+  "packages/core/src/interactions/actions/defaults/containerScroll.ts",
+  "packages/core/src/interactions/actions/defaults/contextMenu.ts",
+  "packages/core/src/interactions/actions/defaults/copySubtree.ts",
+  "packages/core/src/interactions/actions/defaults/index.ts",
+  "packages/core/src/interactions/actions/defaults/lockedReach.ts",
+  "packages/core/src/interactions/actions/defaults/nudgeSteps.ts",
+  "packages/core/src/interactions/actions/defaults/requiresOperands.ts",
+  "packages/core/src/interactions/actions/defaults/segmentUnder.ts",
+  "packages/core/src/interactions/actions/defaults/sliceOps.ts",
+  "packages/core/src/interactions/actions/defaults/toolActivate.ts",
+  "packages/core/src/interactions/actions/defaults/toolResetToDefault.ts",
+  "packages/core/src/interactions/actions/defaults/touchZoom.ts",
+  "packages/core/src/interactions/actions/defaults/undoRedo.ts",
+  "packages/core/src/interactions/actions/defaults/viewportDragPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportWheelPan.ts",
+  "packages/core/src/interactions/actions/defaults/viewportZoom.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1646584,
+   "minutes": 0.16401666666666667,
+   "at": "2026-11-25T21:14:59.951Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A drag coast converts release velocity using the pre-zoom base scale after an external zoom before pointer-up, so the fling travels at the wrong screen speed",
+   "where": "packages/core/src/interactions/actions/defaults/viewportDragPan.ts:148",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Wheel scrolling in a rotated container converts world deltas to local using basis lengths and loses orientation, so it yields to viewport pan when the container could scroll in the wheel's direction",
+   "where": "packages/core/src/interactions/actions/defaults/containerScroll.ts:216",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

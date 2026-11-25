@@ -1,0 +1,47 @@
+{
+ "area": "core.debug",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/debug/createDebugOverlayLayer.ts",
+  "packages/core/src/debug/createDebugSink.ts",
+  "packages/core/src/debug/defaultTheme.ts",
+  "packages/core/src/debug/features.ts",
+  "packages/core/src/debug/flag.ts",
+  "packages/core/src/debug/frameStats.ts",
+  "packages/core/src/debug/index.ts",
+  "packages/core/src/debug/overlayPanels.ts",
+  "packages/core/src/debug/override.ts",
+  "packages/core/src/debug/parseDebugFlags.ts",
+  "packages/core/src/debug/types.ts",
+  "packages/core/src/debug/useDebugSink.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1591984,
+   "minutes": 0.10305,
+   "at": "2026-11-25T21:14:37.289Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Overlay dispatches only rect, circle and polygon hitboxes, so a recorded path hit shape draws nothing",
+   "where": "packages/core/src/debug/createDebugOverlayLayer.ts:187",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

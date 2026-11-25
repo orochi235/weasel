@@ -1,0 +1,74 @@
+{
+ "area": "apps.forge",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/forge/DevtoolsDock.tsx",
+  "apps/forge/a11y.files.ts",
+  "apps/forge/a11y.known.ts",
+  "apps/forge/a11y.ring.ts",
+  "apps/forge/a11y.shards.ts",
+  "apps/forge/a11y.suite.tsx",
+  "apps/forge/devtools.module.css",
+  "apps/forge/devtools.tsx",
+  "apps/forge/e2e/csf.mjs",
+  "apps/forge/e2e/smoke.mjs",
+  "apps/forge/e2e/stories.d.mts",
+  "apps/forge/e2e/stories.mjs",
+  "apps/forge/fonts.ts",
+  "apps/forge/forge.frame.tsx",
+  "apps/forge/forge.shell.tsx",
+  "apps/forge/frame.css",
+  "apps/forge/icons.gen.ts",
+  "apps/forge/icons/index.mjs",
+  "apps/forge/libraries.css",
+  "apps/forge/libraries.ts",
+  "apps/forge/mode.ts",
+  "apps/forge/themes.ts",
+  "apps/forge/vite.config.ts",
+  "apps/forge/viteShared.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16227840000000002,
+   "minutes": 0.107,
+   "at": "2026-11-25T21:12:37.341Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Axe exception suppression keys only on file and rule, so an exception for one story's controls also hides the same violation in other stories of that file",
+   "where": "apps/forge/a11y.suite.tsx:63",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Animation settling waits forever on a finite document-timeline animation with playbackRate zero, timing out the story before axe runs",
+   "where": "apps/forge/a11y.ring.ts:17",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

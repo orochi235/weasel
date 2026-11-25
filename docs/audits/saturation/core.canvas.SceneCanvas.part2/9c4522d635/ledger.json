@@ -1,0 +1,799 @@
+{
+ "area": "core.canvas.SceneCanvas.part2",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/SceneCanvas/toolProps.ts",
+  "packages/core/src/canvas/SceneCanvas/toolRegistry.ts",
+  "packages/core/src/canvas/SceneCanvas/useActionTunings.ts",
+  "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts",
+  "packages/core/src/canvas/SceneCanvas/useBakedScene.ts",
+  "packages/core/src/canvas/SceneCanvas/useBestHit.ts",
+  "packages/core/src/canvas/SceneCanvas/useBuiltinTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasCamera.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasDispatcher.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasSelection.ts",
+  "packages/core/src/canvas/SceneCanvas/useCanvasTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useChromeAffordances.ts",
+  "packages/core/src/canvas/SceneCanvas/useContentBounds.ts",
+  "packages/core/src/canvas/SceneCanvas/useContributionRoles.ts",
+  "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useEdgePan.ts",
+  "packages/core/src/canvas/SceneCanvas/useHeldModifiers.ts",
+  "packages/core/src/canvas/SceneCanvas/useIgnoredProps.ts",
+  "packages/core/src/canvas/SceneCanvas/useMagnificationCheck.ts",
+  "packages/core/src/canvas/SceneCanvas/useNodeKinds.ts",
+  "packages/core/src/canvas/SceneCanvas/usePresetTraits.ts",
+  "packages/core/src/canvas/SceneCanvas/usePreviewGhostLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasHandle.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasPathEdit.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneCanvasTools.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneChrome.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneColorAt.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneGestureDispatcher.ts",
+  "packages/core/src/canvas/SceneCanvas/useScenePickers.ts",
+  "packages/core/src/canvas/SceneCanvas/useScenePicking.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneRedrawSources.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneSlotLayers.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneStandardActions.ts",
+  "packages/core/src/canvas/SceneCanvas/useSceneWorkerSurface.ts",
+  "packages/core/src/canvas/SceneCanvas/useSelectionOverlayLayer.ts",
+  "packages/core/src/canvas/SceneCanvas/useSurfaceRouting.ts",
+  "packages/core/src/canvas/SceneCanvas/useSurfaceViewInputs.ts",
+  "packages/core/src/canvas/SceneCanvas/useToolKeybindings.ts",
+  "packages/core/src/canvas/SceneCanvas/useViewportActions.ts",
+  "packages/core/src/canvas/SceneCanvas/useViewportWithoutView.ts",
+  "packages/core/src/canvas/SceneCanvas/viewportProp.ts",
+  "packages/core/src/canvas/SceneCanvas/workerProps.ts",
+  "packages/core/src/canvas/SceneCanvas/worldPointAt.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1592054,
+   "minutes": 1.68775,
+   "at": "2026-11-25T07:46:08.924Z",
+   "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.4850553999999998,
+   "minutes": 4.270066666666667,
+   "at": "2026-11-25T07:50:29.573Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.2576196000000002,
+   "minutes": 2.6774666666666667,
+   "at": "2026-11-25T07:53:10.300Z",
+   "findings": 4
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.1878542,
+   "minutes": 2.33075,
+   "at": "2026-11-25T07:55:30.219Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.6564608000000002,
+   "minutes": 2.8298833333333335,
+   "at": "2026-11-25T07:58:20.091Z",
+   "findings": 4
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.5819172,
+   "minutes": 2.3970666666666665,
+   "at": "2026-11-25T08:00:43.992Z",
+   "findings": 5
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.5133438,
+   "minutes": 3.1315333333333335,
+   "at": "2026-11-25T08:03:51.946Z",
+   "findings": 5
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.7162726000000001,
+   "minutes": 4.022433333333334,
+   "at": "2026-11-25T08:07:53.356Z",
+   "findings": 6
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.4061234,
+   "minutes": 2.96735,
+   "at": "2026-11-25T08:10:51.464Z",
+   "findings": 1
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.7221118,
+   "minutes": 3.5212833333333333,
+   "at": "2026-11-25T08:14:22.809Z",
+   "findings": 3
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.7045281999999999,
+   "minutes": 2.2495166666666666,
+   "at": "2026-11-25T08:16:37.845Z",
+   "findings": 3
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 1.1230058,
+   "minutes": 2.2746166666666667,
+   "at": "2026-11-25T08:18:54.400Z",
+   "findings": 4
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.3133878,
+   "minutes": 2.8166,
+   "at": "2026-11-25T08:21:43.461Z",
+   "findings": 4
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 1.2174041999999998,
+   "minutes": 2.63495,
+   "at": "2026-11-25T08:24:21.624Z",
+   "findings": 4
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 1.1965240000000001,
+   "minutes": 2.3588,
+   "at": "2026-11-25T08:26:43.222Z",
+   "findings": 5
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 1.2857724,
+   "minutes": 2.7270833333333333,
+   "at": "2026-11-25T08:29:26.916Z",
+   "findings": 1
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 1.0675535999999999,
+   "minutes": 3.209,
+   "at": "2026-11-25T08:32:39.520Z",
+   "findings": 4
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.7321744,
+   "minutes": 2.464,
+   "at": "2026-11-25T08:35:07.425Z",
+   "findings": 2
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 0.6940326,
+   "minutes": 2.5230166666666665,
+   "at": "2026-11-25T08:37:38.870Z",
+   "findings": 4
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 0.9275694,
+   "minutes": 3.0491166666666665,
+   "at": "2026-11-25T08:40:41.883Z",
+   "findings": 4
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 0.7865678,
+   "minutes": 2.3777500000000003,
+   "at": "2026-11-25T08:43:04.614Z",
+   "findings": 5
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.9992024,
+   "minutes": 3.32505,
+   "at": "2026-11-25T08:46:24.178Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A dropped or rounded-away animation proposal under a controlled camera leaves the write flag set, so the next outside camera update fails to interrupt the animation",
+   "where": "packages/core/src/canvas/SceneCanvas/useCanvasCamera.ts:64",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Edge-pan bounds clamp with ancestor-scaled client dimensions in place of layout dimensions, so the world span is wrong under a CSS transform",
+   "where": "packages/core/src/canvas/SceneCanvas/useEdgePan.ts:99",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "The finiteness guard sums pick-box fields, so a finite box near 1e308 overflows to infinity and is rejected (bounds return null)",
+   "where": "packages/core/src/canvas/SceneCanvas/useScenePickers.ts:214",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Departure ghosts fold an envelope parent's own pose into its children's world transform, which the scene's composition skips, so ghosts draw at the wrong place",
+   "where": "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts:94 (draw) and :72 (compose)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    18,
+    20,
+    22
+   ],
+   "sources": {
+    "claude": [
+     2,
+     18,
+     20,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A preset's own tool named in defaultTools bypasses the 'inserts nothing' check",
+   "where": "packages/core/src/canvas/SceneCanvas/toolRegistry.ts:51-57 (resolveToolRegistry)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    6,
+    7,
+    8,
+    10,
+    12,
+    13,
+    15,
+    19
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     6,
+     7,
+     8,
+     10,
+     12,
+     13,
+     15,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "On scene swap, the selection seed uses the `initial` captured at mount rather than the current prop",
+   "where": "packages/core/src/canvas/SceneCanvas/useCanvasSelection.ts:53-62 (useSeed)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    12,
+    13,
+    14,
+    15,
+    17,
+    18,
+    20,
+    21,
+    22
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     12,
+     13,
+     14,
+     15,
+     17,
+     18,
+     20,
+     21,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A tool's `extendClickLocked` set to `undefined` in `selectTool` erases the kit's path-edit lock",
+   "where": "packages/core/src/canvas/SceneCanvas/useSceneCanvasPathEdit.ts:35-40 (selectToolWithDefaults)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    6
+   ],
+   "sources": {
+    "claude": [
+     3,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "The handle `addView` returns keeps drawing its id after a re-add has replaced its props",
+   "where": "packages/core/src/canvas/SceneCanvas/useSceneCanvasHandle.ts:18-26 (addView)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    13
+   ],
+   "sources": {
+    "claude": [
+     3,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "useViewportWithoutView warns that navigation \"does nothing\" when `viewport` only switches navigation off",
+   "where": "packages/core/src/canvas/SceneCanvas/useViewportWithoutView.ts:11 (useViewportWithoutView)",
+   "severity": "",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    9,
+    11,
+    14,
+    17,
+    19,
+    21
+   ],
+   "sources": {
+    "claude": [
+     4,
+     9,
+     11,
+     14,
+     17,
+     19,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "A full actions[slot] descriptor whose id differs from its slot registers under entry.id, so the resolver sees itself as stale on every registry change",
+   "where": "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts:113 (applyActionsProp), :85 (isStale)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    12,
+    14,
+    21
+   ],
+   "sources": {
+    "claude": [
+     5,
+     12,
+     14,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "routing={[]} silently turns off double-click naming, so a double-click on a grouped member names the member instead of its outermost group",
+   "where": "packages/core/src/canvas/SceneCanvas/useScenePicking.ts:112 (doubleClickNames)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "useContentBounds's cached committed box is not invalidated when the adapter (and so committedPoseOf) changes",
+   "where": "packages/core/src/canvas/SceneCanvas/useContentBounds.ts:57 (returned callback)",
+   "severity": "",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "The defaultActiveTool doc says it is ignored under any consumer `tools` prop, but only the takeover form ignores it",
+   "where": "packages/core/src/canvas/SceneCanvas/toolProps.ts:55-59 (SceneCanvasToolProps.defaultActiveTool)",
+   "severity": "",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    7,
+    12
+   ],
+   "sources": {
+    "claude": [
+     6,
+     7,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A press routed to a view id the registry does not hold loses lod-aware and pixel picking, even though it uses the surface's camera",
+   "where": "packages/core/src/canvas/SceneCanvas/useScenePickers.ts:288-291 (askedBy) with :365-370 (askedOwnView)",
+   "severity": "",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "Muting the marker-drag action for a given id still leaves that view's markers claiming presses",
+   "where": "packages/core/src/canvas/SceneCanvas/useCanvasTools.ts:130 (useCanvasTools, markerDrag) with useSceneGestureDispatcher.ts:200 (useMarkerGate)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "Departure ghosts of a removed scrolling container's children leave out the container's scroll offset, so they draw in the wrong place",
+   "where": "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts:80 (draw, child pose)",
+   "severity": "",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    19,
+    20,
+    22
+   ],
+   "sources": {
+    "claude": [
+     7,
+     19,
+     20,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "SceneCanvas never passes a style to its dispatcher-overlay layer, so DispatcherOverlayStyle (including roles) cannot reach the marquee/lasso/polyline paint",
+   "where": "packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts:131 (useSceneCanvasLayers), :182",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    15,
+    17,
+    20
+   ],
+   "sources": {
+    "claude": [
+     8,
+     15,
+     17,
+     20
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "An overlay style field passed as undefined erases the default instead of falling back to it",
+   "where": "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts:85 (draw)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "Re-registering the standard actions under the same ids leaves a configured pinch zoom buried under the kit default",
+   "where": "packages/core/src/canvas/SceneCanvas/useSceneStandardActions.ts:150 (useSceneStandardActions → useViewportActions rev)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    15,
+    16
+   ],
+   "sources": {
+    "claude": [
+     8,
+     15,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "A removed node inside a container that draws copies leaves only one departure ghost, where the preview ghost draws one per copy",
+   "where": "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts:93 (draw)",
+   "severity": "",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    22
+   ],
+   "sources": {
+    "claude": [
+     8,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "The actions prop's warn-once warnings repeat on every render when actions is an inline literal",
+   "where": "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts:39 (useActionsPropResolver)",
+   "severity": "",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A selectionOverlay slot with outline.follow 'shape' and poseById puts chrome on the stroke even with boundsIncludeStroke false",
+   "where": "packages/core/src/canvas/SceneCanvas/useSelectionOverlayLayer.ts:55 (useSelectionOverlayLayer)",
+   "severity": "",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "defaultActiveTool under a ToolsApi takeover throws instead of being ignored",
+   "where": "packages/core/src/canvas/SceneCanvas/useCanvasTools.ts:121 (useCanvasTools)",
+   "severity": "",
+   "firstOccasion": 11,
+   "sightings": [
+    11,
+    21
+   ],
+   "sources": {
+    "claude": [
+     11,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "resolveToolRegistry repeats its patch warnings on every render",
+   "where": "packages/core/src/canvas/SceneCanvas/toolRegistry.ts:73 and :78 (resolveToolRegistry)",
+   "severity": "",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "actions={null} mutes the presets' own actions, though the resolver says it leaves them, and only until they re-register",
+   "where": "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts:105 (applyActionsProp), with useSceneStandardActions.ts:150,207",
+   "severity": "",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "The preview ghost paints a node whose hidden container is still in the scene, where the departure ghost leaves that case out",
+   "where": "packages/core/src/canvas/SceneCanvas/usePreviewGhostLayer.ts:88 (drawEntry / roots loop)",
+   "severity": "",
+   "firstOccasion": 14,
+   "sightings": [
+    14,
+    15
+   ],
+   "sources": {
+    "claude": [
+     14,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "Departure and preview ghosts paint nodes on layers that layerVisibility / layerOrder hide",
+   "where": "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts:57 (draw), packages/core/src/canvas/SceneCanvas/usePreviewGhostLayer.ts:84 (draw)",
+   "severity": "",
+   "firstOccasion": 17,
+   "sightings": [
+    17,
+    19
+   ],
+   "sources": {
+    "claude": [
+     17,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D28",
+   "claim": "A custom selectionOverlay layer entry loses its before/after anchors, unlike pathEditingOverlay",
+   "where": "packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts:176 (layers memo) with useSelectionOverlayLayer.ts:53",
+   "severity": "",
+   "firstOccasion": 20,
+   "sightings": [
+    20,
+    21
+   ],
+   "sources": {
+    "claude": [
+     20,
+     21
+    ]
+   }
+  }
+ ]
+}

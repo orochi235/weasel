@@ -1,0 +1,71 @@
+{
+ "area": "diagram.part4",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/reconnect.ts",
+  "packages/diagram/src/regionEditing.ts",
+  "packages/diagram/src/regionSync.ts",
+  "packages/diagram/src/releaseOnUnmount.ts",
+  "packages/diagram/src/rendererMeasure.ts",
+  "packages/diagram/src/reorder.ts",
+  "packages/diagram/src/reorderModel.ts",
+  "packages/diagram/src/reorderSlide.ts",
+  "packages/diagram/src/resizable.ts",
+  "packages/diagram/src/route.ts",
+  "packages/diagram/src/routeCommands.ts",
+  "packages/diagram/src/routeSnapSource.ts",
+  "packages/diagram/src/routeWrites.ts",
+  "packages/diagram/src/routerCommands.ts",
+  "packages/diagram/src/routers.ts",
+  "packages/diagram/src/rowMeasure.ts",
+  "packages/diagram/src/rowStyle.ts",
+  "packages/diagram/src/sceneSync.ts",
+  "packages/diagram/src/selfLoop.ts",
+  "packages/diagram/src/shape.ts",
+  "packages/diagram/src/specWorld.ts",
+  "packages/diagram/src/stencil.ts",
+  "packages/diagram/src/stencilTool.ts",
+  "packages/diagram/src/subpaths.ts",
+  "packages/diagram/src/testing/dataClusters.ts",
+  "packages/diagram/src/trait.ts",
+  "packages/diagram/src/tree.ts",
+  "packages/diagram/src/types.ts",
+  "packages/diagram/src/unknownRefs.ts",
+  "packages/diagram/src/useFaceRemeasure.ts",
+  "packages/diagram/src/usePagesView.ts",
+  "packages/diagram/src/waypointAction.ts",
+  "packages/diagram/src/waypointFollower.ts",
+  "packages/diagram/src/waypointLayer.ts",
+  "packages/diagram/src/waypoints.ts",
+  "packages/diagram/src/worldWith.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1589784,
+   "minutes": 0.11503333333333333,
+   "at": "2026-11-25T21:16:35.457Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A locked connector keeps its old route but is still added to the ownership set, so its layout-positioned label takes the point from the rejected route and can move off the old connector",
+   "where": "packages/diagram/src/routeWrites.ts:60",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

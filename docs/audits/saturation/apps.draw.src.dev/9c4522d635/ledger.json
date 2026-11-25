@@ -1,0 +1,91 @@
+{
+ "area": "apps.draw.src.dev",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/draw/src/dev/AssetsPage.module.css",
+  "apps/draw/src/dev/AssetsPage.tsx",
+  "apps/draw/src/dev/DevShell.tsx",
+  "apps/draw/src/dev/DevtoolsSidebarPanel.module.css",
+  "apps/draw/src/dev/DevtoolsSidebarPanel.tsx",
+  "apps/draw/src/dev/RegistryDetail.tsx",
+  "apps/draw/src/dev/RegistryInspector.module.css",
+  "apps/draw/src/dev/RegistryInspector.tsx",
+  "apps/draw/src/dev/SchemaTable.tsx",
+  "apps/draw/src/dev/ToolkitBuilder.module.css",
+  "apps/draw/src/dev/ToolkitBuilder.tsx",
+  "apps/draw/src/dev/badgeTokens.ts",
+  "apps/draw/src/dev/detail/BundleDetail.tsx",
+  "apps/draw/src/dev/detail/ExportsDetail.tsx",
+  "apps/draw/src/dev/detail/GestureDetail.tsx",
+  "apps/draw/src/dev/detail/IconDetail.tsx",
+  "apps/draw/src/dev/detail/KindDetail.tsx",
+  "apps/draw/src/dev/detail/MetaDetail.tsx",
+  "apps/draw/src/dev/detail/OpDetail.tsx",
+  "apps/draw/src/dev/detail/RouteBadge.tsx",
+  "apps/draw/src/dev/detail/SlotDetail.tsx",
+  "apps/draw/src/dev/detail/shared.tsx",
+  "apps/draw/src/dev/detail/sourceLinks.tsx",
+  "apps/draw/src/dev/devRoutes.ts",
+  "apps/draw/src/dev/drawAssetSet.ts",
+  "apps/draw/src/dev/drawPresets.ts",
+  "apps/draw/src/dev/registryData.ts",
+  "apps/draw/src/dev/registryEntries.ts",
+  "apps/draw/src/dev/registryProbe.tsx",
+  "apps/draw/src/dev/resolutionInput.ts",
+  "apps/draw/src/dev/sourceIndex.types.ts",
+  "apps/draw/src/dev/sourceLookup.ts",
+  "apps/draw/src/dev/toolkit/ActionsWidget.tsx",
+  "apps/draw/src/dev/toolkit/ConflictsWidget.tsx",
+  "apps/draw/src/dev/toolkit/DispatchTraceWidget.tsx",
+  "apps/draw/src/dev/toolkit/ResolutionWidget.tsx",
+  "apps/draw/src/dev/toolkit/RoutesWidget.tsx",
+  "apps/draw/src/dev/toolkit/ToolsWidget.tsx",
+  "apps/draw/src/dev/toolkit/gridCells.tsx",
+  "apps/draw/src/dev/toolkit/useToolReflection.ts",
+  "apps/draw/src/dev/traitSchemas.types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1637784,
+   "minutes": 0.10931666666666667,
+   "at": "2026-11-25T21:12:16.688Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Resolution widget cannot simulate middle-button drag bindings: synthesized pointerdown omits pointerButton, which the matcher defaults to primary",
+   "where": "apps/draw/src/dev/resolutionInput.ts:111",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Source links put the raw checkout path after vscode://file/ unescaped, so a path containing '#' or other URL delimiters is truncated; callback links share the construction",
+   "where": "apps/draw/src/dev/detail/sourceLinks.tsx:74",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

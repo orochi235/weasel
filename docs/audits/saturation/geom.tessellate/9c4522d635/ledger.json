@@ -1,0 +1,61 @@
+{
+ "area": "geom.tessellate",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/geom/src/tessellate/anchorParams.ts",
+  "packages/geom/src/tessellate/atCurve.ts",
+  "packages/geom/src/tessellate/crossings.ts",
+  "packages/geom/src/tessellate/evenOdd.ts",
+  "packages/geom/src/tessellate/index.ts",
+  "packages/geom/src/tessellate/mesh.ts",
+  "packages/geom/src/tessellate/nesting.ts",
+  "packages/geom/src/tessellate/polyline.ts",
+  "packages/geom/src/tessellate/sweep.ts",
+  "packages/geom/src/tessellate/tessellate.ts",
+  "packages/geom/src/tessellate/trim.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1657984,
+   "minutes": 0.13001666666666667,
+   "at": "2026-11-25T21:18:57.030Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Trim snaps a correctly computed cut to the next vertex because its Float32 tolerance scales with world coordinates, so a translated polyline loses a real visible span",
+   "where": "packages/geom/src/tessellate/trim.ts:50",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A contact/weld tolerance scaled by absolute coordinate magnitude collapses a thin translated polygon's extent, so it produces zero fill triangles",
+   "where": "packages/geom/src/tessellate/crossings.ts:167",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,62 @@
+{
+ "area": "guides.grid",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/guides/src/grid/axes.ts",
+  "packages/guides/src/grid/cellHighlight.ts",
+  "packages/guides/src/grid/fit.ts",
+  "packages/guides/src/grid/index.ts",
+  "packages/guides/src/grid/lattice.ts",
+  "packages/guides/src/grid/layer.ts",
+  "packages/guides/src/grid/pointToGridCell.ts",
+  "packages/guides/src/grid/preset.ts",
+  "packages/guides/src/grid/reading.ts",
+  "packages/guides/src/grid/regions.ts",
+  "packages/guides/src/grid/roundToCell.ts",
+  "packages/guides/src/grid/useGridCellHover.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1634434,
+   "minutes": 0.12168333333333334,
+   "at": "2026-11-25T21:19:10.129Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Even-odd clip built from parent and all child outlines re-exposes the root grid where two child regions overlap",
+   "where": "packages/guides/src/grid/layer.ts:140",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "cellOf does not check for a safe-integer index or distinct edges, so it returns a zero-width numbered cell at large coordinates",
+   "where": "packages/guides/src/grid/axes.ts:148 (cellOf)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

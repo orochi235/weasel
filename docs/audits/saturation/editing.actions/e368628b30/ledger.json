@@ -1,0 +1,85 @@
+{
+ "area": "editing.actions",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/editing/src/actions/align/action.tsx",
+  "packages/editing/src/actions/align/align.ts",
+  "packages/editing/src/actions/align/index.ts",
+  "packages/editing/src/actions/clipboard/action.ts",
+  "packages/editing/src/actions/clone/action.ts",
+  "packages/editing/src/actions/clone/behaviors.ts",
+  "packages/editing/src/actions/delete/delete.ts",
+  "packages/editing/src/actions/derivedBox.ts",
+  "packages/editing/src/actions/distribute/action.tsx",
+  "packages/editing/src/actions/distribute/distribute.ts",
+  "packages/editing/src/actions/distribute/index.ts",
+  "packages/editing/src/actions/distribute/plan.ts",
+  "packages/editing/src/actions/flip/action.ts",
+  "packages/editing/src/actions/flip/helpers.ts",
+  "packages/editing/src/actions/group/enterGroup.ts",
+  "packages/editing/src/actions/lassoSelect/action.ts",
+  "packages/editing/src/actions/lassoSelect/behaviors/selectFromLasso.ts",
+  "packages/editing/src/actions/lassoSelect/index.ts",
+  "packages/editing/src/actions/lassoSelect/options.ts",
+  "packages/editing/src/actions/lockedWrites.ts",
+  "packages/editing/src/actions/pathfinder/action.tsx",
+  "packages/editing/src/actions/pathfinder/booleanGroupAction.ts",
+  "packages/editing/src/actions/pathfinder/keymap.ts",
+  "packages/editing/src/actions/reorder/reorder.ts",
+  "packages/editing/src/actions/rotate/action.ts",
+  "packages/editing/src/actions/rotate/commit.ts",
+  "packages/editing/src/actions/rotate/frame.ts",
+  "packages/editing/src/actions/rotate/replay.ts",
+  "packages/editing/src/actions/rotate/session.ts",
+  "packages/editing/src/actions/select/areaSelect.ts",
+  "packages/editing/src/actions/select/clearSelection.ts",
+  "packages/editing/src/actions/swap/action.ts",
+  "packages/editing/src/actions/swap/swapOps.ts",
+  "packages/editing/src/actions/transformAgain/action.ts",
+  "packages/editing/src/actions/transformAgain/transformSelection.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1629934,
+   "minutes": 0.11766666666666667,
+   "at": "2026-11-25T21:17:03.726Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Cut commits the deletion with no check that the copy succeeded, losing the selection when snapshotSelection is missing or copy returns no items",
+   "where": "packages/editing/src/actions/clipboard/action.ts:60 (cut)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Marquee finalization tests the rectangle from the last move sample, ignoring the onEnd world point, so objects covered only at release are omitted",
+   "where": "packages/editing/src/actions/select/areaSelect.ts:90",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

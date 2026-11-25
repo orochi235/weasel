@@ -1,0 +1,78 @@
+{
+ "area": "core.core",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/core/adapters/testing/rootsTree.ts",
+  "packages/core/src/core/adapters/types.ts",
+  "packages/core/src/core/applyOps.ts",
+  "packages/core/src/core/device/index.ts",
+  "packages/core/src/core/device/targets.ts",
+  "packages/core/src/core/device/types.ts",
+  "packages/core/src/core/device/useDeviceProfile.ts",
+  "packages/core/src/core/device/useTargetBasePx.ts",
+  "packages/core/src/core/device/watchDevicePixelRatio.ts",
+  "packages/core/src/core/isPlainObject.ts",
+  "packages/core/src/core/modifierState.ts",
+  "packages/core/src/core/pbt.fixture.ts",
+  "packages/core/src/core/persistence/codec.ts",
+  "packages/core/src/core/persistence/pbt.fixture.ts",
+  "packages/core/src/core/persistence/sceneDocument.ts",
+  "packages/core/src/core/selection/chromeState.ts",
+  "packages/core/src/core/selection/legalSelection.ts",
+  "packages/core/src/core/selection/readOnlySelection.ts",
+  "packages/core/src/core/selection/selectionContract.ts",
+  "packages/core/src/core/selection/selectionTarget.ts",
+  "packages/core/src/core/selection/usePublishSceneSelection.ts",
+  "packages/core/src/core/selection/viewerSelection.ts",
+  "packages/core/src/core/shapeKinds.ts",
+  "packages/core/src/core/stableStringify.ts",
+  "packages/core/src/core/stream/streamScene.ts",
+  "packages/core/src/core/stream/useSceneStream.ts",
+  "packages/core/src/core/stylus/stylus.ts",
+  "packages/core/src/core/stylus/usePointerStylus.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16407839999999999,
+   "minutes": 0.12233333333333334,
+   "at": "2026-11-25T21:14:03.251Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A failed cell load leaves nodes inserted earlier in the cell outside stream ownership, so they are never released and a retry skips them",
+   "where": "packages/core/src/core/stream/streamScene.ts:91",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Stylus hover remains active after the hovered target is replaced, because cleanup does not reset hovering state",
+   "where": "packages/core/src/core/stylus/usePointerStylus.ts:62",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

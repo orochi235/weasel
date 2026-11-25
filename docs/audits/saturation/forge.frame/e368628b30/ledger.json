@@ -1,0 +1,99 @@
+{
+ "area": "forge.frame",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/forge/src/frame/FrameController.tsx",
+  "packages/forge/src/frame/StoryHost.tsx",
+  "packages/forge/src/frame/a11y.ts",
+  "packages/forge/src/frame/a11yContrast.ts",
+  "packages/forge/src/frame/a11yHighlight.ts",
+  "packages/forge/src/frame/capture/CaptureView.tsx",
+  "packages/forge/src/frame/capture/capture.css",
+  "packages/forge/src/frame/capture/mountCapture.tsx",
+  "packages/forge/src/frame/cssVarUse.ts",
+  "packages/forge/src/frame/cssVars.ts",
+  "packages/forge/src/frame/cssVarsWatch.ts",
+  "packages/forge/src/frame/documentScroll.ts",
+  "packages/forge/src/frame/fault.ts",
+  "packages/forge/src/frame/frame.css",
+  "packages/forge/src/frame/frameDecorators.tsx",
+  "packages/forge/src/frame/frameServices.ts",
+  "packages/forge/src/frame/globalsTarget.ts",
+  "packages/forge/src/frame/index.ts",
+  "packages/forge/src/frame/index/Description.tsx",
+  "packages/forge/src/frame/index/IndexApi.tsx",
+  "packages/forge/src/frame/index/IndexPage.tsx",
+  "packages/forge/src/frame/index/LabBadge.tsx",
+  "packages/forge/src/frame/index/LibraryBadge.tsx",
+  "packages/forge/src/frame/index/TypeText.tsx",
+  "packages/forge/src/frame/index/api.css",
+  "packages/forge/src/frame/index/envContext.ts",
+  "packages/forge/src/frame/index/index.css",
+  "packages/forge/src/frame/index/indexEnv.ts",
+  "packages/forge/src/frame/index/startIndex.tsx",
+  "packages/forge/src/frame/index/useFullscreenFit.ts",
+  "packages/forge/src/frame/index/variants.ts",
+  "packages/forge/src/frame/mountFrame.tsx",
+  "packages/forge/src/frame/safeOverride.ts",
+  "packages/forge/src/frame/storySession.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1693834,
+   "minutes": 0.1727,
+   "at": "2026-11-25T21:18:01.855Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A synchronously throwing importer in the eager preload makes mountFrame reject before saying hello or reporting the import fault to the parent",
+   "where": "packages/forge/src/frame/mountFrame.tsx:80 (mountFrame)",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "answeredKey is set before answerSchema runs, so a transient predicate throw suppresses schema answers for later inputs with the same config",
+   "where": "packages/forge/src/frame/storySession.tsx:90",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "CSS var usage scan never visits nested rules, so var() references in nested declarations targeting story descendants are omitted from the used-variable filter",
+   "where": "packages/forge/src/frame/cssVarUse.ts:62",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

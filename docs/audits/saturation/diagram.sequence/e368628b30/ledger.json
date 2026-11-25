@@ -1,0 +1,74 @@
+{
+ "area": "diagram.sequence",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/diagram/src/sequence/actions.ts",
+  "packages/diagram/src/sequence/author.ts",
+  "packages/diagram/src/sequence/authorActions.ts",
+  "packages/diagram/src/sequence/authorDrags.ts",
+  "packages/diagram/src/sequence/authorParams.ts",
+  "packages/diagram/src/sequence/authorPlace.ts",
+  "packages/diagram/src/sequence/authorSteps.ts",
+  "packages/diagram/src/sequence/columns.ts",
+  "packages/diagram/src/sequence/commit.ts",
+  "packages/diagram/src/sequence/edit.ts",
+  "packages/diagram/src/sequence/fixture.ts",
+  "packages/diagram/src/sequence/index.ts",
+  "packages/diagram/src/sequence/layer.ts",
+  "packages/diagram/src/sequence/layout.ts",
+  "packages/diagram/src/sequence/metrics.ts",
+  "packages/diagram/src/sequence/rows.ts",
+  "packages/diagram/src/sequence/select.ts",
+  "packages/diagram/src/sequence/selected.ts",
+  "packages/diagram/src/sequence/specs.ts",
+  "packages/diagram/src/sequence/textEdit.ts",
+  "packages/diagram/src/sequence/toolOptions.ts",
+  "packages/diagram/src/sequence/tools.ts",
+  "packages/diagram/src/sequence/trait.ts",
+  "packages/diagram/src/sequence/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1629684,
+   "minutes": 0.15948333333333334,
+   "at": "2026-11-25T21:16:48.591Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Adding a box that regroups participants leaves a surviving box with non-contiguous members, so its span straddles the new box's columns",
+   "where": "packages/diagram/src/sequence/author.ts:103",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Inserting a fragment checks only the outer fragment ID, so nested descendants can reuse existing IDs",
+   "where": "packages/diagram/src/sequence/authorSteps.ts:54",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -1,0 +1,55 @@
+{
+ "area": "apps.theme-editor",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/theme-editor/icons/index.mjs",
+  "apps/theme-editor/scripts/brand-colors.d.mts",
+  "apps/theme-editor/scripts/brand-colors.mjs",
+  "apps/theme-editor/scripts/gen-brand-colors.mjs",
+  "apps/theme-editor/vite.config.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16314839999999997,
+   "minutes": 0.10503333333333334,
+   "at": "2026-11-25T21:13:17.707Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "LEGO RGB parser checks the fields are digits but not their 0–255 range, so it emits an invalid hex color such as #3e72850",
+   "where": "apps/theme-editor/scripts/brand-colors.mjs:69",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Outputs are written one after another with no atomicity, so a failed Copic write leaves the LEGO table already replaced and the outputs at different revisions",
+   "where": "apps/theme-editor/scripts/gen-brand-colors.mjs:35",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

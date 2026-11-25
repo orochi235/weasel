@@ -1,0 +1,58 @@
+{
+ "area": "guides",
+ "commit": "e368628b3040756c18b348d5f430643e730b71cb",
+ "files": [
+  "packages/guides/src/index.ts",
+  "packages/guides/src/pbt.fixture.ts",
+  "packages/guides/src/rulers/actions.ts",
+  "packages/guides/src/rulers/createRulers.ts",
+  "packages/guides/src/rulers/hit.ts",
+  "packages/guides/src/rulers/index.ts",
+  "packages/guides/src/rulers/layout.ts",
+  "packages/guides/src/rulers/reading.ts",
+  "packages/guides/src/rulers/settings.ts",
+  "packages/guides/src/rulers/ticks.ts",
+  "packages/guides/src/sources/alignment.ts",
+  "packages/guides/src/sources/grid.ts",
+  "packages/guides/src/sources/guides.ts",
+  "packages/guides/src/sources/index.ts",
+  "packages/guides/src/sources/lines.ts",
+  "packages/guides/src/sources/spacing.ts",
+  "packages/guides/src/sources/targets.ts",
+  "packages/guides/src/sources/testing/session.ts",
+  "packages/guides/src/spacingHints/distance.ts",
+  "packages/guides/src/spacingHints/distanceReadout.ts",
+  "packages/guides/src/spacingHints/index.ts",
+  "packages/guides/src/spacingHints/preset.ts",
+  "packages/guides/src/strategies/onPlane.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.15924839999999998,
+   "minutes": 0.08538333333333334,
+   "at": "2026-11-25T21:19:05.708Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Containment branch draws both gaps at the inner box's cross-axis midpoint, so marker endpoints can fall outside the outer box they measure to",
+   "where": "packages/guides/src/spacingHints/distance.ts:65 (containment branch)",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

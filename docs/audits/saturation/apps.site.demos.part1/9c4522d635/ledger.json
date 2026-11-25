@@ -1,0 +1,83 @@
+{
+ "area": "apps.site.demos.part1",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "apps/site/demos/AddExtremesLabDemo.tsx",
+  "apps/site/demos/AlignDemo.tsx",
+  "apps/site/demos/AlignmentGuidesDemo.tsx",
+  "apps/site/demos/AnchorFieldsLabDemo.tsx",
+  "apps/site/demos/AnchorSelectLabDemo.tsx",
+  "apps/site/demos/AnimationDemo.module.css",
+  "apps/site/demos/AnimationDemo.tsx",
+  "apps/site/demos/AnimatorDemo.module.css",
+  "apps/site/demos/AnimatorDemo.tsx",
+  "apps/site/demos/AnnotationCaptureDemo.tsx",
+  "apps/site/demos/AudioDemo.tsx",
+  "apps/site/demos/AutoControlsDemo.tsx",
+  "apps/site/demos/BendAlongLabDemo.tsx",
+  "apps/site/demos/BidiDemo.module.css",
+  "apps/site/demos/BidiDemo.tsx",
+  "apps/site/demos/BooleanOpsDemo.tsx",
+  "apps/site/demos/BridgeLabDemo.tsx",
+  "apps/site/demos/CanvasViewDemo.module.css",
+  "apps/site/demos/CanvasViewDemo.tsx",
+  "apps/site/demos/ClipDemo.module.css",
+  "apps/site/demos/ClipDemo.tsx",
+  "apps/site/demos/ClockDemo.module.css",
+  "apps/site/demos/ClockDemo.tsx",
+  "apps/site/demos/ClothWarpLabDemo.tsx",
+  "apps/site/demos/ColorMatrixDemo.module.css",
+  "apps/site/demos/ColorMatrixDemo.tsx",
+  "apps/site/demos/CompoundPathsDemo.module.css",
+  "apps/site/demos/CompoundPathsDemo.tsx",
+  "apps/site/demos/ContextMenuDemo.tsx",
+  "apps/site/demos/CursorDemo.module.css",
+  "apps/site/demos/CursorDemo.tsx",
+  "apps/site/demos/CurvatureCombLabDemo.tsx",
+  "apps/site/demos/CurveLabDemo.tsx",
+  "apps/site/demos/CustomShaderDemo.module.css",
+  "apps/site/demos/CustomShaderDemo.tsx",
+  "apps/site/demos/D3SortableDemo.tsx",
+  "apps/site/demos/DebugOverlayDemo.tsx",
+  "apps/site/demos/DemoStage.tsx",
+  "apps/site/demos/DevtoolsDemo.module.css",
+  "apps/site/demos/DevtoolsDemo.tsx",
+  "apps/site/demos/DiagramClustersDemo.tsx",
+  "apps/site/demos/DiagramDataDemo.tsx",
+  "apps/site/demos/DiagramDrawOnDemo.tsx",
+  "apps/site/demos/DiagramDropDemo.module.css",
+  "apps/site/demos/DiagramDropDemo.tsx",
+  "apps/site/demos/DiagramEdgesDemo.tsx",
+  "apps/site/demos/DiagramElkDemo.tsx",
+  "apps/site/demos/DiagramLayoutDemo.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1599934,
+   "minutes": 0.09443333333333333,
+   "at": "2026-11-25T21:12:46.746Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Debug snapshot mixes frames: the camera is captured at click time, but the live debug arrays and the scene are read after the renderer's async warm-up, so the image shows new geometry under the old camera",
+   "where": "apps/site/demos/DebugOverlayDemo.tsx:78",
+   "severity": "low",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

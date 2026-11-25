@@ -1,0 +1,60 @@
+## A departing container's children are composed onto its own pose even when it does not define a frame, so an envelope group's children ghost at a doubled offset
+- where: packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts:76 (useDepartureGhostLayer, inner `draw`)
+- scenario: a removal's root is placed with `composeChildFrame(frames, parent, compose)`, which goes through `childFrameAt` and so respects `definesFrame` (an envelope, `dependsOn: 'children'` + `derivePose`, gives its children no frame: they are stored in the envelope's parent's frame) and `adapter.childFrame` (the scroll offset `viewPoseAdapter` adds). The recursion over `r.children` instead does `compose(pose, c.pose)` with the container's own world pose, unconditionally. Delete a group whose pose derives from its members, under `poseTransition` with `exit`: each member's stored pose is already in the group's parent frame, gets composed with the group's pose again, and the ghosts glide out offset by the group's position (and rotated/scaled by its transform). A removed scrolling container's children likewise ghost without its scroll offset. Should compose children through the same child-frame rule (`definesFrame(r.node) ? childFrame(...) : parent frame`) the root placement uses.
+- evidence: read (composeFrame.ts `childFrameAt`, effectivePose.ts `definesFrame`/`isEnvelope`, poseWrites.ts `RemovedNode.pose` "in its stored frame")
+- severity: medium
+
+## A swapped scene is seeded with the first render's `selectionOptions.initial`, not the current one
+- where: packages/core/src/canvas/SceneCanvas/useCanvasSelection.ts:53 (useSeed)
+- scenario: `first = useRef(initial)` is captured once, but the effect re-seeds "once per scene" on every scene change. A consumer that swaps `scene` (e.g. opening another document) and passes a new `selectionOptions.initial` for it gets the first document's ids written into the new empty scene's selection (or nothing, if the first had none), while the new `initial` is ignored. Should read the latest `initial` when a new scene arrives.
+- evidence: read
+- severity: low
+
+## Files read
+packages/core/src/canvas/SceneCanvas/toolProps.ts
+packages/core/src/canvas/SceneCanvas/toolRegistry.ts
+packages/core/src/canvas/SceneCanvas/useActionTunings.ts
+packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts
+packages/core/src/canvas/SceneCanvas/useBakedScene.ts
+packages/core/src/canvas/SceneCanvas/useBestHit.ts
+packages/core/src/canvas/SceneCanvas/useBuiltinTools.ts
+packages/core/src/canvas/SceneCanvas/useCanvasCamera.ts
+packages/core/src/canvas/SceneCanvas/useCanvasDispatcher.ts
+packages/core/src/canvas/SceneCanvas/useCanvasSelection.ts
+packages/core/src/canvas/SceneCanvas/useCanvasTools.ts
+packages/core/src/canvas/SceneCanvas/useChromeAffordances.ts
+packages/core/src/canvas/SceneCanvas/useContentBounds.ts
+packages/core/src/canvas/SceneCanvas/useContributionRoles.ts
+packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts
+packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts
+packages/core/src/canvas/SceneCanvas/useEdgePan.ts
+packages/core/src/canvas/SceneCanvas/useHeldModifiers.ts
+packages/core/src/canvas/SceneCanvas/useIgnoredProps.ts
+packages/core/src/canvas/SceneCanvas/useMagnificationCheck.ts
+packages/core/src/canvas/SceneCanvas/useNodeKinds.ts
+packages/core/src/canvas/SceneCanvas/usePresetTraits.ts
+packages/core/src/canvas/SceneCanvas/usePreviewGhostLayer.ts
+packages/core/src/canvas/SceneCanvas/useSceneCanvasHandle.ts
+packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts
+packages/core/src/canvas/SceneCanvas/useSceneCanvasPathEdit.ts
+packages/core/src/canvas/SceneCanvas/useSceneCanvasTools.ts
+packages/core/src/canvas/SceneCanvas/useSceneChrome.ts
+packages/core/src/canvas/SceneCanvas/useSceneColorAt.ts
+packages/core/src/canvas/SceneCanvas/useSceneGestureDispatcher.ts
+packages/core/src/canvas/SceneCanvas/useScenePickers.ts
+packages/core/src/canvas/SceneCanvas/useScenePicking.ts
+packages/core/src/canvas/SceneCanvas/useSceneRedrawSources.ts
+packages/core/src/canvas/SceneCanvas/useSceneSlotLayers.ts
+packages/core/src/canvas/SceneCanvas/useSceneStandardActions.ts
+packages/core/src/canvas/SceneCanvas/useSceneWorkerSurface.ts
+packages/core/src/canvas/SceneCanvas/useSelectionOverlayLayer.ts
+packages/core/src/canvas/SceneCanvas/useSurfaceRouting.ts
+packages/core/src/canvas/SceneCanvas/useSurfaceViewInputs.ts
+packages/core/src/canvas/SceneCanvas/useToolKeybindings.ts
+packages/core/src/canvas/SceneCanvas/useViewportActions.ts
+packages/core/src/canvas/SceneCanvas/useViewportWithoutView.ts
+packages/core/src/canvas/SceneCanvas/viewportProp.ts
+packages/core/src/canvas/SceneCanvas/workerProps.ts
+packages/core/src/canvas/SceneCanvas/worldPointAt.ts
+
+<!-- done: 2 findings, files read: 45 -->
