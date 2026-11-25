@@ -148,4 +148,18 @@ describe('createCursorSink', () => {
     sink.setOverride(null);
     expect(el.style.cursor).toBe('text');
   });
+
+  it('with no base set, leaves a painted override it never set', () => {
+    const { painted, sink } = harness();
+    painted.setOverride(ring);
+    sink.setOverride(null);
+    expect(painted.current()?.cursor).toEqual(ring);
+    let to = painted;
+    const other = createPaintedCursorState();
+    const moving = createCursorSink({ element: () => undefined, painted: () => to });
+    moving.setOverride(null);
+    to = other;
+    moving.setOverride(null);
+    expect(painted.current()?.cursor).toEqual(ring);
+  });
 });

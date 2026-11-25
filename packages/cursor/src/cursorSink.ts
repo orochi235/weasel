@@ -39,9 +39,9 @@ const shown = (cursor: ResolvedCursor | null): ResolvedCursor | null =>
  * A sink over `target`. Until `setBase` is called it owns only what it wrote:
  * an override is written and later removed, putting back the cursor it replaced
  * unless other code has written one since, and a cursor some other code put on
- * the element is otherwise left alone. When `element()` starts answering another
- * element, the one it wrote to is given back what it showed before the sink
- * wrote there; when `painted()` starts answering another state, the slots it
+ * the element or the painted state is otherwise left alone. When `element()`
+ * starts answering another element, the one it wrote to is given back what it
+ * showed before the sink wrote there; when `painted()` starts answering another state, the slots it
  * set on the old one are cleared.
  */
 export function createCursorSink(target: CursorSinkTarget): CursorSink {
@@ -50,6 +50,7 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
   let rest = '';
   let override: ResolvedCursor | null = null;
   let ownsBase = false;
+  let ownsPaintedOverride = false;
   /** The element the sink last wrote, what it showed before, and what the sink wrote there. */
   let written: { el: El; prior: string; css: string } | null = null;
   let paintedTo: PaintedCursorState | undefined;
@@ -65,14 +66,21 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     const painted = target.painted();
     if (paintedTo && paintedTo !== painted) {
       if (ownsBase) paintedTo.setBase(null);
-      paintedTo.setOverride(null);
+      if (ownsBase || ownsPaintedOverride) paintedTo.setOverride(null);
+      ownsPaintedOverride = false;
     }
     paintedTo = painted;
     if (!painted) return;
     if (ownsBase) painted.setBase(base?.kind === 'painted' ? base : null);
-    // A CSS override silences the layer too, or a painted base keeps drawing
-    // under the native cursor.
-    painted.setOverride(override === null ? null : override.kind === 'painted' ? override : 'none');
+    if (override !== null) {
+      // A CSS override silences the layer too, or a painted base keeps drawing
+      // under the native cursor.
+      painted.setOverride(override.kind === 'painted' ? override : 'none');
+      ownsPaintedOverride = true;
+    } else if (ownsBase || ownsPaintedOverride) {
+      painted.setOverride(null);
+      ownsPaintedOverride = false;
+    }
   };
 
   const write = (): void => {
