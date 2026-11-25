@@ -9,6 +9,7 @@
  * Linux, and errs toward listing a chord.
  */
 import { isApplePlatform, type KeySpec } from '@weasel-js/gestures';
+import { getOwn } from '@weasel-js/registry';
 
 /** One reserved chord, and what takes it. */
 export interface ReservedChord {
@@ -79,7 +80,7 @@ const CODE_KEYS: Readonly<Record<string, string>> = {
 /** The keys a spec fires on: its `key`s, and each `code` as the US-layout key it names (`KeyR` is `r`). */
 const keysOf = (spec: KeySpec): string[] => [
   ...lower(spec.key),
-  ...(spec.code === undefined ? [] : lower(spec.code).map((c) => CODE_KEYS[c] ?? c.replace(/^(key|digit|numpad)(?=.$)/, ''))),
+  ...(spec.code === undefined ? [] : lower(spec.code).map((c) => getOwn(CODE_KEYS, c) ?? c.replace(/^(key|digit|numpad)(?=.$)/, ''))),
 ];
 
 type Policy = boolean | 'optional' | undefined;
