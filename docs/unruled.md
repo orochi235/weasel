@@ -4174,3 +4174,9 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a Live lens's copy drops every `id` in it, so a trial styled by `#id` selectors shows
   without those styles in the lens. Renaming the copy's ids and rewriting its own references, which loses the same
   styles, or a shadow root, which loses the page's stylesheets, were the alternatives.
+
+## Audit round eighty-four (2026-11-24): routing's menus
+
+- 2026-11-24 (the fixer's call): a menu leaf drawn as several rows (an action with several variants, an `actions`
+  leaf, an enum's options) puts its access letter on none of them, since one letter picks one row and the leaf names
+  no row to pick. Putting it on the first row, which runs that variant or sets that option, was the alternative.
