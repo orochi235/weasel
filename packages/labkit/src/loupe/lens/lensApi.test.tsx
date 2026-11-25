@@ -23,6 +23,21 @@ function setup() {
 }
 
 describe('a host’s lens API', () => {
+  it('offers a compare menu only when the host gives one', () => {
+    expect(setup().api.openCompareMenu).toBeUndefined();
+    const menu = vi.fn();
+    const scene = createLensScene<null>();
+    const api = createLensApi(scene, {
+      body: { current: document.createElement('div') },
+      pointer: { current: null },
+      focus: { current: null },
+      sources: { current: {} },
+      compare: { current: menu },
+    });
+    api.openCompareMenu?.('l0');
+    expect(menu).toHaveBeenCalledWith('l0');
+  });
+
   it('acts on the lens last reported focused, straight away', () => {
     const { api, onFocusLens } = setup();
     const [a, b] = [api.add(), api.add()];

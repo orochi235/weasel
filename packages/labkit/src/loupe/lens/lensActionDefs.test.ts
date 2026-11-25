@@ -223,6 +223,15 @@ describe('lens actions', () => {
     trigger(LENS_ACTION_IDS.compareMenu);
     expect(api.openCompareMenu).toHaveBeenCalledWith('l0');
   });
+
+  it('disables the compare menu on a host that has none', () => {
+    const { openCompareMenu: _, ...plain } = api;
+    actions = createLensActions(plain, { opposite: () => 'dark' });
+    trigger(LENS_ACTION_IDS.add);
+    expect(actionOf(LENS_ACTION_IDS.compareMenu).enabled?.(deps)).toBe(
+      ActionDisabledReason.NotApplicable,
+    );
+  });
 });
 
 describe('createLoupeKeymap', () => {

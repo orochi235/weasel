@@ -4168,3 +4168,9 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a history made without `branching` drops a restored snapshot's branches, warning
   through its `debug` logger, and restores the rest. Refusing the snapshot, or keeping the branches as before, were
   the alternatives.
+
+## Audit round eighty-three (2026-11-24): labkit's lenses
+
+- 2026-11-24 (the fixer's call): a Live lens's copy drops every `id` in it, so a trial styled by `#id` selectors shows
+  without those styles in the lens. Renaming the copy's ids and rewriting its own references, which loses the same
+  styles, or a shadow root, which loses the page's stylesheets, were the alternatives.

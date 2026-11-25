@@ -34,18 +34,31 @@ export function useLensRemeasure(
       rerender();
       remeasure();
     };
-    window.addEventListener('scroll', moved, { capture: true, passive: true });
-    window.addEventListener('resize', moved);
+    const view = body.ownerDocument.defaultView ?? window;
+    view.addEventListener('scroll', moved, { capture: true, passive: true });
+    view.addEventListener('resize', moved);
     const unwatchScheme = watchColorScheme(moved);
+    // A splitter or a collapsing sidebar resizes the body with no window event.
+    let seen = false;
+    const resized =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(() => {
+            // The first callback reports the size the body already had.
+            if (seen) moved();
+            seen = true;
+          });
+    resized?.observe(body);
     // A host takes no pointer while `data-pending`, so a hit test skips it; a new story's host is only found once that
     // attribute goes, after the trials have already changed.
     const unveiled =
       typeof MutationObserver === 'undefined' ? null : new MutationObserver(remeasure);
     unveiled?.observe(body, { subtree: true, attributes: true, attributeFilter: ['data-pending'] });
     return () => {
-      window.removeEventListener('scroll', moved, { capture: true });
-      window.removeEventListener('resize', moved);
+      view.removeEventListener('scroll', moved, { capture: true });
+      view.removeEventListener('resize', moved);
       unwatchScheme();
+      resized?.disconnect();
       unveiled?.disconnect();
     };
   }, [sources, body, rerender]);

@@ -59,7 +59,8 @@ export interface LensActionApi<C> {
   unfollow(lensId: string): void;
   /** `true`, or the reason the source is unavailable. */
   sourceAvailable(kind: LensSourceKind): true | string;
-  openCompareMenu(lensId: string): void;
+  /** Opens the host's compare menu on a lens; a host with none leaves it out, and `loupe.compare.menu` is disabled. */
+  openCompareMenu?(lensId: string): void;
 }
 
 /** Each Live lens is a whole second render, so the count is capped. */
@@ -218,7 +219,12 @@ function settingActions<C>(api: LensActionApi<C>, comparisons: { opposite: () =>
     set(ids.split, 'View: split', view('split')),
     set(ids.difference, 'View: difference', view('difference')),
     set(ids.opposite, 'Compare: opposite', () => ({ compare: comparisons.opposite() })),
-    on(ids.compareMenu, 'Compare with…', (lensId) => api.openCompareMenu(lensId)),
+    on(
+      ids.compareMenu,
+      'Compare with…',
+      (lensId) => api.openCompareMenu?.(lensId),
+      () => (api.openCompareMenu ? true : ActionDisabledReason.NotApplicable),
+    ),
     set(ids.clearCompare, 'Compare: clear', () => ({ compare: null })),
     set(ids.token, 'Readout: token', readout('token')),
     set(ids.contrast, 'Readout: contrast', readout('contrast')),

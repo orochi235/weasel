@@ -154,6 +154,43 @@ describe('a clone source', () => {
     expect(slot.querySelector('iframe')?.hasAttribute('src')).toBe(false);
     expect(slot.querySelector('video')?.hasAttribute('autoplay')).toBe(false);
   });
+
+  it('loads no object or embed a second time in its copy', () => {
+    const { slot } = setup(
+      '<p class="probe"><object data="a.svg"></object><embed src="b.svg"></p>',
+    );
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    expect(slot.querySelector('object')?.hasAttribute('data')).toBe(false);
+    expect(slot.querySelector('embed')?.hasAttribute('src')).toBe(false);
+  });
+
+  it('leaves every id to the trial, so its lookups never land on the copy', () => {
+    const { root, slot } = setup('<p class="probe"><span id="t">own</span></p>');
+    root.id = 'body';
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    const copy = slot.querySelector('.lk-lens-copy') as Element;
+    expect(copy.querySelector('.probe span')?.textContent).toBe('own');
+    expect(copy.querySelectorAll('[id]')).toHaveLength(0);
+    expect(document.getElementById('t')?.closest('[data-lk-copy]')).toBeNull();
+  });
+});
+
+describe('a clone source in another document', () => {
+  it('finds its root and builds its copy in the document its slot lives in', () => {
+    const frame = document.body.appendChild(document.createElement('iframe'));
+    const doc = frame.contentDocument as Document;
+    const root = doc.body.appendChild(doc.createElement('div'));
+    root.className = 'lk-trial__body';
+    root.innerHTML = '<p class="probe">there</p>';
+    root.getBoundingClientRect = () => ({ left: 10, top: 10, width: 200, height: 100 }) as DOMRect;
+    const slot = doc.body.appendChild(doc.createElement('div'));
+    doc.elementsFromPoint = vi.fn(() => [root.firstElementChild as Element]);
+    document.elementsFromPoint = vi.fn(() => []);
+    createCloneSource<null>({ onFrame }).attach(slot, request());
+    const copy = slot.querySelector('.lk-lens-copy');
+    expect(copy?.ownerDocument).toBe(doc);
+    expect(copy?.querySelector('.probe')?.textContent).toBe('there');
+  });
 });
 
 describe('a clone source keeping its copy current', () => {
