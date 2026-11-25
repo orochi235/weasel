@@ -9,7 +9,7 @@ import { ActionsProvider } from '../interactions/actions/ActionsProvider';
 
 describe('server rendering', () => {
   it('renders a tree reading contributions and the open keymap', () => {
-    const modes = createModeRegistry({ modes: [{ id: 'draw', label: 'Draw', allows: [] }], initial: 'draw' });
+    const modes = createModeRegistry({ modes: [{ id: 'draw', kind: 'soft', allows: [], scoping: false }], initial: 'draw' });
     function Probe() {
       useContributions({ entries: [], focused: null, modes });
       useOpenKeymap();
