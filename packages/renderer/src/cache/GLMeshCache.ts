@@ -46,7 +46,7 @@ interface MeshResources {
  * renderer should construct a new GLMeshCache.
  */
 export class GLMeshCache {
-  private readonly map = new WeakMap<Mesh, GLMeshHandle>();
+  private readonly map = new WeakMap<Mesh, PersistentUpload>();
   /** Meshes this context has drawn at least once; see `uploadRecurring`. */
   private readonly seen = new WeakSet<Mesh>();
   private readonly finalizer: FinalizationRegistry<MeshResources>;
@@ -68,11 +68,19 @@ export class GLMeshCache {
     });
   }
 
+  /** The persistent handle for `mesh` carrying `attribute`. A hit must match the
+   *  attribute too: one asked for with another attribute replaces it, and the
+   *  replaced resources are freed at the end of the frame, after any draw this
+   *  frame already made with them. */
   handleFor(mesh: Mesh, attribute?: MeshAttribute): GLMeshHandle {
     const cached = this.map.get(mesh);
-    if (cached) return cached;
+    if (cached && sameAttribute(cached.attribute, attribute)) return cached.handle;
+    if (cached && this.persistent.delete(cached.resources)) {
+      this.finalizer.unregister(mesh);
+      this.transientThisFrame.push(cached.resources);
+    }
     const { handle, resources } = this.upload(mesh, attribute);
-    this.map.set(mesh, handle);
+    this.map.set(mesh, { handle, resources, attribute });
     this.persistent.add(resources);
     this.finalizer.register(mesh, resources, mesh);
     return handle;
@@ -193,6 +201,17 @@ export class GLMeshCache {
       resources: { geometry, vbo, ibo, ...(extra ? { extra } : {}) },
     };
   }
+}
+
+interface PersistentUpload {
+  readonly handle: GLMeshHandle;
+  readonly resources: MeshResources;
+  readonly attribute?: MeshAttribute;
+}
+
+function sameAttribute(a: MeshAttribute | undefined, b: MeshAttribute | undefined): boolean {
+  if (a === undefined || b === undefined) return a === b;
+  return a.location === b.location && a.size === b.size && a.data === b.data;
 }
 
 function release(gpu: GpuDevice, r: MeshResources): void {
