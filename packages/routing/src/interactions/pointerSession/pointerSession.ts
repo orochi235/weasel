@@ -122,6 +122,8 @@ export function openPointerSession(
   opts: PointerSessionOptions = {},
 ): PointerSession {
   const pointerId = down.pointerId;
+  // A session opened ahead of the document's capture phase (from a window listener) hears its own press there.
+  const opening: Event = 'nativeEvent' in down ? down.nativeEvent : down;
   const doc = origin.ownerDocument ?? document;
   const win = opts.blur === false ? null : doc.defaultView;
   // Window capture, and stopped there: the Escape that ends a drag must not also close the dialog the drag is in.
@@ -180,7 +182,7 @@ export function openPointerSession(
   // somewhere that never told us, and where it ended is unknown — so this
   // cancels rather than ending at the new press's coordinates.
   function onRepress(e: PointerEvent) {
-    if (mine(e)) abort('superseded');
+    if (mine(e) && e !== opening) abort('superseded');
   }
   function onBlur() {
     abort('blur');

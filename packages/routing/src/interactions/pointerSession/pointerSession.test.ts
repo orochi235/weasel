@@ -310,3 +310,20 @@ describe('heldWithin', () => {
     s.cancel();
   });
 });
+
+describe('openPointerSession from a window capture listener', () => {
+  it('does not take the press that opened it as a second press', () => {
+    const origin = el();
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    let session: ReturnType<typeof openPointerSession> | undefined;
+    const open = (e: Event) => { session = openPointerSession(origin, e as PointerEvent, { onCancel, onEnd }); };
+    window.addEventListener('pointerdown', open, true);
+    origin.dispatchEvent(down());
+    window.removeEventListener('pointerdown', open, true);
+    expect(onCancel).not.toHaveBeenCalled();
+    expect(session?.active).toBe(true);
+    origin.dispatchEvent(down());
+    expect(onCancel).toHaveBeenCalledWith('superseded');
+  });
+});
