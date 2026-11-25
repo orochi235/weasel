@@ -1,6 +1,8 @@
 /** What the dispatcher reads straight off an input event. */
 import type { BodyKind, BodyTarget, IngestItem } from '@weasel-js/gestures';
-import type { Carried } from '../actions/action';
+import type { Action, Carried } from '../actions/action';
+import type { GestureBinding } from '../actions/binding';
+import { platformRoleKeys, resolveRoles, roleKeysOf } from '../actions/modifierRoles';
 import type { WorldPoint } from '../actions/invoker';
 import type { ModifierState } from '../../vocabulary';
 import type { InputEvent } from './matcher';
@@ -99,6 +101,22 @@ export function immediateParams(
   resolved: Record<string, unknown> | undefined,
 ): ImmediateParams & Record<string, unknown> {
   return { ...carried(event), mods: modifierStateOf(event), ...resolved };
+}
+
+/**
+ * Everything an immediate `action` bound by `binding` runs with for `event`, as its drop preview is shown
+ * with too: {@link immediateParams}, the routed view's id, and the roles the action's modifiers hold.
+ */
+export function immediateRunParams(
+  event: InputEvent,
+  resolved: Record<string, unknown> | undefined,
+  run: { action: Action; binding: GestureBinding; viewId: string | null | undefined; apple: boolean },
+): ImmediateParams & Record<string, unknown> {
+  const params = immediateParams(event, resolved);
+  if (run.viewId !== undefined) params.viewId = run.viewId;
+  const keys = roleKeysOf(run.action.modifierRoles, run.binding.opts?.roles);
+  if (keys && params.mods) params.roles = resolveRoles(platformRoleKeys(keys, run.apple), params.mods, false);
+  return params;
 }
 
 type Landed = Extract<InputEvent, { kind: 'click' | 'doubleclick' | 'contextmenu' | 'pointerdown' | 'longpress' | 'hover' | 'carry' }>;

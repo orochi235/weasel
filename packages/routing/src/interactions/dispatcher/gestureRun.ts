@@ -6,13 +6,12 @@ import type { Action } from '../actions/action';
 import type { ActionDeps, DragSample, InvocationCtx, OngoingHandle } from '../actions/invoker';
 import { resolveParams } from '../actions/invoker';
 import { bindingOptionsOf } from '../actions/binding';
-import { platformRoleKeys, resolveRoles, roleKeysOf, type RoleKeys } from '../actions/modifierRoles';
+import { platformRoleKeys, roleKeysOf } from '../actions/modifierRoles';
 import type { DispatcherContext, KeyReach } from './dispatcherApi';
 import type { GestureFactsStore } from './gestureFacts';
 import { gestureIdFor, isMultiTouchGestureId } from './gestureIds';
 import { isEmptyOngoingHandle, type InFlightGestures } from './inFlightGestures';
-import { immediateParams } from './inputFacts';
-import type { ModifierState } from '../../vocabulary';
+import { immediateRunParams } from './inputFacts';
 import { deferredStart } from './deferredStart';
 import { buildInvocationCtx, uiInvocationCtx } from './invocationCtx';
 import type { InputEvent, MatchResult } from './matcher';
@@ -208,18 +207,6 @@ function carryStageFits(event: InputEvent, timing: 'immediate' | 'ongoing'): boo
   return timing === 'immediate' ? event.stage === 'drop' : event.stage === 'enter' || event.stage === 'move';
 }
 
-function withView<P extends object>(params: P | undefined, viewId: string | null | undefined): P | undefined {
-  return params && viewId !== undefined ? { ...params, viewId } : params;
-}
-
-/** `params` with the roles its `mods` hold, as an ongoing action's ctx carries them. */
-function withRoles<P extends { mods?: ModifierState }>(
-  params: P | undefined,
-  keys: Readonly<Record<string, RoleKeys>> | undefined,
-): P | undefined {
-  return params && keys && params.mods ? { ...params, roles: resolveRoles(keys, params.mods, false) } : params;
-}
-
 const reportedMisbound = new Set<string>();
 
 /** Once per action and spec: a hover binding reaches this on every pointer move. */
@@ -246,11 +233,9 @@ export function invokeAction(
 
   if (action.invoker?.timing === 'immediate') {
     try {
-      const roleKeys = roleKeysOf(action.modifierRoles, match.binding.opts?.roles);
-      const params = withRoles(
-        withView(immediateParams(event, resolveParams(bindingOptionsOf(match.binding)?.params)), run.viewId()),
-        roleKeys && platformRoleKeys(roleKeys, run.apple()),
-      );
+      const params = immediateRunParams(event, resolveParams(bindingOptionsOf(match.binding)?.params), {
+        action, binding: match.binding, viewId: run.viewId(), apple: run.apple(),
+      });
       if (action.invoker.run(deps, params) === 'pass') return 'empty-handle';
     } catch (err) {
       console.error(`weasel dispatcher: action "${action.id}" invoker threw`, err);
