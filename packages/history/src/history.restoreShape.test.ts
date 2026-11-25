@@ -47,4 +47,24 @@ describe('History.restore — a snapshot of the wrong shape', () => {
     expect(() => h.restore(across)).toThrow(/id 2/);
     expect(() => h.restore(snapshotOf({ undoStack: [entry(1), entry(1)], nextEntryId: 2 }))).toThrow(/id 1/);
   });
+
+  it('refuses branches forking only from each other', () => {
+    const h = createHistory(undefined, { branching: true });
+    const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });
+    const cut = snapshotOf({
+      undoStack: [entry(1)], branches: [{ at: 40, entries: [entry(50)] }, { at: 50, entries: [entry(40)] }], nextEntryId: 51,
+    });
+    expect(() => h.restore(cut)).toThrow(/no walk from the stacks reaches/);
+    const chained = snapshotOf({
+      undoStack: [entry(1)], branches: [{ at: 2, entries: [entry(3)] }, { at: 1, entries: [entry(2)] }], nextEntryId: 4,
+    });
+    expect(h.restore(chained).restored).toBe(true);
+  });
+
+  it('refuses an entry whose id is the floor', () => {
+    const h = createHistory(undefined);
+    const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });
+    expect(() => h.restore(snapshotOf({ floor: 5, undoStack: [entry(5)], nextEntryId: 6 }))).toThrow(/floor/);
+    expect(() => h.restore(snapshotOf({ undoStack: [entry(0)], nextEntryId: 1 }))).toThrow(/floor/);
+  });
 });
