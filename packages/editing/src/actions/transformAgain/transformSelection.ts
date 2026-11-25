@@ -2,7 +2,7 @@ import type { ActionDeps } from '@weasel-js/routing';
 import type { Op } from '@weasel-js/core';
 import type { AnyScene } from '@weasel-js/core/engine';
 import { ActionDisabledReason, type ActionUnavailable } from '@weasel-js/routing';
-import { moveNodesOps, recordTransform, type RepeatableTransform } from '@weasel-js/core';
+import { moveNodesOps, operandContent, recordTransform, withoutPageStructure, type RepeatableTransform } from '@weasel-js/core';
 import { resizeSelectionOps } from '../resize/replay';
 import { rotateSelectionOps } from '../rotate/replay';
 import { commitTransform, transformAnswer } from '../lockedWrites';
@@ -10,10 +10,12 @@ import { commitTransform, transformAnswer } from '../lockedWrites';
 /** A move, rotate or resize the selection can be given: a {@link RepeatableTransform} other than a duplicate. */
 export type SelectionTransform = Exclude<RepeatableTransform, { kind: 'duplicate' }>;
 
-/** The batch applying `t` to `selected`, not yet finished by the transform followers; empty when it changes nothing. */
+/** The batch applying `t` to `selected` less page structure, not yet finished by the transform followers; empty when
+ *  it changes nothing. */
 export function selectionTransformOps(
-  deps: ActionDeps, scene: AnyScene, selected: readonly string[], t: SelectionTransform, label: string,
+  deps: ActionDeps, scene: AnyScene, given: readonly string[], t: SelectionTransform, label: string,
 ): Op[] {
+  const selected = withoutPageStructure(scene, given);
   switch (t.kind) {
     case 'translate':
       return moveNodesOps(scene, selected, { dx: t.dx, dy: t.dy }, deps, label);
@@ -29,7 +31,7 @@ export function selectionTransformOps(
 export function selectionTransformAnswer(deps: ActionDeps, t: SelectionTransform, label: string): true | ActionUnavailable {
   const { scene, operands } = deps;
   if (!scene || !operands) return ActionDisabledReason.NotApplicable;
-  return transformAnswer(deps, scene, selectionTransformOps(deps, scene, [...operands.get()] as string[], t, label), label);
+  return transformAnswer(deps, scene, selectionTransformOps(deps, scene, operands.get(), t, label), label);
 }
 
 /**
@@ -44,7 +46,7 @@ export function selectionTransformAnswer(deps: ActionDeps, t: SelectionTransform
 export function transformSelection(deps: ActionDeps, t: SelectionTransform, label: string): boolean {
   const { scene, operands } = deps;
   if (!scene || !operands) return false;
-  const selected = [...operands.get()] as string[];
+  const selected = [...operandContent(deps)] as string[];
   const ops = selectionTransformOps(deps, scene, selected, t, label);
   if (!commitTransform(deps, scene, ops, label)) return false;
   recordTransform(scene, t, selected);

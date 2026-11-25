@@ -1,7 +1,7 @@
 import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { operandMethods, unionAabb, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, createBareSnapSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GestureContext, RotateBehavior, PoseDescriptor, SnapBegin, SnapSession } from '@weasel-js/core/engine';
-import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
+import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources, withoutPageStructure } from '@weasel-js/core';
 import { resolveParams } from '@weasel-js/routing';
 import type { RotateParams, Op, NodeId, Scene, Bounds } from '@weasel-js/core';
 import { moveGestureAdapter } from '../move/gestureAdapter';
@@ -192,11 +192,12 @@ export function beginRotate(
 
   if (!selection || !scene) return null;
 
+  const selected = withoutPageStructure(scene, selection.get());
   // A group whose pose derives from its children turns by turning them.
-  const ids = shapeSources(scene, selection.get()) as NodeId[];
+  const ids = shapeSources(scene, selected) as NodeId[];
   if (ids.length === 0) return null;
 
-  const captured = captureTurn(scene, selection.get(), ids, ctx.deps, params?.pivot === 'each' ? 'each' : 'union');
+  const captured = captureTurn(scene, selected, ids, ctx.deps, params?.pivot === 'each' ? 'each' : 'union');
   if (!captured) return null;
   const { turn, originPoses, poseFrame } = captured;
   const { origins, pivot } = turn;
@@ -214,7 +215,7 @@ export function beginRotate(
     originPoses,
     startPointerAngle: Math.atan2(ctx.world.y - pivot.y, ctx.world.x - pivot.x),
     theta0,
-    snap: beginSnap(ctx, [...new Set([...selection.get(), ...ids])], pivot, theta0),
+    snap: beginSnap(ctx, [...new Set([...selected, ...ids])], pivot, theta0),
     behaviors,
     gestureCtx,
     applyOps: ctx.deps.applyOps,
