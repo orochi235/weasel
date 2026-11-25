@@ -72,6 +72,19 @@ describe('branching off', () => {
 });
 
 describe('branching on', () => {
+  it('keeps no more branch entries than historyLimit, evicting the oldest branch first', () => {
+    const evicted: number[] = [];
+    const { history, write } = setup({ historyLimit: 3, onEvict: (e) => evicted.push(e.id) });
+    write(1, 1);
+    for (let i = 2; i <= 12; i++) {
+      history.undo();
+      write(i, i);
+    }
+    const kept = history.serialize().branches!.flatMap((b) => b.entries.map((e) => e.id));
+    expect(kept).toEqual([9, 10, 11]);
+    expect(evicted).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
   it('keeps the redo future as a branch when a push is made while rewound', () => {
     const onEvict = vi.fn();
     const { history, write } = setup({ onEvict });

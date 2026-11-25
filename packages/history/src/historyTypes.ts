@@ -240,6 +240,8 @@ export interface CreateHistoryOptions {
   selection?: HistorySelection;
   /** Maximum undo-stack depth. When a push overflows the cap the oldest
    *  entry is evicted (reported via `onEvict`) and can no longer be undone.
+   *  With `branching`, it also caps the entries the kept branches hold
+   *  together: past it, the oldest branch is evicted, with every branch forking from it.
    *  `0` disables the undo stack entirely — every push is evicted
    *  synchronously (negative values are clamped to `0`; `NaN` throws a `RangeError`). Default: unbounded. */
   historyLimit?: number;

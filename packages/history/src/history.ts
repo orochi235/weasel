@@ -77,7 +77,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     ...(selection ? { selection } : {}),
   }, clock.seal);
 
-  const forks = createForks({ undoStack, redoStack, branching: options.branching ?? false, onEvict: options.onEvict, logger });
+  const forks = createForks({ undoStack, redoStack, branching: options.branching ?? false, branchLimit: historyLimit, onEvict: options.onEvict, logger });
 
   const applyAllOrNothing = createApplier(adapter, logger);
 

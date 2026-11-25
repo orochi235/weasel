@@ -4174,3 +4174,9 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a Live lens's copy drops every `id` in it, so a trial styled by `#id` selectors shows
   without those styles in the lens. Renaming the copy's ids and rewriting its own references, which loses the same
   styles, or a shadow root, which loses the page's stylesheets, were the alternatives.
+
+## Audit round eighty-four (2026-11-24): history
+
+- 2026-11-24 (the fixer's call): a branching history's `historyLimit` also caps the entries its kept branches hold
+  together, evicting the oldest branch (and every branch forking from it) through `onEvict` once they exceed it. A
+  separate branch limit, or bounding only the undo stack as before, were the alternatives.
