@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "Teardown stops the redraw watch before it cancels the gestures, so an in-flight overlay is never cleared",
+  "`lift` drops a stopped keyup only from `downKeys`; held-key gestures and keymap leaders stay engaged",
+  "Modifier changes dispatch a hover on whichever view was routed last, not on the view under the pointer"
+ ],
+ "b": [
+  "The keymap's `unbound` fallback is frozen at render time while every other gesture setting is read live",
+  "A drop's preview runs with different params than the drop itself: no `viewId` and no modifier roles",
+  "An OS drop no binding takes still has its default prevented",
+  "A UI-driven handle on a dispatcher not yet watched never triggers a redraw"
+ ]
+}

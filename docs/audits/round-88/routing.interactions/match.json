@@ -1,0 +1,15 @@
+{
+ "pairs": [],
+ "a": [
+  "useHandleDrag's scroll compensation misses containing blocks made by `will-change`, `backdrop-filter` and `container-type`",
+  "startThresholdDrag reports a release past the threshold as a click when no move crossed it",
+  "Alt-letter and Alt+Shift chords say \"on Windows and Linux\" but are marked reserved on every platform"
+ ],
+ "b": [
+  "A chorded mouse drag keeps going after its own button is released",
+  "A carry dropped outside the browser window lands on a surface that extends past the viewport",
+  "useHandleDrag stops collecting scrollers at a shadow root, so page scroll during the drag shifts the reported point",
+  "A sticky box's scroller is dropped on both axes, and even while the box is not stuck",
+  "The reserved list covers the shifted brackets but not the shifted digits for Cmd+Shift+3/4/5"
+ ]
+}

@@ -1,0 +1,92 @@
+{
+ "id": "routing.tools",
+ "commit": "01e37b5e5c7a6376427032c06b5dce134bc725d8",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/tools/defineTool.ts",
+  "packages/routing/src/tools/describeShortcuts.ts",
+  "packages/routing/src/tools/returnToModeDefault.ts",
+  "packages/routing/src/tools/routeTypes.ts",
+  "packages/routing/src/tools/routing/gestures.ts",
+  "packages/routing/src/tools/routing/index.ts",
+  "packages/routing/src/tools/routing/reflection/conflictKeys.ts",
+  "packages/routing/src/tools/routing/reflection/conflicts.ts",
+  "packages/routing/src/tools/routing/reflection/index.ts",
+  "packages/routing/src/tools/routing/reflection/registry.ts",
+  "packages/routing/src/tools/routing/routeGrammar.ts",
+  "packages/routing/src/tools/toolGaps.ts",
+  "packages/routing/src/tools/toolOptionPrefs.ts",
+  "packages/routing/src/tools/toolOptionSteps.ts",
+  "packages/routing/src/tools/toolOptions.ts",
+  "packages/routing/src/tools/toolSet.ts",
+  "packages/routing/src/tools/toolShortcuts.ts",
+  "packages/routing/src/tools/toolsScope.tsx",
+  "packages/routing/src/tools/tuneToolOptions.ts",
+  "packages/routing/src/tools/types.ts",
+  "packages/routing/src/tools/useModeDefaultTool.ts",
+  "packages/routing/src/tools/useToolLifecycle.ts",
+  "packages/routing/src/tools/useToolOptionValues.ts",
+  "packages/routing/src/tools/useToolShortcuts.ts",
+  "packages/routing/src/tools/useTools.ts"
+ ],
+ "a": 4,
+ "b": 5,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 14,
+ "unfound": 6,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 87,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 87,
+  "chapman": 3.5,
+  "unfound": 0.5
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 24,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3469,
+   "total": 3469
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.3,
+   "B": 2.2,
+   "match": 0.1,
+   "fix": 52.5
+  },
+  "nodes": {
+   "A": "local",
+   "B": "local",
+   "fix": "local"
+  },
+  "weightedTokens": 542066,
+  "costUsd": 1.77
+ },
+ "fixCommits": [
+  "914c6245a95b8630b0f005e85a4078f35ef4c776",
+  "215a7b579f88c2f34732d40edbcfa334dca04ff8",
+  "c5e140e816f7d2fa557046fad4b10ce4a0c7de3e",
+  "2e15f9e5aa78f1aa71508366ab61c9f443af2f9d",
+  "ecbdeae2d5fcf184b40c2e318155ebeb735c09da",
+  "b786cebb881b15ae32b05afbe2cd7124f1983dd7",
+  "f31c2f61bac8a8e039bc3ff8f7e79ae7b38837ce",
+  "eedb0a19528eeafe0b40a9879022af4ad7b008e2",
+  "07b3976b401135e466d6f272009f8f6a087a43ad"
+ ]
+}

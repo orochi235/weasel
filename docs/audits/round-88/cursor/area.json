@@ -1,0 +1,79 @@
+{
+ "id": "cursor",
+ "commit": "01e37b5e5c7a6376427032c06b5dce134bc725d8",
+ "date": "2026-11-25",
+ "files": [
+  "packages/cursor/src/bake.ts",
+  "packages/cursor/src/brushRing.ts",
+  "packages/cursor/src/cursorSink.ts",
+  "packages/cursor/src/glyphs.ts",
+  "packages/cursor/src/index.ts",
+  "packages/cursor/src/mark.ts",
+  "packages/cursor/src/paint.ts",
+  "packages/cursor/src/paintedCursorState.ts",
+  "packages/cursor/src/pbt.fixture.ts",
+  "packages/cursor/src/registry.ts",
+  "packages/cursor/src/resolve.ts",
+  "packages/cursor/src/types.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 11,
+ "unfound": 3,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 87,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 87,
+  "chapman": 5,
+  "unfound": 0
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3484,
+   "total": 3484
+  },
+  "gui": true,
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.9,
+   "B": 1.9,
+   "match": 0.3,
+   "fix": 42.7,
+   "repair": 6.1
+  },
+  "nodes": {
+   "A": "local",
+   "B": "local",
+   "fix": "local"
+  },
+  "weightedTokens": 1192942,
+  "costUsd": 3.56
+ },
+ "fixCommits": [
+  "aba901ea0cae17e95344ef7cee2c60df9c43161b",
+  "09fbbb426dcb247832adc990dc549d7cea091c95",
+  "4e3210b189d84c41bb3ed1ceab60ad727f655fcf",
+  "ef911948ddb6a363fefc422142d6d927c546ea90",
+  "df82527d403c79f4df98727e531f3cf65881db38",
+  "884adb4478ec8ff99266edaf4728003082ef3913",
+  "f1aa9e1daaa066cfe1d45a3eeadc335c72722641",
+  "253dff6a455ad2cb67c15e7d5c108cf719484414"
+ ]
+}

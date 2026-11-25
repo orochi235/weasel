@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "restore splits an uncoalesced entry in two when its op args hold a Date, Map, Set or typed array",
+  "entry ids past Number.MAX_SAFE_INTEGER collide after a restore",
+  "a restored branching history over historyLimit keeps its branches over the cap until a push retires a redo stack"
+ ],
+ "b": [
+  "A coalesced entry whose ops repeat a coalesceKey is unwound against the wrong twins when a step throws"
+ ]
+}

@@ -1,0 +1,14 @@
+{
+ "pairs": [],
+ "a": [
+  "Last-operation wrap of an ongoing action swallows a handle's `'pass'` from `onMove`, breaking drag hand-off",
+  "A hold's release re-asks `enabled` but not the `eligible` rule, so it runs an action the mode no longer allows",
+  "`<DepRank>` above an `<InputScope>` does not rank the sources registered inside it",
+  "`ToolNode.snapshot` returns a new value on every call when no node in its chain owns a tool"
+ ],
+ "b": [
+  "Last operation reads and writes a nested `params` form's values by dotted path as one flat key",
+  "A hold's release runs the held action outside any catch, unlike every other run path",
+  "`<ActionsProvider>` never tears its root node down, so a held last operation keeps observing history after unmount"
+ ]
+}

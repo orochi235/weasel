@@ -1,0 +1,79 @@
+{
+ "id": "history",
+ "commit": "01e37b5e5c7a6376427032c06b5dce134bc725d8",
+ "date": "2026-11-25",
+ "files": [
+  "packages/history/src/createSwapOp.ts",
+  "packages/history/src/entryOps.ts",
+  "packages/history/src/forks.ts",
+  "packages/history/src/history.ts",
+  "packages/history/src/historyTypes.ts",
+  "packages/history/src/index.ts",
+  "packages/history/src/journal.ts",
+  "packages/history/src/journalSlot.ts",
+  "packages/history/src/op.ts",
+  "packages/history/src/recording.ts",
+  "packages/history/src/restore.ts",
+  "packages/history/src/serialized.ts",
+  "packages/history/src/snapshotShape.ts",
+  "packages/history/src/stackTime.ts",
+  "packages/history/src/stackView.ts",
+  "packages/history/src/textOf.ts",
+  "packages/history/src/versionClock.ts",
+  "packages/history/src/walk.ts"
+ ],
+ "a": 3,
+ "b": 1,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 7,
+ "unfound": 3,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "newCode": {
+  "since": 87,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 87,
+  "chapman": 14,
+  "unfound": 8
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2922,
+   "total": 2922
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.2,
+   "B": 5,
+   "match": 0,
+   "fix": 27.5
+  },
+  "nodes": {
+   "A": "local",
+   "B": "local",
+   "fix": "local"
+  },
+  "weightedTokens": 901325,
+  "costUsd": 4.8
+ },
+ "fixCommits": [
+  "dfa7e42ff32d346b5737112657bc51ce308e6495",
+  "33500c14815394d05413f98927a2bb6d0524bade",
+  "991950426100d434ad12af2bc187840038e25ca5"
+ ]
+}

@@ -1,0 +1,100 @@
+{
+ "id": "routing.interactions.actions",
+ "commit": "01e37b5e5c7a6376427032c06b5dce134bc725d8",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/interactions/actions/ActionsProvider.tsx",
+  "packages/routing/src/interactions/actions/action.ts",
+  "packages/routing/src/interactions/actions/actionEnabled.ts",
+  "packages/routing/src/interactions/actions/actionIcon.typetest.ts",
+  "packages/routing/src/interactions/actions/actionIds.ts",
+  "packages/routing/src/interactions/actions/actionItems.ts",
+  "packages/routing/src/interactions/actions/actionSettings.ts",
+  "packages/routing/src/interactions/actions/actionShortcuts.ts",
+  "packages/routing/src/interactions/actions/actionTags.ts",
+  "packages/routing/src/interactions/actions/activeToolContext.tsx",
+  "packages/routing/src/interactions/actions/betweenGestures.ts",
+  "packages/routing/src/interactions/actions/binding.ts",
+  "packages/routing/src/interactions/actions/bindingOpts.ts",
+  "packages/routing/src/interactions/actions/bindingOverrides.ts",
+  "packages/routing/src/interactions/actions/buildDeps.ts",
+  "packages/routing/src/interactions/actions/defineAction.ts",
+  "packages/routing/src/interactions/actions/depNode.ts",
+  "packages/routing/src/interactions/actions/depRegistry.tsx",
+  "packages/routing/src/interactions/actions/handleWith.ts",
+  "packages/routing/src/interactions/actions/holdPreview.ts",
+  "packages/routing/src/interactions/actions/inputScope.tsx",
+  "packages/routing/src/interactions/actions/invoker.ts",
+  "packages/routing/src/interactions/actions/keyOrder.ts",
+  "packages/routing/src/interactions/actions/lastOperation.ts",
+  "packages/routing/src/interactions/actions/modifierRoles.ts",
+  "packages/routing/src/interactions/actions/overlay.ts",
+  "packages/routing/src/interactions/actions/refusal.ts",
+  "packages/routing/src/interactions/actions/registry.ts",
+  "packages/routing/src/interactions/actions/scopeNode.ts",
+  "packages/routing/src/interactions/actions/showPreview.ts",
+  "packages/routing/src/interactions/actions/toolOffhand.ts",
+  "packages/routing/src/interactions/actions/tunedForm.ts",
+  "packages/routing/src/interactions/actions/tuning.ts",
+  "packages/routing/src/interactions/actions/useCommand.ts",
+  "packages/routing/src/interactions/actions/useLastOperation.ts",
+  "packages/routing/src/interactions/actions/useOngoingAction.ts"
+ ],
+ "a": 4,
+ "b": 3,
+ "m": 0,
+ "distinct": 7,
+ "chapman": 19,
+ "unfound": 12,
+ "read": {
+  "A": 36,
+  "B": 36
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 11,
+  "unfound": 4
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3448,
+   "total": 3448
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.4,
+   "B": 4.2,
+   "match": 0,
+   "fix": 45.3
+  },
+  "nodes": {
+   "A": "local",
+   "B": "local",
+   "fix": "local"
+  },
+  "weightedTokens": 880307,
+  "costUsd": 5.67
+ },
+ "fixCommits": [
+  "d4721223bb14085bee44a2ced6c6f9b084c5e6a6",
+  "0e448452884b5f9a6209a9a7cf34cdcab5bab0ac",
+  "6286a4b40bc73042ba8c57900333537b603bfcbb",
+  "3a50c17a7f39555bb72c7e943e1e0a1635990bd6",
+  "7677c3d077b42f5db63e3bf9c673b269786b074a",
+  "8397c59b2f7d4a7e1169f239158b7387d394952a"
+ ]
+}

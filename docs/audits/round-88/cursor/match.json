@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ],
+  [
+   3,
+   4
+  ]
+ ],
+ "a": [
+  "A sub-step angle turns a glyph that cannot rotate on the painted tier but not on the baked one",
+  "cursorFor answers a cached cursor for an unknown glyph name instead of throwing",
+  "brushRing(-Infinity) does not throw, and draws at the default 24 px",
+  "bakeFallback accepts fallbacks that make the browser drop the whole declaration",
+  "A CursorSink cannot give the element back once setBase has been called"
+ ],
+ "b": [
+  "brushRing's Infinity guard misses a finite radius whose size overflows, which then draws at the default 24 px",
+  "An infinite `size` throws in bakeCursor/cursorFor but draws at 24 px through resolveCursor",
+  "A painted cursor's `fallback` is validated and then dropped, so with no painted layer the sink shows no cursor at all",
+  "On the painted tier, a glyph that cannot rotate is still turned by a small angle that the baked tier ignores",
+  "bakeFallback rejects only `;{}`, so any other value that is not a keyword still makes the browser drop the whole cursor silently"
+ ]
+}

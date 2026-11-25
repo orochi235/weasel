@@ -1,0 +1,88 @@
+{
+ "id": "registry",
+ "commit": "01e37b5e5c7a6376427032c06b5dce134bc725d8",
+ "date": "2026-11-25",
+ "files": [
+  "packages/registry/src/after.ts",
+  "packages/registry/src/codePoint.ts",
+  "packages/registry/src/compositeKey.ts",
+  "packages/registry/src/deepEqual.ts",
+  "packages/registry/src/emitter.ts",
+  "packages/registry/src/extensionRegistry.ts",
+  "packages/registry/src/freshId.ts",
+  "packages/registry/src/getOwn.ts",
+  "packages/registry/src/grade.ts",
+  "packages/registry/src/index.ts",
+  "packages/registry/src/isDev.ts",
+  "packages/registry/src/isFiniteNumber.ts",
+  "packages/registry/src/isPlainObject.ts",
+  "packages/registry/src/latest.ts",
+  "packages/registry/src/match.ts",
+  "packages/registry/src/mixed.ts",
+  "packages/registry/src/part.ts",
+  "packages/registry/src/pbt.fixture.ts",
+  "packages/registry/src/reflectable.ts",
+  "packages/registry/src/sameList.ts",
+  "packages/registry/src/setOwn.ts",
+  "packages/registry/src/testing/hostile.fixture.ts",
+  "packages/registry/src/valueStore.ts",
+  "packages/registry/src/warnOnce.ts",
+  "packages/registry/src/xmlEscape.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 87,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 87,
+  "chapman": 7,
+  "unfound": 2
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 5527,
+   "total": 5527
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.5,
+   "B": 4.3,
+   "match": 0.1,
+   "fix": 21.7
+  },
+  "nodes": {
+   "A": "local",
+   "B": "local",
+   "fix": "local"
+  },
+  "weightedTokens": 897753,
+  "costUsd": 2.82
+ },
+ "fixCommits": [
+  "1ad64bc3ada0812a36d6ca3f9f69bbb0ab5b28b9",
+  "b01dabf84d70c902495d8dfa0a6093427c12319c",
+  "be089d316ffa6d10ecf3c7b2d6bbda132d6bf8a0",
+  "de074ecd1a5a37bfd27754e4e4222e7912606aa1",
+  "3e8ec2e2b337d74ed83d5221c368bd0ce4bc0069"
+ ]
+}

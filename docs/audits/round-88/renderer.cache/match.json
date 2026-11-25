@@ -1,0 +1,9 @@
+{
+ "pairs": [],
+ "a": [
+  "`GLTextureCache.replaces` answers \"will new pixels be written\" differently from `ensure`"
+ ],
+ "b": [
+  "Marker head cache key conflates a bare marker key ending in `@` with a sized ref of the same stem"
+ ]
+}

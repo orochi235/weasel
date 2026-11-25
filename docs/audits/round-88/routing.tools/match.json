@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "Two hotkey-capable tools with size/strength options are reported as a route conflict on `[` `]`, though only the live one's step can run",
+  "The wheel-resize burst state lives in the tool definition, so every canvas and registry using that tool shares one burst",
+  "A tool set or action group with the id `other` swallows the ungrouped rows under its own heading",
+  "A host's default for a shared option is not checked against the widened leaf"
+ ],
+ "b": [
+  "returnToModeDefault can pick an ambient tool as the mode default and throw in setActive",
+  "describeShortcuts never lists keys bound through a tool's own bindings (e.g. the `[` `]` option steps)",
+  "A tool set with id `other` merges into the \"Other tools\" bucket and relabels it",
+  "Conflict checker misses a `code` spec colliding with a `key` spec for the same physical key",
+  "One conflict can name bindings that do not tie with each other"
+ ]
+}

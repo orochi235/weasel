@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "`createValueStore`'s doc recommends `sameList` for rebuilt lists, but `sameList`'s default `===` disagrees with the store's own `Object.is` on NaN",
+  "`deepEqual` ignores an array's own non-index keys, though its doc says it compares each own enumerable key",
+  "`ExtensionRegistry.register` treats a registered `undefined` as no registration, so a later different value overwrites it without `replace`"
+ ],
+ "b": [
+  "A child's own id re-registered in one tick moves in `entries()` when its parent also holds the same value",
+  "A parent's release-and-register of a different value in one tick leaves the child shadowing with the stale value"
+ ]
+}
