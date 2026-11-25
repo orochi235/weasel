@@ -86,6 +86,12 @@ describe('toolOptionsPrefs: a shared number', () => {
     }
   });
 
+  it('refuses a host default no tool naming it takes', () => {
+    expect(() => toolOptionsPrefs([sized('small', 30), sized('big', 100)], { shared: { size: 500 } })).toThrow(/size/);
+    expect(() => toolOptionsPrefs([sized('small', 30)], { shared: { size: 'big' } })).toThrow(/size/);
+    expect(sharedLeaf(toolOptionsPrefs([sized('small', 30), sized('big', 100)], { shared: { size: 80 } })).default).toBe(80);
+  });
+
   it('is unbounded at an end any tool leaves open', () => {
     const open = sized('open', 30);
     delete (open.options.prefs.children.radiusPx as { max?: number }).max;

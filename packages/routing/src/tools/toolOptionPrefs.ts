@@ -2,7 +2,7 @@
  * Tool options kept in a prefs store: the schema a host's prefs hold them
  * under, and the `toolOptionValues` that reads and writes them there.
  */
-import type { PrefEnum, PrefGroup, PrefLeaf, PrefNumber, PrefString } from '@weasel-js/prefs-schema';
+import { repairPrefValue, type PrefEnum, type PrefGroup, type PrefLeaf, type PrefNumber, type PrefString } from '@weasel-js/prefs-schema';
 import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { checkToolOptionOwner, SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
 
@@ -99,7 +99,7 @@ function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: 
  * key once, as the first tool naming it declares it, with the default the host
  * gives it. A shared number takes the widest bounds of the tools naming it, and
  * each tool reads it held to its own; a shared enum takes every tool's options, and a shared string the longest
- * `maxLength`. Throws where tools name one shared key as leaves of different kinds. A tool with no options of its own has no group, and a dotted id's group
+ * `maxLength`. Throws where tools name one shared key as leaves of different kinds, or the host gives one a default its leaf does not take. A tool with no options of its own has no group, and a dotted id's group
  * sits a level down for each dot (`path.brush` in `path`), where the store keeps it.
  */
 export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOptionsPrefsSpec = {}): PrefGroup {
@@ -122,7 +122,12 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
   }
   for (const [key, value] of Object.entries(spec.shared ?? {})) {
     const leaf = getOwn(shared, key);
-    if (leaf && 'kind' in leaf) setOwn(shared, key, { ...leaf, default: value } as PrefLeaf);
+    if (!leaf || !('kind' in leaf)) continue;
+    const invalid = Symbol('invalid');
+    if (!deepEqual(repairPrefValue({ ...leaf, default: invalid } as PrefLeaf, value), value)) {
+      throw new Error(`toolOptionsPrefs: the host's default ${JSON.stringify(value)} for the shared option "${key}" is not a value any tool naming it takes`);
+    }
+    setOwn(shared, key, { ...leaf, default: value } as PrefLeaf);
   }
   if (Object.keys(shared).length > 0) {
     children[SHARED_TOOL_OPTIONS] = { name: 'Shared', description: 'Settings every tool naming them uses.', children: shared };

@@ -20,6 +20,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-25 (my call, audit round 88): `toolOptionsPrefs` throws for a host's `shared` default that the shared
+  option's leaf would repair (a number past every tool's bounds, an enum value no tool lists), as it throws for a kind
+  mismatch, rather than repairing the default or keeping it as given.
 - 2026-11-25: `browserReservedChord` lists the chords every major browser binds even where a page can override them:
   Mod+1–9, Alt+Left/Right off a Mac, Cmd+[ and Cmd+] and Cmd+Shift+[ and ] on one, F5, F11, F12, Alt+F4, Ctrl+F4,
   Ctrl+Shift+Esc, Shift+Esc, and Mod+Shift+Delete. editing's reorder keys (Mod+[ and Mod+], as design apps bind them)
