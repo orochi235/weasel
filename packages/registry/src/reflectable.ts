@@ -132,7 +132,7 @@ function createClashWarnings<K, V>(name: string | undefined) {
   const named = (r: Registrant<V>) => (r.source === undefined ? 'an unnamed registrant' : `"${r.source}"`);
   return {
     warn(key: K, under: Registrant<V>, over: Registrant<V>, live: boolean): void {
-      const pair = `${under.source ?? ''}\u0000${over.source ?? ''}`;
+      const pair = JSON.stringify([under.source ?? null, over.source ?? null]);
       const seen = warned.get(key) ?? new Set<string>();
       if (seen.has(pair)) return;
       warned.set(key, seen.add(pair));

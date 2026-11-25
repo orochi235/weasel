@@ -40,4 +40,13 @@ describe('deepEqual', () => {
     expect(deepEqual({ a: 1, b: undefined }, { a: 1 }, { undefinedAsAbsent: true })).toBe(true);
     expect(deepEqual({ n: { b: undefined } }, { n: {} }, { undefinedAsAbsent: true })).toBe(true);
   });
+
+  it('compares values that hold themselves by shape rather than overflow the stack', () => {
+    const cycle = (n: number) => { const o: Record<string, unknown> = { n }; o.self = o; return o; };
+    expect(deepEqual(cycle(1), cycle(1))).toBe(true);
+    expect(deepEqual(cycle(1), cycle(2))).toBe(false);
+    const list = (n: number) => { const l: unknown[] = [n]; l.push(l); return l; };
+    expect(deepEqual(list(1), list(1))).toBe(true);
+    expect(deepEqual(list(1), list(2))).toBe(false);
+  });
 });

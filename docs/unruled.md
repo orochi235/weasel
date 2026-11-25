@@ -1113,8 +1113,6 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   typed rather than stepping a number row, so "bo" reaches "Bold" past an "Open" whose access letter is `o`. A key
   that would leave the search finding nothing goes on as with no search, so a space there chooses.
 - Open (2026-11-11): `matchQuery` and typeahead lowercase rather than case-fold, so `STRASSE` does not find `Straße`.
-- Open (2026-11-11): `deepEqual` over values that hold themselves (an array whose item is the array) overflows the
-  stack rather than answer.
 - Open (2026-11-11): `holderOf` and `outermost` never return on a `parentOf` whose parents loop without reaching a
   selected id.
 - Open (2026-11-11): a range whose `between` lists an id twice selects it twice; a selection store holds it once.
@@ -4211,6 +4209,15 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): `createWarnOnce` throws a `RangeError` for a `cap` that is not a positive integer,
   `Infinity` included, rather than clamp it: `NaN` never forgot a message and `0` warned every time. A cap meaning
   "never forget" is the alternative left open.
+## Audit round eighty-six (2026-11-25): registry
+
+- 2026-11-25 (the fixer's call): `deepEqual` over values that hold themselves compares them by shape:
+  a pair of containers met again while still being compared reads as equal, so two cycles that unfold alike are
+  equal. Throwing on a cycle was the alternative.
+- 2026-11-25 (the fixer's call): a child extension registry's registration of the value its parent already resolves
+  the id to is held through the parent, with no copy of its own: it follows the parent's replacement (and stops
+  holding the id, as a displaced registration does), and the child takes the id over only if the parent drops it.
+  Taking an own copy at once, which then shadows the parent's later replacement, was the alternative.
 ## Audit round eighty-five (2026-11-24): routing's interactions
 
 - 2026-11-24 (the fixer's call): a release the document never saw (a move reporting no button held) cancels a carry,
