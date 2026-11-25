@@ -36,6 +36,7 @@ export interface HoverCursorInput {
   /** A dispatcher changed: a gesture in flight may show another cursor with no input to carry it, as a
    *  dwell elapsing under a held pointer does. */
   changed(): void;
+  /** Withdraw everything shown for the pointer: the cursor, its painted position, and the trace's live prediction. */
   clear(): void;
 }
 
@@ -146,6 +147,16 @@ export function hoverCursorInput(
     dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, ...from, ...held });
   };
 
+  const clear = (): void => {
+    if (last) {
+      ctxNow().trace?.setLive(null);
+      paintedCursor()?.clearPointer();
+    }
+    facts = null;
+    last = null;
+    override.clear();
+  };
+
   return {
     moved(e) {
       last = hoverOf(e);
@@ -163,11 +174,7 @@ export function hoverCursorInput(
         const w = toWorld(at.clientX, at.clientY);
         dispatch({ kind: 'hover', off: true, x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, from: whereOf(where) });
       }
-      facts = null;
-      last = null;
-      ctxNow().trace?.setLive(null);
-      paintedCursor()?.clearPointer();
-      override.clear();
+      clear();
     },
     onKey(e) {
       if (!last) return;
@@ -187,6 +194,6 @@ export function hoverCursorInput(
       // The last gesture ended with no release or keyup over the pointer to resolve the idle cursor.
       else if (was) refreshSoon();
     },
-    clear: override.clear,
+    clear,
   };
 }

@@ -215,7 +215,8 @@ export interface UseGestureDispatcherOptions {
 
   /**
    * Optional pre-created `Dispatcher`. When provided, this hook pumps events
-   * into the supplied instance instead of creating its own. Lets a parent
+   * into the supplied instance instead of creating its own, and follows it
+   * when it changes, canceling the old one's gestures. Lets a parent
    * scope (e.g. `<SceneCanvas>`) share one dispatcher between the gesture
    * mounter and other consumers (the preview-ghost layer).
    */

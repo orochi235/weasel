@@ -1,6 +1,6 @@
-/** Which of two nested surfaces a wheel, a WebKit pinch or a right-click goes to: the innermost it landed in, then the one around it. */
+/** Which of two nested surfaces a wheel, a WebKit pinch, a right-click or an OS drop goes to: the innermost it landed in, then the one around it. */
 import { describe, expect, it, vi } from 'vitest';
-import { act, render } from '@testing-library/react';
+import { act, render, waitFor } from '@testing-library/react';
 import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
@@ -20,7 +20,7 @@ function Root({ children }: { children: ReactNode }): ReactNode {
   );
 }
 
-type Kind = 'wheel' | 'contextMenu' | 'click' | 'pinch';
+type Kind = 'wheel' | 'contextMenu' | 'click' | 'pinch' | 'drop';
 
 /** A dispatcher on `surface` whose `kind` binding calls `run`, or binds nothing when `run` is absent. */
 function WheelOn({ surface, run, kind }: { surface: RefObject<HTMLElement | null>; run?: () => void; kind: Kind }): null {
@@ -134,5 +134,38 @@ describe('a wheel over a surface nested in another', () => {
     render(<Root><Nested outer={outer} /></Root>);
     wheel();
     expect(outer).toHaveBeenCalledTimes(1);
+  });
+});
+
+const dragEvent = (type: string): Event => Object.assign(new Event(type, { bubbles: true, cancelable: true }), {
+  dataTransfer: { items: [], files: [new File(['x'], 'a.png', { type: 'image/png' })], dropEffect: 'none' },
+  clientX: 0, clientY: 0, altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
+});
+
+describe('an OS drop on a surface nested in another', () => {
+  it('goes to the inner surface, and not on to the outer one once taken', async () => {
+    const outer = vi.fn();
+    const inner = vi.fn();
+    render(<Root><Nested outer={outer} inner={inner} kind="drop" /></Root>);
+    act(() => { document.querySelector('canvas')!.dispatchEvent(dragEvent('drop')); });
+    await waitFor(() => { expect(inner).toHaveBeenCalledTimes(1); });
+    await Promise.resolve();
+    expect(outer).not.toHaveBeenCalled();
+  });
+
+  it('marks only the inner surface as a drop target while dragged over', () => {
+    const { container } = render(<Root><Nested outer={vi.fn()} inner={vi.fn()} kind="drop" /></Root>);
+    act(() => { document.querySelector('canvas')!.dispatchEvent(dragEvent('dragover')); });
+    expect(document.querySelector('canvas')!.classList.contains('weasel-dropover')).toBe(true);
+    expect((container.firstElementChild as HTMLElement).classList.contains('weasel-dropover')).toBe(false);
+  });
+
+  it('goes on to the outer surface when the inner one binds no drop', async () => {
+    const outer = vi.fn();
+    const { container } = render(<Root><Nested outer={outer} kind="drop" /></Root>);
+    act(() => { document.querySelector('canvas')!.dispatchEvent(dragEvent('dragover')); });
+    expect((container.firstElementChild as HTMLElement).classList.contains('weasel-dropover')).toBe(true);
+    act(() => { document.querySelector('canvas')!.dispatchEvent(dragEvent('drop')); });
+    await waitFor(() => { expect(outer).toHaveBeenCalledTimes(1); });
   });
 });

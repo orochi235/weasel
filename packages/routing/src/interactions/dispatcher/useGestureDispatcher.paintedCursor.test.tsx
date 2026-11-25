@@ -1,6 +1,6 @@
 /**
  * The hover-cursor pump and the painted tier: a cursor the layer draws has to
- * survive a gesture, and has to get out of the way of a CSS cursor.
+ * survive a gesture, has to get out of the way of a CSS cursor, and goes with the listeners.
  */
 import { describe, expect, it } from 'vitest';
 import { act, render } from '@testing-library/react';
@@ -12,6 +12,7 @@ import { DepRegistryProvider } from '../actions/depRegistry';
 import type { Action } from '../actions/action';
 import type { AffordanceHit } from '../actions/invoker';
 import { useGestureDispatcher } from './useGestureDispatcher';
+import { createDispatchTrace, type DispatchTrace } from './dispatchTrace';
 
 const RING = { glyph: 'brush', worldRadius: 12 } as const;
 const PAINTED_RING = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 12 };
@@ -89,5 +90,41 @@ describe('hover-cursor pump, painted tier', () => {
     overHandle = false;
     fire('pointermove', { clientX: 7, clientY: 7 });
     expect(painted.current()?.cursor).toEqual(PAINTED_RING);
+  });
+});
+
+describe('tearing down the listeners with the pointer over the canvas', () => {
+  function Toggle({ enabled, painted, trace }: { enabled: boolean; painted: PaintedCursorState; trace: DispatchTrace }) {
+    const registry = useActionsRegistry();
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    registry?.register(brush({}));
+    useGestureDispatcher({
+      canvasRef, actions: registry!, entriesById: new Map(), enabled, trace,
+      classifyTarget: () => ({ bodyTarget: 'empty' }),
+      paintedCursor: () => painted,
+    });
+    return <canvas ref={canvasRef} />;
+  }
+
+  it('withdraws the painted pointer and the trace\'s live prediction', () => {
+    const painted = createPaintedCursorState();
+    painted.setBase(PAINTED_RING as never);
+    const trace = createDispatchTrace(200, true);
+    const tree = (enabled: boolean) => (
+      <DepRegistryProvider>
+        <ActiveToolContextProvider>
+          <ActionsProvider><Toggle enabled={enabled} painted={painted} trace={trace} /></ActionsProvider>
+        </ActiveToolContextProvider>
+      </DepRegistryProvider>
+    );
+    const { container, rerender } = render(tree(true));
+    const canvas = container.querySelector('canvas')!;
+    act(() => { canvas.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, clientX: 5, clientY: 5 })); });
+    expect(painted.current()).not.toBeNull();
+    expect(trace.live()).not.toBeNull();
+
+    rerender(tree(false));
+    expect(painted.current()).toBeNull();
+    expect(trace.live()).toBeNull();
   });
 });

@@ -220,6 +220,20 @@ function withRoles<P extends { mods?: ModifierState }>(
   return params && keys && params.mods ? { ...params, roles: resolveRoles(keys, params.mods, false) } : params;
 }
 
+const reportedMisbound = new Set<string>();
+
+/** Once per action and spec: a hover binding reaches this on every pointer move. */
+function reportMisbound(actionId: string, hover: boolean): void {
+  const key = `${hover ? 'hover' : 'press'}:${actionId}`;
+  if (reportedMisbound.has(key)) return;
+  reportedMisbound.add(key);
+  const spec = hover ? 'hover spec, which has no press to own' : 'pointerDown spec, which fires at press time';
+  console.error(
+    `weasel dispatcher: action "${actionId}" has an ongoing invoker but is bound to a `
+    + `${spec}. Bind it to a drag spec, or give the action an immediate invoker.`,
+  );
+}
+
 /** Run the candidate the walk chose. */
 export function invokeAction(
   run: GestureRun,
@@ -250,11 +264,7 @@ export function invokeAction(
     // action open its handle here would make the drag's own dispatch find
     // a handle already in flight and silently no-op.
     if (event.kind === 'hover' || (event.kind === 'pointerdown' && event.stage === 'press')) {
-      const spec = event.kind === 'hover' ? 'hover spec, which has no press to own' : 'pointerDown spec, which fires at press time';
-      console.error(
-        `weasel dispatcher: action "${action.id}" has an ongoing invoker but is bound to a `
-        + `${spec}. Bind it to a drag spec, or give the action an immediate invoker.`,
-      );
+      reportMisbound(action.id, event.kind === 'hover');
       return 'misbound';
     }
     const gestureId = gestureIdFor(event);
