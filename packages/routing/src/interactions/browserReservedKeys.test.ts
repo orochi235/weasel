@@ -58,4 +58,32 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key: 'ArrowRight', mods: { mod: true, alt: true } }, false)).toBeNull();
     expect(browserReservedChord({ kind: 'key', key: 'f', mods: { mod: true, ctrl: true } }, true)?.use).toMatch(/full screen/);
   });
+
+  it('takes Mod+1 to Mod+9, which select a tab', () => {
+    for (const apple of [true, false]) {
+      expect(browserReservedChord({ kind: 'key', key: '1', mods: { mod: true } }, apple)?.use).toMatch(/tab/);
+      expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Digit9', mods: { mod: true } }, apple)).not.toBeNull();
+    }
+    expect(browserReservedChord({ kind: 'key', key: '0', mods: { mod: true } })).toBeNull();
+  });
+
+  it('takes the history and tab chords: Alt+arrow off a Mac, Cmd+[ and Cmd+Shift+[ on one', () => {
+    expect(browserReservedChord({ kind: 'key', key: 'ArrowLeft', mods: { alt: true } }, false)?.use).toMatch(/back/);
+    expect(browserReservedChord({ kind: 'key', key: 'ArrowRight', mods: { alt: true } }, true)).toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: '[', mods: { mod: true } }, true)?.use).toMatch(/back/);
+    expect(browserReservedChord({ kind: 'key', key: ']', mods: { mod: true } }, false)).toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: '}', mods: { mod: true, shift: true } }, true)?.use).toMatch(/tab/);
+  });
+
+  it('takes the function-key and system chords: F5, F11, F12, Alt+F4, Ctrl+Shift+Esc and Ctrl+Shift+Delete', () => {
+    expect(browserReservedChord({ kind: 'key', key: 'F5' })?.use).toMatch(/reload/);
+    expect(browserReservedChord({ kind: 'key', key: 'F5', mods: { ctrl: true } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'F12' })?.use).toMatch(/devtools/);
+    expect(browserReservedChord({ kind: 'key', key: 'F11' }, false)?.use).toMatch(/full screen/);
+    expect(browserReservedChord({ kind: 'key', key: 'F4', mods: { alt: true } }, false)?.use).toMatch(/close/);
+    expect(browserReservedChord({ kind: 'key', key: 'Escape', mods: { ctrl: true, shift: true } }, false)?.use).toMatch(/Task Manager/);
+    expect(browserReservedChord({ kind: 'key', key: 'Delete', mods: { ctrl: true, shift: true } }, false)?.use).toMatch(/browsing data/);
+    expect(browserReservedChord({ kind: 'key', key: 'Backspace', mods: { mod: true, shift: true } }, true)?.use).toMatch(/browsing data/);
+    expect(browserReservedChord({ kind: 'key', key: 'F4' }, false)).toBeNull();
+  });
 });
