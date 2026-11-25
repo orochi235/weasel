@@ -78,7 +78,8 @@ export const CURSOR_ANGLE_STEPS = 16;
 export const CURSOR_MAX_CSS_PX = 128;
 
 /**
- * Visits the points that bound an authored `d` string, for the fit guards below.
+ * Visits the discs that bound an authored `d` string, for the fit guards below:
+ * a vertex as a disc of radius 0, an arc as the whole circle it lies on.
  *
  * An arc is bounded by the whole circle it lies on. Expanding the arc's
  * *endpoint* by the radii instead over-reports whenever an endpoint sits at an
@@ -89,7 +90,7 @@ export const CURSOR_MAX_CSS_PX = 128;
  * `placeCursorPath` reads it. Anything else would be measured wrong, a relative
  * command as if absolute and an `H` as no point at all, so it throws.
  */
-function walk(d: string, see: (x: number, y: number) => void): void {
+function walk(d: string, see: (x: number, y: number, r: number) => void): void {
   let cx = 0;
   let cy = 0;
   for (const { cmd, args: nums } of tokenizePathData(d)) {
@@ -117,10 +118,7 @@ function walk(d: string, see: (x: number, y: number) => void): void {
         const uy = half > 0 ? dx / (half * 2) : 0;
         const ox = (cx + x) / 2 + sign * off * ux;
         const oy = (cy + y) / 2 + sign * off * uy;
-        see(ox - r, oy - r);
-        see(ox + r, oy - r);
-        see(ox - r, oy + r);
-        see(ox + r, oy + r);
+        see(ox, oy, r);
         cx = x;
         cy = y;
       }
@@ -130,7 +128,7 @@ function walk(d: string, see: (x: number, y: number) => void): void {
     for (let i = 0; i + 2 <= nums.length; i += 2) {
       cx = nums[i]!;
       cy = nums[i + 1]!;
-      see(cx, cy);
+      see(cx, cy, 0);
     }
   }
 }
@@ -144,9 +142,9 @@ export function haloFitsInBox(glyph: CursorGlyph): boolean {
   const margin = CURSOR_HALO_WIDTH / 2;
   let ok = true;
   for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
-    walk(p.d, (x, y) => {
+    walk(p.d, (x, y, r) => {
       for (const v of [x, y]) {
-        if (v < margin || v > glyph.box - margin) ok = false;
+        if (v - r < margin || v + r > glyph.box - margin) ok = false;
       }
     });
   }
@@ -166,8 +164,8 @@ export function rotationFitsInBox(glyph: CursorGlyph): boolean {
   const limit = c - CURSOR_HALO_WIDTH / 2;
   let ok = true;
   for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
-    walk(p.d, (x, y) => {
-      if (Math.hypot(x - c, y - c) > limit) ok = false;
+    walk(p.d, (x, y, r) => {
+      if (Math.hypot(x - c, y - c) + r > limit) ok = false;
     });
   }
   return ok;

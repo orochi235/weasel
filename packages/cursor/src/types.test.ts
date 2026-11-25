@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { haloFitsInBox } from './types';
+import { haloFitsInBox, rotationFitsInBox } from './types';
 import type { CursorGlyph } from './types';
 
 const glyph = (box: number, d: string): CursorGlyph => ({
@@ -34,6 +34,14 @@ describe('haloFitsInBox', () => {
 
   it('refuses a relative command rather than mismeasuring it', () => {
     expect(() => haloFitsInBox(glyph(24, 'M 5 5 l 6 6 Z'))).toThrow(/relative/);
+  });
+});
+
+describe('rotationFitsInBox', () => {
+  it('measures an arc by its circle, not by the corners of its bounding square', () => {
+    // A centered ring of radius 9 reaches 10.3 with its halo, inside the 12 of the inscribed circle at every angle.
+    expect(rotationFitsInBox(glyph(24, 'M 12 3 A 9 9 0 1 0 12 21 A 9 9 0 1 0 12 3 Z'))).toBe(true);
+    expect(rotationFitsInBox(glyph(24, 'M 12 1 A 11 11 0 1 0 12 23 A 11 11 0 1 0 12 1 Z'))).toBe(false);
   });
 });
 
