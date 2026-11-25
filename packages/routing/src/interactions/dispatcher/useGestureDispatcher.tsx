@@ -76,8 +76,7 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
   useEffect(() => depRegistry.register('dispatchTrace', () => trace), [depRegistry, trace]);
   usePublishRuleCtx(depRegistry, getRuleCtx);
 
-  const dispatcherRef = useRef<Dispatcher | null>(null);
-  dispatcherRef.current ??= dispatcherOpt ?? createDispatcher();
+  const dispatcher = useDispatcherOption(dispatcherOpt);
 
   // No `getRuleCtx` here: eligibility is a per-view answer, so it rides on the
   // dispatch record and the core installs the routed view's.
@@ -101,7 +100,7 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
 
   // The flat options are view zero.
   const rootTargetRef = useLatest<DispatcherViewTarget>({
-    id: null, dispatcher: dispatcherRef.current, affordanceAt, classifyTarget, clientToWorld,
+    id: null, dispatcher, affordanceAt, classifyTarget, clientToWorld,
     getRuleCtx,
   });
   const viewsRef = useLatest(views);
@@ -166,6 +165,19 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
     });
   }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
     allDispatchers, clientToLocalRef, controlsRef, ctxRef, heldPointer, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+}
+
+/** The `dispatcher` option, else one of the hook's own; a gesture on one swapped out would never hear its release, so it is canceled. */
+function useDispatcherOption(given: Dispatcher | undefined): Dispatcher {
+  const ownRef = useRef<Dispatcher | null>(null);
+  const dispatcher = given ?? (ownRef.current ??= createDispatcher());
+  const pumpedRef = useRef(dispatcher);
+  useEffect(() => {
+    const was = pumpedRef.current;
+    pumpedRef.current = dispatcher;
+    if (was !== dispatcher) was.cancelAll('cancel');
+  }, [dispatcher]);
+  return dispatcher;
 }
 
 /** The incoming tool must not inherit a live gesture, nor the last-operation panel of one the outgoing tool finished. */
