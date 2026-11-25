@@ -51,6 +51,7 @@ export interface HistoryBranch {
 /** One change to a history's stacks, as `History.observe` reports it.
  *
  * - `'push'` — an entry was added: `applyOps`, `apply`, `recordEntry`, a journal's commit.
+ *   A `recordEntry` or a journal's commit that folds into the top entry under its `coalesceKey` is a `'coalesce'`.
  * - `'coalesce'` — a push merged into the entry on top; `ops` are the ones it brought.
  * - `'undo'` / `'redo'` / `'goto'` — the entries walked across, in the order walked. A `goto` that threw
  *   and could not walk all the way back lists both walks, so an entry can appear twice.

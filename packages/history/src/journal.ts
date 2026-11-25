@@ -110,8 +110,10 @@ export interface Journal {
   subscribe(listener: () => void): () => void;
 
   // Lifecycle
-  /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
-   *  opened with. Throws while a journal opened inside this one is still active or suspended. */
+  /** Flushes the journal to its parent as one entry labeled `label`, or the label it was opened with. A
+   *  session made only of entries recorded under one `coalesceKey` instead folds into the parent's top entry
+   *  when that one carries the key and its run is still open, keeping that entry's label. Throws while a
+   *  journal opened inside this one is still active or suspended. */
   commit(label?: string): void;
   /** Cancels every journal still open inside this one, suspended ones included, the one that
    *  edited last first, each after undoing this journal's own edits made since. */
