@@ -143,7 +143,7 @@ export function createForks(env: ForksEnv) {
       if (redoStack.length > 0) kept.push(redoStack.splice(0).reverse());
       if (kept.length > 0) forks.set(at, kept);
       else forks.delete(at);
-      redoStack.push(...[...chosen!].reverse());
+      refill(redoStack, [...chosen!].reverse());
       evictBranchesPast(forks, branchLimit, evict);
       return chosen;
     },
@@ -166,3 +166,10 @@ export function createForks(env: ForksEnv) {
 }
 
 export type Forks = ReturnType<typeof createForks>;
+
+/** Make `target` hold `source`'s entries in place, by a loop: spreading a stack into a call's arguments throws
+ *  past the engine's argument limit. */
+export function refill<T>(target: T[], source: readonly T[]): void {
+  target.length = source.length;
+  for (let i = 0; i < source.length; i++) target[i] = source[i]!;
+}
