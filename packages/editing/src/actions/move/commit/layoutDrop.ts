@@ -5,6 +5,7 @@ import type { LayoutPass } from '../layout/types';
 import type { MoveSession } from '../session';
 import { rebaseTransformOp } from './rebase';
 import { opInWorld } from '../layout/view';
+import { landOps } from './reparent';
 import * as coreOps from '@weasel-js/core/ops';
 
 /** The ops of a drop a layout container accepted: reparents, then each
@@ -34,16 +35,12 @@ export function layoutDropOps(session: MoveSession, pass: LayoutPass): Op[] | nu
   const reparentOps: Op[] = [];
   const dropOps: Op[] = [];
   const page = pageIdOf(session.scene, asNodeId(destId));
+  const destLayer = session.scene.get(asNodeId(destId))!.layer;
   const landed = new Map<string, string | null>();
   for (const placement of lp.placements) {
     if (placement.dragged.sourceContainerId !== destId) {
       landed.set(placement.dragged.id, page);
-      reparentOps.push(coreOps.reparent({
-        id: placement.dragged.id,
-        fromParentId: placement.dragged.sourceContainerId,
-        toParentId: destId,
-        label: 'Reparent',
-      }));
+      reparentOps.push(...landOps(session, asNodeId(placement.dragged.id), asNodeId(destId), undefined, destLayer));
     }
     const ops = lp.layout.commitDrop(
       lp.container,
