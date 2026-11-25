@@ -112,6 +112,25 @@ describe('createComponentGraph', () => {
     expect(graph['ui/Menu Item']?.source).toBeNull();
   });
 
+  it('follows every member of a dotted meta component, and finds nothing where one is missing', async () => {
+    const ws = workspace({
+      ...FILES,
+      'ui/Menu.tsx': `import { Badge } from '@ui';\nconst Icon = () => <Badge />;\nconst Item = Object.assign(() => null, { Icon });\nexport const Menu = Object.assign(() => null, { Item });\n`,
+      'stories/Icon.stories.tsx': `import { Menu } from '../ui/Menu';\nexport default { title: 'ui/Menu Icon', component: Menu.Item.Icon };\n`,
+      'stories/Gap.stories.tsx': `import { Menu } from '../ui/Menu';\nexport default { title: 'ui/Menu Gap', component: Menu.Item.Gap };\n`,
+    });
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(
+      [
+        ...ENTRIES,
+        entry('ui/Menu Icon', 'stories/Icon.stories.tsx', { componentName: 'Menu.Item.Icon' }),
+        entry('ui/Menu Gap', 'stories/Gap.stories.tsx', { componentName: 'Menu.Item.Gap' }),
+      ],
+      ws.resolve,
+    );
+    expect(graph['ui/Menu Icon']?.uses).toEqual(['ui/Badge']);
+    expect(graph['ui/Menu Gap']?.source).toBeNull();
+  });
+
   it("walks a helper in the component's own directory whose name starts with two dots", async () => {
     const ws = workspace({
       ...FILES,

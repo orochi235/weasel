@@ -10,9 +10,14 @@ export type Bindings = Map<string, t.Node>;
 /** A file's callees that are forge's `meta` or `story`, and which, keyed as `calleeName` writes them. */
 export type Wrappers = ReadonlyMap<string, 'meta' | 'story'>;
 
+/** The syntax babel reads `file` with: JSX in any JavaScript file and in `.tsx`, TypeScript in any but JavaScript. */
+export function parserPluginsFor(file: string): ParserPlugin[] {
+  const js = /\.[cm]?jsx?$/.test(file);
+  return [...(js ? [] : (['typescript'] as const)), 'decorators-legacy', ...(js || /\.[cm]?tsx$/.test(file) ? (['jsx'] as const) : [])];
+}
+
 export function parseFile(code: string, file: string): t.Program {
-  const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
-  return parse(code, { sourceType: 'module', plugins }).program;
+  return parse(code, { sourceType: 'module', plugins: parserPluginsFor(file) }).program;
 }
 
 /** The local a default export that names no binding of its own is declared as. */
@@ -46,21 +51,81 @@ export function bindingsOf(program: t.Program): Bindings {
   return bindings;
 }
 
-/** Every name `node` assigns to, `=`, `+=`, `++` or a `for…in`/`for…of` head, in whatever scope. */
-function assignedNames(node: t.Node): Set<string> {
-  const out = new Set<string>();
+const FUNCTIONS: ReadonlySet<string> = new Set([
+  'FunctionDeclaration',
+  'FunctionExpression',
+  'ArrowFunctionExpression',
+  'ObjectMethod',
+  'ClassMethod',
+  'ClassPrivateMethod',
+]);
+
+const childrenOf = (n: t.Node): unknown[] =>
+  Object.entries(n).flatMap(([key, child]) => (key === 'loc' || key.endsWith('Comments') ? [] : [child]));
+
+const isNode = (value: unknown): value is t.Node =>
+  !!value && typeof value === 'object' && typeof (value as t.Node).type === 'string';
+
+/** The `var`s a function body declares, outside any function nested in it. */
+function varNames(body: t.Node): string[] {
+  const out: string[] = [];
   const visit = (value: unknown): void => {
     if (Array.isArray(value)) return value.forEach(visit);
-    if (!value || typeof value !== 'object' || typeof (value as t.Node).type !== 'string') return;
-    const n = value as t.Node;
-    if (n.type === 'AssignmentExpression') for (const name of patternNames(n.left as t.LVal)) out.add(name);
-    else if (n.type === 'UpdateExpression' && n.argument.type === 'Identifier') out.add(n.argument.name);
-    else if ((n.type === 'ForInStatement' || n.type === 'ForOfStatement') && n.left.type !== 'VariableDeclaration') {
-      for (const name of patternNames(n.left)) out.add(name);
-    }
-    for (const [key, child] of Object.entries(n)) if (key !== 'loc' && !key.endsWith('Comments')) visit(child);
+    if (!isNode(value) || FUNCTIONS.has(value.type)) return;
+    if (value.type === 'VariableDeclaration' && value.kind === 'var') out.push(...value.declarations.flatMap((d) => patternNames(d.id)));
+    childrenOf(value).forEach(visit);
   };
-  visit(node);
+  visit(body);
+  return out;
+}
+
+/** The names `n` declares for its own scope, which hide a top-level binding of the same name inside it. */
+function scopeNames(n: t.Node): string[] {
+  if (FUNCTIONS.has(n.type)) {
+    const fn = n as t.Function;
+    const own = fn.type === 'FunctionExpression' && fn.id ? [fn.id.name] : [];
+    return [...own, ...fn.params.flatMap((p) => patternNames(p.type === 'TSParameterProperty' ? p.parameter : p)), ...varNames(fn.body)];
+  }
+  if (n.type === 'CatchClause') return patternNames(n.param);
+  if (n.type === 'ClassExpression' && n.id) return [n.id.name];
+  const statements =
+    n.type === 'BlockStatement' || n.type === 'StaticBlock'
+      ? n.body
+      : n.type === 'SwitchStatement'
+        ? n.cases.flatMap((c) => c.consequent)
+        : n.type === 'ForStatement'
+          ? [n.init]
+          : n.type === 'ForInStatement' || n.type === 'ForOfStatement'
+            ? [n.left]
+            : [];
+  return statements.flatMap((stmt) => {
+    if (stmt?.type === 'VariableDeclaration' && stmt.kind !== 'var') return stmt.declarations.flatMap((d) => patternNames(d.id));
+    if ((stmt?.type === 'FunctionDeclaration' || stmt?.type === 'ClassDeclaration') && stmt.id) return [stmt.id.name];
+    return [];
+  });
+}
+
+/**
+ * Every top-level name `program` assigns to, `=`, `+=`, `++` or a `for…in`/`for…of` head, at any depth, leaving out
+ * an assignment to an inner scope's own variable of that name.
+ */
+function assignedNames(program: t.Program): Set<string> {
+  const out = new Set<string>();
+  const visit = (value: unknown, hidden: ReadonlySet<string>): void => {
+    if (Array.isArray(value)) return value.forEach((v) => visit(v, hidden));
+    if (!isNode(value)) return;
+    const n = value;
+    const inner = scopeNames(n);
+    const scope = inner.length === 0 ? hidden : new Set([...hidden, ...inner]);
+    const add = (names: string[]) => names.forEach((name) => scope.has(name) || out.add(name));
+    if (n.type === 'AssignmentExpression') add(patternNames(n.left as t.LVal));
+    else if (n.type === 'UpdateExpression' && n.argument.type === 'Identifier') add([n.argument.name]);
+    else if ((n.type === 'ForInStatement' || n.type === 'ForOfStatement') && n.left.type !== 'VariableDeclaration') {
+      add(patternNames(n.left));
+    }
+    for (const child of childrenOf(n)) visit(child, scope);
+  };
+  visit(program, new Set());
   return out;
 }
 

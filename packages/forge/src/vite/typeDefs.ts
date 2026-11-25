@@ -24,9 +24,11 @@ const definedBy = (tsm: typeof ts, node: ts.Declaration | undefined): node is De
 export interface TypeDefs {
   defs: Map<string, ApiTypeDef>;
   seen: Map<string, Defined | null>;
+  /** The files the definitions were printed from. */
+  files: Set<string>;
 }
 
-export const createTypeDefs = (): TypeDefs => ({ defs: new Map(), seen: new Map() });
+export const createTypeDefs = (): TypeDefs => ({ defs: new Map(), seen: new Map(), files: new Set() });
 
 /**
  * Adds to `into` the definition of each name in `text` that, seen from `from`, is an interface, type alias or enum
@@ -70,4 +72,5 @@ export function addTypeDef(reading: TypeDefReading, symbol: ts.Symbol, into: Typ
   const description = tsm.displayPartsToString(symbol.getDocumentationComment(checker)).replace(/\s+/g, ' ').trim();
   if (description) def.description = description;
   into.defs.set(name, def);
+  into.files.add(file.fileName);
 }

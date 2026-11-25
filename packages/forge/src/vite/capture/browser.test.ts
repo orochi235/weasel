@@ -43,11 +43,12 @@ async function route(
   handler: (route: FakeRoute) => unknown,
   url: string,
   method = 'GET',
+  headers: Record<string, string> = {},
 ): Promise<{ decision: 'continue' | 'abort' | 'fulfill'; fulfilled?: { status: number; headers: Record<string, string> } }> {
   let decision: 'continue' | 'abort' | 'fulfill' | null = null;
   let fulfilled: { status: number; headers: Record<string, string> } | undefined;
   await handler({
-    request: () => ({ url: () => url, method: () => method, headers: () => ({}) }),
+    request: () => ({ url: () => url, method: () => method, headers: () => headers }),
     continue: async () => {
       decision = 'continue';
     },
@@ -383,6 +384,31 @@ describe('launchCaptureBrowser', () => {
       await browser.close();
     },
   );
+
+  it('drops credentials from a redirected request when the hop changes origin, as fetch does', async () => {
+    const fake = fakePlaywright();
+    const sent: [string, Record<string, string>][] = [];
+    const hops: Record<string, string> = {
+      'https://a.example/x': '/y',
+      'https://a.example/y': 'https://b.example/z',
+    };
+    const fetchImpl = (async (input: string, init?: RequestInit) => {
+      sent.push([input, { ...(init?.headers as Record<string, string>) }]);
+      const location = hops[input];
+      return location ? new Response(null, { status: 302, headers: { location } }) : new Response('ok');
+    }) as typeof fetch;
+    const browser = await launched(fake.load, fetchImpl);
+    await browser.capture('https://127.0.0.1:5173/__forge/capture.html', payload, ['https://a.example', 'https://b.example']);
+    const [handler] = fake.routes;
+    const headers = { authorization: 'Bearer t', cookie: 'k=v', 'proxy-authorization': 'p', accept: 'font/woff2' };
+    expect((await route(handler!, 'https://a.example/x', 'GET', headers)).decision).toBe('fulfill');
+    expect(sent).toEqual([
+      ['https://a.example/x', headers],
+      ['https://a.example/y', headers],
+      ['https://b.example/z', { accept: 'font/woff2' }],
+    ]);
+    await browser.close();
+  });
 
   it('aborts an allowlisted request that redirects without end', async () => {
     const fake = fakePlaywright();

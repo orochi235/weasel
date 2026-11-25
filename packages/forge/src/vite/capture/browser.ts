@@ -55,6 +55,12 @@ export async function captureAvailability(load: Load = loadPlaywright): Promise<
 /** Headers describing the body as it came over the wire, which Node's fetch has already decoded. */
 const WIRE_HEADERS = new Set(['content-encoding', 'content-length', 'transfer-encoding']);
 
+/** Headers a redirect to another origin does not carry on, as fetch drops them. */
+const CREDENTIAL_HEADERS = new Set(['authorization', 'cookie', 'proxy-authorization']);
+
+const withoutCredentials = (headers: Record<string, string>): Record<string, string> =>
+  Object.fromEntries(Object.entries(headers).filter(([name]) => !CREDENTIAL_HEADERS.has(name.toLowerCase())));
+
 /** How many redirects an allowlisted request may follow before it is aborted. */
 const MAX_REDIRECTS = 5;
 
@@ -69,12 +75,15 @@ async function passThrough(route: Route, reach: (origin: string) => boolean, fet
   if (method !== 'GET' && method !== 'HEAD') return route.abort();
   try {
     let url = request.url();
+    let headers = request.headers();
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      const response = await fetchImpl(url, { method, headers: request.headers(), redirect: 'manual' });
+      const response = await fetchImpl(url, { method, headers, redirect: 'manual' });
       const location = response.headers.get('location');
       if (response.status >= 300 && response.status < 400 && location !== null) {
-        url = new URL(location, url).href;
-        if (!reach(new URL(url).origin)) return await route.abort();
+        const next = new URL(location, url);
+        if (!reach(next.origin)) return await route.abort();
+        if (next.origin !== new URL(url).origin) headers = withoutCredentials(headers);
+        url = next.href;
         continue;
       }
       return await route.fulfill({

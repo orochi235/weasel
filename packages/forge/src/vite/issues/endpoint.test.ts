@@ -77,6 +77,20 @@ describe('repoOf', () => {
     });
     expect(repoOf('/srv/git/widgets.git')).toBeNull();
   });
+
+  it('names nothing for a host known not to be GitHub, at its own domain or self-hosted', () => {
+    for (const remote of [
+      'git@gitlab.com:team/app.git',
+      'https://gitlab.com/team/app.git',
+      'git@bitbucket.org:team/app.git',
+      'https://codeberg.org/team/app',
+      'git@gitlab.acme.test:team/app.git',
+      'ssh://git@gitlab:2222/team/app.git',
+    ]) {
+      expect(repoOf(remote), remote).toBeNull();
+    }
+    expect(repoOf('git@mygitlab.acme.test:team/app.git')?.ghRepo).toBe('mygitlab.acme.test/team/app');
+  });
 });
 
 describe('serveIssues', () => {

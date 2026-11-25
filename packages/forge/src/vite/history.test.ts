@@ -33,6 +33,20 @@ describe('fileDates', () => {
     });
     expect(dates.has('pkg/ui/src/New.tsx')).toBe(false);
   });
+
+  it('reads a path git C-quotes, as it does one holding a quote, a backslash, or a control character', () => {
+    const log = [
+      commit('c2', '2026-02-01T00:00:00Z', 'R100\t"src/a\\"b.tsx"\t"src/t\\tab\\\\c\\001é.tsx"'),
+      commit('c1', '2026-01-01T00:00:00Z', 'A\t"src/a\\"b.tsx"'),
+    ].join('\n');
+    const path = 'src/t\tab\\c\u0001é.tsx';
+    expect(fileDates(log, [path]).get(path)).toEqual({
+      created: '2026-01-01T00:00:00Z',
+      modified: '2026-02-01T00:00:00Z',
+      createdBy: 'c1',
+      modifiedBy: 'c2',
+    });
+  });
 });
 
 describe('fileDates of a file deleted or renamed away since (found by history.pbt)', () => {

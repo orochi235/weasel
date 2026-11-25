@@ -17,6 +17,31 @@ export const runGit: Git = (args, cwd) =>
 /** A commit header in the log `fileDates` reads: a NUL, the hash, a tab, the author date. */
 const LOG_FORMAT = '--format=%x00%H%x09%aI';
 
+const ESCAPES = new Map(Object.entries({ a: 7, b: 8, t: 9, n: 10, v: 11, f: 12, r: 13, '"': 34, '\\': 92 }));
+
+/** A path as git writes it in a log: C-quoted when it holds a quote, a backslash, or a control character. */
+function unquoted(name: string): string {
+  if (!(name.length > 1 && name.startsWith('"') && name.endsWith('"'))) return name;
+  const bytes: number[] = [];
+  const body = name.slice(1, -1);
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i]!;
+    if (ch !== '\\') {
+      bytes.push(...Buffer.from(ch, 'utf8'));
+      continue;
+    }
+    const octal = /^[0-7]{3}/.exec(body.slice(i + 1))?.[0];
+    if (octal) {
+      bytes.push(parseInt(octal, 8));
+      i += 3;
+    } else {
+      bytes.push(ESCAPES.get(body[i + 1] ?? '') ?? body.charCodeAt(i + 1));
+      i += 1;
+    }
+  }
+  return Buffer.from(bytes).toString('utf8');
+}
+
 interface FileDates {
   created: string;
   modified: string;
@@ -42,7 +67,7 @@ export function fileDates(log: string, paths: readonly string[]): Map<string, Fi
       [commit = '', date = ''] = line.slice(1).split('\t');
       continue;
     }
-    const [status, ...files] = line.split('\t');
+    const [status, ...files] = line.split('\t').map((field, i) => (i === 0 ? field : unquoted(field)));
     const name = files.at(-1);
     const path = name === undefined ? undefined : names.get(name);
     const renamed = status?.startsWith('R') ? files[0] : undefined;
