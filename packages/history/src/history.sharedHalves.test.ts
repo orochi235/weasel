@@ -82,3 +82,51 @@ describe('History — a failed step on an entry whose halves share ops', () => {
     expect(cells).toEqual({ n: 1, a: 2 });
   });
 });
+
+/** A write of `to` to `key` that throws while `key=to` is listed. */
+function writeOp(key: string, from: number, to: number, coalesceKey?: string): Op {
+  return {
+    name: 'test:write',
+    args: { key, from, to },
+    ...(coalesceKey ? { coalesceKey } : {}),
+    apply(a: Cells) {
+      if (broken.has(`${key}=${to}`)) throw new Error(`cannot write ${key}=${to}`);
+      a[key] = to;
+    },
+    invert: () => writeOp(key, to, from, coalesceKey),
+  } as Op;
+}
+
+describe('History — a failed step on a coalesced entry followed by a shared op writing the same field', () => {
+  /** A coalesced run writing x to 5 and then 10, then an unkeyed write of x to 15, committed as one entry. */
+  function session() {
+    broken.clear();
+    let t = 0;
+    const cells: Cells = { x: 0 };
+    const history = createHistory(cells, { coalesceWindowMs: 500, now: () => t });
+    const j = history.beginJournal({ label: 'session' });
+    j.applyOps([writeOp('x', 0, 5, 'x')], 'drag');
+    t += 10;
+    j.applyOps([writeOp('x', 5, 10, 'x')], 'drag');
+    t += 1000;
+    j.applyOps([writeOp('x', 10, 15)], 'set');
+    j.commit('Edit');
+    return { cells, history };
+  }
+
+  it('undo leaves the state where it began', () => {
+    const { cells, history } = session();
+    broken.add('x=0');
+    expect(() => history.undo()).toThrow('cannot write x=0');
+    expect(cells).toEqual({ x: 15 });
+    expect(history.canUndo()).toBe(true);
+  });
+
+  it('redo leaves the state where it began', () => {
+    const { cells, history } = session();
+    history.undo();
+    broken.add('x=15');
+    expect(() => history.redo()).toThrow('cannot write x=15');
+    expect(cells).toEqual({ x: 0 });
+  });
+});

@@ -21,14 +21,13 @@ export function createVersionClock() {
     current: () => version,
     /** Whether anything observes steps, so a caller can skip building one. */
     observed: () => stepped.size > 0,
-    bump(step?: HistoryStep): void {
+    /** `anchor` opens the coalesce window at the new version before any listener hears of it, so a
+     *  listener's own seal or step closes it. */
+    bump(step?: HistoryStep, anchor = false): void {
       version++;
+      if (anchor) anchorVersion = version;
       if (step && stepped.size > 0) stepped.emit(step);
       changed.emit();
-    },
-    /** Open the coalesce window at the current version. */
-    anchor(): void {
-      anchorVersion = version;
     },
     seal(): void {
       anchorVersion = -1;
