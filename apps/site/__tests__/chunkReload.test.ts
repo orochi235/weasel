@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isChunkLoadError, RELOAD_WINDOW_MS, reloadOnce, type ReloadStore } from '../chunkReload';
+import { isChunkLoadError, RELOAD_WINDOW_MS, reloadOnce, type ReloadStore } from '@shared/chunkReload';
 
 const memory = (): ReloadStore => {
   const data = new Map<string, string>();

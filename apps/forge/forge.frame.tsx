@@ -1,5 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/labkit/styles.css';
+import { reloadOnStaleChunks } from '@shared/chunkReload';
 import { type Decorator, defineFrameConfig, type StoryContext } from '@weasel-js/forge';
 import { ThemeProvider } from '@weasel-js/theme/react';
 import type { ReactNode } from 'react';
@@ -11,7 +12,10 @@ import { fontRule, loadWebFonts } from './fonts';
 import { followScheme, useResolvedMode } from './mode';
 import { applyTrialTheme, trialChoice } from './themes';
 
-if (typeof document !== 'undefined') loadWebFonts(document);
+if (typeof document !== 'undefined') {
+  loadWebFonts(document);
+  reloadOnStaleChunks();
+}
 
 const isLabkit = (title: string): boolean => title.startsWith('labkit/');
 

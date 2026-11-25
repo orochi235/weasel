@@ -4,7 +4,7 @@ import { CanvasBackendProvider } from '@weasel-js/core';
 import { FrontPage } from './FrontPage/FrontPage';
 import { atFront } from './routes';
 import { backendFromUrl } from './canvasBackend';
-import { sessionStore } from './chunkReload';
+import { sessionStore } from '@shared/chunkReload';
 import { PageBoundary } from './PageBoundary';
 
 // Everything behind the front page — the demo registry, the kit, the fonts —

@@ -3,7 +3,7 @@ import { useNearViewport, useWindowEvent } from '@weasel-js/react';
 import { FORGE_LAB } from '@shared/labs';
 import { Tab, TabList, TabPanel, Tabs } from '@weasel-js/ui/components/Tabs';
 import { DEMOS, DEMOS_BY_ID, placeOf, type DemoEntry, type DemoSourceTab } from './registry';
-import { sessionStore } from './chunkReload';
+import { sessionStore } from '@shared/chunkReload';
 import { PageBoundary } from './PageBoundary';
 import { TAGLINE } from './FrontPage/tagline';
 import { VersionPill } from './FrontPage/VersionPill';

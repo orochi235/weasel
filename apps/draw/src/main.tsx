@@ -1,3 +1,4 @@
+import { reloadOnStaleChunks } from '@shared/chunkReload';
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/theme/fonts.css';
 import { StrictMode, Suspense, lazy, use, useState } from 'react';
@@ -17,6 +18,8 @@ import { registerDefaultFont } from '@shared/defaultFont';
 import { migrateLegacyPanelFlags } from './surfaces/surfaceState';
 import { drawPrefs, importLegacyPrefs } from './prefs';
 import { openSession } from './openSession';
+
+reloadOnStaleChunks();
 const ICON_VARIANTS = {
   all: () => import('virtual:weasel-icons/all'),
   draw: () => import('virtual:weasel-icons/draw'),

@@ -5,14 +5,9 @@ import { DEV_DEVTOOLS } from '@weasel-js/devtools/mount';
 import '@weasel-js/theme/fonts.css';
 import './typography.css';
 import { App } from './App';
-import { reloadOnce, sessionStore } from './chunkReload';
+import { reloadOnStaleChunks } from '@shared/chunkReload';
 
-// A tab opened before a deploy preloads chunks that no longer exist. Left unhandled, the import rejects into PageBoundary.
-window.addEventListener('vite:preloadError', (event) => {
-  if (!reloadOnce(sessionStore(), Date.now())) return;
-  event.preventDefault();
-  window.location.reload();
-});
+reloadOnStaleChunks();
 
 const container = document.getElementById('root');
 if (!container) throw new Error('Missing #root element');

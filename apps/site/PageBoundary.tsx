@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { isChunkLoadError, reloadOnce, type ReloadStore } from './chunkReload';
+import { isChunkLoadError, reloadOnce, type ReloadStore } from '@shared/chunkReload';
 
 export interface PageBoundaryProps {
   readonly children: ReactNode;

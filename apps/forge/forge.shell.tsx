@@ -1,3 +1,4 @@
+import { reloadOnStaleChunks } from '@shared/chunkReload';
 import { defineShellConfig, FOLLOW_APP } from '@weasel-js/forge';
 import { FORGE_LAB, LABS } from '@shared/labs';
 import { DEVTOOLS_GLOBALS } from './devtools';
@@ -5,7 +6,10 @@ import { FONT_GLOBALS, fontTheme, loadWebFonts } from './fonts';
 import { LIBRARIES } from './libraries';
 import { chromeTheme, THEME_GLOBAL } from './themes';
 
-if (typeof document !== 'undefined') loadWebFonts(document);
+if (typeof document !== 'undefined') {
+  loadWebFonts(document);
+  reloadOnStaleChunks();
+}
 
 export default defineShellConfig({
   pages: LABS,

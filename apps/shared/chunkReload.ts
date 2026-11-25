@@ -45,3 +45,15 @@ export function sessionStore(): ReloadStore | undefined {
     return undefined;
   }
 }
+
+/**
+ * Reloads the page once when a chunk it preloads no longer exists, as in a tab opened before a deploy; a chunk still
+ * missing after that reload is left to reject into whatever catches it.
+ */
+export function reloadOnStaleChunks(): void {
+  window.addEventListener('vite:preloadError', (event) => {
+    if (!reloadOnce(sessionStore(), Date.now())) return;
+    event.preventDefault();
+    window.location.reload();
+  });
+}

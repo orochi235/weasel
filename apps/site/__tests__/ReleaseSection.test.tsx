@@ -1,7 +1,7 @@
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { NO_FILTER, type ReleaseIndexEntry } from '@shared/releases';
-import type { ReloadStore } from '../chunkReload';
+import type { ReloadStore } from '@shared/chunkReload';
 import { PageBoundary } from '../PageBoundary';
 import { ReleaseSection } from '../ReleaseSection';
 

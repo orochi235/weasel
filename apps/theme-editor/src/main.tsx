@@ -1,3 +1,4 @@
+import { reloadOnStaleChunks } from '@shared/chunkReload';
 import '@weasel-js/theme/tokens.css';
 import '@weasel-js/labkit/styles.css';
 
@@ -6,6 +7,8 @@ import { StrictMode } from 'react';
 import { IconRegistryProvider } from '@weasel-js/icons/react';
 import icons from 'virtual:weasel-icons';
 import { App } from './App';
+
+reloadOnStaleChunks();
 
 const ICON_VARIANTS = { all: () => import('virtual:weasel-icons/all') };
 
