@@ -2,6 +2,8 @@
 '@weasel-js/ui': patch
 ---
 
-When a `ToolbarDock` host has not yet sent the layout a move made, the next drag starts from the arrangement on screen, so the bars hold still under the press and drop where the mark shows.
+A `ToolbarDock` drag starts from the arrangement on screen while the host has not yet sent the last move's layout.
+
+The bars hold still under the press, and the bar drops where the mark shows.
 
 <!-- entry: fix -->

@@ -2,6 +2,6 @@
 '@weasel-js/ui': patch
 ---
 
-A `ToolbarDock` dock whose bars all draw nothing shows a strip to drop on during a drag, as an empty dock does, and a bar dropped there joins it.
+A `ToolbarDock` drag shows a drop strip for a dock whose bars all draw nothing, as it does for an empty dock.
 
 <!-- entry: fix -->
