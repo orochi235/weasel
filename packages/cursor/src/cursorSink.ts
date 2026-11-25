@@ -41,7 +41,8 @@ const shown = (cursor: ResolvedCursor | null): ResolvedCursor | null =>
  * unless other code has written one since, and a cursor some other code put on
  * the element is otherwise left alone. When `element()` starts answering another
  * element, the one it wrote to is given back what it showed before the sink
- * wrote there.
+ * wrote there; when `painted()` starts answering another state, the slots it
+ * set on the old one are cleared.
  */
 export function createCursorSink(target: CursorSinkTarget): CursorSink {
   type El = { style: { cursor: string } };
@@ -51,6 +52,7 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
   let ownsBase = false;
   /** The element the sink last wrote, what it showed before, and what the sink wrote there. */
   let written: { el: El; prior: string; css: string } | null = null;
+  let paintedTo: PaintedCursorState | undefined;
 
   const giveBack = (): void => {
     if (!written) return;
@@ -61,6 +63,11 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
 
   const writePainted = (): void => {
     const painted = target.painted();
+    if (paintedTo && paintedTo !== painted) {
+      if (ownsBase) paintedTo.setBase(null);
+      paintedTo.setOverride(null);
+    }
+    paintedTo = painted;
     if (!painted) return;
     if (ownsBase) painted.setBase(base?.kind === 'painted' ? base : null);
     // A CSS override silences the layer too, or a painted base keeps drawing

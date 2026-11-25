@@ -121,4 +121,20 @@ describe('createCursorSink', () => {
     expect(b.style.cursor).toBe('');
     expect(a.style.cursor).toBe('move');
   });
+
+  it('clears the slots it set on a painted state it stops answering', () => {
+    const el = { style: { cursor: '' } };
+    const first = createPaintedCursorState();
+    const second = createPaintedCursorState();
+    first.setPointer(5, 5);
+    second.setPointer(5, 5);
+    let painted = first;
+    const sink = createCursorSink({ element: () => el, painted: () => painted });
+    sink.setBase(ring);
+    sink.setOverride(ring);
+    painted = second;
+    sink.setOverride(null);
+    expect(first.current()).toBeNull();
+    expect(second.current()?.cursor).toEqual(ring);
+  });
 });
