@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
-import { GLImageCache, maxImageTextureSide, releaseImageSource } from './GLImageCache';
+import { GLImageCache, imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from './GLImageCache';
 
 /** The GL texture behind a cache's handle. */
 const glOf = (tex: object): unknown => (tex as { handle: unknown }).handle;
@@ -47,6 +47,21 @@ describe('GLImageCache', () => {
     expect(cache.drewInLatestFrame(fakeImg1)).toBe(false);
     expect(cache.texture(fakeImg1)).toBe(made);
     expect(cache.drewInLatestFrame(fakeImg1)).toBe(true);
+  });
+
+  it('a cache replacing another answers for the frame the old one drew', () => {
+    const { gl } = createGLRecorder();
+    const gpu = webglDevice(gl);
+    const key = {};
+    const old = new GLImageCache(gpu);
+    old.beginFrame();
+    old.upload(key, fakeImgData);
+    old.dispose();
+    const next = new GLImageCache(gpu, 'mipmap', old);
+    expect(imageSourceInLatestFrame(key)).toBe(true);
+    next.beginFrame();
+    expect(imageSourceInLatestFrame(key)).toBe(false);
+    next.dispose();
   });
 
   it('sets CLAMP_TO_EDGE wrap by default', () => {

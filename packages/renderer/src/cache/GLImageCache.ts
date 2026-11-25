@@ -31,6 +31,11 @@ type TexSource = ImageTexSource;
  *  WebGL2's guaranteed 2048, and at or below what every current GPU reports. */
 const DEFAULT_MAX_TEXTURE_SIDE = 4096;
 
+interface DrawnRecord {
+  frame: number;
+  readonly at: WeakMap<object, number>;
+}
+
 const live = new Set<GLImageCache>();
 
 /** Free `key`'s texture in every live renderer. For an owner that has replaced
@@ -66,18 +71,20 @@ export class GLImageCache {
   private readonly pendingDeletes: GpuTexture[] = [];
   /** Under `'auto'`, the sources whose mipmaps are built. */
   private readonly mipped = new WeakSet<object>();
-  private frame = 0;
-  private readonly lastDrawn = new WeakMap<object, number>();
+  private readonly drawn: DrawnRecord;
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
    *  `'mipmap'` generates mipmaps and filters LINEAR_MIPMAP_LINEAR: when a
    *  large source bitmap is drawn small, bilinear-only minification
    *  undersamples and produces moiré. `'auto'` pays for that only on the
-   *  textures a frame draws small, when it first does. */
+   *  textures a frame draws small, when it first does. `replacing` is the
+   *  cache this one takes over from, whose latest frame it answers for. */
   constructor(
     private readonly gpu: GpuDevice,
     private readonly minification: ImageMinification = 'linear',
+    replacing?: GLImageCache,
   ) {
+    this.drawn = replacing?.drawn ?? { frame: 0, at: new WeakMap() };
     this.maxTextureSide = gpu.limits.maxTextureSize ?? DEFAULT_MAX_TEXTURE_SIDE;
     this.finalizer = new FinalizationRegistry<GpuTexture>((tex) => {
       if (this.textures.delete(tex)) this.pendingDeletes.push(tex);
@@ -88,19 +95,19 @@ export class GLImageCache {
   /** Open a frame: what {@link drewInLatestFrame} answers about from here on.
    *  The renderer calls this at the top of each `render()`. */
   beginFrame(): void {
-    this.frame++;
+    this.drawn.frame++;
     this.drainPendingDeletes();
   }
 
   /** Whether `key` was uploaded or bound since the last {@link beginFrame}. */
   drewInLatestFrame(key: object): boolean {
-    return this.lastDrawn.get(key) === this.frame;
+    return this.drawn.at.get(key) === this.drawn.frame;
   }
 
   /** Count `key` as drawn this frame though another cache holds its texture: a registered
    *  texture's source, which is the image cache's own bitmap for an image pattern. */
   noteDrawn(key: object): void {
-    this.lastDrawn.set(key, this.frame);
+    this.drawn.at.set(key, this.drawn.frame);
   }
 
   /** Delete the textures of sources collected since the last call. */
@@ -118,7 +125,7 @@ export class GLImageCache {
     this.textures.delete(tex);
     this.finalizer.unregister(key);
     this.map.delete(key);
-    this.lastDrawn.delete(key);
+    this.drawn.at.delete(key);
     this.mipped.delete(key);
   }
 
@@ -143,7 +150,7 @@ export class GLImageCache {
     source: TexSource,
     repetition?: PatternRepetition,
   ): GpuTexture {
-    this.lastDrawn.set(key, this.frame);
+    this.drawn.at.set(key, this.drawn.frame);
     const existing = this.map.get(key);
     if (existing) return existing;
 
@@ -192,7 +199,7 @@ export class GLImageCache {
   texture(key: object): GpuTexture {
     const tex = this.map.get(key);
     if (!tex) throw new Error('GLImageCache: image not uploaded; call upload() first');
-    this.lastDrawn.set(key, this.frame);
+    this.drawn.at.set(key, this.drawn.frame);
     return tex;
   }
 
