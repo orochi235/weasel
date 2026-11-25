@@ -4212,6 +4212,10 @@ Calls the lanes made without a ruling:
 - 2026-11-25 (the fixer's call): `deepEqual` over values that hold themselves compares them by shape:
   a pair of containers met again while still being compared reads as equal, so two cycles that unfold alike are
   equal. Throwing on a cycle was the alternative.
+- 2026-11-25 (the fixer's call): a child extension registry's registration of the value its parent already resolves
+  the id to is held through the parent, with no copy of its own: it follows the parent's replacement (and stops
+  holding the id, as a displaced registration does), and the child takes the id over only if the parent drops it.
+  Taking an own copy at once, which then shadows the parent's later replacement, was the alternative.
 ## Audit round eighty-five (2026-11-24): routing's interactions
 
 - 2026-11-24 (the fixer's call): a release the document never saw (a move reporting no button held) cancels a carry,

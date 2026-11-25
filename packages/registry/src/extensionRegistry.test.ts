@@ -53,6 +53,50 @@ describe('createExtensionRegistry', () => {
     expect(one.own.has('x')).toBe(false);
   });
 
+  it('holds a value its parent already resolves to through the parent, without a copy', () => {
+    const parent = make();
+    const child = make(parent);
+    const heard = vi.fn();
+    child.subscribe(heard);
+    const offParent = parent.register('x', 'f', { source: 'kit' });
+    const version = child.getVersion();
+    heard.mockClear();
+    const off = child.register('x', 'f', { source: 'plugin' });
+    expect([child.getVersion(), heard.mock.calls.length, child.own.has('x')]).toEqual([version, 0, false]);
+    expect(child.entries()[0]!.source).toBe('kit');
+    parent.register('x', 'g', { replace: true });
+    expect(child.get('x')).toBe('g');
+    off(); // displaced along with the parent's 'f'
+    expect(child.get('x')).toBe('g');
+    offParent();
+  });
+
+  it('takes over an id its parent drops while the child still holds it', () => {
+    const parent = make();
+    const child = make(parent);
+    const offParent = parent.register('x', 'f');
+    parent.register('y', 'p');
+    const a = child.register('x', 'f', { source: 'plugin' });
+    const b = child.register('x', 'f');
+    offParent();
+    expect(child.get('x')).toBe('f');
+    expect(child.entries().map((e) => [e.key, e.source])).toEqual([['x', 'plugin'], ['y', undefined]]);
+    a();
+    expect(child.get('x')).toBe('f');
+    b();
+    expect(child.has('x')).toBe(false);
+  });
+
+  it('ends a hold through its parent when it releases it', () => {
+    const parent = make();
+    const child = make(parent);
+    parent.register('x', 'f');
+    const off = child.register('x', 'f');
+    off();
+    parent.register('x', 'g', { replace: true })();
+    expect(child.has('x')).toBe(false);
+  });
+
   it('reports a parent’s changes to a child’s subscribers', () => {
     const shared = make();
     const child = make(shared);
