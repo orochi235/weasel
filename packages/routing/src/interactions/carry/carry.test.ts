@@ -47,4 +47,23 @@ describe('startCarry', () => {
     expect(onEnd).not.toHaveBeenCalled();
     expect(onCancel).toHaveBeenCalledWith('missedrelease');
   });
+
+  it('carries over a surface inside a shadow root, which the document hit-tests as the host', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const el = document.createElement('div');
+    el.getBoundingClientRect = () => ({ left: 0, top: 0, right: 1000, bottom: 1000, x: 0, y: 0, width: 1000, height: 1000, toJSON: () => ({}) });
+    shadow.append(el);
+    document.elementFromPoint = () => host;
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => el;
+    const heard: CarryStage[] = [];
+    const off = addCarrySurface({ element: el, receive: (stage) => { heard.push(stage); return 'handled'; } });
+    const origin = document.createElement('button');
+    document.body.append(origin);
+    cleanups.push(() => { off(); host.remove(); origin.remove(); delete (document as { elementFromPoint?: unknown }).elementFromPoint; });
+    startCarry(origin, new PointerEvent('pointerdown', { pointerId: 3, buttons: 1, clientX: 40, clientY: 40 }), { type: 't', value: 1 });
+    document.dispatchEvent(move(1));
+    expect(heard).toEqual(['enter']);
+  });
 });
