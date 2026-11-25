@@ -58,6 +58,13 @@ describe('resolveCursor', () => {
     expect(r).toMatchObject({ kind: 'painted', glyph: 'brush', worldRadius: 0.5 });
   });
 
+  it('refuses an undrawable glyph or mark on the painted tier as on the baked one', () => {
+    for (const spec of [{ worldRadius: 5 }, { size: CURSOR_MAX_CSS_PX + 1 }, {}]) {
+      expect(() => resolveCursor({ glyph: 'pencil', mark: 'rect', ...spec })).toThrow(/no slot/);
+      expect(() => resolveCursor({ glyph: 'nope' as 'pencil', ...spec })).toThrow(/unknown cursor glyph/);
+    }
+  });
+
   it('carries the angle through unquantized to the painter', () => {
     const r = resolveCursor({ glyph: 'brush', worldRadius: 4, angle: 0.3 });
     expect(r).toMatchObject({ kind: 'painted', angle: 0.3 });

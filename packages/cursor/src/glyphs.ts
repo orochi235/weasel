@@ -93,8 +93,8 @@ export const GLYPHS = {
       "y": 17.6,
       "size": 10,
       "shift": [
-        -3,
-        -3
+        -2.5,
+        -2.5
       ]
     },
     "paths": [

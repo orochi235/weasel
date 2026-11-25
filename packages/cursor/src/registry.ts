@@ -1,9 +1,12 @@
-import { bakeCursor, bakeSize, quantizeCursorAngle } from './bake';
+import { bakeCursor, bakeFallback, bakeSize, quantizeCursorAngle } from './bake';
 import type { BakeOptions } from './bake';
 import { GLYPHS, MARKS } from './glyphs';
 import type { CursorGlyphName, CursorMarkName } from './glyphs';
 import { markedGlyph } from './mark';
 import type { CursorGlyph, CursorMark } from './types';
+
+/** How many baked cursors {@link cursorFor} keeps; past it, the least recently used is dropped. */
+export const CURSOR_BAKE_CACHE_LIMIT = 512;
 
 const cache = new Map<string, string>();
 const composed = new Map<string, CursorGlyph>();
@@ -60,21 +63,24 @@ export function cursorVariants(): readonly CursorVariant[] {
 export type CursorForOptions = BakeOptions & CursorGlyphOptions;
 
 /**
- * The baked cursor string for a named glyph, memoized.
- *
- * The key space is bounded by the glyph set times its marks times 16 angles times the handful of sizes and
- * fallbacks in use, so the cache needs no eviction.
+ * The baked cursor string for a named glyph, memoized: the most recent {@link CURSOR_BAKE_CACHE_LIMIT} glyph, mark,
+ * size, angle step and fallback combinations are kept, so a size that follows a continuous value stays bounded.
  */
 export function cursorFor(name: CursorGlyphName, opts: CursorForOptions = {}): string {
   const size = bakeSize(opts.size);
-  const fallback = opts.fallback ?? 'default';
+  const fallback = bakeFallback(opts.fallback);
   // The step index, not the raw angle: the hover pump feeds a continuously
   // varying selection rotation, so a raw-angle key would never hit.
   const step = quantizeCursorAngle(opts.angle ?? 0);
   const key = `${name}${opts.mark === undefined ? '' : `+${opts.mark}`}|${size}|${step}|${fallback}`;
   const hit = cache.get(key);
-  if (hit !== undefined) return hit;
+  if (hit !== undefined) {
+    cache.delete(key);
+    cache.set(key, hit);
+    return hit;
+  }
   const css = bakeCursor(cursorGlyph(name, { mark: opts.mark }), { size, fallback, angle: opts.angle ?? 0 });
   cache.set(key, css);
+  if (cache.size > CURSOR_BAKE_CACHE_LIMIT) cache.delete(cache.keys().next().value!);
   return css;
 }

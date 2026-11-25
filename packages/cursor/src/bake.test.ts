@@ -24,6 +24,14 @@ describe('bakeCursor', () => {
     expect(bakeCursor(PENCIL, { size: 30 })).toContain('") 6 24,');
   });
 
+  it('holds the hotspot to a pixel inside the image', () => {
+    const corner: CursorGlyph = { ...PENCIL, hotspot: [24, 24] };
+    expect(bakeCursor(corner, { size: 24 })).toContain('") 23 23,');
+    // A one-pixel image has one pixel, at 0.
+    expect(bakeCursor(corner, { size: 1 })).toContain('") 0 0,');
+    expect(bakeCursor(corner, { size: 24.5 })).toContain('") 24 24,');
+  });
+
   it('draws a non-finite angle unrotated, where it wrote NaN into the hotspot', () => {
     expect(quantizeCursorAngle(Number.NaN)).toBe(0);
     expect(quantizeCursorAngle(Infinity)).toBe(0);
@@ -34,6 +42,20 @@ describe('bakeCursor', () => {
     // Without one, a rejected image leaves the element on `auto`, not on the
     // cursor the tool asked for.
     expect(bakeCursor(PENCIL, {})).toMatch(/, default$/);
+    expect(bakeCursor(PENCIL, { fallback: 'crosshair' })).toMatch(/, crosshair$/);
+  });
+
+  it('escapes attribute values, so an accent fill holding quotes keeps the SVG well formed', () => {
+    const swatch: CursorGlyph = { ...PENCIL, paths: [{ role: 'accent', d: 'M 5 5 L 9 5 L 9 9 Z', fill: 'url("#g") & <x>' }] };
+    const svg = decodeURIComponent(bakeCursor(swatch).slice('url("data:image/svg+xml,'.length).split('") ')[0]!);
+    expect(svg).toContain('fill="url(&quot;#g&quot;) &amp; &lt;x>"');
+    expect(svg.match(/"/g)!.length % 2).toBe(0);
+  });
+
+  it('falls back to default for a blank fallback, and refuses one that is not a cursor value', () => {
+    expect(bakeCursor(PENCIL, { fallback: '' })).toMatch(/, default$/);
+    expect(bakeCursor(PENCIL, { fallback: '  ' })).toMatch(/, default$/);
+    expect(() => bakeCursor(PENCIL, { fallback: 'pointer; color: red' })).toThrow(RangeError);
     expect(bakeCursor(PENCIL, { fallback: 'crosshair' })).toMatch(/, crosshair$/);
   });
 

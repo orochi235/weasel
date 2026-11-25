@@ -12,7 +12,8 @@ export interface BakeOptions {
   /** Clockwise rotation in radians about the box centre, quantized to
    *  {@link CURSOR_ANGLE_STEPS} steps. Default 0. */
   readonly angle?: number;
-  /** Keyword drawn if the browser rejects the image. Default 'default'. */
+  /** Keyword drawn if the browser rejects the image. Default 'default', also for a blank one; one holding `;`, `{`
+   *  or `}` throws. */
   readonly fallback?: string;
 }
 
@@ -26,6 +27,15 @@ export function bakeSize(size: number | undefined): number {
     );
   }
   return size !== undefined && Number.isFinite(size) && size > 0 ? size : 24;
+}
+
+/** The cursor a baked image falls back to: `fallback`, or 'default' when it is missing or blank. Throws a
+ *  `RangeError` for one holding `;`, `{` or `}`, which no cursor value does: the browser would drop the whole
+ *  declaration and keep the cursor before it. */
+export function bakeFallback(fallback: string | undefined): string {
+  if (fallback === undefined || fallback.trim() === '') return 'default';
+  if (/[;{}]/.test(fallback)) throw new RangeError(`cursor fallback ${JSON.stringify(fallback)} is not a cursor value`);
+  return fallback;
 }
 
 /**
@@ -42,14 +52,18 @@ export function quantizeCursorAngle(angle: number): number {
   return wrapPositive(i, CURSOR_ANGLE_STEPS);
 }
 
+/** A value as a double-quoted XML attribute's text. */
+const attr = (v: string | number): string =>
+  String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
 /** One paint op as an SVG element. */
 function renderOp(op: CursorPaintOp): string {
   const fill = op.fill === undefined ? 'none' : op.fill;
   const stroke = op.stroke
-    ? ` stroke="${op.stroke.color}" stroke-width="${op.stroke.width}"` +
+    ? ` stroke="${attr(op.stroke.color)}" stroke-width="${attr(op.stroke.width)}"` +
       ` stroke-linecap="round" stroke-linejoin="round"`
     : '';
-  return `<path d="${op.d}" fill="${fill}"${stroke}/>`;
+  return `<path d="${attr(op.d)}" fill="${attr(fill)}"${stroke}/>`;
 }
 
 /**
@@ -83,10 +97,10 @@ export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
   const dy = glyph.hotspot[1] - c;
   const cos = Math.cos(theta);
   const sin = Math.sin(theta);
-  // Held to the image's whole pixels: rounding can carry a hotspot past a fractional size.
-  const pixel = (v: number): number => Math.min(Math.max(0, Math.round(v)), Math.floor(size));
+  // Held to the image's pixels, 0 to its width less one: rounding can carry a hotspot past the last.
+  const pixel = (v: number): number => Math.min(Math.max(0, Math.round(v)), Math.max(0, Math.ceil(size) - 1));
   const hx = pixel(((c + cos * dx - sin * dy) / glyph.box) * size);
   const hy = pixel(((c + sin * dx + cos * dy) / glyph.box) * size);
   const uri = `data:image/svg+xml,${encodeURIComponent(svg)}`;
-  return `url("${uri}") ${hx} ${hy}, ${opts.fallback ?? 'default'}`;
+  return `url("${uri}") ${hx} ${hy}, ${bakeFallback(opts.fallback)}`;
 }

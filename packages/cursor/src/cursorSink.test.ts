@@ -41,13 +41,22 @@ describe('createCursorSink', () => {
     expect(el.style.cursor).toBe('pointer');
   });
 
-  it('with no base set, removes only an override it wrote', () => {
+  it('with no base set, removes only an override it wrote, putting back the cursor it replaced', () => {
     const { el, sink } = harness('help');
     sink.setOverride(null);
     expect(el.style.cursor).toBe('help');
     sink.setOverride({ kind: 'css', css: 'grab' });
+    sink.setOverride({ kind: 'css', css: 'move' });
     sink.setOverride(null);
-    expect(el.style.cursor).toBe('');
+    expect(el.style.cursor).toBe('help');
+  });
+
+  it('with no base set, leaves a cursor other code wrote over its override', () => {
+    const { el, sink } = harness('help');
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el.style.cursor = 'wait';
+    sink.setOverride(null);
+    expect(el.style.cursor).toBe('wait');
   });
 
   it('hides the native cursor and paints a painted one', () => {
@@ -73,5 +82,30 @@ describe('createCursorSink', () => {
     sink.setBase({ kind: 'css', css: 'crosshair' });
     sink.setOverride({ kind: 'css', css: '' });
     expect(el.style.cursor).toBe('crosshair');
+  });
+
+  it('gives the element an override was on back its cursor when the target element changes', () => {
+    const a = { style: { cursor: 'help' } };
+    const b = { style: { cursor: '' } };
+    let el = a;
+    const sink = createCursorSink({ element: () => el, painted: () => undefined });
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el = b;
+    sink.setOverride(null);
+    expect(a.style.cursor).toBe('help');
+    expect(b.style.cursor).toBe('');
+  });
+
+  it('with a base, leaves the old element on the base and moves the override to the new one', () => {
+    const a = { style: { cursor: '' } };
+    const b = { style: { cursor: '' } };
+    let el = a;
+    const sink = createCursorSink({ element: () => el, painted: () => undefined });
+    sink.setBase({ kind: 'css', css: 'crosshair' });
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el = b;
+    sink.setOverride({ kind: 'css', css: 'move' });
+    expect(a.style.cursor).toBe('crosshair');
+    expect(b.style.cursor).toBe('move');
   });
 });

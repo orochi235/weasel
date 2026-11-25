@@ -11,10 +11,11 @@ const ARM_IN = 2.6;   // gap half-width, so the aiming point stays visible
 const ARM_OUT = 7.4;  // arm length from the center
 const ARM_W = 1.6;
 
-// Marked, the crosshair moves 3 up and left to leave the mark its corner. The
-// arms are short for the same reason: at 7.4 they stop clear of the mark's
-// halo.
-const SHIFT = -3;
+// Marked, the crosshair moves 2.5 up and left to leave the mark its corner: any
+// further and the outer arms' halo, half of ARM_W + 2.6 past their ends, leaves
+// the box. The arms are short for the same reason: at 7.4 they stop clear of the
+// mark's halo.
+const SHIFT = -2.5;
 
 /** The four arms. One path each: a cross drawn as two crossing lines would
  *  put ink over the aiming point the gap exists to keep clear. */

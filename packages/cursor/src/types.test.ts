@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { haloFitsInBox } from './types';
+import { haloFitsInBox, rotationFitsInBox } from './types';
 import type { CursorGlyph } from './types';
 
 const glyph = (box: number, d: string): CursorGlyph => ({
@@ -34,6 +34,43 @@ describe('haloFitsInBox', () => {
 
   it('refuses a relative command rather than mismeasuring it', () => {
     expect(() => haloFitsInBox(glyph(24, 'M 5 5 l 6 6 Z'))).toThrow(/relative/);
+  });
+});
+
+describe('rotationFitsInBox', () => {
+  it('measures an arc by its circle, not by the corners of its bounding square', () => {
+    // A centered ring of radius 9 reaches 10.3 with its halo, inside the 12 of the inscribed circle at every angle.
+    expect(rotationFitsInBox(glyph(24, 'M 12 3 A 9 9 0 1 0 12 21 A 9 9 0 1 0 12 3 Z'))).toBe(true);
+    expect(rotationFitsInBox(glyph(24, 'M 12 1 A 11 11 0 1 0 12 23 A 11 11 0 1 0 12 1 Z'))).toBe(false);
+  });
+});
+
+describe('the fit guards’ reach', () => {
+  const stroked = (d: string, width: number): CursorGlyph => ({ box: 24, hotspot: [0, 0], paths: [{ role: 'stroke', d, width }] });
+
+  it("hold a stroke's halo, half its own width past the halo's, inside the box", () => {
+    // A 2.8-wide stroke's halo reaches 2.7 past its end, so an end at 1.5 is clipped by 1.2.
+    expect(haloFitsInBox(stroked('M 1.5 12 L 12 12', 2.8))).toBe(false);
+    expect(haloFitsInBox(stroked('M 2.7 12 L 12 12', 2.8))).toBe(true);
+    expect(rotationFitsInBox(stroked('M 2.5 12 L 12 12', 2.8))).toBe(false);
+    expect(rotationFitsInBox(stroked('M 2.7 12 L 12 12', 2.8))).toBe(true);
+  });
+
+  it('hold a detail, which has no halo, to its own half width', () => {
+    const detail: CursorGlyph = { box: 24, hotspot: [0, 0], paths: [{ role: 'detail', d: 'M 0.5 12 L 12 12', width: 1 }] };
+    expect(haloFitsInBox(detail)).toBe(true);
+  });
+});
+
+describe('the fit guards’ arcs', () => {
+  it('scale an arc too short for its chord up to half the chord, as SVG draws it', () => {
+    // Drawn as a radius-10 half circle about (12, 8), whose circle reaches y = -2.
+    expect(haloFitsInBox(glyph(24, 'M 2 8 A 1 1 0 0 1 22 8'))).toBe(false);
+  });
+
+  it('start an arc after Z from the subpath start, where SVG puts the current point', () => {
+    // From (12, 12) the arc is a small half circle; from the last vertex (12, 22.5) it would reach y = 24.3.
+    expect(haloFitsInBox(glyph(24, 'M 12 12 L 12 22.5 Z A 1 1 0 0 1 2.5 12'))).toBe(true);
   });
 });
 

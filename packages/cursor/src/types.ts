@@ -78,7 +78,8 @@ export const CURSOR_ANGLE_STEPS = 16;
 export const CURSOR_MAX_CSS_PX = 128;
 
 /**
- * Visits the points that bound an authored `d` string, for the fit guards below.
+ * Visits the discs that bound an authored `d` string, for the fit guards below:
+ * a vertex as a disc of radius 0, an arc as the whole circle it lies on.
  *
  * An arc is bounded by the whole circle it lies on. Expanding the arc's
  * *endpoint* by the radii instead over-reports whenever an endpoint sits at an
@@ -89,9 +90,11 @@ export const CURSOR_MAX_CSS_PX = 128;
  * `placeCursorPath` reads it. Anything else would be measured wrong, a relative
  * command as if absolute and an `H` as no point at all, so it throws.
  */
-function walk(d: string, see: (x: number, y: number) => void): void {
+function walk(d: string, see: (x: number, y: number, r: number) => void): void {
   let cx = 0;
   let cy = 0;
+  let sx = 0;
+  let sy = 0;
   for (const { cmd, args: nums } of tokenizePathData(d)) {
     if (cmd !== cmd.toUpperCase()) {
       throw new Error(`cursor glyph path uses a relative command '${cmd}': ${d}`);
@@ -101,15 +104,20 @@ function walk(d: string, see: (x: number, y: number) => void): void {
     if (arity > 0 && (nums.length === 0 || nums.length % arity !== 0)) {
       throw new Error(`cursor glyph path '${cmd}' has ${nums.length} numbers, which are not whole points: ${d}`);
     }
-    if (cmd === 'Z') continue;
+    if (cmd === 'Z') {
+      cx = sx;
+      cy = sy;
+      continue;
+    }
     if (cmd === 'A') {
       for (let i = 0; i + 7 <= nums.length; i += 7) {
         const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7) as [number, number, number, number, number, number, number];
         if (rx !== ry) throw new Error(`cursor glyph path has an elliptical arc (${rx} by ${ry}): ${d}`);
-        const r = rx;
         const dx = x - cx;
         const dy = y - cy;
         const half = Math.hypot(dx, dy) / 2;
+        // SVG scales a radius too short for its chord up to half the chord.
+        const r = Math.max(Math.abs(rx), half);
         // Centre sits off the chord midpoint by this much, perpendicular to it.
         const off = Math.sqrt(Math.max(0, r * r - half * half));
         const sign = largeArc === sweep ? -1 : 1;
@@ -117,10 +125,7 @@ function walk(d: string, see: (x: number, y: number) => void): void {
         const uy = half > 0 ? dx / (half * 2) : 0;
         const ox = (cx + x) / 2 + sign * off * ux;
         const oy = (cy + y) / 2 + sign * off * uy;
-        see(ox - r, oy - r);
-        see(ox + r, oy - r);
-        see(ox - r, oy + r);
-        see(ox + r, oy + r);
+        see(ox, oy, r);
         cx = x;
         cy = y;
       }
@@ -130,23 +135,43 @@ function walk(d: string, see: (x: number, y: number) => void): void {
     for (let i = 0; i + 2 <= nums.length; i += 2) {
       cx = nums[i]!;
       cy = nums[i + 1]!;
-      see(cx, cy);
+      if (cmd === 'M' && i === 0) {
+        sx = cx;
+        sy = cy;
+      }
+      see(cx, cy, 0);
     }
   }
 }
 
+/** Slack for authored decimals: a ring drawn flush with the edge, as `brush` is, fits rather than failing on rounding, which a half-circle's center picks up at 1e-7. */
+const FIT_EPSILON = 1e-6;
+
+/** How far a path's paint reaches past its geometry: its halo, or a halo-less detail's own half width. */
+function reach(p: CursorPath): number {
+  switch (p.role) {
+    case 'ink':
+    case 'accent':
+      return CURSOR_HALO_WIDTH / 2;
+    case 'stroke':
+      return (p.width + CURSOR_HALO_WIDTH) / 2;
+    case 'detail':
+      return p.width / 2;
+  }
+}
+
 /**
- * True when every authored path sits at least half a halo stroke inside the
+ * True when every authored path's paint, halo included, sits inside the
  * viewBox. A clipped halo is invisible at proof size and flattens the glyph's
  * outline at cursor size.
  */
 export function haloFitsInBox(glyph: CursorGlyph): boolean {
-  const margin = CURSOR_HALO_WIDTH / 2;
   let ok = true;
   for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
-    walk(p.d, (x, y) => {
+    const margin = reach(p);
+    walk(p.d, (x, y, r) => {
       for (const v of [x, y]) {
-        if (v < margin || v > glyph.box - margin) ok = false;
+        if (v - r < margin - FIT_EPSILON || v + r > glyph.box - margin + FIT_EPSILON) ok = false;
       }
     });
   }
@@ -155,7 +180,7 @@ export function haloFitsInBox(glyph: CursorGlyph): boolean {
 
 /**
  * True when the glyph still fits its viewBox at every rotation — i.e. every
- * authored point is inside the box's inscribed circle, halo included.
+ * authored path's paint, halo included, is inside the box's inscribed circle.
  *
  * Bake rotates about the box center in a viewBox that does not grow, so a
  * glyph that merely satisfies {@link haloFitsInBox} can have its corners
@@ -163,11 +188,11 @@ export function haloFitsInBox(glyph: CursorGlyph): boolean {
  */
 export function rotationFitsInBox(glyph: CursorGlyph): boolean {
   const c = glyph.box / 2;
-  const limit = c - CURSOR_HALO_WIDTH / 2;
   let ok = true;
   for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
-    walk(p.d, (x, y) => {
-      if (Math.hypot(x - c, y - c) > limit) ok = false;
+    const limit = c - reach(p);
+    walk(p.d, (x, y, r) => {
+      if (Math.hypot(x - c, y - c) + r > limit + FIT_EPSILON) ok = false;
     });
   }
   return ok;

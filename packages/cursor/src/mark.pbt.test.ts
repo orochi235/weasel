@@ -47,7 +47,8 @@ describe('the fit guards', () => {
       hows: fc.array(fc.nat(), { minLength: 1, maxLength: 8 }),
     }));
     fc.assert(fc.property(input, ({ box, paths, hows }) => {
-      const m = CURSOR_HALO_WIDTH / 2;
+      // The guards allow a millionth of a unit for authored decimals, so a point at 1.2999999999999998 fits.
+      const m = CURSOR_HALO_WIDTH / 2 - 1e-6;
       const all = paths.flat();
       const halo = all.every(([x, y]) => x >= m && x <= box - m && y >= m && y <= box - m);
       const turn = all.every(([x, y]) => Math.hypot(x - box / 2, y - box / 2) <= box / 2 - m);
