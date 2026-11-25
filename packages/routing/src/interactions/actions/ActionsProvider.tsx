@@ -357,6 +357,7 @@ export function ActionsProvider({ children }: { children: ReactNode }): ReactEle
   const depReg = useOptionalDepRegistry();
   const depRegRef = useLatest<DepRegistry | null>(depReg);
   const node = useMemo(() => new ActionsNode(null, true, () => depRegRef.current), [depRegRef]);
+  useEffect(() => node.mount(), [node]);
   return (
     <ActionsContext.Provider value={node.registry}>
       <MenuHostContext.Provider value={node.menuHost()}>{children}</MenuHostContext.Provider>

@@ -92,6 +92,24 @@ describe('the last operation', () => {
     expect(store.get()).toBeNull();
   });
 
+  it('ends when the ActionsProvider it ran under unmounts', () => {
+    const doc: Doc = { width: 10, selected: [], ranOn: [] };
+    const history = createHistory(doc);
+    let registry: ActionsRegistry | null = null;
+    let deps: DepRegistry | null = null;
+    function Grab() { registry = useActionsRegistry(); deps = useDepRegistry(); return null; }
+    const view = render(<DepRegistryProvider><ActionsProvider><Grab /></ActionsProvider></DepRegistryProvider>);
+    act(() => {
+      deps!.register('history' as DepName, () => history as never);
+      registry!.register(widen(doc, history));
+    });
+    act(() => { registry!.trigger(dynamicActionId('widen'), { by: 3 }); });
+    const store = lastOperationOf(registry)!;
+    expect(store.get()).toMatchObject({ id: 'widen' });
+    view.unmount();
+    expect(store.get()).toBeNull();
+  });
+
   it('holds a run of an action with params that committed one entry, at the values it used', () => {
     const { registry, store } = setup();
     expect(store.get()).toBeNull();
