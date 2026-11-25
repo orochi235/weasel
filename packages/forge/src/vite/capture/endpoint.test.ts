@@ -319,6 +319,10 @@ describe('hmrSocketOf', () => {
     expect(hmrSocketOf(page, { ws: false })).toBeUndefined();
   });
 
+  it("falls back to the page's host and protocol for an empty one, as vite's client does", () => {
+    expect(hmrSocketOf(page, { hmr: { host: '', protocol: '' } })).toBe('ws://127.0.0.1:5173');
+  });
+
   it("follows vite's client to a configured HMR port, client port, host and protocol", () => {
     expect(hmrSocketOf(page, { hmr: { port: 24678 } })).toBe('ws://127.0.0.1:24678');
     expect(hmrSocketOf(page, { hmr: { port: 24678, clientPort: 443, protocol: 'wss', host: 'dev.example' } })).toBe('wss://dev.example');

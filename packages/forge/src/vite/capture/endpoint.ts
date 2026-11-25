@@ -62,10 +62,10 @@ export function hmrSocketOf(
 ): string | undefined {
   if (hmr === false || ws === false) return undefined;
   const options = typeof ws === 'object' ? ws : typeof hmr === 'object' ? hmr : {};
-  const protocol = options.protocol ?? (page.protocol === 'https:' ? 'wss' : 'ws');
+  const protocol = options.protocol || (page.protocol === 'https:' ? 'wss' : 'ws');
   const fallback = middlewareMode && !options.server ? MIDDLEWARE_HMR_PORT : page.port;
   const port = options.clientPort || options.port || fallback;
-  const socket = new URL(`${protocol}://${options.host ?? page.hostname}${port ? `:${port}` : ''}`);
+  const socket = new URL(`${protocol}://${options.host || page.hostname}${port ? `:${port}` : ''}`);
   return `${socket.protocol}//${socket.host}`;
 }
 
