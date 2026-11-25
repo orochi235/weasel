@@ -1,0 +1,91 @@
+{
+ "id": "routing.tools",
+ "commit": "841da92f13a15f3f4f46052210ffae37ee4963ea",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/tools/defineTool.ts",
+  "packages/routing/src/tools/describeShortcuts.ts",
+  "packages/routing/src/tools/returnToModeDefault.ts",
+  "packages/routing/src/tools/routeTypes.ts",
+  "packages/routing/src/tools/routing/gestures.ts",
+  "packages/routing/src/tools/routing/index.ts",
+  "packages/routing/src/tools/routing/reflection/conflictKeys.ts",
+  "packages/routing/src/tools/routing/reflection/conflicts.ts",
+  "packages/routing/src/tools/routing/reflection/index.ts",
+  "packages/routing/src/tools/routing/reflection/registry.ts",
+  "packages/routing/src/tools/routing/routeGrammar.ts",
+  "packages/routing/src/tools/toolGaps.ts",
+  "packages/routing/src/tools/toolOptionPrefs.ts",
+  "packages/routing/src/tools/toolOptionSteps.ts",
+  "packages/routing/src/tools/toolOptions.ts",
+  "packages/routing/src/tools/toolSet.ts",
+  "packages/routing/src/tools/toolShortcuts.ts",
+  "packages/routing/src/tools/toolsScope.tsx",
+  "packages/routing/src/tools/tuneToolOptions.ts",
+  "packages/routing/src/tools/types.ts",
+  "packages/routing/src/tools/useModeDefaultTool.ts",
+  "packages/routing/src/tools/useToolLifecycle.ts",
+  "packages/routing/src/tools/useToolOptionValues.ts",
+  "packages/routing/src/tools/useToolShortcuts.ts",
+  "packages/routing/src/tools/useTools.ts"
+ ],
+ "a": 2,
+ "b": 2,
+ "m": 1,
+ "distinct": 3,
+ "chapman": 3.5,
+ "unfound": 0.5,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 5,
+  "unfound": 2
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 3,
+   "passed": 3376,
+   "total": 3379
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.9,
+   "B": 4.4,
+   "match": 0.2,
+   "fix": 21.2
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1127285,
+  "costUsd": 3.35
+ },
+ "fixCommits": [
+  "ebf5c719c65336701e10316cffa022163b59f98e",
+  "5fd2d09fc49b798ce8aa55e961154d636641dd55",
+  "1691d92494f7e92ca8a2393d9ec0dcd431ae5e72"
+ ]
+}

@@ -1,0 +1,103 @@
+{
+ "id": "editing.actions",
+ "commit": "841da92f13a15f3f4f46052210ffae37ee4963ea",
+ "date": "2026-11-25",
+ "files": [
+  "packages/editing/src/actions/align/action.tsx",
+  "packages/editing/src/actions/align/align.ts",
+  "packages/editing/src/actions/align/index.ts",
+  "packages/editing/src/actions/clipboard/action.ts",
+  "packages/editing/src/actions/clone/action.ts",
+  "packages/editing/src/actions/clone/behaviors.ts",
+  "packages/editing/src/actions/delete/delete.ts",
+  "packages/editing/src/actions/derivedBox.ts",
+  "packages/editing/src/actions/distribute/action.tsx",
+  "packages/editing/src/actions/distribute/distribute.ts",
+  "packages/editing/src/actions/distribute/index.ts",
+  "packages/editing/src/actions/distribute/plan.ts",
+  "packages/editing/src/actions/flip/action.ts",
+  "packages/editing/src/actions/flip/helpers.ts",
+  "packages/editing/src/actions/group/enterGroup.ts",
+  "packages/editing/src/actions/lassoSelect/action.ts",
+  "packages/editing/src/actions/lassoSelect/behaviors/selectFromLasso.ts",
+  "packages/editing/src/actions/lassoSelect/index.ts",
+  "packages/editing/src/actions/lassoSelect/options.ts",
+  "packages/editing/src/actions/lockedWrites.ts",
+  "packages/editing/src/actions/pathfinder/action.tsx",
+  "packages/editing/src/actions/pathfinder/booleanGroupAction.ts",
+  "packages/editing/src/actions/pathfinder/keymap.ts",
+  "packages/editing/src/actions/reorder/reorder.ts",
+  "packages/editing/src/actions/rotate/action.ts",
+  "packages/editing/src/actions/rotate/commit.ts",
+  "packages/editing/src/actions/rotate/frame.ts",
+  "packages/editing/src/actions/rotate/replay.ts",
+  "packages/editing/src/actions/rotate/session.ts",
+  "packages/editing/src/actions/select/areaSelect.ts",
+  "packages/editing/src/actions/select/clearSelection.ts",
+  "packages/editing/src/actions/swap/action.ts",
+  "packages/editing/src/actions/swap/swapOps.ts",
+  "packages/editing/src/actions/transformAgain/action.ts",
+  "packages/editing/src/actions/transformAgain/transformSelection.ts"
+ ],
+ "a": 5,
+ "b": 4,
+ "m": 1,
+ "distinct": 8,
+ "chapman": 14,
+ "unfound": 6,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 84,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 84,
+  "chapman": 11.5,
+  "unfound": 4.5
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 3,
+   "passed": 1449,
+   "total": 1452
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 7.6,
+   "B": 2.1,
+   "match": 0.2,
+   "fix": 23.9
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "studio",
+   "fix": "studio"
+  },
+  "weightedTokens": 1411033,
+  "costUsd": 4.15
+ },
+ "fixCommits": [
+  "68b7b8d44a8525eb7282bd21c15dfa9ef9b8cfb9",
+  "cc07df231a88f8f6126354317732f8cb047ea544",
+  "72fe624078016bf9a060a5a0555df716df73148d",
+  "586cacf6e136846f0109c43e6bafea7ef58985ea",
+  "03794c81e9c03aa55d63c723599101d93e956870"
+ ]
+}

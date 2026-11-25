@@ -3215,6 +3215,7 @@
    "packages/forge/src/testing/frame.ts",
    "packages/forge/src/testing/loupe.ts",
    "packages/forge/src/testing/shell.ts",
+   "packages/forge/src/testing/stalledCommand.ts",
    "packages/forge/src/title.ts"
   ]
  },

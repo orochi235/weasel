@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "Step actions and the options tuning answer \"which tool is live\" two ways",
+  "Whether a child's `toolOptionValues` beats the canvas's `values` prop depends on mount order"
+ ],
+ "b": [
+  "A shared tool option that is not a number keeps only the first tool's schema, so the store repairs other tools' values away",
+  "The step actions and the option tuning decide \"the live tool\" two different ways"
+ ]
+}

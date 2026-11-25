@@ -1,0 +1,85 @@
+{
+ "id": "routing.interactions",
+ "commit": "841da92f13a15f3f4f46052210ffae37ee4963ea",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/interactions/browserReservedKeys.ts",
+  "packages/routing/src/interactions/carry/carry.ts",
+  "packages/routing/src/interactions/carry/index.ts",
+  "packages/routing/src/interactions/elementAt.ts",
+  "packages/routing/src/interactions/handleDrag/handleDrag.ts",
+  "packages/routing/src/interactions/keyHelpers.ts",
+  "packages/routing/src/interactions/pointerSession/index.ts",
+  "packages/routing/src/interactions/pointerSession/pointerSession.ts",
+  "packages/routing/src/interactions/pointerSession/swallowClick.ts",
+  "packages/routing/src/interactions/scratchKey.ts",
+  "packages/routing/src/interactions/sweep/index.ts",
+  "packages/routing/src/interactions/sweep/sweep.ts",
+  "packages/routing/src/interactions/thresholdDrag/index.ts",
+  "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+ ],
+ "a": 5,
+ "b": 5,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 11,
+ "unfound": 3,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 7,
+  "unfound": 1
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 3,
+   "passed": 3429,
+   "total": 3432
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 8.2,
+   "B": 2.9,
+   "match": 0.1,
+   "fix": 25
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1001920,
+  "costUsd": 2.95
+ },
+ "fixCommits": [
+  "eca0ef3c020fd0546781bf2f24d834624962b965",
+  "5f4f934514640ee04bf635f07920043d4ea44171",
+  "4624ff8f7c6d318e730c1fb9b0c62c6e9b8bc8e5",
+  "5a55c537b2d69b894680c6f6f14de464d47ea483",
+  "d9988e1c4321bc203aa44a83e5fbb0776da82149",
+  "99abd1686500e8d724b2935f26081fa94e7dc0c6",
+  "35627d4bd4f0dad74dc7cecf94031a55b55786b7",
+  "cdc7755ede81a2de3309a3704087c8105eda8f37"
+ ]
+}

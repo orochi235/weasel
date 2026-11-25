@@ -1,0 +1,21 @@
+{
+ "pairs": [
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "makeBooleanGroup returns the group's id even when the scene refused the batch",
+  "Rotate with pivot 'each' takes a selected derived group apart, where flip 'each' keeps it whole",
+  "A rotate behavior that returns a pose leaves gctx.current stale for the behaviors after it",
+  "Lasso behaviors get no `plane` in their GestureContext, unlike every other gesture's behaviors",
+  "Clone reports a commit when a behavior's answer is an empty op list"
+ ],
+ "b": [
+  "Make Boolean Group takes page structure from the selection into the group",
+  "Transform Again translates/rotates page structure, unlike the nudge/move it repeats",
+  "Clone copies a selected page",
+  "Lasso behaviors get no `plane` (or `kitSettings`), though the lasso itself measures in the plane"
+ ]
+}

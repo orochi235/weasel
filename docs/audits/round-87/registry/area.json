@@ -1,0 +1,93 @@
+{
+ "id": "registry",
+ "commit": "841da92f13a15f3f4f46052210ffae37ee4963ea",
+ "date": "2026-11-25",
+ "files": [
+  "packages/registry/src/after.ts",
+  "packages/registry/src/codePoint.ts",
+  "packages/registry/src/compositeKey.ts",
+  "packages/registry/src/deepEqual.ts",
+  "packages/registry/src/emitter.ts",
+  "packages/registry/src/extensionRegistry.ts",
+  "packages/registry/src/freshId.ts",
+  "packages/registry/src/getOwn.ts",
+  "packages/registry/src/grade.ts",
+  "packages/registry/src/index.ts",
+  "packages/registry/src/isDev.ts",
+  "packages/registry/src/isFiniteNumber.ts",
+  "packages/registry/src/isPlainObject.ts",
+  "packages/registry/src/latest.ts",
+  "packages/registry/src/match.ts",
+  "packages/registry/src/mixed.ts",
+  "packages/registry/src/part.ts",
+  "packages/registry/src/pbt.fixture.ts",
+  "packages/registry/src/reflectable.ts",
+  "packages/registry/src/sameList.ts",
+  "packages/registry/src/setOwn.ts",
+  "packages/registry/src/testing/hostile.fixture.ts",
+  "packages/registry/src/valueStore.ts",
+  "packages/registry/src/warnOnce.ts",
+  "packages/registry/src/xmlEscape.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 7,
+  "unfound": 2
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 3,
+   "passed": 5515,
+   "total": 5518
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.8,
+   "B": 5.2,
+   "match": 0.1,
+   "fix": 18.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 788285,
+  "costUsd": 2.51
+ },
+ "fixCommits": [
+  "d6d27f0fb53b410b006ff07c2396cd0120c58f27",
+  "d8b07af181833b80f8ebc636c722ee1fe02af5c3",
+  "c1c48e22d3bdd3c4232574269dfd9d6988902e4d",
+  "2793449835bf864430b8ef8fd7a64a4687712381",
+  "247b809ac3ff052768f7ab266a9fdaba95e9debb"
+ ]
+}

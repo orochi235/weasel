@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A child's held-through-parent registration is taken over by a same-tick release and re-register in the parent, and then stops following the parent",
+  "A child registry's listeners can hear an id it holds go absent for one notification when the parent drops it",
+  "`deepEqual` compares an Array subclass instance structurally, though its doc says a class instance equals only itself"
+ ],
+ "b": [
+  "A child's hold through its parent turns into a stale own copy when the parent releases and re-registers the id in one tick",
+  "`Reflectable.set` drops the `fallback` mark of the registrant it replaces, so a later same-rank push warns as a clash",
+  "`prototypePolluted` misses a member of `Object.prototype` redefined with different attributes"
+ ]
+}

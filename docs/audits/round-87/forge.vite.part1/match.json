@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ]
+ ],
+ "a": [
+  "An optional method on a ref's handle is listed as a property typed `(() => void) | undefined`",
+  "An edit that lands while the first `deps.js` build runs is never pushed, so the page keeps a stale graph",
+  "The TypeScript reader and the babel indexer disagree on what a meta built by a non-forge helper names as its component",
+  "A computed `[component]` key is read as the literal key `component`"
+ ],
+ "b": [
+  "The API table's component and the dependency graph's component are read through different calls",
+  "The issues endpoint runs `gh` and `git` with no timeout",
+  "freeNames drops every value reference inside a TS enum or namespace",
+  "The component graph sorts titles one way and `uses`/`usedBy` another"
+ ]
+}

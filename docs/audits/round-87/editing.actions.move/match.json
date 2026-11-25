@@ -1,0 +1,23 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "snapToContainer hands followerOps a container id where every other caller hands a page id",
+  "A layout drop moves a dragged envelope's descendants by a local-pose difference taken across two different frames",
+  "Reparent-on-drop in 'into' mode raises a node to the top of its stack when it is dropped over a sibling mark",
+  "Overrides posted through the gesture adapter's previewPoses survive the gesture"
+ ],
+ "b": [
+  "snapToContainer hands followerOps a container id where a page id is expected, so a dragged node's followers are moved to the page run",
+  "reparentOnDrop `'into'` re-appends a node dropped back into its own parent, raising it to the front",
+  "clampMove treats a framed bounds rect as axis-aligned, ignoring its rotation and transform"
+ ]
+}

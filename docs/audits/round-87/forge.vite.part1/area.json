@@ -1,0 +1,97 @@
+{
+ "id": "forge.vite.part1",
+ "commit": "841da92f13a15f3f4f46052210ffae37ee4963ea",
+ "date": "2026-11-25",
+ "files": [
+  "packages/forge/src/vite/apiTable.ts",
+  "packages/forge/src/vite/ast.ts",
+  "packages/forge/src/vite/autoTitle.ts",
+  "packages/forge/src/vite/bindings.ts",
+  "packages/forge/src/vite/build.ts",
+  "packages/forge/src/vite/capture/browser.ts",
+  "packages/forge/src/vite/capture/cache.ts",
+  "packages/forge/src/vite/capture/endpoint.ts",
+  "packages/forge/src/vite/capture/entries.ts",
+  "packages/forge/src/vite/capture/payload.ts",
+  "packages/forge/src/vite/componentGraph.ts",
+  "packages/forge/src/vite/componentOf.ts",
+  "packages/forge/src/vite/componentReach.ts",
+  "packages/forge/src/vite/depsFeed.ts",
+  "packages/forge/src/vite/entries.ts",
+  "packages/forge/src/vite/folderTitles.ts",
+  "packages/forge/src/vite/foreignStories.ts",
+  "packages/forge/src/vite/forgeTest.ts",
+  "packages/forge/src/vite/freeNames.ts",
+  "packages/forge/src/vite/history.ts",
+  "packages/forge/src/vite/html.ts",
+  "packages/forge/src/vite/index.ts",
+  "packages/forge/src/vite/indexFile.ts",
+  "packages/forge/src/vite/indexStory.ts",
+  "packages/forge/src/vite/isolateReport.ts",
+  "packages/forge/src/vite/issues/answer.ts",
+  "packages/forge/src/vite/issues/endpoint.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11.5,
+ "unfound": 4.5,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "newCode": {
+  "since": 84,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 84,
+  "chapman": 15,
+  "unfound": 6
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 21,
+  "testFiles": {
+   "failed": 3,
+   "passed": 6210,
+   "total": 6213
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.6,
+   "B": 11.7,
+   "match": 0.5,
+   "fix": 27.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1288178,
+  "costUsd": 4.19
+ },
+ "fixCommits": [
+  "011b65f9bf901e69058b943d92abdee3b5e76e13",
+  "3fb8a1db5371670dc450ec395d1aaacace333e5a",
+  "1e3a34864e6bf9f6112a3659e343d41068bc7f13",
+  "56d7b7234a28a94e0fb1b00043ce3d8aa1eaa119",
+  "ee1d651814cd347f24eb5909b60aa27e69b3e14d",
+  "5610728815314c8ff093b1e0710527a0590c59d9",
+  "39b3ffe8b034f52bd28785da0a654edc22ec9e82"
+ ]
+}

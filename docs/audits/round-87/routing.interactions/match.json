@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ],
+  [
+   1,
+   2
+  ]
+ ],
+ "a": [
+  "scrollersOf drops a fixed box's containing block, so a scroll of that block mid-drag is not compensated",
+  "scrollersOf treats every ancestor of an absolutely positioned box as moving it",
+  "surfaceAt picks the outer carry surface when the inner one sits in its shadow root and registered first",
+  "BROWSER_RESERVED_CHORDS misses OS-level macOS chords a page never receives",
+  "A session opened from a window-capture pointerdown listener supersedes itself on the same press"
+ ],
+ "b": [
+  "useHandleDrag reports `moved: false` for a drag ended by a missed release far from the press",
+  "A fixed handle's own containing block is never counted as a scroller",
+  "Scrolling a container that is not an absolute box's containing block is counted as moving it",
+  "`browserReservedChord` misses chords named by a `code` other than `Key*`/`Digit*`",
+  "A carry released over a surface that does not take it never tells that surface it left"
+ ]
+}
