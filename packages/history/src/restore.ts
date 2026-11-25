@@ -95,10 +95,12 @@ function placeholderOp(so: SerializedOp, label: string, skip: () => void): Op {
   return op;
 }
 
-/** The stacks `snapshot` describes, each op rebuilt through `rebuild`, and the ops it could not.
- *  Throws {@link HistoryRestoreError} for any it could not under strict recovery. */
+/** The stacks `snapshot` describes, each op rebuilt through `rebuild`, and the ops it could not;
+ *  without `branching`, the snapshot's branches are dropped unread. Throws {@link HistoryRestoreError}
+ *  for any op it could not rebuild under strict recovery. */
 export function rebuilt(
   snapshot: SerializedHistory, rebuild: RebuildOp | undefined, options: RestoreOptions, logger: HistoryLogger,
+  branching: boolean,
 ): { stacks: Stacks; unresolved: UnresolvedOp[] } {
   const recovery = options.recovery ?? 'strict';
   const unresolved: UnresolvedOp[] = [];
@@ -123,7 +125,9 @@ export function rebuilt(
   const undoStack = snapshot.undoStack.map(entry);
   const redoStack = snapshot.redoStack.map(entry);
   const forks = new Map<number, Entry[][]>();
-  for (const b of snapshot.branches ?? []) {
+  const branches = snapshot.branches ?? [];
+  if (!branching && branches.length > 0) logger.warn('restore: dropped the snapshot\'s branches — this history does not keep them');
+  for (const b of branching ? branches : []) {
     const entries = b.entries.map(entry);
     const kept = forks.get(b.at);
     if (kept) kept.push(entries);
@@ -135,8 +139,11 @@ export function rebuilt(
   let nextEntryId = snapshot.nextEntryId;
   const past = (id: number): void => { if (id >= nextEntryId) nextEntryId = id + 1; };
   past(snapshot.floor ?? 0);
-  for (const at of forks.keys()) past(at);
-  for (const entries of [undoStack, redoStack, ...[...forks.values()].flat()]) for (const e of entries) past(e.id);
+  for (const b of branches) {
+    past(b.at);
+    for (const e of b.entries) past(e.id);
+  }
+  for (const entries of [undoStack, redoStack]) for (const e of entries) past(e.id);
   return { stacks: { undoStack, redoStack, forks, floorId: snapshot.floor ?? 0, nextEntryId }, unresolved };
 }
 

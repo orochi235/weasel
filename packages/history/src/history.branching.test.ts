@@ -44,6 +44,22 @@ describe('branching off', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/branch/));
   });
 
+  it('restores strictly when only a dropped branch holds an op it cannot rebuild', () => {
+    const { history, write } = setup();
+    write(1, 1);
+    history.undo();
+    write(2, 2);
+    const snap = history.serialize();
+    const branchOnly = snap.branches![0]!.entries[0]!.forwardOps[0]!;
+    const rebuildOp = vi.fn((_: string, args: unknown) =>
+      args === branchOnly.args ? null : setX({ x: 0 }, 0, (args as { to: number }).to));
+    const plain = createHistory(null, { branching: false, debug: { log: () => {}, warn: () => {} }, rebuildOp });
+    const report = plain.restore(snap);
+    expect(report).toEqual({ restored: true, unresolved: [] });
+    expect(plain.undoDepth()).toBe(1);
+    expect(rebuildOp.mock.calls.some(([, args]) => args === branchOnly.args)).toBe(false);
+  });
+
   it('drops the redo future on a push, as before', () => {
     const { history, write } = setup({ branching: false });
     write(1, 10);

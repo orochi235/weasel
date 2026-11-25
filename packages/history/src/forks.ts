@@ -128,11 +128,10 @@ export function createForks(env: ForksEnv) {
       floorId = 0;
       return had;
     },
-    /** Take `next`'s branches and floor in place of these; a history that does not branch drops the branches. */
+    /** Take `next`'s branches and floor in place of these. */
     replace(next: { forks: ReadonlyMap<number, Entry[][]>; floorId: number }): void {
       forks.clear();
-      if (branching) for (const [at, kept] of next.forks) forks.set(at, kept);
-      else if (next.forks.size > 0) logger.warn('restore: dropped the snapshot\'s branches — this history does not keep them');
+      for (const [at, kept] of next.forks) forks.set(at, kept);
       floorId = next.floorId;
     },
     /** The live branch map and floor, for a snapshot to read. */

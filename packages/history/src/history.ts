@@ -165,7 +165,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
       const rebuild: RebuildOp | undefined = first
         ? (name, args, context) => first(name, args, context) ?? customRebuild?.(name, args, context) ?? null
         : customRebuild;
-      const { stacks: next, unresolved } = rebuilt(serialized, rebuild, restoreOptions, logger);
+      const { stacks: next, unresolved } = rebuilt(serialized, rebuild, restoreOptions, logger, options.branching ?? false);
       undoStack.splice(0, undoStack.length, ...next.undoStack);
       redoStack.splice(0, redoStack.length, ...next.redoStack);
       forks.replace(next);
