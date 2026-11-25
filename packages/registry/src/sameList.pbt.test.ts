@@ -1,5 +1,5 @@
 /**
- * Property tests of `sameList`: it agrees with an index-by-index oracle under `===` and under a given `same`, never
+ * Property tests of `sameList`: it agrees with an index-by-index oracle under `Object.is` and under a given `same`, never
  * calls `same` past the shorter list, and reads a list as the same as itself and any copy.
  */
 import { describe, expect, it } from 'vitest';
@@ -13,14 +13,14 @@ const list = fc.array(item, { maxLength: 5 });
 const pair = fc.oneof(fc.tuple(list, list), list.map((a) => [a, [...a]] as const), list.chain((a) => fc.tuple(fc.constant(a), fc.array(item, { minLength: a.length, maxLength: a.length }))));
 
 describe('sameList', () => {
-  it('agrees with an index-by-index comparison, under === and under Object.is', () => {
+  it('agrees with an index-by-index comparison, under Object.is and under ===', () => {
     const t = tally();
     fc.assert(fc.property(pair, ([a, b]) => {
-      const strict = a.length === b.length && a.every((x, i) => x === b[i]);
+      const strict = a.length === b.length && a.every((x, i) => Object.is(x, b[i]));
       expect(sameList(a, b)).toBe(strict);
       const asked: number[] = [];
-      const byIs = sameList(a, b, (x, y) => { asked.push(asked.length); return Object.is(x, y); });
-      expect(byIs).toBe(a.length === b.length && a.every((x, i) => Object.is(x, b[i])));
+      const byIs = sameList(a, b, (x, y) => { asked.push(asked.length); return x === y; });
+      expect(byIs).toBe(a.length === b.length && a.every((x, i) => x === b[i]));
       expect(asked.length).toBeLessThanOrEqual(a.length === b.length ? a.length : 0);
       t.count(strict ? 'same' : 'differ');
     }), runs(RUNS));

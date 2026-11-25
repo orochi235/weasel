@@ -13,10 +13,11 @@ describe('sameList', () => {
     expect(sameList(['a', 'b'], ['b', 'a'])).toBe(false);
   });
 
-  it('compares elements by identity unless told otherwise', () => {
+  it('compares elements with Object.is unless told otherwise', () => {
     expect(sameList([{ x: 1 }], [{ x: 1 }])).toBe(false);
-    expect(sameList([NaN], [NaN])).toBe(false);
-    expect(sameList([NaN, 1], [NaN, 1], Object.is)).toBe(true);
+    expect(sameList([NaN, 1], [NaN, 1])).toBe(true);
+    expect(sameList([0], [-0])).toBe(false);
+    expect(sameList([NaN], [NaN], (p, q) => p === q)).toBe(false);
     expect(sameList([{ x: 1 }], [{ x: 1 }], (p, q) => p.x === q.x)).toBe(true);
   });
 });
