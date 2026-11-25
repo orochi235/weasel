@@ -1540,7 +1540,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   a cursor keyword, optionally after `url(…)` entries with a hotspot, throws too; CSS-wide keywords such as `inherit`
   are refused, since a cursor list cannot end in one.
 - 2026-11-25 (my call, cursor audit 86): `resolveCursor` throws that `RangeError` on every tier, a painted spec
-  included, though the painted tier never shows its fallback, so whether a spec is valid does not turn on its size.
+  included, so whether a spec is valid does not turn on its size. A painted cursor carries its fallback, which a
+  cursor sink with no painted layer shows in place of `none` (cursor audit 88).
 - 2026-11-25 (my call, cursor audit 87): `brushRing` throws a `RangeError` for an infinite radius, in either unit,
   as `bakeCursor` refuses an infinite size, where it drew the default 24 px ring; a negative or `NaN` radius still
   falls to the default. Minus infinity, and a finite radius whose px size overflows, throw too (cursor audit 88).

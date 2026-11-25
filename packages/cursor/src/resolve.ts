@@ -49,6 +49,8 @@ export type ResolvedCursor =
       readonly size?: number;
       /** World units; the painter scales this by the live view. */
       readonly worldRadius?: number;
+      /** The CSS cursor shown where no painted layer draws it. Default 'default'. */
+      readonly fallback?: string;
     };
 
 /** `n` when it is a finite positive number; a size that is not draws at the default instead of not at all. */
@@ -79,12 +81,12 @@ export function resolveCursor(spec: CursorSpec): ResolvedCursor {
     cursorGlyph(glyph, marked),
     spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0,
   );
-  bakeFallback(fallback);
+  const fallbackCss = bakeFallback(fallback);
   if (worldRadius !== undefined) {
-    return { kind: 'painted', glyph, ...marked, angle, worldRadius };
+    return { kind: 'painted', glyph, ...marked, angle, worldRadius, fallback: fallbackCss };
   }
   if (size !== undefined && size > CURSOR_MAX_CSS_PX) {
-    return { kind: 'painted', glyph, ...marked, angle, size };
+    return { kind: 'painted', glyph, ...marked, angle, size, fallback: fallbackCss };
   }
   return {
     kind: 'css',
