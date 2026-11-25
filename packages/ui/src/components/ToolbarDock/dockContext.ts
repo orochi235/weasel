@@ -21,7 +21,10 @@ export const DockBarContext = createContext<DockBarContextValue | null>(null);
 /** Tells the dock drawing this bar, if one is, the shortest the bar can be along its line. */
 export function useReportDockLeast(least: number | undefined): void {
   const report = useContext(DockBarContext)?.onLeast;
-  useLayoutEffect(() => report?.(least), [report, least]);
+  useLayoutEffect(() => {
+    report?.(least);
+    return () => report?.(undefined);
+  }, [report, least]);
 }
 
 /** A movable bar's handle: the bar it moves, and the attributes and handlers its lead spreads. */

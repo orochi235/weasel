@@ -37,6 +37,8 @@ export interface DockBox {
   id: string;
   edge: DockEdge;
   vertical: boolean;
+  /** Whether its rows' `start` and `end` are measured from the right, negated: a left or right dock right to left. */
+  mirrored: boolean;
   along: readonly [number, number];
   rows: RowBox[];
 }
@@ -85,6 +87,8 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
     const edge = docks.find((d) => d.id === id)?.edge ?? 'top';
     const vertical = isVerticalEdge(edge);
     const box = el.getBoundingClientRect();
+    // Right to left, a left or right dock sets its columns from the right, so they are measured from there.
+    const mirrored = vertical && getComputedStyle(el).direction === 'rtl';
     const rows = Array.from(el.querySelectorAll<HTMLElement>(':scope > [data-dock-row]'), (row) => {
       const r = row.getBoundingClientRect();
       const drawn = Array.from(row.querySelectorAll<HTMLElement>(`:scope > [${DOCK_BAR}]`)).filter(isDrawn);
@@ -92,11 +96,11 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
         const b = bar.getBoundingClientRect();
         return { id: bar.getAttribute(DOCK_BAR)!, at: vertical ? b.top + b.height / 2 : b.left + b.width / 2, end: bar.hasAttribute(DOCK_END) };
       });
-      if (vertical) return { start: r.left, end: r.right, from: r.top, to: r.bottom, bars };
+      if (vertical) return { start: mirrored ? -r.right : r.left, end: mirrored ? -r.left : r.right, from: r.top, to: r.bottom, bars };
       const rtl = getComputedStyle(row).direction === 'rtl';
       return { start: r.top, end: r.bottom, from: rtl ? r.right : r.left, to: rtl ? r.left : r.right, bars };
     });
-    return { id, edge, vertical, along: vertical ? [box.top, box.bottom] : [box.left, box.right], rows } as DockBox;
+    return { id, edge, vertical, mirrored, along: vertical ? [box.top, box.bottom] : [box.left, box.right], rows } as DockBox;
   });
 }
 
@@ -105,7 +109,7 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
  * new row where the pointer is within half a row, or `reach` if that is more, beyond a dock's first or last. A row
  * under the pointer wins over another dock's new-row zone. In the gap between a row's start bars and its end bars,
  * or past the last of either where the other end has none, the bar joins whichever end the pointer is nearer.
- * Null over no dock, or over one the bar may not enter.
+ * Null over no dock, or over a row of one the bar may not enter; a new-row zone of such a dock gives way to another's.
  */
 export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, reach = 0): { target: BarTarget; mark: DockDropMark | null } | null {
   for (const dock of boxes) {
@@ -116,7 +120,9 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, re
     while (row + 1 < dock.rows.length && dock.rows[row + 1]!.start <= cross) row++;
     const box = dock.rows[row]!;
     const from = box.bars.findIndex((b) => b.id === bar.id);
-    const gap = gapByMidpoint(box.bars.map((b) => b.at), along);
+    // A right-to-left row reads from its right; one bar's middle alone can't say so, so the row's own ends do.
+    const back = box.from > box.to;
+    const gap = gapByMidpoint(box.bars.map((b) => (back ? -b.at : b.at)), back ? -along : along);
     const index = from >= 0 && gap > from ? gap - 1 : gap;
     const others = box.bars.filter((b) => b.id !== bar.id);
     const starts = others.filter((b) => !b.end).length;
@@ -132,7 +138,7 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, re
     const first = dock.rows[0]!;
     const last = dock.rows.at(-1)!;
     if (cross < first.start - Math.max(reach, (first.end - first.start) / 2) || cross > last.end + Math.max(reach, (last.end - last.start) / 2)) continue;
-    if (!canEnter(bar, dock)) return null;
+    if (!canEnter(bar, dock)) continue;
     const row = cross < first.start ? 0 : dock.rows.length;
     return { target: { dock: dock.id, row, index: 0, newRow: true }, mark: { dock: dock.id, row } };
   }
@@ -149,10 +155,10 @@ function rowMark(others: readonly { id: string }[], starts: number, index: numbe
 }
 
 /** `p` along `dock`'s rows and across them. */
-const axes = (dock: DockBox, p: DockPoint) => (dock.vertical ? { along: p.clientY, cross: p.clientX } : { along: p.clientX, cross: p.clientY });
+const axes = (dock: DockBox, p: DockPoint) => (dock.vertical ? { along: p.clientY, cross: dock.mirrored ? -p.clientX : p.clientX } : { along: p.clientX, cross: p.clientY });
 
-/** Whether `dock` has rows and `along` falls within its length. */
-const overRows = (dock: DockBox, along: number): boolean => dock.rows.length > 0 && along >= dock.along[0] && along <= dock.along[1];
+/** Whether `dock` draws a bar and `along` falls within its length: one whose bars all draw nothing takes drops on its strip. */
+const overRows = (dock: DockBox, along: number): boolean => dock.rows.some((r) => r.bars.length > 0) && along >= dock.along[0] && along <= dock.along[1];
 
 /** `layout` with `barId` moved to `to`, or null where that changes nothing. */
 export function movedLayout(layout: ToolbarLayout, barId: string, to: BarTarget): ToolbarLayout | null {
@@ -172,9 +178,14 @@ export function locateBar(layout: ToolbarLayout, barId: string): { dock: string;
   return null;
 }
 
-/** The keys that move a bar along its row, back then on, and across rows, back then on, in a dock on `edge`. */
-const keysFor = (edge: DockEdge | undefined) =>
-  isVerticalEdge(edge) ? ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'] : ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+/**
+ * The keys that move a bar along its row, back then on, and across rows, back then on, in a dock on `edge`: right to
+ * left, a row's start and a side dock's first column are on the right.
+ */
+const keysFor = (edge: DockEdge | undefined, rtl: boolean) => {
+  const [back, on] = rtl ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+  return isVerticalEdge(edge) ? ['ArrowUp', 'ArrowDown', back, on] : [back, on, 'ArrowUp', 'ArrowDown'];
+};
 
 /**
  * Where Alt+`key` sends `bar`. In a top or bottom dock: one slot along its row for Left and Right, and from the last
@@ -182,13 +193,13 @@ const keysFor = (edge: DockEdge | undefined) =>
  * previous or next row of its dock at the same place in the same end, and past its dock's first or last row the
  * previous or next dock it may enter: after the start bars of that dock's last row going back, of its first row going
  * on. A left or right dock turns this a quarter: Up and Down move along the column, Left and Right across columns and
- * docks. Null where it has nowhere to go.
+ * docks. With `rtl`, Left and Right swap, following the rows and columns as they are drawn. Null where it has nowhere to go.
  */
-export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, key: string): BarTarget | null {
+export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, key: string, rtl = false): BarTarget | null {
   const at = locateBar(layout, bar.id);
   if (!at) return null;
   const rows = dockRows(layout, at.dock)!;
-  const [alongBack, alongOn, acrossBack] = keysFor(docks.find((d) => d.id === at.dock)?.edge);
+  const [alongBack, alongOn, acrossBack] = keysFor(docks.find((d) => d.id === at.dock)?.edge, rtl);
   if (key === alongBack || key === alongOn) return alongTarget(layout, at, key === alongOn);
   const step = key === acrossBack ? -1 : 1;
   const row = rows[at.row + step];
@@ -222,12 +233,15 @@ function alongTarget(layout: ToolbarLayout, at: { dock: string; row: number; ind
   return index >= row.length ? null : { ...place, index, end: true };
 }
 
-/** What the dock announces after a keyboard move: where the bar landed, after `state` where it is given. */
+/** What the dock announces after a keyboard move: where the bar landed in `layout`, its drawn bars, after `state` where it is given. */
 export function placeWords(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, state?: string): string {
   const at = locateBar(layout, bar.id);
   if (!at) return '';
   const name = state ? `${bar.label} toolbar ${state}` : `${bar.label} toolbar`;
   const line = isVerticalEdge(docks.find((d) => d.id === at.dock)?.edge) ? 'column' : 'row';
-  const where = `${name}, ${line} ${at.row + 1}, position ${at.index + 1} of ${dockRows(layout, at.dock)![at.row]!.length}`;
+  const rows = dockRows(layout, at.dock)!;
+  // `layout` holds only drawn bars, so a row left empty draws nothing and is not counted.
+  const shown = rows.slice(0, at.row).filter((r) => r.length > 0).length;
+  const where = `${name}, ${line} ${shown + 1}, position ${at.index + 1} of ${rows[at.row]!.length}`;
   return at.end ? `${where}, at the end` : where;
 }

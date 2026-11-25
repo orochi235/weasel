@@ -252,3 +252,13 @@ test('a bar dragged into the far half of a row snaps to its far end, flush with 
   expect(Math.abs(after.right - file.right)).toBeLessThanOrEqual(0.5);
   expect(file.left - shape.right).toBeGreaterThan(100);
 });
+
+test('right to left, the strip for an empty left dock is drawn on the right, where that dock is', async () => {
+  const sides: DockSpec[] = [{ id: 'top', edge: 'top' }, { id: 'left', edge: 'left' }];
+  const offered = [bar('file', 'File', false, { docks: ['top', 'left'], vertical: true }), bar('view', 'View')];
+  render(<div dir="rtl"><Host offered={offered} initial={{ docks: { top: [['file', 'view']], left: [] }, floating: {} }} at={sides} /></div>);
+  const grab = mid(handle('File'));
+  await commands.pointer([to(grab), { down: true }, ...line(grab, { x: grab.x, y: grab.y + 40 }).slice(1).map(to)]);
+  const strip = document.querySelector('[data-dock-empty="left"]')!.getBoundingClientRect();
+  expect(Math.abs(strip.right - layer().right)).toBeLessThan(2);
+});

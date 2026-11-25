@@ -100,13 +100,16 @@
   block-size: var(--wzl-space-6);
 }
 
+/* Logical, as the grid's 'left' and 'right' areas are: right to left, a left dock is drawn on the right. */
 .empty[data-dock-edge='left'] {
-  inset: 0 auto 0 0;
+  inset-block: 0;
+  inset-inline-start: 0;
   inline-size: var(--wzl-space-6);
 }
 
 .empty[data-dock-edge='right'] {
-  inset: 0 0 0 auto;
+  inset-block: 0;
+  inset-inline-end: 0;
   inline-size: var(--wzl-space-6);
 }
 
