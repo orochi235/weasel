@@ -9,7 +9,7 @@ import { bakeCursor, quantizeCursorAngle } from './bake';
 import { cursorFor, cursorGlyph, cursorVariants } from './registry';
 import { cursorCss, resolveCursor, type CursorGlyphSpec, type ResolvedCursor } from './resolve';
 import { CURSOR_MAX_CSS_PX } from './types';
-import { anyNumber, angle, bakedSize, runs, tally, timeoutFor, variant } from './pbt.fixture';
+import { anyNumber, angle, bakedSize, runs, tally, timeoutFor, turns, variant } from './pbt.fixture';
 
 const RUNS = 300;
 
@@ -24,10 +24,11 @@ const glyphSpec: fc.Arbitrary<CursorGlyphSpec> = fc.record({
 
 const positive = (n: number | undefined) => (n !== undefined && Number.isFinite(n) && n > 0 ? n : undefined);
 
-/** What the documented order says a spec resolves to. */
-function model(spec: CursorGlyphSpec): ResolvedCursor {
+/** What the documented order says a spec resolves to, or null where it throws. */
+function model(spec: CursorGlyphSpec): ResolvedCursor | null {
   const angle = spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0;
   const mark = spec.mark === undefined ? {} : { mark: spec.mark };
+  if (quantizeCursorAngle(angle) !== 0 && !turns(spec)) return null;
   const worldRadius = positive(spec.worldRadius);
   const size = positive(spec.size);
   if (worldRadius !== undefined) return { kind: 'painted', glyph: spec.glyph, ...mark, angle, worldRadius };
@@ -39,8 +40,14 @@ describe('resolveCursor', () => {
   it('resolves in the documented order, and every baked cursor ends in its fallback keyword', () => {
     const t = tally();
     fc.assert(fc.property(glyphSpec, (spec) => {
+      const want = model(spec);
+      if (want === null) {
+        expect(() => resolveCursor(spec)).toThrow(RangeError);
+        t.count('threw');
+        return;
+      }
       const got = resolveCursor(spec);
-      expect(got).toEqual(model(spec));
+      expect(got).toEqual(want);
       expect(cursorCss(spec)).toBe(got.kind === 'css' ? got.css : 'none');
       if (got.kind === 'css') {
         expect(got.css.endsWith(`, ${spec.fallback ?? 'default'}`)).toBe(true);
@@ -48,7 +55,7 @@ describe('resolveCursor', () => {
       }
       t.count(got.kind === 'css' ? 'css' : got.worldRadius !== undefined ? 'world' : 'big');
     }), runs(RUNS));
-    for (const k of ['css', 'world', 'big']) t.atLeast(k, 30);
+    for (const k of ['css', 'world', 'big', 'threw']) t.atLeast(k, 30);
   }, timeoutFor(RUNS, 2));
 
   it('passes a bare string through, and answers nothing for nothing', () => {
@@ -63,7 +70,8 @@ describe('resolveCursor', () => {
 describe('cursorFor', () => {
   it('answers what a fresh bake of the same glyph draws, for every angle in the same step', () => {
     const t = tally();
-    fc.assert(fc.property(variant, bakedSize, angle, angle, (v, size, a, b) => {
+    fc.assert(fc.property(variant, bakedSize, angle, angle, (v, size, turnA, turnB) => {
+      const [a, b] = turns(v) ? [turnA, turnB] : [0, 0];
       const opts = { ...(v.mark ? { mark: v.mark } : {}), size };
       const css = cursorFor(v.glyph, { ...opts, angle: a });
       expect(css).toBe(bakeCursor(cursorGlyph(v.glyph, { mark: v.mark }), { size, angle: a }));

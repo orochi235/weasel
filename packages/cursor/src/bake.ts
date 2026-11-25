@@ -1,8 +1,9 @@
 import { cursorPaintOps } from './paint';
 import type { CursorPaintOp } from './paint';
-import { CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX } from './types';
+import { CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX, rotationFitsInBox } from './types';
 import type { CursorGlyph } from './types';
 import { wrapPositive } from '@weasel-js/geom';
+import { createPart } from '@weasel-js/registry';
 
 /** How {@link bakeCursor} renders a glyph. */
 export interface BakeOptions {
@@ -10,7 +11,8 @@ export interface BakeOptions {
    *  {@link CURSOR_MAX_CSS_PX} it throws. */
   readonly size?: number;
   /** Clockwise rotation in radians about the box centre, quantized to
-   *  {@link CURSOR_ANGLE_STEPS} steps. Default 0. */
+   *  {@link CURSOR_ANGLE_STEPS} steps. Default 0. One that turns a glyph not fitting its box at every rotation
+   *  throws. */
   readonly angle?: number;
   /** Keyword drawn if the browser rejects the image. Default 'default', also for a blank one; one holding `;`, `{`
    *  or `}` throws. */
@@ -52,6 +54,17 @@ export function quantizeCursorAngle(angle: number): number {
   return wrapPositive(i, CURSOR_ANGLE_STEPS);
 }
 
+const turnable = createPart(rotationFitsInBox);
+
+/** The step `angle` turns `glyph` by. Throws a `RangeError` for a turn that would carry part of the glyph's paint out
+ *  of its box, where a baked image clips it. */
+export function rotationStep(glyph: CursorGlyph, angle: number | undefined): number {
+  const step = quantizeCursorAngle(angle ?? 0);
+  if (step === 0) return 0;
+  if (!turnable(glyph)) throw new RangeError(`a cursor glyph that does not fit its box at every rotation cannot be turned by ${angle}`);
+  return step;
+}
+
 /** A value as a double-quoted XML attribute's text. */
 const attr = (v: string | number): string =>
   String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
@@ -75,13 +88,13 @@ function renderOp(op: CursorPaintOp): string {
  */
 export function bakeCursor(glyph: CursorGlyph, opts: BakeOptions = {}): string {
   const size = bakeSize(opts.size);
+  const step = rotationStep(glyph, opts.angle);
   // Halos first, then ink; within each pass, source order is z-order. The
   // pass structure is `paint.ts`'s, so the painted tier draws the same glyph
   // rather than a second drawing that resembles it.
   const paths = cursorPaintOps(glyph).map(renderOp).join('');
 
   const c = glyph.box / 2;
-  const step = quantizeCursorAngle(opts.angle ?? 0);
   const theta = (step / CURSOR_ANGLE_STEPS) * Math.PI * 2;
   // A whole-glyph transform rather than rotated path data: the same record
   // has to reach `paint.ts` unrotated, and a `d` string is not re-authorable.

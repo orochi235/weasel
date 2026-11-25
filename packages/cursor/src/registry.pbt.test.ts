@@ -9,7 +9,7 @@ import { bakeCursor } from './bake';
 import { GLYPHS, MARKS, type CursorGlyphName, type CursorMarkName } from './glyphs';
 import { cursorFor, cursorGlyph } from './registry';
 import { CURSOR_MAX_CSS_PX, type CursorGlyph } from './types';
-import { runs, tally } from './pbt.fixture';
+import { runs, tally, turns } from './pbt.fixture';
 
 const RUNS = 150;
 
@@ -66,7 +66,7 @@ const hotspotOf = (css: string): [number, number] => {
 
 describe('a baked hotspot', () => {
   it('lands within a pixel of where the glyph puts it at every size, and scales with the size', () => {
-    const glyphs = NAMES.map((n) => [n, GLYPHS[n] as CursorGlyph] as const);
+    const glyphs = NAMES.filter((n) => turns({ glyph: n })).map((n) => [n, GLYPHS[n] as CursorGlyph] as const);
     fc.assert(fc.property(fc.constantFrom(...glyphs), fc.integer({ min: 1, max: CURSOR_MAX_CSS_PX / 2 }), fc.integer({ min: 0, max: 15 }), ([name, g], size, step) => {
       const angle = (step / 16) * Math.PI * 2;
       const [hx, hy] = hotspotOf(cursorFor(name, { size, angle }));
