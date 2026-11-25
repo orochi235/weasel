@@ -18,7 +18,10 @@ import { refusalOverlays } from '../refusal';
  * Built by the move action for one drag, after the binding's own behaviors, and
  * only when the `layout` dep is present.
  */
-export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> {
+export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> & {
+  /** Whether this frame's pass answers the drop: a container takes it or refuses it. */
+  claimsDrop(): boolean;
+} {
   // This frame's pass; reset by every move, a throwing one included.
   let drop: DropPass | null = null;
   const gliding = new Set<NodeId>();
@@ -30,6 +33,8 @@ export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> {
   };
 
   return {
+    claimsDrop: () => drop?.pass != null || drop?.refused !== undefined,
+
     onMove(ctx, proposed): BehaviorResult<unknown> | void {
       drop = null;
       const session = move.session();

@@ -143,12 +143,13 @@ export function beginMove(
   // answer owns the commit, so each preempts the ones after it. A swap the
   // `swapOnDrop` param turns on comes ahead of the drops, which it preempts.
   const gesture: MoveGesture = { session: () => session, frame };
+  const layoutBehavior = layout ? layoutDrop(gesture) : null;
   const behaviors: MoveBehavior<unknown>[] = [
     ...((opts?.behaviors ?? []) as MoveBehavior<unknown>[]),
     swapBehavior({}, (s) => s.swapOnDrop() === 'dwell'),
-    ...(layout ? [layoutDrop(gesture)] : []),
+    ...(layoutBehavior ? [layoutBehavior] : []),
     ...(isPaged(scene) ? [pageDrop(gesture)] : []),
-    reparentOnDrop(gesture),
+    reparentOnDrop(gesture, () => layoutBehavior?.claimsDrop() ?? false),
   ];
   const lifecycle = readRunLifecycle(params, 'Move', behaviors);
   // A behavior that commits after the gesture has ended, a coast coming to

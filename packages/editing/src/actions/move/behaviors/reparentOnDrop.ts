@@ -11,9 +11,10 @@ import { swapArmed } from '../sessionOf';
  * the refusal, and a release there moves nothing.
  *
  * Built by the move action for one drag and run last, so a binding's behavior
- * or a layout drop that claims the commit preempts it.
+ * or a layout drop that claims the commit preempts it. `claimed` says whether an
+ * earlier behavior answers this frame's drop, so the refusal is drawn once.
  */
-export function reparentOnDrop(move: MoveGesture): MoveBehavior<unknown> {
+export function reparentOnDrop(move: MoveGesture, claimed: () => boolean = () => false): MoveBehavior<unknown> {
   const dropAt = (at: { x: number; y: number }) => {
     const session = move.session();
     return session.reparentOnDrop() === 'off' ? null : resolveDrop(session, at);
@@ -21,7 +22,7 @@ export function reparentOnDrop(move: MoveGesture): MoveBehavior<unknown> {
   return {
     onMove(ctx) {
       // Only a `canDropInto` dep refuses with a reason; without one, the hit-test waits for the release.
-      if (!move.session().mayRefuse || swapArmed(ctx)) return undefined;
+      if (!move.session().mayRefuse || swapArmed(ctx) || claimed()) return undefined;
       const at = { x: ctx.pointer.worldX, y: ctx.pointer.worldY };
       const drop = dropAt(at);
       return drop !== null && 'refused' in drop ? { overlays: refusalOverlays(drop.refused, at) } : undefined;

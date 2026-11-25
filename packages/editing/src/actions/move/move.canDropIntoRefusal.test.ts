@@ -84,4 +84,10 @@ describe('moveAction — a canDropInto refusal with a reason', () => {
     expect(scene.get(A)!.parent).toBe(null);
     expect(scene.get(A)!.pose).toEqual(HOME);
   });
+
+  it('draws one refusal when the layout drop and reparent-on-drop both find the container', () => {
+    const { overlays } = drag(refuseInner, { nodeAtPoint: () => INNER }, { reparentOnDrop: 'into' });
+    expect(overlays.filter((o) => o.kind === 'reason')).toHaveLength(1);
+    expect(overlays.filter((o) => o.kind === 'polyline')).toHaveLength(1);
+  });
 });
