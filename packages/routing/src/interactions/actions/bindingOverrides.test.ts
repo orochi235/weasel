@@ -147,3 +147,24 @@ describe('ActionsRegistry.overrideBindings', () => {
     expect(actionShortcuts(registry.list()[0]!).map((s) => s.key)).toEqual(['A', 'T']);
   });
 });
+
+describe("a binding on the '&' channel, which no action can resolve", () => {
+  const align: Action = { id: 'align.left', label: 'Align left', defaultBinding: key('L'), invoker: { timing: 'immediate', run: () => {} } };
+
+  it('is refused when a tuning adds it, as when the action declares it', () => {
+    const { registry } = new ActionsNode(null, true, () => null);
+    registry.register(align);
+    expect(() => registry.tune('align.left', { bindings: [{ kind: 'key', key: 'a', phase: 'engaged' }] })).toThrow(/'&' channel/);
+    expect(actionShortcuts(registry.list().find((a) => a.id === 'align.left')!).length).toBe(1);
+  });
+
+  it('is left unbound, with a warning, when an override substitutes it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const { registry } = new ActionsNode(null, true, () => null);
+    registry.register(align);
+    registry.overrideBindings({ 'align.left@0': { kind: 'key', key: 'a', phase: 'engaged' } });
+    expect(registry.list().find((a) => a.id === 'align.left')!.defaultBinding).toEqual([]);
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/'&' channel/));
+    warn.mockRestore();
+  });
+});

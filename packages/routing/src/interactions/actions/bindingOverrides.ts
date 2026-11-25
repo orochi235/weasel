@@ -5,8 +5,10 @@
  * `tune`'s job.
  */
 import { bindingSpec, key, type BindingOverrideInput, type GestureSpec } from '@weasel-js/gestures';
+import { createWarnOnce } from '@weasel-js/registry';
 import type { Action } from './action';
 import { actionBindings, type BoundGesture, type GestureBinding } from './binding';
+import { usesOwnerChannel } from './registry';
 
 /** Overrides by binding id: a route string or spec to bind instead, or `null` to unbind. */
 export type BindingOverrides = Readonly<Record<string, BindingOverrideInput>>;
@@ -95,5 +97,22 @@ export function overrideActionBindings(action: Action, overrides: ResolvedBindin
     const next = id === undefined ? b : overridden(b, id, overrides);
     if (next) kept.push({ spec: next.spec, opts: id === undefined ? next.opts : { ...next.opts, id } });
   });
+  return { ...action, defaultBinding: kept };
+}
+
+const warnOwnerChannel = createWarnOnce();
+
+/** `action` without the bindings whose phase uses the '&' channel, which no action can resolve: what an override
+ *  substituted, since `register` and `tune` refuse them on the action's own and tuned bindings. Warns once per id. */
+export function withoutOwnerChannel(action: Action): Action {
+  const gs = action.defaultBinding;
+  if (gs === undefined) return action;
+  const raw: readonly BoundGesture[] = Array.isArray(gs) ? gs : [gs as BoundGesture];
+  const kept = raw.filter((entry) => !usesOwnerChannel('kind' in entry ? entry : entry.spec));
+  if (kept.length === raw.length) return action;
+  warnOwnerChannel(
+    `weasel: a binding override for action "${action.id}" uses the '&' channel, which has no owning tool to resolve to; it is left unbound.`,
+    action.id,
+  );
   return { ...action, defaultBinding: kept };
 }
