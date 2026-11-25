@@ -133,14 +133,16 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
       history: () => (this.deps()?.get('history' as DepName) as History | undefined) ?? null,
       takeSelection: () => this.deps()?.get('selectionSnapshot')?.take() ?? null,
       paramsOf: (id, given) => tunedParams(this.tuningsOf(id), given),
+      admits: (id, params) => {
+        const a = this.resolve(id);
+        if (!a?.invoker) return false;
+        const r = this.deps();
+        return eligibleNow(a, r?.get('ruleCtx')) && checkEnabled(a, depsFor(a, r), pointOf(params), params).enabled;
+      },
       rerun: (id, params) => {
         const a = this.resolve(id);
-        if (a?.invoker?.timing !== 'immediate') return false;
-        const r = this.deps();
-        if (!eligibleNow(a, r?.get('ruleCtx'))) return false;
-        const deps = depsFor(a, r);
-        if (!checkEnabled(a, deps, pointOf(params), params).enabled) return false;
-        return a.invoker.run(deps, params) !== 'pass';
+        if (a?.invoker?.timing !== 'immediate' || !this.opHost?.admits(id, params)) return false;
+        return a.invoker.run(depsFor(a, this.deps()), params) !== 'pass';
       },
       keep: (id, params) => { for (const t of this.tuningsOf(id)) t.keep?.(params); },
     };

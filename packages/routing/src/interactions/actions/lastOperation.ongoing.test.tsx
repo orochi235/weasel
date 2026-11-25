@@ -190,6 +190,23 @@ describe('a gesture as the last operation', () => {
     expect(store.get()?.values).toEqual({ factor: 6 });
   });
 
+  it.each([
+    ['unregistered', (r: ActionsRegistry) => { r.unregister('stretch'); }],
+    ['muted', (r: ActionsRegistry) => { r.mute('stretch'); }],
+    ['refusing', (r: ActionsRegistry) => {
+      const a = r.list().find((x) => x.id === 'stretch')!;
+      r.unregister('stretch');
+      r.register({ ...a, enabled: () => 'refused' });
+    }],
+  ])('leaves a drag as it was when its action is %s by the time it is adjusted', (_, change) => {
+    const { doc, history, registry, store, drag } = setup({ replays: true });
+    drag(4, { factor: 2 });
+    act(() => { change(registry); });
+    act(() => { expect(store.adjust({ factor: 3 })).toBe(false); });
+    expect(doc.width).toBe(18);
+    expect(history.undoDepth()).toBe(1);
+  });
+
   it('ends when the active tool changes, leaving what the drag did', () => {
     const { doc, history, registry, store, drag } = setup({ replays: true });
     drag(4, { factor: 2 });
