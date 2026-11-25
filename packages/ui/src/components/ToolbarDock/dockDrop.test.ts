@@ -23,4 +23,10 @@ describe('dropAt', () => {
     const below = { ...left, rows: [{ ...left.rows[0]!, start: 0, end: 40 }], along: [0, 800] as const };
     expect(dropAt([top, below], { ...bar, docks: ['left'] }, { clientX: 50, clientY: 50 })?.target).toEqual({ dock: 'left', row: 1, index: 0, newRow: true });
   });
+
+  it('drops before the only bar of a right-to-left row with the pointer on its right', () => {
+    const rtl: DockBox = { ...top, rows: [{ start: 0, end: 40, from: 1000, to: 0, bars: [{ id: 't1', at: 500, end: false }] }] };
+    expect(dropAt([rtl], bar, { clientX: 700, clientY: 20 })?.mark).toEqual({ bar: 't1', side: 'before' });
+    expect(dropAt([rtl], bar, { clientX: 300, clientY: 20 })?.mark).toEqual({ bar: 't1', side: 'after' });
+  });
 });

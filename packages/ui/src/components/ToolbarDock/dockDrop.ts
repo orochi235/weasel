@@ -116,7 +116,9 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, re
     while (row + 1 < dock.rows.length && dock.rows[row + 1]!.start <= cross) row++;
     const box = dock.rows[row]!;
     const from = box.bars.findIndex((b) => b.id === bar.id);
-    const gap = gapByMidpoint(box.bars.map((b) => b.at), along);
+    // A right-to-left row reads from its right; one bar's middle alone can't say so, so the row's own ends do.
+    const back = box.from > box.to;
+    const gap = gapByMidpoint(box.bars.map((b) => (back ? -b.at : b.at)), back ? -along : along);
     const index = from >= 0 && gap > from ? gap - 1 : gap;
     const others = box.bars.filter((b) => b.id !== bar.id);
     const starts = others.filter((b) => !b.end).length;
