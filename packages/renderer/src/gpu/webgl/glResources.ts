@@ -8,6 +8,7 @@ import { withFlagHonoringSource } from './bitmapCanvas';
 import { packedStride } from '../vertexLayout';
 import { textureSize } from '../textureSize';
 import { bytesOf, checkBufferWrite } from '../bufferWrite';
+import { mergeSampling } from '../samplingMerge';
 
 export interface GlBuffer extends GpuBuffer {
   readonly handle: WebGLBuffer;
@@ -148,19 +149,18 @@ function upload(gl: WebGL2RenderingContext, format: GpuTextureFormat, data: GpuT
   gl.texImage2D(gl.TEXTURE_2D, 0, internal, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, data.data);
 }
 
-function applySampling(gl: WebGL2RenderingContext, sampling: Partial<GpuSampling>, was?: GpuSampling): void {
-  const mipmap = sampling.mipmap ?? was?.mipmap;
-  const min = sampling.min ?? was?.min;
-  if (min !== undefined && (!was || min !== was.min || (mipmap ?? false) !== (was.mipmap ?? false))) {
+function applySampling(gl: WebGL2RenderingContext, sampling: GpuSampling, was?: GpuSampling): void {
+  const { min, mipmap } = sampling;
+  if (!was || min !== was.min || (mipmap ?? false) !== (was.mipmap ?? false)) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, filterOf(gl, min, mipmap));
   }
-  if (sampling.mag !== undefined && sampling.mag !== was?.mag) {
+  if (sampling.mag !== was?.mag) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, filterOf(gl, sampling.mag));
   }
-  if (sampling.wrapS !== undefined && sampling.wrapS !== was?.wrapS) {
+  if (sampling.wrapS !== was?.wrapS) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, wrapOf(gl, sampling.wrapS));
   }
-  if (sampling.wrapT !== undefined && sampling.wrapT !== was?.wrapT) {
+  if (sampling.wrapT !== was?.wrapT) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, wrapOf(gl, sampling.wrapT));
   }
 }
@@ -219,10 +219,10 @@ export function setSampling(
   gl: WebGL2RenderingContext, cache: GlCache, texture: GlTexture, sampling: Partial<GpuSampling>,
 ): void {
   const was = texture.sampling;
-  const next = { ...was, ...sampling };
+  const next = mergeSampling(was, sampling);
   if (next.min === was.min && next.mag === was.mag && (next.mipmap ?? false) === (was.mipmap ?? false)
       && next.wrapS === was.wrapS && next.wrapT === was.wrapT) return;
-  cache.withTexture(texture.handle, () => applySampling(gl, sampling, was));
+  cache.withTexture(texture.handle, () => applySampling(gl, next, was));
   texture.sampling = next;
 }
 

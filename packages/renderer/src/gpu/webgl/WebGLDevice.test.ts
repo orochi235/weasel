@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createGLRecorder, type GLRecorder } from '../../testing/glRecorder';
 import { PREMULTIPLIED } from '../blend';
 import type { GpuDrawState, GpuStencilState } from '../types';
+import type { GlTexture } from './glResources';
 import { WebGLDevice } from './WebGLDevice';
 
 const VERT = '#version 300 es\nin vec2 a_position;\nvoid main() { gl_Position = vec4(a_position, 0.0, 1.0); }\n';
@@ -304,6 +305,19 @@ describe('WebGLDevice mipmapped textures', () => {
     expect(maxLevels(rec)).toEqual([]);
     gpu.writeTexture(tex, { width: 8, height: 8, data: new Uint8Array(256) });
     expect(maxLevels(rec)).toEqual([0]);
+  });
+
+  it('keeps the setting a sampling change gives as undefined, in GL and in the record alike', () => {
+    const { rec, gpu } = setup();
+    const { gl } = rec;
+    const tex = gpu.createTexture('rgba8', MIPMAPPED, { width: 4, height: 4, data: new Uint8Array(64) });
+    const minFilters = () => argsOf(rec, 'texParameteri').filter(([, p]) => p === gl.TEXTURE_MIN_FILTER).map(([, , v]) => v);
+    rec.reset();
+    gpu.setSampling(tex, { mipmap: undefined, min: undefined, wrapS: 'repeat' });
+    expect((tex as GlTexture).sampling).toEqual({ ...MIPMAPPED, wrapS: 'repeat' });
+    expect(minFilters()).toEqual([]);
+    gpu.setSampling(tex, { mipmap: false });
+    expect(minFilters()).toEqual([gl.LINEAR]);
   });
 });
 
