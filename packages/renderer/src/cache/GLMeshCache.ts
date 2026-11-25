@@ -46,14 +46,13 @@ interface MeshResources {
  * renderer should construct a new GLMeshCache.
  */
 export class GLMeshCache {
-  private readonly map = new WeakMap<Mesh, PersistentUpload>();
+  private map = new WeakMap<Mesh, PersistentUpload>();
   /** Meshes this context has drawn at least once; see `uploadRecurring`. */
-  private readonly seen = new WeakSet<Mesh>();
+  private seen = new WeakSet<Mesh>();
   private readonly finalizer: FinalizationRegistry<MeshResources>;
   /** Every persistent upload not yet freed, so `dispose` can reach them. */
   private readonly persistent = new Set<MeshResources>();
   private readonly pendingDeletes: MeshResources[] = [];
-  private disposed = false;
   /** Transient resources allocated this frame; freed at end of render(). */
   private readonly transientThisFrame: MeshResources[] = [];
 
@@ -148,16 +147,17 @@ export class GLMeshCache {
 
   /**
    * Free every GL resource this cache holds — persistent, pending and
-   * transient — and ignore finalizers from here on. Idempotent. Unlike the
+   * transient — and forget every mesh it uploaded, so a later lookup uploads
+   * afresh and a later `dispose` frees that too. Idempotent. Unlike the
    * other paths this does not wait on GC, which is what lets a renderer on a
    * context it does not own give back everything it uploaded.
    */
   dispose(): void {
-    if (this.disposed) return;
-    this.disposed = true;
     this.freeTransient();
     for (const r of this.persistent) this.pendingDeletes.push(r);
     this.persistent.clear();
+    this.map = new WeakMap();
+    this.seen = new WeakSet();
     this.drainPendingDeletes();
   }
 

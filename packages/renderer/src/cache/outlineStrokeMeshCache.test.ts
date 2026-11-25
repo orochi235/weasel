@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { setDefaultOpenFill } from '@weasel-js/geom';
 import { outlineStrokeMesh, quantizeEmWidth, _resetOutlineStrokeMeshCacheForTests } from './outlineStrokeMeshCache';
 import { registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
 
@@ -61,5 +62,16 @@ describe('outline stroke mesh cache', () => {
     expect(quantizeEmWidth(0.5)).toBe(512 / 1024);
     expect(quantizeEmWidth(0.30001)).toBe(Math.round(0.30001 * 1024) / 1024);
     expect(quantizeEmWidth(0)).toBe(0);
+  });
+  it('rebuilds an aligned ribbon on an open contour under another default open-fill rule', () => {
+    const open = 'M0 0L1 0L1 -1';
+    try {
+      const closed = outlineStrokeMesh('k|open', open, 0.1, { align: 'inner' });
+      setDefaultOpenFill('none');
+      const left = outlineStrokeMesh('k|open', open, 0.1, { align: 'inner' });
+      expect(left).not.toBe(closed);
+    } finally {
+      setDefaultOpenFill('close');
+    }
   });
 });

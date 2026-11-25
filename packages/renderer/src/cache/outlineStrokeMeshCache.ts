@@ -10,7 +10,7 @@
  */
 
 import { faceGeneration } from '@weasel-js/font';
-import { pathFromD } from '@weasel-js/geom';
+import { defaultOpenFill, pathFromD } from '@weasel-js/geom';
 import { strokeToPath, tessellateStroke } from '@weasel-js/stroke';
 import { metricKey, type StrokeMetric } from '@weasel-js/stroke';
 import { strokeTrimKey, type Stroke } from '@weasel-js/paint';
@@ -62,6 +62,8 @@ export function outlineStrokeMesh(
     stroke.nib ? `${stroke.nib.angle}:${stroke.nib.ratio}` : '', stroke.varyingWidthJoinThreshold ?? '',
     stroke.vertexWidths?.length ? JSON.stringify(stroke.vertexWidths) : '', strokeTrimKey(stroke.trim),
     metricKey(metric),
+    // An aligned ribbon is cut to the glyph's fill, whose open contours follow this rule.
+    (stroke.align ?? 'center') === 'center' ? '' : defaultOpenFill(),
   ].join('|');
 
   if (faces !== faceGeneration()) {

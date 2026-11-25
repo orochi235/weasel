@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
+import { setDefaultOpenFill } from '@weasel-js/geom';
 import {
   outlineMesh, OUTLINE_MESH_CACHE_LIMIT, _resetOutlineMeshCacheForTests,
 } from './outlineMeshCache';
@@ -68,5 +69,15 @@ describe('outline mesh cache', () => {
       maxErr = Math.max(maxErr, Math.abs(Math.hypot(dx, dy) - 0.5));
     }
     expect(maxErr).toBeLessThan(1 / 2048);
+  });
+  it('rebuilds a glyph with an open contour under another default open-fill rule', () => {
+    const open = 'M0 0L1 0L1 -1';
+    try {
+      expect(outlineMesh('k|open', open).indices.length).toBe(3);
+      setDefaultOpenFill('none');
+      expect(outlineMesh('k|open', open).indices.length).toBe(0);
+    } finally {
+      setDefaultOpenFill('close');
+    }
   });
 });

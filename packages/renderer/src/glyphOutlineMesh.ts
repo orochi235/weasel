@@ -4,7 +4,7 @@
  */
 import type { Mesh } from '@weasel-js/geom/tessellate';
 import type { LaidOutGroup, LaidOutOutlineGlyph } from '@weasel-js/text';
-import { scaledDash, strokeHasInk } from '@weasel-js/paint';
+import { scaleVertexWidth, scaledDash, strokeHasInk, type Stroke, type StrokeTrim, type TrimAt } from '@weasel-js/paint';
 import { strokeMetricOf } from '@weasel-js/stroke';
 import type { GlMat3 } from '@weasel-js/geom';
 import { quantizeStrokeScale } from './cache/strokeMeshCache';
@@ -59,7 +59,7 @@ export function outlineGroupStrokeMesh(
       );
       const pxPerEm = quantizeStrokeScale(width.px, space.scale);
       if (!(pxPerEm > 0)) return null;
-      const dashed = scaledDash(stroke, 1 / pxPerEm);
+      const dashed = scaledDash(emLengths(stroke, 1 / s), 1 / pxPerEm);
       return outlineStrokeMesh(
         glyph.key, glyph.d, width.px / pxPerEm, dashed, space.metric ?? undefined,
       );
@@ -69,10 +69,28 @@ export function outlineGroupStrokeMesh(
     glyph.scale > 0
       ? outlineStrokeMesh(
         glyph.key, glyph.d, quantizeEmWidth(width / glyph.scale),
-        scaledDash(stroke, 1 / glyph.scale),
+        scaledDash(emLengths(stroke, 1 / glyph.scale), 1 / glyph.scale),
       )
       : null);
 }
+
+/** `stroke`'s world-unit lengths besides width and dashes (`vertexWidths`, and a
+ *  trim edge given as a length) multiplied by `k`, the em per world unit. */
+function emLengths(stroke: Stroke, k: number): Stroke {
+  const { vertexWidths, trim } = stroke;
+  if (!vertexWidths?.length && !isLengthTrim(trim)) return stroke;
+  return {
+    ...stroke,
+    ...(vertexWidths?.length ? { vertexWidths: vertexWidths.map((w) => scaleVertexWidth(w, k)) } : {}),
+    ...(trim && isLengthTrim(trim) ? { trim: { ...trim, start: scaledAt(trim.start, k), end: scaledAt(trim.end, k) } } : {}),
+  };
+}
+
+const isLengthAt = (at: TrimAt | undefined): at is { length: number } => typeof at === 'object' && 'length' in at;
+const isLengthTrim = (trim: StrokeTrim | undefined): boolean =>
+  trim !== undefined && (isLengthAt(trim.start) || isLengthAt(trim.end));
+const scaledAt = (at: TrimAt | undefined, k: number): TrimAt | undefined =>
+  isLengthAt(at) ? { length: at.length * k } : at;
 
 const shearOf = (group: LaidOutGroup): number =>
   group.synthetic.italic ? Math.tan(SYNTHETIC_ITALIC_RADIANS) : 0;

@@ -254,4 +254,16 @@ describe('a cache never disposed', () => {
     }
     expect(imageSourceInLatestFrame(key)).toBe(false);
   });
+
+  it('uploads afresh after dispose rather than handing back a deleted texture', () => {
+    const rec = createGLRecorder();
+    const cache = new GLImageCache(webglDevice(rec.gl));
+    const before = cache.upload(fakeImg1, fakeImgData);
+    cache.dispose();
+    const after = cache.upload(fakeImg1, fakeImgData);
+    expect(after).not.toBe(before);
+    rec.reset();
+    cache.dispose();
+    expect(rec.calls.filter((c) => c.name === 'deleteTexture').map((c) => c.args[0])).toEqual([glOf(after)]);
+  });
 });

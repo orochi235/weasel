@@ -11,11 +11,12 @@
  * Eviction is wholesale rather than LRU because the refill cost is bounded by
  * what is actually on screen. A key names a glyph by its face's name, which a
  * registration can point at other outlines, so the cache is also dropped
- * whenever `faceGeneration()` moves.
+ * whenever `faceGeneration()` moves. A glyph's open contours fill by
+ * `defaultOpenFill()`, so that rule is in the key too.
  */
 
 import { faceGeneration } from '@weasel-js/font';
-import { pathFromD } from '@weasel-js/geom';
+import { defaultOpenFill, pathFromD } from '@weasel-js/geom';
 import { tessellate, type Mesh } from '@weasel-js/geom/tessellate';
 
 /** Curve flattening tolerance for glyph outlines, in em. See the header. */
@@ -28,10 +29,11 @@ let cache = new Map<string, Mesh>();
 let faces = faceGeneration();
 
 /**
- * The em-space tessellation of one glyph. `key` identifies the glyph — face
+ * The em-space tessellation of one glyph. `glyphKey` identifies the glyph — face
  * identity plus codepoint. `d` is only read on a miss.
  */
-export function outlineMesh(key: string, d: string): Mesh {
+export function outlineMesh(glyphKey: string, d: string): Mesh {
+  const key = `${glyphKey}|${defaultOpenFill()}`;
   if (faces !== faceGeneration()) {
     faces = faceGeneration();
     cache = new Map();

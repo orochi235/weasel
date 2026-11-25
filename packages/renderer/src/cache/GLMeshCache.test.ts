@@ -210,4 +210,16 @@ describe('GLMeshCache', () => {
     cache.freeTransient();
     expect(recorder.calls.filter((c) => c.name === 'deleteBuffer')).toHaveLength(5);
   });
+
+  it('uploads afresh after dispose, and frees that upload on the next dispose', () => {
+    const first = cache.handleFor(sampleMesh);
+    cache.dispose();
+    recorder.reset();
+    const second = cache.handleFor(sampleMesh);
+    expect(second).not.toBe(first);
+    expect(recorder.calls.some((c) => c.name === 'createVertexArray')).toBe(true);
+    recorder.reset();
+    cache.dispose();
+    expect(recorder.calls.filter((c) => c.name === 'deleteVertexArray').length).toBe(1);
+  });
 });

@@ -71,14 +71,14 @@ export class GLImageCache {
   /** This context's `MAX_TEXTURE_SIZE`. */
   readonly maxTextureSide: number;
 
-  private readonly map = new WeakMap<object, GpuTexture>();
+  private map = new WeakMap<object, GpuTexture>();
   /** Every texture `map` holds, so `dispose` can reach them — a WeakMap
    *  cannot be enumerated. */
   private readonly textures = new Set<GpuTexture>();
   private readonly finalizer: FinalizationRegistry<GpuTexture>;
   private readonly pendingDeletes: GpuTexture[] = [];
   /** Under `'auto'`, the sources whose mipmaps are built. */
-  private readonly mipped = new WeakSet<object>();
+  private mipped = new WeakSet<object>();
   private readonly drawn: DrawnRecord;
   private readonly ref = new WeakRef(this);
 
@@ -138,7 +138,7 @@ export class GLImageCache {
     this.mipped.delete(key);
   }
 
-  /** Delete every texture this cache uploaded and stop answering
+  /** Delete every texture this cache uploaded, forget them, and stop answering
    *  {@link releaseImageSource} and {@link maxImageTextureSide}. Idempotent. */
   dispose(): void {
     for (const tex of this.textures) this.gpu.deleteTexture(tex);
@@ -150,6 +150,8 @@ export class GLImageCache {
    *  its textures died with it. */
   abandon(): void {
     this.textures.clear();
+    this.map = new WeakMap();
+    this.mipped = new WeakSet();
     this.pendingDeletes.length = 0;
     live.delete(this.ref);
   }
