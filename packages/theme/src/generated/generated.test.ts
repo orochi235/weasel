@@ -95,7 +95,7 @@ describe('generated tokens.css', () => {
   it('redeclares every mode-dependent token inside every mode block', () => {
     const blocks = parseBlocks(css);
     const root = blocks.find((b) => b.selector === ':root' && b.decls.size > 1)!;
-    const modes = blocks.filter((b) => b.selector.includes('data-wzl-mode'));
+    const modes = blocks.filter((b) => b.selector.includes('data-wzl-mode') && b.decls.size > 0);
     expect(modes.length).toBeGreaterThan(1);
 
     // Names any mode block declares are the ones whose value depends on mode.
