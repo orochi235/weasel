@@ -406,11 +406,51 @@ describe('useHandleDrag — callbacks from a later render', () => {
     document.body.appendChild(scroller);
     const target = mount();
     target.style.position = 'sticky';
+    target.style.top = '0';
     scroller.appendChild(target);
     result.current.onPointerDown(press(target, 10, 10));
     scroller.scrollTop = 30;
     target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
     expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 10 });
+    scroller.remove();
+  });
+
+  it('counts the scroll a sticky rect sticks in on the axis it has no inset on', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    scroller.style.overflow = 'auto';
+    document.body.appendChild(scroller);
+    const target = mount();
+    target.style.position = 'sticky';
+    target.style.top = '0';
+    scroller.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollLeft = 20;
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 30, y: 10 });
+    scroller.remove();
+  });
+
+  it('counts the scroll a sticky box sticks in while the box is not yet stuck', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    scroller.style.overflow = 'auto';
+    document.body.appendChild(scroller);
+    const header = document.createElement('div');
+    header.style.position = 'sticky';
+    header.style.top = '0';
+    // Not stuck yet: the header still rides the scroll.
+    header.getBoundingClientRect = () => ({ left: 0, top: 50 - scroller.scrollTop, right: 100, bottom: 150 - scroller.scrollTop, width: 100, height: 100, x: 0, y: 50 - scroller.scrollTop, toJSON: () => ({}) });
+    scroller.appendChild(header);
+    const target = mount();
+    header.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 40 });
     scroller.remove();
   });
 

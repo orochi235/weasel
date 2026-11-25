@@ -49,9 +49,8 @@ export interface UseHandleDragReturn<T extends HTMLElement | SVGElement> {
 }
 
 interface Scroller {
-  el: Element;
-  /** Client pixels per CSS pixel of the scroller's content, per axis. */
-  scale: { x: number; y: number };
+  /** How far, in client pixels, the scroller has moved what it holds back from where it would sit unscrolled. */
+  moved: () => { x: number; y: number };
 }
 
 /** The properties any value but `none` of which makes a box the containing block of a fixed descendant. */
@@ -77,37 +76,63 @@ const flatParentOf = (el: Element): Element | null =>
   el.assignedSlot ?? el.parentElement ?? (el.parentNode as Partial<ShadowRoot> | null)?.host ?? null;
 
 /** The ancestors whose scrolling moves `el` on screen: each box's containing block, up the chain, but not the
- *  viewport a fixed box is held by, nor the scroller a sticky box sticks in. */
+ *  viewport a fixed box is held by. */
 function scrollersOf(el: Element): Scroller[] {
   const view = el.ownerDocument.defaultView;
   const root = el.ownerDocument.documentElement;
   const styleOf = (n: Element) => view?.getComputedStyle(n);
   const out: Scroller[] = [];
-  const push = (p: Element) => out.push({ el: p, scale: p instanceof HTMLElement ? clientScaleOf(p) : { x: 1, y: 1 } });
-  let sticky = false;
+  let sticky: Element | null = null;
   for (let n: Element = el; ;) {
     const position = styleOf(n)?.position;
-    if (position === 'sticky') sticky = true;
+    if (position === 'sticky') sticky ??= n;
     let p = flatParentOf(n);
     while (p && !holds(position, styleOf(p))) p = flatParentOf(p);
     if (!p) {
       // An absolute box with no positioned ancestor is held by the initial containing block, which the page scrolls.
-      if (position === 'absolute' && n !== root) push(root);
+      if (position === 'absolute' && n !== root) out.push(scrollerOf(root));
       return out;
     }
-    if (sticky && (p === root || styleOf(p)?.overflow !== 'visible')) sticky = false;
-    else push(p);
+    if (sticky && (p === root || styleOf(p)?.overflow !== 'visible')) {
+      out.push(stickyScrollerOf(sticky, p, styleOf(sticky)));
+      sticky = null;
+    } else out.push(scrollerOf(p));
     n = p;
   }
+}
+
+/** A scroller that moves what it holds by its own scroll offset. */
+function scrollerOf(el: Element): Scroller {
+  const scale = el instanceof HTMLElement ? clientScaleOf(el) : { x: 1, y: 1 };
+  return { moved: () => ({ x: el.scrollLeft * scale.x, y: el.scrollTop * scale.y }) };
+}
+
+/** The scroller `box`, positioned sticky, sticks in. On an axis with an inset the box rides the scroll only until it
+ *  sticks, so there what it moved is read off where it sits in the scroller; on the others it rides the scroll. */
+function stickyScrollerOf(box: Element, scroller: Element, style: CSSStyleDeclaration | undefined): Scroller {
+  const inset = (a: string, b: string) => !!style && [a, b].some((side) => !['', 'auto'].includes(style.getPropertyValue(side)));
+  const stuckX = inset('left', 'right');
+  const stuckY = inset('top', 'bottom');
+  const scroll = scrollerOf(scroller);
+  return {
+    moved: () => {
+      const s = scroll.moved();
+      if (!stuckX && !stuckY) return s;
+      const b = box.getBoundingClientRect();
+      const p = scroller.getBoundingClientRect();
+      return { x: stuckX ? p.left - b.left : s.x, y: stuckY ? p.top - b.top : s.y };
+    },
+  };
 }
 
 /** How far `scrollers` have moved what they hold, in client pixels. */
 function scrollOf(scrollers: readonly Scroller[]): { x: number; y: number } {
   let x = 0;
   let y = 0;
-  for (const { el, scale } of scrollers) {
-    x += el.scrollLeft * scale.x;
-    y += el.scrollTop * scale.y;
+  for (const scroller of scrollers) {
+    const m = scroller.moved();
+    x += m.x;
+    y += m.y;
   }
   return { x, y };
 }
