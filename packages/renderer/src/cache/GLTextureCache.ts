@@ -68,7 +68,7 @@ export class GLTextureCache {
         warnOnce(`texture-alpha:${id}`, `weasel: texture id '${id}' names both a font atlas and a registered texture; `
           + 'each upload under it replaces the other\'s pixels');
       }
-      if (this.sources.get(id) !== source || was !== premultiply) {
+      if (this.rewrites(id, source, premultiply)) {
         this.gpu.writeTexture(cached, { source, premultiply });
         this.sources.set(id, source);
         this.premultiplied.set(id, premultiply);
@@ -97,7 +97,11 @@ export class GLTextureCache {
   /** Whether `uploadRegistered(id, source)` would send new pixels to a
    *  texture already made for `id`. */
   replaces(id: string, source: TexSource): boolean {
-    return this.map.has(id) && this.sources.get(id) !== source;
+    return this.map.has(id) && this.rewrites(id, source, true);
+  }
+
+  private rewrites(id: string, source: TexSource, premultiply: boolean): boolean {
+    return this.sources.get(id) !== source || this.premultiplied.get(id) !== premultiply;
   }
 
   /**
