@@ -87,8 +87,9 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     }
     // Other code wrote over the sink's cursor since: that is what to put back now.
     const prior = written && el.style.cursor === written.css ? written.prior : el.style.cursor;
-    written = { el, prior, css };
     el.style.cursor = css;
+    // The style hands back its own serialization (`'Grab '` reads `'grab'`), which is what later reads compare.
+    written = { el, prior, css: el.style.cursor };
   };
 
   return {
