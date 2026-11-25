@@ -245,9 +245,10 @@ export interface CreateHistoryOptions {
    *  `0` disables the undo stack entirely — every push is evicted
    *  synchronously (negative values are clamped to `0`; `NaN` throws a `RangeError`). Default: unbounded. */
   historyLimit?: number;
-  /** Fired once per entry that permanently leaves the reachable stacks:
-   *  redo entries dropped by a branch edit (a new push or `recordEntry`
-   *  after undo) and undo entries evicted by `historyLimit`.
+  /** Fired once per entry that permanently leaves the history: undo entries
+   *  evicted by `historyLimit` or `prune`, the entries of every branch evicted
+   *  with them or past `historyLimit`, and, without `branching`, the redo
+   *  entries a push, `recordEntry` or `dropRedo` drops (with it, those are kept as a branch).
    *  NOT fired by `clear()` or `restore()` — those wholesale-replace the
    *  history and the caller already knows. Note `restore()` does not enforce
    *  `historyLimit` either: a restored snapshot may exceed the cap, which
