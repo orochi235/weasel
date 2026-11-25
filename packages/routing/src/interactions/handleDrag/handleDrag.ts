@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useLatest } from '@weasel-js/react';
-import { clientToCanvasRect, layoutBoxOf } from '../../viewport/clientToCanvas';
+import { clientScaleOf, clientToCanvasRect, layoutBoxOf } from '../../viewport/clientToCanvas';
 import { openPointerSession, type PointerSession, type PointerSessionCancelReason } from '../pointerSession';
 import { isPrimaryPress } from '@weasel-js/gestures';
 
@@ -48,13 +48,47 @@ export interface UseHandleDragReturn<T extends HTMLElement | SVGElement> {
   onPointerDown: (e: React.PointerEvent<T>) => void;
 }
 
-/** How far `el`'s scrolling ancestors have scrolled, the document's own scroller among them. */
-function scrollOf(el: Element): { x: number; y: number } {
+interface Scroller {
+  el: Element;
+  /** Client pixels per CSS pixel of the scroller's content, per axis. */
+  scale: { x: number; y: number };
+}
+
+/** Whether `style` makes its box the containing block of a fixed descendant. */
+const holdsFixed = (style: CSSStyleDeclaration): boolean =>
+  (style.transform !== '' && style.transform !== 'none') || (style.filter !== '' && style.filter !== 'none')
+  || (style.perspective !== '' && style.perspective !== 'none') || /paint|layout|strict|content/.test(style.contain);
+
+/** The ancestors whose scrolling moves `el` on screen: none between a fixed box and its containing block, nor the
+ *  one a sticky box sticks in. */
+function scrollersOf(el: Element): Scroller[] {
+  const view = el.ownerDocument.defaultView;
+  const out: Scroller[] = [];
+  let fixed = false;
+  let sticky = false;
+  for (let n: Element | null = el; n; n = n.parentElement) {
+    const style = view?.getComputedStyle(n);
+    if (fixed && style && holdsFixed(style)) fixed = false;
+    if (style?.position === 'fixed') fixed = true;
+    else if (style?.position === 'sticky') sticky = true;
+    const p = n.parentElement;
+    if (!p || fixed) continue;
+    if (sticky && (p === p.ownerDocument.documentElement || view?.getComputedStyle(p).overflow !== 'visible')) {
+      sticky = false;
+      continue;
+    }
+    out.push({ el: p, scale: p instanceof HTMLElement ? clientScaleOf(p) : { x: 1, y: 1 } });
+  }
+  return out;
+}
+
+/** How far `scrollers` have moved what they hold, in client pixels. */
+function scrollOf(scrollers: readonly Scroller[]): { x: number; y: number } {
   let x = 0;
   let y = 0;
-  for (let p = el.parentElement; p; p = p.parentElement) {
-    x += p.scrollLeft;
-    y += p.scrollTop;
+  for (const { el, scale } of scrollers) {
+    x += el.scrollLeft * scale.x;
+    y += el.scrollTop * scale.y;
   }
   return { x, y };
 }
@@ -74,7 +108,7 @@ function defaultRectEl(target: HTMLElement | SVGElement): Element {
  *
  * The rect is measured once, at the press: a handle that moves under its own
  * drag must not shift the space its coordinates are reported in. A scroll
- * during the drag still moves it, by what its ancestors scrolled.
+ * during the drag still moves it, by what the ancestors that carry it scrolled.
  */
 export function useHandleDrag<T extends HTMLElement | SVGElement>(
   opts: UseHandleDragOptions<T>,
@@ -97,9 +131,10 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       const rectEl = getRect ? getRect(target) : defaultRectEl(target);
       // Measured once: by default the box is the handle's own, which the drag moves.
       const box = layoutBoxOf(rectEl);
-      const scrolled = scrollOf(rectEl);
+      const scrollers = scrollersOf(rectEl);
+      const scrolled = scrollOf(scrollers);
       const localOf = (clientX: number, clientY: number): HandleDragPoint => {
-        const now = scrollOf(rectEl);
+        const now = scrollOf(scrollers);
         const at = { ...box, left: box.left - (now.x - scrolled.x), top: box.top - (now.y - scrolled.y) };
         const [x, y] = clientToCanvasRect(at, clientX, clientY);
         return { x, y };

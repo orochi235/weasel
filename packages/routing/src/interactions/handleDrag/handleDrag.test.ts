@@ -368,4 +368,76 @@ describe('useHandleDrag — callbacks from a later render', () => {
     expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 40 });
     scroller.remove();
   });
+  it('leaves out a scroll above a fixed ancestor, which does not move the rect', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    const panel = document.createElement('div');
+    panel.style.position = 'fixed';
+    document.body.appendChild(scroller);
+    scroller.appendChild(panel);
+    const target = mount();
+    panel.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 10 });
+    scroller.remove();
+  });
+
+  it('leaves out the scroll a sticky rect sticks in', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    scroller.style.overflow = 'auto';
+    document.body.appendChild(scroller);
+    const target = mount();
+    target.style.position = 'sticky';
+    scroller.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 10 });
+    scroller.remove();
+  });
+
+  it('moves the rect by a scroll at the scale a transform shows the scroller at', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    document.body.appendChild(scroller);
+    mockRect(scroller, { left: 0, top: 0, width: 200, height: 200 });
+    Object.defineProperty(scroller, 'offsetWidth', { value: 100 });
+    Object.defineProperty(scroller, 'offsetHeight', { value: 100 });
+    const target = mount();
+    mockRect(target, { left: 0, top: 0, width: 200, height: 200 });
+    Object.defineProperty(target, 'offsetWidth', { value: 100 });
+    Object.defineProperty(target, 'offsetHeight', { value: 100 });
+    scroller.appendChild(target);
+    result.current.onPointerDown(press(target, 20, 20));
+    scroller.scrollTop = 10;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 20, clientY: 20 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 20 });
+    scroller.remove();
+  });
+  it('counts a scroll above the transformed box that holds a fixed one, which moves it', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    const holder = document.createElement('div');
+    holder.style.transform = 'translateX(0px)';
+    const panel = document.createElement('div');
+    panel.style.position = 'fixed';
+    document.body.appendChild(scroller);
+    scroller.appendChild(holder);
+    holder.appendChild(panel);
+    const target = mount();
+    panel.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    panel.scrollTop = 5;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 45 });
+    scroller.remove();
+  });
 });
