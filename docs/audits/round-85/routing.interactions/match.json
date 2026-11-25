@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ]
+ ],
+ "a": [
+  "browserReservedChord never reports the tab-switching chords, and on Apple can never report a chord that needs Ctrl",
+  "handleDrag and thresholdDrag keep a drag open across a window blur, and later commit it, where carry and the dispatcher cancel",
+  "startThresholdDrag reports a missed release below the threshold as a click"
+ ],
+ "b": [
+  "A carry whose release went unseen drops its payload at the next move's point",
+  "`undoKeyStep` takes a text field inside a shadow root for a non-editable target and hands its Cmd+Z to the page",
+  "`useHandleDrag` measures its box once, so a scroll during the drag shifts every reported point",
+  "The reserved-chord table cannot express Ctrl+Tab, so the tab switcher's chords are never reported",
+  "`startThresholdDrag` takes and releases its late capture itself, beside the session's own `capture()`"
+ ]
+}

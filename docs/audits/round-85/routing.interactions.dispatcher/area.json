@@ -1,0 +1,115 @@
+{
+ "id": "routing.interactions.dispatcher",
+ "commit": "2deb4d3b86eff8c016b33bf760a4260ea3a22762",
+ "date": "2026-11-24",
+ "files": [
+  "packages/routing/src/interactions/dispatcher/attachInput.ts",
+  "packages/routing/src/interactions/dispatcher/buildDispatchRecord.ts",
+  "packages/routing/src/interactions/dispatcher/channels/carry.ts",
+  "packages/routing/src/interactions/dispatcher/channels/contextMenu.ts",
+  "packages/routing/src/interactions/dispatcher/channels/dropPreview.ts",
+  "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts",
+  "packages/routing/src/interactions/dispatcher/channels/ingest.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keyPeers.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keyboard.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts",
+  "packages/routing/src/interactions/dispatcher/channels/listeners.ts",
+  "packages/routing/src/interactions/dispatcher/channels/modal.ts",
+  "packages/routing/src/interactions/dispatcher/channels/overKeys.ts",
+  "packages/routing/src/interactions/dispatcher/channels/pointer.ts",
+  "packages/routing/src/interactions/dispatcher/channels/webkitPinch.ts",
+  "packages/routing/src/interactions/dispatcher/channels/wheel.ts",
+  "packages/routing/src/interactions/dispatcher/deferredStart.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchCore.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchRecord.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchTrace.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcher.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcherApi.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcherWatch.ts",
+  "packages/routing/src/interactions/dispatcher/gestureDispatcherOptions.ts",
+  "packages/routing/src/interactions/dispatcher/gestureFacts.ts",
+  "packages/routing/src/interactions/dispatcher/gestureIds.ts",
+  "packages/routing/src/interactions/dispatcher/gestureRun.ts",
+  "packages/routing/src/interactions/dispatcher/handOff.ts",
+  "packages/routing/src/interactions/dispatcher/inFlightGestures.ts",
+  "packages/routing/src/interactions/dispatcher/inputFacts.ts",
+  "packages/routing/src/interactions/dispatcher/invocationCtx.ts",
+  "packages/routing/src/interactions/dispatcher/keymapRoute.ts",
+  "packages/routing/src/interactions/dispatcher/longPressState.ts",
+  "packages/routing/src/interactions/dispatcher/matcher.ts",
+  "packages/routing/src/interactions/dispatcher/predicates.ts",
+  "packages/routing/src/interactions/dispatcher/predict.ts",
+  "packages/routing/src/interactions/dispatcher/ranking.ts",
+  "packages/routing/src/interactions/dispatcher/testing/dispatcherStubs.ts",
+  "packages/routing/src/interactions/dispatcher/uiOngoing.ts",
+  "packages/routing/src/interactions/dispatcher/underPointer.ts",
+  "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx",
+  "packages/routing/src/interactions/dispatcher/useKeyLease.ts",
+  "packages/routing/src/interactions/dispatcher/usePageActions.ts",
+  "packages/routing/src/interactions/dispatcher/walk.ts"
+ ],
+ "a": 6,
+ "b": 4,
+ "m": 2,
+ "distinct": 8,
+ "chapman": 10.7,
+ "unfound": 2.7,
+ "read": {
+  "A": 44,
+  "B": 44
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 2,
+  "findings": 0
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 9.8,
+  "unfound": 0.8
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 27,
+  "testFiles": {
+   "failed": 3,
+   "passed": 3459,
+   "total": 3462
+  },
+  "gui": true,
+  "baseline": [
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.2,
+   "B": 5,
+   "match": 0.1,
+   "fix": 31.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 2018315,
+  "costUsd": 5.98
+ },
+ "fixCommits": [
+  "fba48959099d995b5165343d25fe5b5815609a48",
+  "48a52dd415cb467f15a20356ea43c341da4da043",
+  "eb77a8e49b6d44249f53f173c6090014f86e7441",
+  "8d7f1f8ef711cf4f88fab754d70605819df8c710",
+  "a44ebc018251d62e0280c3eea0c477df0d6f1b45",
+  "4cfe641b7440a44b4e6816d290f0ad3cb2e3253c",
+  "13cd957779e07cc81b27d88ab2edb1e71b506d89",
+  "f9d1cf2981123e0fef58d99463867cc4045c0cd5"
+ ]
+}

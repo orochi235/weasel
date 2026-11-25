@@ -1,0 +1,91 @@
+{
+ "id": "cursor",
+ "commit": "2deb4d3b86eff8c016b33bf760a4260ea3a22762",
+ "date": "2026-11-24",
+ "files": [
+  "packages/cursor/src/bake.ts",
+  "packages/cursor/src/brushRing.ts",
+  "packages/cursor/src/cursorSink.ts",
+  "packages/cursor/src/glyphs.ts",
+  "packages/cursor/src/index.ts",
+  "packages/cursor/src/mark.ts",
+  "packages/cursor/src/paint.ts",
+  "packages/cursor/src/paintedCursorState.ts",
+  "packages/cursor/src/pbt.fixture.ts",
+  "packages/cursor/src/registry.ts",
+  "packages/cursor/src/resolve.ts",
+  "packages/cursor/src/types.ts"
+ ],
+ "a": 8,
+ "b": 9,
+ "m": 4,
+ "distinct": 13,
+ "chapman": 17,
+ "unfound": 4,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 42,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 42,
+  "chapman": 7.2,
+  "unfound": 0.2
+ },
+ "patches": 15,
+ "verify": {
+  "ok": true,
+  "files": 31,
+  "testFiles": {
+   "failed": 3,
+   "passed": 3476,
+   "total": 3479
+  },
+  "gui": true,
+  "baseline": [
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.5,
+   "B": 4.9,
+   "match": 0.1,
+   "fix": 31.4,
+   "repair": 16
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1645351,
+  "costUsd": 4.64
+ },
+ "fixCommits": [
+  "04a8af55f02ebdb2703037e337c3b9399e761d1d",
+  "373d1693fdbb88b1a4b09e1356fbebfae4716b5a",
+  "1b087cbcb2d9c6df728584cc10d64cb37f36ad36",
+  "c1932887c21b795228bbb94a99aef89999093b8f",
+  "f94e33be3b876e6d64169f0200048b57b806c9c7",
+  "9cd7fb47e5ae53bc67374e3f68dff7a9b9d2e4a2",
+  "2b80b1c036b2303edec8be40514ddfc93501ef04",
+  "f3328b80695478583745b500ec00c1014f693f46",
+  "833ede6d4ae78559e243ed866d2f11025b892acb",
+  "6d46564d62aae86707785582e8ce3fef9592cc46",
+  "abf3eafcdd137b7bc0ae4f73766cb9fb010df7ff",
+  "9d0c3b177400d11304ef16122a40b448be7fa543",
+  "4f3bad325733d835300c2c51a9e4689b7808e623",
+  "ad796a2ca7c30247ab15c413c419f27999934b20",
+  "20ab9c3ecf33ea7bd70574c39f5a324594921e11"
+ ]
+}

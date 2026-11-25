@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "Last-operation wrap of an ongoing handle splits `this`: onEnd/replay run on the original, every other method on a spread copy",
+  "An emptied yoke left as its parent's active child takes every read from the root",
+  "`rankedDepRegistry` loses its rank when a caller passes `{ rank: undefined }`",
+  "`checkEnabled` JSDoc names the wrong throw reason"
+ ],
+ "b": [
+  "The last-operation wrapper hands the dispatcher a spread copy of the gesture's handle, so a handle using `this` (or prototype methods/getters) splits its state",
+  "The last operation outlives the input scope it ran in, and adjusting it reruns against the parent scope's deps",
+  "A hold runs its action with the params resolved at the press, so a thunked binding param changed while the key is held is not what runs",
+  "`checkEnabled`'s doc names the wrong disabled reason for a throwing predicate"
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   3,
+   0
+  ],
+  [
+   6,
+   2
+  ]
+ ],
+ "a": [
+  "Predicate targets bucket by the `{ kindOf }` wrapper's identity, not the predicate function's, so two bindings sharing one function go unflagged",
+  "`disengageHotkey` with no holds of its own pops whatever tops the stack, including a tool held on its key",
+  "Holds made through `engageHotkey` survive the unmount of the `useTools` that made them",
+  "Re-publishing on every `ToolsApi` change moves an older canvas to newest, so it takes the scoped slot",
+  "A tool redefined under the same id while live never gets `onActivate`, and the old definition never gets `onDeactivate`",
+  "`toolGaps` reports \"no cursor\" for a tool that carries `Tool.cursor` but no `def.cursor`",
+  "A `times` step on a size option at 0, with no `step` on the leaf, never moves"
+ ],
+ "b": [
+  "ToolsSlot hands the shared slot to whichever canvas last re-published, not the one that joined last",
+  "A panel value clamped to the leaf's default is dropped instead of written",
+  "A `times` step never moves an option off 0",
+  "`useTools` throws mid-life when the initial `active` tool leaves the registry",
+  "The shortcut sheet never lists keys a tool binds itself, including the option-step `[` `]` keys"
+ ]
+}

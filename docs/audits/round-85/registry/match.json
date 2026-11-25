@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "`ReflectedEntry.shadowed` is documented \"oldest first\" but is ordered by rank, then age",
+  "`deepEqual` ignores symbol-keyed properties",
+  "`createWarnOnce` with a `cap` that is not a positive integer either never forgets or never dedups",
+  "An extension released and registered again in the same tick moves to the end of `entries()`",
+  "`isOneChar` reads a lone surrogate as one typed character"
+ ],
+ "b": [
+  "A child `ExtensionRegistry` lists every inherited id before its own when its parent was not made by this module's `createExtensionRegistry`"
+ ]
+}

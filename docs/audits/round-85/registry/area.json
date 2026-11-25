@@ -1,0 +1,94 @@
+{
+ "id": "registry",
+ "commit": "2deb4d3b86eff8c016b33bf760a4260ea3a22762",
+ "date": "2026-11-24",
+ "files": [
+  "packages/registry/src/after.ts",
+  "packages/registry/src/codePoint.ts",
+  "packages/registry/src/compositeKey.ts",
+  "packages/registry/src/deepEqual.ts",
+  "packages/registry/src/emitter.ts",
+  "packages/registry/src/extensionRegistry.ts",
+  "packages/registry/src/freshId.ts",
+  "packages/registry/src/getOwn.ts",
+  "packages/registry/src/grade.ts",
+  "packages/registry/src/index.ts",
+  "packages/registry/src/isDev.ts",
+  "packages/registry/src/isFiniteNumber.ts",
+  "packages/registry/src/isPlainObject.ts",
+  "packages/registry/src/latest.ts",
+  "packages/registry/src/match.ts",
+  "packages/registry/src/mixed.ts",
+  "packages/registry/src/part.ts",
+  "packages/registry/src/pbt.fixture.ts",
+  "packages/registry/src/reflectable.ts",
+  "packages/registry/src/sameList.ts",
+  "packages/registry/src/setOwn.ts",
+  "packages/registry/src/testing/hostile.fixture.ts",
+  "packages/registry/src/valueStore.ts",
+  "packages/registry/src/warnOnce.ts",
+  "packages/registry/src/xmlEscape.ts"
+ ],
+ "a": 5,
+ "b": 1,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 11,
+ "unfound": 5,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 54,
+  "changedFiles": 2,
+  "findings": 1
+ },
+ "previous": {
+  "round": 54,
+  "chapman": 8,
+  "unfound": 0
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 3,
+   "passed": 5509,
+   "total": 5512
+  },
+  "gui": true,
+  "baseline": [
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.7,
+   "B": 7.2,
+   "match": 0.1,
+   "fix": 21.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 867971,
+  "costUsd": 2.74
+ },
+ "fixCommits": [
+  "bc6125c1122c608f87fdcdfbe393474bfb377018",
+  "989d863911bae7c98e5eb8d0733f25affe4a8fcf",
+  "b9beb6807d553764fd4589344e50f3ebbaf8d91d",
+  "5138c12c527aea4495468b2564ee836cd5e07019",
+  "7d85f6f377fb99ccaad49c24685d71d940b9232a",
+  "b35b43b0ed773ce1d6b4ee96ed415e729778d678"
+ ]
+}

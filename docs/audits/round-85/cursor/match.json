@@ -1,0 +1,41 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   3,
+   8
+  ],
+  [
+   5,
+   2
+  ],
+  [
+   6,
+   7
+  ]
+ ],
+ "a": [
+  "Fit guards ignore a stroke path's own width, so a stroke whose halo is clipped passes",
+  "rotationFitsInBox measures an arc by its bounding square's corners, rejecting arcs that fit at every angle",
+  "walk under-reports an arc whose radius is too small for its chord",
+  "cursorFor's cache is keyed on raw size and fallback with no bound",
+  "resolveCursor validates glyph and mark on the CSS tier only",
+  "A CSS cursor written to one element is left behind when the sink's element changes",
+  "bakeCursor writes accent fills, stroke colors and path data into SVG attributes unescaped",
+  "An empty fallback bakes an invalid cursor declaration"
+ ],
+ "b": [
+  "The fit guards ignore a stroke path's own width, so a stroke whose halo is clipped passes",
+  "Clearing an override on a sink that does not own the base erases the cursor other code had set",
+  "An override written to one element is never cleared once `element()` returns a different one",
+  "`brushRing(r, 'world')` with r = 0 draws a 24 px baked ring, while `brushRing(0, 'px')` draws a 1 px ring",
+  "Baked hotspot can equal the image width, outside the image",
+  "Arc bounds in the fit guards use the authored radius even when SVG scales it up",
+  "`walk` does not return the current point to the subpath start on `Z`",
+  "`renderOp` and `bakeCursor` interpolate unescaped strings into SVG and CSS",
+  "`cursorFor`'s cache is unbounded for continuous sizes or arbitrary fallbacks"
+ ]
+}

@@ -1,0 +1,85 @@
+{
+ "id": "routing.interactions",
+ "commit": "2deb4d3b86eff8c016b33bf760a4260ea3a22762",
+ "date": "2026-11-24",
+ "files": [
+  "packages/routing/src/interactions/browserReservedKeys.ts",
+  "packages/routing/src/interactions/carry/carry.ts",
+  "packages/routing/src/interactions/carry/index.ts",
+  "packages/routing/src/interactions/handleDrag/handleDrag.ts",
+  "packages/routing/src/interactions/keyHelpers.ts",
+  "packages/routing/src/interactions/pointerSession/index.ts",
+  "packages/routing/src/interactions/pointerSession/pointerSession.ts",
+  "packages/routing/src/interactions/pointerSession/swallowClick.ts",
+  "packages/routing/src/interactions/scratchKey.ts",
+  "packages/routing/src/interactions/sweep/index.ts",
+  "packages/routing/src/interactions/sweep/sweep.ts",
+  "packages/routing/src/interactions/thresholdDrag/index.ts",
+  "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11,
+ "unfound": 4,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 4,
+  "unfound": 0
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 3,
+   "passed": 3736,
+   "total": 3739
+  },
+  "gui": true,
+  "baseline": [
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 2
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.8,
+   "B": 7.2,
+   "match": 0.1,
+   "fix": 27.1,
+   "repair": 24.8
+  },
+  "nodes": {
+   "A": "msb-uai",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1718882,
+  "costUsd": 5.03
+ },
+ "fixCommits": [
+  "985a9d3a29e31342ff49589bbb17a4799fc06f32",
+  "a2a53ee3cffcfc76bb9cf8cc05e85730ef291eb3",
+  "a8211040f53c09133c00e047752ae61332ddcada",
+  "4ca3c1d4f9a773677701dc7a5f78428093fc6168",
+  "4e6783a5bfd382945d98571c2fa643349fc4f621",
+  "2c7bc77013a775f3e553df98693786ca2a507626",
+  "35d7c1c2a08e781caf7dc29e0ef84e0c61857b7a",
+  "529e354178d5f1af69611a81d5ae9a48167f940a"
+ ]
+}

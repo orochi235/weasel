@@ -1,0 +1,103 @@
+{
+ "id": "routing.tools",
+ "commit": "2deb4d3b86eff8c016b33bf760a4260ea3a22762",
+ "date": "2026-11-24",
+ "files": [
+  "packages/routing/src/tools/defineTool.ts",
+  "packages/routing/src/tools/describeShortcuts.ts",
+  "packages/routing/src/tools/returnToModeDefault.ts",
+  "packages/routing/src/tools/routeTypes.ts",
+  "packages/routing/src/tools/routing/gestures.ts",
+  "packages/routing/src/tools/routing/index.ts",
+  "packages/routing/src/tools/routing/reflection/conflictKeys.ts",
+  "packages/routing/src/tools/routing/reflection/conflicts.ts",
+  "packages/routing/src/tools/routing/reflection/index.ts",
+  "packages/routing/src/tools/routing/reflection/registry.ts",
+  "packages/routing/src/tools/routing/routeGrammar.ts",
+  "packages/routing/src/tools/toolGaps.ts",
+  "packages/routing/src/tools/toolOptionPrefs.ts",
+  "packages/routing/src/tools/toolOptionSteps.ts",
+  "packages/routing/src/tools/toolOptions.ts",
+  "packages/routing/src/tools/toolSet.ts",
+  "packages/routing/src/tools/toolShortcuts.ts",
+  "packages/routing/src/tools/toolsScope.tsx",
+  "packages/routing/src/tools/tuneToolOptions.ts",
+  "packages/routing/src/tools/types.ts",
+  "packages/routing/src/tools/useModeDefaultTool.ts",
+  "packages/routing/src/tools/useToolLifecycle.ts",
+  "packages/routing/src/tools/useToolOptionValues.ts",
+  "packages/routing/src/tools/useToolShortcuts.ts",
+  "packages/routing/src/tools/useTools.ts"
+ ],
+ "a": 7,
+ "b": 5,
+ "m": 2,
+ "distinct": 10,
+ "chapman": 15,
+ "unfound": 5,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 55,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 55,
+  "chapman": 5,
+  "unfound": 0
+ },
+ "patches": 14,
+ "verify": {
+  "ok": true,
+  "files": 27,
+  "testFiles": {
+   "failed": 3,
+   "passed": 3437,
+   "total": 3440
+  },
+  "gui": true,
+  "baseline": [
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.4,
+   "B": 3.2,
+   "match": 0.1,
+   "fix": 31.3,
+   "repair": 12
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1497484,
+  "costUsd": 5.13
+ },
+ "fixCommits": [
+  "ff1e0a6877ab43791e38e9debd0e47b28e505d45",
+  "e1bf87d36b1c78a13046dfa808b8c8100855744c",
+  "c0555ee6a4dbdad509dcc272466e9ee328e19a37",
+  "ceab712dec479f020738cb150baed2133b93ec1d",
+  "ba69d7a4e98ede42e9b98e1c1336c93dc680cd17",
+  "a65b5de1a8fa89919500fd1f760ee5839d695f1d",
+  "8c42317b07e0da017985367497c79703e182d63c",
+  "d13bc437dffb70bb9b2aeb6695c1d3d31ae95687",
+  "eb8dfc6bc905d98ca0399fbcc6388d84079d740b",
+  "34fdea23eb5dd6affd3b151e5dba610829b9a971",
+  "74497bce6c27229d9f70685e8f2805e183f9b61e",
+  "ad14d82476fe1c1ba606a6dbd3c5a51bad91bc1c",
+  "70251eaeb64e28889a1021bc8f4356b2f8674adc",
+  "436eeea9e01f2a0bfcdc1aaedef868e1d0d9b24b"
+ ]
+}

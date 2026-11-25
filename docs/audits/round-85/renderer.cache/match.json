@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   0,
+   3
+  ]
+ ],
+ "a": [
+  "GLMeshCache returns a cached handle without checking the attribute it was asked to carry",
+  "Replacing the GLImageCache leaves every on-screen image reading as \"not drawn\" until the next render"
+ ],
+ "b": [
+  "A world-width glyph stroke thinner than half an em quantum vanishes, and its width snaps to an em quantum the zoom does not scale",
+  "The gradient ramp key collapses non-finite stop offsets, so different stop lists share one row",
+  "GLImageCache drops `repetition` on a cache hit, while GLTextureCache re-applies wrap for the same situation",
+  "GLMeshCache.handleFor ignores `attribute` on a hit",
+  "A GLImageCache never disposed is pinned forever by the module-level `live` set"
+ ]
+}

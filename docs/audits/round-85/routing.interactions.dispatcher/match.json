@@ -1,0 +1,26 @@
+{
+ "pairs": [
+  [
+   2,
+   0
+  ],
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "Keys the keydown filters refuse are still pressed for `over` bindings when the pointer arrives",
+  "A held-key entry outlives its gesture and blocks re-engaging on the next arrival",
+  "The hover cursor keeps the in-flight cursor after a gesture ends with no input to carry it",
+  "Immediate params drop `bodyKind` for pointerdown, longpress and hover",
+  "`ctx.screen` is canvas-local for wheel and pinch, client pixels for everything else",
+  "A drop whose items fail to materialize is an unhandled rejection"
+ ],
+ "b": [
+  "A gesture that ends with no input leaves its active cursor on the canvas until the pointer moves",
+  "`heldPointer` is read once at attach, so a later callback never gets the feed and the earlier one never gets `null`",
+  "A keystroke that closes a keymap while Cmd is down stays in the `quiet` set after its keyup is lost",
+  "Immediate params carry `bodyKind` for some pointer kinds and drop it for others that match on it"
+ ]
+}

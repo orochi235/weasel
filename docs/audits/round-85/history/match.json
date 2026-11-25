@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "A listener that seals (or steps) the history in response to a push has its effect undone: `anchor()` runs after `bump()` notifies",
+  "A `recordEntry` / journal-commit push reports the entry's ops as `applied`, though that step applied nothing",
+  "A coalesce step's `ops` means two different things on the two coalesce paths"
+ ],
+ "b": [
+  "A failed undo of a journal-committed entry re-applies the coalesced halves after the shared ops that originally ran after them, leaving stale values",
+  "A grandchild journal's edits don't count as its parent journal's latest edit, so an enclosing cancel unwinds in the wrong order",
+  "`activeJournal()` answers the outer journal while a nested one is active, and that journal refuses every apply/undo"
+ ]
+}

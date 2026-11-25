@@ -1,0 +1,79 @@
+{
+ "id": "renderer.cache",
+ "commit": "2deb4d3b86eff8c016b33bf760a4260ea3a22762",
+ "date": "2026-11-24",
+ "files": [
+  "packages/renderer/src/cache/GLImageCache.ts",
+  "packages/renderer/src/cache/GLMeshCache.ts",
+  "packages/renderer/src/cache/GLTextureCache.ts",
+  "packages/renderer/src/cache/GradientRampAtlas.ts",
+  "packages/renderer/src/cache/cache.ts",
+  "packages/renderer/src/cache/markerCommandCache.ts",
+  "packages/renderer/src/cache/outlineMeshCache.ts",
+  "packages/renderer/src/cache/outlineStrokeMeshCache.ts",
+  "packages/renderer/src/cache/strokeMeshCache.ts",
+  "packages/renderer/src/cache/uploadPremultiplied.ts",
+  "packages/renderer/src/cache/whiteTexture.ts"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 54,
+  "changedFiles": 2,
+  "findings": 1
+ },
+ "previous": {
+  "round": 54,
+  "chapman": 1,
+  "unfound": 0
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 14,
+  "testFiles": {
+   "failed": 2,
+   "passed": 3145,
+   "total": 3147
+  },
+  "gui": true,
+  "baseline": [
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.8,
+   "B": 5.7,
+   "match": 0.1,
+   "fix": 13
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1129529,
+  "costUsd": 3.3
+ },
+ "fixCommits": [
+  "b332bc0b97e728a7492aa10640cbc0d92013acb1",
+  "79a0defba279fcbbf5873721722a0f6fadf8c8f7",
+  "8e99083af9b9f5198bee1c4867db602447411312",
+  "63e9b907f9ad9f54d5285971b31afd0de2bf2955",
+  "30f1825255a72ec426bba7c6f11836be4d9419a6",
+  "b22955ad9aaa1220630e3de351857ad31663124e"
+ ]
+}
