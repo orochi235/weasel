@@ -53,7 +53,7 @@ export const enterPathEditAction = defineAction({
       kind: 'doubleClick',
       target: { kindOf: isBody },
     },
-    opts: { id: 'enterPathEdit.doubleClick' },
+    opts: { id: 'enterPathEdit.doubleClick', yields: true },
   }],
   eligible: { mode: 'normal' },
   requires: ['editAnchors', 'operands', 'nodeAtPoint', 'hitAt', 'scene'],

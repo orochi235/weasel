@@ -13,7 +13,7 @@ export const enterTextEditAtAction = defineAction({
   label: 'Edit text here',
   defaultBinding: [{
     spec: { kind: 'doubleClick', target: { kindOf: isBody } },
-    opts: { id: 'enterTextEditAt.doubleClick' },
+    opts: { id: 'enterTextEditAt.doubleClick', yields: true },
   }],
   eligible: { mode: 'normal' },
   requires: ['textEdit', 'hitAt'],
