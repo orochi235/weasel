@@ -9,7 +9,7 @@ import type { Path, PathFillRule, PolygonPath } from '../path';
 import { PATH_C, PATH_Q } from '../commands';
 import { resolveCorners } from '../paths/corners';
 import { type Contour, type Seg, clockwiseFirst, reverseContour } from './contourSegments';
-import { parseContours, extentOf } from './contours';
+import { parseContours, extentOf, probeDistance } from './contours';
 import { writePath } from './cutRegions';
 import { type Edge, cutEdges } from './curveEdges';
 import { type CoveredEdge, coverEdges, reversed, windingSet } from './curveClassify';
@@ -63,7 +63,7 @@ export function cutContours(operands: readonly Contour[][], rules: readonly Path
   const extent = extentOf(operands.flat()) || 1;
   const arrangement = cutEdges(operands, extent * 1e-6);
   const sets = operands.map((cs, i) => windingSet(cs, rules[i]));
-  const edges = coverEdges(arrangement.edges, sets, extent * 1e-7);
+  const edges = coverEdges(arrangement.edges, sets, probeDistance(operands.flat(), 1e-7));
   if (!edges) return null;
   return { edges, vertexCount: arrangement.points.length, clockwise: operands.map(clockwiseFirst) };
 }

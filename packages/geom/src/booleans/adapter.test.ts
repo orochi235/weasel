@@ -25,6 +25,28 @@ describe('pathToMultiPolygon', () => {
     expect(pathContainsPoint(path, 17, 0)).toBe(true);
   });
 
+  it('leaves a pentagram\'s center empty under evenodd, past the cut\'s segment limit', () => {
+    const tip = Array.from({ length: 5 }, (_, i) => {
+      const a = Math.PI / 2 + (4 * Math.PI * i) / 5;
+      return [10 * Math.cos(a), 10 * Math.sin(a)];
+    });
+    const perEdge = 1000;
+    const coords = tip.flatMap(([x0, y0], i) => {
+      const [x1, y1] = tip[(i + 1) % 5];
+      return Array.from({ length: perEdge }, (_, k) => [x0 + ((x1 - x0) * k) / perEdge, y0 + ((y1 - y0) * k) / perEdge]).flat();
+    });
+    const n = coords.length / 2;
+    const mp = pathToMultiPolygon({
+      kind: 'polygon',
+      fillRule: 'evenodd',
+      commands: new Uint8Array([PATH_M, ...Array<number>(n - 1).fill(PATH_L), PATH_Z]),
+      coords: new Float32Array(coords),
+    });
+    const path = multiPolygonToPath(clipper.union(mp));
+    expect(pathContainsPoint(path, 0, 0)).toBe(false);
+    expect(pathContainsPoint(path, 0, 8)).toBe(true);
+  });
+
   it('keeps a small hole in a path whose origin lies far from 0', () => {
     const mp = pathToMultiPolygon({
       kind: 'polygon',

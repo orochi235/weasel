@@ -7,7 +7,6 @@
 import type { PathFillRule } from '../path';
 import type { Contour } from './contourSegments';
 import { cutContours, curveRegions } from './curveBoolean';
-import { clipper } from './clipper';
 import { contourFaces } from './curveFaces';
 import type { Ring } from './adapter';
 
@@ -60,8 +59,8 @@ function segmentsMeet(e: { x0: number; y0: number; x1: number; y1: number }, f: 
 /**
  * The fill of `rings` under `fillRule` as rings that do not cross, filled on
  * their left, or null where nesting by containment already reads them right.
- * Where the cut cannot be made, an even-odd fill falls back to the rings'
- * exclusive or, and a nonzero one to their face arrangement.
+ * Where the cut cannot be made, the fill falls back to the rings' face
+ * arrangement under the same rule.
  */
 export function resolveRingFill(rings: readonly Ring[], fillRule: PathFillRule): Ring[] | null {
   if (rings.length < (fillRule === 'evenodd' ? 1 : 2) || !ringsMeet(rings)) return null;
@@ -73,10 +72,6 @@ export function resolveRingFill(rings: readonly Ring[], fillRule: PathFillRule):
   const cut = cutContours([contours], [fillRule]);
   const regions = cut && curveRegions(cut, (inside) => (inside[0] ? 0 : -1));
   if (regions) return (regions.get(0) ?? []).map(ringOf);
-  if (fillRule === 'evenodd') {
-    const [head, ...rest] = rings.map((ring) => [[ring]]);
-    return clipper.xor(head, ...rest).flat();
-  }
   return contourFaces([contours], [fillRule], undefined, false).faces.flatMap((face) => face.loops.map(ringOf));
 }
 

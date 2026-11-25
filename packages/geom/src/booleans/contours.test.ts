@@ -24,4 +24,13 @@ describe('orientBoundaries', () => {
     const drop = new PathBuilder().moveTo(0, 0).curveTo(1, 1, 0, 1, 1, 0).close().build();
     expect(orientBoundaries(parseContours(drop), 'nonzero')).toHaveLength(1);
   });
+
+  it('keeps a small contour far from the origin', () => {
+    const x = 1e11;
+    const at = (px: number, py: number) => ({ x: px, y: py });
+    const square = [
+      [at(x, 0), at(x, 1)], [at(x, 1), at(x - 1, 1)], [at(x - 1, 1), at(x - 1, 0)], [at(x - 1, 0), at(x, 0)],
+    ];
+    expect(orientBoundaries([square], 'nonzero')).toHaveLength(1);
+  });
 });
