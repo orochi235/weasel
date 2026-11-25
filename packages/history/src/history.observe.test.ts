@@ -121,6 +121,18 @@ describe('History.observe', () => {
     expect(applied()).toEqual([['push', [0]], ['coalesce', [0]], ['push', [0]]]);
   });
 
+  it('reports a folded entry\'s whole redo as its ops', () => {
+    const box = { v: 0 };
+    const history = createHistory(box);
+    const steps: HistoryStep[] = [];
+    history.observe((s) => steps.push(s));
+    const first = setOp(0, 1), second = setOp(1, 2);
+    history.recordEntry([first], 'r', { coalesceKey: 'run' });
+    history.recordEntry([second], 'r', { coalesceKey: 'run' });
+    expect(steps[1]!.kind).toBe('coalesce');
+    expect(steps[1]!.entries[0]!.ops).toEqual([first, second]);
+  });
+
   it('stops reporting once released', () => {
     const t = open();
     t.off();

@@ -23,8 +23,8 @@ export interface RecorderEnv {
 }
 
 /** `applied` is what the step itself applied: none of what `recordEntry` records, which already ran. */
-function coalesceStep(top: Entry, ops: Op[], applied: readonly Op[]): HistoryStep {
-  return { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied }] };
+function coalesceStep(top: Entry, applied: readonly Op[]): HistoryStep {
+  return { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops: top.forwardOps, applied }] };
 }
 
 const NONE: readonly Op[] = [];
@@ -79,7 +79,7 @@ export function createRecorder(env: RecorderEnv) {
       // stepped, and every step clears it, so a live anchor implies an empty
       // redo stack.
       logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
-      clock.bump(clock.observed() ? coalesceStep(top, ops, ops) : undefined, true);
+      clock.bump(clock.observed() ? coalesceStep(top, ops) : undefined, true);
       return;
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
@@ -97,7 +97,7 @@ export function createRecorder(env: RecorderEnv) {
     const top = undoStack[undoStack.length - 1];
     if (key !== undefined && top?.coalesceKey === key && clock.anchored() && forwardOps === baseOps) {
       foldEntry(top, forwardOps, now());
-      clock.bump(clock.observed() ? coalesceStep(top, forwardOps, NONE) : undefined, true);
+      clock.bump(clock.observed() ? coalesceStep(top, NONE) : undefined, true);
       return;
     }
     push({
