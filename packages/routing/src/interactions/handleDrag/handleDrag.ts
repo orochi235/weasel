@@ -71,6 +71,11 @@ const holds = (position: string | undefined, style: CSSStyleDeclaration | undefi
   : position === 'absolute' ? !!style && (style.position !== 'static' || holdsFixed(style))
   : true;
 
+/** `el`'s parent in the flat tree, which is the one its box is laid out in: the slot it is assigned to, else its
+ *  parent, else the host of the shadow root it tops. */
+const flatParentOf = (el: Element): Element | null =>
+  el.assignedSlot ?? el.parentElement ?? (el.parentNode as Partial<ShadowRoot> | null)?.host ?? null;
+
 /** The ancestors whose scrolling moves `el` on screen: each box's containing block, up the chain, but not the
  *  viewport a fixed box is held by, nor the scroller a sticky box sticks in. */
 function scrollersOf(el: Element): Scroller[] {
@@ -83,8 +88,8 @@ function scrollersOf(el: Element): Scroller[] {
   for (let n: Element = el; ;) {
     const position = styleOf(n)?.position;
     if (position === 'sticky') sticky = true;
-    let p = n.parentElement;
-    while (p && !holds(position, styleOf(p))) p = p.parentElement;
+    let p = flatParentOf(n);
+    while (p && !holds(position, styleOf(p))) p = flatParentOf(p);
     if (!p) {
       // An absolute box with no positioned ancestor is held by the initial containing block, which the page scrolls.
       if (position === 'absolute' && n !== root) push(root);

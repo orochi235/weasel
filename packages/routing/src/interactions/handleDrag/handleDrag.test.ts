@@ -414,6 +414,42 @@ describe('useHandleDrag — callbacks from a later render', () => {
     scroller.remove();
   });
 
+  it('follows a scroll outside the shadow root the rect is in', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    document.body.appendChild(scroller);
+    const host = document.createElement('div');
+    scroller.appendChild(host);
+    const target = mount();
+    host.attachShadow({ mode: 'open' }).appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    document.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 40 });
+    scroller.remove();
+  });
+
+  it('follows a scroll inside the shadow root a slotted rect is shown in', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    document.body.appendChild(scroller);
+    const host = document.createElement('div');
+    scroller.appendChild(host);
+    const inner = document.createElement('div');
+    inner.appendChild(document.createElement('slot'));
+    host.attachShadow({ mode: 'open' }).appendChild(inner);
+    const target = mount();
+    host.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    inner.scrollTop = 5;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 45 });
+    scroller.remove();
+  });
+
   it('moves the rect by a scroll at the scale a transform shows the scroller at', () => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
