@@ -229,6 +229,19 @@ describe('useHandleDrag', () => {
     document.body.removeChild(target);
   });
 
+  it('ends with moved true when the release lands away from the press with no move before it', () => {
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }));
+    const target = mount();
+    result.current.onPointerDown(press(target, 0, 0));
+    target.dispatchEvent(makePointerEvent('pointerup', { clientX: 30, clientY: 40 }));
+    expect(onEnd.mock.calls[0][0]).toMatchObject({ point: { x: 30, y: 40 }, moved: true });
+    result.current.onPointerDown(press(target, 0, 0));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 5, clientY: 0, buttons: 0 }));
+    expect(onEnd.mock.calls[1][0]).toMatchObject({ point: { x: 5, y: 0 }, moved: true });
+    target.remove();
+  });
+
   it('a press that never moves ends with moved false', () => {
     const onEnd = vi.fn();
     const { result } = renderHook(() =>

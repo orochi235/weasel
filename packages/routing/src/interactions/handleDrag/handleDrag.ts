@@ -14,7 +14,7 @@ export interface HandleDragPoint {
 export interface HandleDragEnd {
   /** Where the pointer was let go, in the rect element's local space. */
   point: HandleDragPoint;
-  /** False when the pointer never moved — a press, not a drag. Commit-on-end
+  /** False when the pointer never left the press point — a press, not a drag. Commit-on-end
    *  consumers use this to tell an edit from a stray click. */
   moved: boolean;
   event: PointerEvent;
@@ -150,14 +150,15 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
 
       let moved = false;
       const { clientX: pressX, clientY: pressY } = e;
+      const away = (ev: PointerEvent) => ev.clientX !== pressX || ev.clientY !== pressY;
       live.current = openPointerSession(target, e, {
         onMove: (ev) => {
-          if (ev.clientX !== pressX || ev.clientY !== pressY) moved = true;
+          if (away(ev)) moved = true;
           optsRef.current.onMove(localOf(ev.clientX, ev.clientY), ev);
         },
         onEnd: (ev) => {
           live.current = null;
-          optsRef.current.onEnd?.({ point: localOf(ev.clientX, ev.clientY), moved, event: ev });
+          optsRef.current.onEnd?.({ point: localOf(ev.clientX, ev.clientY), moved: moved || away(ev), event: ev });
         },
         onCancel: (reason) => {
           live.current = null;
