@@ -15,7 +15,7 @@ import { useGestureDispatcher } from './useGestureDispatcher';
 import { createDispatchTrace, type DispatchTrace } from './dispatchTrace';
 
 const RING = { glyph: 'brush', worldRadius: 12 } as const;
-const PAINTED_RING = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 12 };
+const PAINTED_RING = { kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 12, fallback: 'default' };
 
 function Probe({ action, painted, affordanceAt }: {
   action: Action;
