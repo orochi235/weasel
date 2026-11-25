@@ -52,8 +52,16 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           async (spec, importer) => (await this.resolve(spec, importer))?.id ?? null,
         );
         const title = entries[0]?.title;
-        if (title === undefined) return undefined;
         const q = (value: string) => JSON.stringify(value);
+        // vitest fails a file that registers no test, so one with no stories to run says so as a skipped test.
+        if (title === undefined) {
+          const empty = [
+            '',
+            `import { TestRunner as __forge_runner, test as __forge_test } from "vitest";`,
+            `if (__forge_runner.getCurrentSuite().file?.filepath === ${q(id)}) __forge_test.skip("no stories", () => {});`,
+          ];
+          return { code: `${code}\n${empty.join('\n')}\n`, map: null };
+        }
         // The module comes from its own URL at test time: vitest imports a test file with a cache-busting query,
         // so a static self-import would evaluate the file a second time and register every test twice.
         const lines = [

@@ -25,9 +25,10 @@ function unquoted(name: string): string {
   const bytes: number[] = [];
   const body = name.slice(1, -1);
   for (let i = 0; i < body.length; i++) {
-    const ch = body[i]!;
+    const ch = String.fromCodePoint(body.codePointAt(i)!);
     if (ch !== '\\') {
       bytes.push(...Buffer.from(ch, 'utf8'));
+      i += ch.length - 1;
       continue;
     }
     const octal = /^[0-7]{3}/.exec(body.slice(i + 1))?.[0];

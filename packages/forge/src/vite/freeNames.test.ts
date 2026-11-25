@@ -22,6 +22,10 @@ describe('freeNames', () => {
     expect(names).not.toContain('target');
   });
 
+  it("takes a static block's `var` for its own, not a reference to a top-level name", () => {
+    expect(namesIn('class C { static { var x = 1; use(x); } }')).not.toContain('x');
+  });
+
   it('reads a parameter default in the outer scope, past a `var` of the same name in the body', () => {
     expect(namesIn('function C(p = Icon) { var Icon; return p; }')).toContain('Icon');
     expect(namesIn('function C(p = 1) { var Icon; return Icon; }')).not.toContain('Icon');

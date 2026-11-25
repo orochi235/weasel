@@ -4174,3 +4174,14 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a Live lens's copy drops every `id` in it, so a trial styled by `#id` selectors shows
   without those styles in the lens. Renaming the copy's ids and rewriting its own references, which loses the same
   styles, or a shadow root, which loses the page's stylesheets, were the alternatives.
+
+## Audit round eighty-four (2026-11-24): forge's vite plugin, part one
+
+- 2026-11-24 (the fixer's call): forge's API panel documents the component the dependency graph picks for a story
+  file, and shows no table when the graph picks none: a meta's `component` declared in the story file itself or in a
+  dependency gives way to the title's import, and with no such import the panel is empty. Prop controls still read the
+  meta's `component` wherever it is declared. Showing the wrapper's or the dependency's props, as before, was the
+  alternative.
+- 2026-11-24 (the fixer's call): forge's issues endpoint answers 400 for a component name holding a comma, a double
+  quote, or a control character, since `gh` splits `--label` at commas and the search link quotes the label. Quoting
+  the label for gh's CSV reading and escaping it in the link was the alternative.
