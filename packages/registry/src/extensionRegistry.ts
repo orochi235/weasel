@@ -109,10 +109,11 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
     }
     stop();
   };
-  /** A parent's release and re-register in one tick is no drop, as its own store keeps the id's place. */
+  /** A parent's release and re-register in one tick is no drop, as its own store keeps the id's place: the hold
+   *  goes on through the parent, or ends as a replacement's would when the parent took a different value. */
   const relean = (id: string, lean: Lean<V>): void => {
     const theirs = parent.get(id);
-    if (theirs === undefined || !same(theirs, lean.value) || !untake(id, lean)) return;
+    if (theirs === undefined || !untake(id, lean) || !same(theirs, lean.value)) return;
     leans.set(id, lean);
     off ??= parent.subscribe(settle);
   };

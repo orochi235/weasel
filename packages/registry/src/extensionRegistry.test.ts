@@ -110,6 +110,21 @@ describe('createExtensionRegistry', () => {
     expect(child.get('x')).toBe('g');
   });
 
+  it('follows its parent to a different value the parent releases and registers in one tick', async () => {
+    const parent = make();
+    const child = make(parent);
+    const off = parent.register('x', 'f');
+    const mine = child.register('x', 'f');
+    off();
+    const offG = parent.register('x', 'g');
+    await Promise.resolve();
+    expect(child.get('x')).toBe('g');
+    expect(child.own.has('x')).toBe(false);
+    mine();
+    offG();
+    expect(child.has('x')).toBe(false);
+  });
+
   it('keeps an id it takes over once the tick passes', async () => {
     const parent = make();
     const child = make(parent);
