@@ -16,6 +16,19 @@ describe('indexFile', () => {
     expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/Auto', 'ui/C']]);
   });
 
+  it('reads a top-level let whose name only an inner scope’s own variable is assigned under', () => {
+    const code = `let title = 'ui/A';
+function f(title) { title = 'x'; }
+const g = () => { let title; title = 'y'; for (const title of []) {} };
+try {} catch (title) { title = 'z'; }
+{ let title; title++; }
+export default { title };
+export const S = {};
+`;
+    expect(indexFile(code, FILE, 'ui/Auto').map((e) => e.title)).toEqual(['ui/A']);
+    expect(indexFile(`${code}function h() { title = 'ui/B'; }\n`, FILE, 'ui/Auto').map((e) => e.title)).toEqual(['ui/Auto']);
+  });
+
   it('reads a computed literal key after a plain one, as the object holds it', () => {
     const code = "export default { title: 'ui/A', ['title']: 'ui/B' };\nexport const S = { name: 'x', [`name`]: 'y' };\n";
     expect(indexFile(code, FILE, 'ui/Auto').map((e) => [e.title, e.name])).toEqual([['ui/B', 'y']]);
