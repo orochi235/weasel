@@ -354,4 +354,18 @@ describe('useHandleDrag — callbacks from a later render', () => {
     expect(onCancel).toHaveBeenCalledWith('blur');
     expect(onEnd).not.toHaveBeenCalled();
   });
+
+  it('follows a scroll during the drag, so a still pointer reports a point that moved with the page', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    document.body.appendChild(scroller);
+    const target = mount();
+    scroller.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 40 });
+    scroller.remove();
+  });
 });
