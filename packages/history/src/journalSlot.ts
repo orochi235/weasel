@@ -3,7 +3,7 @@
  * suspended one, and refusing stack moves while one is open.
  */
 import {
-  createJournalInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive,
+  createJournalInternal, _openInsideInternal, _resumeJournalInternal, _resumedByOwnerInternal, _refuseWhileActiveInternal as refuseWhileActive,
   type BeginJournalOptions, type Journal,
 } from './journal';
 import type { CreateHistoryOptions, History } from './historyTypes';
@@ -28,7 +28,8 @@ export function createJournalSlot(adapter: unknown, inherited: InheritedOptions,
       active = j;
       return j;
     },
-    active: () => (active?.isActive() ? active : null),
+    /** The innermost journal open, since one holding another refuses every edit. */
+    active: () => (active?.isActive() ? _openInsideInternal(active) ?? active : null),
     resume(history: History, journal: Journal): void {
       if (_resumedByOwnerInternal(journal, history)) return;
       refuseWhileActive(active, journal);

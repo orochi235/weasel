@@ -120,3 +120,17 @@ describe('a journal inside a journal', () => {
     expect(h.activeJournal?.()).toBe(outer);
   });
 });
+
+describe('history.activeJournal with a journal open inside another', () => {
+  it('answers the innermost one, which takes the edits', () => {
+    const h = createHistory({ x: 0 });
+    const outer = h.beginJournal({ label: 'outer' });
+    const inner = outer.beginJournal({ label: 'inner' });
+    expect(h.activeJournal?.()).toBe(inner);
+    inner.suspend();
+    expect(h.activeJournal?.()).toBe(outer);
+    h.resumeJournal(inner);
+    inner.commit();
+    expect(h.activeJournal?.()).toBe(outer);
+  });
+});

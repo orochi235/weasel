@@ -194,8 +194,8 @@ export interface History {
    *  `nextEntryId()` and your own op-semantic rules to decide whether
    *  to resume or discard before calling this. */
   resumeJournal(journal: Journal): void;
-  /** The journal open on this history now, which applies and undoes in its place, or null. Optional, so a
-   *  history that never journals need not answer. */
+  /** The journal open on this history now, which applies and undoes in its place, or null: the innermost
+   *  one when a journal is open inside another. Optional, so a history that never journals need not answer. */
   activeJournal?(): Journal | null;
 }
 
