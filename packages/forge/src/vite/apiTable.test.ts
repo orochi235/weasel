@@ -144,7 +144,12 @@ export const Input = (_props: InputProps) => null;
     );
     story('chip', `import { Chip } from './Chip';\nexport default { component: Chip };\n`);
     story('outer', `import { Outer } from './Chip';\nexport default { component: Outer };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer'].map((n) => at(`${n}.stories.ts`));
+    writeFileSync(
+      at('Knob.ts'),
+      `import { forwardRef, memo } from './react';\nexport default memo(forwardRef<HTMLDivElement, { size?: string }>(function Knob({ size = 'md' }, _ref) { return null; }));\n`,
+    );
+    story('knob', `import Knob from './Knob';\nexport default { component: Knob };\n`);
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -236,6 +241,12 @@ export const Input = (_props: InputProps) => null;
     const table = api('memo');
     expect(prop(table, 'count')?.default).toBe('4');
     expect(table?.ref?.type).toBe('ChartHandle');
+  });
+
+  it('reads defaults and the TypeDoc name of a component exported as a default expression', () => {
+    const table = api('knob');
+    expect(prop(table, 'size')?.default).toBe("'md'");
+    expect(table?.component).toEqual({ name: 'default', file: at('Knob.ts') });
   });
 
   it('reads a generic component', () => {

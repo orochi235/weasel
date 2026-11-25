@@ -78,8 +78,12 @@ function inheritedRows(groups: readonly { container: string | undefined; pkg: st
 }
 
 function componentOf(tsm: typeof ts, declaration: ts.Declaration | undefined): Pick<ReadApi, 'component'> {
-  const name = declaration && tsm.getNameOfDeclaration(declaration);
-  return name && tsm.isIdentifier(name) ? { component: { name: name.text, file: declaration.getSourceFile().fileName } } : {};
+  if (!declaration) return {};
+  const file = declaration.getSourceFile().fileName;
+  // `export default memo(…)` has no name of its own; TypeDoc documents it as `default`.
+  if (tsm.isExportAssignment(declaration)) return { component: { name: 'default', file } };
+  const name = tsm.getNameOfDeclaration(declaration);
+  return name && tsm.isIdentifier(name) ? { component: { name: name.text, file } } : {};
 }
 
 const filesOf = (symbol: ts.Symbol): string[] =>
@@ -204,6 +208,7 @@ function destructuredDefaults(reading: ApiReading, declaration: ts.Declaration):
   let node: ts.Node | undefined = declaration;
   for (let depth = 0; node && depth < 32; depth++) {
     if (tsm.isVariableDeclaration(node)) node = node.initializer;
+    else if (tsm.isExportAssignment(node)) node = node.expression;
     else if (tsm.isCallExpression(node)) node = node.arguments[0];
     else if (tsm.isParenthesizedExpression(node) || tsm.isAsExpression(node) || tsm.isSatisfiesExpression(node)) node = node.expression;
     else if (tsm.isIdentifier(node)) {
