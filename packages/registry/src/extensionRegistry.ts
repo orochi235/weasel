@@ -117,6 +117,13 @@ function createLeans<V>(
   };
 }
 
+/** Bring `seen` up to the ids `parent` resolves: drop the gone, and order the new after everything so far. */
+function see(parent: Reflection<unknown>, seen: Map<string, number>): void {
+  const ids = new Set(parent.entries().map((e) => e.key));
+  for (const id of seen.keys()) if (!ids.has(id)) seen.delete(id);
+  for (const id of ids) if (!seen.has(id)) seen.set(id, nextOrder++);
+}
+
 /** Make an {@link ExtensionRegistry}: one per host that should keep its extensions to itself, or one
  *  shared by hosts that should not. */
 export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>): ExtensionRegistry<V> {
@@ -131,11 +138,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const foreignParent = parent !== null && knownOrder === undefined;
   /** For a parent this module did not make, which keeps no order to read: when this registry first saw each id. */
   const seen = new Map<string, number>();
-  const seeParent = (): void => {
-    const ids = new Set(parent!.entries().map((e) => e.key));
-    for (const id of seen.keys()) if (!ids.has(id)) seen.delete(id);
-    for (const id of ids) if (!seen.has(id)) seen.set(id, nextOrder++);
-  };
+  const seeParent = (): void => { see(parent!, seen); };
   const parentOrder = knownOrder ?? (foreignParent ? (id: string) => seen.get(id) : undefined);
   const orderOf = (id: string): number | undefined => {
     // A released id keeps its `since` until the next tick, to take its place back if registered again; until then it sits where its parent puts it.
