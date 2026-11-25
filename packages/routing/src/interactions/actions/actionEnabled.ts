@@ -58,7 +58,7 @@ export function gateEnabled(action: Action, ask: () => true | ActionUnavailable)
 /**
  * Safely evaluate an action's `enabled` predicate for the entry `params`
  * names. Returns `{enabled: true}` when no predicate is supplied. Catches
- * throws and treats them as disabled with reason `'(predicate threw)'`. In
+ * throws and treats them as disabled with reason `ActionDisabledReason.PredicateThrew` (`'predicate-threw'`). In
  * dev mode, warns once per action id when a single call exceeds 4ms (single
  * frame at 240fps — generous; real predicates should be sub-millisecond).
  */
