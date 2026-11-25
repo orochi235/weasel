@@ -186,6 +186,16 @@ describe('serveIssues', () => {
   });
 });
 
+describe('serveIssues for a name gh would split', () => {
+  it('refuses a component holding a comma, a quote, or a control character, without running gh', async () => {
+    const gh = answering({ stdout: '[]' });
+    for (const name of ['Foo,Bar', 'Foo"', 'Foo%0ABar']) {
+      expect((await get(`/__forge/issues?component=${name}`, gh)).status).toBe(400);
+    }
+    expect(gh).not.toHaveBeenCalled();
+  });
+});
+
 describe('serveIssues for a page that is not this server', () => {
   it('refuses a Host another name was rebound from, and a foreign Origin, without running gh', async () => {
     const gh = answering({ stdout: '[]' });

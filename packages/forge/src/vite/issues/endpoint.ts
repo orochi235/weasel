@@ -154,6 +154,8 @@ export function serveIssues(
     }
     const component = url.searchParams.get('component')?.trim();
     if (!component) return json(res, 400, { error: 'name a component: ?component=<name>' });
+    // gh reads `--label` as comma-separated values, and the search link quotes the label.
+    if (/[,"\p{Cc}]/u.test(component)) return json(res, 400, { error: 'a component name holds no comma, quote, or control character' });
     answer(component).then(({ status, body }) => json(res, status, body), next);
   });
 }
