@@ -246,6 +246,20 @@ describe('openPointerSession', () => {
     expect(onEnd).not.toHaveBeenCalled();
   });
 
+  it('takes the Escape at the window, before any document listener such as a dialog closing on it', () => {
+    const onCancel = vi.fn();
+    const dialog = vi.fn();
+    document.addEventListener('keydown', dialog, true);
+    try {
+      openPointerSession(el(), down(), { onCancel }, { escape: true, blur: false });
+      document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      expect(onCancel).toHaveBeenCalledWith('escape');
+      expect(dialog).not.toHaveBeenCalled();
+    } finally {
+      document.removeEventListener('keydown', dialog, true);
+    }
+  });
+
   it('leaves Escape alone without escape', () => {
     const onCancel = vi.fn();
     const s = openPointerSession(el(), down(), { onCancel });

@@ -70,6 +70,22 @@ function setup(props: Parameters<typeof Row>[0]) {
 }
 
 describe('createSweepAction', () => {
+  it('finds an item in a surface inside a shadow root, which the document hit-tests as the host', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const surface = document.createElement('div');
+    const item = document.createElement('button');
+    item.dataset.key = 'a';
+    surface.append(item);
+    shadow.append(surface);
+    document.elementFromPoint = () => host;
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => item;
+    const sweep = createSweepAction({ surface: () => surface, keyOf: (el) => (el as HTMLElement).dataset.key, begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: 5, y: 5 })).toBe(true);
+    host.remove();
+  });
+
   it('enters the pressed item, then every item the drag crosses, in order', () => {
     const entered: string[] = [];
     const end = vi.fn();

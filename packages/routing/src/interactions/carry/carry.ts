@@ -8,6 +8,7 @@ import {
   openPointerSession,
   type PointerSessionCancelReason,
 } from '../pointerSession';
+import { elementAt } from '../elementAt';
 
 /** What a carry brings. `type` is what a `carry` spec's `types` globs filter. */
 export interface CarryPayload {
@@ -75,11 +76,14 @@ function contains(r: DOMRect, x: number, y: number): boolean {
 }
 
 /** The innermost surface under the point that nothing else on the page covers. */
-function surfaceAt(doc: Document, x: number, y: number): CarrySurface | null {
-  const hit = typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(x, y) : null;
+function surfaceAt(x: number, y: number): CarrySurface | null {
+  const hits = new Map<Node, Element | null>();
   let best: CarrySurface | null = null;
   for (const s of surfaces) {
     if (!contains(s.element.getBoundingClientRect(), x, y)) continue;
+    const root = s.element.getRootNode();
+    if (!hits.has(root)) hits.set(root, elementAt(s.element, x, y));
+    const hit = hits.get(root);
     if (hit && !s.element.contains(hit)) continue;
     if (best && s.element.contains(best.element)) continue;
     best = s;
@@ -101,7 +105,6 @@ export function startCarry(
   payload: CarryPayload,
   cb: CarryCallbacks = {},
 ): Carry {
-  const doc = origin.ownerDocument ?? document;
   const pointerId = down.pointerId;
   let over: CarrySurface | null = null;
 
@@ -112,7 +115,7 @@ export function startCarry(
   };
 
   const step = (at: CarryPointer): void => {
-    const next = surfaceAt(doc, at.clientX, at.clientY);
+    const next = surfaceAt(at.clientX, at.clientY);
     if (next === over) {
       over?.receive('move', payload, at, pointerId);
       return;

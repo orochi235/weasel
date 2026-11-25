@@ -42,6 +42,21 @@ export const BROWSER_RESERVED_CHORDS: readonly ReservedChord[] = [
   ...chord(['tab'], { alt: true, platform: 'other' }, 'the window switcher on Windows and Linux'),
   ...chord(['arrowleft', 'arrowright'], { mod: true, alt: true, platform: 'apple' }, 'next and previous tab on macOS'),
   ...chord('fq', { mod: true, ctrl: true, platform: 'apple' }, 'full screen and lock screen on macOS'),
+  ...chord('123456789', { mod: true }, 'select a tab by its number'),
+  ...chord(['arrowleft', 'arrowright'], { alt: true, platform: 'other' }, 'back and forward on Windows and Linux'),
+  ...chord('[]', { mod: true, platform: 'apple' }, 'back and forward on macOS'),
+  ...chord('[]{}', { mod: true, shift: true, platform: 'apple' }, 'previous and next tab on macOS'),
+  ...chord(['f5'], {}, 'reload'),
+  ...chord(['f5'], { mod: true, platform: 'other' }, 'hard reload on Windows and Linux'),
+  ...chord(['f5'], { shift: true }, 'hard reload'),
+  ...chord(['f11'], { platform: 'other' }, 'full screen on Windows and Linux'),
+  ...chord(['f12'], {}, 'devtools'),
+  ...chord(['f4'], { alt: true, platform: 'other' }, 'close the window on Windows and Linux'),
+  ...chord(['f4'], { mod: true, platform: 'other' }, 'close the tab on Windows and Linux'),
+  ...chord(['escape'], { mod: true, shift: true, platform: 'other' }, 'the Windows Task Manager'),
+  ...chord(['escape'], { shift: true, platform: 'other' }, "Chrome's task manager on Windows and Linux"),
+  ...chord(['delete'], { mod: true, shift: true, platform: 'other' }, 'clear browsing data on Windows and Linux'),
+  ...chord(['backspace'], { mod: true, shift: true, platform: 'apple' }, 'clear browsing data on macOS'),
 ];
 
 const lower = (k: string | readonly string[]): string[] => (typeof k === 'string' ? [k] : [...k]).map((x) => x.toLowerCase());
