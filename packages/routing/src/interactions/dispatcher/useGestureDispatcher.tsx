@@ -17,7 +17,7 @@ import { createDispatcher, createDispatchTrace, type Dispatcher, type Dispatcher
 import { attachInput } from './attachInput';
 import { useKeyLease } from './useKeyLease';
 import { createKeymapStack } from '../../keymaps/keymapStack';
-import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
+import type { DispatcherViewTarget, HeldPointerFeed, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 
 export type {
   DispatcherChannels, DispatcherViewTarget, HeldPointerFeed, UseGestureDispatcherOptions, ViewIdResolver,
@@ -63,7 +63,7 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
   const ingestChannel = channels?.ingest !== false;
   const carryChannel = channels?.carry !== false;
   const onClickRef = useLatest(onClick);
-  const heldPointerRef = useLatest(opts.heldPointer);
+  const heldPointer = useHeldPointerRelay(opts.heldPointer);
   const onDoubleClickRef = useLatest(onDoubleClick);
   const [apple] = useState(isApplePlatform);
 
@@ -143,7 +143,7 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
       context: () => ctxRef.current,
       actions: () => registryRef.current,
       dispatchers: allDispatchers,
-      heldPointer: () => heldPointerRef.current,
+      heldPointer: () => heldPointer,
       requestRedraw: () => { requestRedrawRef.current?.(); },
       paintedCursor: () => cursorRef.current.painted?.(),
       cursorSink: () => cursorRef.current.sink?.(),
@@ -165,11 +165,32 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
       carry: carryChannel,
     });
   }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
-    allDispatchers, clientToLocalRef, controlsRef, ctxRef, heldPointerRef, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, clientToLocalRef, controlsRef, ctxRef, heldPointer, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
 }
 
 /** The incoming tool must not inherit a live gesture, nor the last-operation panel of one the outgoing tool finished. */
 function endOutgoingTool(dispatchers: readonly Dispatcher[], actions: ActionsRegistry): void {
   for (const d of dispatchers) d.cancelAll('cancel');
   actionsNodeOf(actions)?.lastOperation.toolLeft();
+}
+
+type HeldPointerSink = (feed: HeldPointerFeed | null) => void;
+
+/** A stable sink for the listeners' held-pointer feed, which keeps the feed with whichever callback `heldPointer` is now. */
+function useHeldPointerRelay(heldPointer: HeldPointerSink | undefined): HeldPointerSink {
+  const [relay] = useState(() => {
+    let feed: HeldPointerFeed | null = null;
+    let to: HeldPointerSink | undefined;
+    return {
+      give: (next: HeldPointerFeed | null): void => { feed = next; to?.(next); },
+      follow: (next: HeldPointerSink | undefined): void => {
+        if (next === to) return;
+        if (feed) { to?.(null); next?.(feed); }
+        to = next;
+      },
+    };
+  });
+  // Before the listeners attach, so the first feed reaches the first callback.
+  useEffect(() => { relay.follow(heldPointer); }, [relay, heldPointer]);
+  return relay.give;
 }
