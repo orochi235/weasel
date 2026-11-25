@@ -45,6 +45,23 @@ describe('rotationFitsInBox', () => {
   });
 });
 
+describe('the fit guards’ reach', () => {
+  const stroked = (d: string, width: number): CursorGlyph => ({ box: 24, hotspot: [0, 0], paths: [{ role: 'stroke', d, width }] });
+
+  it("hold a stroke's halo, half its own width past the halo's, inside the box", () => {
+    // A 2.8-wide stroke's halo reaches 2.7 past its end, so an end at 1.5 is clipped by 1.2.
+    expect(haloFitsInBox(stroked('M 1.5 12 L 12 12', 2.8))).toBe(false);
+    expect(haloFitsInBox(stroked('M 2.7 12 L 12 12', 2.8))).toBe(true);
+    expect(rotationFitsInBox(stroked('M 2.5 12 L 12 12', 2.8))).toBe(false);
+    expect(rotationFitsInBox(stroked('M 2.7 12 L 12 12', 2.8))).toBe(true);
+  });
+
+  it('hold a detail, which has no halo, to its own half width', () => {
+    const detail: CursorGlyph = { box: 24, hotspot: [0, 0], paths: [{ role: 'detail', d: 'M 0.5 12 L 12 12', width: 1 }] };
+    expect(haloFitsInBox(detail)).toBe(true);
+  });
+});
+
 describe('the fit guards’ dialect', () => {
   it('refuses an absolute command outside M, L, A and Z rather than skipping it', () => {
     // `H 23.5` reaches past the margin; read as pairs it visits no point at all.

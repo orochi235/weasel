@@ -133,18 +133,34 @@ function walk(d: string, see: (x: number, y: number, r: number) => void): void {
   }
 }
 
+/** Slack for authored decimals: a ring drawn flush with the edge, as `brush` is, fits rather than failing on rounding, which a half-circle's center picks up at 1e-7. */
+const FIT_EPSILON = 1e-6;
+
+/** How far a path's paint reaches past its geometry: its halo, or a halo-less detail's own half width. */
+function reach(p: CursorPath): number {
+  switch (p.role) {
+    case 'ink':
+    case 'accent':
+      return CURSOR_HALO_WIDTH / 2;
+    case 'stroke':
+      return (p.width + CURSOR_HALO_WIDTH) / 2;
+    case 'detail':
+      return p.width / 2;
+  }
+}
+
 /**
- * True when every authored path sits at least half a halo stroke inside the
+ * True when every authored path's paint, halo included, sits inside the
  * viewBox. A clipped halo is invisible at proof size and flattens the glyph's
  * outline at cursor size.
  */
 export function haloFitsInBox(glyph: CursorGlyph): boolean {
-  const margin = CURSOR_HALO_WIDTH / 2;
   let ok = true;
   for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
+    const margin = reach(p);
     walk(p.d, (x, y, r) => {
       for (const v of [x, y]) {
-        if (v - r < margin || v + r > glyph.box - margin) ok = false;
+        if (v - r < margin - FIT_EPSILON || v + r > glyph.box - margin + FIT_EPSILON) ok = false;
       }
     });
   }
@@ -153,7 +169,7 @@ export function haloFitsInBox(glyph: CursorGlyph): boolean {
 
 /**
  * True when the glyph still fits its viewBox at every rotation — i.e. every
- * authored point is inside the box's inscribed circle, halo included.
+ * authored path's paint, halo included, is inside the box's inscribed circle.
  *
  * Bake rotates about the box center in a viewBox that does not grow, so a
  * glyph that merely satisfies {@link haloFitsInBox} can have its corners
@@ -161,11 +177,11 @@ export function haloFitsInBox(glyph: CursorGlyph): boolean {
  */
 export function rotationFitsInBox(glyph: CursorGlyph): boolean {
   const c = glyph.box / 2;
-  const limit = c - CURSOR_HALO_WIDTH / 2;
   let ok = true;
   for (const p of [...glyph.paths, ...(glyph.over ?? [])]) {
+    const limit = c - reach(p);
     walk(p.d, (x, y, r) => {
-      if (Math.hypot(x - c, y - c) + r > limit) ok = false;
+      if (Math.hypot(x - c, y - c) + r > limit + FIT_EPSILON) ok = false;
     });
   }
   return ok;
