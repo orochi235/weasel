@@ -226,7 +226,6 @@ export function createJournalInternal(
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
-      // Its own edits made after a child's last one are undone before that child's.
       for (const { child, depth } of latestFirst()) {
         _journalAccessInternal(inner).rewind(depth);
         if (!child.isActive()) RESUMERS.get(child)!();

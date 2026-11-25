@@ -43,6 +43,9 @@ export function _journalAccessInternal(history: History): JournalAccess {
   return access;
 }
 
+/** One list as both halves of an entry nothing coalesced into. */
+const twice = (ops: Op[]): [Op[], Op[]] => [ops, ops];
+
 /** Silent default — keeps every call site unconditional. */
 const SILENT: HistoryLogger = { log: () => {}, warn: () => {} };
 
@@ -52,14 +55,19 @@ function gotoDepth(n: number, total: number): number {
   throw new RangeError(`goto: depth ${n} is not a whole number from 0 to ${total}`);
 }
 
+/** The undo-stack cap `historyLimit` asks for: unbounded when omitted, a negative one clamped to 0. */
+function limitOf(limit: number | undefined): number {
+  if (Number.isNaN(limit)) throw new RangeError('createHistory: historyLimit is NaN');
+  return Math.max(0, limit ?? Infinity);
+}
+
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
   const undoStack: Entry[] = [];
   const redoStack: Entry[] = [];
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
-  if (Number.isNaN(options.historyLimit)) throw new RangeError('createHistory: historyLimit is NaN');
-  const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
+  const historyLimit = limitOf(options.historyLimit);
   const customRebuild = options.rebuildOp;
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
@@ -137,8 +145,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       journals.refuse();
-      const kept = recordedOps(ops, [], false);
-      record(kept, kept, label, options);
+      record(...twice(recordedOps(ops, [], false)), label, options);
     },
     nextEntryId: recorder.nextEntryId,
     beginJournal: (opts) => journals.begin(history, opts),
@@ -170,9 +177,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   JOURNAL_ACCESS.set(history, {
     appliedOps: () => appliedHalves(undoStack),
     record,
-    rewind(depth) {
-      if (depth < undoStack.length) reported('goto', (into) => walkOrReturn(depth, into));
-    },
+    rewind: (depth) => depth < undoStack.length && reported('goto', (into) => walkOrReturn(depth, into)),
   });
   return history;
 }
