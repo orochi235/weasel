@@ -87,6 +87,31 @@ describe('createExtensionRegistry', () => {
     expect(child.has('x')).toBe(false);
   });
 
+  it('goes on holding through its parent when the parent releases and registers the id again in one tick', async () => {
+    const parent = make();
+    const child = make(parent);
+    const off = parent.register('x', 'f');
+    const mine = child.register('x', 'f');
+    off();
+    parent.register('x', 'f');
+    await Promise.resolve();
+    expect(child.own.has('x')).toBe(false);
+    parent.register('x', 'g', { replace: true });
+    expect(child.get('x')).toBe('g');
+    mine();
+    expect(child.get('x')).toBe('g');
+  });
+
+  it('keeps an id it takes over once the tick passes', async () => {
+    const parent = make();
+    const child = make(parent);
+    const off = parent.register('x', 'f');
+    child.register('x', 'f');
+    off();
+    await Promise.resolve();
+    expect(child.own.get('x')).toBe('f');
+  });
+
   it('never tells its listeners an id it holds is gone while it takes it over', () => {
     const parent = make();
     const child = make(parent);
