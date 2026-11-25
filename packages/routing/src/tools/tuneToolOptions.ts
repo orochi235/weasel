@@ -4,6 +4,7 @@
 import type { ActionsRegistry } from '../interactions/actions/registry';
 import type { DepRegistry } from '../interactions/actions/depNode';
 import { keepToolOptions, liveTool, toolOptionActionIds, toolOptionParams } from './toolOptions';
+import { LIVE_TOOL_PARAM, toolOptionStepIds } from './toolOptionSteps';
 import type { Tool } from './types';
 
 /** Tune the actions each tool's options are params of with every option's
@@ -33,6 +34,9 @@ export function tuneToolOptions(
     const options = tool.options;
     if (!options) continue;
     const active = () => live() === tool.id;
+    for (const stepId of toolOptionStepIds(tool.id, options)) {
+      releases.push(registry.tune(stepId, { under: true, params: () => ({ [LIVE_TOOL_PARAM]: live() }) }));
+    }
     for (const actionId of toolOptionActionIds(options)) {
       releases.push(registry.tune(actionId, {
         under: true,

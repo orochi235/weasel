@@ -36,12 +36,6 @@ export function createWalk(env: WalkEnv) {
     return selection ? [...selection.get()] : undefined;
   }
 
-  /** The ops of `half` that `other` does not hold too: an op both share is restored by the unwind itself. */
-  function ownOps(half: readonly Op[], other: readonly Op[]): Op[] {
-    const shared = new Set(other);
-    return half.filter((op) => !shared.has(op));
-  }
-
   /** Whether the halves pair op for op, so each op of one undoes a failed step over its partner in the other.
    *  A coalesced batch may list its keys in another order than the first, so position alone does not pair them. */
   function aligned(entry: Entry): boolean {
@@ -58,7 +52,7 @@ export function createWalk(env: WalkEnv) {
     const inverses = invertEntry(entry);
     applyAllOrNothing(inverses, !coalesced ? undefined : aligned(entry)
       ? { twins: [...entry.forwardOps].reverse(), inverted: false }
-      : { ops: ownOps(entry.forwardOps, entry.baseOps), inverted: false });
+      : { from: [...entry.baseOps].reverse(), other: entry.forwardOps, inverted: false });
     if (leaving) entry.selectionAfter = leaving;
     return inverses;
   }
@@ -69,7 +63,7 @@ export function createWalk(env: WalkEnv) {
     const coalesced = entry.forwardOps !== entry.baseOps;
     applyAllOrNothing(entry.forwardOps, !coalesced ? undefined : aligned(entry)
       ? { twins: entry.baseOps, inverted: true }
-      : { ops: ownOps(entry.baseOps, entry.forwardOps).reverse(), inverted: true });
+      : { from: entry.forwardOps, other: [...entry.baseOps].reverse(), inverted: true });
     if (leaving) entry.selectionBefore = leaving;
   }
 

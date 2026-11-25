@@ -1,5 +1,7 @@
+import { tmpdir } from 'node:os';
 import { describe, expect, it } from 'vitest';
-import { createHistoryReader, fileDates, type Git, versionOf } from './history';
+import { withStalledCommand } from '../testing/stalledCommand';
+import { createHistoryReader, fileDates, type Git, gitRunner, versionOf } from './history';
 
 const commit = (hash: string, date: string, ...changes: string[]) => [`\0${hash}\t${date}`, '', ...changes].join('\n');
 
@@ -12,6 +14,12 @@ const LOG = [
   commit('c1', '2026-06-01T10:00:00Z', 'A\tpkg/weasel-ui/src/Badge.tsx'),
   commit('c0', '2026-05-01T10:00:00Z', 'D\tpkg/weasel-ui/src/Badge.tsx'),
 ].join('\n');
+
+describe('gitRunner', () => {
+  it.skipIf(process.platform === 'win32')('fails a git run that stalls past its timeout', async () => {
+    await expect(withStalledCommand('git', () => gitRunner(200)(['log'], tmpdir()))).rejects.toMatchObject({ killed: true });
+  });
+});
 
 describe('fileDates', () => {
   it('follows a file back through a rename to the commit that added it', () => {

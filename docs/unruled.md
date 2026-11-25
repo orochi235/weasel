@@ -1539,6 +1539,13 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   browser drop the whole declaration. Other strings still pass through unchecked.
 - 2026-11-25 (my call, cursor audit 86): `resolveCursor` throws that `RangeError` on every tier, a painted spec
   included, though the painted tier never shows its fallback, so whether a spec is valid does not turn on its size.
+- 2026-11-25 (my call, cursor audit 87): `brushRing` throws a `RangeError` for an infinite radius, in either unit,
+  as `bakeCursor` refuses an infinite size, where it drew the default 24 px ring; a negative or `NaN` radius still
+  falls to the default.
+- 2026-11-25 (my call, cursor audit 87): `bakeCursor`, `cursorFor` and `resolveCursor` throw a `RangeError` for an
+  angle whose step turns a glyph that `rotationFitsInBox` refuses (a marked crosshair, the eyedropper, the swap),
+  on every tier, where the baked image clipped it. Only `resize` and `rotate` are turned in the tree. Rejected: a
+  viewBox grown to the turned glyph, which shrinks the drawing at every size.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
@@ -4247,3 +4254,19 @@ Calls the lanes made without a ruling:
   be told to have been written with `roleMods` for it; such a binding names the new key itself.
 - 2026-11-25 (the fixer's call): a binding override putting an action binding on the `'&'` channel leaves it unbound
   with a warning, as an override that is not a route is skipped; `tune` throws, as `register` does.
+## Audit round eighty-seven (2026-11-25): editing's move action
+
+- 2026-11-25 (the fixer's call): a reparent-on-drop or page drop that lands a node in the parent it already has, with
+  no sibling to land just above, keeps its place in that parent's paint order. Raising it to the top, as `'into'` did
+  when it was dropped over a sibling mark, was the alternative.
+- 2026-11-25 (the fixer's call): `clampMove` holds the dragged nodes where they started while its `bounds` has a
+  singular `transform`, since nothing is inside a box drawn flat. Clamping to the box as if untransformed was the
+
+## Audit round eighty-seven (2026-11-25): routing's tools
+
+- 2026-11-25 (the fixer's call): `<SceneCanvas toolOptionValues>` wins over a store a child publishes with
+  `useToolOptionValues`, whichever mounted first; the child's store answers only when the canvas is given none. The
+  hook's doc had said both; the child's store always winning was the alternative.
+- 2026-11-25 (the fixer's call): `toolOptionsPrefs` throws where two tools name one shared key as leaves of different
+  kinds (an enum and a string), since no prefs leaf takes both. Keeping the first tool's leaf, as before, was the
+  alternative.

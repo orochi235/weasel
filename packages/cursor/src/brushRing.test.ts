@@ -20,4 +20,9 @@ describe('brushRing', () => {
     expect(brushRing(0, 'world')).toEqual(brushRing(0, 'px'));
     expect(resolveCursor(brushRing(0, 'world'))).toEqual(resolveCursor(brushRing(0, 'px')));
   });
+
+  it('refuses an infinite radius in either unit rather than drawing it at the default size', () => {
+    expect(() => brushRing(Infinity)).toThrow(RangeError);
+    expect(() => brushRing(Infinity, 'world')).toThrow(RangeError);
+  });
 });

@@ -134,3 +134,29 @@ describe('history.activeJournal with a journal open inside another', () => {
     expect(h.activeJournal?.()).toBe(outer);
   });
 });
+
+describe('a journal hearing a commit from a journal inside it', () => {
+  it('can commit itself from the listener', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const outer = h.beginJournal({ label: 'outer' });
+    const inner = outer.beginJournal({ label: 'inner' });
+    inner.applyOps([pushOp(1)], 'one');
+    outer.observe((step) => { if (step.kind === 'push') outer.commit('Outer'); });
+    inner.commit();
+    expect(outer.isActive()).toBe(false);
+    expect(h.entries().undo.map((e) => e.label)).toEqual(['Outer']);
+  });
+
+  it('can cancel itself from the listener', () => {
+    const adapter = { values: [] as number[] };
+    const h = createHistory(adapter);
+    const outer = h.beginJournal({ label: 'outer' });
+    const inner = outer.beginJournal({ label: 'inner' });
+    inner.applyOps([pushOp(1)], 'one');
+    outer.observe((step) => { if (step.kind === 'push') outer.cancel(); });
+    inner.commit();
+    expect(outer.isActive()).toBe(false);
+    expect(adapter.values).toEqual([]);
+  });
+});

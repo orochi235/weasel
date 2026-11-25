@@ -3,12 +3,13 @@
  */
 import fc from 'fast-check';
 import { GLYPHS, MARKS, type CursorGlyphName, type CursorMarkName } from './glyphs';
-import type { CursorGlyph } from './types';
+import { cursorGlyph } from './registry';
+import { rotationFitsInBox, type CursorGlyph } from './types';
 
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {
   const deep = Math.floor(Number(globalThis.process?.env?.WEASEL_PBT_RUNS));
-  return { numRuns: deep >= 1 ? deep : n };
+  return { numRuns: Number.isFinite(deep) && deep >= 1 ? deep : n };
 }
 
 /** A test timeout for a property costing about `msPerRun` a run, at the count {@link runs} settles on. */
@@ -30,6 +31,10 @@ export function tally(): { count(what: string): void; atLeast(what: string, n: n
 export const GLYPH_NAMES = Object.keys(GLYPHS) as CursorGlyphName[];
 export const MARK_NAMES = Object.keys(MARKS) as CursorMarkName[];
 const SLOTTED = GLYPH_NAMES.filter((g) => (GLYPHS[g] as CursorGlyph).mark !== undefined);
+
+/** Whether a variant fits its box at every rotation, which a nonzero angle needs. */
+export const turns = (v: { glyph: CursorGlyphName; mark?: CursorMarkName }): boolean =>
+  rotationFitsInBox(cursorGlyph(v.glyph, v.mark === undefined ? {} : { mark: v.mark }));
 
 /** A glyph, and a mark it has a slot for, or none. */
 export const variant: fc.Arbitrary<{ glyph: CursorGlyphName; mark?: CursorMarkName }> = fc.oneof(

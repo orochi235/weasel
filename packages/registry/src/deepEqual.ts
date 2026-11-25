@@ -7,9 +7,9 @@ export interface DeepEqualOptions {
 }
 
 /**
- * Structural equality over arrays and plain objects from any realm, comparing each own enumerable
+ * Structural equality over plain arrays and plain objects from any realm, comparing each own enumerable
  * key, symbols included. Every other
- * value — a function, a class instance, a `Date`, a `Map` — equals only itself
+ * value — a function, a class instance (an `Array` subclass's included), a `Date`, a `Map` — equals only itself
  * (`Object.is`). Values that hold themselves compare by shape: two cycles that unfold alike are equal.
  */
 export function deepEqual(a: unknown, b: unknown, opts: DeepEqualOptions = {}): boolean {
@@ -19,8 +19,8 @@ export function deepEqual(a: unknown, b: unknown, opts: DeepEqualOptions = {}): 
 /** `pairs` holds each pair of containers already under comparison, so a cycle reads as equal on its way round. */
 function equal(a: unknown, b: unknown, opts: DeepEqualOptions, pairs: Map<object, Set<object>>): boolean {
   if (Object.is(a, b)) return true;
-  if (Array.isArray(a) || Array.isArray(b)) {
-    if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return false;
+  if (isPlainArray(a) || isPlainArray(b)) {
+    if (!isPlainArray(a) || !isPlainArray(b) || a.length !== b.length) return false;
     if (!enter(pairs, a, b)) return true;
     for (let i = 0; i < a.length; i++) if (!equal(a[i], b[i], opts, pairs)) return false;
     return true;
@@ -33,6 +33,11 @@ function equal(a: unknown, b: unknown, opts: DeepEqualOptions, pairs: Map<object
   const keys = keysOf(a);
   return keys.length === keysOf(b).length
     && keys.every((k) => isOwnEnumerable(b, k) && equal(own(a, k), own(b, k), opts, pairs));
+}
+
+/** An array whose prototype is some realm's `Array.prototype`, itself an array, rather than a subclass's. */
+function isPlainArray(v: unknown): v is unknown[] {
+  return Array.isArray(v) && Array.isArray(Object.getPrototypeOf(v));
 }
 
 /** Record that `a` and `b` are being compared; false when they already were. */

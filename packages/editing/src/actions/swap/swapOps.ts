@@ -4,6 +4,7 @@ import {
   documentOf, followerOpsFor, isEnvelope, moveEachOps, nodeDescriptors, poseDescriptorOf, sameValue, scenePoseFrame,
   translatePoseViaDescriptor, type PoseFrame,
 } from '@weasel-js/core';
+import { pageIdOf } from '@weasel-js/core/engine';
 import * as coreOps from '@weasel-js/core/ops';
 
 
@@ -129,7 +130,8 @@ export function swapOps(
     if (kept === null) return null;
     ops.push(...kept);
   }
-  const followers = followerOpsFor(doc, new Map([[a, pb.parent], [b, pa.parent]]), label);
+  const pageOf = (parent: NodeId | null) => (parent === null ? null : pageIdOf(doc, parent));
+  const followers = followerOpsFor(doc, new Map([[a, pageOf(pb.parent)], [b, pageOf(pa.parent)]]), label);
   if (followers === null) return null;
   ops.push(...followers);
   return ops;

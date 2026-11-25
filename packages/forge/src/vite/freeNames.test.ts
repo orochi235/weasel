@@ -37,4 +37,21 @@ describe('freeNames', () => {
     expect(names).toContain('Icon');
     expect(names).toContain('ui');
   });
+
+  it('reads the values a namespace or an enum body refers to, and none an ambient one declares', () => {
+    const names = namesIn('namespace Parts { export const Icon = () => <Glyph />; const Own = 1; use(Own, Icon); }');
+    expect(names).toContain('Glyph');
+    expect(names).toContain('use');
+    expect(names).not.toContain('Own');
+    expect(names).not.toContain('Icon');
+    const members = namesIn('enum E { A = compute(), B = A, C = E.A }');
+    expect(members).toContain('compute');
+    expect(members).not.toContain('A');
+    expect(members).not.toContain('E');
+    expect(namesIn('declare namespace N { const x: typeof Hidden; }')).not.toContain('Hidden');
+  });
+
+  it('reads the name an import alias refers to', () => {
+    expect(namesIn('import Icon = Parts.Icon;')).toContain('Parts');
+  });
 });

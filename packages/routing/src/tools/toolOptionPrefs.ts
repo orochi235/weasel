@@ -2,7 +2,7 @@
  * Tool options kept in a prefs store: the schema a host's prefs hold them
  * under, and the `toolOptionValues` that reads and writes them there.
  */
-import type { PrefGroup, PrefLeaf, PrefNumber } from '@weasel-js/prefs-schema';
+import type { PrefEnum, PrefGroup, PrefLeaf, PrefNumber, PrefString } from '@weasel-js/prefs-schema';
 import { deepEqual, getOwn, setOwn } from '@weasel-js/registry';
 import { checkToolOptionOwner, SHARED_TOOL_OPTIONS, toolOptionSlot, type ToolOptionsSpec, type ToolOptionValues } from './toolOptions';
 
@@ -30,11 +30,32 @@ export interface ToolOptionsPrefsSpec {
 
 const isNumber = (leaf: PrefLeaf | PrefGroup): leaf is PrefNumber => 'kind' in leaf && leaf.kind === 'number';
 
+const isEnum = (leaf: PrefLeaf | PrefGroup): leaf is PrefEnum => 'kind' in leaf && leaf.kind === 'enum';
+const isString = (leaf: PrefLeaf | PrefGroup): leaf is PrefString => 'kind' in leaf && leaf.kind === 'string';
+
 const endsOf = (e: PrefNumber['endless']) => ({ lo: e === 'min' || e === 'both', hi: e === 'max' || e === 'both' });
 
-/** `held` widened to take every value `next` does, so a store repairing against it keeps what any tool may write. */
-function widened(held: PrefLeaf | PrefGroup, next: PrefLeaf | PrefGroup): PrefLeaf | PrefGroup {
-  if (!isNumber(held) || !isNumber(next)) return held;
+/** `held` widened to take every value `next` does, so a store repairing against it keeps what any tool may write.
+ *  Throws where the two are not one kind, as no leaf takes both. */
+function widened(key: string, held: PrefLeaf | PrefGroup, next: PrefLeaf | PrefGroup): PrefLeaf | PrefGroup {
+  const kindOf = (n: PrefLeaf | PrefGroup) => ('kind' in n ? n.kind : 'group');
+  if (kindOf(held) !== kindOf(next)) {
+    throw new Error(`toolOptionsPrefs: the shared option "${key}" is of kind "${kindOf(held)}" for one tool and "${kindOf(next)}" for another`);
+  }
+  if (isNumber(held) && isNumber(next)) return widenedNumber(held, next);
+  if (isEnum(held) && isEnum(next)) {
+    const have = new Set(held.options.map((o) => o.value));
+    return { ...held, options: [...held.options, ...next.options.filter((o) => !have.has(o.value))] } as PrefEnum;
+  }
+  if (isString(held) && isString(next)) {
+    const { maxLength: _maxLength, ...rest } = held;
+    const maxLength = held.maxLength === undefined || next.maxLength === undefined ? undefined : Math.max(held.maxLength, next.maxLength);
+    return { ...rest, ...(maxLength === undefined ? {} : { maxLength }) } as PrefString;
+  }
+  return held;
+}
+
+function widenedNumber(held: PrefNumber, next: PrefNumber): PrefNumber {
   const { min: _min, max: _max, endless: _endless, ...rest } = held;
   const min = held.min === undefined || next.min === undefined ? undefined : Math.min(held.min, next.min);
   const max = held.max === undefined || next.max === undefined ? undefined : Math.max(held.max, next.max);
@@ -77,7 +98,8 @@ function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: 
  * own options, and a {@link SHARED_TOOL_OPTIONS} group holding each shared
  * key once, as the first tool naming it declares it, with the default the host
  * gives it. A shared number takes the widest bounds of the tools naming it, and
- * each tool reads it held to its own. A tool with no options of its own has no group, and a dotted id's group
+ * each tool reads it held to its own; a shared enum takes every tool's options, and a shared string the longest
+ * `maxLength`. Throws where tools name one shared key as leaves of different kinds. A tool with no options of its own has no group, and a dotted id's group
  * sits a level down for each dot (`path.brush` in `path`), where the store keeps it.
  */
 export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOptionsPrefsSpec = {}): PrefGroup {
@@ -94,7 +116,7 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
         throw new Error(`toolOptionsPrefs: ${tool.id}'s option "${key}" is kept under "${slot.key}", and a prefs store reads a "." there as a group`);
       }
       if (slot.owner === tool.id) setOwn(own, key, leaf);
-      else setOwn(shared, slot.key, Object.hasOwn(shared, slot.key) ? widened(getOwn(shared, slot.key)!, leaf) : leaf);
+      else setOwn(shared, slot.key, Object.hasOwn(shared, slot.key) ? widened(slot.key, getOwn(shared, slot.key)!, leaf) : leaf);
     }
     if (Object.keys(own).length > 0) placeToolGroup(children, tool.id, { ...options.prefs, children: own });
   }

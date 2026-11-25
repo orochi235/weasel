@@ -43,11 +43,11 @@ export function stepOf(
 }
 
 /** How a failed step on a coalesced entry unwinds. `twins[i]` (or its inverse when `inverted`) undoes the
- *  step's `i`th op, for halves that line up op for op; otherwise each op that ran is inverted and then `ops`
- *  applies. */
+ *  step's `i`th op, for halves that line up op for op. Otherwise the step's `i`th op came from `from[i]`, and
+ *  `other` is the far half in the order it lands the state the step began at, applied, or inverted when `inverted`. */
 export type Settle =
   | { twins: readonly Op[]; inverted: boolean }
-  | { ops: readonly Op[]; inverted: boolean };
+  | { from: readonly Op[]; other: readonly Op[]; inverted: boolean };
 
 /** Build the all-or-nothing apply a history runs every step through, against `adapter`. */
 export function createApplier(adapter: unknown, logger: HistoryLogger) {
@@ -61,6 +61,19 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
         logger.warn(`unwinding a failed step: op "${op.name ?? '?'}" threw: ${textOf(err)}`);
       }
     }
+  }
+
+  /** Unwind the `done` ops of a step whose halves do not pair. Inverting what ran is exact until it reaches an op
+   *  the far half lacks; then only those are inverted and the far half replays, an op both halves hold only when
+   *  the step reached it, so each lands once and in the far half's order. */
+  function settleApart(ops: readonly Op[], done: number, { from, other, inverted }: Extract<Settle, { from: readonly Op[] }>): void {
+    const shared = new Set(other);
+    const own = (i: number) => !shared.has(from[i]!);
+    const ran = ops.slice(0, done);
+    if (!ran.some((_, i) => own(i))) return applyUnwinding(ran.reverse(), true);
+    applyUnwinding(ran.filter((_, i) => own(i)).reverse(), true);
+    const half = new Set(from), reached = new Set(from.slice(0, done));
+    applyUnwinding(other.filter((op) => !half.has(op) || reached.has(op)), inverted);
   }
 
   /** Apply every op or none: when one throws, the ops that ran before it are
@@ -84,10 +97,8 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
     } catch (err) {
       if (done > 0) {
         if (settle && 'twins' in settle) applyUnwinding(settle.twins.slice(0, done).reverse(), settle.inverted);
-        else {
-          applyUnwinding(ops.slice(0, done).reverse(), true);
-          if (settle) applyUnwinding(settle.ops, settle.inverted);
-        }
+        else if (settle) settleApart(ops, done, settle);
+        else applyUnwinding(ops.slice(0, done).reverse(), true);
       }
       throw err;
     }

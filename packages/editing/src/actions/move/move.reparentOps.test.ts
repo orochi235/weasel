@@ -115,3 +115,14 @@ describe('moveAction — reparentOnDrop commits as ops', () => {
     expect(onRunEnd).toHaveBeenCalledWith(false);
   });
 });
+
+describe('moveAction — reparentOnDrop into the parent a node already has', () => {
+  it('keeps its place in the paint order when dropped over a sibling mark', () => {
+    const scene = makeScene();
+    const M = asNodeId('m');
+    scene.add({ id: M, kind: 'mark', layer: 'main', data: {}, pose: { x: 200, y: 0, width: 10, height: 10 } });
+    drop(scene, { reparentOnDrop: 'into' }, { nodeAtPoint: () => M });
+    expect(scene.get(A)!.parent).toBe(null);
+    expect(scene.roots).toEqual([A, T, M]);
+  });
+});

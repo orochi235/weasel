@@ -11,19 +11,25 @@ export type GhResult = { stdout: string } | { missing: true } | { failed: string
 /** Runs `gh` in `cwd` under the machine's own login. */
 export type Gh = (args: readonly string[], cwd: string) => Promise<GhResult>;
 
-export const runGh: Gh = (args, cwd) =>
-  new Promise((done) => {
-    execFile(
-      'gh',
-      [...args],
-      { cwd, maxBuffer: 16 << 20, env: { ...process.env, GH_PROMPT_DISABLED: '1' } },
-      (error, stdout, stderr) => {
-        if (!error) return done({ stdout });
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return done({ missing: true });
-        done({ failed: stderr.trim() || error.message, code: typeof error.code === 'number' ? error.code : null });
-      },
-    );
-  });
+/** A `gh` runner that ends a run lasting past `timeoutMs`, such as one stalled on the network, as a failure. */
+export const ghRunner =
+  (timeoutMs: number): Gh =>
+  (args, cwd) =>
+    new Promise((done) => {
+      execFile(
+        'gh',
+        [...args],
+        { cwd, maxBuffer: 16 << 20, timeout: timeoutMs, env: { ...process.env, GH_PROMPT_DISABLED: '1' } },
+        (error, stdout, stderr) => {
+          if (!error) return done({ stdout });
+          if ((error as NodeJS.ErrnoException).code === 'ENOENT') return done({ missing: true });
+          if (error.killed) return done({ failed: `gh did not answer within ${timeoutMs / 1000}s`, code: null });
+          done({ failed: stderr.trim() || error.message, code: typeof error.code === 'number' ? error.code : null });
+        },
+      );
+    });
+
+export const runGh: Gh = ghRunner(30_000);
 
 /** A GitHub repository as `gh -R` names it and as its page is found. */
 export interface RemoteRepo extends IssueRepo {

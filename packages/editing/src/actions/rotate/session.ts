@@ -1,7 +1,7 @@
 import type { ActionDeps, BindingOptions, InvocationCtx } from '@weasel-js/routing';
 import { operandMethods, unionAabb, nodeDescriptors, poseDescriptorOf, scenePoseFrame, type PoseFrame, drawnBoxes, type DrawnBoxes, createBareSnapSession, SNAP_ANGLE_STEP } from '@weasel-js/core/engine';
 import type { CommitSelectionMethods, GestureContext, RotateBehavior, PoseDescriptor, SnapBegin, SnapSession } from '@weasel-js/core/engine';
-import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources } from '@weasel-js/core';
+import { pointerStateOf, transformFinisher, type TransformFinisher, sceneGestureFrames, gestureReaders, type GestureReaders, readRunLifecycle, type RunLifecycle, carryPose, invertPlane, planeOf, shapeSources, withoutPageStructure } from '@weasel-js/core';
 import { resolveParams } from '@weasel-js/routing';
 import type { RotateParams, Op, NodeId, Scene, Bounds } from '@weasel-js/core';
 import { moveGestureAdapter } from '../move/gestureAdapter';
@@ -22,8 +22,11 @@ export interface Turn {
   /** The point the pointer orbits: the center of what the selection draws. */
   readonly pivot: { x: number; y: number };
   /** Orbit each node's center around `pivot`, for a multi-selection. Off,
-   *  each node turns about its own center. */
+   *  each node turns about its own center, or about the one `orbits` names. */
   readonly useUnionPivot: boolean;
+  /** With `useUnionPivot` off, the point a selected item's source orbits when the item turns by turning its
+   *  sources: the center of the item's own box. */
+  readonly orbits: ReadonlyMap<NodeId, { x: number; y: number }>;
   readonly descriptorOf: (id: NodeId) => PoseDescriptor<unknown>;
 }
 
@@ -65,6 +68,8 @@ export interface RotateFrame {
   readonly previews: Map<NodeId, unknown>;
 }
 
+const centerOf = (b: Bounds): { x: number; y: number } => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+
 function captureOrigins(
   view: unknown,
   scene: Scene<unknown, string, unknown>,
@@ -86,10 +91,9 @@ function captureOrigins(
     // is taken from the world pose, not the stored one — carried into the
     // plane the edit is measured in, where the pointer's angle is read.
     const world = carryPose(g, poseFrame.world(id), invertPlane(planeOf(view, node.layer)));
-    const b = g.getBounds(world);
     origins.set(id, {
       world,
-      center: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
+      center: centerOf(g.getBounds(world)),
       rotation: g.getRotation?.(world) ?? 0,
     });
     visual.push(boxes.aabb(id, world));
@@ -145,17 +149,22 @@ export function captureTurn(
   if (locked === 'refuse' && [...originPoses.keys()].some((id) => scene.isLocked?.(id) === true)) return null;
   // A derived node's chrome draws its own box, not its sources' union.
   const owner = derivedBoxOwner(scene, selected);
-  const union = owner === null
-    ? unionAabb(visual)!
-    : boxes.aabb(owner, carryPose(descriptorOf(owner), poseFrame.world(owner), invertPlane(planeOf(view, scene.get(owner)!.layer))));
+  const ownBox = (id: NodeId): Bounds =>
+    boxes.aabb(id, carryPose(descriptorOf(id), poseFrame.world(id), invertPlane(planeOf(view, scene.get(id)!.layer))));
+  const union = owner === null ? unionAabb(visual)! : ownBox(owner);
+  // A derived node turns as one item about its own box, whatever its sources.
+  const useUnionPivot = owner !== null || (ids.length > 1 && pivot !== 'each');
+  const orbits = new Map<NodeId, { x: number; y: number }>();
+  if (!useUnionPivot) {
+    for (const item of selected as NodeId[]) {
+      const members = shapeSources(scene, [item]) as NodeId[];
+      if (scene.get(item) === undefined || (members.length === 1 && members[0] === item)) continue;
+      const c = centerOf(ownBox(item));
+      for (const m of members) if (origins.has(m) && !orbits.has(m)) orbits.set(m, c);
+    }
+  }
   return {
-    turn: {
-      origins,
-      pivot: { x: union.x + union.width / 2, y: union.y + union.height / 2 },
-      // A derived node turns as one item about its own box, whatever its sources.
-      useUnionPivot: owner !== null || (ids.length > 1 && pivot !== 'each'),
-      descriptorOf,
-    },
+    turn: { origins, pivot: centerOf(union), useUnionPivot, orbits, descriptorOf },
     originPoses,
     poseFrame,
   };
@@ -183,11 +192,12 @@ export function beginRotate(
 
   if (!selection || !scene) return null;
 
+  const selected = withoutPageStructure(scene, selection.get());
   // A group whose pose derives from its children turns by turning them.
-  const ids = shapeSources(scene, selection.get()) as NodeId[];
+  const ids = shapeSources(scene, selected) as NodeId[];
   if (ids.length === 0) return null;
 
-  const captured = captureTurn(scene, selection.get(), ids, ctx.deps, params?.pivot === 'each' ? 'each' : 'union');
+  const captured = captureTurn(scene, selected, ids, ctx.deps, params?.pivot === 'each' ? 'each' : 'union');
   if (!captured) return null;
   const { turn, originPoses, poseFrame } = captured;
   const { origins, pivot } = turn;
@@ -205,7 +215,7 @@ export function beginRotate(
     originPoses,
     startPointerAngle: Math.atan2(ctx.world.y - pivot.y, ctx.world.x - pivot.x),
     theta0,
-    snap: beginSnap(ctx, [...new Set([...selection.get(), ...ids])], pivot, theta0),
+    snap: beginSnap(ctx, [...new Set([...selected, ...ids])], pivot, theta0),
     behaviors,
     gestureCtx,
     applyOps: ctx.deps.applyOps,

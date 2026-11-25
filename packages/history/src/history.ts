@@ -3,7 +3,7 @@ import { appliedHalves, createApplier, recordedOps, stepOf } from './entryOps';
 import { createStackView } from './stackView';
 import { createWalk } from './walk';
 import { createVersionClock } from './versionClock';
-import { createForks } from './forks';
+import { createForks, refill } from './forks';
 import { createRecorder } from './recording';
 import { createJournalSlot } from './journalSlot';
 import {
@@ -166,8 +166,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
         ? (name, args, context) => first(name, args, context) ?? customRebuild?.(name, args, context) ?? null
         : customRebuild;
       const { stacks: next, unresolved } = rebuilt(serialized, rebuild, restoreOptions, logger, options.branching ?? false);
-      undoStack.splice(0, undoStack.length, ...next.undoStack);
-      redoStack.splice(0, redoStack.length, ...next.redoStack);
+      refill(undoStack, next.undoStack);
+      refill(redoStack, next.redoStack);
       forks.replace(next);
       recorder.resumeIdsAt(next.nextEntryId);
       clock.bump(stepOf('restore'));

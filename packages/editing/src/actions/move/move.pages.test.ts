@@ -304,6 +304,28 @@ describe('a node following others, when a drop into a container moves what it fo
     expect(scene.historyEntries().length - entries).toBe(1);
   });
 
+  it('leaves one on its page when snapToContainer takes what it follows into a group on that page', () => {
+    const { scene } = pagedScene();
+    scene.add(group(G1, PAGE_A, 0));
+    scene.add(rect(N, G1, 5));
+    scene.add(rect(M, PAGE_A, 50));
+    scene.add(group(G3, PAGE_A, 60));
+    scene.add({ ...rect(C, PAGE_A, 0), dependsOn: [N, M] });
+    const target: SnapTarget<RectPose> = { parentId: G3, slotPose: { x: 60, y: 10, width: 20, height: 10 } };
+    const invoker = moveAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const base = { world: { x: 10, y: 15 }, modifiers: MODS, deps: { operands: { get: () => [N] }, scene } };
+    const to = { x: 65, y: 15 };
+    const at = { ...base, world: to, drag: { start: base.world, current: to, delta: { x: 55, y: 0 } } } as unknown as InvocationCtx;
+    const handle = invoker.start(base as unknown as InvocationCtx, {
+      behaviors: [snapToContainer<RectPose>({ dwellMs: 0, isInstant: () => true, findTarget: () => target }) as never],
+    } as BindingOptions);
+    handle.onMove!(at);
+    handle.onEnd!(at, 'commit');
+    expect(scene.get(N)!.parent).toBe(G3);
+    expect(scene.get(C)!.parent).toBe(PAGE_A);
+  });
+
   it('moves one on the old page into the run when a layout container on the other page takes what it follows', () => {
     const { scene } = pagedScene();
     scene.add(group(G1, PAGE_A, 0));

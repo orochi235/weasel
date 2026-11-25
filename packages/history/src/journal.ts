@@ -13,9 +13,11 @@ export function _refuseWhileActiveInternal(active: Journal | null, except?: Jour
   }
 }
 
-/** What each journal is made of: the history it was opened on, the one holding its own entries, and a
- *  subscription hearing every edit made in it or in a journal opened inside it. */
-const PARTS = new WeakMap<Journal, { owner: History; inner: History; edits: (listener: () => void) => () => void }>();
+/** What each journal is made of: the history it was opened on, the one holding its own entries, a
+ *  subscription hearing every edit made in it or in a journal opened inside it, and one hearing it close. */
+const PARTS = new WeakMap<Journal, {
+  owner: History; inner: History; edits: (listener: () => void) => () => void; closed: (listener: () => void) => () => void;
+}>();
 
 /** Hear `inner`'s steps and the edits made in the journals opened in it, which `inside` subscribes to. */
 function editsOf(inner: History, inside: (listener: () => void) => () => void) {
@@ -108,8 +110,10 @@ export interface Journal {
   subscribe(listener: () => void): () => void;
 
   // Lifecycle
-  /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
-   *  opened with. Throws while a journal opened inside this one is still active or suspended. */
+  /** Flushes the journal to its parent as one entry labeled `label`, or the label it was opened with. A
+   *  session made only of entries recorded under one `coalesceKey` instead folds into the parent's top entry
+   *  when that one carries the key and its run is still open, keeping that entry's label. Throws while a
+   *  journal opened inside this one is still active or suspended. */
   commit(label?: string): void;
   /** Cancels every journal still open inside this one, suspended ones included, the one that
    *  edited last first, each after undoing this journal's own edits made since. */
@@ -137,10 +141,10 @@ export function createChildren(depth: () => number = () => 0) {
         touched(child);
         edited.emit();
       });
-      const unsubscribe = child.subscribe(() => {
-        if (RESUMERS.has(child)) return;
+      const onClosed = PARTS.get(child)?.closed ?? ((l: () => void) => child.subscribe(() => { if (!RESUMERS.has(child)) l(); }));
+      const unclosed = onClosed(() => {
         unobserve();
-        unsubscribe();
+        unclosed();
         children.splice(children.indexOf(child), 1);
         lastEdit.delete(child);
       });
@@ -188,7 +192,8 @@ export function createJournalInternal(
   const targetId = opts.targetId;
   const { adopt, openChildren, latestFirst, edits } = createChildren(() => inner.undoDepth());
 
-  const close = () => { state = 'closed'; RESUMERS.delete(journal); onClose?.(false); };
+  const closed = createEmitter();
+  const close = () => { state = 'closed'; RESUMERS.delete(journal); closed.emit(); onClose?.(false); };
   const journal: Journal = {
     targetId,
     forkedAtEntryId,
@@ -269,7 +274,7 @@ export function createJournalInternal(
     },
   };
 
-  PARTS.set(journal, { owner: parent, inner, edits: editsOf(inner, edits) });
+  PARTS.set(journal, { owner: parent, inner, edits: editsOf(inner, edits), closed: closed.subscribe });
   RESUMERS.set(journal, () => {
     if (state !== 'suspended') throw new Error('Journal is not suspended');
     state = 'active';

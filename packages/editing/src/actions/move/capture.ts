@@ -1,7 +1,7 @@
 import type { InvocationCtx } from '@weasel-js/routing';
 import { pointerStateOf, composeChildFrame, composeWorldPose, frameAtOrAbove, invertPlane, planeOf, sceneGestureFrames, boundsOffset, poseDescriptorOf, translateTargets, followerOpsFor } from '@weasel-js/core';
 import type { PoseDescriptor, ReflowTransition, GestureContext } from '@weasel-js/core/engine';
-import { effectivePose, toPlane, sceneViewPoseAdapter, scenePoseFrame, poseDescriptorForNode } from '@weasel-js/core/engine';
+import { effectivePose, toPlane, sceneViewPoseAdapter, scenePoseFrame, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
 import type { NodeId, Scene, GestureReaders } from '@weasel-js/core';
 import type { MoveGestureAdapter } from './gestureAdapter';
 import { catchGliding } from './layout/glide';
@@ -129,7 +129,8 @@ export function buildGestureContext(
     kitSettings: readers.kitSettings,
     frames: sceneGestureFrames(scene, ctx.deps),
     offset: boundsOffset(projection),
-    followerOps: (landed, label) => followerOpsFor(scene, landed, label),
+    followerOps: (landed, label) => followerOpsFor(scene, new Map([...landed]
+      .map(([id, parent]) => [id, parent === null ? null : pageIdOf(scene, parent as NodeId)])), label),
     adapter: adapter as unknown as GestureContext<unknown>['adapter'],
     scratch: {},
   };

@@ -1,4 +1,4 @@
-import { bakeFallback } from './bake';
+import { bakeFallback, rotationStep } from './bake';
 import { cursorFor, cursorGlyph } from './registry';
 import type { CursorGlyphName, CursorMarkName } from './glyphs';
 import { CURSOR_MAX_CSS_PX } from './types';
@@ -24,7 +24,8 @@ export interface CursorGlyphSpec {
    * image would have to be rebuilt on every wheel tick. Ignored unless a finite positive number.
    */
   readonly worldRadius?: number;
-  /** Clockwise rotation in radians, quantized to 22.5° at bake. */
+  /** Clockwise rotation in radians, quantized to 22.5° at bake. Only a glyph that fits its box at every rotation, as
+   *  `resize` and `rotate` do, takes one. */
   readonly angle?: number;
   /** Keyword drawn if the browser rejects the image. Default 'default', also for a blank one. */
   readonly fallback?: string;
@@ -60,7 +61,8 @@ const positive = (n: number | undefined): number | undefined =>
  * Escalates to painted when the glyph is sized in world units, or when its
  * fixed size is past {@link CURSOR_MAX_CSS_PX} — above which the browser drops
  * the image and silently falls back to the keyword. Throws, on every tier, for a glyph the set lacks, for a mark
- * on a glyph with no slot, and for a fallback no cursor value holds.
+ * on a glyph with no slot, for a fallback no cursor value holds, and for an angle that would turn part of the glyph out
+ * of its box.
  */
 export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   if (typeof spec === 'string') return { kind: 'css', css: spec };
@@ -70,7 +72,7 @@ export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   const angle = spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0;
   const marked = mark === undefined ? {} : { mark };
   // Thrown here on every tier, or a painted spec fails only later, in the painter's draw.
-  cursorGlyph(glyph, marked);
+  rotationStep(cursorGlyph(glyph, marked), angle);
   bakeFallback(fallback);
   if (worldRadius !== undefined) {
     return { kind: 'painted', glyph, ...marked, angle, worldRadius };

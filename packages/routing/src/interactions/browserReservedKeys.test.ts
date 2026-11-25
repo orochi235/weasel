@@ -86,4 +86,22 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key: 'Backspace', mods: { mod: true, shift: true } }, true)?.use).toMatch(/browsing data/);
     expect(browserReservedChord({ kind: 'key', key: 'F4' }, false)).toBeNull();
   });
+  it('reads a punctuation or numpad code as the key it types', () => {
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'BracketLeft', mods: { mod: true } }, true)?.use).toMatch(/back/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'BracketRight', mods: { mod: true, shift: true } }, true)?.use).toMatch(/tab/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Numpad1', mods: { mod: true } }, false)?.use).toMatch(/tab/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Numpad0', mods: { mod: true } }, false)).toBeNull();
+  });
+
+  it('takes the macOS chords the system keeps from every app: screenshots, Spotlight, window cycling and Force Quit', () => {
+    for (const key of ['3', '4', '5']) {
+      expect(browserReservedChord({ kind: 'key', key, mods: { mod: true, shift: true } }, true)?.use).toMatch(/screenshot/);
+    }
+    expect(browserReservedChord({ kind: 'key', key: '3', mods: { mod: true, shift: true } }, false)).toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: ' ', mods: { mod: true } }, true)?.use).toMatch(/Spotlight/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Space', mods: { mod: true } }, true)?.use).toMatch(/Spotlight/);
+    expect(browserReservedChord({ kind: 'key', key: '`', mods: { mod: true } }, true)?.use).toMatch(/window/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Backquote', mods: { mod: true } }, true)?.use).toMatch(/window/);
+    expect(browserReservedChord({ kind: 'key', key: 'Escape', mods: { mod: true, alt: true } }, true)?.use).toMatch(/Force Quit/);
+  });
 });

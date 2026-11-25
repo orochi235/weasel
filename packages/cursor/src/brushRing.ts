@@ -8,9 +8,11 @@ export type BrushRingUnit = 'px' | 'world';
 /**
  * The `brush` ring cursor drawn `radius` in radius: in CSS px for `'px'`, or in
  * world units for `'world'`, which paints it so it follows the zoom. A radius of
- * 0 is a one-pixel ring in either unit.
+ * 0 is a one-pixel ring in either unit. Throws a `RangeError` for an infinite radius, as `bakeCursor` refuses an
+ * infinite size, rather than draw it at the default.
  */
 export function brushRing(radius: number, unit: BrushRingUnit = 'px'): CursorSpec {
+  if (radius === Infinity) throw new RangeError(`brushRing: a radius of ${radius} cannot be drawn`);
   if (unit === 'world' && radius !== 0) return { glyph: 'brush', worldRadius: radius, fallback: 'crosshair' };
   const glyph: CursorGlyph = GLYPHS.brush;
   const ring = glyph.radius ?? glyph.box / 2;

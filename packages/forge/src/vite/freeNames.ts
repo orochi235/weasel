@@ -46,6 +46,33 @@ function varNames(node: unknown): string[] {
   return Object.entries(node).flatMap(([k, child]) => (SKIPPED_KEYS.has(k) ? [] : varNames(child)));
 }
 
+/** The values a TS-only node holds outside type positions: a namespace's body, enum initializers, an import alias. */
+function tsValues(n: t.Node, scope: Names, walk: (value: unknown, scope: Names) => void): void {
+  if ('declare' in n && n.declare) return;
+  switch (n.type) {
+    case 'TSModuleDeclaration': {
+      const own = n.id.type === 'Identifier' ? [n.id.name] : [];
+      return walk(n.body, plus(scope, own));
+    }
+    case 'TSModuleBlock': {
+      const declared = n.body.map((s) => (s.type === 'ExportNamedDeclaration' && s.declaration ? s.declaration : s));
+      return walk(declared, plus(scope, [...lexicalNames(declared), ...varNames(declared)]));
+    }
+    case 'TSEnumDeclaration': {
+      const members = 'members' in n ? (n.members as t.TSEnumMember[]) : n.body.members;
+      const inner = plus(scope, [n.id.name, ...members.flatMap((m) => (m.id.type === 'Identifier' ? [m.id.name] : []))]);
+      for (const m of members) walk(m.initializer, inner);
+      return;
+    }
+    case 'TSImportEqualsDeclaration': {
+      let ref: t.Node = n.moduleReference;
+      while (ref.type === 'TSQualifiedName') ref = ref.left;
+      if (ref.type === 'Identifier') walk(ref, scope);
+      return;
+    }
+  }
+}
+
 /**
  * Every name `node` refers to as a value and does not declare itself, JSX tags included: a parameter, an inner
  * `const` or a catch binding shadows a top-level name of the same spelling. Types and property names are left out.
@@ -101,7 +128,7 @@ export function freeNames(node: t.Node): Set<string> {
     }
     if (!isNode(value)) return;
     const n = value;
-    if (n.type.startsWith('TS') && !('expression' in n)) return;
+    if (n.type.startsWith('TS') && !('expression' in n)) return tsValues(n, scope, walk);
     if (isFunction(n)) {
       if ((n.type === 'ObjectMethod' || n.type === 'ClassMethod') && n.computed) walk(n.key, scope);
       if (n.type === 'ClassMethod' || n.type === 'ClassPrivateMethod') walk(n.decorators, scope);

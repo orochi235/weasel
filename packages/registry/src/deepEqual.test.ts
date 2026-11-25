@@ -35,6 +35,14 @@ describe('deepEqual', () => {
     expect(deepEqual(new Date(0), new Date(0))).toBe(false);
   });
 
+  it('compares an Array subclass instance only to itself, as any class instance', () => {
+    class Path extends Array<number> {}
+    const path = Path.from([1, 2]);
+    expect(deepEqual(path, [1, 2])).toBe(false);
+    expect(deepEqual(path, Path.from([1, 2]))).toBe(false);
+    expect(deepEqual(path, path)).toBe(true);
+  });
+
   it('counts a key holding undefined as present unless told otherwise', () => {
     expect(deepEqual({ a: 1, b: undefined }, { a: 1 })).toBe(false);
     expect(deepEqual({ a: 1, b: undefined }, { a: 1 }, { undefinedAsAbsent: true })).toBe(true);

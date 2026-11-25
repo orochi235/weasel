@@ -58,6 +58,16 @@ const ENTRIES = [
 ];
 
 describe('createComponentGraph', () => {
+  it('orders uses and usedBy as it orders its own titles', async () => {
+    const ws = workspace(FILES);
+    const entries = ENTRIES.map((e) => (e.title === 'ui/Badge' ? { ...e, title: 'ui/badge' } : e));
+    const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(entries, ws.resolve);
+    const order = Object.keys(graph);
+    expect(order).toEqual(['ui/badge', 'ui/Button', 'ui/Dialog']);
+    expect(graph['ui/Dialog']?.uses).toEqual(['ui/badge', 'ui/Button']);
+    expect(graph['ui/badge']?.usedBy).toEqual(['ui/Button', 'ui/Dialog']);
+  });
+
   it('links components through barrels, re-exports and the component’s own relative files', async () => {
     const ws = workspace(FILES);
     const graph = await createComponentGraph({ root: ROOT, read: ws.read }).build(ENTRIES, ws.resolve);

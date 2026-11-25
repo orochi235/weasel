@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "A failed undo of an entry whose halves share ops replays the coalesced forward ops after the shared ones, leaving the state other than where the undo found it",
+  "A listener that hears a nested journal's commit cannot commit or cancel the enclosing journal: the closed child is still in the enclosing journal's open-children list",
+  "`restore` and `switchBranch` spread whole stacks into call arguments, which throws on a large history and can leave the two stacks out of step",
+  "`Journal.commit` documents one entry under the commit's label, but a keyed session folds into the parent's top entry and drops the label"
+ ],
+ "b": [
+  "snapshotFault accepts branches unreachable from the snapshot's stacks, and an entry id that collides with the floor",
+  "HistoryStep's `'coalesce'` doc says `ops` are what the push brought, but a folded `recordEntry` reports the whole entry"
+ ]
+}
