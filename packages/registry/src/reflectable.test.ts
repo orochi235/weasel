@@ -391,6 +391,16 @@ describe('createReflectable clash warning', () => {
     expect(warn).not.toHaveBeenCalled();
   });
 
+  it('keeps a fallback a fallback when set replaces it, so a push over it stays silent', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'kit', { source: 'kit', fallback: true });
+    r.set('k', 'kit2', { source: 'kit' });
+    expect(r.stack('k').at(-1)?.fallback).toBe(true);
+    r.push('k', 'app', { source: 'app' });
+    expect(warn).not.toHaveBeenCalled();
+  });
+
   it('is silent when the same value is pushed again under its key', () => {
     const warn = spyWarn();
     const r = createReflectable<string>();

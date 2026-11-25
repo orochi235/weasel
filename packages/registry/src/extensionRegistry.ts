@@ -1,5 +1,5 @@
 import { createEmitter } from './emitter';
-import { createReflectable, type ReflectedEntry, type Reflection } from './reflectable';
+import { createReflectable, type Reflectable, type ReflectedEntry, type Reflection } from './reflectable';
 
 /** Options for {@link ExtensionRegistry.register}. */
 export interface ExtensionRegisterOptions {
@@ -79,11 +79,17 @@ interface Lean<V> {
   order: number;
 }
 
+/** What a child does with a hold whose id its parent drops: `take` copies it into the child's own store, and
+ *  `untake` removes that copy again, answering whether it was still there to remove. */
+interface Takeover<V> {
+  take(id: string, lean: Lean<V>): void;
+  untake(id: string, lean: Lean<V>): boolean;
+}
+
 /** A child's holds through its parent. It hears the parent while it holds any: one the parent replaces with a
- *  different value is dropped, and one whose id the parent drops is handed to `take`. */
-function createLeans<V>(
-  parent: ExtensionRegistry<V>, same: (a: V, b: V) => boolean, take: (id: string, lean: Lean<V>) => void,
-) {
+ *  different value is dropped, and one whose id the parent drops is taken over. The child also calls `settle`
+ *  before notifying its own listeners of the parent, so none of them reads a held id as gone. */
+function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => boolean, { take, untake }: Takeover<V>) {
   const leans = new Map<string, Lean<V>>();
   let off: (() => void) | null = null;
   const stop = (): void => {
@@ -96,12 +102,23 @@ function createLeans<V>(
       const theirs = parent.get(id);
       if (theirs !== undefined && same(theirs, lean.value)) continue;
       leans.delete(id);
-      if (theirs === undefined) take(id, lean);
+      if (theirs === undefined) {
+        take(id, lean);
+        queueMicrotask(() => { relean(id, lean); });
+      }
     }
     stop();
   };
+  /** A parent's release and re-register in one tick is no drop, as its own store keeps the id's place. */
+  const relean = (id: string, lean: Lean<V>): void => {
+    const theirs = parent.get(id);
+    if (theirs === undefined || !same(theirs, lean.value) || !untake(id, lean)) return;
+    leans.set(id, lean);
+    off ??= parent.subscribe(settle);
+  };
   return {
     get: (id: string): Lean<V> | undefined => leans.get(id),
+    settle,
     add(id: string, lean: Lean<V>): void {
       leans.set(id, lean);
       off ??= parent.subscribe(settle);
@@ -115,6 +132,18 @@ function createLeans<V>(
       stop();
     },
   };
+}
+
+/** Remove the own copy a takeover made of the registration `holding`, if it is still the one `id` holds. */
+function untake<V>(
+  store: Reflectable<V>, held: Map<string, Holding>, since: Map<string, number>, id: string, holding: Holding,
+): boolean {
+  if (held.get(id) !== holding) return false;
+  held.delete(id);
+  since.delete(id);
+  const live = store.stack(id).at(-1);
+  if (live) store.release(id, live);
+  return true;
 }
 
 /** Bring `seen` up to the ids `parent` resolves: drop the gone, and order the new after everything so far. */
@@ -152,10 +181,13 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const changes = createEmitter();
   const notify = (): void => { changes.emit(); };
   let offUpstream: (() => void) | null = null;
-  const leans = parent ? createLeans(parent, same, (id, lean) => {
-    held.set(id, lean.holding);
-    since.set(id, lean.order);
-    store.set(id, lean.value, lean.source !== undefined ? { source: lean.source } : undefined);
+  const leans = parent ? createLeans(parent, same, {
+    take(id, lean) {
+      held.set(id, lean.holding);
+      since.set(id, lean.order);
+      store.set(id, lean.value, lean.source !== undefined ? { source: lean.source } : undefined);
+    },
+    untake: (id, lean) => untake(store, held, since, id, lean.holding),
   }) : null;
 
   const get = (id: string): V | undefined => (store.has(id) ? store.get(id) : parent?.get(id));
@@ -199,7 +231,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     subscribe(listener) {
       if (changes.size === 0) {
         const offStore = store.subscribe(notify);
-        const offParent = parent?.subscribe(notify);
+        const offParent = parent?.subscribe(() => { leans?.settle(); notify(); });
         offUpstream = () => { offStore(); offParent?.(); };
       }
       const off = changes.subscribe(listener);
