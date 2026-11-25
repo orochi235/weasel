@@ -30,6 +30,17 @@ Owner tags, after the priority (2026-10-26):
 
 ## Tools & gestures
 
+- **(P2) [agent] A multi-member layout drop places one member at a time against a stale container.**
+  `placeAll` (`packages/editing/src/actions/move/layout/dropPass.ts`) asks the strategy for each dragged
+  child in turn, and `LayoutStrategy`'s `getDropTargets`/`reflowPoses`/`commitDrop` take one `dragged`.
+  Members not yet placed sit in `children` at their old poses, and a sequence strategy's slot count is
+  the final one only for a drag from inside. Dragging the first two of four `slots({ arrangement:
+  rowSlots() })` children two slots right lands them C, A, D, B rather than C, D, A, B; a drag of the
+  same pair from another container undercounts instead. Too big for the round-84 fix pass: it needs the
+  strategy contract to take the whole drop (every member, its source, its probe) and all six strategies
+  in `@weasel-js/guides` rewritten to it. Closes when that drop lands C, D, A, B, from inside the row and
+  from outside it, in a test beside `dropPass.ts`.
+
 - **(P3) [maintainer] External-content ingestion — the drag ghost seen in a real OS drag.** While a drag
   hovers, the dispatcher calls the drop action's `preview`, and `ingest` draws a placeholder box per claimable
   file (or one for text) through `previewPaths` (`packages/core/src/domains/ingestion/ghost.ts`). No test can

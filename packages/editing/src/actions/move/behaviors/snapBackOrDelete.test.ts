@@ -80,7 +80,22 @@ describe('snapBackOrDelete', () => {
     c.origin.set('g', { x: 0, y: 0 });
     c.current.set('g', { x: 50, y: 50 });
     c.adapter = { ...c.adapter, getParent: (id: string) => (id === 'a' ? 'g' : null) } as any;
-    expect(b.onEnd!(c, moveEnd())).toHaveLength(2);
+    expect(b.onEnd!(c, moveEnd())).toHaveLength(1);
+  });
+
+  it('deletes only the outermost dragged nodes, since a delete takes its subtree', () => {
+    const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'delete' });
+    const nodes = [{ id: 'g' }, { id: 'a' }, { id: 'b' }];
+    const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 });
+    c.draggedIds = ['a', 'g', 'b'];
+    for (const id of ['g', 'b']) {
+      c.origin.set(id, { x: 5, y: 5 });
+      c.current.set(id, { x: 50, y: 50 });
+    }
+    c.adapter = { getNode: (id: string) => nodes.find((n) => n.id === id), getNodes: () => nodes, getParent: (id: string) => (id === 'a' ? 'g' : null) } as any;
+    b.onStart!(c);
+    const ops = b.onEnd!(c, moveEnd()) as any[];
+    expect(ops.map((op) => op.args.node.id)).toEqual(['b', 'g']);
   });
 
   it('measures the radius in world units under a scaled frame', () => {

@@ -155,6 +155,7 @@ export function reparentOps(
   target: DropTarget,
   mode: ReparentOnDrop,
   delta: { dx: number; dy: number },
+  outer: readonly NodeId[] = session.outer,
 ): Op[] | null {
   const { scene } = session;
   const label = session.lifecycle.label;
@@ -162,7 +163,7 @@ export function reparentOps(
   // The destination's children as each op will find them: an earlier root's
   // landing shifts where a later one goes.
   const siblings = [...(target.newParent === null ? scene.roots : scene.childrenOf(target.newParent))];
-  const roots = new Set(session.outer);
+  const roots = new Set(outer);
   for (const id of roots) {
     const node = scene.get(id);
     // A node removed mid-drag is skipped, as the translate commit skips it.
@@ -173,7 +174,11 @@ export function reparentOps(
     ops.push(...landOps(session, id, target.newParent, toIndex, target.newLayer));
     ops.push(coreOps.setPose<unknown>({ id: id as string, from: node.pose, to, label }));
   }
-  const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])];
+  const under = (id: NodeId): boolean => {
+    for (let at = scene.get(id)?.parent ?? null; at !== null; at = scene.get(at)?.parent ?? null) if (roots.has(at)) return true;
+    return false;
+  };
+  const riders = [...new Set([...session.ids.filter((id) => !roots.has(id)), ...session.cascadeIds])].filter(under);
   const page = target.newParent === null ? null : pageIdOf(scene, target.newParent);
   const landed = new Map([...roots].filter((id) => session.startPoses.has(id) && scene.get(id) !== undefined)
     .map((id) => [id as string, page]));

@@ -55,11 +55,12 @@ export function pageDrops(
   session: MoveSession,
   at: { x: number; y: number },
   delta: { dx: number; dy: number },
+  roots: readonly NodeId[] = session.ids,
 ): Map<NodeId, RootDrop> | 'refused' | null {
   const { scene } = session;
   const pasteboard = pasteboardOn(scene);
   const isPage = (id: NodeId | null) => id !== null && scene.get(id)?.page !== undefined;
-  const ours = session.ids.filter((id) => {
+  const ours = roots.filter((id) => {
     const node = scene.get(id);
     if (!session.startPoses.has(id) || node === undefined) return false;
     return !isFollower(node) && (isPage(node.parent) || (pasteboard && node.parent === null));
@@ -116,13 +117,14 @@ export function belowRoots(session: MoveSession, roots: ReadonlySet<NodeId>): Ma
   return out;
 }
 
-/** The commit for `drops`: each dragged root translated by the drag plus its shift, and moved into its new
+/** The commit for `drops`: each dragged root among `roots` translated by the drag plus its shift, and moved into its new
  *  container at the world place that gives, its descendants with it. `null` when one would land in a
  *  singular frame, so the drop refuses whole. */
 export function pageDropOps(
   session: MoveSession,
   drops: ReadonlyMap<NodeId, RootDrop>,
   delta: { dx: number; dy: number },
+  roots: readonly NodeId[] = session.outer,
 ): Op[] | null {
   const { scene } = session;
   const label = session.lifecycle.label;
@@ -141,7 +143,7 @@ export function pageDropOps(
   }
   const below = belowRoots(session, new Set([...drops.keys()].filter((id) => dragged.has(id))));
   const ridden = new Set([...below.values()].flat());
-  for (const id of session.outer) {
+  for (const id of roots) {
     if (ridden.has(id)) continue;
     const drop = drops.get(id) ?? STAY;
     const d = { dx: delta.dx + drop.shift.dx, dy: delta.dy + drop.shift.dy };

@@ -15,12 +15,15 @@ const G = asNodeId('g');
 const N = asNodeId('n');
 const stack = { childPoses: () => new Map() } as unknown as LayoutStrategy<unknown>;
 
-function release(dx: number, pasteboard: boolean) {
+const P = asNodeId('p');
+
+function release(dx: number, pasteboard: boolean, withPlain = false) {
   const { scene } = pagedScene({ pasteboard });
   scene.add({ id: G, kind: 'group', layer: 'ink', parent: PAGE_A, pose: { x: 0, y: 0, width: 40, height: 40 }, data: {} });
   scene.add({ id: N, kind: 'mark', layer: 'ink', parent: G, pose: { x: 5, y: 10, width: 20, height: 10 }, data: {} });
+  scene.add({ id: P, kind: 'mark', layer: 'ink', parent: PAGE_A, pose: { x: 5, y: 50, width: 10, height: 10 }, data: {} });
   const from = { x: 15, y: 15 };
-  const deps = { operands: { get: () => [N] }, scene, layout: { getLayout: (id: string) => (id === G ? stack : null) } };
+  const deps = { operands: { get: () => (withPlain ? [N, P] : [N]) }, scene, layout: { getLayout: (id: string) => (id === G ? stack : null) } };
   const base = { world: from, modifiers: MODS, deps };
   const invoker = moveAction.invoker!;
   if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
@@ -29,7 +32,7 @@ function release(dx: number, pasteboard: boolean) {
   const at = { ...base, world: to, drag: { start: from, current: to, delta: { x: dx, y: 0 } } } as unknown as InvocationCtx;
   handle.onMove!(at);
   handle.onEnd!(at, 'commit');
-  return scene.get(N)!;
+  return withPlain ? scene.get(P)! : scene.get(N)!;
 }
 
 describe('moveAction — a layout child let go outside its container in a paged scene', () => {
@@ -47,5 +50,16 @@ describe('moveAction — a layout child let go outside its container in a paged 
 
   it('makes one let go off every page a root with the pasteboard on', () => {
     expect(release(400, true).parent).toBe(null);
+  });
+
+  it('lands a plain page child dragged beside it by the page rule too', () => {
+    const plain = release(150, false, true);
+    expect(plain.parent).toBe(PAGE_B);
+  });
+
+  it('keeps a plain page child dragged beside it off every page on its page, with part of it on', () => {
+    const plain = release(400, false, true);
+    expect(plain.parent).toBe(PAGE_A);
+    expect((plain.pose as RectPose).x).toBeLessThan(400);
   });
 });
