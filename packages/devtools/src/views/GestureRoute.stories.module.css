@@ -1,6 +1,6 @@
 .catalog { display: grid; gap: var(--wzl-space-6); color: var(--wzl-fg); }
 .heading { font-weight: var(--wzl-font-weight-bold); margin: 0 0 var(--wzl-space-2); }
-.rows { border-top: 1px solid var(--wzl-border); }
+.rows { border-top: 1px solid var(--wzl-border); font-size: var(--wzl-font-size-sm); }
 .row {
   display: grid;
   grid-template-columns: 340px 1fr;
