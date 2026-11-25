@@ -6,6 +6,7 @@ import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import { PATHFINDER_GROUP } from '../../actionGroups';
 import * as coreOps from '@weasel-js/core/ops';
+import { anyLocked, writesLocked } from '../lockedWrites';
 
 const PAINT_KEYS = ['fill', 'stroke'] as const;
 
@@ -17,14 +18,14 @@ const PAINT_KEYS = ['fill', 'stroke'] as const;
  * where `followerMoves` says. The group wears the frontmost
  * operand's `fill` and `stroke`. The operands are the outermost of `ids`, so a selected node's selected
  * descendant stays where it is. Null when fewer than two operands are nodes on one layer, or when one would land in
- * a singular frame.
+ * a singular frame. `locked` when an operand, the container it lands in, or a follower it moves is locked, as Group.
  */
 export function booleanGroupOps(
   scene: AnyScene,
   ids: readonly string[],
   op: BooleanShapeOp = 'union',
   label = 'Make Boolean Group',
-): { ops: Op[]; group: NodeId } | null {
+): { ops: Op[]; group: NodeId; locked: boolean } | null {
   const nodes = inPaintOrder(scene, rootsAmong(scene, ids)
     .map((id) => scene.get(id))
     .filter((n): n is Node<unknown, string, unknown> => n !== undefined));
@@ -60,14 +61,18 @@ export function booleanGroupOps(
     // The group derives its pose from its members, so it is no frame: they keep the frame it sits in.
     ops.push(coreOps.setPose<unknown>({ id: n.id, from: n.pose, to: locals.get(n.id), label }));
   });
-  ops.push(...followerMoveOps(followers, label));
-  return { ops, group };
+  const followerOps = followerMoveOps(followers, label);
+  ops.push(...followerOps);
+  const locked = anyLocked(scene, parent === null ? nodes.map((n) => n.id) : [parent, ...nodes.map((n) => n.id)])
+    || writesLocked(scene, followerOps);
+  return { ops, group, locked };
 }
 
-/** {@link booleanGroupOps} committed straight to `scene` as one undo entry. Returns the group's id, or null. */
+/** {@link booleanGroupOps} committed straight to `scene` as one undo entry. Returns the group's id, or null, as when
+ *  it would rewrite a locked node. */
 export function makeBooleanGroup(scene: AnyScene, ids: readonly string[], op: BooleanShapeOp = 'union'): NodeId | null {
   const made = booleanGroupOps(scene, ids, op);
-  if (!made) return null;
+  if (!made || made.locked) return null;
   scene.applyBatch(made.ops, 'Make Boolean Group', defaultCommitAdapter(scene));
   return made.group;
 }
@@ -86,7 +91,7 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
       const { scene, operands } = deps;
       if (!scene || !operands) return;
       const made = booleanGroupOps(scene as AnyScene, operands.get());
-      if (made) commitOps(deps, made.ops, 'Make Boolean Group', { select: [made.group] });
+      if (made && !made.locked) commitOps(deps, made.ops, 'Make Boolean Group', { select: [made.group] });
     },
   },
   enabled: (deps) => {
@@ -96,6 +101,8 @@ export const makeBooleanGroupAction: Action & { requires: string[] } = {
     const scene = deps.scene as AnyScene;
     const operands = deps.operands!.get();
     if (rootsAmong(scene, operands).length < 2) return ActionDisabledReason.SelectionRequired;
-    return booleanGroupOps(scene, operands) !== null ? true : ActionDisabledReason.NotApplicable;
+    const made = booleanGroupOps(scene, operands);
+    if (made === null) return ActionDisabledReason.NotApplicable;
+    return made.locked ? ActionDisabledReason.Locked : true;
   },
 };
