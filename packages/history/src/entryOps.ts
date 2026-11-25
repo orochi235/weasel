@@ -42,8 +42,12 @@ export function stepOf(
   return { kind, entries: entries.map((e, i) => ({ id: e.id, label: e.label, ops: e.forwardOps, applied: applied?.[i] ?? NONE })) };
 }
 
-/** Ops a failed step applies after unwinding, as `inverted` ones when their inverses are what applies. */
-export interface Settle { ops: readonly Op[]; inverted: boolean }
+/** How a failed step on a coalesced entry unwinds. `twins[i]` (or its inverse when `inverted`) undoes the
+ *  step's `i`th op, for halves that line up op for op; otherwise each op that ran is inverted and then `ops`
+ *  applies. */
+export type Settle =
+  | { twins: readonly Op[]; inverted: boolean }
+  | { ops: readonly Op[]; inverted: boolean };
 
 /** Build the all-or-nothing apply a history runs every step through, against `adapter`. */
 export function createApplier(adapter: unknown, logger: HistoryLogger) {
@@ -67,8 +71,7 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
    *  matched). Ops returning `undefined`/`void` count as "mutated".
    *
    *  `settle` is for a coalesced entry, whose two halves are not each
-   *  other's inverse: inverting what ran lands on the other half's far side,
-   *  and re-applying that half is what returns to where the step began. */
+   *  other's inverse: inverting what ran lands on the other half's far side. */
   function applyAllOrNothing(ops: Op[], settle?: Settle, idle?: Op[]): boolean {
     let anyMutated = false;
     let done = 0;
@@ -80,8 +83,11 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
       }
     } catch (err) {
       if (done > 0) {
-        applyUnwinding(ops.slice(0, done).reverse(), true);
-        if (settle) applyUnwinding(settle.ops, settle.inverted);
+        if (settle && 'twins' in settle) applyUnwinding(settle.twins.slice(0, done).reverse(), settle.inverted);
+        else {
+          applyUnwinding(ops.slice(0, done).reverse(), true);
+          if (settle) applyUnwinding(settle.ops, settle.inverted);
+        }
       }
       throw err;
     }

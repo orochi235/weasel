@@ -42,12 +42,19 @@ export function createWalk(env: WalkEnv) {
     return half.filter((op) => !shared.has(op));
   }
 
+  /** Whether the halves pair op for op, so each op of one undoes a failed step over its partner in the other. */
+  function aligned(entry: Entry): boolean {
+    return entry.forwardOps.length === entry.baseOps.length;
+  }
+
   /** Apply what walking `entry` backwards takes, noting the selection it leaves. */
   function stepBack(entry: Entry): Op[] {
     const leaving = readSelection();
     const coalesced = entry.forwardOps !== entry.baseOps;
     const inverses = invertEntry(entry);
-    applyAllOrNothing(inverses, coalesced ? { ops: ownOps(entry.forwardOps, entry.baseOps), inverted: false } : undefined);
+    applyAllOrNothing(inverses, !coalesced ? undefined : aligned(entry)
+      ? { twins: [...entry.forwardOps].reverse(), inverted: false }
+      : { ops: ownOps(entry.forwardOps, entry.baseOps), inverted: false });
     if (leaving) entry.selectionAfter = leaving;
     return inverses;
   }
@@ -56,7 +63,9 @@ export function createWalk(env: WalkEnv) {
   function stepForward(entry: Entry): void {
     const leaving = readSelection();
     const coalesced = entry.forwardOps !== entry.baseOps;
-    applyAllOrNothing(entry.forwardOps, coalesced ? { ops: ownOps(entry.baseOps, entry.forwardOps).reverse(), inverted: true } : undefined);
+    applyAllOrNothing(entry.forwardOps, !coalesced ? undefined : aligned(entry)
+      ? { twins: entry.baseOps, inverted: true }
+      : { ops: ownOps(entry.baseOps, entry.forwardOps).reverse(), inverted: true });
     if (leaving) entry.selectionBefore = leaving;
   }
 
