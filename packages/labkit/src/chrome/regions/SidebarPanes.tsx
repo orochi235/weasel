@@ -16,6 +16,8 @@ const CONFIG = { axis: 'y', resizable: true, fill: true };
 /** How short a drag may make an open section. */
 const FLOOR = 96;
 const UNCAPPED = 1e6;
+/** How far past its bar a seam drags a folded section before the section opens. */
+const UNFOLD_SLOP = 4;
 /** A section bar's height until one is on the page to measure. */
 const BAR = 32;
 
@@ -60,6 +62,7 @@ function Pane<TCtx extends SidebarSlotContext>({
   fills,
   height,
   onHeight,
+  openNext,
 }: {
   contribution: RegionContribution<TCtx>;
   ctx: TCtx;
@@ -71,6 +74,8 @@ function Pane<TCtx extends SidebarSlotContext>({
   fills: boolean;
   height: number | undefined;
   onHeight: (height: number) => void;
+  /** Opens the folded section after this one, when this one fills: the height its seam gives up has to go there. */
+  openNext: (() => void) | undefined;
 }) {
   const id = asNodeId(`lk-pane-${c.id}`);
   const h = c.render
@@ -82,12 +87,9 @@ function Pane<TCtx extends SidebarSlotContext>({
         : Math.max(FLOOR, height);
   // Held steady between renders: the preset reconciles a new object into the store.
   const placement = useMemo(() => ({ size: h === undefined ? {} : { h } }), [h]);
+  // A folded pane may grow, so a seam beside it can drag it open; its placement holds it at its bar until then.
   const hints = useMemo(
-    // An open pane restates its ceiling: hints merge, and a folded pane's would outlive the fold.
-    () =>
-      collapsed
-        ? { minSize: { w: 0, h: bar }, maxSize: { w: 0, h: bar } }
-        : { minSize: { w: 0, h: FLOOR }, maxSize: { w: 0, h: UNCAPPED } },
+    () => ({ minSize: { w: 0, h: collapsed ? bar : FLOOR }, maxSize: { w: 0, h: UNCAPPED } }),
     [collapsed, bar],
   );
   const item = c.item as SidebarSection | undefined;
@@ -109,8 +111,16 @@ function Pane<TCtx extends SidebarSlotContext>({
       hints={hints}
       onPlacementChange={(next) => {
         const dragged = (next.size as { h?: number } | undefined)?.h;
-        if (!collapsed && !fills && typeof dragged === 'number' && dragged !== height)
+        if (typeof dragged !== 'number') return;
+        if (collapsed) {
+          if (dragged <= bar + UNFOLD_SLOP) return;
+          ctx.setSectionCollapsed(c.id, false);
           onHeight(dragged);
+        } else {
+          // Kept for the filling pane too: it reads its height again once another pane takes over filling.
+          if (dragged !== height) onHeight(dragged);
+          if (fills) openNext?.();
+        }
       }}
     >
       <Section
@@ -166,6 +176,12 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
     getOwn(ctx.collapsedSections, c.id) ?? (c.item as SidebarSection).defaultCollapsed ?? false;
   const open = shown.filter((c) => !c.render && !folded(c));
   const filler = (open.find((c) => (c.item as SidebarSection).fill) ?? open.at(-1))?.id;
+  const foldedAfter = (order: number): (() => void) | undefined => {
+    const next = shown[order + 1];
+    return next && !next.render && folded(next)
+      ? () => ctx.setSectionCollapsed(next.id, false)
+      : undefined;
+  };
 
   return (
     <div className="lk-sidebar-panes">
@@ -191,6 +207,7 @@ export function SidebarPanes<TCtx extends SidebarSlotContext = TrialChromeContex
                 fills={c.id === filler}
                 height={getOwn(heights, c.id)}
                 onHeight={(h) => onHeightsChange?.({ ...heights, [c.id]: h })}
+                openNext={foldedAfter(order)}
               />
             ))}
           </Zone>

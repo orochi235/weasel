@@ -288,8 +288,9 @@ button.lk-sidebar-section__head {
     background: var(--wzl-line-subtle);
   }
 
-  .windease-affordance-hit:hover [data-affordance-kind='resize-y'],
-  .windease-affordance-hit:focus-visible [data-affordance-kind='resize-y'] {
+  // A seam that cannot move is marked disabled, and does not light up as if it could.
+  .windease-affordance-hit:not([aria-disabled='true']):hover [data-affordance-kind='resize-y'],
+  .windease-affordance-hit:not([aria-disabled='true']):focus-visible [data-affordance-kind='resize-y'] {
     background: var(--wzl-accent);
   }
 

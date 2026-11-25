@@ -99,6 +99,45 @@ describe('<SidebarPanes>', () => {
     expect(onHeightsChange).toHaveBeenCalledWith({ a: 208 });
   });
 
+  it('opens a folded section when the seam after it is dragged into the open one below', async () => {
+    const setSectionCollapsed = vi.fn();
+    const folded = {
+      ...ctx,
+      collapsedSections: { b: true },
+      setSectionCollapsed,
+    } as unknown as TrialChromeContext;
+    const { container } = await renderSettled(
+      <SidebarPanes
+        contributions={contributions}
+        ctx={folded}
+        viewport={VIEWPORT}
+        heights={{ a: 200 }}
+      />,
+    );
+    const seam = screen.getByRole('separator', { name: 'resize Checks' });
+    expect(seam.getAttribute('aria-disabled')).toBeNull();
+    seam.focus();
+    seam.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(setSectionCollapsed).toHaveBeenCalledWith('b', false);
+    expect(container.querySelectorAll('[role="separator"][aria-disabled="true"]')).toHaveLength(0);
+  });
+
+  it('opens the folded section after the only open one when that one’s seam is dragged', async () => {
+    const setSectionCollapsed = vi.fn();
+    const folded = {
+      ...ctx,
+      collapsedSections: { b: true, c: true },
+      setSectionCollapsed,
+    } as unknown as TrialChromeContext;
+    await renderSettled(
+      <SidebarPanes contributions={contributions} ctx={folded} viewport={VIEWPORT} />,
+    );
+    const seam = screen.getByRole('separator', { name: 'resize Vars' });
+    seam.focus();
+    seam.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    expect(setSectionCollapsed).toHaveBeenCalledWith('b', false);
+  });
+
   it('mounts a new section without updating the stack while it renders', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
