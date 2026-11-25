@@ -55,3 +55,13 @@ it('keeps a standalone slider disabled for a reason reachable through its readou
   expect(readout).toHaveAttribute('aria-disabled', 'true');
   expect(readout).toHaveAccessibleDescription('Locked');
 });
+
+it('keeps the caret after a typed minus sign', async () => {
+  const { readout } = slider();
+  await userEvent.click(readout);
+  await userEvent.keyboard('{End}');
+  readout.setSelectionRange(0, 0);
+  await userEvent.keyboard('-');
+  expect(readout.value).toBe('−20');
+  expect(readout.selectionStart).toBe(1);
+});

@@ -339,7 +339,17 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
           setDraft(text(value));
           e.currentTarget.select();
         }}
-        onChange={(e) => setDraft(e.target.value.replace(/-/g, '−'))}
+        onChange={(e) => {
+          // Swapped in place, so React finds the DOM already holding the draft and leaves the caret where it was.
+          const box = e.currentTarget;
+          const typed = box.value.replace(/-/g, '−');
+          if (typed !== box.value) {
+            const { selectionStart, selectionEnd } = box;
+            box.value = typed;
+            box.setSelectionRange(selectionStart, selectionEnd);
+          }
+          setDraft(typed);
+        }}
         onBlur={commit}
         onClick={(e) => {
           e.preventDefault();
