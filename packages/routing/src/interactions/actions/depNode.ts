@@ -117,7 +117,17 @@ export function rankedDepRegistry(registry: DepRegistry, rank: number): DepRegis
   };
   const node = NODES.get(registry);
   if (node) NODES.set(ranked, node);
+  RANKS.set(ranked, rank);
   return ranked;
+}
+
+const RANKS = new WeakMap<DepRegistry, number>();
+
+/** `registry` joining at the rank `outer` registers at, when `outer` is ranked: a scope's own registry, for
+ *  what registers inside a scope mounted under a `<DepRank>`. */
+export function rankedLike(outer: DepRegistry | null, registry: DepRegistry): DepRegistry {
+  const rank = outer ? RANKS.get(outer) : undefined;
+  return rank === undefined ? registry : rankedDepRegistry(registry, rank);
 }
 
 /**

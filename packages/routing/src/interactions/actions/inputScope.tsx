@@ -4,6 +4,7 @@
 import { useContext, useEffect, useMemo, type ReactElement, type ReactNode } from 'react';
 import { ActionsContext, ActionsNode, actionsNodeOf, useActionsRegistry } from './ActionsProvider';
 import { DepNode, DepRegistryContext, depNodeOf, useOptionalDepRegistry } from './depRegistry';
+import { rankedLike } from './depNode';
 import { ActiveToolNodeContext, ToolNode } from './activeToolContext';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 
@@ -56,8 +57,10 @@ function useNodes(
  *  `<ActionsProvider>` above has put one there. */
 function Provide({ nodes, children }: { nodes: Yoke; children: ReactNode }): ReactElement {
   const menuHost = useContext(MenuHostContext) ?? nodes.actions.menuHost();
+  const outerDeps = useOptionalDepRegistry();
+  const deps = useMemo(() => rankedLike(outerDeps, nodes.deps.registry), [outerDeps, nodes]);
   return (
-    <DepRegistryContext.Provider value={nodes.deps.registry}>
+    <DepRegistryContext.Provider value={deps}>
       <ActionsContext.Provider value={nodes.actions.registry}>
         <ActiveToolNodeContext.Provider value={nodes.tools}>
           <MenuHostContext.Provider value={menuHost}>{children}</MenuHostContext.Provider>

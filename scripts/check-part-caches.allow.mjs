@@ -72,7 +72,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/prefs/src/usePrefsStore.ts', 'read without being made'],
   ['packages/react/src/testing/leakProbe.ts', 'set from the registration\'s target, and read without being made'],
   ['packages/routing/src/interactions/actions/ActionsProvider.tsx', 'set from a constructor and read elsewhere as a lookup'],
-  ['packages/routing/src/interactions/actions/depNode.ts', 'set from a constructor and read elsewhere as a lookup'],
+  ['packages/routing/src/interactions/actions/depNode.ts', ['set when a registry is made, from its arguments, and read elsewhere as a lookup', 2]],
   ['packages/routing/src/interactions/actions/modifierRoles.ts', 'set from another value, and read with a fallback'],
   ['packages/routing/src/interactions/actions/tunedForm.ts', 'records what a wrap was made from, walked as a chain of reads'],
   ['packages/routing/src/interactions/actions/tuning.ts', ['records what a wrap was made from, walked as a chain of reads', 2]],
