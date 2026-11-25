@@ -16,6 +16,10 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key: 'f', mods: { alt: true } }, true)).toBeNull();
   });
 
+  it.each(['#', '$', '%'])('takes Cmd+Shift+3/4/5 on a Mac when written as the shifted digit %s', (key) => {
+    expect(browserReservedChord({ kind: 'key', key, mods: { mod: true, shift: true } }, true)?.use).toMatch(/screenshots/);
+  });
+
   it('leaves Alt+J and Mod+Alt+Shift+J free', () => {
     expect(browserReservedChord({ kind: 'key', key: 'j', mods: { alt: true } })).toBeNull();
     expect(browserReservedChord({ kind: 'key', key: 'j', mods: { mod: true, alt: true, shift: true } })).toBeNull();
