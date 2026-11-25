@@ -15,4 +15,9 @@ describe('brushRing', () => {
     expect(brushRing(12, 'world')).toEqual({ glyph: 'brush', worldRadius: 12, fallback: 'crosshair' });
     expect(resolveCursor(brushRing(12, 'world'))).toMatchObject({ kind: 'painted', worldRadius: 12 });
   });
+
+  it('draws a zero world radius as the one-pixel ring a zero px radius is, not at the default size', () => {
+    expect(brushRing(0, 'world')).toEqual(brushRing(0, 'px'));
+    expect(resolveCursor(brushRing(0, 'world'))).toEqual(resolveCursor(brushRing(0, 'px')));
+  });
 });

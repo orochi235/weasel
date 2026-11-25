@@ -1482,7 +1482,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   number at the default 24, as `resolveCursor` already reads a spec's size, one rule for both; a size past the
   cap, `Infinity` included, still throws. `brushRing` gives a radius of 0 or more a size of at least one pixel, so a
   brush too small to round to one draws a one-pixel ring rather than the default 24; a negative or `NaN` radius still
-  falls to the default.
+  falls to the default. A world radius of 0 gives the same one-pixel ring (2026-11-24).
 - Ruled 2026-11-10 (my call, overnight sweep): `protectMask` reads a rect whose size is `Infinity` as running to
   infinity from wherever it starts, minus infinity included, as an input past the double range is read at its limit.
 - Ruled 2026-11-10 (my call, overnight sweep): forge's static indexer names a story whose `name` (or
