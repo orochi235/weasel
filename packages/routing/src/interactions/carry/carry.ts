@@ -27,7 +27,8 @@ export interface CarryPointer {
 }
 
 /** What a carry did on a surface: came over it, moved on it, was released on
- *  it, or left it — off it, or canceled while over it. */
+ *  it, or left it — off it, or canceled while over it. A `drop` closes the carry
+ *  on that surface whether or not the surface took it; no `leave` follows. */
 export type CarryStage = 'enter' | 'move' | 'drop' | 'leave';
 
 /** An element a carry can be released on. */
