@@ -86,4 +86,10 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key: 'Backspace', mods: { mod: true, shift: true } }, true)?.use).toMatch(/browsing data/);
     expect(browserReservedChord({ kind: 'key', key: 'F4' }, false)).toBeNull();
   });
+  it('reads a punctuation or numpad code as the key it types', () => {
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'BracketLeft', mods: { mod: true } }, true)?.use).toMatch(/back/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'BracketRight', mods: { mod: true, shift: true } }, true)?.use).toMatch(/tab/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Numpad1', mods: { mod: true } }, false)?.use).toMatch(/tab/);
+    expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Numpad0', mods: { mod: true } }, false)).toBeNull();
+  });
 });

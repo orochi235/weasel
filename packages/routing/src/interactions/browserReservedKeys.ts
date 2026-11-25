@@ -66,10 +66,16 @@ const lower = (k: string | readonly string[]): string[] => (typeof k === 'string
 const allows = (policy: boolean | 'optional' | undefined, held: boolean): boolean =>
   policy === 'optional' || (policy === true) === held;
 
+/** The US-layout key each physical code that is not `Key?`, `Digit?` or `Numpad?` types. */
+const CODE_KEYS: Readonly<Record<string, string>> = {
+  bracketleft: '[', bracketright: ']', backquote: '`', space: ' ', minus: '-', equal: '=', comma: ',',
+  period: '.', slash: '/', backslash: '\\', semicolon: ';', quote: "'",
+};
+
 /** The keys a spec fires on: its `key`s, and each `code` as the US-layout key it names (`KeyR` is `r`). */
 const keysOf = (spec: KeySpec): string[] => [
   ...lower(spec.key),
-  ...(spec.code === undefined ? [] : lower(spec.code).map((c) => c.replace(/^(key|digit)(?=.$)/, ''))),
+  ...(spec.code === undefined ? [] : lower(spec.code).map((c) => CODE_KEYS[c] ?? c.replace(/^(key|digit|numpad)(?=.$)/, ''))),
 ];
 
 type Policy = boolean | 'optional' | undefined;
