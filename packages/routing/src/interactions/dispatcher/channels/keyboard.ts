@@ -53,6 +53,15 @@ const fieldChord = (e: KeyboardEvent): boolean => e.ctrlKey || e.metaKey;
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
 
+const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
+const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
+
+/** Drop the key `e` lifts from `down`, and with Cmd's keyup every key that went down with Cmd. */
+function lifted(down: Map<string, { withCmd: boolean }>, e: KeyboardEvent): void {
+  down.delete(physicalKey(e));
+  if (e.key === 'Meta') for (const [k, held] of [...down]) if (held.withCmd) down.delete(k);
+}
+
 export function keyboardInput(core: DispatchCore): {
   onKeyDown: (e: KeyboardEvent) => void;
   onKeyUp: (e: KeyboardEvent) => void;
@@ -60,6 +69,8 @@ export function keyboardInput(core: DispatchCore): {
   take: TakeKey;
   /** End every held key, as a window that lost focus must: it never delivers the keyup. */
   releaseAll: () => void;
+  /** A key came up, heard ahead of every element, so one whose keyup a widget stops is not pressed again on `arrive`. */
+  lift: (e: KeyboardEvent) => void;
   /** The pointer came over the canvas: press the keys already held for its `over` bindings. */
   arrive: (e: PointerEvent) => void;
   /** The pointer left the canvas: release what its `over` bindings hold. */
@@ -74,8 +85,6 @@ export function keyboardInput(core: DispatchCore): {
   // Every key down on the page, taken or not, for `arrive` to press again.
   const downKeys = new Map<string, Omit<HeldKey, 'on' | 'view'>>();
   const keymaps = keymapKeys(core.keymaps);
-  const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
-  const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
   // Keystrokes already offered here by a peer on the surface, which this channel's own listener leaves.
   const taken = new WeakSet<Event>();
 
@@ -124,11 +133,7 @@ export function keyboardInput(core: DispatchCore): {
 
   /** Dispatch `e` as both `key` and `keyHeld` with `mods` for its Alt and Ctrl. True when either was handled. */
   const press = (e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boolean }, reach: KeyReach): boolean => {
-    // Both forms dispatch unconditionally. The dispatcher
-    // de-dupes naturally because each form uses a different gestureId and
-    // different GestureSpec kind. The dispatcher returns 'unhandled' when no
-    // binding matches the alternate form, so there's no double-fire risk.
-
+    // Both forms dispatch: each has its own gesture id and spec kind, so neither fires twice.
     const { keyEv, heldEv } = keystrokeEvents(e, mods);
     const keyResult = dispatch(keyEv, undefined, reach, (r) => noteRefusal(e, r));
 
@@ -173,5 +178,5 @@ export function keyboardInput(core: DispatchCore): {
     for (const down of releasing) releaseIn(core, down, releaseOf(down, NO_MODS));
   };
 
-  return { onKeyDown, onKeyUp, take, releaseAll, ...followPointer(core, downKeys, heldKeys) };
+  return { onKeyDown, onKeyUp, take, releaseAll, lift: (e) => { lifted(downKeys, e); }, ...followPointer(core, downKeys, heldKeys) };
 }
