@@ -19,7 +19,7 @@ export function CurveMarks({ marks, width, height }: { marks: readonly CurveMark
       viewBox={`0 0 ${width} ${height}`}
       aria-hidden="true"
     >
-      {marks.map((m) => {
+      {marks.map((m, i) => {
         const color = css(m.color) ?? '#ffcc00';
         if (m.kind === 'band') {
           const x0 = Math.max(0, Math.min(1, m.x[0])) * width;
@@ -27,7 +27,7 @@ export function CurveMarks({ marks, width, height }: { marks: readonly CurveMark
           const left = Math.min(x0, x1);
           const w = Math.abs(x1 - x0);
           return (
-            <g key={`band-${m.x[0]}-${m.x[1]}-${color}`}>
+            <g key={i}>
               <rect x={left} y={0} width={w} height={height} fill={color} fillOpacity={0.4} />
               <line
                 x1={left}
@@ -53,7 +53,7 @@ export function CurveMarks({ marks, width, height }: { marks: readonly CurveMark
         const x = Math.max(0, Math.min(1, m.x)) * width;
         return (
           <line
-            key={`mark-${m.x}-${color}`}
+            key={i}
             x1={x}
             y1={0}
             x2={x}
