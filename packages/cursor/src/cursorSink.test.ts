@@ -41,13 +41,22 @@ describe('createCursorSink', () => {
     expect(el.style.cursor).toBe('pointer');
   });
 
-  it('with no base set, removes only an override it wrote', () => {
+  it('with no base set, removes only an override it wrote, putting back the cursor it replaced', () => {
     const { el, sink } = harness('help');
     sink.setOverride(null);
     expect(el.style.cursor).toBe('help');
     sink.setOverride({ kind: 'css', css: 'grab' });
+    sink.setOverride({ kind: 'css', css: 'move' });
     sink.setOverride(null);
-    expect(el.style.cursor).toBe('');
+    expect(el.style.cursor).toBe('help');
+  });
+
+  it('with no base set, leaves a cursor other code wrote over its override', () => {
+    const { el, sink } = harness('help');
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el.style.cursor = 'wait';
+    sink.setOverride(null);
+    expect(el.style.cursor).toBe('wait');
   });
 
   it('hides the native cursor and paints a painted one', () => {

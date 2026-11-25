@@ -37,15 +37,26 @@ const shown = (cursor: ResolvedCursor | null): ResolvedCursor | null =>
 
 /**
  * A sink over `target`. Until `setBase` is called it owns only what it wrote:
- * an override is written and later removed, and a cursor some other code put
- * on the element is otherwise left alone.
+ * an override is written and later removed, putting back the cursor it replaced
+ * unless other code has written one since, and a cursor some other code put on
+ * the element is otherwise left alone.
  */
 export function createCursorSink(target: CursorSinkTarget): CursorSink {
+  type El = { style: { cursor: string } };
   let base: ResolvedCursor | null = null;
   let rest = '';
   let override: ResolvedCursor | null = null;
   let ownsBase = false;
-  let wroteOverride = false;
+  /** The element an override is on, what it showed before, and what the sink wrote there. */
+  let written: { el: El; prior: string; css: string } | null = null;
+
+  const unwrite = (): void => {
+    if (!written) return;
+    const { el, prior, css } = written;
+    written = null;
+    if (ownsBase) el.style.cursor = base ? cssOf(base) : rest;
+    else if (el.style.cursor === css) el.style.cursor = prior;
+  };
 
   const write = (): void => {
     const painted = target.painted();
@@ -56,13 +67,13 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     const el = target.element();
     if (!el) return;
     if (override) {
-      el.style.cursor = cssOf(override);
-      wroteOverride = true;
+      const css = cssOf(override);
+      written = { el, prior: written ? written.prior : el.style.cursor, css };
+      el.style.cursor = css;
       return;
     }
-    if (ownsBase) el.style.cursor = base ? cssOf(base) : rest;
-    else if (wroteOverride) el.style.cursor = '';
-    wroteOverride = false;
+    if (written) unwrite();
+    else if (ownsBase) el.style.cursor = base ? cssOf(base) : rest;
   };
 
   return {
