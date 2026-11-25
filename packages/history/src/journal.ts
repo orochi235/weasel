@@ -188,6 +188,7 @@ export function createJournalInternal(
   const targetId = opts.targetId;
   const { adopt, openChildren, latestFirst, edits } = createChildren(() => inner.undoDepth());
 
+  const close = () => { state = 'closed'; RESUMERS.delete(journal); onClose?.(false); };
   const journal: Journal = {
     targetId,
     forkedAtEntryId,
@@ -239,9 +240,7 @@ export function createJournalInternal(
       // A session made only of one keyed run carries its key, so it continues that run on the parent.
       const { forwardOps, baseOps, coalesceKey } = _journalAccessInternal(inner).appliedOps();
       // Closed first: the parent's listeners hear the push and may edit the parent in turn.
-      state = 'closed';
-      RESUMERS.delete(journal);
-      onClose?.(false);
+      close();
       _journalAccessInternal(parent).record(forwardOps, baseOps, label, { selectionBefore, coalesceKey });
       bump();
     },
@@ -253,16 +252,13 @@ export function createJournalInternal(
         child.cancel();
       }
       inner.goto(0);
-      state = 'closed';
-      RESUMERS.delete(journal);
-      onClose?.(false);
+      close();
       bump();
     },
     suspend(): void {
       if (state !== 'active') throw new Error('Journal is not active');
       // It would go on writing to the adapter while the history counts no journal open.
       if (openChildren().some((c) => c.isActive())) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
-      // The parent may edit beneath it before it resumes, so its next push starts a new entry.
       inner.seal();
       state = 'suspended';
       onClose?.(true);
