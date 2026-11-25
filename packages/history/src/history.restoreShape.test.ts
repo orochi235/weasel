@@ -13,6 +13,17 @@ describe('History.restore — a snapshot of the wrong shape', () => {
     expect(h.branches()).toEqual([]);
   });
 
+  it('refuses ids that leave too little room to count on without two entries sharing one', () => {
+    const h = createHistory(undefined);
+    const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });
+    const top = Number.MAX_SAFE_INTEGER;
+    expect(() => h.restore(snapshotOf({ undoStack: [entry(top)], nextEntryId: 1 }))).toThrow(/within/);
+    expect(() => h.restore(snapshotOf({ nextEntryId: top }))).toThrow(/nextEntryId/);
+    expect(() => h.restore(snapshotOf({ floor: top - 1 }))).toThrow(/floor/);
+    expect(h.restore(snapshotOf({ undoStack: [entry(2 ** 52)], nextEntryId: 1 })).restored).toBe(true);
+    expect(h.nextEntryId()).toBe(2 ** 52 + 1);
+  });
+
   it('refuses a snapshot in a version it does not read', () => {
     const h = createHistory(undefined);
     const later = snapshotOf({ version: 2 as 1 });
