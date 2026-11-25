@@ -147,3 +147,18 @@ describe('tuneToolOptions', () => {
     expect(values.get('c')).toEqual({ radiusPx: 30 });
   });
 });
+
+describe('tuneToolOptions and the step actions', () => {
+  it("enable a tool's step actions while a tool held from another canvas tops the hotkey stack", () => {
+    const tunings = new Map<string, ActionTuning>();
+    const registry = { tune: (id: string, t: ActionTuning) => { tunings.set(id, t); return () => {}; } };
+    const values = createToolOptionValues();
+    const activeTool = { active: 'b', hotkeyStack: ['elsewhere'] };
+    const sized: ToolOptionsSpec = { ...OPTIONS, size: { option: 'radiusPx', plus: 1 } };
+    const tool = defineTool({ id: 'b', options: sized });
+    tuneToolOptions(registry, depsOf(values, activeTool) as never, [tool]);
+    const grow = tool.actions!.find((a) => a.id === 'b.grow')!;
+    const params = (tunings.get('b.grow')!.params as () => Record<string, unknown>)();
+    expect(grow.enabled!({ activeTool, toolOptionValues: values } as never, undefined, undefined, params)).toBe(true);
+  });
+});

@@ -46,8 +46,18 @@ function stepOption(
   if (!Object.is(next, current)) setToolOption(toolId, options, values, step.option, next);
 }
 
-const enabledFor = (toolId: string) => (deps?: ActionDeps) =>
-  liveTool(deps?.activeTool) === toolId && deps?.toolOptionValues ? true : ActionDisabledReason.NotApplicable;
+/** The param a canvas's option tuning gives each step action: the live tool among that canvas's own tools, which
+ *  a hotkey stack shared with another canvas cannot say alone. */
+export const LIVE_TOOL_PARAM = 'liveTool';
+
+function liveFrom(deps: ActionDeps | undefined, params: Readonly<Record<string, unknown>> | undefined): string | null {
+  const tuned = params && Object.hasOwn(params, LIVE_TOOL_PARAM) ? params[LIVE_TOOL_PARAM] : undefined;
+  return typeof tuned === 'string' || tuned === null ? tuned : liveTool(deps?.activeTool);
+}
+
+const enabledFor = (toolId: string) => (
+  deps?: ActionDeps, _at?: unknown, _carried?: unknown, params?: Readonly<Record<string, unknown>>,
+) => liveFrom(deps, params) === toolId && deps?.toolOptionValues ? true : ActionDisabledReason.NotApplicable;
 
 function stepAction(toolId: string, toolLabel: string, options: ToolOptionsSpec, spec: StepSpec): Action | null {
   const step = options[spec.which];
@@ -121,6 +131,16 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
     } satisfies ImmediateInvoker,
     enabled: enabledFor(toolId),
   };
+}
+
+/** The ids of the actions {@link toolOptionSteps} makes for `toolId`. */
+export function toolOptionStepIds(toolId: string, options: ToolOptionsSpec): string[] {
+  const has = (which: 'size' | 'strength') => {
+    const step = options[which];
+    return !!step && !!toolOptionNumberLeaf(options, step.option);
+  };
+  const ids = STEPS.filter((s) => has(s.which)).map((s) => `${toolId}.${s.name}`);
+  return has('size') ? [...ids, `${toolId}.wheelSize`] : ids;
 }
 
 /** The step actions for `toolId`'s size and strength options, and the key and
