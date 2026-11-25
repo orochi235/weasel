@@ -168,7 +168,8 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
     let moved: { next: ToolbarLayout; words: string } | null;
     if (floats) moved = toggleFloat(was, bar, drawn);
     else {
-      const to = keyTarget(drawnLayout(was, drawn, barId), specs, bar, e.key);
+      const rtl = getComputedStyle(e.currentTarget).direction === 'rtl';
+      const to = keyTarget(drawnLayout(was, drawn, barId), specs, bar, e.key, rtl);
       const next = to && movedLayout(was, barId, spreadTarget(was, barId, to, drawn));
       moved = next && { next, words: placeWords(drawnLayout(next, drawn, barId), specs, bar) };
     }

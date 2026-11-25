@@ -221,6 +221,15 @@ describe('moving a bar from its handle with Alt+arrows', () => {
     expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'view', 'shape']]);
   });
 
+  it('follows the drawn direction in a right-to-left row', () => {
+    const onChange = vi.fn<(l: ToolbarLayout) => void>();
+    render(<div style={{ direction: 'rtl' }}><Harness initial={start([['file', 'view', 'shape']])} onChange={onChange} /></div>);
+    key(handle('File'), 'ArrowLeft');
+    expect(onChange.mock.calls[0]![0].docks.top).toEqual([['view', 'file', 'shape']]);
+    key(handle('File'), 'ArrowRight');
+    expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'view', 'shape']]);
+  });
+
   it('does nothing before a row’s start, and sends a row’s last start bar on to its far end', () => {
     const onChange = setup(start([['file', 'view', 'shape']]));
     key(handle('File'), 'ArrowLeft');

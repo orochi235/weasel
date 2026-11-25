@@ -178,9 +178,14 @@ export function locateBar(layout: ToolbarLayout, barId: string): { dock: string;
   return null;
 }
 
-/** The keys that move a bar along its row, back then on, and across rows, back then on, in a dock on `edge`. */
-const keysFor = (edge: DockEdge | undefined) =>
-  isVerticalEdge(edge) ? ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'] : ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+/**
+ * The keys that move a bar along its row, back then on, and across rows, back then on, in a dock on `edge`: right to
+ * left, a row's start and a side dock's first column are on the right.
+ */
+const keysFor = (edge: DockEdge | undefined, rtl: boolean) => {
+  const [back, on] = rtl ? ['ArrowRight', 'ArrowLeft'] : ['ArrowLeft', 'ArrowRight'];
+  return isVerticalEdge(edge) ? ['ArrowUp', 'ArrowDown', back, on] : [back, on, 'ArrowUp', 'ArrowDown'];
+};
 
 /**
  * Where Alt+`key` sends `bar`. In a top or bottom dock: one slot along its row for Left and Right, and from the last
@@ -188,13 +193,13 @@ const keysFor = (edge: DockEdge | undefined) =>
  * previous or next row of its dock at the same place in the same end, and past its dock's first or last row the
  * previous or next dock it may enter: after the start bars of that dock's last row going back, of its first row going
  * on. A left or right dock turns this a quarter: Up and Down move along the column, Left and Right across columns and
- * docks. Null where it has nowhere to go.
+ * docks. With `rtl`, Left and Right swap, following the rows and columns as they are drawn. Null where it has nowhere to go.
  */
-export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, key: string): BarTarget | null {
+export function keyTarget(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, key: string, rtl = false): BarTarget | null {
   const at = locateBar(layout, bar.id);
   if (!at) return null;
   const rows = dockRows(layout, at.dock)!;
-  const [alongBack, alongOn, acrossBack] = keysFor(docks.find((d) => d.id === at.dock)?.edge);
+  const [alongBack, alongOn, acrossBack] = keysFor(docks.find((d) => d.id === at.dock)?.edge, rtl);
   if (key === alongBack || key === alongOn) return alongTarget(layout, at, key === alongOn);
   const step = key === acrossBack ? -1 : 1;
   const row = rows[at.row + step];

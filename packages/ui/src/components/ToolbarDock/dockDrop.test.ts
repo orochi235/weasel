@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { dropAt, measureDocks, type DockBox } from './dockDrop';
+import { dropAt, keyTarget, measureDocks, type DockBox } from './dockDrop';
 import type { DockBar } from './layout';
 
 const top: DockBox = { id: 'top', edge: 'top', vertical: false, mirrored: false, along: [0, 1000], rows: [{ start: 0, end: 40, from: 0, to: 1000, bars: [{ id: 't1', at: 100, end: false }] }] };
@@ -44,5 +44,12 @@ describe('dropAt', () => {
     expect(dropAt(boxes, bar, { clientX: 60, clientY: 400 })?.target).toMatchObject({ dock: 'left', row: 0 });
     expect(dropAt(boxes, bar, { clientX: 20, clientY: 400 })?.target).toMatchObject({ dock: 'left', row: 1 });
     expect(dropAt(boxes, bar, { clientX: 90, clientY: 400 })?.target).toEqual({ dock: 'left', row: 0, index: 0, newRow: true });
+  });
+
+  it('sends a bar to the column drawn on its left with Alt+Left in a right-to-left side dock', () => {
+    const layout = { docks: { left: [['l1'], ['b']] }, floating: {} };
+    const specs = [{ id: 'left', edge: 'left' as const }];
+    expect(keyTarget(layout, specs, bar, 'ArrowLeft', true)).toBeNull();
+    expect(keyTarget(layout, specs, bar, 'ArrowRight', true)).toMatchObject({ dock: 'left', row: 0 });
   });
 });
