@@ -37,3 +37,17 @@ describe('step bindings of two tools held on keys', () => {
     expect(findScopedConflicts({ registry: [tool('brush', 'b'), tool('eraser', 'e')] })).toEqual([]);
   });
 });
+
+describe('the wheel size step', () => {
+  it('starts a burst of its own on each canvas\'s option values', () => {
+    const wheel = toolOptionSteps('brush', 'Brush', brush).actions.find((a) => a.id === 'brush.wheelSize')!;
+    const run = (values: ReturnType<typeof createToolOptionValues>, deltaY: number) =>
+      (wheel.invoker as ImmediateInvoker).run({ activeTool: { active: 'brush', hotkeyStack: [] }, toolOptionValues: values } as never, { deltaY });
+    const a = createToolOptionValues();
+    const b = createToolOptionValues();
+    run(a, -10);
+    run(b, -10);
+    expect(toolOptionParams('brush', brush, a).size).toBe(11);
+    expect(toolOptionParams('brush', brush, b).size).toBe(11);
+  });
+});

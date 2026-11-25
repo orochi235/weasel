@@ -98,8 +98,8 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
   const step = options.size;
   const leaf = step ? toolOptionNumberLeaf(options, step.option) : undefined;
   if (!step || !leaf) return null;
-  let travel = 0;
-  let last = -Infinity;
+  // Keyed by the option values a canvas hands in, so two canvases sharing this tool keep separate bursts.
+  const bursts = new WeakMap<ToolOptionValues, { travel: number; last: number }>();
   return {
     id: `${toolId}.wheelSize`,
     label: `Resize ${toolLabel} with the wheel`,
@@ -112,20 +112,22 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
         const dy = finite(params?.deltaY);
         const d = dy !== 0 ? dy : finite(params?.deltaX);
         if (!values || d === 0) return;
+        let burst = bursts.get(values);
+        if (!burst) bursts.set(values, burst = { travel: 0, last: -Infinity });
         const now = Date.now();
         // A clock set back since the last notch gives a negative gap: a new burst, not one going on.
-        const gap = now - last;
-        const fresh = !(gap >= 0 && gap <= WHEEL_SIZE_BURST_MS) || (travel !== 0 && Math.sign(travel) !== Math.sign(d));
-        last = now;
+        const gap = now - burst.last;
+        const fresh = !(gap >= 0 && gap <= WHEEL_SIZE_BURST_MS) || (burst.travel !== 0 && Math.sign(burst.travel) !== Math.sign(d));
+        burst.last = now;
         const dir: 1 | -1 = d < 0 ? 1 : -1;
         if (fresh) {
-          travel = 0;
+          burst.travel = 0;
           stepOption(toolId, options, values, step, leaf, dir);
           return;
         }
-        travel += d;
-        const steps = Math.floor(Math.abs(travel) / WHEEL_SIZE_STEP_PX);
-        travel -= Math.sign(travel) * steps * WHEEL_SIZE_STEP_PX;
+        burst.travel += d;
+        const steps = Math.floor(Math.abs(burst.travel) / WHEEL_SIZE_STEP_PX);
+        burst.travel -= Math.sign(burst.travel) * steps * WHEEL_SIZE_STEP_PX;
         for (let i = Math.min(steps, WHEEL_SIZE_MAX_STEPS); i > 0; i--) stepOption(toolId, options, values, step, leaf, dir);
       },
     } satisfies ImmediateInvoker,
