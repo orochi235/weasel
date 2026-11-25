@@ -34,7 +34,7 @@ describe('ActionsRegistry.trigger', () => {
   it('reads paramsOf at the active scope, where trigger runs', () => {
     const run = vi.fn();
     const root = new ActionsNode(null, true, () => null);
-    const canvas = new ActionsNode(root, true, () => null);
+    const canvas = new ActionsNode(root, false, () => null);
     canvas.mount();
     canvas.activate();
     root.registry.register({ id: 'test.insert', label: 'Insert', invoker: { timing: 'immediate', run } });
