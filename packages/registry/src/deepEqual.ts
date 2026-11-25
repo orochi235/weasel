@@ -23,16 +23,22 @@ function equal(a: unknown, b: unknown, opts: DeepEqualOptions, pairs: Map<object
     if (!isPlainArray(a) || !isPlainArray(b) || a.length !== b.length) return false;
     if (!enter(pairs, a, b)) return true;
     for (let i = 0; i < a.length; i++) if (!equal(a[i], b[i], opts, pairs)) return false;
-    return true;
+    return sameKeys(a, b, extraKeysOf, opts, pairs);
   }
   if (!isPlainObject(a) || !isPlainObject(b)) return false;
   if (!enter(pairs, a, b)) return true;
+  return sameKeys(a, b, keysOf, opts, pairs);
+}
+
+/** Whether `a` and `b` hold equal values under every key `keys` reads from either. */
+function sameKeys(
+  a: object, b: object, keys: (o: object) => Key[], opts: DeepEqualOptions, pairs: Map<object, Set<object>>,
+): boolean {
+  const ka = keys(a);
   if (opts.undefinedAsAbsent) {
-    return [...new Set([...keysOf(a), ...keysOf(b)])].every((k) => equal(own(a, k), own(b, k), opts, pairs));
+    return [...new Set([...ka, ...keys(b)])].every((k) => equal(own(a, k), own(b, k), opts, pairs));
   }
-  const keys = keysOf(a);
-  return keys.length === keysOf(b).length
-    && keys.every((k) => isOwnEnumerable(b, k) && equal(own(a, k), own(b, k), opts, pairs));
+  return ka.length === keys(b).length && ka.every((k) => isOwnEnumerable(b, k) && equal(own(a, k), own(b, k), opts, pairs));
 }
 
 /** An array whose prototype is some realm's `Array.prototype`, itself an array, rather than a subclass's. */
@@ -55,11 +61,21 @@ function keysOf(o: object): Key[] {
   return [...Object.keys(o), ...Object.getOwnPropertySymbols(o).filter((k) => isOwnEnumerable(o, k))];
 }
 
+/** An array's own enumerable keys other than its indices. */
+function extraKeysOf(o: object): Key[] {
+  return keysOf(o).filter((k) => typeof k === 'symbol' || !isIndex(k));
+}
+
+function isIndex(k: string): boolean {
+  const n = Number(k);
+  return Number.isInteger(n) && n >= 0 && n < 2 ** 32 - 1 && String(n) === k;
+}
+
 function isOwnEnumerable(o: object, k: Key): boolean {
   return Object.prototype.propertyIsEnumerable.call(o, k);
 }
 
 /** `o`'s own `k`: a key named like an `Object.prototype` member is read as a plain own key. */
-function own(o: Record<Key, unknown>, k: Key): unknown {
-  return Object.hasOwn(o, k) && isOwnEnumerable(o, k) ? o[k] : undefined;
+function own(o: object, k: Key): unknown {
+  return Object.hasOwn(o, k) && isOwnEnumerable(o, k) ? (o as Record<Key, unknown>)[k] : undefined;
 }

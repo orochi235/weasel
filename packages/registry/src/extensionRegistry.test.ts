@@ -30,6 +30,14 @@ describe('createExtensionRegistry', () => {
     expect(r.has('x')).toBe(false);
   });
 
+  it('refuses to register undefined, which `get` could not tell from no registration', () => {
+    const r = createExtensionRegistry<string | undefined>({ kind: 'thing' });
+    expect(() => r.register('x', undefined)).toThrow(TypeError);
+    expect(r.has('x')).toBe(false);
+    r.register('x', 'f');
+    expect(() => r.register('x', 'g')).toThrow(ExtensionConflictError);
+  });
+
   it('keeps isolated registries apart under the same id', () => {
     const a = make();
     const b = make();
@@ -100,6 +108,21 @@ describe('createExtensionRegistry', () => {
     expect(child.get('x')).toBe('g');
     mine();
     expect(child.get('x')).toBe('g');
+  });
+
+  it('follows its parent to a different value the parent releases and registers in one tick', async () => {
+    const parent = make();
+    const child = make(parent);
+    const off = parent.register('x', 'f');
+    const mine = child.register('x', 'f');
+    off();
+    const offG = parent.register('x', 'g');
+    await Promise.resolve();
+    expect(child.get('x')).toBe('g');
+    expect(child.own.has('x')).toBe(false);
+    mine();
+    offG();
+    expect(child.has('x')).toBe(false);
   });
 
   it('keeps an id it takes over once the tick passes', async () => {
@@ -206,6 +229,18 @@ describe('createExtensionRegistry', () => {
     await Promise.resolve();
     r.register('x', 'one');
     expect(r.entries().map((e) => e.key)).toEqual(['y', 'x']);
+  });
+
+  it('keeps an id in place when it is released and registered again in one tick while its parent holds it too', () => {
+    const parent = make();
+    const child = make(parent);
+    const offX = child.register('x', 'v');
+    child.register('y', 'w');
+    parent.register('x', 'v');
+    expect(child.entries().map((e) => e.key)).toEqual(['x', 'y']);
+    offX();
+    child.register('x', 'v');
+    expect(child.entries().map((e) => e.key)).toEqual(['x', 'y']);
   });
 
   it('puts an id it releases at its parent\'s place at once, not a tick later', async () => {

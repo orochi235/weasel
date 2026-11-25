@@ -31,7 +31,7 @@ export interface ExtensionRegisterOptions {
  * The registry is itself a {@link Reflection} over every id it resolves, its parent's included.
  */
 export interface ExtensionRegistry<V> extends Reflection<V> {
-  /** Register `value` under `id` and return its release. */
+  /** Register `value` under `id` and return its release. Throws a `TypeError` for an undefined `value`. */
   register(id: string, value: V, options?: ExtensionRegisterOptions): () => void;
   /** The registry this one falls back to, or null. */
   readonly parent: ExtensionRegistry<V> | null;
@@ -109,10 +109,11 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
     }
     stop();
   };
-  /** A parent's release and re-register in one tick is no drop, as its own store keeps the id's place. */
+  /** A parent's release and re-register in one tick is no drop, as its own store keeps the id's place: the hold
+   *  goes on through the parent, or ends as a replacement's would when the parent took a different value. */
   const relean = (id: string, lean: Lean<V>): void => {
     const theirs = parent.get(id);
-    if (theirs === undefined || !same(theirs, lean.value) || !untake(id, lean)) return;
+    if (theirs === undefined || !untake(id, lean) || !same(theirs, lean.value)) return;
     leans.set(id, lean);
     off ??= parent.subscribe(settle);
   };
@@ -153,6 +154,10 @@ function see(parent: Reflection<unknown>, seen: Map<string, number>): void {
   for (const id of ids) if (!seen.has(id)) seen.set(id, nextOrder++);
 }
 
+function earlier(a: number | undefined, b: number | undefined): number | undefined {
+  return a === undefined ? b : b === undefined ? a : Math.min(a, b);
+}
+
 /** Make an {@link ExtensionRegistry}: one per host that should keep its extensions to itself, or one
  *  shared by hosts that should not. */
 export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>): ExtensionRegistry<V> {
@@ -171,9 +176,8 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const parentOrder = knownOrder ?? (foreignParent ? (id: string) => seen.get(id) : undefined);
   const orderOf = (id: string): number | undefined => {
     // A released id keeps its `since` until the next tick, to take its place back if registered again; until then it sits where its parent puts it.
-    const mine = held.has(id) ? since.get(id) : undefined;
-    const theirs = parentOrder?.(id);
-    return mine === undefined ? theirs : theirs === undefined ? mine : Math.min(mine, theirs);
+    const mine = held.has(id) ? since.get(id) : leans?.get(id)?.order;
+    return earlier(mine, parentOrder?.(id));
   };
   let cached: { version: number; entries: readonly ReflectedEntry<V>[] } | null = null;
   /** This registry's own listeners, so subscribing here never shares a subscription a listener holds on `own` or
@@ -244,6 +248,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     },
     getVersion,
     register(id, value, opts = {}) {
+      if (value === undefined) throw new TypeError(`${kind} "${id}" cannot be registered as undefined, which reads as no registration`);
       const have = get(id);
       if (have !== undefined && same(have, value)) {
         const holding = held.get(id) ?? leans?.get(id)?.holding;
@@ -252,7 +257,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
           return createRelease(id, holding);
         }
         if (foreignParent) seeParent();
-        const lean: Lean<V> = { holding: { token: {}, count: 1 }, value, source: opts.source, order: orderOf(id) ?? nextOrder++ };
+        const lean: Lean<V> = { holding: { token: {}, count: 1 }, value, source: opts.source, order: earlier(since.get(id), orderOf(id)) ?? nextOrder++ };
         leans!.add(id, lean);
         return createRelease(id, lean.holding);
       }
