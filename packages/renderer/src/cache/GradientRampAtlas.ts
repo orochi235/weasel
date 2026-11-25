@@ -2,7 +2,7 @@
  * CPU gradient-ramp builder + the GL texture every baked ramp lives in.
  *
  * Each unique stop list is baked once into a 256-texel strip and written to its
- * own **row** of one RGBA texture, keyed by `JSON.stringify(stops)`. One
+ * own **row** of one RGBA texture, keyed by the serialized stops. One
  * texture rather than one per ramp is what lets a gradient take a batch texture
  * slot the way a bitmap or a font atlas does: every gradient in a frame samples
  * the same unit, so a run does not break per gradient. The atlas is
@@ -67,7 +67,12 @@ export function buildGradientRamp(stops: GradStop[], space: ColorSpace = 'rgb'):
 /** The row identity. Two gradients with the same stops and different
  *  `interpolate` bake to different texels, so the space is part of the key. */
 function rampKey(stops: GradStop[], space: ColorSpace): string {
-  return `${space}|${JSON.stringify(stops)}`;
+  return `${space}|${JSON.stringify(stops, keepNonFinite)}`;
+}
+
+/** `JSON.stringify` writes NaN and both infinities as `null`, and stops resolve each differently. */
+function keepNonFinite(_key: string, value: unknown): unknown {
+  return typeof value === 'number' && !Number.isFinite(value) ? String(value) : value;
 }
 
 export class GradientRampAtlas {

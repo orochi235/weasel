@@ -120,6 +120,14 @@ describe('GradientRampAtlas', () => {
     expect(writtenRows(calls)).toHaveLength(0);
   });
 
+  it('upload() keeps stop lists apart that differ only in a non-finite offset', () => {
+    const { gl } = createGLRecorder();
+    const atlas = new GradientRampAtlas(webglDevice(gl));
+    const withOffset = (offset: number): GradStop[] => [{ offset: 0.5, color: '#ff0000' }, { offset, color: '#0000ff' }];
+    const rows = [-Infinity, Infinity, NaN].map((o) => atlas.upload(withOffset(o)));
+    expect(new Set(rows).size).toBe(3);
+  });
+
   it('upload() for different stops takes a different row', () => {
     const { gl } = createGLRecorder();
     const atlas = new GradientRampAtlas(webglDevice(gl));
