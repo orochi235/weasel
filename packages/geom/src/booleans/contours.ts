@@ -134,6 +134,16 @@ export function extentOf(contours: Contour[]): number {
   return Math.hypot(maxX - minX, maxY - minY);
 }
 
+/**
+ * How far off a contour of `contours` a side probe goes: `relative` of their
+ * extent, but never less than the coordinates' rounding can resolve.
+ */
+export function probeDistance(contours: Contour[], relative: number): number {
+  let magnitude = 0;
+  for (const c of contours) for (const s of c) for (const p of s) magnitude = Math.max(magnitude, Math.abs(p.x), Math.abs(p.y));
+  return Math.max(extentOf(contours) * relative, 16 * Number.EPSILON * magnitude, 1e-9);
+}
+
 /** The area below which a region cut from `contours` is rounding, not a piece. */
 export function negligibleArea(contours: Contour[]): number {
   const extent = extentOf(contours);
@@ -150,7 +160,7 @@ export function orientBoundaries(contours: Contour[], fillRule: PathFillRule): C
     const w = windingAt(q, contours);
     return fillRule === 'evenodd' ? (w & 1) !== 0 : w !== 0;
   };
-  const eps = Math.max(extentOf(contours) * 1e-6, 1e-9);
+  const eps = probeDistance(contours, 1e-6);
 
   const out: Contour[] = [];
   for (const contour of contours) {
