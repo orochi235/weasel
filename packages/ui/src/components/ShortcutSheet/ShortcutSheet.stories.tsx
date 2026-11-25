@@ -57,6 +57,8 @@ function Command({ open }: { open: () => void }) {
 const meta: Meta<typeof Demo> = {
   title: 'ui/ShortcutSheet',
   component: Demo,
+  // Not a control: the index page would mount a second, open copy as its `true` variant, and two modals lock each other.
+  argTypes: { initiallyOpen: { control: false } },
 };
 export default meta;
 
