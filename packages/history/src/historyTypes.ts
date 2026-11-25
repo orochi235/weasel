@@ -168,15 +168,15 @@ export interface History {
    *  subscribers exactly once. Throws while a journal is active. */
   restore(snapshot: SerializedHistory, options?: RestoreOptions): HistoryRestoreReport;
   /** Push an entry whose ops have already been applied to the adapter.
-   *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
-   *  to flush a session's net forward ops to the parent as one entry without
-   *  re-mutating the scene. An op naming what it `caused` is recorded as those ops, as
+   *  Unlike `applyOps`, does NOT call `op.apply()`, so it records changes made
+   *  outside the history without re-mutating the scene. An op naming what it `caused` is recorded as those ops, as
    *  `applyOps` records it. Throws while a journal is active, as `apply` does. */
   recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   /** Concatenated forwardOps of every undo-stack entry, in order. Snapshot
-   *  of "what changes are currently applied via this history" — useful for
-   *  Journal.commit to flush to a parent, and for any caller that wants to
-   *  diff against a baseline. */
+   *  of "what changes are currently applied via this history", for a caller
+   *  that wants to diff against a baseline. A coalesced entry's forward ops do
+   *  not invert back to its start, so these are not a way to record a session
+   *  elsewhere: `Journal.commit` does that. */
   allForwardOps(): Op[];
   /** The id that will be assigned to the *next* pushed entry. Stable
    *  monotonic counter; callers use it to tag a fork point (see Journal). */
