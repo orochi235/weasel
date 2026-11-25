@@ -129,6 +129,12 @@ describe('worldCursorPx', () => {
     paths: [{ role: 'stroke', d: 'M 12 2.1 A 9.9 9.9 0 1 0 12 21.9 A 9.9 9.9 0 1 0 12 2.1 Z', width: 1.6 }],
   };
 
+  it('draws a positive radius at no less than one CSS px, as a fixed-size brush is', () => {
+    expect(worldCursorPx(RING, 0.01, 1)).toBe(1);
+    expect(worldCursorPx(RING, 5e-324, 0.01)).toBe(1);
+    expect(worldCursorPx(RING, 0, 1)).toBe(0);
+  });
+
   it('draws the named circle at the world radius it was asked for', () => {
     // The whole contract of a brush cursor: the ring measures the brush.
     for (const [worldRadius, scale] of [[40, 1], [40, 2], [7.5, 0.5]] as const) {

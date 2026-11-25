@@ -108,7 +108,8 @@ export function cursorPaintMatrix(glyph: CursorGlyph, placement: PaintPlacement)
 /**
  * The CSS-px size a world-sized glyph is drawn at, so the circle its `radius`
  * names measures `worldRadius` world units on screen. A glyph with no `radius`
- * is measured by its inscribed circle.
+ * is measured by its inscribed circle. A positive size is at least one CSS px,
+ * as a fixed-size brush is, so a brush too small for the zoom still shows.
  */
 export function worldCursorPx(
   glyph: CursorGlyph,
@@ -116,7 +117,8 @@ export function worldCursorPx(
   scale: number,
 ): number {
   const r = glyph.radius ?? glyph.box / 2;
-  return worldRadius * scale * (glyph.box / r);
+  const px = worldRadius * scale * (glyph.box / r);
+  return worldRadius > 0 && scale > 0 ? Math.max(1, px) : px;
 }
 
 /**

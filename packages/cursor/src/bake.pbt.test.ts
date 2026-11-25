@@ -117,7 +117,9 @@ describe('the painted tier', () => {
       if (Number.isFinite(want * (glyph.box / r))) {
         t.count('finite');
         expect(Number.isFinite(size)).toBe(true);
-        expect(Math.abs(ring - want)).toBeLessThanOrEqual(1e-12 * want);
+        const floor = r / glyph.box;
+        if (want >= floor) expect(Math.abs(ring - want)).toBeLessThanOrEqual(1e-12 * want);
+        else expect(size).toBe(1);
       }
       expect(Number.isNaN(size)).toBe(false);
       const lw = chromeLineWidthScale(glyph, size);
@@ -156,7 +158,7 @@ describe('brushRing', () => {
       const world = resolveCursor(brushRing(radius, 'world'));
       expect(world).toMatchObject({ kind: 'painted', glyph: 'brush', worldRadius: radius });
       const drawn = worldCursorPx(GLYPHS.brush, radius, zoom) * (ring / box);
-      expect(drawn).toBeCloseTo(radius * zoom, 6);
+      expect(drawn).toBeCloseTo(Math.max(ring / box, radius * zoom), 6);
     }), runs(RUNS));
     t.atLeast('baked', 100);
     t.atLeast('painted', 20);
