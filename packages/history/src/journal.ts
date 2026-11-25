@@ -105,18 +105,25 @@ export interface Journal {
   isActive(): boolean;
 }
 
-/** The journals opened inside one: each leaves `RESUMERS` when it closes. */
-function createChildren() {
+/** The journals opened inside one, each dropped as it closes. */
+export function createChildren() {
   const children: Journal[] = [];
   /** When each child last changed the adapter, counted in opens and edits. */
   const lastEdit = new Map<Journal, number>();
   let edits = 0;
-  const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
+  const openChildren = (): Journal[] => children.slice();
   return {
     adopt(child: Journal): void {
       children.push(child);
       lastEdit.set(child, ++edits);
-      child.observe(() => lastEdit.set(child, ++edits));
+      const unobserve = child.observe(() => lastEdit.set(child, ++edits));
+      const unsubscribe = child.subscribe(() => {
+        if (RESUMERS.has(child)) return;
+        unobserve();
+        unsubscribe();
+        children.splice(children.indexOf(child), 1);
+        lastEdit.delete(child);
+      });
     },
     openChildren,
     /** The open ones, latest edit first. Edits interleaved between suspended siblings cannot be
