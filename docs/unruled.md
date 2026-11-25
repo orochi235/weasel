@@ -28,6 +28,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   `toolOptionsPrefs` throw, since its options would land in the group every tool's shared options are kept in.
   `toolOptionsPrefs` also throws for an option key or shared key with a dot, and for a tool whose options would sit
   inside another tool's option (`path`'s option `brush` beside a tool `path.brush`), rather than escaping either.
+- 2026-11-24 (my call, audit round 85): `ToolsApi.disengageHotkey()` with no hold of its own releases nothing,
+  where it used to release the top of the hotkey stack; a hold made through another `useTools` is that one's to
+  release.
 - 2026-11-22: `activatesFocusedControl` (and so `focusedControlOwnsKey`) gives a control only the key that activates
   it: Space alone to a checkbox, radio or switch, Enter alone to a link. A page-level Enter shortcut now fires on a
   focused checkbox, except a native checkbox or radio in a form, where Enter submits the form.
