@@ -40,8 +40,8 @@ const shown = (cursor: ResolvedCursor | null): ResolvedCursor | null =>
  * an override is written and later removed, putting back the cursor it replaced
  * unless other code has written one since, and a cursor some other code put on
  * the element is otherwise left alone. When `element()` starts answering another
- * element, the one an override was written to is given back what it showed
- * without it.
+ * element, the one it wrote to is given back what it showed before the sink
+ * wrote there.
  */
 export function createCursorSink(target: CursorSinkTarget): CursorSink {
   type El = { style: { cursor: string } };
@@ -49,36 +49,39 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
   let rest = '';
   let override: ResolvedCursor | null = null;
   let ownsBase = false;
-  /** The element an override is on, what it showed before, and what the sink wrote there. */
+  /** The element the sink last wrote, what it showed before, and what the sink wrote there. */
   let written: { el: El; prior: string; css: string } | null = null;
 
-  const unwrite = (): void => {
+  const giveBack = (): void => {
     if (!written) return;
     const { el, prior, css } = written;
     written = null;
-    if (ownsBase) el.style.cursor = base ? cssOf(base) : rest;
-    else if (el.style.cursor === css) el.style.cursor = prior;
+    if (el.style.cursor === css) el.style.cursor = prior;
+  };
+
+  const writePainted = (): void => {
+    const painted = target.painted();
+    if (!painted) return;
+    if (ownsBase) painted.setBase(base?.kind === 'painted' ? base : null);
+    // A CSS override silences the layer too, or a painted base keeps drawing
+    // under the native cursor.
+    painted.setOverride(override === null ? null : override.kind === 'painted' ? override : 'none');
   };
 
   const write = (): void => {
-    const painted = target.painted();
-    if (ownsBase) painted?.setBase(base?.kind === 'painted' ? base : null);
-    // A CSS override silences the layer too, or a painted base keeps drawing
-    // under the native cursor.
-    painted?.setOverride(override === null ? null : override.kind === 'painted' ? override : 'none');
+    writePainted();
     const el = target.element();
-    if (written && written.el !== el) unwrite();
+    if (written && written.el !== el) giveBack();
     if (!el) return;
-    if (override) {
-      const css = cssOf(override);
-      // Other code wrote over the sink's cursor since: that is what to put back now.
-      const prior = written && el.style.cursor === written.css ? written.prior : el.style.cursor;
-      written = { el, prior, css };
-      el.style.cursor = css;
+    const css = override ? cssOf(override) : ownsBase ? (base ? cssOf(base) : rest) : null;
+    if (css === null) {
+      giveBack();
       return;
     }
-    if (written) unwrite();
-    else if (ownsBase) el.style.cursor = base ? cssOf(base) : rest;
+    // Other code wrote over the sink's cursor since: that is what to put back now.
+    const prior = written && el.style.cursor === written.css ? written.prior : el.style.cursor;
+    written = { el, prior, css };
+    el.style.cursor = css;
   };
 
   return {
