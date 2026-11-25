@@ -20,6 +20,26 @@ describe('History.restore — a snapshot of the wrong shape', () => {
     expect(h.restore(later, { recovery: 'best-effort' }).restored).toBe(false);
   });
 
+  it('refuses a snapshot whose version is a BigInt or holds a cycle', () => {
+    const h = createHistory(undefined, { debug: { log: () => {}, warn: () => {} } });
+    const cycle: Record<string, unknown> = {};
+    cycle.self = cycle;
+    for (const version of [1n, cycle]) {
+      const bad = snapshotOf({ version: version as unknown as 1 });
+      expect(() => h.restore(bad)).toThrow(HistoryRestoreError);
+      expect(h.restore(bad, { recovery: 'best-effort' }).restored).toBe(false);
+    }
+  });
+
+  it('refuses a branch forking from an entry the snapshot does not hold', () => {
+    const h = createHistory(undefined, { branching: true });
+    const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });
+    const stray = snapshotOf({ undoStack: [entry(1)], branches: [{ at: 7, entries: [entry(2)] }], nextEntryId: 3 });
+    expect(() => h.restore(stray)).toThrow(/forks from entry 7/);
+    const floored = snapshotOf({ floor: 5, undoStack: [entry(6)], branches: [{ at: 5, entries: [entry(7)] }], nextEntryId: 8 });
+    expect(h.restore(floored).restored).toBe(true);
+  });
+
   it('refuses a snapshot naming one entry id twice', () => {
     const h = createHistory(undefined);
     const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });

@@ -44,6 +44,22 @@ describe('branching off', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/branch/));
   });
 
+  it('restores strictly when only a dropped branch holds an op it cannot rebuild', () => {
+    const { history, write } = setup();
+    write(1, 1);
+    history.undo();
+    write(2, 2);
+    const snap = history.serialize();
+    const branchOnly = snap.branches![0]!.entries[0]!.forwardOps[0]!;
+    const rebuildOp = vi.fn((_: string, args: unknown) =>
+      args === branchOnly.args ? null : setX({ x: 0 }, 0, (args as { to: number }).to));
+    const plain = createHistory(null, { branching: false, debug: { log: () => {}, warn: () => {} }, rebuildOp });
+    const report = plain.restore(snap);
+    expect(report).toEqual({ restored: true, unresolved: [] });
+    expect(plain.undoDepth()).toBe(1);
+    expect(rebuildOp.mock.calls.some(([, args]) => args === branchOnly.args)).toBe(false);
+  });
+
   it('drops the redo future on a push, as before', () => {
     const { history, write } = setup({ branching: false });
     write(1, 10);
@@ -56,6 +72,19 @@ describe('branching off', () => {
 });
 
 describe('branching on', () => {
+  it('keeps no more branch entries than historyLimit, evicting the oldest branch first', () => {
+    const evicted: number[] = [];
+    const { history, write } = setup({ historyLimit: 3, onEvict: (e) => evicted.push(e.id) });
+    write(1, 1);
+    for (let i = 2; i <= 12; i++) {
+      history.undo();
+      write(i, i);
+    }
+    const kept = history.serialize().branches!.flatMap((b) => b.entries.map((e) => e.id));
+    expect(kept).toEqual([9, 10, 11]);
+    expect(evicted).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+  });
+
   it('keeps the redo future as a branch when a push is made while rewound', () => {
     const onEvict = vi.fn();
     const { history, write } = setup({ onEvict });

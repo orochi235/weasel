@@ -4,6 +4,7 @@
  * entries off the bottom along with every branch that forks from them.
  */
 import type { Entry, HistoryLogger } from './serialized';
+import { textOf } from './textOf';
 import type { EvictedEntry, HistoryBranch } from './historyTypes';
 
 export interface ForksEnv {
@@ -11,6 +12,8 @@ export interface ForksEnv {
   redoStack: Entry[];
   /** Keep a retired redo stack as a branch rather than evicting it. */
   branching: boolean;
+  /** The most entries the kept branches may hold together: `historyLimit`. */
+  branchLimit: number;
   onEvict: ((entry: EvictedEntry) => void) | undefined;
   logger: HistoryLogger;
 }
@@ -20,8 +23,29 @@ function branchView(entries: readonly Entry[], current: boolean): HistoryBranch 
   return { id: first.id, label: first.label, timestamp: first.timestamp, length: entries.length, current };
 }
 
+function keptEntries(forks: ReadonlyMap<number, Entry[][]>): number {
+  let n = 0;
+  for (const kept of forks.values()) for (const branch of kept) n += branch.length;
+  return n;
+}
+
+/** Take the oldest branches out of `forks`, handing each to `evict`, until the rest hold at most `limit` entries. */
+function evictBranchesPast(forks: Map<number, Entry[][]>, limit: number, evict: (branch: Entry[]) => void): void {
+  if (limit === Infinity) return;
+  while (forks.size > 0 && keptEntries(forks) > limit) {
+    let oldest: { at: number; i: number; id: number } | undefined;
+    for (const [at, kept] of forks) {
+      kept.forEach((b, i) => { if (!oldest || b[0]!.id < oldest.id) oldest = { at, i, id: b[0]!.id }; });
+    }
+    const kept = forks.get(oldest!.at)!;
+    const [branch] = kept.splice(oldest!.i, 1);
+    if (kept.length === 0) forks.delete(oldest!.at);
+    evict(branch!);
+  }
+}
+
 export function createForks(env: ForksEnv) {
-  const { undoStack, redoStack, branching, onEvict, logger } = env;
+  const { undoStack, redoStack, branching, branchLimit, onEvict, logger } = env;
   /** Futures a push set aside, by the id of the entry they fork from (the
    *  floor's for the oldest reachable state), each in time order. Only a
    *  branching history adds to it. */
@@ -39,7 +63,7 @@ export function createForks(env: ForksEnv) {
       try {
         onEvict({ id: e.id, label: e.label, forwardOps: e.forwardOps, baseOps: e.baseOps });
       } catch (err) {
-        logger.warn(`onEvict callback threw for entry id=${e.id} "${e.label}": ${String(err)}`);
+        logger.warn(`onEvict callback threw for entry id=${e.id} "${e.label}": ${textOf(err)}`);
       }
     }
   }
@@ -83,6 +107,7 @@ export function createForks(env: ForksEnv) {
     const kept = forks.get(at);
     if (kept) kept.push(future.reverse());
     else forks.set(at, [future.reverse()]);
+    evictBranchesPast(forks, branchLimit, evict);
   }
 
   return {
@@ -119,6 +144,7 @@ export function createForks(env: ForksEnv) {
       if (kept.length > 0) forks.set(at, kept);
       else forks.delete(at);
       redoStack.push(...[...chosen!].reverse());
+      evictBranchesPast(forks, branchLimit, evict);
       return chosen;
     },
     /** Drop every branch and lower the floor to the start; returns whether any branch was kept. */
@@ -128,11 +154,10 @@ export function createForks(env: ForksEnv) {
       floorId = 0;
       return had;
     },
-    /** Take `next`'s branches and floor in place of these; a history that does not branch drops the branches. */
+    /** Take `next`'s branches and floor in place of these. */
     replace(next: { forks: ReadonlyMap<number, Entry[][]>; floorId: number }): void {
       forks.clear();
-      if (branching) for (const [at, kept] of next.forks) forks.set(at, kept);
-      else if (next.forks.size > 0) logger.warn('restore: dropped the snapshot\'s branches — this history does not keep them');
+      for (const [at, kept] of next.forks) forks.set(at, kept);
       floorId = next.floorId;
     },
     /** The live branch map and floor, for a snapshot to read. */

@@ -517,13 +517,13 @@ describe('createHistory — serialize / restore', () => {
     expect(h.entries().undo.map((e) => e.id)).toEqual([10]);
   });
 
-  it('restore bumps nextEntryId past the floor and every branch fork point', () => {
+  it('restore bumps nextEntryId past the floor a branch forks from', () => {
     const h = createHistory(makeAdapter() as any);
     h.restore({
       version: 1,
       undoStack: [],
       redoStack: [],
-      floor: 4,
+      floor: 6,
       branches: [{ at: 6, entries: [restoredEntry(2)] }],
       nextEntryId: 1,
       droppedEntries: 0,

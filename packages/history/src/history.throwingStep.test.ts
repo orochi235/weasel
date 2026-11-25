@@ -128,6 +128,17 @@ describe('History — a step that throws', () => {
     expect(steps).toEqual([{ kind: 'goto', ids: [3, 2, 2], applied: ['c=0', 'b=0', 'b=1'] }]);
   });
 
+  it('unwinds past an op that throws something with no text', () => {
+    const { cells, history } = open({ debug: { log: () => {}, warn: () => {} } });
+    const mute: Op = {
+      ...setOp('a', 0, 1),
+      invert: () => ({ ...setOp('a', 1, 0), apply() { throw Object.create(null); } }) as Op,
+    };
+    broken.add('c');
+    expect(() => history.applyOps([setOp('b', 0, 1), mute, setOp('c', 0, 1)], 'all')).toThrow('cannot write c');
+    expect(cells.b).toBe(0);
+  });
+
   it('applyOps records nothing and reverts the ops that ran before the throw', () => {
     const { cells, history } = open();
     broken.add('c');

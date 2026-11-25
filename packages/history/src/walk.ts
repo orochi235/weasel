@@ -3,6 +3,7 @@
  * applying what each move takes.
  */
 import type { Op } from './op';
+import { textOf } from './textOf';
 import type { Entry, HistoryLogger } from './serialized';
 import type { HistorySelection, HistoryStep } from './historyTypes';
 import { stepOf, type Settle } from './entryOps';
@@ -35,12 +36,18 @@ export function createWalk(env: WalkEnv) {
     return selection ? [...selection.get()] : undefined;
   }
 
+  /** The ops of `half` that `other` does not hold too: an op both share is restored by the unwind itself. */
+  function ownOps(half: readonly Op[], other: readonly Op[]): Op[] {
+    const shared = new Set(other);
+    return half.filter((op) => !shared.has(op));
+  }
+
   /** Apply what walking `entry` backwards takes, noting the selection it leaves. */
   function stepBack(entry: Entry): Op[] {
     const leaving = readSelection();
     const coalesced = entry.forwardOps !== entry.baseOps;
     const inverses = invertEntry(entry);
-    applyAllOrNothing(inverses, coalesced ? { ops: entry.forwardOps, inverted: false } : undefined);
+    applyAllOrNothing(inverses, coalesced ? { ops: ownOps(entry.forwardOps, entry.baseOps), inverted: false } : undefined);
     if (leaving) entry.selectionAfter = leaving;
     return inverses;
   }
@@ -49,7 +56,7 @@ export function createWalk(env: WalkEnv) {
   function stepForward(entry: Entry): void {
     const leaving = readSelection();
     const coalesced = entry.forwardOps !== entry.baseOps;
-    applyAllOrNothing(entry.forwardOps, coalesced ? { ops: [...entry.baseOps].reverse(), inverted: true } : undefined);
+    applyAllOrNothing(entry.forwardOps, coalesced ? { ops: ownOps(entry.baseOps, entry.forwardOps).reverse(), inverted: true } : undefined);
     if (leaving) entry.selectionBefore = leaving;
   }
 
@@ -91,7 +98,7 @@ export function createWalk(env: WalkEnv) {
       try {
         walkTo(start, into);
       } catch (back) {
-        env.logger.warn(`goto: returning to depth ${start} threw: ${String(back)}`);
+        env.logger.warn(`goto: returning to depth ${start} threw: ${textOf(back)}`);
       }
       throw err;
     }

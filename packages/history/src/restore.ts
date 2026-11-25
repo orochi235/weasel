@@ -34,7 +34,8 @@ export interface UnresolvedOp {
 export interface HistoryRestoreReport {
   /** Whether the stacks were replaced. */
   readonly restored: boolean;
-  /** Each op nothing could rebuild, in stack order: once per half of its entry that holds it. */
+  /** Each op nothing could rebuild, in stack order: once per half of its entry that holds it, an op the
+   *  two halves share once. */
   readonly unresolved: readonly UnresolvedOp[];
 }
 
@@ -94,10 +95,12 @@ function placeholderOp(so: SerializedOp, label: string, skip: () => void): Op {
   return op;
 }
 
-/** The stacks `snapshot` describes, each op rebuilt through `rebuild`, and the ops it could not.
- *  Throws {@link HistoryRestoreError} for any it could not under strict recovery. */
+/** The stacks `snapshot` describes, each op rebuilt through `rebuild`, and the ops it could not;
+ *  without `branching`, the snapshot's branches are dropped unread. Throws {@link HistoryRestoreError}
+ *  for any op it could not rebuild under strict recovery. */
 export function rebuilt(
   snapshot: SerializedHistory, rebuild: RebuildOp | undefined, options: RestoreOptions, logger: HistoryLogger,
+  branching: boolean,
 ): { stacks: Stacks; unresolved: UnresolvedOp[] } {
   const recovery = options.recovery ?? 'strict';
   const unresolved: UnresolvedOp[] = [];
@@ -122,7 +125,9 @@ export function rebuilt(
   const undoStack = snapshot.undoStack.map(entry);
   const redoStack = snapshot.redoStack.map(entry);
   const forks = new Map<number, Entry[][]>();
-  for (const b of snapshot.branches ?? []) {
+  const branches = snapshot.branches ?? [];
+  if (!branching && branches.length > 0) logger.warn('restore: dropped the snapshot\'s branches — this history does not keep them');
+  for (const b of branching ? branches : []) {
     const entries = b.entries.map(entry);
     const kept = forks.get(b.at);
     if (kept) kept.push(entries);
@@ -134,8 +139,11 @@ export function rebuilt(
   let nextEntryId = snapshot.nextEntryId;
   const past = (id: number): void => { if (id >= nextEntryId) nextEntryId = id + 1; };
   past(snapshot.floor ?? 0);
-  for (const at of forks.keys()) past(at);
-  for (const entries of [undoStack, redoStack, ...[...forks.values()].flat()]) for (const e of entries) past(e.id);
+  for (const b of branches) {
+    past(b.at);
+    for (const e of b.entries) past(e.id);
+  }
+  for (const entries of [undoStack, redoStack]) for (const e of entries) past(e.id);
   return { stacks: { undoStack, redoStack, forks, floorId: snapshot.floor ?? 0, nextEntryId }, unresolved };
 }
 
@@ -143,14 +151,30 @@ function sameSerialOps(a: readonly SerializedOp[], b: readonly SerializedOp[]): 
   return a === b || deepEqual(a, b);
 }
 
+/** `se`'s base half, reusing `forwardOps`' ops for the prefix and suffix the two halves share. */
+function sharedHalf(se: SerializedHistoryEntry, forwardOps: Op[], op: (so: SerializedOp, se: SerializedHistoryEntry) => Op): Op[] {
+  const f = se.forwardOps;
+  const b = se.baseOps;
+  const most = Math.min(f.length, b.length);
+  let head = 0;
+  while (head < most && deepEqual(f[head], b[head])) head++;
+  let tail = 0;
+  while (tail < most - head && deepEqual(f[f.length - 1 - tail], b[b.length - 1 - tail])) tail++;
+  return [
+    ...forwardOps.slice(0, head),
+    ...b.slice(head, b.length - tail).map((so) => op(so, se)),
+    ...forwardOps.slice(f.length - tail),
+  ];
+}
+
 /** Rebuild a runtime entry from its serialized form. */
 function serialToEntry(se: SerializedHistoryEntry, op: (so: SerializedOp, se: SerializedHistoryEntry) => Op): Entry {
   const forwardOps = se.forwardOps.map((so) => op(so, se));
-  // An entry nothing coalesced into holds one array as both halves, and a
-  // step that throws unwinds differently when they differ.
+  // An entry nothing coalesced into holds one array as both halves, and the
+  // ops two differing halves share stay shared: a failed step replays only the rest.
   const baseOps = sameSerialOps(se.forwardOps, se.baseOps)
     ? forwardOps
-    : se.baseOps.map((so) => op(so, se));
+    : sharedHalf(se, forwardOps, op);
   return {
     id: se.id,
     label: se.label,

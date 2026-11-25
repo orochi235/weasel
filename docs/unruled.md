@@ -4185,3 +4185,8 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): forge's issues endpoint answers 400 for a component name holding a comma, a double
   quote, or a control character, since `gh` splits `--label` at commas and the search link quotes the label. Quoting
   the label for gh's CSV reading and escaping it in the link was the alternative.
+## Audit round eighty-four (2026-11-24): history
+
+- 2026-11-24 (the fixer's call): a branching history's `historyLimit` also caps the entries its kept branches hold
+  together, evicting the oldest branch (and every branch forking from it) through `onEvict` once they exceed it. A
+  separate branch limit, or bounding only the undo stack as before, were the alternatives.
