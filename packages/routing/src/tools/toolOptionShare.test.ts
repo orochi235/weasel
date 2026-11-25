@@ -82,6 +82,17 @@ describe('shared tool options', () => {
     expect(toolOptionParams('rect', shape(RED), values).fill).toBeNull();
   });
 
+  it('writes a panel value clamped onto the default', () => {
+    const capped: ToolOptionsSpec = {
+      actionId: 'insert',
+      prefs: { name: 'Capped', children: { size: { kind: 'number', name: 'Size', description: '', default: 100, max: 100 } } },
+    };
+    const values = createToolOptionValues();
+    setToolOption('t', capped, values, 'size', 50);
+    keepToolOptions('t', capped, values, { size: 200 });
+    expect(toolOptionParams('t', capped, values).size).toBe(100);
+  });
+
   it('writes back only what the params change, into each option’s slot', () => {
     const values = createToolOptionValues();
     const rect = shape(RED);

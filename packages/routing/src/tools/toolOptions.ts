@@ -139,9 +139,12 @@ function readHeld(leaf: PrefLeaf, held: unknown): unknown {
   if (leaf.kind === 'number' && !(typeof held === 'number' && (Number.isFinite(held) || endlessAllows((leaf as PrefNumber).endless, held)))) {
     return undefined;
   }
-  const repaired = repairPrefValue(leaf, held);
-  return repaired === (leaf as { default?: unknown }).default && !deepEqual(repaired, held) ? undefined : repaired;
+  // Repaired against a default nothing else can be, so a value clamped onto the real default still reads.
+  const repaired = repairPrefValue({ ...leaf, default: REJECTED } as PrefLeaf, held);
+  return repaired === REJECTED ? undefined : repaired;
 }
+
+const REJECTED = Symbol('rejected');
 
 function* optionKeys(options: ToolOptionsSpec): Iterable<[string, PrefLeaf]> {
   for (const key of Object.keys(options.prefs.children)) {
