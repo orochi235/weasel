@@ -1536,7 +1536,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   coordinate `NaN` or infinite (e3481a9d2), as `bakeCursor` refuses an infinite size, rather than dropping the point.
 - 2026-11-24 (my call, cursor audit 85): `bakeCursor` and `cursorFor` bake a blank fallback as `default`, as a
   missing one, and throw a `RangeError` for one holding `;`, `{` or `}`, which no cursor value holds and which makes the
-  browser drop the whole declaration. Other strings still pass through unchecked.
+  browser drop the whole declaration. Since cursor audit 88 (2026-11-25) every fallback is checked: one that is not
+  a cursor keyword, optionally after `url(…)` entries with a hotspot, throws too; CSS-wide keywords such as `inherit`
+  are refused, since a cursor list cannot end in one.
 - 2026-11-25 (my call, cursor audit 86): `resolveCursor` throws that `RangeError` on every tier, a painted spec
   included, though the painted tier never shows its fallback, so whether a spec is valid does not turn on its size.
 - 2026-11-25 (my call, cursor audit 87): `brushRing` throws a `RangeError` for an infinite radius, in either unit,

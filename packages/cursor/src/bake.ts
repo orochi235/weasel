@@ -14,8 +14,8 @@ export interface BakeOptions {
    *  {@link CURSOR_ANGLE_STEPS} steps. Default 0. One that turns a glyph not fitting its box at every rotation
    *  throws. */
   readonly angle?: number;
-  /** Keyword drawn if the browser rejects the image. Default 'default', also for a blank one; one holding `;`, `{`
-   *  or `}` throws. */
+  /** Keyword drawn if the browser rejects the image, optionally after `url(…)` images of its own. Default 'default',
+   *  also for a blank one; one that does not end a `cursor` value that way throws. */
   readonly fallback?: string;
 }
 
@@ -31,12 +31,26 @@ export function bakeSize(size: number | undefined): number {
   return size !== undefined && Number.isFinite(size) && size > 0 ? size : 24;
 }
 
+const CURSOR_KEYWORDS = new Set([
+  'auto', 'default', 'none', 'context-menu', 'help', 'pointer', 'progress', 'wait', 'cell', 'crosshair', 'text',
+  'vertical-text', 'alias', 'copy', 'move', 'no-drop', 'not-allowed', 'grab', 'grabbing', 'all-scroll', 'col-resize',
+  'row-resize', 'n-resize', 'e-resize', 's-resize', 'w-resize', 'ne-resize', 'nw-resize', 'se-resize', 'sw-resize',
+  'ew-resize', 'ns-resize', 'nesw-resize', 'nwse-resize', 'zoom-in', 'zoom-out',
+]);
+
+/** `url(…)` with an optional hotspot, then a comma: one image entry of a cursor list. */
+const IMAGE_ENTRY = /^\s*url\(\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'()\\]*)\s*\)(?:\s+-?\d*\.?\d+\s+-?\d*\.?\d+)?\s*,/i;
+
 /** The cursor a baked image falls back to: `fallback`, or 'default' when it is missing or blank. Throws a
- *  `RangeError` for one holding `;`, `{` or `}`, which no cursor value does: the browser would drop the whole
- *  declaration and keep the cursor before it. */
+ *  `RangeError` for one that is not a cursor keyword, optionally after `url(…)` entries, because the browser drops a
+ *  `cursor` declaration that does not end in a keyword and keeps the cursor before it. */
 export function bakeFallback(fallback: string | undefined): string {
   if (fallback === undefined || fallback.trim() === '') return 'default';
-  if (/[;{}]/.test(fallback)) throw new RangeError(`cursor fallback ${JSON.stringify(fallback)} is not a cursor value`);
+  let rest = fallback;
+  for (let m = IMAGE_ENTRY.exec(rest); m; m = IMAGE_ENTRY.exec(rest)) rest = rest.slice(m[0].length);
+  if (!CURSOR_KEYWORDS.has(rest.trim().toLowerCase())) {
+    throw new RangeError(`cursor fallback ${JSON.stringify(fallback)} is not a cursor value`);
+  }
   return fallback;
 }
 
