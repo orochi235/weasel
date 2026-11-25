@@ -4231,3 +4231,11 @@ Calls the lanes made without a ruling:
   alternative. `openPointerSession`'s `missedRelease` option picks either.
 - 2026-11-24 (the fixer's call): every `openPointerSession` cancels on a window blur, reporting `'blur'`, unless
   opened with `blur: false`. Leaving blur to each caller, as only carry and the dispatcher did, was the alternative.
+## Audit round eighty-seven (2026-11-25): editing's move action
+
+- 2026-11-25 (the fixer's call): a reparent-on-drop or page drop that lands a node in the parent it already has, with
+  no sibling to land just above, keeps its place in that parent's paint order. Raising it to the top, as `'into'` did
+  when it was dropped over a sibling mark, was the alternative.
+- 2026-11-25 (the fixer's call): `clampMove` holds the dragged nodes where they started while its `bounds` has a
+  singular `transform`, since nothing is inside a box drawn flat. Clamping to the box as if untransformed was the
+  alternative.
