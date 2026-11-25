@@ -105,4 +105,37 @@ describe('createExtensionRegistry', () => {
     child.register('c', 'mine', { replace: true });
     expect(child.entries().map((e) => [e.key, e.value])).toEqual([['a', 'one'], ['b', 'two'], ['c', 'mine']]);
   });
+
+  it('keeps an id in place when it is released and registered again in the same tick', async () => {
+    const r = make();
+    const offX = r.register('x', 'one');
+    r.register('y', 'two');
+    offX();
+    expect(r.has('x')).toBe(false);
+    const offAgain = r.register('x', 'one');
+    expect(r.entries().map((e) => e.key)).toEqual(['x', 'y']);
+    const child = make(r);
+    const offA = child.register('a', 'mine');
+    child.register('b', 'mine');
+    offA();
+    child.register('a', 'mine');
+    expect(child.entries().map((e) => e.key)).toEqual(['x', 'y', 'a', 'b']);
+    offAgain();
+    await Promise.resolve();
+    r.register('x', 'one');
+    expect(r.entries().map((e) => e.key)).toEqual(['y', 'x']);
+  });
+
+  it('orders its ids among those of a parent another module made', () => {
+    const made = make();
+    const parent: ExtensionRegistry<string> = {
+      name: made.name, parent: null, own: made.own, register: made.register, clear: made.clear,
+      get: made.get, has: made.has, entries: () => made.entries(), subscribe: made.subscribe, getVersion: made.getVersion,
+    };
+    const child = make(parent);
+    parent.register('a', 'p');
+    child.register('x', 'c');
+    parent.register('b', 'p');
+    expect(child.entries().map((e) => e.key)).toEqual(['a', 'x', 'b']);
+  });
 });

@@ -4,9 +4,11 @@ import { isDev } from './isDev';
  * A `console.warn` that, in development only, says each message once. It keeps the last `cap` messages
  * it said, so a message embedding something a session mints without end (an id, a key from document
  * data) can't grow it without bound; one pushed out says itself again when it next comes. Given a `key`,
- * it says once per key instead, so messages that differ in their wording count as one.
+ * it says once per key instead, so messages that differ in their wording count as one. A `cap` that is not a
+ * positive integer throws a `RangeError`.
  */
 export function createWarnOnce(cap = 256): (message: string, key?: string) => void {
+  if (!Number.isInteger(cap) || cap < 1) throw new RangeError(`createWarnOnce: cap must be a positive integer, got ${cap}`);
   const said = new Set<string>();
   return (message, key = message) => {
     if (!isDev() || said.has(key)) return;

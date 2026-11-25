@@ -18,8 +18,8 @@ export interface ReflectedEntry<V, K = string> extends Registrant<V> {
    *  object across snapshots, and the one `shadowed` lists once it is
    *  displaced, so it identifies the registrant to {@link Reflectable.release}. */
   readonly live: Registrant<V>;
-  /** The registrants this one displaced, oldest first. Non-empty means two
-   *  registrants claimed one key — a conflict, resolved newest-wins. */
+  /** The registrants beneath this one, in stack order: lowest rank first, and oldest first within a rank.
+   *  Non-empty means two registrants claimed one key — a conflict, resolved highest rank, then newest, wins. */
   readonly shadowed: readonly Registrant<V>[];
 }
 

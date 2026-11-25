@@ -6,7 +6,10 @@ export function codePointFloor(s: string, at: number): number {
   return before >= 0xd800 && before <= 0xdbff && after >= 0xdc00 && after <= 0xdfff ? at - 1 : at;
 }
 
-/** Whether `text` is one typed character, counted by code point: an emoji is one, though it takes two UTF-16 units. */
+/** Whether `text` is one typed character, counted by code point: an emoji is one, though it takes two UTF-16 units,
+ *  and half of one, a lone surrogate, is none. */
 export function isOneChar(text: string): boolean {
-  return text.length > 0 && text.length <= 2 && [...text].length === 1;
+  if (text.length === 0 || text.length > 2 || [...text].length !== 1) return false;
+  const unit = text.charCodeAt(0);
+  return text.length === 2 || unit < 0xd800 || unit > 0xdfff;
 }
