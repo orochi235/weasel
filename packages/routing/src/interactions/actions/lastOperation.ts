@@ -288,7 +288,7 @@ export class LastOperationKeeper implements LastOperationStore {
         };
         this.hold({ op, gesture: true, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
       };
-      return { ...handle, onEnd: ended };
+      return withOnEnd(handle, ended);
     };
     return { ...invoker, start };
   }
@@ -310,4 +310,23 @@ export class LastOperationKeeper implements LastOperationStore {
     this.session.set(id, { params: { ...values } });
     this.onSession();
   }
+}
+
+/** `handle` with `onEnd` replaced and every other member read live from it, each method called on `handle` itself:
+ *  a copy would split the state of a handle that keeps it on `this`, and drop a class instance's methods. */
+function withOnEnd(handle: OngoingHandle, onEnd: OngoingHandle['onEnd']): OngoingHandle {
+  const bound = new Map<PropertyKey, { of: unknown; fn: unknown }>();
+  return new Proxy(handle, {
+    get(target, key) {
+      if (key === 'onEnd') return onEnd;
+      const value: unknown = Reflect.get(target, key, target);
+      if (typeof value !== 'function') return value;
+      let hit = bound.get(key);
+      if (hit?.of !== value) {
+        hit = { of: value, fn: (value as (...args: unknown[]) => unknown).bind(target) };
+        bound.set(key, hit);
+      }
+      return hit.fn;
+    },
+  });
 }

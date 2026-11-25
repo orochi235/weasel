@@ -27,7 +27,20 @@ function push(history: History, ops: Op[]): void {
 }
 
 /** A drag that sets the width to its travel times `factor`, live through coalescing pushes when `live`. */
-interface StretchOptions { replays: boolean; live?: boolean; reports?: number; journals?: boolean }
+interface StretchOptions { replays: boolean; live?: boolean; reports?: number; journals?: boolean; asClass?: boolean }
+
+/** The same drag as a class instance, keeping its travel on `this`. */
+class StretchHandle implements OngoingHandle {
+  #travel = 0;
+  constructor(private readonly doc: Doc, private readonly history: History, private readonly from: number, private readonly base: number) {}
+  get kind(): string { return this.#travel > 0 ? 'stretching' : 'idle'; }
+  onMove(m: InvocationCtx): void { this.#travel = m.world.x - this.from; }
+  onEnd(_e: InvocationCtx, reason: 'commit' | 'cancel'): void { if (reason === 'commit') this.replay({ factor: 2 }); }
+  replay(params: Record<string, unknown>): void {
+    const factor = typeof params.factor === 'number' ? params.factor : 1;
+    push(this.history, [setWidth(this.doc, this.base + this.#travel * factor)]);
+  }
+}
 
 function stretch(doc: Doc, history: History, opts: StretchOptions): Action {
   return {
@@ -39,6 +52,7 @@ function stretch(doc: Doc, history: History, opts: StretchOptions): Action {
       start(ctx, bindingOpts) {
         const from = ctx.world.x;
         const base = doc.width;
+        if (opts.asClass) return new StretchHandle(doc, history, from, base);
         let travel = 0;
         const factorOf = (p: Record<string, unknown> | undefined) => (typeof p?.factor === 'number' ? p.factor : 1);
         // A gesture that, like one converting text as it begins, journals its edits from the press.
@@ -171,6 +185,22 @@ describe('a gesture as the last operation', () => {
     expect(store.get()).toBeNull();
     expect(doc.width).toBe(18);
     expect(history.undoDepth()).toBe(1);
+  });
+
+  it('calls every method of a class-instance handle on the instance, so its state and getters are one', () => {
+    const { doc, registry, store } = setup({ replays: true, asClass: true });
+    const invoker = registry.list().find((a) => a.id === 'stretch')!.invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('timing');
+    act(() => {
+      const handle = invoker.start(ctxAt(0));
+      expect(handle.kind).toBe('idle');
+      handle.onMove?.(ctxAt(4));
+      expect(handle.kind).toBe('stretching');
+      handle.onEnd?.(ctxAt(4), 'commit');
+    });
+    expect(doc.width).toBe(18);
+    act(() => { expect(store.adjust({ factor: 3 })).toBe(true); });
+    expect(doc.width).toBe(22);
   });
 
   it('holds nothing for a drag whose handle cannot replay', () => {
