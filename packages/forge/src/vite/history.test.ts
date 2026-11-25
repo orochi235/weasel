@@ -47,6 +47,11 @@ describe('fileDates', () => {
       modifiedBy: 'c2',
     });
   });
+
+  it('reads an astral character raw in a C-quoted path', () => {
+    const log = commit('c1', '2026-01-01T00:00:00Z', 'A\t"src/\\"x\\" 🎨.tsx"');
+    expect(fileDates(log, ['src/"x" 🎨.tsx']).get('src/"x" 🎨.tsx')?.createdBy).toBe('c1');
+  });
 });
 
 describe('fileDates of a file deleted or renamed away since (found by history.pbt)', () => {
