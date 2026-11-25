@@ -1541,7 +1541,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   included, though the painted tier never shows its fallback, so whether a spec is valid does not turn on its size.
 - 2026-11-25 (my call, cursor audit 87): `brushRing` throws a `RangeError` for an infinite radius, in either unit,
   as `bakeCursor` refuses an infinite size, where it drew the default 24 px ring; a negative or `NaN` radius still
-  falls to the default.
+  falls to the default. Minus infinity, and a finite radius whose px size overflows, throw too (cursor audit 88).
 - 2026-11-25 (my call, cursor audit 87): `bakeCursor`, `cursorFor` and `resolveCursor` throw a `RangeError` for an
   angle whose step turns a glyph that `rotationFitsInBox` refuses (a marked crosshair, the eyedropper, the swap),
   on every tier, where the baked image clipped it. Only `resize` and `rotate` are turned in the tree. Rejected: a
