@@ -132,3 +132,18 @@ describe('useTools hotkey holds', () => {
     expect(ctx.hotkeyStack).toEqual(['b']);
   });
 });
+
+describe('useTools active', () => {
+  it('checks the initial tool on mount only, so a later registry may drop it', () => {
+    let tools!: ToolsApi<unknown>;
+    function Host({ registry }: { registry: Record<string, AnyTool> }): null {
+      tools = useTools({ active: 'a', registry });
+      return null;
+    }
+    const view = render(<ActiveToolContextProvider><Host registry={{ a, b }} /></ActiveToolContextProvider>);
+    act(() => { tools.setActive('b'); });
+    view.rerender(<ActiveToolContextProvider><Host registry={{ b }} /></ActiveToolContextProvider>);
+    expect(tools.active).toBe('b');
+    expect(() => render(<ActiveToolContextProvider><Host registry={{ b }} /></ActiveToolContextProvider>)).toThrow(/not in registry/);
+  });
+});

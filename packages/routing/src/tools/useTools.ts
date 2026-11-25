@@ -1,5 +1,5 @@
 // src/tools/useTools.ts
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ModeRegistry } from '@weasel-js/modes';
 import { setOwn } from '@weasel-js/registry';
 import { dlog } from '../dlog';
@@ -174,9 +174,12 @@ export function useTools<TOverlay = KernelOverlay>(
   opts: UseToolsOptions<TOverlay>,
 ): ToolsApi<TOverlay> {
   const initialActive = opts.active ?? null;
-  if (initialActive !== null && !Object.hasOwn(opts.registry, initialActive)) {
-    throw new Error(`useTools: active "${initialActive}" not in registry`);
-  }
+  // `active` seeds the slot on mount only, so a later registry need not hold it.
+  useState(() => {
+    if (initialActive !== null && !Object.hasOwn(opts.registry, initialActive)) {
+      throw new Error(`useTools: active "${initialActive}" not in registry`);
+    }
+  });
 
   const ctx = useActiveToolContext();
 
