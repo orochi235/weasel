@@ -2,6 +2,7 @@
 import type { DispatchCore } from '../dispatchCore';
 import type { Dispatcher, KeyReach } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
+import { keyHeldGestureId } from '../gestureIds';
 
 /** A key down, as it went down, and the dispatcher that took it. */
 export interface HeldKey {
@@ -30,6 +31,10 @@ export function releaseIn(
   }
 }
 
+/** Whether `down`'s gesture is still in flight: a cancel-all or tool switch may have ended it before its keyup. */
+const stillHeld = (down: HeldKey): boolean =>
+  down.on.inFlight().has(keyHeldGestureId(down.key, down.code));
+
 // Only a held key is pressed again: a `key` binding is a single press, which an
 // arriving pointer does not repeat.
 const OVER_ONLY: KeyReach = { held: false, over: true };
@@ -51,7 +56,8 @@ export function followPointer(
 } {
   const arrive = (e: PointerEvent): void => {
     for (const [physical, { key, code, withCmd }] of down) {
-      if (held.has(physical)) continue;
+      const holding = held.get(physical);
+      if (holding !== undefined && stillHeld(holding)) continue;
       core.routeAt(null, e.clientX, e.clientY);
       const on = core.dispatcherNow();
       const codeField = code !== undefined ? { code } : {};

@@ -39,6 +39,11 @@ export function isMultiTouchGestureId(gestureId: string): boolean {
   return gestureId.startsWith('multitouch-');
 }
 
+/** The gesture id of a held key: its physical key where the event reports one. */
+export function keyHeldGestureId(key: string, code?: string): string {
+  return `key-held-${code ?? key}`;
+}
+
 /** Whether `gestureId` is a held key's. */
 export function isKeyHeldGestureId(gestureId: string): boolean {
   return gestureId.startsWith('key-held-');
@@ -46,7 +51,7 @@ export function isKeyHeldGestureId(gestureId: string): boolean {
 
 export function gestureIdFor(event: InputEvent): string {
   if (event.kind === 'keyHeld') {
-    return `key-held-${event.code ?? event.key}`;
+    return keyHeldGestureId(event.key, event.code);
   }
   if (
     event.kind === 'pointerdown' ||
