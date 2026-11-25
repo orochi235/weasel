@@ -1,7 +1,13 @@
+import type { CursorGlyphName } from './glyphs';
 import { describe, expect, it } from 'vitest';
 import { cursorFor } from './registry';
 
 describe('cursorFor', () => {
+  it('throws for an unknown name even when its cache key matches a marked glyph already baked', () => {
+    cursorFor('pen', { mark: 'add' });
+    expect(() => cursorFor('pen+add' as CursorGlyphName)).toThrow(/unknown cursor glyph/);
+  });
+
   it('returns a bakeable cursor string for a known glyph', () => {
     expect(cursorFor('pencil')).toMatch(/^url\("data:image\/svg\+xml,/);
   });
