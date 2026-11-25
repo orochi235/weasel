@@ -3,6 +3,7 @@
  * applying what each move takes.
  */
 import type { Op } from './op';
+import { textOf } from './textOf';
 import type { Entry, HistoryLogger } from './serialized';
 import type { HistorySelection, HistoryStep } from './historyTypes';
 import { stepOf, type Settle } from './entryOps';
@@ -97,7 +98,7 @@ export function createWalk(env: WalkEnv) {
       try {
         walkTo(start, into);
       } catch (back) {
-        env.logger.warn(`goto: returning to depth ${start} threw: ${String(back)}`);
+        env.logger.warn(`goto: returning to depth ${start} threw: ${textOf(back)}`);
       }
       throw err;
     }

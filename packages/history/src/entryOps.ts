@@ -3,6 +3,7 @@
  * its stacks.
  */
 import type { Op } from './op';
+import { textOf } from './textOf';
 import { touchedIdsOf, type Entry, type HistoryLogger } from './serialized';
 import type { HistoryEntry, HistoryStep } from './historyTypes';
 
@@ -53,7 +54,7 @@ export function createApplier(adapter: unknown, logger: HistoryLogger) {
       try {
         (inverted ? op.invert() : op).apply(adapter);
       } catch (err) {
-        logger.warn(`unwinding a failed step: op "${op.name ?? '?'}" threw: ${String(err)}`);
+        logger.warn(`unwinding a failed step: op "${op.name ?? '?'}" threw: ${textOf(err)}`);
       }
     }
   }

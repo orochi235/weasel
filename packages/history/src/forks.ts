@@ -4,6 +4,7 @@
  * entries off the bottom along with every branch that forks from them.
  */
 import type { Entry, HistoryLogger } from './serialized';
+import { textOf } from './textOf';
 import type { EvictedEntry, HistoryBranch } from './historyTypes';
 
 export interface ForksEnv {
@@ -39,7 +40,7 @@ export function createForks(env: ForksEnv) {
       try {
         onEvict({ id: e.id, label: e.label, forwardOps: e.forwardOps, baseOps: e.baseOps });
       } catch (err) {
-        logger.warn(`onEvict callback threw for entry id=${e.id} "${e.label}": ${String(err)}`);
+        logger.warn(`onEvict callback threw for entry id=${e.id} "${e.label}": ${textOf(err)}`);
       }
     }
   }
