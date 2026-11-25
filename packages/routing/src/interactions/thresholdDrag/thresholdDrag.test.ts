@@ -394,4 +394,16 @@ describe('startThresholdDrag origin', () => {
     expect(onEnd).toHaveBeenCalledTimes(1);
     container.remove();
   });
+
+  it('cancels on a window blur, and never reports the release that follows', () => {
+    const start = makeStart();
+    const onEnd = vi.fn();
+    const onCancel = vi.fn();
+    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onEnd, onCancel });
+    fireMove(100 + DRAG_THRESHOLD_PX * 4, 100);
+    window.dispatchEvent(new Event('blur'));
+    fireUp(300, 100);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onEnd).not.toHaveBeenCalled();
+  });
 });

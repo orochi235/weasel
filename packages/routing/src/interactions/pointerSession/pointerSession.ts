@@ -37,8 +37,10 @@ export type PointerSessionCancelReason =
   | 'pointercancel'
   /** The origin left the document mid-gesture, taking capture with it. */
   | 'lostcapture'
-  /** `cancel()` — an unmount, a window blur, Escape, a consumer's own rule. */
+  /** `cancel()` — an unmount, Escape, a consumer's own rule. */
   | 'aborted'
+  /** The window lost focus, so the release may never come, or come somewhere unseen. */
+  | 'blur'
   /** A new press arrived on this pointer, so the tracked one had ended. */
   | 'superseded'
   /** Escape was pressed, in a session opened with `escape: true`. */
@@ -63,6 +65,8 @@ export interface PointerSessionOptions {
   /** Escape ends the session as canceled, reporting `'escape'`, and goes no further than the session. Default
    *  `false`: a session whose owner reads Escape some other way (the dispatcher's) leaves it alone. */
   escape?: boolean;
+  /** A window blur ends the session as canceled, reporting `'blur'`. Default `true`. */
+  blur?: boolean;
 }
 
 /** A live drag opened by {@link openPointerSession}. */
@@ -98,11 +102,11 @@ export function heldWithin(pointerId: number, surface: Element, self?: PointerSe
  *
  * Listens on the origin's document rather than on the element: a captured
  * element that is removed mid-drag stops receiving events, and every listener
- * hung on it goes with it. Three recovery rules close the gaps a plain
+ * hung on it goes with it. Recovery rules close the gaps a plain
  * pointerup/pointercancel pair leaves — losing capture cancels only once the
  * origin has left the document, a move reporting no held button is read as
- * the release that never arrived, and a fresh press on the same pointer says
- * the tracked one had already ended.
+ * the release that never arrived, a fresh press on the same pointer says
+ * the tracked one had already ended, and a window blur cancels.
  */
 export function openPointerSession(
   origin: Element,
@@ -112,6 +116,7 @@ export function openPointerSession(
 ): PointerSession {
   const pointerId = down.pointerId;
   const doc = origin.ownerDocument ?? document;
+  const win = opts.blur === false ? null : doc.defaultView;
   const buttonsReported = reportsButtons(down);
   let active = true;
   let captured = opts.capture !== false;
@@ -124,6 +129,7 @@ export function openPointerSession(
     doc.removeEventListener('pointercancel', onPointerCancel, true);
     doc.removeEventListener('pointerdown', onRepress, true);
     if (opts.escape) doc.removeEventListener('keydown', onKey, true);
+    win?.removeEventListener('blur', onBlur);
     origin.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
     doc.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture, true);
     if (captured) {
@@ -162,6 +168,9 @@ export function openPointerSession(
   function onRepress(e: PointerEvent) {
     if (mine(e)) abort('superseded');
   }
+  function onBlur() {
+    abort('blur');
+  }
   function onKey(e: KeyboardEvent) {
     if (e.key !== 'Escape' || e.isComposing) return;
     e.preventDefault();
@@ -192,6 +201,7 @@ export function openPointerSession(
   doc.addEventListener('pointercancel', onPointerCancel, true);
   doc.addEventListener('pointerdown', onRepress, true);
   if (opts.escape) doc.addEventListener('keydown', onKey, true);
+  win?.addEventListener('blur', onBlur);
   // Chrome sends it to the document, not the origin, once the origin has left it.
   origin.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
   doc.addEventListener(LOST_CAPTURE_EVENT, onLostCapture, true);

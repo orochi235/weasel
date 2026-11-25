@@ -253,4 +253,18 @@ describe('openPointerSession', () => {
     expect(onCancel).not.toHaveBeenCalled();
     expect(s.active).toBe(true);
   });
+
+  it('cancels on a window blur, reporting why, unless opened with blur: false', () => {
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    const s = openPointerSession(el(), down(1, 1), { onCancel, onEnd });
+    window.dispatchEvent(new Event('blur'));
+    expect(onCancel).toHaveBeenCalledWith('blur');
+    expect(s.active).toBe(false);
+
+    const kept = openPointerSession(el(), down(2, 1), { onCancel }, { blur: false });
+    window.dispatchEvent(new Event('blur'));
+    expect(kept.active).toBe(true);
+    kept.cancel();
+  });
 });

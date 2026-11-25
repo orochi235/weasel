@@ -341,4 +341,17 @@ describe('useHandleDrag — callbacks from a later render', () => {
       target.remove();
     }
   });
+
+  it('cancels on a window blur, so a release in another app is not committed', () => {
+    const onEnd = vi.fn();
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd, onCancel }));
+    const target = mount();
+    result.current.onPointerDown(press(target, 10, 10));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 20, clientY: 10, buttons: 1 }));
+    window.dispatchEvent(new Event('blur'));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 90, clientY: 90, buttons: 0 }));
+    expect(onCancel).toHaveBeenCalledWith('blur');
+    expect(onEnd).not.toHaveBeenCalled();
+  });
 });

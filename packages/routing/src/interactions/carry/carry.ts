@@ -122,9 +122,6 @@ export function startCarry(
   };
 
   let last: CarryPointer = down;
-  // As a dispatcher's own drags do: the release after a lost focus may never come, or come somewhere unseen.
-  const win = doc.defaultView;
-  const onBlur = (): void => { session.cancel(); };
   const session = openPointerSession(origin, down, {
     onMove: (e) => {
       last = e;
@@ -132,7 +129,6 @@ export function startCarry(
       cb.onMove?.(e);
     },
     onEnd: (e) => {
-      win?.removeEventListener('blur', onBlur);
       step(e);
       const on = over;
       over = null;
@@ -140,13 +136,10 @@ export function startCarry(
       cb.onEnd?.({ taken, event: e });
     },
     onCancel: (reason) => {
-      win?.removeEventListener('blur', onBlur);
       leave(last);
       cb.onCancel?.(reason);
     },
   });
-
-  win?.addEventListener('blur', onBlur);
 
   return {
     pointerId,

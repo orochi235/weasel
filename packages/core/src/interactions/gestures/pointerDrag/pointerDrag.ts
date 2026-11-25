@@ -237,8 +237,8 @@ export function useDragHandle(
         live.current = null;
         ghost?.cancel();
         if (!dropClickGuard) return;
-        // Only an abort leaves the button down, with a release still to come.
-        if (reason === 'aborted') afterRelease(target.ownerDocument, pointerId, dropClickGuard);
+        // Only an abort or a blur leaves the button down, with a release still to come.
+        if (reason === 'aborted' || reason === 'blur') afterRelease(target.ownerDocument, pointerId, dropClickGuard);
         else dropClickGuard();
       },
     }, { capture: false });

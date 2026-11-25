@@ -24,7 +24,7 @@ export interface ThresholdDragOptions {
   onEnd: (e: PointerEvent) => void;
   /** Released below the threshold — the click the press turned out to be. */
   onClick?: (e: PointerEvent) => void;
-  /** Ended without a release: pointercancel, lost capture, Escape during the drag, or `cancel()`. */
+  /** Ended without a release: pointercancel, lost capture, a window blur, Escape during the drag, or `cancel()`. */
   onCancel?: () => void;
 }
 

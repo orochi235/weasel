@@ -136,7 +136,7 @@ describe('useGestureDispatcher — carry channel', () => {
     move('pointermove', 150, 150);
     act(() => { window.dispatchEvent(new Event('blur')); });
     expect(onEnd).toHaveBeenCalledWith(expect.anything(), 'cancel');
-    expect(onCancel).toHaveBeenCalledWith('aborted');
+    expect(onCancel).toHaveBeenCalledWith('blur');
     act(() => {
       document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 1, bubbles: true, buttons: 0, clientX: 160, clientY: 160 }));
     });
