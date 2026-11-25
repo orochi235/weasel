@@ -1,3 +1,4 @@
+import { bakeFallback } from './bake';
 import { cursorFor, cursorGlyph } from './registry';
 import type { CursorGlyphName, CursorMarkName } from './glyphs';
 import { CURSOR_MAX_CSS_PX } from './types';
@@ -58,8 +59,8 @@ const positive = (n: number | undefined): number | undefined =>
  *
  * Escalates to painted when the glyph is sized in world units, or when its
  * fixed size is past {@link CURSOR_MAX_CSS_PX} — above which the browser drops
- * the image and silently falls back to the keyword. Throws, on every tier, for a glyph the set lacks and for a mark
- * on a glyph with no slot.
+ * the image and silently falls back to the keyword. Throws, on every tier, for a glyph the set lacks, for a mark
+ * on a glyph with no slot, and for a fallback no cursor value holds.
  */
 export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   if (typeof spec === 'string') return { kind: 'css', css: spec };
@@ -70,6 +71,7 @@ export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   const marked = mark === undefined ? {} : { mark };
   // Thrown here on every tier, or a painted spec fails only later, in the painter's draw.
   cursorGlyph(glyph, marked);
+  bakeFallback(fallback);
   if (worldRadius !== undefined) {
     return { kind: 'painted', glyph, ...marked, angle, worldRadius };
   }

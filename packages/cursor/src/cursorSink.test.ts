@@ -96,16 +96,45 @@ describe('createCursorSink', () => {
     expect(b.style.cursor).toBe('');
   });
 
-  it('with a base, leaves the old element on the base and moves the override to the new one', () => {
-    const a = { style: { cursor: '' } };
+  it('with no base set, a replaced override puts back a cursor other code wrote under it', () => {
+    const { el, sink } = harness('help');
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el.style.cursor = 'wait';
+    sink.setOverride({ kind: 'css', css: 'move' });
+    sink.setOverride(null);
+    expect(el.style.cursor).toBe('wait');
+  });
+
+  it('with a base, gives the old element back what it showed before the sink wrote there', () => {
+    const a = { style: { cursor: 'help' } };
     const b = { style: { cursor: '' } };
     let el = a;
     const sink = createCursorSink({ element: () => el, painted: () => undefined });
     sink.setBase({ kind: 'css', css: 'crosshair' });
-    sink.setOverride({ kind: 'css', css: 'grab' });
     el = b;
+    sink.setBase({ kind: 'css', css: 'crosshair' });
+    expect(a.style.cursor).toBe('help');
+    expect(b.style.cursor).toBe('crosshair');
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el = a;
     sink.setOverride({ kind: 'css', css: 'move' });
-    expect(a.style.cursor).toBe('crosshair');
-    expect(b.style.cursor).toBe('move');
+    expect(b.style.cursor).toBe('');
+    expect(a.style.cursor).toBe('move');
+  });
+
+  it('clears the slots it set on a painted state it stops answering', () => {
+    const el = { style: { cursor: '' } };
+    const first = createPaintedCursorState();
+    const second = createPaintedCursorState();
+    first.setPointer(5, 5);
+    second.setPointer(5, 5);
+    let painted = first;
+    const sink = createCursorSink({ element: () => el, painted: () => painted });
+    sink.setBase(ring);
+    sink.setOverride(ring);
+    painted = second;
+    sink.setOverride(null);
+    expect(first.current()).toBeNull();
+    expect(second.current()?.cursor).toEqual(ring);
   });
 });
