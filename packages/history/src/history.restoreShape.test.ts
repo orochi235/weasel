@@ -20,6 +20,17 @@ describe('History.restore — a snapshot of the wrong shape', () => {
     expect(h.restore(later, { recovery: 'best-effort' }).restored).toBe(false);
   });
 
+  it('refuses a snapshot whose version is a BigInt or holds a cycle', () => {
+    const h = createHistory(undefined, { debug: { log: () => {}, warn: () => {} } });
+    const cycle: Record<string, unknown> = {};
+    cycle.self = cycle;
+    for (const version of [1n, cycle]) {
+      const bad = snapshotOf({ version: version as unknown as 1 });
+      expect(() => h.restore(bad)).toThrow(HistoryRestoreError);
+      expect(h.restore(bad, { recovery: 'best-effort' }).restored).toBe(false);
+    }
+  });
+
   it('refuses a snapshot naming one entry id twice', () => {
     const h = createHistory(undefined);
     const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });
