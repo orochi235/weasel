@@ -28,14 +28,14 @@
   "B": 13
  },
  "newCode": {
-  "since": 86,
+  "since": 85,
   "changedFiles": 0,
   "findings": 0
  },
  "previous": {
-  "round": 86,
-  "chapman": 7,
-  "unfound": 1
+  "round": 85,
+  "chapman": 11,
+  "unfound": 4
  },
  "patches": 5,
  "verify": {

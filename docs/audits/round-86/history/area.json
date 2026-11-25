@@ -33,14 +33,14 @@
   "B": 18
  },
  "newCode": {
-  "since": 86,
+  "since": 85,
   "changedFiles": 0,
   "findings": 0
  },
  "previous": {
-  "round": 86,
-  "chapman": 5,
-  "unfound": 1
+  "round": 85,
+  "chapman": 15,
+  "unfound": 9
  },
  "patches": 5,
  "verify": {

@@ -1,0 +1,107 @@
+{
+ "id": "routing.interactions.actions",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/interactions/actions/ActionsProvider.tsx",
+  "packages/routing/src/interactions/actions/action.ts",
+  "packages/routing/src/interactions/actions/actionEnabled.ts",
+  "packages/routing/src/interactions/actions/actionIcon.typetest.ts",
+  "packages/routing/src/interactions/actions/actionIds.ts",
+  "packages/routing/src/interactions/actions/actionItems.ts",
+  "packages/routing/src/interactions/actions/actionSettings.ts",
+  "packages/routing/src/interactions/actions/actionShortcuts.ts",
+  "packages/routing/src/interactions/actions/actionTags.ts",
+  "packages/routing/src/interactions/actions/activeToolContext.tsx",
+  "packages/routing/src/interactions/actions/betweenGestures.ts",
+  "packages/routing/src/interactions/actions/binding.ts",
+  "packages/routing/src/interactions/actions/bindingOpts.ts",
+  "packages/routing/src/interactions/actions/bindingOverrides.ts",
+  "packages/routing/src/interactions/actions/buildDeps.ts",
+  "packages/routing/src/interactions/actions/defineAction.ts",
+  "packages/routing/src/interactions/actions/depNode.ts",
+  "packages/routing/src/interactions/actions/depRegistry.tsx",
+  "packages/routing/src/interactions/actions/holdPreview.ts",
+  "packages/routing/src/interactions/actions/inputScope.tsx",
+  "packages/routing/src/interactions/actions/invoker.ts",
+  "packages/routing/src/interactions/actions/keyOrder.ts",
+  "packages/routing/src/interactions/actions/lastOperation.ts",
+  "packages/routing/src/interactions/actions/modifierRoles.ts",
+  "packages/routing/src/interactions/actions/overlay.ts",
+  "packages/routing/src/interactions/actions/refusal.ts",
+  "packages/routing/src/interactions/actions/registry.ts",
+  "packages/routing/src/interactions/actions/scopeNode.ts",
+  "packages/routing/src/interactions/actions/showPreview.ts",
+  "packages/routing/src/interactions/actions/toolOffhand.ts",
+  "packages/routing/src/interactions/actions/tunedForm.ts",
+  "packages/routing/src/interactions/actions/tuning.ts",
+  "packages/routing/src/interactions/actions/useCommand.ts",
+  "packages/routing/src/interactions/actions/useLastOperation.ts",
+  "packages/routing/src/interactions/actions/useOngoingAction.ts"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 1,
+ "distinct": 7,
+ "chapman": 11,
+ "unfound": 4,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 85,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 85,
+  "chapman": 7.3,
+  "unfound": 1.3
+ },
+ "patches": 8,
+ "verify": {
+  "ok": true,
+  "files": 22,
+  "testFiles": {
+   "failed": 4,
+   "passed": 3490,
+   "total": 3494
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.8,
+   "B": 6.8,
+   "match": 0.1,
+   "fix": 23
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1637426,
+  "costUsd": 4.87
+ },
+ "fixCommits": [
+  "4d7bb30cf866583e75430fa0d4fadce6c35e71cc",
+  "4e2238037bf5969444db098f47afee42d430c81f",
+  "df85dec733ebae8dcc1340e48025a045d5e8df2b",
+  "26f82597f537a4bccc08932b759bded04c6f51e4",
+  "ef684e91e3a753e02c2ef0c6afec0b73ce8575f3",
+  "dbd2a72b99c2b6eb0b6f04a6b8b5688fa76fa840",
+  "4d081c6f02358992ce31f9565661bf181f07762d",
+  "55ab81207386a662264cad2efe9d4f5c908b60f6"
+ ]
+}

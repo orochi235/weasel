@@ -1,0 +1,113 @@
+{
+ "id": "routing.interactions.dispatcher",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/interactions/dispatcher/attachInput.ts",
+  "packages/routing/src/interactions/dispatcher/buildDispatchRecord.ts",
+  "packages/routing/src/interactions/dispatcher/channels/carry.ts",
+  "packages/routing/src/interactions/dispatcher/channels/contextMenu.ts",
+  "packages/routing/src/interactions/dispatcher/channels/dropPreview.ts",
+  "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts",
+  "packages/routing/src/interactions/dispatcher/channels/ingest.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keyPeers.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keyboard.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts",
+  "packages/routing/src/interactions/dispatcher/channels/listeners.ts",
+  "packages/routing/src/interactions/dispatcher/channels/modal.ts",
+  "packages/routing/src/interactions/dispatcher/channels/overKeys.ts",
+  "packages/routing/src/interactions/dispatcher/channels/pointer.ts",
+  "packages/routing/src/interactions/dispatcher/channels/webkitPinch.ts",
+  "packages/routing/src/interactions/dispatcher/channels/wheel.ts",
+  "packages/routing/src/interactions/dispatcher/deferredStart.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchCore.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchRecord.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchTrace.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcher.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcherApi.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcherWatch.ts",
+  "packages/routing/src/interactions/dispatcher/gestureDispatcherOptions.ts",
+  "packages/routing/src/interactions/dispatcher/gestureFacts.ts",
+  "packages/routing/src/interactions/dispatcher/gestureIds.ts",
+  "packages/routing/src/interactions/dispatcher/gestureRun.ts",
+  "packages/routing/src/interactions/dispatcher/handOff.ts",
+  "packages/routing/src/interactions/dispatcher/inFlightGestures.ts",
+  "packages/routing/src/interactions/dispatcher/inputFacts.ts",
+  "packages/routing/src/interactions/dispatcher/invocationCtx.ts",
+  "packages/routing/src/interactions/dispatcher/keymapRoute.ts",
+  "packages/routing/src/interactions/dispatcher/longPressState.ts",
+  "packages/routing/src/interactions/dispatcher/matcher.ts",
+  "packages/routing/src/interactions/dispatcher/predicates.ts",
+  "packages/routing/src/interactions/dispatcher/predict.ts",
+  "packages/routing/src/interactions/dispatcher/ranking.ts",
+  "packages/routing/src/interactions/dispatcher/testing/dispatcherStubs.ts",
+  "packages/routing/src/interactions/dispatcher/uiOngoing.ts",
+  "packages/routing/src/interactions/dispatcher/underPointer.ts",
+  "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx",
+  "packages/routing/src/interactions/dispatcher/useKeyLease.ts",
+  "packages/routing/src/interactions/dispatcher/usePageActions.ts",
+  "packages/routing/src/interactions/dispatcher/walk.ts"
+ ],
+ "a": 3,
+ "b": 6,
+ "m": 3,
+ "distinct": 6,
+ "chapman": 6,
+ "unfound": 0,
+ "read": {
+  "A": 44,
+  "B": 44
+ },
+ "newCode": {
+  "since": 85,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 85,
+  "chapman": 10.7,
+  "unfound": 2.7
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 16,
+  "testFiles": {
+   "failed": 4,
+   "passed": 3456,
+   "total": 3460
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 6.4,
+   "B": 4.4,
+   "match": 0.2,
+   "fix": 26.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1389184,
+  "costUsd": 4.31
+ },
+ "fixCommits": [
+  "d653ba10bf786d596b42755a098bfa324f0f8aa8",
+  "660a027ba68d6c0f8dabef2ed9d5040bd387d433",
+  "3a4da7f76f305dbbbbecb21467ad9609e4c8cf3d",
+  "bfa44536cb66862336cae2247f2669d1113075ca",
+  "c9842f1044753cdc927ddf9bf658c3244c5c78a2"
+ ]
+}

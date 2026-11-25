@@ -1,0 +1,29 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "An OS drop or dragover on a nested dispatcher surface is ingested by both the inner and the outer surface",
+  "A `dispatcher` option that changes after the first render is silently ignored",
+  "Teardown leaves the trace's live explain and the painted cursor's pointer behind"
+ ],
+ "b": [
+  "An OS drop on a dispatcher surface nested inside another is ingested by both",
+  "Teardown leaves the trace's live prediction pointing at the torn-down listener set",
+  "Teardown leaves the painted cursor's pointer position set",
+  "A `dispatcher` option that changes after mount is silently ignored",
+  "A hover binding naming an ongoing action logs a console.error on every pointer move",
+  "A window blur mid-pinch resets the step baseline while Safari keeps sending cumulative scale"
+ ]
+}

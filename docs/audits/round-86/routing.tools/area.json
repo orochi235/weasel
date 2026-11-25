@@ -40,14 +40,14 @@
   "B": 25
  },
  "newCode": {
-  "since": 86,
+  "since": 85,
   "changedFiles": 0,
   "findings": 0
  },
  "previous": {
-  "round": 86,
-  "chapman": 5,
-  "unfound": 2
+  "round": 85,
+  "chapman": 15,
+  "unfound": 5
  },
  "patches": 3,
  "verify": {

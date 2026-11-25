@@ -1,0 +1,80 @@
+{
+ "id": "renderer.cache",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "date": "2026-11-25",
+ "files": [
+  "packages/renderer/src/cache/GLImageCache.ts",
+  "packages/renderer/src/cache/GLMeshCache.ts",
+  "packages/renderer/src/cache/GLTextureCache.ts",
+  "packages/renderer/src/cache/GradientRampAtlas.ts",
+  "packages/renderer/src/cache/cache.ts",
+  "packages/renderer/src/cache/markerCommandCache.ts",
+  "packages/renderer/src/cache/outlineMeshCache.ts",
+  "packages/renderer/src/cache/outlineStrokeMeshCache.ts",
+  "packages/renderer/src/cache/strokeMeshCache.ts",
+  "packages/renderer/src/cache/uploadPremultiplied.ts",
+  "packages/renderer/src/cache/whiteTexture.ts"
+ ],
+ "a": 4,
+ "b": 2,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 6.5,
+ "unfound": 1.5,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 85,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 85,
+  "chapman": 8,
+  "unfound": 2
+ },
+ "patches": 5,
+ "carried": 1,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 3,
+   "passed": 3128,
+   "total": 3131
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.2,
+   "B": 8.6,
+   "match": 0.1,
+   "fix": 12.8
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1725798,
+  "costUsd": 4.91
+ },
+ "fixCommits": [
+  "b40304788d34618dc14c96ba911b85411c4bfee5",
+  "17120390f83108a55202335d279ae1edf643ce5c",
+  "d090c03ae72966c2b90cfc3318e1bdaa905e3deb",
+  "27ca0cf7ee3d683b362d194fa05060f25610024a",
+  "577704cf426602274acfc5e55b44ceae04ae7cfe"
+ ]
+}

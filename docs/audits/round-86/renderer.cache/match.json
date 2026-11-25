@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Glyph-outline stroke ribbons take `vertexWidths` in world units into an em-space tessellation",
+  "GLTextureCache keeps one texture per id whatever the alpha convention, so a straight upload and a premultiplied one under the same id share texels",
+  "GLMeshCache keeps uploading after `dispose`, and what it uploads then is never freed",
+  "GLImageCache hands out deleted textures after `dispose`"
+ ],
+ "b": [
+  "Glyph-outline stroke ribbon applies world-unit `vertexWidths` and `{ length }` trim edges in em space",
+  "The glyph-outline fill cache ignores the default open-fill rule, which the path fill cache rebuilds on"
+ ]
+}

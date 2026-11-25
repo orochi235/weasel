@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "A kept run writes its resolved values as session params even when nothing was adjusted, masking an `under` tuning's later values",
+  "A UI-begun gesture kept as last operation ignores `ctx.params`, so the panel shows, and replay receives, the wrong values",
+  "Adjusting a gesture operation replays it even after its action is unregistered, muted or refused"
+ ],
+ "b": [
+  "A tuning's params reach a UI-driven ongoing action's `start` but not the `onMove` each `update` drives",
+  "A kept gesture's `handle.params()` (values read from the object it edited) become session params for every later run",
+  "Dev deps Proxy throws on any undeclared string property, including the introspection ones (`toJSON`, `constructor`, `$$typeof`, `asymmetricMatch`)",
+  "`withRoleMods` widens a binding that never admitted a role, when that role's declared keys are empty",
+  "`'&'`-channel phase validation covers `defaultBinding` only, not bindings a tuning adds or an override substitutes"
+ ]
+}

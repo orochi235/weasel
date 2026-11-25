@@ -1,0 +1,14 @@
+{
+ "findings": [
+  {
+   "id": "r85-1",
+   "claim": "GLMeshCache returns a cached handle without checking the attribute it was asked to carry",
+   "where": "packages/renderer/src/cache/GLMeshCache.ts:69 (handleFor), :97 (uploadRecurring)",
+   "from": "A+B",
+   "round": 85,
+   "rounds": [
+    85
+   ]
+  }
+ ]
+}
