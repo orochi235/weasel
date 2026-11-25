@@ -44,6 +44,20 @@ describe('tuneAction', () => {
     expect(run.mock.calls.map((c) => c[1].radiusPx)).toEqual([4, 9]);
   });
 
+  it('lays its params under the params each update of a UI-driven edit hands onMove, as under the start', () => {
+    const moves: unknown[] = [];
+    const ongoing: Action = {
+      id: 'fill', label: 'Fill',
+      invoker: { timing: 'ongoing', start: () => ({ onMove: (m) => { moves.push(m.params); } }) },
+    };
+    const tuned = tuneAction(ongoing, [{ params: { alpha: 0.5 } }]);
+    if (tuned.invoker?.timing !== 'ongoing') throw new Error('timing');
+    const handle = tuned.invoker.start({ ...ctx, params: { color: '#f00' } }, { params: { color: '#f00' } });
+    handle.onMove?.({ ...ctx, params: { color: '#0f0' } });
+    handle.onMove?.(ctx);
+    expect(moves).toEqual([{ alpha: 0.5, color: '#0f0' }, undefined]);
+  });
+
   it("hands an ongoing action a thunk that stays live through the gesture", () => {
     let seen: BindingOptions | undefined;
     const ongoing: Action = {

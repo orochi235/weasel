@@ -10,6 +10,7 @@ import type { BoundGesture } from './binding';
 import { resolveParams, type BindingOptions, type Invoker } from './invoker';
 import { rebindRoles, type RoleRebinds } from './modifierRoles';
 import { formWith } from './tunedForm';
+import { handleWith } from './handleWith';
 
 /** An action's params, or a thunk read each time the action asks for them. */
 export type ActionParams<P = Record<string, unknown>> = Partial<P> | (() => Partial<P>);
@@ -74,10 +75,14 @@ function wrapInvoker(invoker: Invoker, params: ActionParams): Invoker {
     ? { timing: 'immediate', run: (deps, given) => invoker.run(deps, base(given)) }
     : {
         ...invoker,
-        start: (ctx, opts) => invoker.start(
-          ctx.params ? { ...ctx, params: base(ctx.params) } : ctx,
-          { ...opts, params: layered(params, opts?.params) },
-        ),
+        start: (ctx, opts) => {
+          const handle = invoker.start(ctx.params ? { ...ctx, params: base(ctx.params) } : ctx, { ...opts, params: layered(params, opts?.params) });
+          const { onMove } = handle;
+          if (!onMove) return handle;
+          return handleWith(handle, {
+            onMove: (moveCtx) => onMove.call(handle, moveCtx.params ? { ...moveCtx, params: base(moveCtx.params) } : moveCtx),
+          });
+        },
       };
   WRAPS.set(wrapped, { inner: invoker, params });
   return wrapped;
