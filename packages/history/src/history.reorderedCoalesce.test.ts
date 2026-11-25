@@ -46,3 +46,59 @@ describe('History — a failed step on an entry coalesced from reordered batches
     expect(history.redoDepth()).toBe(1);
   });
 });
+
+/** A write of `to` to `key` that throws while `key=to` is listed. */
+function writeOp(key: string, from: number, to: number, coalesceKey?: string): Op {
+  return {
+    name: 'test:write',
+    args: { key, from, to },
+    ...(coalesceKey ? { coalesceKey } : {}),
+    apply(a: Cells) {
+      if (broken.has(`${key}=${to}`)) throw new Error(`cannot write ${key}=${to}`);
+      a[key] = to;
+    },
+    invert: () => writeOp(key, to, from, coalesceKey),
+  } as Op;
+}
+
+describe('History — a failed step on a reordered coalesced entry sharing an op with the next', () => {
+  /** A session committed as one entry: a run whose second batch lists its keys in another order, and a plain
+   *  write of x, in the order `plainFirst` says. */
+  function session(plainFirst: boolean) {
+    broken.clear();
+    let t = 0;
+    const cells: Cells = { x: 0, y: 0 };
+    const history = createHistory(cells, { coalesceWindowMs: 500, now: () => t });
+    const j = history.beginJournal({ label: 'session' });
+    const plain = () => { t += 1000; j.applyOps([writeOp('x', cells.x!, 9)], 'set'); t += 1000; };
+    if (plainFirst) plain();
+    j.applyOps([writeOp('x', cells.x!, 3, 'x'), writeOp('y', 0, 1, 'y')], 'drag');
+    t += 10;
+    j.applyOps([writeOp('y', 1, 2, 'y'), writeOp('x', 3, 5, 'x')], 'drag');
+    if (!plainFirst) plain();
+    j.commit('Edit');
+    return { cells, history };
+  }
+
+  it('undo leaves the state where it began when the shared op runs last', () => {
+    const { cells, history } = session(false);
+    broken.add('y=0');
+    expect(() => history.undo()).toThrow('cannot write y=0');
+    expect(cells).toEqual({ x: 9, y: 2 });
+  });
+
+  it('undo leaves the state where it began when the shared op runs first', () => {
+    const { cells, history } = session(true);
+    broken.add('x=0');
+    expect(() => history.undo()).toThrow('cannot write x=0');
+    expect(cells).toEqual({ x: 5, y: 2 });
+  });
+
+  it('redo leaves the state where it began when the shared op runs first', () => {
+    const { cells, history } = session(true);
+    history.undo();
+    broken.add('x=5');
+    expect(() => history.redo()).toThrow('cannot write x=5');
+    expect(cells).toEqual({ x: 0, y: 0 });
+  });
+});
