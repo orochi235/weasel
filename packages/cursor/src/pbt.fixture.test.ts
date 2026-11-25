@@ -13,4 +13,9 @@ describe('runs', () => {
     vi.stubEnv('WEASEL_PBT_RUNS', '0.5');
     expect(runs(10)).toEqual({ numRuns: 10 });
   });
+
+  it('keeps the default for an infinite count', () => {
+    vi.stubEnv('WEASEL_PBT_RUNS', 'Infinity');
+    expect(runs(10)).toEqual({ numRuns: 10 });
+  });
 });

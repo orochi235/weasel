@@ -8,7 +8,7 @@ import type { CursorGlyph } from './types';
 /** `{ numRuns: n }`, or the count in `WEASEL_PBT_RUNS` when set: a deep run on the fleet raises every property's at once. */
 export function runs(n: number): { numRuns: number } {
   const deep = Math.floor(Number(globalThis.process?.env?.WEASEL_PBT_RUNS));
-  return { numRuns: deep >= 1 ? deep : n };
+  return { numRuns: Number.isFinite(deep) && deep >= 1 ? deep : n };
 }
 
 /** A test timeout for a property costing about `msPerRun` a run, at the count {@link runs} settles on. */
