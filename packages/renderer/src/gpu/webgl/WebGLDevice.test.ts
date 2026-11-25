@@ -440,6 +440,14 @@ describe('WebGLDevice geometry', () => {
 });
 
 describe('WebGLDevice uniforms', () => {
+  it('has a uniform array it looked up, as WebGPU does', () => {
+    const { gpu } = setup();
+    const { program } = drawable(gpu);
+    program.lookupUniformArrays(new Map([['u_ripples', { type: 'vec4', size: 8 }]]));
+    expect(program.array('u_ripples')).toBeDefined();
+    expect(program.has('u_ripples')).toBe(true);
+  });
+
   it('writes nothing for a ranged write of no numbers', () => {
     const { rec, gpu } = setup();
     const { program } = drawable(gpu);

@@ -175,7 +175,7 @@ export class GlProgram implements GpuProgram {
 
   has(name: string): boolean {
     this.settle();
-    return this.uniforms.has(name);
+    return this.uniforms.has(name) || this.arrays.has(name);
   }
 
   array(name: string): GpuUniformArray | undefined {
