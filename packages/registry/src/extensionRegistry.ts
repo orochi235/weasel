@@ -73,7 +73,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const { kind } = options;
   const parent = options.parent ?? null;
   const same = options.same ?? Object.is;
-  const store = createReflectable<V>({ name: kind });
+  const store = createReflectable<V>({ name: kind, holdPlace: true });
   const held = new Map<string, Holding>();
   /** When this registry's store came to hold each id it holds. */
   const since = new Map<string, number>();
@@ -101,8 +101,11 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       if (held.get(id)?.token !== holding.token) return;
       if (--holding.count > 0) return;
       held.delete(id);
-      since.delete(id);
-      store.delete(id);
+      const live = store.stack(id).at(-1);
+      if (live) store.release(id, live);
+      queueMicrotask(() => {
+        if (!held.has(id)) since.delete(id);
+      });
     };
   }
 
