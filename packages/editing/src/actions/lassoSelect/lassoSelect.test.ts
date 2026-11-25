@@ -419,3 +419,25 @@ describe('the lasso at a zoom', () => {
     expect(dep.calls.setSelection).toEqual([[]]);
   });
 });
+
+describe('the lasso behaviors\' gesture context', () => {
+  it('carries the plane, read again each move, and the kit settings', () => {
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const dep = makeLassoSelectDep([], []);
+    let plane = { origin: { x: 0, y: 0 }, scale: { x: 2, y: 2 } };
+    const view = { get: () => ({ x: 0, y: 0, scale: { x: 1, y: 1 } }), set: () => {}, plane: () => plane };
+    const kitSettings = { get: () => undefined };
+    const seen: unknown[] = [];
+    const behavior = {
+      onStart: (g: { plane?: unknown; kitSettings?: unknown }) => { seen.push(g.plane, g.kitSettings); },
+      onMove: (g: { plane?: unknown }) => { seen.push(g.plane); },
+    };
+    const start: InvocationCtx = { ...makeCtx(dep, { x: 0, y: 0 }), deps: { lassoSelect: dep, view, kitSettings } as never };
+    const handle = invoker.start(start, { behaviors: [behavior] } as never);
+    const first = plane;
+    plane = { origin: { x: 0, y: 0 }, scale: { x: 3, y: 3 } };
+    handle.onMove!({ ...makeCtx(), world: { x: 50, y: 0 } });
+    handle.onEnd!(makeCtx(), 'cancel');
+    expect(seen).toEqual([first, kitSettings, plane]);
+  });
+});
