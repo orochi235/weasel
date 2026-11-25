@@ -55,9 +55,29 @@ export function snapshotFault(snapshot: unknown): string | null {
       seen.add(id);
     }
   }
-  const floor = snapshot.floor ?? 0;
-  for (const [i, b] of ((snapshot.branches ?? []) as { at: number }[]).entries()) {
+  const floor = (snapshot.floor ?? 0) as number;
+  if (seen.has(floor)) return `it names entry id ${floor}, which is the floor it starts from`;
+  const branches = (snapshot.branches ?? []) as { at: number; entries: { id: number }[] }[];
+  for (const [i, b] of branches.entries()) {
     if (b.at !== floor && !seen.has(b.at)) return `branch ${i} forks from entry ${b.at}, which it does not hold`;
   }
+  return unreachedBranch(floor, lists.slice(0, 2), branches);
+}
+
+/** What is wrong when a branch forks from an entry no walk from the floor, the stacks, or another branch reaches. */
+function unreachedBranch(floor: number, stacks: { id: number }[][], branches: { at: number; entries: { id: number }[] }[]): string | null {
+  const reached = new Set<number>([floor]);
+  for (const list of stacks) for (const { id } of list) reached.add(id);
+  const pending = new Set(branches.keys());
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const i of pending) {
+      if (!reached.has(branches[i]!.at)) continue;
+      for (const { id } of branches[i]!.entries) reached.add(id);
+      pending.delete(i);
+      grew = true;
+    }
+  }
+  for (const i of pending) return `branch ${i} forks from entry ${branches[i]!.at}, which no walk from the stacks reaches`;
   return null;
 }
