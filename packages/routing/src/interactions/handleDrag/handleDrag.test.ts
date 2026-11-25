@@ -470,6 +470,32 @@ describe('useHandleDrag — callbacks from a later render', () => {
     holder.remove();
   });
 
+  it.each([
+    ['will-change', 'transform'],
+    ['will-change', 'filter'],
+    ['backdrop-filter', 'blur(2px)'],
+    ['container-type', 'inline-size'],
+    ['translate', '10px'],
+    ['rotate', '5deg'],
+    ['scale', '2'],
+    ['content-visibility', 'auto'],
+  ])('counts a scroll of a box whose %s: %s holds a fixed one', (prop, value) => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const holder = document.createElement('div');
+    holder.style.setProperty(prop, value);
+    holder.style.overflow = 'auto';
+    document.body.appendChild(holder);
+    const target = mount();
+    target.style.position = 'fixed';
+    holder.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    holder.scrollTop = 20;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 30 });
+    holder.remove();
+  });
+
   it('leaves out a scroll between an absolute rect and its containing block, which does not move it', () => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
