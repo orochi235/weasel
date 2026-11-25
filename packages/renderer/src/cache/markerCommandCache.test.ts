@@ -124,6 +124,21 @@ describe('cachedMarkerHeads', () => {
     }
   });
 
+  it('keeps a marker key ending in @ apart from a ref to the key before it', () => {
+    const disposeAt = registerMarker({ ...getMarker('arrow')!, id: 'tip@', reads: [] });
+    const dispose = registerMarker({ ...lengthHead([]), id: 'tip' });
+    try {
+      const bare: CommandStroke = { ...STROKE, markerEnd: 'tip@' };
+      const ref: CommandStroke = { ...STROKE, markerEnd: { key: 'tip' } };
+      const a = cmdOf(cachedMarkerHeads(LINE, bare, bare, 2, undefined));
+      const b = cmdOf(cachedMarkerHeads(LINE, ref, ref, 2, undefined));
+      expect(b.path).not.toBe(a.path);
+    } finally {
+      dispose();
+      disposeAt();
+    }
+  });
+
   // It may read any field, so only the same stroke object is known to match.
   it('rebuilds for a new stroke object when a head does not say what it reads', () => {
     const dispose = registerMarker(lengthHead());

@@ -48,8 +48,8 @@ let byValue = new WeakMap<Path, Map<string, Entry>>();
 let byStroke = new WeakMap<Path, WeakMap<CommandStroke, Map<string, Entry>>>();
 let shapesBuilt = 0;
 
-const refKey = (ref: MarkerRef | undefined): string =>
-  ref === undefined ? '' : typeof ref === 'string' ? ref : `${ref.key}@${String(ref.size ?? '')}`;
+const refKey = (ref: MarkerRef | undefined): string | [string, unknown] | null =>
+  ref === undefined ? null : typeof ref === 'string' ? ref : [ref.key, ref.size ?? null];
 
 /** What every head of `stroke` reads, or `null` if any head does not say. */
 function readsKey(stroke: CommandStroke): string | null {
@@ -98,7 +98,8 @@ export function cachedMarkerHeads(
   }
   const reads = readsKey(stroke);
   const map = mapFor(path, source, reads);
-  const key = [
+  // Marker keys are any string, so the fields are JSON-encoded rather than joined.
+  const key = JSON.stringify([
     strokeWidth,
     // How finely the path is flattened, which is where a head sits on a curve.
     widestStrokeWidth(strokeWidth, stroke.vertexWidths),
@@ -111,7 +112,7 @@ export function cachedMarkerHeads(
     screenSpaceKey(spaces.start),
     screenSpaceKey(spaces.mid),
     screenSpaceKey(spaces.end),
-  ].join('|');
+  ]);
   let entry = map.get(key);
   if (entry === undefined) {
     entry = {
