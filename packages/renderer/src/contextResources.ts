@@ -117,7 +117,7 @@ export class ContextResources {
     this.meshCache = new GLMeshCache(gpu);
     this.textureCache = new GLTextureCache(gpu, (source) => this.imageCache.noteDrawn(source));
     this.imageCache.abandon();
-    this.imageCache = new GLImageCache(gpu, imageMinification);
+    this.imageCache = new GLImageCache(gpu, imageMinification, this.imageCache);
     this.gradRamps = new GradientRampAtlas(gpu);
 
     this.uploadQuadGeometry();
@@ -135,7 +135,7 @@ export class ContextResources {
   /** Free every image texture and sample images under `mode` from here on. */
   setImageMinification(mode: ImageMinification): void {
     this.imageCache.dispose();
-    this.imageCache = new GLImageCache(this.gpu, mode);
+    this.imageCache = new GLImageCache(this.gpu, mode, this.imageCache);
   }
 
   /** Free every GPU resource held here. */

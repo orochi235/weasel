@@ -23,8 +23,11 @@ export const OUTLINE_STROKE_MESH_CACHE_LIMIT = 2048;
 /**
  * Em-width quantum: a 0.001 em difference is a fifth of a screen pixel on
  * 200px text, and a slider dragged across a range lands on a bounded set of keys.
+ * A width under a quarter em steps by at most 1/256 of itself instead, so a hairline
+ * zoomed far in keeps its width and none rounds to zero.
  */
 const WIDTH_QUANTUM = 1 / 1024;
+const RELATIVE_BITS = 8;
 
 let cache = new Map<string, Mesh>();
 let faces = faceGeneration();
@@ -32,7 +35,9 @@ let faces = faceGeneration();
 /** Quantized em width, exported so the key builder and the tessellator agree
  *  on the number rather than each rounding for themselves. */
 export function quantizeEmWidth(emWidth: number): number {
-  return Math.round(emWidth / WIDTH_QUANTUM) * WIDTH_QUANTUM;
+  if (!(emWidth > 0) || !Number.isFinite(emWidth)) return Math.round(emWidth / WIDTH_QUANTUM) * WIDTH_QUANTUM;
+  const quantum = Math.min(WIDTH_QUANTUM, 2 ** (Math.floor(Math.log2(emWidth)) - RELATIVE_BITS));
+  return Math.round(emWidth / quantum) * quantum;
 }
 
 /**

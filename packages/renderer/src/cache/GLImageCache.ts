@@ -6,15 +6,13 @@
  * frees it at once with {@link releaseImageSource}, and `dispose` frees them
  * all.
  *
- * Wrapping is set once at upload time. Texels are stored premultiplied,
- * whatever the source: what samples one divides the alpha back out before
- * any color math (`STRAIGHT_RGB_GLSL`).
+ * Every texture clamps at its edges; a repeating tile is GLTextureCache's.
+ * Texels are stored premultiplied, whatever the source: what samples one
+ * divides the alpha back out before any color math (`STRAIGHT_RGB_GLSL`).
  */
 
-import type { GpuDevice, GpuFilter, GpuTexture, GpuWrap } from '../gpu/types';
+import type { GpuDevice, GpuFilter, GpuTexture } from '../gpu/types';
 import type { ImageTexSource } from './uploadPremultiplied';
-
-export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat';
 
 /**
  * MIN_FILTER strategy for uploaded textures: `'linear'` never mipmaps,
@@ -31,18 +29,33 @@ type TexSource = ImageTexSource;
  *  WebGL2's guaranteed 2048, and at or below what every current GPU reports. */
 const DEFAULT_MAX_TEXTURE_SIDE = 4096;
 
-const live = new Set<GLImageCache>();
+interface DrawnRecord {
+  frame: number;
+  readonly at: WeakMap<object, number>;
+}
+
+/** Weak, so a renderer dropped without `dispose` takes its cache, context and
+ *  textures with it. */
+const live = new Set<WeakRef<GLImageCache>>();
+
+function* liveCaches(): Generator<GLImageCache> {
+  for (const ref of live) {
+    const cache = ref.deref();
+    if (cache === undefined) live.delete(ref);
+    else yield cache;
+  }
+}
 
 /** Free `key`'s texture in every live renderer. For an owner that has replaced
  *  a source and will never draw the old one again — a later draw of it simply
  *  re-uploads. */
 export function releaseImageSource(key: object): void {
-  for (const cache of live) cache.release(key);
+  for (const cache of liveCaches()) cache.release(key);
 }
 
 /** Whether any live renderer drew `key` in the latest frame it rendered. */
 export function imageSourceInLatestFrame(key: object): boolean {
-  for (const cache of live) if (cache.drewInLatestFrame(key)) return true;
+  for (const cache of liveCaches()) if (cache.drewInLatestFrame(key)) return true;
   return false;
 }
 
@@ -50,7 +63,7 @@ export function imageSourceInLatestFrame(key: object): boolean {
  *  `MAX_TEXTURE_SIZE` among them, or a conservative default when none is live. */
 export function maxImageTextureSide(): number {
   let side = Infinity;
-  for (const cache of live) side = Math.min(side, cache.maxTextureSide);
+  for (const cache of liveCaches()) side = Math.min(side, cache.maxTextureSide);
   return Number.isFinite(side) ? side : DEFAULT_MAX_TEXTURE_SIDE;
 }
 
@@ -66,41 +79,44 @@ export class GLImageCache {
   private readonly pendingDeletes: GpuTexture[] = [];
   /** Under `'auto'`, the sources whose mipmaps are built. */
   private readonly mipped = new WeakSet<object>();
-  private frame = 0;
-  private readonly lastDrawn = new WeakMap<object, number>();
+  private readonly drawn: DrawnRecord;
+  private readonly ref = new WeakRef(this);
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
    *  `'mipmap'` generates mipmaps and filters LINEAR_MIPMAP_LINEAR: when a
    *  large source bitmap is drawn small, bilinear-only minification
    *  undersamples and produces moiré. `'auto'` pays for that only on the
-   *  textures a frame draws small, when it first does. */
+   *  textures a frame draws small, when it first does. `replacing` is the
+   *  cache this one takes over from, whose latest frame it answers for. */
   constructor(
     private readonly gpu: GpuDevice,
     private readonly minification: ImageMinification = 'linear',
+    replacing?: GLImageCache,
   ) {
+    this.drawn = replacing?.drawn ?? { frame: 0, at: new WeakMap() };
     this.maxTextureSide = gpu.limits.maxTextureSize ?? DEFAULT_MAX_TEXTURE_SIDE;
     this.finalizer = new FinalizationRegistry<GpuTexture>((tex) => {
       if (this.textures.delete(tex)) this.pendingDeletes.push(tex);
     });
-    live.add(this);
+    live.add(this.ref);
   }
 
   /** Open a frame: what {@link drewInLatestFrame} answers about from here on.
    *  The renderer calls this at the top of each `render()`. */
   beginFrame(): void {
-    this.frame++;
+    this.drawn.frame++;
     this.drainPendingDeletes();
   }
 
   /** Whether `key` was uploaded or bound since the last {@link beginFrame}. */
   drewInLatestFrame(key: object): boolean {
-    return this.lastDrawn.get(key) === this.frame;
+    return this.drawn.at.get(key) === this.drawn.frame;
   }
 
   /** Count `key` as drawn this frame though another cache holds its texture: a registered
    *  texture's source, which is the image cache's own bitmap for an image pattern. */
   noteDrawn(key: object): void {
-    this.lastDrawn.set(key, this.frame);
+    this.drawn.at.set(key, this.drawn.frame);
   }
 
   /** Delete the textures of sources collected since the last call. */
@@ -118,7 +134,7 @@ export class GLImageCache {
     this.textures.delete(tex);
     this.finalizer.unregister(key);
     this.map.delete(key);
-    this.lastDrawn.delete(key);
+    this.drawn.at.delete(key);
     this.mipped.delete(key);
   }
 
@@ -135,20 +151,15 @@ export class GLImageCache {
   abandon(): void {
     this.textures.clear();
     this.pendingDeletes.length = 0;
-    live.delete(this);
+    live.delete(this.ref);
   }
 
-  upload(
-    key: object,
-    source: TexSource,
-    repetition?: PatternRepetition,
-  ): GpuTexture {
-    this.lastDrawn.set(key, this.frame);
+  upload(key: object, source: TexSource): GpuTexture {
+    this.drawn.at.set(key, this.drawn.frame);
     const existing = this.map.get(key);
     if (existing) return existing;
 
-    const [wrapS, wrapT] = wrapModes(repetition);
-    const tex = this.gpu.createTexture('rgba8', { min: 'linear', mag: 'linear', wrapS, wrapT },
+    const tex = this.gpu.createTexture('rgba8', { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' },
       { source, premultiply: true });
     if (this.minification === 'mipmap') {
       this.gpu.generateMipmaps(tex);
@@ -192,7 +203,7 @@ export class GLImageCache {
   texture(key: object): GpuTexture {
     const tex = this.map.get(key);
     if (!tex) throw new Error('GLImageCache: image not uploaded; call upload() first');
-    this.lastDrawn.set(key, this.frame);
+    this.drawn.at.set(key, this.drawn.frame);
     return tex;
   }
 
@@ -201,14 +212,5 @@ export class GLImageCache {
    *  value the texture already holds. */
   setMagFilter(key: object, filter: GpuFilter): void {
     this.gpu.setSampling(this.texture(key), { mag: filter });
-  }
-}
-
-function wrapModes(rep?: PatternRepetition): [GpuWrap, GpuWrap] {
-  switch (rep) {
-    case 'repeat':   return ['repeat', 'repeat'];
-    case 'repeat-x': return ['repeat', 'clamp'];
-    case 'repeat-y': return ['clamp', 'repeat'];
-    default:         return ['clamp', 'clamp'];
   }
 }

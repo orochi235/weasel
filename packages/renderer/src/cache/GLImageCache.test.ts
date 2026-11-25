@@ -1,7 +1,9 @@
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
-import { GLImageCache, maxImageTextureSide, releaseImageSource } from './GLImageCache';
+import { GLImageCache, imageSourceInLatestFrame, maxImageTextureSide, releaseImageSource } from './GLImageCache';
 
 /** The GL texture behind a cache's handle. */
 const glOf = (tex: object): unknown => (tex as { handle: unknown }).handle;
@@ -49,6 +51,21 @@ describe('GLImageCache', () => {
     expect(cache.drewInLatestFrame(fakeImg1)).toBe(true);
   });
 
+  it('a cache replacing another answers for the frame the old one drew', () => {
+    const { gl } = createGLRecorder();
+    const gpu = webglDevice(gl);
+    const key = {};
+    const old = new GLImageCache(gpu);
+    old.beginFrame();
+    old.upload(key, fakeImgData);
+    old.dispose();
+    const next = new GLImageCache(gpu, 'mipmap', old);
+    expect(imageSourceInLatestFrame(key)).toBe(true);
+    next.beginFrame();
+    expect(imageSourceInLatestFrame(key)).toBe(false);
+    next.dispose();
+  });
+
   it('sets CLAMP_TO_EDGE wrap by default', () => {
     const { gl, calls } = createGLRecorder();
     const cache = new GLImageCache(webglDevice(gl));
@@ -56,15 +73,6 @@ describe('GLImageCache', () => {
     const wrapCalls = calls.filter((c) => c.name === 'texParameteri');
     const hasClamp = wrapCalls.some((c) => c.args[2] === gl.CLAMP_TO_EDGE);
     expect(hasClamp).toBe(true);
-  });
-
-  it('sets REPEAT wrap when repetition is "repeat"', () => {
-    const { gl, calls } = createGLRecorder();
-    const cache = new GLImageCache(webglDevice(gl));
-    cache.upload(fakeImg1, fakeImgData, 'repeat');
-    const wrapCalls = calls.filter((c) => c.name === 'texParameteri');
-    const hasRepeat = wrapCalls.some((c) => c.args[2] === gl.REPEAT);
-    expect(hasRepeat).toBe(true);
   });
 });
 
@@ -227,5 +235,23 @@ describe('GLImageCache — a source the garbage collector reclaimed', () => {
     cache.drainPendingDeletes();
     expect(calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(1);
     cache.dispose();
+  });
+});
+
+describe('a cache never disposed', () => {
+  it('stops answering once nothing holds it', async () => {
+    setFlagsFromString('--expose-gc');
+    const gc = runInNewContext('gc') as () => void;
+    const key = {};
+    (() => {
+      const { gl } = createGLRecorder();
+      new GLImageCache(webglDevice(gl)).upload(key, fakeImgData);
+    })();
+    expect(imageSourceInLatestFrame(key)).toBe(true);
+    for (let i = 0; i < 5 && imageSourceInLatestFrame(key); i++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      gc();
+    }
+    expect(imageSourceInLatestFrame(key)).toBe(false);
   });
 });

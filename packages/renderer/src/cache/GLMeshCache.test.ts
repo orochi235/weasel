@@ -196,4 +196,18 @@ describe('GLMeshCache', () => {
     expect(deletedVaos).toEqual(expect.arrayContaining([vaoOf(a), vaoOf(t)]));
     expect(recorder.calls.filter((c) => c.name === 'deleteBuffer')).toHaveLength(4);
   });
+
+  it('a hit must carry the attribute asked for, and the handle it replaces lives out the frame', () => {
+    const trim = { location: 3, size: 4 as const, data: new Float32Array(16) };
+    const bare = cache.handleFor(sampleMesh);
+    const trimmed = cache.handleFor(sampleMesh, trim);
+    expect(trimmed).not.toBe(bare);
+    expect(cache.handleFor(sampleMesh, trim)).toBe(trimmed);
+    const moved = cache.handleFor(sampleMesh, { ...trim, location: 5 });
+    expect(moved).not.toBe(trimmed);
+    expect(recorder.calls.some((c) => c.name === 'deleteBuffer')).toBe(false);
+    expect(cache._transientCount()).toBe(2);
+    cache.freeTransient();
+    expect(recorder.calls.filter((c) => c.name === 'deleteBuffer')).toHaveLength(5);
+  });
 });

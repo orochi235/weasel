@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { outlineStrokeMesh, _resetOutlineStrokeMeshCacheForTests } from './outlineStrokeMeshCache';
+import { outlineStrokeMesh, quantizeEmWidth, _resetOutlineStrokeMeshCacheForTests } from './outlineStrokeMeshCache';
 import { registerFontOutlines, unregisterFontOutlines } from '@weasel-js/font';
 
 const SQUARE = 'M0 0L1 0L1 -1L0 -1Z';
@@ -50,5 +50,16 @@ describe('outline stroke mesh cache', () => {
     };
     expect(extent('center')).toEqual([-0.025, 1.025, -1.1, 0.1]);
     expect(extent('outer')).toEqual([-0.05, 1.05, -1.2, 0.2]);
+  });
+
+  it('quantizes a thin width relative to itself, so it never rounds to nothing', () => {
+    for (const w of [0.0004, 0.0014, 1e-7]) {
+      const q = quantizeEmWidth(w);
+      expect(Math.abs(q - w) / w).toBeLessThan(1 / 256);
+    }
+    expect(outlineStrokeMesh('k|sq', SQUARE, quantizeEmWidth(0.0004), {})).not.toBeNull();
+    expect(quantizeEmWidth(0.5)).toBe(512 / 1024);
+    expect(quantizeEmWidth(0.30001)).toBe(Math.round(0.30001 * 1024) / 1024);
+    expect(quantizeEmWidth(0)).toBe(0);
   });
 });
