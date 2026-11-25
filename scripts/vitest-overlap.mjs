@@ -93,9 +93,12 @@ const reports = mkdtempSync(join(tmpdir(), 'weasel-load-'));
 const reportOf = (i) => join(reports, `${i}.json`);
 const exited = (child) => new Promise((resolve) => child.on('close', (code, signal) => resolve(signal ? 1 : (code ?? 1))));
 
+// The run that holds every project but the browser one sits near node's default 4 GB heap (2026-11-25, docs/TODO.md).
+const HEAP = '--max-old-space-size=8192';
+
 const children = runs.map((argv, i) => {
   const own = { ...(i === 1 ? { ...env, ...browserEnv } : env), WEASEL_LOAD_REPORT: reportOf(i) };
-  const child = spawn(process.execPath, [VITEST, ...argv], { env: own, stdio: ['inherit', 'inherit', 'inherit', 'pipe'] });
+  const child = spawn(process.execPath, [HEAP, VITEST, ...argv], { env: own, stdio: ['inherit', 'inherit', 'inherit', 'pipe'] });
   createInterface({ input: child.stdio[3] }).on('line', (text) => merge.line(i, text).forEach(emit));
   return child;
 });
@@ -118,7 +121,7 @@ rmSync(reports, { recursive: true, force: true });
 if (plan.files.length) {
   console.log(`\nvitest-overlap: the network changed and ${plan.files.length} file(s) loaded no tests; running them again:`);
   for (const f of plan.files) console.log(`  ${f}`);
-  const again = spawn(process.execPath, [VITEST, ...args, ...plan.files], {
+  const again = spawn(process.execPath, [HEAP, VITEST, ...args, ...plan.files], {
     env: { ...env, ...browserEnv, WEASEL_LOAD_REPORT: '' },
     stdio: ['inherit', 'inherit', 'inherit', 'ignore'],
   });

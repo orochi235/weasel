@@ -576,6 +576,13 @@ these entries are what is left of them.
 
 ## Release-gate & build hygiene
 
+- **(P2) [agent] The non-browser fleet run needs over 4 GB of heap** (2026-11-25): with every project but `browser` in
+  one vitest process, `main` at `73ca57f759` fits under node's default 4 GB heap and either of audit round 86's routing
+  branches (`audit86-routing.interactions.dispatcher`, `audit86-routing.interactions.actions`) pushes it over
+  (`JavaScript heap out of memory` 2–6 minutes in), while every project run alone passes. `scripts/vitest-overlap.mjs`
+  now gives its vitest processes 8 GB. Closes when a heap snapshot (`scripts/heap-retainers.mjs`) shows what the
+  process holds that grows with the run, and that is let go.
+
 - **(P2) [agent] `LabLoupe.browser.test.tsx`'s "F2 opens a lens over the pointer, carries it while held, and a tap
   closes it" fails under the fleet suite's load** (2026-11-22): `expected <div class="lk-lens-interior" …> to be null`
   after the tap, in one of audit round 73's six gate runs, while two runs of the file alone on a GUI node passed on the
