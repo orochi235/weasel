@@ -28,8 +28,8 @@ function turnPose(
 /** Each rotated node's world pose turned by `delta`. */
 export function turnedWorlds(turn: Turn, delta: number): Map<NodeId, unknown> {
   const out = new Map<NodeId, unknown>();
-  const pivot = turn.useUnionPivot ? turn.pivot : null;
   for (const [id, origin] of turn.origins) {
+    const pivot = turn.useUnionPivot ? turn.pivot : turn.orbits.get(id) ?? null;
     out.set(id, turnPose(turn.descriptorOf(id), origin, delta, pivot));
   }
   return out;

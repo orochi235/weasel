@@ -22,8 +22,11 @@ export interface Turn {
   /** The point the pointer orbits: the center of what the selection draws. */
   readonly pivot: { x: number; y: number };
   /** Orbit each node's center around `pivot`, for a multi-selection. Off,
-   *  each node turns about its own center. */
+   *  each node turns about its own center, or about the one `orbits` names. */
   readonly useUnionPivot: boolean;
+  /** With `useUnionPivot` off, the point a selected item's source orbits when the item turns by turning its
+   *  sources: the center of the item's own box. */
+  readonly orbits: ReadonlyMap<NodeId, { x: number; y: number }>;
   readonly descriptorOf: (id: NodeId) => PoseDescriptor<unknown>;
 }
 
@@ -65,6 +68,8 @@ export interface RotateFrame {
   readonly previews: Map<NodeId, unknown>;
 }
 
+const centerOf = (b: Bounds): { x: number; y: number } => ({ x: b.x + b.width / 2, y: b.y + b.height / 2 });
+
 function captureOrigins(
   view: unknown,
   scene: Scene<unknown, string, unknown>,
@@ -86,10 +91,9 @@ function captureOrigins(
     // is taken from the world pose, not the stored one — carried into the
     // plane the edit is measured in, where the pointer's angle is read.
     const world = carryPose(g, poseFrame.world(id), invertPlane(planeOf(view, node.layer)));
-    const b = g.getBounds(world);
     origins.set(id, {
       world,
-      center: { x: b.x + b.width / 2, y: b.y + b.height / 2 },
+      center: centerOf(g.getBounds(world)),
       rotation: g.getRotation?.(world) ?? 0,
     });
     visual.push(boxes.aabb(id, world));
@@ -145,17 +149,22 @@ export function captureTurn(
   if (locked === 'refuse' && [...originPoses.keys()].some((id) => scene.isLocked?.(id) === true)) return null;
   // A derived node's chrome draws its own box, not its sources' union.
   const owner = derivedBoxOwner(scene, selected);
-  const union = owner === null
-    ? unionAabb(visual)!
-    : boxes.aabb(owner, carryPose(descriptorOf(owner), poseFrame.world(owner), invertPlane(planeOf(view, scene.get(owner)!.layer))));
+  const ownBox = (id: NodeId): Bounds =>
+    boxes.aabb(id, carryPose(descriptorOf(id), poseFrame.world(id), invertPlane(planeOf(view, scene.get(id)!.layer))));
+  const union = owner === null ? unionAabb(visual)! : ownBox(owner);
+  // A derived node turns as one item about its own box, whatever its sources.
+  const useUnionPivot = owner !== null || (ids.length > 1 && pivot !== 'each');
+  const orbits = new Map<NodeId, { x: number; y: number }>();
+  if (!useUnionPivot) {
+    for (const item of selected as NodeId[]) {
+      const members = shapeSources(scene, [item]) as NodeId[];
+      if (scene.get(item) === undefined || (members.length === 1 && members[0] === item)) continue;
+      const c = centerOf(ownBox(item));
+      for (const m of members) if (origins.has(m) && !orbits.has(m)) orbits.set(m, c);
+    }
+  }
   return {
-    turn: {
-      origins,
-      pivot: { x: union.x + union.width / 2, y: union.y + union.height / 2 },
-      // A derived node turns as one item about its own box, whatever its sources.
-      useUnionPivot: owner !== null || (ids.length > 1 && pivot !== 'each'),
-      descriptorOf,
-    },
+    turn: { origins, pivot: centerOf(union), useUnionPivot, orbits, descriptorOf },
     originPoses,
     poseFrame,
   };
