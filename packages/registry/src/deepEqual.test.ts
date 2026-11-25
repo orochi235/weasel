@@ -11,6 +11,14 @@ describe('deepEqual', () => {
     expect(deepEqual(NaN, NaN)).toBe(true);
   });
 
+  it('compares symbol-keyed properties', () => {
+    const s = Symbol('s');
+    expect(deepEqual({ [s]: 1 }, { [s]: 1 })).toBe(true);
+    expect(deepEqual({ [s]: 1 }, { [s]: 2 })).toBe(false);
+    expect(deepEqual({ [s]: 1 }, {})).toBe(false);
+    expect(deepEqual({ [s]: undefined }, {}, { undefinedAsAbsent: true })).toBe(true);
+  });
+
   it('holds across realms', () => {
     const value = { a: [1, { b: 2 }] };
     expect(deepEqual(structuredClone(value), value)).toBe(true);

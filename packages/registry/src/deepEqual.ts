@@ -7,7 +7,8 @@ export interface DeepEqualOptions {
 }
 
 /**
- * Structural equality over arrays and plain objects from any realm. Every other
+ * Structural equality over arrays and plain objects from any realm, comparing each own enumerable
+ * key, symbols included. Every other
  * value — a function, a class instance, a `Date`, a `Map` — equals only itself
  * (`Object.is`).
  */
@@ -20,14 +21,25 @@ export function deepEqual(a: unknown, b: unknown, opts: DeepEqualOptions = {}): 
   }
   if (!isPlainObject(a) || !isPlainObject(b)) return false;
   if (opts.undefinedAsAbsent) {
-    return [...new Set([...Object.keys(a), ...Object.keys(b)])].every((k) => deepEqual(own(a, k), own(b, k), opts));
+    return [...new Set([...keysOf(a), ...keysOf(b)])].every((k) => deepEqual(own(a, k), own(b, k), opts));
   }
-  const keys = Object.keys(a);
-  return keys.length === Object.keys(b).length
-    && keys.every((k) => Object.hasOwn(b, k) && deepEqual(a[k], b[k], opts));
+  const keys = keysOf(a);
+  return keys.length === keysOf(b).length
+    && keys.every((k) => isOwnEnumerable(b, k) && deepEqual(own(a, k), own(b, k), opts));
+}
+
+type Key = string | symbol;
+
+/** `o`'s own enumerable keys, its symbols included. */
+function keysOf(o: object): Key[] {
+  return [...Object.keys(o), ...Object.getOwnPropertySymbols(o).filter((k) => isOwnEnumerable(o, k))];
+}
+
+function isOwnEnumerable(o: object, k: Key): boolean {
+  return Object.prototype.propertyIsEnumerable.call(o, k);
 }
 
 /** `o`'s own `k`: a key named like an `Object.prototype` member is read as a plain own key. */
-function own(o: Record<string, unknown>, k: string): unknown {
-  return Object.hasOwn(o, k) ? o[k] : undefined;
+function own(o: Record<Key, unknown>, k: Key): unknown {
+  return Object.hasOwn(o, k) && isOwnEnumerable(o, k) ? o[k] : undefined;
 }
