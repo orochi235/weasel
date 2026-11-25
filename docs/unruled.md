@@ -270,6 +270,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-25 (my call, audit round 88, history lane): `History.restore` refuses a snapshot naming an id, floor, fork
+  point or `nextEntryId` beyond ±2^52 as malformed, leaving 2^52 entries before the counter passes `MAX_SAFE_INTEGER`.
+  Rejected: throwing at the push that runs out, after its ops have applied.
 - 2026-11-11 (my call, audit round 16, history lane): `scene.jumpToHistoryIndex` (draw's History panel) does nothing
   and returns false while a journal is open, where it walked the scene stack beneath the journal's applied edits.
   Rejected: committing the journal first, which would end the user's mode from a click on the panel.
