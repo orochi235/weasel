@@ -48,6 +48,20 @@ describe('startCarry', () => {
     expect(onCancel).toHaveBeenCalledWith('missedrelease');
   });
 
+  it('drops nothing past the window edge, where the page hit-tests nothing, over a surface that runs past it', () => {
+    const heard = surface();
+    document.elementFromPoint = (x: number, y: number) => (x >= 0 && y >= 0 && x < 100 && y < 100 ? document.body : null);
+    const origin = document.createElement('button');
+    document.body.append(origin);
+    cleanups.push(() => { origin.remove(); delete (document as { elementFromPoint?: unknown }).elementFromPoint; });
+    const onEnd = vi.fn();
+    startCarry(origin, new PointerEvent('pointerdown', { pointerId: 3, buttons: 1, clientX: 40, clientY: 40 }), { type: 't', value: 1 }, { onEnd });
+    document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, bubbles: true, buttons: 1, clientX: 500, clientY: 50 }));
+    document.dispatchEvent(new PointerEvent('pointerup', { pointerId: 3, bubbles: true, clientX: 500, clientY: 50 }));
+    expect(heard).not.toContain('drop');
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+
   it('carries over a surface inside a shadow root, which the document hit-tests as the host', () => {
     const host = document.createElement('div');
     document.body.append(host);
