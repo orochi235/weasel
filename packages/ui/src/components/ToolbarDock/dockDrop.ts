@@ -105,7 +105,7 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
  * new row where the pointer is within half a row, or `reach` if that is more, beyond a dock's first or last. A row
  * under the pointer wins over another dock's new-row zone. In the gap between a row's start bars and its end bars,
  * or past the last of either where the other end has none, the bar joins whichever end the pointer is nearer.
- * Null over no dock, or over one the bar may not enter.
+ * Null over no dock, or over a row of one the bar may not enter; a new-row zone of such a dock gives way to another's.
  */
 export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, reach = 0): { target: BarTarget; mark: DockDropMark | null } | null {
   for (const dock of boxes) {
@@ -132,7 +132,7 @@ export function dropAt(boxes: readonly DockBox[], bar: DockBar, p: DockPoint, re
     const first = dock.rows[0]!;
     const last = dock.rows.at(-1)!;
     if (cross < first.start - Math.max(reach, (first.end - first.start) / 2) || cross > last.end + Math.max(reach, (last.end - last.start) / 2)) continue;
-    if (!canEnter(bar, dock)) return null;
+    if (!canEnter(bar, dock)) continue;
     const row = cross < first.start ? 0 : dock.rows.length;
     return { target: { dock: dock.id, row, index: 0, newRow: true }, mark: { dock: dock.id, row } };
   }

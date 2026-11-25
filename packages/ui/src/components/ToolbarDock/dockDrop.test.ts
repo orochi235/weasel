@@ -18,4 +18,9 @@ describe('dropAt', () => {
   it('gives a point over a dock row the bar may not enter no drop, even inside another dock’s zone', () => {
     expect(dropAt([top, left], { ...bar, docks: ['top'] }, { clientX: 20, clientY: 50 })).toBeNull();
   });
+
+  it('passes over the new-row zone of a dock the bar may not enter to one it may', () => {
+    const below = { ...left, rows: [{ ...left.rows[0]!, start: 0, end: 40 }], along: [0, 800] as const };
+    expect(dropAt([top, below], { ...bar, docks: ['left'] }, { clientX: 50, clientY: 50 })?.target).toEqual({ dock: 'left', row: 1, index: 0, newRow: true });
+  });
 });
