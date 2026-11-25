@@ -2,6 +2,6 @@
 '@weasel-js/registry': patch
 ---
 
-A registry's development clash warning names a push over an unnamed registrant and one over a registrant whose `source` is `''` separately, instead of warning only of the first.
+A registry's clash warning tells an unnamed registrant apart from one whose `source` is `''`, warning of a push over each.
 
 <!-- entry: fix -->
