@@ -31,7 +31,7 @@ export interface ExtensionRegisterOptions {
  * The registry is itself a {@link Reflection} over every id it resolves, its parent's included.
  */
 export interface ExtensionRegistry<V> extends Reflection<V> {
-  /** Register `value` under `id` and return its release. */
+  /** Register `value` under `id` and return its release. Throws a `TypeError` for an undefined `value`. */
   register(id: string, value: V, options?: ExtensionRegisterOptions): () => void;
   /** The registry this one falls back to, or null. */
   readonly parent: ExtensionRegistry<V> | null;
@@ -244,6 +244,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     },
     getVersion,
     register(id, value, opts = {}) {
+      if (value === undefined) throw new TypeError(`${kind} "${id}" cannot be registered as undefined, which reads as no registration`);
       const have = get(id);
       if (have !== undefined && same(have, value)) {
         const holding = held.get(id) ?? leans?.get(id)?.holding;

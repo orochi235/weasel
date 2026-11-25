@@ -30,6 +30,14 @@ describe('createExtensionRegistry', () => {
     expect(r.has('x')).toBe(false);
   });
 
+  it('refuses to register undefined, which `get` could not tell from no registration', () => {
+    const r = createExtensionRegistry<string | undefined>({ kind: 'thing' });
+    expect(() => r.register('x', undefined)).toThrow(TypeError);
+    expect(r.has('x')).toBe(false);
+    r.register('x', 'f');
+    expect(() => r.register('x', 'g')).toThrow(ExtensionConflictError);
+  });
+
   it('keeps isolated registries apart under the same id', () => {
     const a = make();
     const b = make();

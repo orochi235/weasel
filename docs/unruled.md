@@ -4270,3 +4270,9 @@ Calls the lanes made without a ruling:
 - 2026-11-25 (the fixer's call): `toolOptionsPrefs` throws where two tools name one shared key as leaves of different
   kinds (an enum and a string), since no prefs leaf takes both. Keeping the first tool's leaf, as before, was the
   alternative.
+
+## Audit round eighty-eight (2026-11-25): registry
+
+- 2026-11-25 (the fixer's call): `ExtensionRegistry.register` throws a `TypeError` for an `undefined` value, with no
+  override, since `get` answers `undefined` for an id nobody holds and a registered `undefined` could not be told from
+  none. Storing it, so the next registration of any value overwrote it without `replace`, was the alternative.
