@@ -42,9 +42,13 @@ export function createWalk(env: WalkEnv) {
     return half.filter((op) => !shared.has(op));
   }
 
-  /** Whether the halves pair op for op, so each op of one undoes a failed step over its partner in the other. */
+  /** Whether the halves pair op for op, so each op of one undoes a failed step over its partner in the other.
+   *  A coalesced batch may list its keys in another order than the first, so position alone does not pair them. */
   function aligned(entry: Entry): boolean {
-    return entry.forwardOps.length === entry.baseOps.length;
+    const { forwardOps, baseOps } = entry;
+    if (forwardOps.length !== baseOps.length) return false;
+    for (let i = 0; i < baseOps.length; i++) if (forwardOps[i]!.coalesceKey !== baseOps[i]!.coalesceKey) return false;
+    return true;
   }
 
   /** Apply what walking `entry` backwards takes, noting the selection it leaves. */
