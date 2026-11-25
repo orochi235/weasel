@@ -65,6 +65,12 @@ export function rotationStep(glyph: CursorGlyph, angle: number | undefined): num
   return step;
 }
 
+/** The angle the painted tier turns `glyph` by: `angle`, or 0 for a glyph that cannot turn, as its baked image is
+ *  drawn upright for an angle inside the first step. Throws as {@link rotationStep} does. */
+export function paintAngleFor(glyph: CursorGlyph, angle: number): number {
+  return rotationStep(glyph, angle) === 0 && !turnable(glyph) ? 0 : angle;
+}
+
 /** A value as a double-quoted XML attribute's text. */
 const attr = (v: string | number): string =>
   String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');

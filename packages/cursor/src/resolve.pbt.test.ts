@@ -26,9 +26,10 @@ const positive = (n: number | undefined) => (n !== undefined && Number.isFinite(
 
 /** What the documented order says a spec resolves to, or null where it throws. */
 function model(spec: CursorGlyphSpec): ResolvedCursor | null {
-  const angle = spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0;
+  const raw = spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0;
   const mark = spec.mark === undefined ? {} : { mark: spec.mark };
-  if (quantizeCursorAngle(angle) !== 0 && !turns(spec)) return null;
+  if (quantizeCursorAngle(raw) !== 0 && !turns(spec)) return null;
+  const angle = turns(spec) ? raw : 0;
   const worldRadius = positive(spec.worldRadius);
   const size = positive(spec.size);
   if (worldRadius !== undefined) return { kind: 'painted', glyph: spec.glyph, ...mark, angle, worldRadius };

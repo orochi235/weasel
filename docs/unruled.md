@@ -1545,7 +1545,8 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-25 (my call, cursor audit 87): `bakeCursor`, `cursorFor` and `resolveCursor` throw a `RangeError` for an
   angle whose step turns a glyph that `rotationFitsInBox` refuses (a marked crosshair, the eyedropper, the swap),
   on every tier, where the baked image clipped it. Only `resize` and `rotate` are turned in the tree. Rejected: a
-  viewBox grown to the turned glyph, which shrinks the drawing at every size.
+  viewBox grown to the turned glyph, which shrinks the drawing at every size. An angle inside the first step paints such a glyph upright, as it
+  bakes (2026-11-25, cursor audit 88).
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.

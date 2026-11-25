@@ -41,6 +41,12 @@ describe('resolveCursor', () => {
     expect(() => resolveCursor({ glyph: 'brush', worldRadius: 5, fallback: 'a;b' })).toThrow(RangeError);
   });
 
+  it('paints a glyph that cannot turn upright for an angle inside the first step, as it bakes', () => {
+    expect(resolveCursor({ glyph: 'eyedropper', size: 200, angle: 0.15 })).toMatchObject({ kind: 'painted', angle: 0 });
+    expect(resolveCursor({ glyph: 'pen', mark: 'add', worldRadius: 4, angle: -0.15 })).toMatchObject({ angle: 0 });
+    expect(resolveCursor({ glyph: 'rotate', size: 200, angle: 0.15 })).toMatchObject({ angle: 0.15 });
+  });
+
   it('reads a non-finite angle as none, for the painted tier as for the baked one', () => {
     expect(resolveCursor({ glyph: 'brush', worldRadius: 4, angle: Number.NaN })).toMatchObject({ angle: 0 });
   });

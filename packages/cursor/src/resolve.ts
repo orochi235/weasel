@@ -1,4 +1,4 @@
-import { bakeFallback, rotationStep } from './bake';
+import { bakeFallback, paintAngleFor } from './bake';
 import { cursorFor, cursorGlyph } from './registry';
 import type { CursorGlyphName, CursorMarkName } from './glyphs';
 import { CURSOR_MAX_CSS_PX } from './types';
@@ -69,10 +69,12 @@ export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   const { glyph, mark, fallback } = spec;
   const size = positive(spec.size);
   const worldRadius = positive(spec.worldRadius);
-  const angle = spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0;
   const marked = mark === undefined ? {} : { mark };
   // Thrown here on every tier, or a painted spec fails only later, in the painter's draw.
-  rotationStep(cursorGlyph(glyph, marked), angle);
+  const angle = paintAngleFor(
+    cursorGlyph(glyph, marked),
+    spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0,
+  );
   bakeFallback(fallback);
   if (worldRadius !== undefined) {
     return { kind: 'painted', glyph, ...marked, angle, worldRadius };
