@@ -255,6 +255,8 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       threshold: optsRef.current.items[index]?.locked
         ? Number.POSITIVE_INFINITY
         : optsRef.current.threshold,
+      // A press reports its row whether or not the document saw the release.
+      missedRelease: 'click',
       onStart: (ev) => {
         draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
         setState({ draggedIds, targetIndex: liveTarget(ev), ghost: ghostAt(ev) });

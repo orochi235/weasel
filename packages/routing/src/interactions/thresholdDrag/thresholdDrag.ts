@@ -25,8 +25,12 @@ export interface ThresholdDragOptions {
   /** Released below the threshold — the click the press turned out to be. */
   onClick?: (e: PointerEvent) => void;
   /** Ended without a release: pointercancel, lost capture, a window blur, Escape during the drag, `cancel()`, or a
-   *  release the document never saw below the threshold. */
+   *  release the document never saw below the threshold, unless `missedRelease` is `'click'`. */
   onCancel?: () => void;
+  /** What a release the document never saw (a move reporting no held button) means below the threshold: `'cancel'`
+   *  (the default), since where it was let go is unknown, or `'click'`, reported at that move, for a caller whose
+   *  click does not depend on where the press was let go. Past the threshold it always ends the drag. */
+  missedRelease?: 'cancel' | 'click';
 }
 
 /** Handle returned by `startThresholdDrag` exposing live gesture state. */
@@ -82,7 +86,7 @@ export function startThresholdDrag(
       unlisten();
       opts.onCancel?.();
     },
-  }, { capture: !late, missedRelease: () => (activated ? 'end' : 'cancel') });
+  }, { capture: !late, missedRelease: () => (activated || opts.missedRelease === 'click' ? 'end' : 'cancel') });
 
   return {
     isDragging: () => activated,
