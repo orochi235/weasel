@@ -28,6 +28,11 @@ describe('createWarnOnce', () => {
     expect(warn).toHaveBeenCalledTimes(4);
   });
 
+  it('refuses a cap that is not a positive integer', () => {
+    for (const cap of [0, -1, 1.5, NaN, Infinity]) expect(() => createWarnOnce(cap)).toThrow(RangeError);
+    expect(() => createWarnOnce(1)).not.toThrow();
+  });
+
   it('says nothing and keeps nothing in production', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const once = createWarnOnce();

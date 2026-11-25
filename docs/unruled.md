@@ -4195,3 +4195,9 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a menu leaf drawn as several rows (an action with several variants, an `actions`
   leaf, an enum's options) puts its access letter on none of them, since one letter picks one row and the leaf names
   no row to pick. Putting it on the first row, which runs that variant or sets that option, was the alternative.
+
+## Audit round eighty-five (2026-11-24): registry
+
+- 2026-11-24 (the fixer's call): `createWarnOnce` throws a `RangeError` for a `cap` that is not a positive integer,
+  `Infinity` included, rather than clamp it: `NaN` never forgot a message and `0` warned every time. A cap meaning
+  "never forget" is the alternative left open.
