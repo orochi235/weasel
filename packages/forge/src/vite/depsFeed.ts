@@ -54,6 +54,9 @@ export function createDepsFeed({ root, index, logError }: DepsFeedOptions): Deps
   let depsSent: string | null = null;
   /** Bumped by `reset`, so a rebuild still running for the old root drops what it built. */
   let generation = 0;
+  /** Whether a `module` build is running, and the server of an edit landing during it, rebuilt for once it is served. */
+  let serving = false;
+  let editedWhileServing: ViteDevServer | null = null;
 
   const componentGraph = (): ComponentGraphBuilder => (deps ??= createComponentGraph({ root: root(), read: (file) => readFileSync(file, 'utf8') }));
 
@@ -83,19 +86,29 @@ export function createDepsFeed({ root, index, logError }: DepsFeedOptions): Deps
   return {
     componentGraph,
     async module(resolveImport) {
-      for (;;) {
-        const started = generation;
-        const graph = await graphOf(resolveImport);
-        if (started !== generation) continue;
-        depsSent = JSON.stringify(graph);
-        return `export default ${depsSent};\n`;
+      serving = true;
+      try {
+        for (;;) {
+          const started = generation;
+          const graph = await graphOf(resolveImport);
+          if (started !== generation) continue;
+          depsSent = JSON.stringify(graph);
+          return `export default ${depsSent};\n`;
+        }
+      } finally {
+        serving = false;
+        const edited = editedWhileServing;
+        editedWhileServing = null;
+        if (edited && depsSent !== null) rebuild(edited);
       }
     },
     redeps(server) {
       if (depsSent !== null) rebuild(server);
+      else if (serving) editedWhileServing = server;
     },
     reset() {
       generation++;
+      editedWhileServing = null;
       deps = null;
       history = null;
       depsSent = null;
