@@ -54,6 +54,11 @@ describe('parseRoute / formatRoute', () => {
   it('formats a bare hash when there are no params', () => {
     expect(formatRoute({ story: 'a', params: {} })).toBe('#/a');
   });
+
+  it('leaves an index id’s colon readable, and still reads the encoded form', () => {
+    expect(formatRoute({ story: 'ui-button:index', params: {} })).toBe('#/ui-button:index');
+    expect(parseRoute('#/ui-button%3Aindex').story).toBe('ui-button:index');
+  });
 });
 
 describe('reserved params', () => {

@@ -40,10 +40,12 @@ export function parseRoute(hash: string): ForgeRoute {
 }
 
 /** The hash for `route`, with its leading `#`. The inverse of `parseRoute`. A lone surrogate, which no URL can
- *  carry, is written as U+FFFD, as `URLSearchParams` writes one in a param. */
+ *  carry, is written as U+FFFD, as `URLSearchParams` writes one in a param. A colon, which a fragment may hold as
+ *  it is, is left readable: `#/ui-button:index`. */
 export function formatRoute(route: ForgeRoute): string {
   const query = new URLSearchParams(Object.entries(route.params)).toString();
-  return `#/${encodeURIComponent((route.story ?? '').replace(/\p{Cs}/gu, '\uFFFD'))}${query ? `?${query}` : ''}`;
+  const story = encodeURIComponent((route.story ?? '').replace(/\p{Cs}/gu, '\uFFFD')).replaceAll('%3A', ':');
+  return `#/${story}${query ? `?${query}` : ''}`;
 }
 
 /** Whether a param name can be a knob: not reserved and not under one of forge's own config keys (`$globals`). */

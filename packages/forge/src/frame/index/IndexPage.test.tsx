@@ -58,7 +58,7 @@ describe('IndexPage', () => {
     const uses = screen.getByRole('list', { name: 'Uses' });
     const links = within(uses).getAllByRole('link');
     expect(links.map((a) => a.textContent)).toEqual(['ui/Badge', 'ui/Foundations/Button']);
-    expect(links[1]?.getAttribute('href')).toBe('#/ui-foundations-button%3Aindex');
+    expect(links[1]?.getAttribute('href')).toBe('#/ui-foundations-button:index');
     fireEvent.click(links[1] as HTMLElement);
     expect(env.open).toHaveBeenCalledWith('ui-foundations-button:index');
     const usedBy = screen.getByRole('list', { name: 'Used by' });
