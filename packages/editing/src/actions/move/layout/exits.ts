@@ -1,7 +1,7 @@
 import type { NodeId } from '@weasel-js/core';
-import { poseDescriptorForNode, toPlane, composeWorldPose, sceneViewPoseAdapter } from '@weasel-js/core/engine';
+import { poseDescriptorForNode, toPlane, composeWorldPose, sceneViewPoseAdapter, pageAt, pageIdOf, pageNodeOf, placedPagesOf } from '@weasel-js/core/engine';
 import type { LayoutStrategy } from '@weasel-js/core/engine';
-import { planeOf } from '@weasel-js/core';
+import { planeOf, pasteboardOn } from '@weasel-js/core';
 import type { MoveSession } from '../session';
 import { rectContainsPointHalfOpen } from '@weasel-js/geom';
 
@@ -9,7 +9,9 @@ import { rectContainsPointHalfOpen } from '@weasel-js/geom';
  *  A root leaves when the drop center falls outside the body of the layout
  *  container holding it, and lands under the innermost plain container beneath
  *  the drop that admits it (`canDropInto`) — a layout container there has
- *  already declined it — or at the top level of its layer. A root whose parent
+ *  already declined it — else, in a paged scene, by the page rule: on the page
+ *  under the drop, or off every page in its own page with the pasteboard off —
+ *  or at the top level of its layer. A root whose parent
  *  has no layout is not this pass's to move; `reparentOnDrop` decides for those. */
 export function resolveLayoutExits(
   session: MoveSession, dropCenter: { x: number; y: number } | null, ids: Iterable<NodeId>,
@@ -53,13 +55,22 @@ export function resolveLayoutExits(
     landings.set(layer, best);
     return best;
   };
+  const onPage = (id: NodeId): NodeId | null => {
+    const placed = placedPagesOf(scene);
+    const under = pageAt(placed, center);
+    const page = under === null ? null : pageNodeOf(scene, under.id);
+    if (page && session.admits(page)) return page;
+    if (placed.length === 0 || pasteboardOn(scene)) return null;
+    const own = pageIdOf(scene, id);
+    return own === null ? null : pageNodeOf(scene, own) ?? null;
+  };
   for (const id of ids) {
     const node = scene.get(id);
     const parent = node?.parent ?? null;
     if (!node || parent === null) continue;
     const layout = layoutDep.getLayout(parent as string);
     if (!layout || holds(parent, layout)) continue;
-    out.set(id, landingOn(node.layer));
+    out.set(id, landingOn(node.layer) ?? onPage(id));
   }
   return out;
 }
