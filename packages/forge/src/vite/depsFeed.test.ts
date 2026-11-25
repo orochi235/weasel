@@ -51,4 +51,19 @@ describe('createDepsFeed', () => {
     builds.shift()!(graph('new.tsx'));
     expect(await served).toContain('new.tsx');
   });
+
+  it('pushes an edit that lands while the first deps.js build runs', async () => {
+    const feed = createDepsFeed({ root: () => '/repo', index: () => [], logError: (err) => { throw err; } });
+    const send = vi.fn();
+    const server = { ws: { send } } as unknown as ViteDevServer;
+    const served = feed.module(async () => null);
+    feed.redeps(server);
+    builds.shift()!(graph('before.tsx'));
+    expect(await served).toContain('before.tsx');
+    await settle();
+    expect(builds).toHaveLength(1);
+    builds.shift()!(graph('after.tsx'));
+    await settle();
+    expect(send).toHaveBeenCalledWith(expect.objectContaining({ event: 'forge:deps', data: graph('after.tsx') }));
+  });
 });

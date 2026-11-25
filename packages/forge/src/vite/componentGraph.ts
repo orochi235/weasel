@@ -59,6 +59,8 @@ async function componentsOf(entries: readonly IndexEntry[], bindings: Bindings):
   return components;
 }
 
+const byTitle = (a: string, b: string): number => a.localeCompare(b);
+
 /**
  * The component graph of `entries`, derived from source: each component is the binding its story file's meta names
  * (or, when that is declared in the story file itself, the import the title's last segment names), found by
@@ -106,11 +108,11 @@ export function createComponentGraph({ root, read }: ComponentGraphOptions): Com
           for (const other of byKey.get(target) ?? []) if (other !== title) uses.add(other);
         }
         const node = getOwn(graph, title) as ComponentNode;
-        node.uses = [...uses].sort();
+        node.uses = [...uses].sort(byTitle);
         for (const other of node.uses) getOwn(graph, other)?.usedBy.push(title);
       }
-      for (const node of Object.values(graph)) node.usedBy.sort();
-      return Object.fromEntries(Object.entries(graph).sort(([a], [b]) => a.localeCompare(b)));
+      for (const node of Object.values(graph)) node.usedBy.sort(byTitle);
+      return Object.fromEntries(Object.entries(graph).sort(([a], [b]) => byTitle(a, b)));
     },
   };
 }

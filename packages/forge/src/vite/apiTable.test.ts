@@ -44,6 +44,8 @@ export interface ChartHandle {
   toModel(pt: Point): Point;
   readonly width: number;
   label: string;
+  reset?(): void;
+  note?: string;
 }
 /** How heavy a stroke is. */
 type Weight = 'thin' | 'bold';
@@ -111,6 +113,12 @@ export const Input = (_props: InputProps) => null;
       'spreadTyped',
       `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst base: Meta = { component: Chart };\nconst meta: Meta = { ...base };\nexport default meta;\n`,
     );
+    writeFileSync(at('helpers.ts'), `export const withDefaults = <T,>(m: T): T => m;\nexport { meta as defineMeta } from '@weasel-js/forge';\n`);
+    story('helper', `import { Chart } from './Chart';\nimport { withDefaults } from './helpers';\nexport default withDefaults({ component: Chart });\n`);
+    story('forged', `import { meta } from '@weasel-js/forge';\nimport { Chart } from './Chart';\nexport default meta({ component: Chart });\n`);
+    story('forgedNs', `import * as forge from '@weasel-js/forge';\nimport { Chart } from './Chart';\nexport default forge.meta({ component: Chart });\n`);
+    story('reexported', `import { defineMeta } from './helpers';\nimport { Chart } from './Chart';\nexport default defineMeta({ component: Chart });\n`);
+    story('computed', `import { Chart, Box } from './Chart';\nconst component = 'title';\nexport default { component: Chart, [component]: Box };\n`);
     story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
     writeFileSync(at('layout.ts'), `export type Size = 'sm' | 'lg';\nexport interface LayoutProps { size?: Size }\n`);
@@ -152,7 +160,7 @@ export const Input = (_props: InputProps) => null;
     writeFileSync(at('node_modules/dep/index.ts'), `export const Trigger = (_props: { armed?: boolean }) => null;\n`);
     story('dependency', `import { Trigger } from './node_modules/dep/index';\nimport { Chart } from './Chart';\nexport default { component: Trigger };\n`);
     story('knob', `import Knob from './Knob';\nexport default { component: Knob };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob', 'dependency'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob', 'dependency', 'helper', 'forged', 'forgedNs', 'reexported', 'computed'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -227,6 +235,8 @@ export const Input = (_props: InputProps) => null;
       { name: 'toModel', kind: 'method', signature: '(pt: Point) => Point', readonly: false, description: 'Maps a plot point to the model.' },
       { name: 'width', kind: 'property', signature: 'number', readonly: true },
       { name: 'label', kind: 'property', signature: 'string', readonly: false },
+      { name: 'reset', kind: 'method', signature: '() => void', readonly: false },
+      { name: 'note', kind: 'property', signature: 'string', readonly: false },
     ]);
     expect(prop(table, 'ref')).toBeUndefined();
     expect(prop(table, 'key')).toBeUndefined();
@@ -277,6 +287,18 @@ export const Input = (_props: InputProps) => null;
   it("reads the title's import, not a wrapper the story file declares itself", () => {
     expect(api('wrapper', 'Chart')?.ref?.type).toBe('ChartHandle');
     expect(api('wrapper')).toBeNull();
+  });
+
+  it("unwraps only forge's own meta call, as the story indexer does", () => {
+    expect(api('forged')?.component?.name).toBe('Chart');
+    expect(api('forgedNs')?.component?.name).toBe('Chart');
+    expect(api('reexported')?.component?.name).toBe('Chart');
+    expect(api('helper')).toBeNull();
+    expect(api('helper', 'Chart')?.component?.name).toBe('Chart');
+  });
+
+  it('reads a computed key spelled as an identifier as no key', () => {
+    expect(api('computed')?.component?.name).toBe('Chart');
   });
 
   it("reads the title's import, not a dependency's component, as the dependency graph does", () => {
