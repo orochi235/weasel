@@ -19,9 +19,12 @@ import type { MeshEdge } from './meshOutline';
 import { crossingsOf } from './edgeCrossings';
 import { leftSector, sectorFacingLeft, sectorWindings, sortRays, type Ray } from './vertexFans';
 import { lerp } from '../scalar';
+import { heldAsFloat32 } from './meshJunctions';
 
-/** Boundary points nearer than this fraction of the outline's size are one point. */
+/** Boundary points nearer than this fraction of the outline's size are one point; the finer one when its
+ *  coordinates are held in doubles. */
 const SAME_POINT = 2 ** -28;
+const SAME_POINT_64 = 2 ** -40;
 
 /**
  * The loops bounding the nonzero region of `edges` (each edge counted `n`
@@ -66,7 +69,7 @@ export function coverageBoundary(edges: readonly MeshEdge[]): Ring[] | null {
   };
   let size = 0;
   for (const e of edges) size = Math.max(size, Math.abs(e.ax), Math.abs(e.ay), Math.abs(e.bx), Math.abs(e.by));
-  return loopsOf(pieces, point, size * SAME_POINT);
+  return loopsOf(pieces, point, size * (heldAsFloat32(xs) && heldAsFloat32(ys) ? SAME_POINT : SAME_POINT_64));
 }
 
 /** The winding just left of each edge where it starts: around each vertex from the sector facing straight left,
