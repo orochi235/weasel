@@ -42,14 +42,18 @@ export function quantizeCursorAngle(angle: number): number {
   return wrapPositive(i, CURSOR_ANGLE_STEPS);
 }
 
+/** A value as a double-quoted XML attribute's text. */
+const attr = (v: string | number): string =>
+  String(v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
 /** One paint op as an SVG element. */
 function renderOp(op: CursorPaintOp): string {
   const fill = op.fill === undefined ? 'none' : op.fill;
   const stroke = op.stroke
-    ? ` stroke="${op.stroke.color}" stroke-width="${op.stroke.width}"` +
+    ? ` stroke="${attr(op.stroke.color)}" stroke-width="${attr(op.stroke.width)}"` +
       ` stroke-linecap="round" stroke-linejoin="round"`
     : '';
-  return `<path d="${op.d}" fill="${fill}"${stroke}/>`;
+  return `<path d="${attr(op.d)}" fill="${attr(fill)}"${stroke}/>`;
 }
 
 /**

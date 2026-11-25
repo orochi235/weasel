@@ -45,6 +45,13 @@ describe('bakeCursor', () => {
     expect(bakeCursor(PENCIL, { fallback: 'crosshair' })).toMatch(/, crosshair$/);
   });
 
+  it('escapes attribute values, so an accent fill holding quotes keeps the SVG well formed', () => {
+    const swatch: CursorGlyph = { ...PENCIL, paths: [{ role: 'accent', d: 'M 5 5 L 9 5 L 9 9 Z', fill: 'url("#g") & <x>' }] };
+    const svg = decodeURIComponent(bakeCursor(swatch).slice('url("data:image/svg+xml,'.length).split('") ')[0]!);
+    expect(svg).toContain('fill="url(&quot;#g&quot;) &amp; &lt;x>"');
+    expect(svg.match(/"/g)!.length % 2).toBe(0);
+  });
+
   it('percent-encodes the payload so no raw # reaches the URI', () => {
     // An unencoded '#' from a color starts a fragment and truncates the SVG.
     const css = bakeCursor(PENCIL, {});
