@@ -233,12 +233,15 @@ function alongTarget(layout: ToolbarLayout, at: { dock: string; row: number; ind
   return index >= row.length ? null : { ...place, index, end: true };
 }
 
-/** What the dock announces after a keyboard move: where the bar landed, after `state` where it is given. */
+/** What the dock announces after a keyboard move: where the bar landed in `layout`, its drawn bars, after `state` where it is given. */
 export function placeWords(layout: ToolbarLayout, docks: readonly DockSpec[], bar: DockBar, state?: string): string {
   const at = locateBar(layout, bar.id);
   if (!at) return '';
   const name = state ? `${bar.label} toolbar ${state}` : `${bar.label} toolbar`;
   const line = isVerticalEdge(docks.find((d) => d.id === at.dock)?.edge) ? 'column' : 'row';
-  const where = `${name}, ${line} ${at.row + 1}, position ${at.index + 1} of ${dockRows(layout, at.dock)![at.row]!.length}`;
+  const rows = dockRows(layout, at.dock)!;
+  // `layout` holds only drawn bars, so a row left empty draws nothing and is not counted.
+  const shown = rows.slice(0, at.row).filter((r) => r.length > 0).length;
+  const where = `${name}, ${line} ${shown + 1}, position ${at.index + 1} of ${rows[at.row]!.length}`;
   return at.end ? `${where}, at the end` : where;
 }

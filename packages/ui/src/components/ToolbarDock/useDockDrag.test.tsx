@@ -433,6 +433,12 @@ describe('a bar drawn as nothing', () => {
     expect(onChange.mock.calls[0]![0].docks.top).toEqual([['ghost', 'view', 'nil', 'file', 'shape']]);
     expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('File toolbar, row 1, position 2 of 3');
   });
+
+  it('leaves a row it alone sits in out of the row a move announces', () => {
+    setup(start([['ghost'], ['file', 'view']]), [bars[0]!, bars[1]!, ghost]);
+    act(() => void fireEvent.keyDown(handle('File'), { key: 'ArrowRight', altKey: true }));
+    expect(document.querySelector('[data-dock-announce]')).toHaveTextContent('File toolbar, row 1, position 2 of 2');
+  });
 });
 
 describe('a bar drawn as a menu button', () => {
