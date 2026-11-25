@@ -4218,3 +4218,13 @@ Calls the lanes made without a ruling:
   alternative. `openPointerSession`'s `missedRelease` option picks either.
 - 2026-11-24 (the fixer's call): every `openPointerSession` cancels on a window blur, reporting `'blur'`, unless
   opened with `blur: false`. Leaving blur to each caller, as only carry and the dispatcher did, was the alternative.
+
+## Audit round eighty-six (2026-11-25): routing's actions
+
+- 2026-11-25 (the fixer's call): only a last-operation adjust writes an action's session params; a plain run, and the
+  params a gesture's handle reports from what it edited, do not. Remembering every kept run's values, which hid an
+  `under` tuning's later values, was the alternative.
+- 2026-11-25 (the fixer's call): moving a modifier role that declares no keys widens no binding, since no binding can
+  be told to have been written with `roleMods` for it; such a binding names the new key itself.
+- 2026-11-25 (the fixer's call): a binding override putting an action binding on the `'&'` channel leaves it unbound
+  with a warning, as an override that is not a route is skipped; `tune` throws, as `register` does.
