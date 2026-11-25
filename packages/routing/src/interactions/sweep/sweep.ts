@@ -9,6 +9,7 @@
 import { ANY_MODS, type GestureSpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../actions/action';
 import type { InvocationCtx } from '../actions/invoker';
+import { elementAt } from '../elementAt';
 
 /** One item a sweep reaches: its key, and the element `keyOf` named it from. */
 export interface SweepItem<K> {
@@ -80,8 +81,7 @@ const MAX_STEPS = 4096;
 
 /** The item under client point (`x`, `y`) in `surface`, or `null`. */
 function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number, y: number): SweepItem<K> | null {
-  const doc = surface.ownerDocument;
-  let el = typeof doc.elementFromPoint === 'function' ? doc.elementFromPoint(x, y) : null;
+  let el = elementAt(surface, x, y);
   if (!el || !surface.contains(el)) return null;
   for (; el && el !== surface; el = el.parentElement) {
     const key = keyOf(el);
