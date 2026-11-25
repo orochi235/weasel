@@ -231,6 +231,18 @@ describe('createExtensionRegistry', () => {
     expect(r.entries().map((e) => e.key)).toEqual(['y', 'x']);
   });
 
+  it('keeps an id in place when it is released and registered again in one tick while its parent holds it too', () => {
+    const parent = make();
+    const child = make(parent);
+    const offX = child.register('x', 'v');
+    child.register('y', 'w');
+    parent.register('x', 'v');
+    expect(child.entries().map((e) => e.key)).toEqual(['x', 'y']);
+    offX();
+    child.register('x', 'v');
+    expect(child.entries().map((e) => e.key)).toEqual(['x', 'y']);
+  });
+
   it('puts an id it releases at its parent\'s place at once, not a tick later', async () => {
     const parent = make();
     const child = make(parent);

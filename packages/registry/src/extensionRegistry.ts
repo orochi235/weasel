@@ -154,6 +154,10 @@ function see(parent: Reflection<unknown>, seen: Map<string, number>): void {
   for (const id of ids) if (!seen.has(id)) seen.set(id, nextOrder++);
 }
 
+function earlier(a: number | undefined, b: number | undefined): number | undefined {
+  return a === undefined ? b : b === undefined ? a : Math.min(a, b);
+}
+
 /** Make an {@link ExtensionRegistry}: one per host that should keep its extensions to itself, or one
  *  shared by hosts that should not. */
 export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>): ExtensionRegistry<V> {
@@ -172,9 +176,8 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const parentOrder = knownOrder ?? (foreignParent ? (id: string) => seen.get(id) : undefined);
   const orderOf = (id: string): number | undefined => {
     // A released id keeps its `since` until the next tick, to take its place back if registered again; until then it sits where its parent puts it.
-    const mine = held.has(id) ? since.get(id) : undefined;
-    const theirs = parentOrder?.(id);
-    return mine === undefined ? theirs : theirs === undefined ? mine : Math.min(mine, theirs);
+    const mine = held.has(id) ? since.get(id) : leans?.get(id)?.order;
+    return earlier(mine, parentOrder?.(id));
   };
   let cached: { version: number; entries: readonly ReflectedEntry<V>[] } | null = null;
   /** This registry's own listeners, so subscribing here never shares a subscription a listener holds on `own` or
@@ -254,7 +257,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
           return createRelease(id, holding);
         }
         if (foreignParent) seeParent();
-        const lean: Lean<V> = { holding: { token: {}, count: 1 }, value, source: opts.source, order: orderOf(id) ?? nextOrder++ };
+        const lean: Lean<V> = { holding: { token: {}, count: 1 }, value, source: opts.source, order: earlier(since.get(id), orderOf(id)) ?? nextOrder++ };
         leans!.add(id, lean);
         return createRelease(id, lean.holding);
       }
