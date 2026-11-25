@@ -53,8 +53,8 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
   hotkeyEngaged: string | null;
   /** Engage a hotkey-slot tool by id. */
   engageHotkey: (id: string) => void;
-  /** Release the newest hold `engageHotkey` made, or with none, the top of
-   *  the hotkey stack. A tool held on its key is left held. */
+  /** Release the newest hold this api's `engageHotkey` made. With none it
+   *  releases nothing, so a tool held on its key is left held. */
   disengageHotkey: () => void;
   /** All always-on entries, in registration order. */
   ambient: readonly Contribution<TOverlay>[];
@@ -198,7 +198,6 @@ export function useTools<TOverlay = KernelOverlay>(
   // re-creating themselves.
   const slottedRef = useLatest(slotted);
   const activeRef = useLatest(contributions.focused);
-  const hotkeyRef = useLatest(hotkeyEngaged);
 
   const setFocused = contributions.setFocused;
   const setActive = useCallback(
@@ -229,10 +228,10 @@ export function useTools<TOverlay = KernelOverlay>(
 
   const disengageHotkey = useCallback(() => {
     const own = holdsRef.current.pop();
-    const id = own ?? hotkeyRef.current;
-    if (id) dlog('tools', 'hotkey disengaged:', id);
+    if (own === undefined) return;
+    dlog('tools', 'hotkey disengaged:', own);
     ctx.popHotkey(own);
-  }, [ctx, hotkeyRef]);
+  }, [ctx]);
 
   // May be called while rendering, so it reads this render's tools, not a ref.
   const has = useCallback(
