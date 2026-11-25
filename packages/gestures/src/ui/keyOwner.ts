@@ -20,6 +20,9 @@ export function textOwnsChord(e: { ctrlKey: boolean; metaKey: boolean }, apple =
 /** Returns true when the target takes typed text: a text-entry input, a textarea, or a contenteditable element. */
 export function isEditableTarget(target: EventTarget | null): boolean {
   if (!isElement(target)) return false;
+  // Outside an open shadow root an event names the host; the field is the root's focused element.
+  const inner = target.shadowRoot?.activeElement;
+  if (inner) return isEditableTarget(inner);
   const tag = target.tagName;
   if (tag === 'TEXTAREA') return true;
   if (tag === 'INPUT') return TEXT_INPUT_TYPES.has((target as HTMLInputElement).type);

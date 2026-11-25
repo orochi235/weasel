@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { historyKey, matchesKeyBinding } from './keyHelpers';
+import { historyKey, matchesKeyBinding, undoKeyStep } from './keyHelpers';
 
 const key = (k: string, mods: { meta?: boolean; ctrl?: boolean; shift?: boolean; alt?: boolean } = {}) => ({
   key: k,
@@ -76,5 +76,19 @@ describe('historyKey', () => {
     expect(historyKey(key('z'), MAC)).toBeNull();
     expect(historyKey(key('z', { meta: true, alt: true }), MAC)).toBeNull();
     expect(historyKey(key('s', { meta: true }), MAC)).toBeNull();
+  });
+});
+
+describe('undoKeyStep', () => {
+  it('leaves Cmd+Z to a text field focused inside a shadow root, heard at the page as its host', () => {
+    const host = document.createElement('div');
+    document.body.appendChild(host);
+    const input = document.createElement('input');
+    host.attachShadow({ mode: 'open' }).appendChild(input);
+    input.focus();
+    const e = { key: 'z', code: 'KeyZ', metaKey: true, ctrlKey: false, shiftKey: false, altKey: false, defaultPrevented: false, target: host };
+    expect(undoKeyStep(e, true)).toBeNull();
+    expect(undoKeyStep({ ...e, target: document.body }, true)).toBe('undo');
+    host.remove();
   });
 });
