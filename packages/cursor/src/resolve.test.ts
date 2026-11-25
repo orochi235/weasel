@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { cursorFor } from './registry';
 import { cursorCss, resolveCursor } from './resolve';
 import { CURSOR_MAX_CSS_PX } from './types';
 
@@ -93,3 +94,16 @@ describe('resolveCursor', () => {
     }
   });
 });
+
+describe('a turned glyph', () => {
+  it('refuses an angle on a glyph that would turn out of its box, on every tier', () => {
+    for (const spec of [{ glyph: 'crosshair', mark: 'rect' }, { glyph: 'eyedropper' }] as const) {
+      expect(() => resolveCursor({ ...spec, angle: Math.PI / 4 })).toThrow(RangeError);
+      expect(() => resolveCursor({ ...spec, angle: Math.PI / 4, worldRadius: 10 })).toThrow(RangeError);
+      expect(() => cursorFor(spec.glyph, { ...spec, angle: Math.PI / 4 })).toThrow(RangeError);
+      expect(resolveCursor({ ...spec, angle: 0.01 }).kind).toBe('css');
+    }
+    expect(resolveCursor({ glyph: 'resize', angle: Math.PI / 4 }).kind).toBe('css');
+  });
+});
+

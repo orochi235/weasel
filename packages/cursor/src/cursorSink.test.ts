@@ -137,4 +137,29 @@ describe('createCursorSink', () => {
     expect(first.current()).toBeNull();
     expect(second.current()?.cursor).toEqual(ring);
   });
+
+  it('with no base set, removes an override the element serializes differently from how it was written', () => {
+    let value = 'text';
+    const el = { style: { get cursor() { return value; }, set cursor(v: string) { value = v.trim().toLowerCase(); } } };
+    const sink = createCursorSink({ element: () => el, painted: () => undefined });
+    sink.setOverride({ kind: 'css', css: 'Grab ' });
+    expect(el.style.cursor).toBe('grab');
+    sink.setOverride({ kind: 'css', css: 'Pointer' });
+    sink.setOverride(null);
+    expect(el.style.cursor).toBe('text');
+  });
+
+  it('with no base set, leaves a painted override it never set', () => {
+    const { painted, sink } = harness();
+    painted.setOverride(ring);
+    sink.setOverride(null);
+    expect(painted.current()?.cursor).toEqual(ring);
+    let to = painted;
+    const other = createPaintedCursorState();
+    const moving = createCursorSink({ element: () => undefined, painted: () => to });
+    moving.setOverride(null);
+    to = other;
+    moving.setOverride(null);
+    expect(painted.current()?.cursor).toEqual(ring);
+  });
 });

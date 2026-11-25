@@ -45,7 +45,8 @@ function placed(p: CursorPath, k: number, dx: number, dy: number): CursorPath {
 
 /**
  * `glyph` carrying `mark` in its slot: the glyph moved by the slot's shift, hotspot included, and the mark scaled
- * into the slot as an `over` layer, so the mark's halo separates it from the glyph. Throws for a glyph with no slot.
+ * into the slot as an `over` layer, after any the glyph has, so the mark's halo separates it from the glyph. Throws
+ * for a glyph with no slot.
  */
 export function markedGlyph(glyph: CursorGlyph, mark: CursorMark): CursorGlyph {
   const slot = glyph.mark;
@@ -55,10 +56,11 @@ export function markedGlyph(glyph: CursorGlyph, mark: CursorMark): CursorGlyph {
   const mx = slot.x - (mark.box / 2) * k;
   const my = slot.y - (mark.box / 2) * k;
   const { mark: _slot, ...rest } = glyph;
+  const shifted = (p: CursorPath): CursorPath => (sx === 0 && sy === 0 ? p : placed(p, 1, sx, sy));
   return {
     ...rest,
     hotspot: [glyph.hotspot[0] + sx, glyph.hotspot[1] + sy],
-    paths: glyph.paths.map((p) => (sx === 0 && sy === 0 ? p : placed(p, 1, sx, sy))),
-    over: mark.paths.map((p) => placed(p, k, mx, my)),
+    paths: glyph.paths.map(shifted),
+    over: [...(glyph.over ?? []).map(shifted), ...mark.paths.map((p) => placed(p, k, mx, my))],
   };
 }

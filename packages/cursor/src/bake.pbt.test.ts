@@ -13,7 +13,7 @@ import { chromeLineWidthScale, cursorPaintMatrix, cursorPaintOps, worldCursorPx 
 import { cursorGlyph } from './registry';
 import { resolveCursor } from './resolve';
 import { CURSOR_ANGLE_STEPS, CURSOR_MAX_CSS_PX, type CursorGlyph } from './types';
-import { angle, anyNumber, bakedSize, runs, tally, timeoutFor, variant } from './pbt.fixture';
+import { angle, anyNumber, bakedSize, runs, tally, timeoutFor, turns, variant } from './pbt.fixture';
 
 const RUNS = 300;
 
@@ -32,8 +32,9 @@ const apply = (m: readonly number[], x: number, y: number) => [m[0]! * x + m[2]!
 describe('bakeCursor', () => {
   it('draws a finite image at any size up to the cap, its whole-pixel hotspot inside it where the turned glyph puts it', () => {
     const t = tally();
-    fc.assert(fc.property(variant, fc.oneof(bakedSize, anyNumber.filter((n) => !(n > CURSOR_MAX_CSS_PX))), angle, (v, size, a) => {
+    fc.assert(fc.property(variant, fc.oneof(bakedSize, anyNumber.filter((n) => !(n > CURSOR_MAX_CSS_PX))), angle, (v, size, turn) => {
       const glyph = cursorGlyph(v.glyph, { mark: v.mark });
+      const a = turns(v) ? turn : 0;
       const css = bakeCursor(glyph, { size, angle: a });
       const got = parse(css);
       const s = Number.isFinite(size) && size > 0 ? size : 24;
@@ -82,8 +83,9 @@ describe('bakeCursor', () => {
 
 describe('the painted tier', () => {
   it('puts the hotspot on the pointer, and every glyph point where the baked image draws it', () => {
-    fc.assert(fc.property(variant, bakedSize, fc.integer({ min: 0, max: CURSOR_ANGLE_STEPS - 1 }), fc.double({ min: -2000, max: 2000, noNaN: true }), fc.double({ min: -2000, max: 2000, noNaN: true }), fc.tuple(fc.double({ min: 0, max: 24, noNaN: true }), fc.double({ min: 0, max: 24, noNaN: true })), (v, size, step, x, y, [px, py]) => {
+    fc.assert(fc.property(variant, bakedSize, fc.integer({ min: 0, max: CURSOR_ANGLE_STEPS - 1 }), fc.double({ min: -2000, max: 2000, noNaN: true }), fc.double({ min: -2000, max: 2000, noNaN: true }), fc.tuple(fc.double({ min: 0, max: 24, noNaN: true }), fc.double({ min: 0, max: 24, noNaN: true })), (v, size, turn, x, y, [px, py]) => {
       const glyph = cursorGlyph(v.glyph, { mark: v.mark });
+      const step = turns(v) ? turn : 0;
       const angle = (step / CURSOR_ANGLE_STEPS) * 2 * Math.PI;
       const m = cursorPaintMatrix(glyph, { size, angle, at: { x, y } });
       expect(m.every(Number.isFinite)).toBe(true);
