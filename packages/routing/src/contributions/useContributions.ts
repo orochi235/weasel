@@ -99,10 +99,8 @@ export function useContributions<TOverlay = KernelOverlay>(
   // The active mode's capability set gates overlays as it gates bindings. Read
   // as state so `overlays` changes identity when the mode does.
   const modes = opts.modes;
-  const modeVersion = useSyncExternalStore(
-    modes ? modes.subscribe : NO_SUBSCRIBE,
-    () => modes?.getVersion() ?? 0,
-  );
+  const readModeVersion = () => modes?.getVersion() ?? 0;
+  const modeVersion = useSyncExternalStore(modes ? modes.subscribe : NO_SUBSCRIBE, readModeVersion, readModeVersion);
   const openKeymap = useInnermostKeymap()?.id ?? null;
   const snapshot = useCallback(() => assembleEntries(entries, {
     focusedId: focused,

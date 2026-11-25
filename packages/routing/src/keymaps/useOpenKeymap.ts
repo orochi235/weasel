@@ -12,8 +12,11 @@ export function useOpenKeymap(): KeymapDescription | null {
   const registry = useActionsRegistry();
   const open = useInnermostKeymap();
   // Both are cached on the registry's version, so they keep their identity until it moves.
-  const actions = useSyncExternalStore(registry ? registry.subscribe : noSubscribe, () => registry?.list());
-  const overrides = useSyncExternalStore(registry ? registry.subscribe : noSubscribe, () => registry?.bindingOverrides());
+  const subscribe = registry ? registry.subscribe : noSubscribe;
+  const readActions = () => registry?.list();
+  const readOverrides = () => registry?.bindingOverrides();
+  const actions = useSyncExternalStore(subscribe, readActions, readActions);
+  const overrides = useSyncExternalStore(subscribe, readOverrides, readOverrides);
   return useMemo(
     () => (open ? describeKeymap(open, actions ?? [], overrides) : null),
     [open, actions, overrides],
