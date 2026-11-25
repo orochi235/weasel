@@ -9,6 +9,7 @@
 
 import type { GpuDevice, GpuSampling, GpuTexture } from '../gpu/types';
 import type { ImageTexSource } from './uploadPremultiplied';
+import { warnOnce } from '../warnOnce';
 
 type TexSource = ImageTexSource;
 
@@ -34,6 +35,8 @@ export class GLTextureCache {
   private readonly wraps = new Map<string, TextureWrap>();
   /** The source each image-backed id was last uploaded from. */
   private readonly sources = new Map<string, TexSource>();
+  /** Whether each image-backed id's texels were last written premultiplied. */
+  private readonly premultiplied = new Map<string, boolean>();
   /** The ids that came from the texture registry, which a sweep may drop. */
   private readonly registered = new Set<string>();
   private sweptVersion = -1;
@@ -53,15 +56,22 @@ export class GLTextureCache {
    *  tile in the next. */
   upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
     // A font atlas's channels are a distance field, not a color: kept straight.
+    this.registered.delete(id);
     return this.ensure(id, source, wrap, false);
   }
 
   private ensure(id: string, source: TexSource, wrap: TextureWrap, premultiply: boolean): string {
     const cached = this.map.get(id);
     if (cached) {
-      if (this.sources.get(id) !== source) {
+      const was = this.premultiplied.get(id);
+      if (was !== undefined && was !== premultiply) {
+        warnOnce(`texture-alpha:${id}`, `weasel: texture id '${id}' names both a font atlas and a registered texture; `
+          + 'each upload under it replaces the other\'s pixels');
+      }
+      if (this.sources.get(id) !== source || was !== premultiply) {
         this.gpu.writeTexture(cached, { source, premultiply });
         this.sources.set(id, source);
+        this.premultiplied.set(id, premultiply);
       }
       if (this.wraps.get(id) !== wrap) this.applyWrap(id, cached, wrap);
       return id;
@@ -71,6 +81,7 @@ export class GLTextureCache {
     this.map.set(id, tex);
     this.wraps.set(id, wrap);
     this.sources.set(id, source);
+    this.premultiplied.set(id, premultiply);
     return id;
   }
 
@@ -105,6 +116,7 @@ export class GLTextureCache {
       this.map.delete(id);
       this.wraps.delete(id);
       this.sources.delete(id);
+      this.premultiplied.delete(id);
       this.registered.delete(id);
     }
   }
@@ -162,6 +174,7 @@ export class GLTextureCache {
     this.map.clear();
     this.wraps.clear();
     this.sources.clear();
+    this.premultiplied.clear();
     this.registered.clear();
   }
 }

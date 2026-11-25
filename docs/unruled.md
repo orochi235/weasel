@@ -4218,3 +4218,10 @@ Calls the lanes made without a ruling:
   alternative. `openPointerSession`'s `missedRelease` option picks either.
 - 2026-11-24 (the fixer's call): every `openPointerSession` cancels on a window blur, reporting `'blur'`, unless
   opened with `blur: false`. Leaving blur to each caller, as only carry and the dispatcher did, was the alternative.
+
+## Audit round eighty-six (2026-11-25): renderer.cache
+
+- 2026-11-25 (the fixer's call): a texture id that names both a font atlas and a registered texture warns once, and
+  each upload under it rewrites the texels in its own alpha convention (straight for the atlas, premultiplied for the
+  image); the last to upload also decides whether a registry sweep may delete it. Keeping the two in separate
+  namespaces was the alternative, which would change how every draw looks a texture up.

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
 import { GLTextureCache } from './GLTextureCache';
@@ -148,5 +148,24 @@ describe('GLTextureCache', () => {
       cache.sweep({ getVersion: () => 1, has: () => { asked++; return true; } });
       expect(asked).toBe(0);
     });
+  });
+
+  it('writes an id\'s pixels again, with a warning, when a font atlas and a registered texture share it', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const { gl, calls, reset } = createGLRecorder();
+      const cache = new GLTextureCache(webglDevice(gl));
+      cache.upload('shared-alpha-id', fakeImage);
+      reset();
+      cache.uploadRegistered('shared-alpha-id', fakeImage);
+      expect(calls.filter((c) => c.name === 'texImage2D').length).toBe(1);
+      expect(warn).toHaveBeenCalledWith(expect.stringMatching(/shared-alpha-id/));
+      // The atlas took the id back, so a sweep that does not know it leaves it alone.
+      cache.upload('shared-alpha-id', fakeImage);
+      cache.sweep({ getVersion: () => 1, has: () => false });
+      expect(cache.has('shared-alpha-id')).toBe(true);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
