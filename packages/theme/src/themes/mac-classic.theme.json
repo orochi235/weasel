@@ -3,6 +3,10 @@
   "extends": "weasel",
   "description": "What every classic Mac OS look shares, whatever its era: the system faces and their sizes, square windows and fields, centered window titles, and flat control faces. An era's theme extends it with colors and edges.",
   "axes": {
+    "scrollbars": {
+      "default": "native",
+      "values": {}
+    },
     "mode": {
       "default": "light",
       "values": {

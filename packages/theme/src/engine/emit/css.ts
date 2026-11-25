@@ -6,6 +6,7 @@ import { refTarget, resolveTokens } from '../../dtcg/resolve.ts';
 import type { RawToken } from '../../dtcg/types.ts';
 import type { BakedTheme } from '../bake.ts';
 import type { AxisDependency } from '../deps.ts';
+import { scrollbarRules, stylesScrollbars } from '../../scrollbars.ts';
 
 /** One theme to write as CSS: its baked tokens and the axes each token depends on. */
 export interface EmitInput {
@@ -268,5 +269,8 @@ export function emitCss(themes: readonly EmitInput[]): string {
     blocks(lines, plan, (attrs) => [`${wzlAttr('theme', plan.theme)}${attrs} {`]);
   }
 
+  if (themes.some((t) => stylesScrollbars(Object.keys(t.baked.tokens)))) {
+    lines.push(...scrollbarRules(themes.flatMap((t) => Object.keys(t.baked.axes))));
+  }
   return lines.join('\n');
 }

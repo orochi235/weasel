@@ -2,6 +2,7 @@ import { axisScheme, fullAxisChoice, wzlAttr, wzlValue, type AxisDefs, type Axis
 import { blendTheme, type AxisWeights } from './blendTheme';
 import { resolveTheme, themeAxes } from './resolveTheme';
 import type { Theme } from './theme';
+import { SCROLLBAR_COLOR_DECL, stylesScrollbars } from './scrollbars';
 import { holdRule, styleRootOf } from './themeSheet';
 import { warnThemeOnce } from './warnOnce';
 import { getOwn } from '@weasel-js/registry';
@@ -110,9 +111,11 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: AxisChoice 
   const picked = Object.entries(sel);
   const names = picked.map(([a]) => a);
   const scheme = picked.map(([a, v]) => axisScheme(axes, a, v)).find((s) => s !== undefined);
+  const tokens = options.weights ? blendTheme(theme, options.weights, sel) : resolveTheme(theme, sel);
   const body = [
     ...(scheme ? [`color-scheme: ${scheme};`] : []),
-    ...declarations(theme, options.weights ? blendTheme(theme, options.weights, sel) : resolveTheme(theme, sel)),
+    ...(stylesScrollbars(Object.keys(tokens)) ? [SCROLLBAR_COLOR_DECL] : []),
+    ...declarations(theme, tokens),
   ].join(' ');
   const selector = `${wzlAttr('theme', theme.name)}${picked.map(([a, v]) => wzlAttr(a, v)).join('')}`;
   // Held before the last one is let go, so re-applying the same rule rewrites nothing.
