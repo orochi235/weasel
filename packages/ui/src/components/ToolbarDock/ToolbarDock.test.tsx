@@ -4,6 +4,7 @@ import type { PrefBarLead } from '@weasel-js/prefs';
 import { Bar, type BarOrientation } from '../Bar';
 import { barNodeChildren } from '../PrefsBar';
 import { ToolbarDock } from './ToolbarDock';
+import { useReportDockLeast } from './dockContext';
 import type { DockBar, DockSpec, ToolbarLayout } from './layout';
 
 const docks: DockSpec[] = [
@@ -104,5 +105,18 @@ describe('ToolbarDock', () => {
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]![0]).toContain('bar "lost" lists docks ["lefft","left"]');
     warn.mockRestore();
+  });
+
+  it('drops a bar’s least length once what reported it is gone', () => {
+    function Least() {
+      useReportDockLeast(50);
+      return <span>least</span>;
+    }
+    const sized = (with_: boolean): DockBar => ({ id: 'file', label: 'File', docks: ['top'], render: () => (with_ ? <Least /> : <span>plain</span>) });
+    const { rerender } = render(<ToolbarDock docks={docks} bars={[sized(true)]} layout={layout} />);
+    const slot = () => document.querySelector<HTMLElement>('[data-dock-bar="file"]')!;
+    expect(slot().style.getPropertyValue('--dock-least')).toBe('50px');
+    rerender(<ToolbarDock docks={docks} bars={[sized(false)]} layout={layout} />);
+    expect(slot().style.getPropertyValue('--dock-least')).toBe('');
   });
 });
