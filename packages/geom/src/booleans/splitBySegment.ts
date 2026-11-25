@@ -61,7 +61,7 @@ export function splitPathBySegment(
  *
  * A path whose contours cross each other or themselves is first resolved into
  * non-overlapping rings by `pathUnion`, which keeps its curves except in the
- * few cases that union flattens (a cubic that crosses itself, say).
+ * few cases that union flattens (some tangencies, very large paths).
  *
  * Returns `null` when no chord is cut.
  */
