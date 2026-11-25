@@ -38,6 +38,14 @@ describe('steppedOption', () => {
     expect(steppedOption(leaf('radiusPx'), 3, OPTIONS.size!, 1)).toBe(4);
   });
 
+  it('moves an off-grid value on to the next grid point when a small step would round it back past where it began', () => {
+    const ones: PrefNumber = { kind: 'number', name: 'S', description: '', default: 10, step: 1 };
+    expect(steppedOption(ones, 10.4, { option: 's', times: 1.005 }, 1)).toBe(11);
+    expect(steppedOption(ones, 10.6, { option: 's', times: 1.005 }, -1)).toBe(10);
+    expect(steppedOption(ones, 10.4, { option: 's', plus: 0.2 }, 1)).toBe(11);
+    expect(steppedOption(ones, 10.6, { option: 's', plus: 0.2 }, -1)).toBe(10);
+  });
+
   it('moves at least one step on a fractional step, where rounding lands a float error away from the start', () => {
     const tenths: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0.3, min: 0, max: 10, step: 0.1 };
     expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, 1)).toBe(0.4);
