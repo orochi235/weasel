@@ -54,32 +54,40 @@ interface Scroller {
   scale: { x: number; y: number };
 }
 
-/** Whether `style` makes its box the containing block of a fixed descendant. */
+/** Whether `style` makes its box the containing block of a fixed descendant (and so of an absolute one). */
 const holdsFixed = (style: CSSStyleDeclaration): boolean =>
   (style.transform !== '' && style.transform !== 'none') || (style.filter !== '' && style.filter !== 'none')
   || (style.perspective !== '' && style.perspective !== 'none') || /paint|layout|strict|content/.test(style.contain);
 
-/** The ancestors whose scrolling moves `el` on screen: none between a fixed box and its containing block, nor the
- *  one a sticky box sticks in. */
+/** Whether a box with `style` is the containing block of a descendant positioned as `position`. */
+const holds = (position: string | undefined, style: CSSStyleDeclaration | undefined): boolean =>
+  position === 'fixed' ? !!style && holdsFixed(style)
+  : position === 'absolute' ? !!style && (style.position !== 'static' || holdsFixed(style))
+  : true;
+
+/** The ancestors whose scrolling moves `el` on screen: each box's containing block, up the chain, but not the
+ *  viewport a fixed box is held by, nor the scroller a sticky box sticks in. */
 function scrollersOf(el: Element): Scroller[] {
   const view = el.ownerDocument.defaultView;
+  const root = el.ownerDocument.documentElement;
+  const styleOf = (n: Element) => view?.getComputedStyle(n);
   const out: Scroller[] = [];
-  let fixed = false;
+  const push = (p: Element) => out.push({ el: p, scale: p instanceof HTMLElement ? clientScaleOf(p) : { x: 1, y: 1 } });
   let sticky = false;
-  for (let n: Element | null = el; n; n = n.parentElement) {
-    const style = view?.getComputedStyle(n);
-    if (fixed && style && holdsFixed(style)) fixed = false;
-    if (style?.position === 'fixed') fixed = true;
-    else if (style?.position === 'sticky') sticky = true;
-    const p = n.parentElement;
-    if (!p || fixed) continue;
-    if (sticky && (p === p.ownerDocument.documentElement || view?.getComputedStyle(p).overflow !== 'visible')) {
-      sticky = false;
-      continue;
+  for (let n: Element = el; ;) {
+    const position = styleOf(n)?.position;
+    if (position === 'sticky') sticky = true;
+    let p = n.parentElement;
+    while (p && !holds(position, styleOf(p))) p = p.parentElement;
+    if (!p) {
+      // An absolute box with no positioned ancestor is held by the initial containing block, which the page scrolls.
+      if (position === 'absolute' && n !== root) push(root);
+      return out;
     }
-    out.push({ el: p, scale: p instanceof HTMLElement ? clientScaleOf(p) : { x: 1, y: 1 } });
+    if (sticky && (p === root || styleOf(p)?.overflow !== 'visible')) sticky = false;
+    else push(p);
+    n = p;
   }
-  return out;
 }
 
 /** How far `scrollers` have moved what they hold, in client pixels. */

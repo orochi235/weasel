@@ -440,4 +440,40 @@ describe('useHandleDrag — callbacks from a later render', () => {
     expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 45 });
     scroller.remove();
   });
+  it('counts a scroll of the transformed box that holds a fixed one, which moves it', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const holder = document.createElement('div');
+    holder.style.transform = 'translateX(0px)';
+    holder.style.overflow = 'auto';
+    document.body.appendChild(holder);
+    const target = mount();
+    target.style.position = 'fixed';
+    holder.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    holder.scrollTop = 20;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 30 });
+    holder.remove();
+  });
+
+  it('leaves out a scroll between an absolute rect and its containing block, which does not move it', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const block = document.createElement('div');
+    block.style.position = 'relative';
+    const wrapper = document.createElement('div');
+    wrapper.style.overflow = 'auto';
+    document.body.appendChild(block);
+    block.appendChild(wrapper);
+    const target = mount();
+    target.style.position = 'absolute';
+    wrapper.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    wrapper.scrollTop = 30;
+    block.scrollTop = 5;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 15 });
+    block.remove();
+  });
 });
