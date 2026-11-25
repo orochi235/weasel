@@ -1,5 +1,5 @@
 import type { Op } from './op';
-import { appliedHalves, createApplier, stepOf } from './entryOps';
+import { appliedHalves, createApplier, recordedOps, stepOf } from './entryOps';
 import { createStackView } from './stackView';
 import { createWalk } from './walk';
 import { createVersionClock } from './versionClock';
@@ -135,7 +135,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       journals.refuse();
-      const kept = ops.slice();
+      const kept = recordedOps(ops, [], false);
       record(kept, kept, label, options);
     },
     nextEntryId: recorder.nextEntryId,

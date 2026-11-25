@@ -84,4 +84,17 @@ describe('History.recordEntry', () => {
     h.undo();
     expect(adapter.values).toEqual([]);
   });
+
+  it('records the ops an op says it caused in its place', () => {
+    const adapter = makeArrayAdapter();
+    const h = createHistory(adapter);
+    const decided: Op = { apply() { throw new Error('re-decided'); }, invert: () => decided, caused: () => [pushOp(7)] };
+    adapter.values.push(7);
+    h.recordEntry([decided], 'decided');
+
+    h.undo();
+    expect(adapter.values).toEqual([]);
+    h.redo();
+    expect(adapter.values).toEqual([7]);
+  });
 });

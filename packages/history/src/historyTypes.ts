@@ -170,7 +170,8 @@ export interface History {
   /** Push an entry whose ops have already been applied to the adapter.
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
    *  to flush a session's net forward ops to the parent as one entry without
-   *  re-mutating the scene. Throws while a journal is active, as `apply` does. */
+   *  re-mutating the scene. An op naming what it `caused` is recorded as those ops, as
+   *  `applyOps` records it. Throws while a journal is active, as `apply` does. */
   recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   /** Concatenated forwardOps of every undo-stack entry, in order. Snapshot
    *  of "what changes are currently applied via this history" — useful for
