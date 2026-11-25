@@ -17,7 +17,7 @@ const INDEXES = scratchKey<Map<string, number>>('snapBackOrDelete.indexes');
  * pose; release outside it and they all either spring back anyway or are
  * deleted, per `onFreeRelease`. The distance is the first outermost dragged
  * node's, measured in world. A deletion is recorded as undoable ops with paint
- * order preserved. An Alt-drag clone released anywhere but a snap target makes
+ * order preserved; a dragged node inside another dragged node goes with it. An Alt-drag clone released anywhere but a snap target makes
  * no copy.
  */
 export function snapBackOrDelete<TPose extends { x: number; y: number }>(args: {
@@ -65,7 +65,8 @@ export function snapBackOrDelete<TPose>(args: {
 
     onEnd(ctx) {
       if (ctx.snap) return;
-      const id = outermost(ctx.draggedIds, (at) => ctx.adapter.getParent(at))[0];
+      const roots = outermost(ctx.draggedIds, (at) => ctx.adapter.getParent(at));
+      const id = roots[0];
       const world = (pose: TPose): TPose => ctx.frames?.toWorld(id, pose) ?? pose;
       const o0 = proj.getOrigin(world(ctx.origin.get(id)!));
       const o1 = proj.getOrigin(world(ctx.current.get(id)!));
@@ -79,8 +80,9 @@ export function snapBackOrDelete<TPose>(args: {
         const snapshots = getScratch(ctx.scratch, SNAPSHOTS);
         const indexes = getScratch(ctx.scratch, INDEXES);
         const indexOf = (dragged: string): number => indexes?.get(dragged) ?? -1;
-        // Topmost first, so an undo, which replays in reverse, restores each index in turn.
-        return [...ctx.draggedIds]
+        // Only roots: a delete takes its subtree. Topmost first, so an undo, which replays in
+        // reverse, restores each index in turn.
+        return [...roots]
           .sort((p, q) => indexOf(q) - indexOf(p))
           .map((dragged): Op => ops.delete({
             node: snapshots?.get(dragged) ?? { id: dragged },
