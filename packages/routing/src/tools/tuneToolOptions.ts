@@ -14,7 +14,7 @@ import type { Tool } from './types';
  *  can bind one action (every shape tool binds `insert`), and only the active
  *  tool's options reach it. The options and the action's last-operation panel
  *  are one setting: a value the panel sets is written back to the dep, for the
- *  tool whose options the action last read, active or not. The panel shows the live tool's options beside the
+ *  tool whose options the panel's run showed, active or not. The panel shows the live tool's options beside the
  *  action's own params (`ActionTuning.form`), so a shape's fill and stroke can be changed after it is drawn.
  *  Returns a release. */
 export function tuneToolOptions(
@@ -23,8 +23,9 @@ export function tuneToolOptions(
   tools: Iterable<Tool>,
 ): () => void {
   const releases: Array<() => void> = [];
-  // The tool whose options each action last read: the one a panel change to its last run belongs to.
-  const readBy = new Map<string, string>();
+  // The tool whose options each action's last held run showed, `null` for none: the one a panel change belongs to.
+  // Taken from `form`, read once per run the panel may hold, not `params`, which a cursor or an enabled check reads too.
+  const readBy = new Map<string, string | null>();
   const all = [...tools];
   const ids = new Set(all.map((t) => t.id));
   const live = (): string | null => liveTool(deps?.get('activeTool'), ids);
@@ -35,15 +36,16 @@ export function tuneToolOptions(
     for (const actionId of toolOptionActionIds(options)) {
       releases.push(registry.tune(actionId, {
         under: true,
-        params: () => {
-          if (!active()) return {};
-          readBy.set(actionId, tool.id);
-          return toolOptionParams(tool.id, options, deps?.get('toolOptionValues'));
+        params: () => (active() ? toolOptionParams(tool.id, options, deps?.get('toolOptionValues')) : {}),
+        form: () => {
+          if (active()) readBy.set(actionId, tool.id);
+          else if (readBy.get(actionId) === tool.id) readBy.set(actionId, null);
+          return active() ? options.prefs : null;
         },
-        form: () => (active() ? options.prefs : null),
         keep: (params) => {
           const values = deps?.get('toolOptionValues');
-          if (values && (readBy.get(actionId) ?? (active() ? tool.id : null)) === tool.id) keepToolOptions(tool.id, options, values, params);
+          const reader = readBy.has(actionId) ? readBy.get(actionId) : active() ? tool.id : null;
+          if (values && reader === tool.id) keepToolOptions(tool.id, options, values, params);
         },
       }));
     }
