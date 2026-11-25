@@ -25,7 +25,8 @@ export interface ExtensionRegisterOptions {
  *   of one, does nothing.
  * - **Scoped.** A registry made with a `parent` resolves its own ids first and then the parent's.
  *   Hosts that should not see each other's extensions each make their own; hosts that should share
- *   them hold one registry, or children of one.
+ *   them hold one registry, or children of one. A parent never sees its children, so its own
+ *   registration is never refused for an id a child holds: the child's value goes on shadowing it.
  *
  * The registry is itself a {@link Reflection} over every id it resolves, its parent's included.
  */
