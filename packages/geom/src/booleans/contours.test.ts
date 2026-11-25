@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { PathBuilder } from '../paths/builder';
-import { contoursIntersect, parseContours } from './contours';
+import { contoursIntersect, orientBoundaries, parseContours } from './contours';
 
 const squares = (...boxes: [number, number, number][]) => {
   const b = new PathBuilder();
@@ -16,5 +16,12 @@ describe('contoursIntersect', () => {
 
   it('finds two squares that overlap', () => {
     expect(contoursIntersect(parseContours(squares([0, 0, 10], [5, 5, 10])), 0.5)).toBe(true);
+  });
+});
+
+describe('orientBoundaries', () => {
+  it('keeps a contour whose longest segment is a cubic with a cusp at its middle', () => {
+    const drop = new PathBuilder().moveTo(0, 0).curveTo(1, 1, 0, 1, 1, 0).close().build();
+    expect(orientBoundaries(parseContours(drop), 'nonzero')).toHaveLength(1);
   });
 });

@@ -681,3 +681,10 @@ describe('tolerances scale with the path', () => {
     expect(runs).toHaveLength(2);
   });
 });
+
+describe('splitPathBySegment on a cusp', () => {
+  it('halves a teardrop whose cubic has its cusp at the middle', () => {
+    const drop = new PathBuilder().moveTo(0, 0).curveTo(1, 1, 0, 1, 1, 0).close().build();
+    expect(splitPathBySegment(drop, { x: 0.5, y: -1 }, { x: 0.5, y: 2 })).toHaveLength(2);
+  });
+});
