@@ -354,8 +354,8 @@ describe('lassoSelectAction behaviors', () => {
   });
 });
 
-describe('a lasso too thin to enclose anything', () => {
-  it('reads as a click under the default commit, as under selectFromLasso', () => {
+describe('a lasso flat on one axis', () => {
+  it('selects what it crosses under the default commit, as a flat marquee does', () => {
     const invoker = getOngoingInvoker(lassoSelectAction);
     const dep = makeLassoSelectDep(['crossed'], ['held']);
     const handle = invoker.start(makeCtx(dep, { x: 0, y: 0 }), undefined);
@@ -365,6 +365,56 @@ describe('a lasso too thin to enclose anything', () => {
     handle.onMove!(at(20));
     handle.onMove!(at(40));
     handle.onEnd!(at(40), 'commit');
+    expect(dep.calls.hitTestLasso).toHaveLength(1);
+    expect(dep.calls.setSelection).toEqual([['crossed']]);
+  });
+
+  it('reads as a click when the pointer never leaves its vertex spacing', () => {
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const dep = makeLassoSelectDep(['crossed'], ['held']);
+    const handle = invoker.start(makeCtx(dep, { x: 0, y: 0 }), undefined);
+    handle.onMove!({ ...makeCtx(), world: { x: 1, y: 1 }, screen: { x: 1, y: 1 } });
+    handle.onEnd!(makeCtx(), 'commit');
+    expect(dep.calls.hitTestLasso).toHaveLength(0);
+    expect(dep.calls.setSelection).toEqual([[]]);
+  });
+});
+
+describe('the lasso at a zoom', () => {
+  const zoomed = (scale: number) => ({
+    get: () => ({ x: 0, y: 0, scale: { x: scale, y: scale } }),
+    set: () => {},
+  });
+
+  function drawSquare(scale: number, side: number) {
+    const invoker = getOngoingInvoker(lassoSelectAction);
+    const dep = makeLassoSelectDep(['inside'], ['held']);
+    const start: InvocationCtx = { ...makeCtx(dep, { x: 0, y: 0 }), deps: { lassoSelect: dep, view: zoomed(scale) } };
+    const handle = invoker.start(start, undefined);
+    const steps = 30;
+    const corners = [[side, 0], [side, side], [0, side], [0, 0]];
+    let from = [0, 0];
+    for (const [cx, cy] of corners) {
+      for (let i = 1; i <= steps; i++) {
+        const x = from[0] + ((cx - from[0]) * i) / steps;
+        const y = from[1] + ((cy - from[1]) * i) / steps;
+        handle.onMove!({ ...makeCtx(), world: { x, y }, screen: { x: x * scale, y: y * scale } });
+      }
+      from = [cx, cy];
+    }
+    handle.onEnd!(makeCtx(), 'commit');
+    return dep;
+  }
+
+  it('spaces vertices in screen px, so a deep zoom keeps a 150 px loop around a 1.5 unit square', () => {
+    const dep = drawSquare(100, 1.5);
+    expect(dep.calls.setSelection).toEqual([['inside']]);
+    const { polygon } = dep.calls.hitTestLasso[0] as { polygon: unknown[] };
+    expect(polygon.length).toBeGreaterThan(40);
+  });
+
+  it('reads a 1 px jiggle as a click at a far zoom-out', () => {
+    const dep = drawSquare(0.1, 10);
     expect(dep.calls.hitTestLasso).toHaveLength(0);
     expect(dep.calls.setSelection).toEqual([[]]);
   });
