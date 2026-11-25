@@ -1,3 +1,5 @@
+import { setFlagsFromString } from 'node:v8';
+import { runInNewContext } from 'node:vm';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createGLRecorder } from '../testing/glRecorder';
 import { webglDevice } from '../gpu/webgl/WebGLDevice';
@@ -233,5 +235,23 @@ describe('GLImageCache — a source the garbage collector reclaimed', () => {
     cache.drainPendingDeletes();
     expect(calls.filter((c) => c.name === 'deleteTexture')).toHaveLength(1);
     cache.dispose();
+  });
+});
+
+describe('a cache never disposed', () => {
+  it('stops answering once nothing holds it', async () => {
+    setFlagsFromString('--expose-gc');
+    const gc = runInNewContext('gc') as () => void;
+    const key = {};
+    (() => {
+      const { gl } = createGLRecorder();
+      new GLImageCache(webglDevice(gl)).upload(key, fakeImgData);
+    })();
+    expect(imageSourceInLatestFrame(key)).toBe(true);
+    for (let i = 0; i < 5 && imageSourceInLatestFrame(key); i++) {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      gc();
+    }
+    expect(imageSourceInLatestFrame(key)).toBe(false);
   });
 });

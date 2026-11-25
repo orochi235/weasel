@@ -34,18 +34,28 @@ interface DrawnRecord {
   readonly at: WeakMap<object, number>;
 }
 
-const live = new Set<GLImageCache>();
+/** Weak, so a renderer dropped without `dispose` takes its cache, context and
+ *  textures with it. */
+const live = new Set<WeakRef<GLImageCache>>();
+
+function* liveCaches(): Generator<GLImageCache> {
+  for (const ref of live) {
+    const cache = ref.deref();
+    if (cache === undefined) live.delete(ref);
+    else yield cache;
+  }
+}
 
 /** Free `key`'s texture in every live renderer. For an owner that has replaced
  *  a source and will never draw the old one again — a later draw of it simply
  *  re-uploads. */
 export function releaseImageSource(key: object): void {
-  for (const cache of live) cache.release(key);
+  for (const cache of liveCaches()) cache.release(key);
 }
 
 /** Whether any live renderer drew `key` in the latest frame it rendered. */
 export function imageSourceInLatestFrame(key: object): boolean {
-  for (const cache of live) if (cache.drewInLatestFrame(key)) return true;
+  for (const cache of liveCaches()) if (cache.drewInLatestFrame(key)) return true;
   return false;
 }
 
@@ -53,7 +63,7 @@ export function imageSourceInLatestFrame(key: object): boolean {
  *  `MAX_TEXTURE_SIZE` among them, or a conservative default when none is live. */
 export function maxImageTextureSide(): number {
   let side = Infinity;
-  for (const cache of live) side = Math.min(side, cache.maxTextureSide);
+  for (const cache of liveCaches()) side = Math.min(side, cache.maxTextureSide);
   return Number.isFinite(side) ? side : DEFAULT_MAX_TEXTURE_SIDE;
 }
 
@@ -70,6 +80,7 @@ export class GLImageCache {
   /** Under `'auto'`, the sources whose mipmaps are built. */
   private readonly mipped = new WeakSet<object>();
   private readonly drawn: DrawnRecord;
+  private readonly ref = new WeakRef(this);
 
   /** `minification` selects the MIN_FILTER strategy for uploaded textures.
    *  `'mipmap'` generates mipmaps and filters LINEAR_MIPMAP_LINEAR: when a
@@ -87,7 +98,7 @@ export class GLImageCache {
     this.finalizer = new FinalizationRegistry<GpuTexture>((tex) => {
       if (this.textures.delete(tex)) this.pendingDeletes.push(tex);
     });
-    live.add(this);
+    live.add(this.ref);
   }
 
   /** Open a frame: what {@link drewInLatestFrame} answers about from here on.
@@ -140,7 +151,7 @@ export class GLImageCache {
   abandon(): void {
     this.textures.clear();
     this.pendingDeletes.length = 0;
-    live.delete(this);
+    live.delete(this.ref);
   }
 
   upload(key: object, source: TexSource): GpuTexture {
