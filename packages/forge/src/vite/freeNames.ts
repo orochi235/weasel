@@ -119,8 +119,9 @@ export function freeNames(node: t.Node): Set<string> {
         if (!scope.has(n.name)) out.add(n.name);
         return;
       case 'BlockStatement':
-      case 'StaticBlock':
         return walk(n.body, plus(scope, lexicalNames(n.body)));
+      case 'StaticBlock':
+        return walk(n.body, plus(scope, [...lexicalNames(n.body), ...varNames(n.body)]));
       case 'SwitchStatement': {
         walk(n.discriminant, scope);
         return walk(n.cases, plus(scope, lexicalNames(n.cases.flatMap((c) => c.consequent))));

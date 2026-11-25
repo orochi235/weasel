@@ -66,12 +66,12 @@ const childrenOf = (n: t.Node): unknown[] =>
 const isNode = (value: unknown): value is t.Node =>
   !!value && typeof value === 'object' && typeof (value as t.Node).type === 'string';
 
-/** The `var`s a function body declares, outside any function nested in it. */
-function varNames(body: t.Node): string[] {
+/** The `var`s a function body or static block declares, outside any function or static block nested in it. */
+function varNames(body: t.Node | readonly t.Node[]): string[] {
   const out: string[] = [];
   const visit = (value: unknown): void => {
     if (Array.isArray(value)) return value.forEach(visit);
-    if (!isNode(value) || FUNCTIONS.has(value.type)) return;
+    if (!isNode(value) || FUNCTIONS.has(value.type) || value.type === 'StaticBlock') return;
     if (value.type === 'VariableDeclaration' && value.kind === 'var') out.push(...value.declarations.flatMap((d) => patternNames(d.id)));
     childrenOf(value).forEach(visit);
   };
@@ -88,6 +88,7 @@ function scopeNames(n: t.Node): string[] {
   }
   if (n.type === 'CatchClause') return patternNames(n.param);
   if (n.type === 'ClassExpression' && n.id) return [n.id.name];
+  const vars = n.type === 'StaticBlock' ? varNames(n.body) : [];
   const statements =
     n.type === 'BlockStatement' || n.type === 'StaticBlock'
       ? n.body
@@ -98,11 +99,11 @@ function scopeNames(n: t.Node): string[] {
           : n.type === 'ForInStatement' || n.type === 'ForOfStatement'
             ? [n.left]
             : [];
-  return statements.flatMap((stmt) => {
+  return [...vars, ...statements.flatMap((stmt) => {
     if (stmt?.type === 'VariableDeclaration' && stmt.kind !== 'var') return stmt.declarations.flatMap((d) => patternNames(d.id));
     if ((stmt?.type === 'FunctionDeclaration' || stmt?.type === 'ClassDeclaration') && stmt.id) return [stmt.id.name];
     return [];
-  });
+  })];
 }
 
 /**
