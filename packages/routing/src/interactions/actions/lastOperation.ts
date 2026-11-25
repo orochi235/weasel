@@ -282,7 +282,7 @@ export class LastOperationKeeper implements LastOperationStore {
       let driven = ctx.params;
       const moved: OngoingHandle['onMove'] = (moveCtx) => {
         if (moveCtx.params) driven = moveCtx.params;
-        onMove?.call(handle, moveCtx);
+        return onMove?.call(handle, moveCtx);
       };
       const ended: OngoingHandle['onEnd'] = (endCtx, reason) => {
         let entry: number | null = null;
