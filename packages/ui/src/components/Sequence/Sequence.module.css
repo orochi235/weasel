@@ -42,7 +42,9 @@
   text-align: center;
 }
 
+/* Hugs its cells rather than stretching across the column, so each heading sits over the cell below it. */
 .grid {
+  align-self: start;
   border-collapse: separate;
   border-spacing: var(--wzl-space-4);
 }
