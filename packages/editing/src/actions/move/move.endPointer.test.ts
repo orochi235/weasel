@@ -16,7 +16,11 @@ function fixture() {
   const a = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } });
   const base = { world: { x: 0, y: 0 }, screen: { x: 0, y: 0 }, modifiers: MODS, deps: { operands: { get: () => [a] as NodeId[] }, scene } };
   const seen: MoveEnd['pointer'][] = [];
-  const spy: MoveBehavior<unknown> = { onEnd: (_ctx, end) => { seen.push(end.pointer); } };
+  const moved: { x: number; y: number }[] = [];
+  const spy: MoveBehavior<unknown> = {
+    onMove: (ctx) => { moved.push({ x: ctx.pointer.worldX, y: ctx.pointer.worldY }); },
+    onEnd: (_ctx, end) => { seen.push(end.pointer); },
+  };
   const opts = { behaviors: [spy] } as BindingOptions;
   const at = (x: number, y: number, dx: number): InvocationCtx => ({
     ...base,
@@ -24,7 +28,7 @@ function fixture() {
     drag: { start: { x: 0, y: 0 }, current: { x, y }, delta: { x: dx, y: 0 } },
   }) as unknown as InvocationCtx;
   const press = base as unknown as InvocationCtx;
-  return { press, opts, at, seen };
+  return { press, opts, at, seen, moved, scene, a };
 }
 
 describe('MoveEnd.pointer', () => {
@@ -42,5 +46,14 @@ describe('MoveEnd.pointer', () => {
     handle.onMove!(at(10, 4, 10));
     handle.onEnd!(press, 'commit');
     expect(seen).toEqual([{ x: 10, y: 4 }]);
+  });
+
+  it('runs a last frame at a release past the last move, and commits what it shows', () => {
+    const { press, opts, at, moved, scene, a } = fixture();
+    const handle = (moveAction.invoker as OngoingInvoker).start(press, opts) as OngoingHandle;
+    handle.onMove!(at(10, 0, 10));
+    handle.onEnd!(at(12, 0, 12), 'commit');
+    expect(moved.at(-1)).toEqual({ x: 12, y: 0 });
+    expect(scene.get(a)!.pose.x).toBe(12);
   });
 });

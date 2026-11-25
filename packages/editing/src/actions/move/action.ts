@@ -78,11 +78,13 @@ export const moveAction: Action = inPlane(defineAction({
             // A press that never moved was never a move: its behaviors
             // started, so they are canceled, not asked to commit.
             if (reason === 'commit' && engaged) {
-              committed = commitMove({
-                session,
-                delta: frame.delta,
-                at: endCtx.drag ? endCtx.world : engaged,
-              });
+              // A release past the last move gets a frame of its own, so every behavior judges the same point.
+              if (endCtx.drag && (endCtx.world.x !== engaged.x || endCtx.world.y !== engaged.y)) {
+                engaged = endCtx.world;
+                lastMove = endCtx;
+                show(endCtx);
+              }
+              committed = commitMove({ session, delta: frame.delta, at: engaged });
               if (committed) recordTransform(session.scene, { kind: 'translate', ...frame.delta }, subject);
             } else runBehaviorCancel(session.behaviors, session.gestureCtx);
           } finally {
