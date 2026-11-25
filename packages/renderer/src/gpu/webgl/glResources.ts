@@ -75,6 +75,8 @@ export function writeBuffer(
   srcOffset?: number, length?: number,
 ): void {
   checkBufferWrite(dstByteOffset, dstByteOffset + bytesOf(data, srcOffset, length).byteLength, buffer.size);
+  // GL reads a zero length as the rest of the array.
+  if (length === 0) return;
   const target = bindBuffer(gl, cache, buffer);
   if (srcOffset === undefined && length === undefined) gl.bufferSubData(target, dstByteOffset, data);
   else gl.bufferSubData(target, dstByteOffset, data, srcOffset ?? 0, length);

@@ -318,6 +318,14 @@ describe('WebGLDevice buffer writes', () => {
     gpu.writeBuffer(buffer, 4, new Float32Array(3));
     expect(argsOf(rec, 'bufferSubData')).toHaveLength(2);
   });
+
+  it('writes nothing for a length of 0, which GL would read as the rest of the array', () => {
+    const { rec, gpu } = setup();
+    const buffer = gpu.createBuffer('vertex', 64, 'dynamic');
+    rec.reset();
+    gpu.writeBuffer(buffer, 0, new Float32Array(64), 16, 0);
+    expect(argsOf(rec, 'bufferSubData')).toEqual([]);
+  });
 });
 
 describe('WebGLDevice id targets', () => {
