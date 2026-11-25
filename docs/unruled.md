@@ -1433,8 +1433,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   long-press's `progress()` reads 0 at a clock or start of `NaN`; a duration that is not above 0, `NaN` included,
   still reads 1. `steppedOption` sheds float noise to 12 significant digits rather than 6 decimal places, and a
   finite option stepped past the double range stops at the largest double.
-- Open (routing second property pass, 2026-11-11): a `times` step never moves an option at 0, and grows a negative
-  value further below zero. Where a host has no `elementFromPoint`, two overlapping carry surfaces neither of which
+- 2026-11-24 (my call, audit round 85): a `times` step that cannot move an option the way it steps (from 0, or up
+  from a negative value) steps by the leaf's `step`, else 1, so `]` takes a size at 0 to 1. An infinite option
+  stepped back toward a bound it lacks goes to the largest double.
+- Open (routing second property pass, 2026-11-11): where a host has no `elementFromPoint`, two overlapping carry surfaces neither of which
   holds the other are picked between by registration order (read from `surfaceAt`, not tested).
 
 - 2026-10-28: `useEffectRunner` takes `clock?: ClockHandle`, treated as seekable, and seeks the

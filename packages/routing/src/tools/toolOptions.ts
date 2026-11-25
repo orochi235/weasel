@@ -203,8 +203,13 @@ export function keepToolOptions(
 export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionStep, dir: 1 | -1): number {
   const end = dir === 1 ? leaf.max : leaf.min;
   if (value === dir * Infinity || (value === end && endlessAllows(leaf.endless, dir * Infinity))) return dir * Infinity;
-  if (!Number.isFinite(value)) return (value > 0 ? leaf.max : leaf.min) ?? value;
-  const moved = step.times !== undefined ? value * step.times ** dir : value + dir * (step.plus ?? leaf.step ?? 1);
+  if (Number.isNaN(value)) return leaf.min ?? value;
+  if (!Number.isFinite(value)) return (value > 0 ? leaf.max : leaf.min) ?? Math.sign(value) * Number.MAX_VALUE;
+  const scaled = step.times === undefined ? undefined : value * step.times ** dir;
+  // A scale cannot leave 0, and moves a negative value the wrong way: there it steps by `leaf.step`, else 1.
+  const plus = step.times === undefined ? step.plus : undefined;
+  const scales = scaled !== undefined && value !== 0 && (scaled - value) * dir >= 0;
+  const moved = scales ? scaled : value + dir * (plus ?? leaf.step ?? 1);
   const snapped = leaf.step ? Math.round(moved / leaf.step) * leaf.step : moved;
   // A step that rounds back to where it began still moves one `step`.
   const stepped = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
