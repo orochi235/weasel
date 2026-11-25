@@ -13,7 +13,7 @@ export function _refuseWhileActiveInternal(active: Journal | null, except?: Jour
   }
 }
 
-/** A journal opened inside another, to the history that journal records into. */
+/** Each journal, to the history it was opened on. */
 const OWNER = new WeakMap<Journal, History>();
 
 /** Resume `j` through the history it was opened on when that is not `by`, and say whether it did.
@@ -21,7 +21,9 @@ const OWNER = new WeakMap<Journal, History>();
 export function _resumedByOwnerInternal(j: Journal, by: History): boolean {
   const owner = OWNER.get(j);
   if (owner === undefined || owner === by) return false;
-  if (!ENCLOSING.get(j)!.isActive()) throw new Error('The journal this one was opened inside is not active');
+  const enclosing = ENCLOSING.get(j);
+  if (enclosing === undefined) throw new Error('This journal was opened on another history — resume it through that one');
+  if (!enclosing.isActive()) throw new Error('The journal this one was opened inside is not active');
   owner.resumeJournal(j);
   return true;
 }
@@ -95,31 +97,42 @@ export interface Journal {
   /** Flushes the journal to its parent as one entry labelled `label`, or the label it was
    *  opened with. Throws while a journal opened inside this one is still active or suspended. */
   commit(label?: string): void;
-  /** Cancels every journal still open inside this one first, suspended ones included, the one
-   *  that edited last first. */
+  /** Cancels every journal still open inside this one, suspended ones included, the one that
+   *  edited last first, each after undoing this journal's own edits made since. */
   cancel(): void;
   /** Throws while a journal opened inside this one is active. */
   suspend(): void;
   isActive(): boolean;
 }
 
-/** The journals opened inside one: each leaves `RESUMERS` when it closes. */
-function createChildren() {
+/** The journals opened inside one, each dropped as it closes. `depth` reads the enclosing
+ *  journal's undo depth, noted at each child's latest edit. */
+export function createChildren(depth: () => number = () => 0) {
   const children: Journal[] = [];
-  /** When each child last changed the adapter, counted in opens and edits. */
-  const lastEdit = new Map<Journal, number>();
+  /** When each child last changed the adapter, counted in opens and edits, and the depth then. */
+  const lastEdit = new Map<Journal, { at: number; depth: number }>();
   let edits = 0;
-  const openChildren = (): Journal[] => children.filter((c) => RESUMERS.has(c));
+  const touched = (child: Journal) => lastEdit.set(child, { at: ++edits, depth: depth() });
+  const openChildren = (): Journal[] => children.slice();
   return {
     adopt(child: Journal): void {
       children.push(child);
-      lastEdit.set(child, ++edits);
-      child.observe(() => lastEdit.set(child, ++edits));
+      touched(child);
+      const unobserve = child.observe(() => touched(child));
+      const unsubscribe = child.subscribe(() => {
+        if (RESUMERS.has(child)) return;
+        unobserve();
+        unsubscribe();
+        children.splice(children.indexOf(child), 1);
+        lastEdit.delete(child);
+      });
     },
     openChildren,
-    /** The open ones, latest edit first. Edits interleaved between suspended siblings cannot be
-     *  unwound exactly in any order. */
-    latestFirst: (): Journal[] => openChildren().sort((x, y) => lastEdit.get(y)! - lastEdit.get(x)!),
+    /** The open ones, latest edit first, each with the enclosing journal's depth at that edit. Edits
+     *  interleaved between suspended siblings cannot be unwound exactly in any order. */
+    latestFirst: (): { child: Journal; depth: number }[] => openChildren()
+      .map((child) => ({ child, ...lastEdit.get(child)! }))
+      .sort((x, y) => y.at - x.at),
   };
 }
 
@@ -130,7 +143,7 @@ export function createJournalInternal(
   parent: History,
   adapter: unknown,
   opts: BeginJournalOptions,
-  onClose?: () => void,
+  onClose?: (suspended: boolean) => void,
   inherited: Pick<CreateHistoryOptions, 'coalesceWindowMs' | 'now' | 'debug' | 'selection'> = {},
 ): Journal {
   const inner = createHistory(adapter, {
@@ -153,7 +166,7 @@ export function createJournalInternal(
   type State = 'active' | 'suspended' | 'closed';
   let state: State = 'active';
   const targetId = opts.targetId;
-  const { adopt, openChildren, latestFirst } = createChildren();
+  const { adopt, openChildren, latestFirst } = createChildren(() => inner.undoDepth());
 
   const journal: Journal = {
     targetId,
@@ -192,7 +205,6 @@ export function createJournalInternal(
       if (state !== 'active') throw new Error('Journal is not active');
       const child = inner.beginJournal(nested);
       ENCLOSING.set(child, journal);
-      OWNER.set(child, inner);
       adopt(child);
       return child;
     },
@@ -209,19 +221,20 @@ export function createJournalInternal(
       _journalAccessInternal(parent).record(forwardOps, baseOps, label, { selectionBefore, coalesceKey });
       state = 'closed';
       RESUMERS.delete(journal);
-      onClose?.();
+      onClose?.(false);
       bump();
     },
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
-      for (const child of latestFirst()) {
+      for (const { child, depth } of latestFirst()) {
+        _journalAccessInternal(inner).rewind(depth);
         if (!child.isActive()) RESUMERS.get(child)!();
         child.cancel();
       }
       inner.goto(0);
       state = 'closed';
       RESUMERS.delete(journal);
-      onClose?.();
+      onClose?.(false);
       bump();
     },
     suspend(): void {
@@ -229,7 +242,7 @@ export function createJournalInternal(
       // It would go on writing to the adapter while the history counts no journal open.
       if (openChildren().some((c) => c.isActive())) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
       state = 'suspended';
-      onClose?.();
+      onClose?.(true);
       bump();
     },
     isActive(): boolean {
@@ -237,6 +250,7 @@ export function createJournalInternal(
     },
   };
 
+  OWNER.set(journal, parent);
   RESUMERS.set(journal, () => {
     if (state !== 'suspended') throw new Error('Journal is not suspended');
     state = 'active';

@@ -4159,3 +4159,12 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): when `polygon-clipping` throws on a boolean's inputs, the retry grid is never coarser
   than 2^-10 of the inputs' extent, and the boolean throws when no grid that fine succeeds. Snapping on, so a small
   shape far from the origin comes back collapsed with no error, was the alternative.
+## Audit round eighty-three (2026-11-24): history
+
+- 2026-11-24 (the fixer's call): `resumeJournal` throws for a top-level journal another history opened, leaving it
+  suspended. Routing it to the history that opened it, as a nested journal is routed, was the alternative.
+- 2026-11-24 (the fixer's call): `createHistory` throws a `RangeError` for `historyLimit: NaN`. Treating it as `0`, as a
+  negative limit is, or as unbounded, as an omitted one is, were the alternatives.
+- 2026-11-24 (the fixer's call): a history made without `branching` drops a restored snapshot's branches, warning
+  through its `debug` logger, and restores the rest. Refusing the snapshot, or keeping the branches as before, were
+  the alternatives.

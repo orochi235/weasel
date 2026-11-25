@@ -30,6 +30,9 @@ export interface Op {
    *  again. Read once, after the batch's first apply; never on a replay. */
   caused?(): Op[];
   label?: string;
+  /** Lets a batch merge into the entry above it inside `coalesceWindowMs`. The merged entry keeps
+   *  only the first batch to undo and the latest to redo, so a keyed op must write an absolute
+   *  value (move to x, not by dx); a relative edit records each batch under `recordEntry`'s key. */
   coalesceKey?: string;
   /** Stable factory name for op-registry lookup. Kit-emitted ops always
    *  set this; consumer ops without a name can't round-trip through

@@ -35,14 +35,24 @@ export function snapshotFault(snapshot: unknown): string | null {
   if (!isOptional(snapshot.floor, isId)) return '`floor` is not an integer';
   const fault = entriesFault(snapshot.undoStack, '`undoStack`') ?? entriesFault(snapshot.redoStack, '`redoStack`');
   if (fault) return fault;
-  if (snapshot.branches === undefined) return null;
-  if (!Array.isArray(snapshot.branches)) return '`branches` is not a list';
-  for (let i = 0; i < snapshot.branches.length; i++) {
-    const b: unknown = snapshot.branches[i];
-    if (!isPlainObject(b) || !isId(b.at)) return `branch ${i} has no integer \`at\``;
-    const inner = entriesFault(b.entries, `branch ${i}'s \`entries\``);
-    if (inner) return inner;
-    if ((b.entries as unknown[]).length === 0) return `branch ${i} has no entries`;
+  const lists = [snapshot.undoStack, snapshot.redoStack] as { id: number }[][];
+  if (snapshot.branches !== undefined) {
+    if (!Array.isArray(snapshot.branches)) return '`branches` is not a list';
+    for (let i = 0; i < snapshot.branches.length; i++) {
+      const b: unknown = snapshot.branches[i];
+      if (!isPlainObject(b) || !isId(b.at)) return `branch ${i} has no integer \`at\``;
+      const inner = entriesFault(b.entries, `branch ${i}'s \`entries\``);
+      if (inner) return inner;
+      if ((b.entries as unknown[]).length === 0) return `branch ${i} has no entries`;
+      lists.push(b.entries as { id: number }[]);
+    }
+  }
+  const seen = new Set<number>();
+  for (const list of lists) {
+    for (const { id } of list) {
+      if (seen.has(id)) return `it names entry id ${id} more than once`;
+      seen.add(id);
+    }
   }
   return null;
 }

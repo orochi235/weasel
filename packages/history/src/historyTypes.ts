@@ -170,7 +170,8 @@ export interface History {
   /** Push an entry whose ops have already been applied to the adapter.
    *  Unlike `applyOps`, does NOT call `op.apply()`. Used by Journal.commit
    *  to flush a session's net forward ops to the parent as one entry without
-   *  re-mutating the scene. Throws while a journal is active, as `apply` does. */
+   *  re-mutating the scene. An op naming what it `caused` is recorded as those ops, as
+   *  `applyOps` records it. Throws while a journal is active, as `apply` does. */
   recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void;
   /** Concatenated forwardOps of every undo-stack entry, in order. Snapshot
    *  of "what changes are currently applied via this history" — useful for
@@ -222,7 +223,8 @@ export interface RecordEntryOptions {
 /** Options for `createHistory`. */
 export interface CreateHistoryOptions {
   /** Window (ms) within which a new entry may merge into the previous one
-   *  via matching `Op.coalesceKey`. Defaults to `0` (no coalescing — every
+   *  via matching `Op.coalesceKey`, which keeps its first batch to undo and
+   *  its latest to redo, so those ops write absolute values. Defaults to `0` (no coalescing — every
    *  `applyOps` pushes a discrete entry). Recommended: ~500ms for typical
    *  rapid-input UX (nudge, per-keystroke text edits). The window resets on
    *  each successful coalesce, so a sustained burst keeps merging, and closes
@@ -239,7 +241,7 @@ export interface CreateHistoryOptions {
   /** Maximum undo-stack depth. When a push overflows the cap the oldest
    *  entry is evicted (reported via `onEvict`) and can no longer be undone.
    *  `0` disables the undo stack entirely — every push is evicted
-   *  synchronously (negative values are clamped to `0`). Default: unbounded. */
+   *  synchronously (negative values are clamped to `0`; `NaN` throws a `RangeError`). Default: unbounded. */
   historyLimit?: number;
   /** Fired once per entry that permanently leaves the reachable stacks:
    *  redo entries dropped by a branch edit (a new push or `recordEntry`
@@ -254,7 +256,8 @@ export interface CreateHistoryOptions {
    *  Undo and redo still walk one line, the current branch. An entry evicted by
    *  `historyLimit` or `prune` takes along the branches forking from the state
    *  before it, which nothing can return to; the ones forking from the state
-   *  it leaves stay, at the bottom of the undo stack. Default `false`. */
+   *  it leaves stay, at the bottom of the undo stack. Without it, `restore()` drops a
+   *  snapshot's branches. Default `false`. */
   branching?: boolean;
   /** How `restore()` turns a serialized op back into a live one. This engine
    *  knows nothing of any op registry; `@weasel-js/core`'s `createHistory`

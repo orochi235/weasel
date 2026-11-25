@@ -1,5 +1,5 @@
 import type { Op } from './op';
-import { appliedHalves, createApplier, stepOf } from './entryOps';
+import { appliedHalves, createApplier, recordedOps, stepOf } from './entryOps';
 import { createStackView } from './stackView';
 import { createWalk } from './walk';
 import { createVersionClock } from './versionClock';
@@ -30,6 +30,8 @@ export type {
 interface JournalAccess {
   appliedOps(): ReturnType<typeof appliedHalves>;
   record(forwardOps: Op[], baseOps: Op[], label: string, options?: RecordEntryOptions): void;
+  /** Undo down to `depth` entries when deeper, past a journal still open on this history. */
+  rewind(depth: number): void;
 }
 
 const JOURNAL_ACCESS = new WeakMap<History, JournalAccess>();
@@ -41,6 +43,9 @@ export function _journalAccessInternal(history: History): JournalAccess {
   return access;
 }
 
+/** One list as both halves of an entry nothing coalesced into. */
+const twice = (ops: Op[]): [Op[], Op[]] => [ops, ops];
+
 /** Silent default — keeps every call site unconditional. */
 const SILENT: HistoryLogger = { log: () => {}, warn: () => {} };
 
@@ -50,13 +55,19 @@ function gotoDepth(n: number, total: number): number {
   throw new RangeError(`goto: depth ${n} is not a whole number from 0 to ${total}`);
 }
 
+/** The undo-stack cap `historyLimit` asks for: unbounded when omitted, a negative one clamped to 0. */
+function limitOf(limit: number | undefined): number {
+  if (Number.isNaN(limit)) throw new RangeError('createHistory: historyLimit is NaN');
+  return Math.max(0, limit ?? Infinity);
+}
+
 /** Build an op-batched undo/redo `History`. The adapter is passed to each op's `apply`/`invert`. */
 export function createHistory(adapter: unknown, options: CreateHistoryOptions = {}): History {
   const undoStack: Entry[] = [];
   const redoStack: Entry[] = [];
   const coalesceWindowMs = options.coalesceWindowMs ?? 0;
   const now = options.now ?? (() => Date.now());
-  const historyLimit = Math.max(0, options.historyLimit ?? Infinity);
+  const historyLimit = limitOf(options.historyLimit);
   const customRebuild = options.rebuildOp;
   const selection = options.selection;
   const logger = options.debug ?? SILENT;
@@ -64,7 +75,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   const journals = createJournalSlot(adapter, {
     coalesceWindowMs, now, debug: logger,
     ...(selection ? { selection } : {}),
-  });
+  }, clock.seal);
 
   const forks = createForks({ undoStack, redoStack, branching: options.branching ?? false, onEvict: options.onEvict, logger });
 
@@ -134,7 +145,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       journals.refuse();
-      record(ops, ops, label, options);
+      record(...twice(recordedOps(ops, [], false)), label, options);
     },
     nextEntryId: recorder.nextEntryId,
     beginJournal: (opts) => journals.begin(history, opts),
@@ -166,6 +177,7 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
   JOURNAL_ACCESS.set(history, {
     appliedOps: () => appliedHalves(undoStack),
     record,
+    rewind: (depth) => depth < undoStack.length && reported('goto', (into) => walkOrReturn(depth, into)),
   });
   return history;
 }
