@@ -20,16 +20,17 @@ export function contentBoxOf(
 }
 
 /** A container at world `pose` as its strategy's drag hooks see it: upright,
- *  the way the layout pass shows it to `childPoses`, `arrive` and `depart`. */
+ *  the way the layout pass shows it to `childPoses`, `arrive` and `depart`.
+ *  `null` when `pose` is singular, as a container scaled to nothing is. */
 export function containerView(
   pc: PoseComposition<unknown>, g: PoseDescriptor<unknown>, pose: unknown,
-): StrategyView<unknown> {
+): StrategyView<unknown> | null {
   return strategyView(
     pose,
     pc,
     (p) => boxOf(g, p),
     (p, from, to) => translatePoseViaDescriptor(p, to.x - from.x, to.y - from.y, g),
-  )!;
+  );
 }
 
 /** A dragged child's poses in `view`'s space. */

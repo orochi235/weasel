@@ -24,6 +24,13 @@ function releaseFrom(
   const pc = session.pc;
   const released: NodeId[] = [];
   const releasedOps: Op[] = [];
+  const srcLayout = session.layout?.getLayout(srcId);
+  const srcNode = session.scene.get(asNodeId(srcId));
+  if (!srcLayout?.releaseDrop || !srcNode) return { ops: releasedOps, released };
+  const g = poseDescriptorForNode(session.projection, srcNode);
+  const srcWorld = composeWorldPose(commitAdapter, srcId, pc.compose);
+  const view = containerView(pc, g, srcWorld);
+  if (view === null) return { ops: releasedOps, released };
   // Released children keep their parent, so both ends of a transform
   // rebase under the same frame.
   const rebaseReleased = (op: Op): Op | null => {
@@ -32,12 +39,6 @@ function releaseFrom(
     const parent = session.scene.get(asNodeId(id))?.parent ?? null;
     return rebaseTransformOp(opInWorld(view, op), commitAdapter, pc, parent, parent);
   };
-  const srcLayout = session.layout?.getLayout(srcId);
-  const srcNode = session.scene.get(asNodeId(srcId));
-  if (!srcLayout?.releaseDrop || !srcNode) return { ops: releasedOps, released };
-  const g = poseDescriptorForNode(session.projection, srcNode);
-  const srcWorld = composeWorldPose(commitAdapter, srcId, pc.compose);
-  const view = containerView(pc, g, srcWorld);
   const srcContainer: LayoutContainer = {
     id: srcId,
     bounds: contentBoxOf(g, view, commitAdapter, srcId, srcWorld),
