@@ -72,12 +72,12 @@ const resolved = (tsm: typeof ts, checker: ts.TypeChecker, symbol: ts.Symbol): t
  * written, since a typed meta's property is declared by its type, not by the object.
  */
 function assigned(tsm: typeof ts, checker: ts.TypeChecker, meta: ts.Symbol): ts.Symbol | undefined {
-  const value = componentIn(tsm, checker, objectOf(tsm, meta), 0);
+  const value = componentIn(tsm, checker, objectOf(tsm, checker, meta), 0);
   return value && resolved(tsm, checker, value);
 }
 
-/** The object literal `symbol`'s declaration is initialized with, through calls and casts. */
-function objectOf(tsm: typeof ts, symbol: ts.Symbol): ts.ObjectLiteralExpression | undefined {
+/** The object literal `symbol`'s declaration is initialized with, through casts and forge's `meta(…)`/`story(…)`. */
+function objectOf(tsm: typeof ts, checker: ts.TypeChecker, symbol: ts.Symbol): ts.ObjectLiteralExpression | undefined {
   const declaration = symbol.getDeclarations()?.[0];
   let node: ts.Node | undefined =
     declaration && tsm.isVariableDeclaration(declaration)
@@ -86,7 +86,7 @@ function objectOf(tsm: typeof ts, symbol: ts.Symbol): ts.ObjectLiteralExpression
         ? declaration.expression
         : undefined;
   while (node && !tsm.isObjectLiteralExpression(node)) {
-    if (tsm.isCallExpression(node)) node = node.arguments[0];
+    if (tsm.isCallExpression(node)) node = isForgeWrapper(tsm, checker, node.expression) ? node.arguments[0] : undefined;
     else if (
       tsm.isParenthesizedExpression(node) ||
       tsm.isAsExpression(node) ||
@@ -98,6 +98,36 @@ function objectOf(tsm: typeof ts, symbol: ts.Symbol): ts.ObjectLiteralExpression
     } else node = undefined;
   }
   return node;
+}
+
+const FORGE = '@weasel-js/forge';
+const WRAPPERS = new Set(['meta', 'story']);
+
+/**
+ * Whether `callee` is forge's `meta` or `story`: imported from forge by name, through re-exports, or read off a
+ * namespace import of it. The story indexer reads no other call as a meta, so neither does this.
+ */
+function isForgeWrapper(tsm: typeof ts, checker: ts.TypeChecker, callee: ts.Expression): boolean {
+  const fromForge = (declaration: ts.Node): boolean => {
+    let node: ts.Node | undefined = declaration;
+    while (node && !tsm.isImportDeclaration(node) && !tsm.isExportDeclaration(node)) node = node.parent;
+    const specifier = node && (node as ts.ImportDeclaration | ts.ExportDeclaration).moduleSpecifier;
+    return !!specifier && tsm.isStringLiteral(specifier) && specifier.text === FORGE;
+  };
+  if (tsm.isPropertyAccessExpression(callee)) {
+    if (!WRAPPERS.has(callee.name.text)) return false;
+    const held = checker.getSymbolAtLocation(callee.expression);
+    return (held?.getDeclarations() ?? []).some((d) => tsm.isNamespaceImport(d) && fromForge(d));
+  }
+  let symbol = tsm.isIdentifier(callee) ? checker.getSymbolAtLocation(callee) : undefined;
+  for (let depth = 0; symbol && symbol.flags & tsm.SymbolFlags.Alias && depth < 16; depth++) {
+    const declaration = symbol.getDeclarations()?.[0];
+    if (declaration && (tsm.isImportSpecifier(declaration) || tsm.isExportSpecifier(declaration)) && fromForge(declaration)) {
+      return WRAPPERS.has((declaration.propertyName ?? declaration.name).text);
+    }
+    symbol = checker.getImmediateAliasedSymbol(symbol);
+  }
+  return false;
 }
 
 /**
@@ -114,7 +144,7 @@ function componentIn(
   for (const property of [...object.properties].reverse()) {
     if (tsm.isSpreadAssignment(property)) {
       const spread = checker.getSymbolAtLocation(property.expression);
-      const found = spread && componentIn(tsm, checker, objectOf(tsm, resolved(tsm, checker, spread)), depth + 1);
+      const found = spread && componentIn(tsm, checker, objectOf(tsm, checker, resolved(tsm, checker, spread)), depth + 1);
       if (found) return found;
       continue;
     }
