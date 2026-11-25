@@ -87,6 +87,19 @@ describe('createExtensionRegistry', () => {
     expect(child.has('x')).toBe(false);
   });
 
+  it('never tells its listeners an id it holds is gone while it takes it over', () => {
+    const parent = make();
+    const child = make(parent);
+    const seen: (string | undefined)[] = [];
+    child.subscribe(() => { seen.push(child.get('x')); });
+    const off = parent.register('x', 'f');
+    child.register('x', 'f');
+    seen.length = 0;
+    off();
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((v) => v === 'f')).toBe(true);
+  });
+
   it('ends a hold through its parent when it releases it', () => {
     const parent = make();
     const child = make(parent);

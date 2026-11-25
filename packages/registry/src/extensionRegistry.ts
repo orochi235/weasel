@@ -102,6 +102,7 @@ function createLeans<V>(
   };
   return {
     get: (id: string): Lean<V> | undefined => leans.get(id),
+    settle,
     add(id: string, lean: Lean<V>): void {
       leans.set(id, lean);
       off ??= parent.subscribe(settle);
@@ -199,7 +200,11 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     subscribe(listener) {
       if (changes.size === 0) {
         const offStore = store.subscribe(notify);
-        const offParent = parent?.subscribe(notify);
+        // Settled first, so a listener never reads an id this registry holds as gone while it takes it over.
+        const offParent = parent?.subscribe(() => {
+          leans?.settle();
+          notify();
+        });
         offUpstream = () => { offStore(); offParent?.(); };
       }
       const off = changes.subscribe(listener);
