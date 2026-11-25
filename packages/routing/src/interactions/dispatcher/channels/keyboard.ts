@@ -80,10 +80,12 @@ export function keyboardInput(core: DispatchCore): {
   const taken = new WeakSet<Event>();
 
   const onKeyDown = (e: KeyboardEvent) => {
-    // Before the filters: a key another surface took is still down.
+    // A key that something focused or modal owns is not this page's to press again when the pointer arrives.
+    if (inMenu(e.target) || focusedControlOwnsKey(e) || (isEditableTarget(e.target) && !fieldChord(e))) return;
+    if (inModalOver(e.target, core.canvas)) return;
+    // A key another surface took is still down.
     downKeys.set(physicalKey(e), { key: e.key, ...codeOf(e), withCmd: e.metaKey });
-    if (e.defaultPrevented || inMenu(e.target) || focusedControlOwnsKey(e) || (isEditableTarget(e.target) && !fieldChord(e))) return;
-    if (inModalOver(e.target, core.canvas) || taken.has(e)) return;
+    if (e.defaultPrevented || taken.has(e)) return;
     // Every dispatcher hears keys on window. The one holding them acts, and so
     // does the one under the pointer, for its `over` bindings alone.
     const reach: KeyReach = { held: core.holdsKeys(), over: core.pointerOver() };
