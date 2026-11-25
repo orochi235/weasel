@@ -126,8 +126,11 @@ function componentIn(
 }
 
 const keyName = (tsm: typeof ts, name: ts.PropertyName | undefined): string | undefined => {
-  const key = name && tsm.isComputedPropertyName(name) ? name.expression : name;
-  return key && (tsm.isIdentifier(key) || tsm.isStringLiteral(key) || tsm.isNoSubstitutionTemplateLiteral(key)) ? key.text : undefined;
+  if (name && tsm.isComputedPropertyName(name)) {
+    const key = name.expression;
+    return tsm.isStringLiteral(key) || tsm.isNoSubstitutionTemplateLiteral(key) ? key.text : undefined;
+  }
+  return name && (tsm.isIdentifier(name) || tsm.isStringLiteral(name)) ? name.text : undefined;
 };
 
 function importNamed(tsm: typeof ts, checker: ts.TypeChecker, source: ts.SourceFile, name: string): ts.Symbol | undefined {

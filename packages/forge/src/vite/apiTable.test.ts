@@ -113,6 +113,7 @@ export const Input = (_props: InputProps) => null;
       'spreadTyped',
       `import type { Meta } from './meta';\nimport { Chart } from './Chart';\nconst base: Meta = { component: Chart };\nconst meta: Meta = { ...base };\nexport default meta;\n`,
     );
+    story('computed', `import { Chart, Box } from './Chart';\nconst component = 'title';\nexport default { component: Chart, [component]: Box };\n`);
     story('clash', `import { Clash } from './Chart';\nexport default { component: Clash };\n`);
     story('none', `export default { title: 'x' };\nexport const A = {};\n`);
     writeFileSync(at('layout.ts'), `export type Size = 'sm' | 'lg';\nexport interface LayoutProps { size?: Size }\n`);
@@ -154,7 +155,7 @@ export const Input = (_props: InputProps) => null;
     writeFileSync(at('node_modules/dep/index.ts'), `export const Trigger = (_props: { armed?: boolean }) => null;\n`);
     story('dependency', `import { Trigger } from './node_modules/dep/index';\nimport { Chart } from './Chart';\nexport default { component: Trigger };\n`);
     story('knob', `import Knob from './Knob';\nexport default { component: Knob };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob', 'dependency'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob', 'dependency', 'computed'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -281,6 +282,10 @@ export const Input = (_props: InputProps) => null;
   it("reads the title's import, not a wrapper the story file declares itself", () => {
     expect(api('wrapper', 'Chart')?.ref?.type).toBe('ChartHandle');
     expect(api('wrapper')).toBeNull();
+  });
+
+  it('reads a computed key spelled as an identifier as no key', () => {
+    expect(api('computed')?.component?.name).toBe('Chart');
   });
 
   it("reads the title's import, not a dependency's component, as the dependency graph does", () => {
