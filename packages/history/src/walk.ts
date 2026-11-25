@@ -37,11 +37,17 @@ export function createWalk(env: WalkEnv) {
   }
 
   /** Whether the halves pair op for op, so each op of one undoes a failed step over its partner in the other.
-   *  A coalesced batch may list its keys in another order than the first, so position alone does not pair them. */
+   *  A coalesced batch may list its keys in another order than the first, so position alone does not pair them,
+   *  and a key two ops share names neither, so matching keys pair them only when no key repeats. */
   function aligned(entry: Entry): boolean {
     const { forwardOps, baseOps } = entry;
     if (forwardOps.length !== baseOps.length) return false;
-    for (let i = 0; i < baseOps.length; i++) if (forwardOps[i]!.coalesceKey !== baseOps[i]!.coalesceKey) return false;
+    const keys = new Set<string | undefined>();
+    for (let i = 0; i < baseOps.length; i++) {
+      const key = baseOps[i]!.coalesceKey;
+      if (forwardOps[i]!.coalesceKey !== key || keys.has(key)) return false;
+      keys.add(key);
+    }
     return true;
   }
 

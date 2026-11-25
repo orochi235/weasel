@@ -102,3 +102,32 @@ describe('History — a failed step on a reordered coalesced entry sharing an op
     expect(cells).toEqual({ x: 0, y: 0 });
   });
 });
+
+describe('History — a failed step on a coalesced entry whose batches repeat a key', () => {
+  /** Two writes under one key, coalesced with a batch listing them in the other order. */
+  function shared() {
+    broken.clear();
+    const cells: Cells = { a: 0, b: 0 };
+    const history = createHistory(cells, { coalesceWindowMs: 500, now: () => 0 });
+    history.applyOps([writeOp('a', 0, 1, 'k'), writeOp('b', 0, 1, 'k')], 'restyle');
+    history.applyOps([writeOp('b', 1, 2, 'k'), writeOp('a', 1, 2, 'k')], 'restyle');
+    return { cells, history };
+  }
+
+  it('undo leaves the latest values', () => {
+    const { cells, history } = shared();
+    broken.add('a=0');
+    expect(() => history.undo()).toThrow('cannot write a=0');
+    expect(cells).toEqual({ a: 2, b: 2 });
+    expect(history.undoDepth()).toBe(1);
+  });
+
+  it('redo leaves the values from before the entry', () => {
+    const { cells, history } = shared();
+    history.undo();
+    broken.add('a=2');
+    expect(() => history.redo()).toThrow('cannot write a=2');
+    expect(cells).toEqual({ a: 0, b: 0 });
+    expect(history.redoDepth()).toBe(1);
+  });
+});
