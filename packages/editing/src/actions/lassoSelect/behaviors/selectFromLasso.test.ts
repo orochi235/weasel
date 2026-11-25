@@ -115,16 +115,17 @@ describe('selectFromLasso', () => {
     expect(setTo).toEqual(['old']);
   });
 
-  it('vanishingly small AABB (< 4 world-units²) treated as click', () => {
+  it('a lasso of three vertices hit-tests however small its box, as the box is in world units', () => {
     const beh = selectFromLasso();
     const c = ctx({
-      vertices: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 1, y: 1 }],   // area 0.5
+      vertices: [{ x: 0, y: 0 }, { x: 0.01, y: 0 }, { x: 0.01, y: 0.01 }],
+      hitTestLasso: () => ['tiny'],
       selection: ['old'],
     });
     const ops = beh.onEnd!(c, { answered: false })!;
     let setTo: string[] = ['sentinel'];
     ops[0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
-    expect(setTo).toEqual([]);
+    expect(setTo).toEqual(['tiny']);
   });
 
   it('defaultTransient: true', () => {

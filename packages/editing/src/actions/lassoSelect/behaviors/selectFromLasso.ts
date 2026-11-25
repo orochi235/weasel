@@ -13,12 +13,10 @@ import * as ops from '@weasel-js/core/ops';
  *  selection write under this same key. */
 export const LASSO_VERTICES = scratchKey<ReadonlyArray<{ x: number; y: number }>>('lassoSelect.vertices');
 
-const MIN_AREA = 4;
-
-/** Whether a lasso through `vertices` is too small to enclose anything, so it reads as a click: fewer than
- *  three vertices, or a box under 4 world px². */
+/** Whether a lasso through `vertices` reads as a click: fewer than three vertices, so the pointer never moved two
+ *  vertex spacings. A lasso flat on one axis still crosses what lies along it, as a marquee does. */
 export function isTinyLasso(vertices: ReadonlyArray<{ x: number; y: number }>): boolean {
-  return vertices.length < 3 || polygonAabbArea(vertices) < MIN_AREA;
+  return vertices.length < 3;
 }
 
 /** Options for `selectFromLasso`. */
@@ -58,16 +56,4 @@ export function selectFromLasso(opts?: SelectFromLassoOptions): LassoSelectBehav
       return [op];
     },
   };
-}
-
-function polygonAabbArea(vertices: ReadonlyArray<{ x: number; y: number }>): number {
-  if (vertices.length === 0) return 0;
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  for (const v of vertices) {
-    if (v.x < minX) minX = v.x;
-    if (v.y < minY) minY = v.y;
-    if (v.x > maxX) maxX = v.x;
-    if (v.y > maxY) maxY = v.y;
-  }
-  return (maxX - minX) * (maxY - minY);
 }
