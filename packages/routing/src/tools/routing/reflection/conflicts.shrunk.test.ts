@@ -37,7 +37,9 @@ describe('findConflicts, shrunk', () => {
     const letter = { kind: 'key', key: 'a', mods: { mod: true } };
     const byCode = { kind: 'key', key: '1', code: 'KeyA', mods: { mod: true } };
     expect(findConflicts([entry('o0', letter), entry('o1', byCode)]).map((c) => c.ownerIds)).toEqual([['o0', 'o1']]);
-    // Alone, a key types what it says, so only a chord reads a code's letter.
-    expect(findConflicts([entry('o0', { kind: 'key', key: 'a' }), entry('o1', { kind: 'key', key: '1', code: 'KeyA' })])).toEqual([]);
+    // Alone, the A key types `a` on a Latin layout, which fires both as well.
+    expect(findConflicts([entry('o0', { kind: 'key', key: 'a' }), entry('o1', { kind: 'key', key: '1', code: 'KeyA' })]).map((c) => c.ownerIds))
+      .toEqual([['o0', 'o1']]);
+    expect(findConflicts([entry('o0', { kind: 'key', key: 'b' }), entry('o1', { kind: 'key', key: '1', code: 'KeyA' })])).toEqual([]);
   });
 });
