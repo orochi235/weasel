@@ -1,0 +1,95 @@
+{
+ "id": "geom.booleans",
+ "commit": "e9f6aefb6511d9f3a0fcea1ba8641667fcf1861a",
+ "date": "2026-11-24",
+ "files": [
+  "packages/geom/src/booleans/adapter.ts",
+  "packages/geom/src/booleans/arrangement.ts",
+  "packages/geom/src/booleans/clipper.ts",
+  "packages/geom/src/booleans/contourSegments.ts",
+  "packages/geom/src/booleans/contours.ts",
+  "packages/geom/src/booleans/coverageBoundary.ts",
+  "packages/geom/src/booleans/crossingPolish.ts",
+  "packages/geom/src/booleans/curveBoolean.ts",
+  "packages/geom/src/booleans/curveClassify.ts",
+  "packages/geom/src/booleans/curveEdges.ts",
+  "packages/geom/src/booleans/curveFaces.ts",
+  "packages/geom/src/booleans/curveOverlap.ts",
+  "packages/geom/src/booleans/curvePieces.ts",
+  "packages/geom/src/booleans/curveShapes.fixtures.ts",
+  "packages/geom/src/booleans/curveTrace.ts",
+  "packages/geom/src/booleans/cutCrossings.ts",
+  "packages/geom/src/booleans/cutLoops.ts",
+  "packages/geom/src/booleans/cutPolyline.ts",
+  "packages/geom/src/booleans/cutRegions.ts",
+  "packages/geom/src/booleans/edgeCrossings.ts",
+  "packages/geom/src/booleans/faceArrangement.bench.ts",
+  "packages/geom/src/booleans/faceCycles.ts",
+  "packages/geom/src/booleans/glyphCell.fixture.ts",
+  "packages/geom/src/booleans/index.ts",
+  "packages/geom/src/booleans/meshJunctions.ts",
+  "packages/geom/src/booleans/meshOutline.ts",
+  "packages/geom/src/booleans/ops.ts",
+  "packages/geom/src/booleans/ringFill.ts",
+  "packages/geom/src/booleans/snipAtCrossings.ts",
+  "packages/geom/src/booleans/splitBySegment.ts",
+  "packages/geom/src/booleans/trianglesToPath.ts",
+  "packages/geom/src/booleans/vertexFans.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 0,
+ "distinct": 6,
+ "chapman": 15,
+ "unfound": 9,
+ "read": {
+  "A": 32,
+  "B": 32
+ },
+ "newCode": {
+  "since": 83,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 83,
+  "chapman": 15,
+  "unfound": 9
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 17,
+  "testFiles": {
+   "failed": 0,
+   "passed": 4813,
+   "total": 4813
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.1,
+   "B": 7.1,
+   "match": 0.1,
+   "fix": 30.5
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "local"
+  },
+  "weightedTokens": 1889912,
+  "costUsd": 6.23
+ },
+ "fixCommits": [
+  "d2695222e769a15c01a85aa6d787daac483dd875",
+  "80cb16d25f973fd8a2d1a1bf89c50ec01310e33f",
+  "235ff328010572d13a19ce443cf16892832da057",
+  "874ca3e5736e9e3295f5485cb943606a219da356",
+  "3ebdfefe96f65d879c7a5b32a0226b733dbaa8a1"
+ ]
+}

@@ -1,0 +1,88 @@
+{
+ "id": "history",
+ "commit": "e9f6aefb6511d9f3a0fcea1ba8641667fcf1861a",
+ "date": "2026-11-24",
+ "files": [
+  "packages/history/src/createSwapOp.ts",
+  "packages/history/src/entryOps.ts",
+  "packages/history/src/forks.ts",
+  "packages/history/src/history.ts",
+  "packages/history/src/historyTypes.ts",
+  "packages/history/src/index.ts",
+  "packages/history/src/journal.ts",
+  "packages/history/src/journalSlot.ts",
+  "packages/history/src/op.ts",
+  "packages/history/src/recording.ts",
+  "packages/history/src/restore.ts",
+  "packages/history/src/serialized.ts",
+  "packages/history/src/snapshotShape.ts",
+  "packages/history/src/stackTime.ts",
+  "packages/history/src/stackView.ts",
+  "packages/history/src/versionClock.ts",
+  "packages/history/src/walk.ts"
+ ],
+ "a": 7,
+ "b": 8,
+ "m": 3,
+ "distinct": 12,
+ "chapman": 17,
+ "unfound": 5,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "newCode": {
+  "since": 83,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 83,
+  "chapman": 17,
+  "unfound": 5
+ },
+ "patches": 13,
+ "verify": {
+  "ok": true,
+  "files": 33,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2907,
+   "total": 2907
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.6,
+   "B": 2.4,
+   "match": 0.1,
+   "fix": 46.5
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "local"
+  },
+  "weightedTokens": 574743,
+  "costUsd": 5.99
+ },
+ "fixCommits": [
+  "a246d5ff04963d85d5b67102f144693a735f7f85",
+  "130487879d1b85bb8b2b4ae9354caf2cb597bf33",
+  "e9dfb37b363439a06123e9de92890c780ecf0064",
+  "5181c6aa255d81b5660140707b531b3d30d4bb26",
+  "abbefbe5fe64653688ce16eb2527d8eb81e2c830",
+  "b7e677fad3180745bd4f06fc2a66b48ed1a9c020",
+  "5944f1caef82c2a9dd20ee2115e5e7f89385537d",
+  "16fcd200467306e49717b7bc29ac8b66260a7a30",
+  "d19284b887dc410c2bebf269500b869cea4bb927",
+  "9590d4f9149e031c8194c1c330c0bbe416c21561",
+  "d9ec1e1036eaae6492bdd92ec9ea6419fc7a10ff",
+  "700ab8ea86e9332afe509a1ead31e52c28c58f72",
+  "e2bfdb46686c7e470b2369c4d6ae9008907a17e5"
+ ]
+}

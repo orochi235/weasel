@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "BVH box, point and half-space queries with a NaN coordinate (or a short box) visit every item",
+  "BVH raycast with an infinite direction component ignores a negative `tMax`",
+  "`nearestPointsRayLine` counts a ray and line as parallel up to an angle of 1e-6 rad, not SINGULAR_RATIO"
+ ],
+ "b": [
+  "BVH box/point/half-space queries with a NaN coordinate visit every item instead of none",
+  "intersectRayPlane returns NaN, not null, for a NaN ray origin or offset"
+ ]
+}

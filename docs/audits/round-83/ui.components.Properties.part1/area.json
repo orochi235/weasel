@@ -1,0 +1,101 @@
+{
+ "id": "ui.components.Properties.part1",
+ "commit": "e9f6aefb6511d9f3a0fcea1ba8641667fcf1861a",
+ "date": "2026-11-24",
+ "files": [
+  "packages/ui/src/components/Properties/ColorControls.tsx",
+  "packages/ui/src/components/Properties/CurveField.module.css",
+  "packages/ui/src/components/Properties/CurveField.stories.tsx",
+  "packages/ui/src/components/Properties/CurveField.tsx",
+  "packages/ui/src/components/Properties/CurveMarks.tsx",
+  "packages/ui/src/components/Properties/DialogRow.stories.tsx",
+  "packages/ui/src/components/Properties/DialogRow.tsx",
+  "packages/ui/src/components/Properties/EnumControl.tsx",
+  "packages/ui/src/components/Properties/FontControls.tsx",
+  "packages/ui/src/components/Properties/NumberControls.tsx",
+  "packages/ui/src/components/Properties/Properties.gallery.stories.module.css",
+  "packages/ui/src/components/Properties/Properties.gallery.stories.tsx",
+  "packages/ui/src/components/Properties/Properties.metrics.stories.module.css",
+  "packages/ui/src/components/Properties/Properties.metrics.stories.tsx",
+  "packages/ui/src/components/Properties/Properties.module.css",
+  "packages/ui/src/components/Properties/PropertyAutoReadout.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyAutoReadout.tsx",
+  "packages/ui/src/components/Properties/PropertyCaption.tsx",
+  "packages/ui/src/components/Properties/PropertyControl.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyField.stories.module.css",
+  "packages/ui/src/components/Properties/PropertyField.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyField.tsx",
+  "packages/ui/src/components/Properties/PropertyGroup.css",
+  "packages/ui/src/components/Properties/PropertyGroup.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyGroup.tsx",
+  "packages/ui/src/components/Properties/PropertyHelp.module.css",
+  "packages/ui/src/components/Properties/PropertyHelp.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyHelp.tsx",
+  "packages/ui/src/components/Properties/PropertyList.css",
+  "packages/ui/src/components/Properties/PropertyList.stories.module.css",
+  "packages/ui/src/components/Properties/PropertyList.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyList.tsx",
+  "packages/ui/src/components/Properties/PropertyNote.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyPanel.css",
+  "packages/ui/src/components/Properties/PropertyPanel.stance.css",
+  "packages/ui/src/components/Properties/PropertyPanel.stories.module.css",
+  "packages/ui/src/components/Properties/PropertyPanel.stories.tsx"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 37,
+  "B": 37
+ },
+ "newCode": {
+  "since": 83,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 83,
+  "chapman": 8,
+  "unfound": 2
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1060,
+   "total": 1060
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.5,
+   "B": 2.2,
+   "match": 0.1,
+   "fix": 13.4
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "local"
+  },
+  "weightedTokens": 1126292,
+  "costUsd": 3.37
+ },
+ "fixCommits": [
+  "e8c1b71ed06b1a0693bfe5cc05b268d8030e40b8",
+  "0ef3c65e2c5b367c59889b5750313ddb66000484",
+  "baa01e2c3a7c760f6954b32f3eb45b5bab10c850",
+  "e6b1746bbcf0451ed8a7d2adc9cadeefa7ef4632",
+  "6d381f3de6f3ec88cbd27f843c420c9a58467703",
+  "751fdf08e78583c584108e539b3d1b43ab06c747"
+ ]
+}

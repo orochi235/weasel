@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   1,
+   3
+  ]
+ ],
+ "a": [
+  "A `<PropertyNote>` inside a `<PropertyGroup pack=\"pairs\">` fills one column, not both",
+  "Two identical curve marks share a React key"
+ ],
+ "b": [
+  "A slider's editable readout stringifies `format`'s ReactNode, where the read-only readout renders it",
+  "Typing `-` in a slider readout moves the caret to the end",
+  "A paired PropertyGroup body lets a wide row widen its column, where a paired list does not",
+  "CurveMarks keys collide for two identical marks",
+  "The PropertyPanel story's `pack` control cannot select `one-up`"
+ ]
+}

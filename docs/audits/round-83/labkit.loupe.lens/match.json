@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ],
+  [
+   3,
+   2
+  ]
+ ],
+ "a": [
+  "Reticle client points go stale when the lab body moves without a window scroll or resize",
+  "A Live lens's copy puts duplicate ids and duplicate trial markup into the document",
+  "stillCopy misses other live elements a clone brings back to life",
+  "LabLoupe's compare-menu action is enabled and bound to `k` but does nothing",
+  "The wheel pass-through and the clone source's root probe hit-test the global document, not the layer's"
+ ],
+ "b": [
+  "A Live lens's copy keeps every `id` of the trial it copies, so the page holds duplicate ids",
+  "The Pixel grid draws a stale capture against the new factor until the next capture lands",
+  "LabLoupe offers `loupe.compare.menu` (key K) enabled while it has no compare menu"
+ ]
+}

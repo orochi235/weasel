@@ -1,0 +1,13 @@
+{
+ "pairs": [],
+ "a": [
+  "A cut polyline's joint that only touches a boundary counts as a crossing (knife and scissors)",
+  "Mesh vertex snapping scales with distance from the origin, not with the mesh, so a small float64 mesh far out is distorted",
+  "Docs say curve booleans flatten self-crossing cubics, but the cut has handled them since 466b04ef9d"
+ ],
+ "b": [
+  "orientBoundaries drops a whole contour when its probe segment has a zero tangent at t = 0.5 (cusp cubic)",
+  "snipPathByPolyline cuts a path that only runs along the cut and leaves on the side it came from",
+  "The clipper's retry grid is scaled by the largest coordinate, not the inputs' extent, so a small shape far from the origin is snapped out of shape"
+ ]
+}

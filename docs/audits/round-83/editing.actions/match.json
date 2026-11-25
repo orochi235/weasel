@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   3,
+   3
+  ]
+ ],
+ "a": [
+  "Lasso's \"tiny lasso\" and vertex-spacing thresholds are in world units, so a deep zoom turns a real lasso into a click",
+  "A flat lasso clears the selection where a flat marquee selects what it crosses — the same \"is this a click\" decision answered two ways",
+  "Pathfinder `enabled` gates on `operands` but counts operands from the booleans adapter's own selection",
+  "Clone records a plain `duplicate` of the drag delta even when a behavior placed the copies elsewhere",
+  "`transformSelection` checks locks on the unfinished batch, while `enabled` checks the followers' finished batch"
+ ],
+ "b": [
+  "Make Boolean Group ignores locked operands, unlike Group",
+  "Align, Distribute, Flip and Swap `enabled` ignore the transform followers their `run` commits through",
+  "Transform Again on a rotate with a locked source answers NotApplicable, not Locked",
+  "A clone drag whose behavior claims the commit with no ops is recorded as a duplicate",
+  "Flip mirrors data-held geometry by the parent frame's rotation only, so a sheared/scaled frame mis-mirrors the data"
+ ]
+}

@@ -1,0 +1,35 @@
+{
+ "pairs": [
+  [
+   1,
+   6
+  ],
+  [
+   2,
+   4
+  ],
+  [
+   4,
+   7
+  ]
+ ],
+ "a": [
+  "Opening or suspending a journal leaves the parent's coalesce window open, so a parent edit coalesces across the journal's applied edits",
+  "An enclosing journal keeps every closed nested journal (and its whole inner history) alive",
+  "`resumeJournal` on a history the journal was not opened on resumes it into that history's slot",
+  "A throwing `invert()` during rollback replaces the original error and skips the rest of the unwind",
+  "`historyLimit: NaN` silently disables the cap",
+  "Restoring a snapshot with branches into a non-branching history gives it branches it never evicts",
+  "`snapshotFault` accepts duplicate entry ids"
+ ],
+ "b": [
+  "A history's own `rebuildOp` returning `undefined` makes `restore` throw a TypeError; the per-restore hook's `undefined` is read as `null`",
+  "`recordEntry` stores the caller's ops array by reference, where `applyOps` copies it",
+  "`recordEntry` never reads an op's `caused()`, so an op whose effect is decided as it runs is re-decided on redo",
+  "Op-key coalescing replaces the forward half while `recordEntry` key-folding concatenates — relative ops coalesce to the wrong state",
+  "Resuming a top-level journal through a different history leaves its own history unguarded",
+  "An enclosing journal's `cancel` unwinds a suspended child's edits before its own later edits",
+  "A nested journal's `children` list and `lastEdit` map grow for the outer journal's life",
+  "`historyLimit: NaN` disables the cap instead of clamping"
+ ]
+}

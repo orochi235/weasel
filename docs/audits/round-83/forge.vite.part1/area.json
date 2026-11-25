@@ -1,0 +1,95 @@
+{
+ "id": "forge.vite.part1",
+ "commit": "e9f6aefb6511d9f3a0fcea1ba8641667fcf1861a",
+ "date": "2026-11-24",
+ "files": [
+  "packages/forge/src/vite/apiTable.ts",
+  "packages/forge/src/vite/ast.ts",
+  "packages/forge/src/vite/autoTitle.ts",
+  "packages/forge/src/vite/bindings.ts",
+  "packages/forge/src/vite/build.ts",
+  "packages/forge/src/vite/capture/browser.ts",
+  "packages/forge/src/vite/capture/cache.ts",
+  "packages/forge/src/vite/capture/endpoint.ts",
+  "packages/forge/src/vite/capture/entries.ts",
+  "packages/forge/src/vite/capture/payload.ts",
+  "packages/forge/src/vite/componentGraph.ts",
+  "packages/forge/src/vite/componentOf.ts",
+  "packages/forge/src/vite/componentReach.ts",
+  "packages/forge/src/vite/depsFeed.ts",
+  "packages/forge/src/vite/entries.ts",
+  "packages/forge/src/vite/folderTitles.ts",
+  "packages/forge/src/vite/foreignStories.ts",
+  "packages/forge/src/vite/forgeTest.ts",
+  "packages/forge/src/vite/freeNames.ts",
+  "packages/forge/src/vite/history.ts",
+  "packages/forge/src/vite/html.ts",
+  "packages/forge/src/vite/index.ts",
+  "packages/forge/src/vite/indexFile.ts",
+  "packages/forge/src/vite/indexStory.ts",
+  "packages/forge/src/vite/isolateReport.ts",
+  "packages/forge/src/vite/issues/answer.ts",
+  "packages/forge/src/vite/issues/endpoint.ts"
+ ],
+ "a": 5,
+ "b": 7,
+ "m": 2,
+ "distinct": 10,
+ "chapman": 15,
+ "unfound": 5,
+ "read": {
+  "A": 27,
+  "B": 27
+ },
+ "newCode": {
+  "since": 83,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 83,
+  "chapman": 15,
+  "unfound": 5
+ },
+ "patches": 10,
+ "verify": {
+  "ok": true,
+  "files": 26,
+  "testFiles": {
+   "failed": 0,
+   "passed": 6180,
+   "total": 6180
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.1,
+   "B": 5,
+   "match": 0,
+   "fix": 27.6
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "local"
+  },
+  "weightedTokens": 1890891,
+  "costUsd": 5.54
+ },
+ "fixCommits": [
+  "dadaa809a3cc3b00903276a299d3087d47bfac16",
+  "e7f92f8bcd061453163d2f815782c4a4ab4588ab",
+  "252ad52fcdd4723efc495ea82bd1ccbb952f5732",
+  "a2f1e49c3d951564c378e40c1835ee1e61483d89",
+  "6d30c3559be5ef61c3503aca32fbf84dc1ee1e7c",
+  "beecb935e498e5ea1c497fe82390c9b3abbf8940",
+  "e4913e7e4b553e2b44819a6b9b3b74b68c9da863",
+  "d230ad60bedad771b1b227a8523a7ca69ed298ed",
+  "7988dd39b68ccb490337bd05424dd309b3a1af8a",
+  "60daeb778d2aa1cf7936cdd947c6e4cca29559b0"
+ ]
+}

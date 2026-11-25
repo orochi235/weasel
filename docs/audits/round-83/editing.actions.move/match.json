@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   1
+  ]
+ ],
+ "a": [
+  "snapToContainer freezes the primary node's slot at the pointer where it entered the container, while every other dragged node's slot follows the pointer",
+  "snapBackOrDelete measures the release distance on `draggedIds[0]` even when that id is carried by another dragged node, so it always snaps back",
+  "A layout container (or source container) whose world pose is singular throws on every move",
+  "The release is resolved partly at the release point and partly at the last move's point",
+  "snapToContainer's commit writes a caught-mid-glide node's undo `from` as its shown pose, not its document pose"
+ ],
+ "b": [
+  "Layout drop reparents across layers with no layer change, so a container on a higher layer throws and one on a lower layer gets a child left on the wrong layer",
+  "snapToContainer freezes the primary node's slot at the first slot it committed to while the pointer stays in the same container",
+  "A layout drop moves the dragged root's descendants by a translation only, while reparent and page drops re-pose each descendant in its new frame",
+  "A layout child let go outside its container in a paged scene with the pasteboard off lands off-page at the top of the tree",
+  "Layout preview positions the dragged nodes without the snap lead, while the release commit uses it",
+  "reparentOnDrop `'inside'` raises a node to the top of its own parent when it is released over a sibling or over its parent",
+  "The drop verdict is asked about every drag root, including ones nested inside another root that never land on their own"
+ ]
+}

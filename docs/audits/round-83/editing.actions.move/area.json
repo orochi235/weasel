@@ -1,0 +1,100 @@
+{
+ "id": "editing.actions.move",
+ "commit": "e9f6aefb6511d9f3a0fcea1ba8641667fcf1861a",
+ "date": "2026-11-24",
+ "files": [
+  "packages/editing/src/actions/move/action.ts",
+  "packages/editing/src/actions/move/behaviors/clampMove.ts",
+  "packages/editing/src/actions/move/behaviors/index.ts",
+  "packages/editing/src/actions/move/behaviors/layoutDrop.ts",
+  "packages/editing/src/actions/move/behaviors/pageDrop.ts",
+  "packages/editing/src/actions/move/behaviors/reparentOnDrop.ts",
+  "packages/editing/src/actions/move/behaviors/snapBackOrDelete.ts",
+  "packages/editing/src/actions/move/behaviors/snapToContainer.ts",
+  "packages/editing/src/actions/move/behaviors/swapOnDrop.ts",
+  "packages/editing/src/actions/move/capture.ts",
+  "packages/editing/src/actions/move/commit/index.ts",
+  "packages/editing/src/actions/move/commit/layoutDrop.ts",
+  "packages/editing/src/actions/move/commit/layoutRelease.ts",
+  "packages/editing/src/actions/move/commit/pageDrop.ts",
+  "packages/editing/src/actions/move/commit/rebase.ts",
+  "packages/editing/src/actions/move/commit/reparent.ts",
+  "packages/editing/src/actions/move/delta.ts",
+  "packages/editing/src/actions/move/dragSnap.ts",
+  "packages/editing/src/actions/move/frame.ts",
+  "packages/editing/src/actions/move/gestureAdapter.ts",
+  "packages/editing/src/actions/move/index.ts",
+  "packages/editing/src/actions/move/landedDescendants.ts",
+  "packages/editing/src/actions/move/layout/container.ts",
+  "packages/editing/src/actions/move/layout/dragged.ts",
+  "packages/editing/src/actions/move/layout/dropPass.ts",
+  "packages/editing/src/actions/move/layout/exits.ts",
+  "packages/editing/src/actions/move/layout/glide.ts",
+  "packages/editing/src/actions/move/layout/types.ts",
+  "packages/editing/src/actions/move/layout/view.ts",
+  "packages/editing/src/actions/move/refusal.ts",
+  "packages/editing/src/actions/move/session.ts",
+  "packages/editing/src/actions/move/sessionOf.ts",
+  "packages/editing/src/actions/move/translate.ts"
+ ],
+ "a": 5,
+ "b": 7,
+ "m": 1,
+ "distinct": 11,
+ "chapman": 23,
+ "unfound": 12,
+ "read": {
+  "A": 33,
+  "B": 33
+ },
+ "newCode": {
+  "since": 83,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 83,
+  "chapman": 23,
+  "unfound": 12
+ },
+ "patches": 9,
+ "verify": {
+  "ok": true,
+  "files": 28,
+  "testFiles": {
+   "failed": 0,
+   "passed": 1472,
+   "total": 1472
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.2,
+   "B": 2.8,
+   "match": 0.1,
+   "fix": 29.9
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "local"
+  },
+  "weightedTokens": 784998,
+  "costUsd": 6.88
+ },
+ "fixCommits": [
+  "8149d61263b7d0b73ab3de285f9dfe077e863578",
+  "3bb86b796747e151248d06034c7738393d69f410",
+  "e9eb6432021e42c64dd8b4763e2592fa444fd645",
+  "2380585d0fbe0e341ec991bbfb6f59c9c80e8ddc",
+  "bbf0e39842e8ed3a8c10ea065ac4e90d3ec8ecbd",
+  "21a2b7c5cbd4a122f043bbb8e9fd743d916056df",
+  "bb6735011e8ef72e96f78956b57aeb8d0fc7a349",
+  "b62b6e8c39b221a5264b9836e3458011ec9b3509",
+  "e6a146c3241ab0a0d3869b45bf1e6dd142001d73"
+ ]
+}

@@ -1,0 +1,28 @@
+{
+ "pairs": [
+  [
+   2,
+   3
+  ],
+  [
+   3,
+   5
+  ]
+ ],
+ "a": [
+  "forgeTest registers a story file's tests again inside every test file that imports it",
+  "repoOf takes any git host for GitHub, so a GitLab or Bitbucket origin reports a `repo` and a misleading reason",
+  "componentOf drops everything past the second segment of a dotted component name",
+  "fileDates misses files whose paths git still quotes with core.quotepath=off",
+  "bindingsOf treats a top-level `let` as reassigned when an inner scope assigns its own variable of the same name"
+ ],
+ "b": [
+  "apiTable leaves the files of the type definitions it prints out of `sources`, so they go stale",
+  "The component's own file, read for destructured defaults, is not recorded in `sources`",
+  "destructuredDefaults finds no defaults for a component wrapped by reference (`memo(ChipImpl)`)",
+  "Bindings.componentOf keeps only two segments of a dotted `component`",
+  "parseFile turns on JSX only for `.jsx`/`.tsx`, so a `.js` or `.mjs` story containing JSX fails to index",
+  "fileDates misses paths that git C-quotes, so those components get no history",
+  "passThrough sends the original request headers on to a redirect's new origin"
+ ]
+}
