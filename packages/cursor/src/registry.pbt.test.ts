@@ -74,7 +74,8 @@ describe('a baked hotspot', () => {
       const c = g.box / 2;
       const x = c + Math.cos(angle) * (g.hotspot[0] - c) - Math.sin(angle) * (g.hotspot[1] - c);
       const y = c + Math.sin(angle) * (g.hotspot[0] - c) + Math.cos(angle) * (g.hotspot[1] - c);
-      const want = (v: number, s: number) => Math.min(Math.max(0, (v / g.box) * s), s);
+      // Held to the last pixel, the width less one, as the bake holds it.
+      const want = (v: number, s: number) => Math.min(Math.max(0, (v / g.box) * s), s - 1);
       expect(Math.abs(hx - want(x, size))).toBeLessThanOrEqual(0.5 + 1e-9);
       expect(Math.abs(hy - want(y, size))).toBeLessThanOrEqual(0.5 + 1e-9);
       expect(Math.abs(dx - 2 * hx)).toBeLessThanOrEqual(1);
