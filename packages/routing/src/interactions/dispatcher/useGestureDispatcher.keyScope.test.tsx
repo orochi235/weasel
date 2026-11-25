@@ -451,6 +451,18 @@ describe('a key held for an `over` binding', () => {
     expect(peeking).not.toHaveBeenCalled();
   });
 
+  it('releases it when the key comes up in a widget that stops its keyup', () => {
+    const peeking = vi.fn();
+    render(<Root><div data-testid="widget" /><InputScope><PeekCanvas name="a" peeking={peeking} /></InputScope></Root>);
+    const widget = document.querySelector('[data-testid="widget"]')!;
+    widget.addEventListener('keyup', (e) => { e.stopPropagation(); });
+    enter('a', false);
+    alt('keydown');
+    expect(peeking.mock.calls).toEqual([[true]]);
+    act(() => { widget.dispatchEvent(new KeyboardEvent('keyup', { key: 'Alt', code: 'AltLeft', bubbles: true })); });
+    expect(peeking.mock.calls).toEqual([[true], [false]]);
+  });
+
   it('does not repeat a single-press binding when the pointer arrives', () => {
     const run = vi.fn();
     render(<Root><InputScope><Canvas name="a" run={run} over /></InputScope></Root>);

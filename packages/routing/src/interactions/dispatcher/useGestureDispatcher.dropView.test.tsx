@@ -10,13 +10,15 @@ import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDis
 import { createDispatcher, type DispatcherContext } from './dispatcher';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
-import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
+import { ActionsProvider, useAction, useActionsRegistry } from '../actions/ActionsProvider';
+import type { Action } from '../actions/action';
 import type { InputEvent } from './matcher';
 
 /** The panel is every point at client x >= 100. */
 const viewAt = (_pointerId: number | null, x: number): { id: string | null } =>
   ({ id: x >= 100 ? 'panel' : null });
 const resolver = { at: viewAt, begin: viewAt, end: (): void => {} };
+const DROP: Action = { id: 'test.drop', label: 'drop', defaultBinding: { kind: 'drop' }, invoker: { timing: 'immediate', run: () => {} } };
 
 describe('a drop whose items arrive after the pointer changed view', () => {
   it('dispatches with the context of the view it landed in', async () => {
@@ -34,6 +36,7 @@ describe('a drop whose items arrive after the pointer changed view', () => {
     function Mount(): ReactNode {
       const canvasRef = useRef<HTMLCanvasElement | null>(null);
       const registry = useActionsRegistry();
+      useAction(DROP);
       useGestureDispatcher({
         canvasRef, actions: registry!, entriesById: new Map(), dispatcher: root,
         views: { targets: () => [target], resolver },

@@ -5,7 +5,7 @@
  */
 import { createActionDeps } from '../../actions/buildDeps';
 import type { DispatcherContext, ResolveOnlyResult } from '../dispatcherApi';
-import { immediateParams } from '../inputFacts';
+import { immediateRunParams } from '../inputFacts';
 import type { InputEvent } from '../matcher';
 
 export interface DropPreview {
@@ -47,7 +47,8 @@ export function dropPreview(): DropPreview {
     const { action } = winner;
     if (!action.preview) return;
     try {
-      const out = action.preview(createActionDeps(action, ctx.depRegistry), immediateParams(event, winner.params));
+      const params = immediateRunParams(event, winner.params, { action, binding: winner.binding, viewId: ctx.viewId, apple: ctx.apple });
+      const out = action.preview(createActionDeps(action, ctx.depRegistry), params);
       stop = typeof out === 'function' ? out : null;
     } catch (err) {
       console.error(`weasel dispatcher: preview of "${action.id}" threw`, err);

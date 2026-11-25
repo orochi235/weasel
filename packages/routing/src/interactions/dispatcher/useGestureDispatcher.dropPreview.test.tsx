@@ -4,7 +4,7 @@
  * jsdom has no DragEvent, so events are plain `Event`s with fields assigned on.
  */
 import { describe, it, expect, vi } from 'vitest';
-import { act } from '@testing-library/react';
+import { act, waitFor } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
@@ -12,6 +12,7 @@ import type { Action } from '../actions/action';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher } from './useGestureDispatcher';
+import { roleMods } from '../actions/modifierRoles';
 
 function Probe({ actionDef }: { actionDef: Action }) {
   const registry = useActionsRegistry();
@@ -108,6 +109,28 @@ describe('useGestureDispatcher — drop preview', () => {
     expect(preview).toHaveBeenCalledTimes(1);
     drag(child, 'dragleave', { relatedTarget: null });
     expect(hide).toHaveBeenCalledTimes(1);
+  });
+
+  it('previews with the view and modifier roles the drop itself runs with', async () => {
+    const roles = { 'drop.copy': { label: 'Copy', keys: ['alt'] } } as const;
+    const run = vi.fn();
+    const preview = vi.fn(() => () => {});
+    const action: Action = {
+      id: 'drop-probe', label: 'Drop probe',
+      defaultBinding: [{ kind: 'drop', mods: roleMods(roles) }],
+      modifierRoles: roles,
+      invoker: { timing: 'immediate', run: (_deps, params) => run(params) },
+      preview,
+    };
+    const { canvas } = mount(action);
+    drag(canvas, 'dragover', { altKey: true });
+    drag(canvas, 'drop', { altKey: true, dataTransfer: { items: [], files: [new File(['x'], 'a.png', { type: 'image/png' })], types: ['Files'] } });
+    await waitFor(() => { expect(run).toHaveBeenCalledTimes(1); });
+    const shown = (preview.mock.calls[0] as unknown[])[1] as Record<string, unknown>;
+    const ran = run.mock.calls[0][0] as Record<string, unknown>;
+    expect(ran.roles).toEqual({ 'drop.copy': true });
+    expect({ viewId: shown.viewId, roles: shown.roles }).toEqual({ viewId: ran.viewId, roles: ran.roles });
+    expect('viewId' in shown).toBe('viewId' in ran);
   });
 
   it('asks nothing of a drag no binding would take', () => {

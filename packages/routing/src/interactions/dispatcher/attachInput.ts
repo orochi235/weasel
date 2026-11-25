@@ -26,6 +26,8 @@ export interface InputSources
     Pick<PointerInputOptions, 'longPress' | 'kitSettings' | 'onClick' | 'onDoubleClick' | 'clicks' | 'controls'> {
   /** Every live dispatcher — what a cancel-everything has to reach. */
   dispatchers(): Dispatcher[];
+  /** Hear that `dispatchers` may answer differently. Returns the unsubscribe. */
+  dispatchersChanged(listener: () => void): () => void;
   heldPointer(): ((feed: HeldPointerFeed | null) => void) | undefined;
   requestRedraw(): void;
   paintedCursor(): PaintedCursorState | undefined;
@@ -56,9 +58,10 @@ export function attachInput(
   let cursor: HoverCursorInput | null = null;
   const redraw = dispatcherWatch(() => {
     src.requestRedraw();
-    cursor?.changed();
+    if (!disposed) cursor?.changed();
   });
   redraw.sync(src.dispatchers());
+  const offDispatchers = src.dispatchersChanged(() => { if (!disposed) redraw.sync(src.dispatchers()); });
   const core = createDispatchCore({
     canvas,
     root: src.root,
@@ -104,8 +107,7 @@ export function attachInput(
   const keyTarget: EventTarget = channels.keyboard === 'page' ? (canvas?.ownerDocument ?? document) : window;
   if (channels.keyboard) {
     listeners.on(keyTarget, 'keydown', keys.onKeyDown, keyCapture);
-    listeners.on(keyTarget, 'keyup', keys.onKeyUp, keyCapture);
-    listeners.on(window, 'keyup', keys.lift, true);
+    listeners.on(window, 'keyup', keys.onKeyUp, true);
   }
   const leaveKeyPeers = channels.keyboard && canvas ? joinSurface(canvas, keys.take) : null;
   listeners.on(window, 'blur', onWindowBlur);
@@ -143,6 +145,7 @@ export function attachInput(
   return () => {
     if (channels.pointer) src.heldPointer()?.(null);
     listeners.removeAll();
+    offDispatchers();
     releaseSurface?.();
     leaveKeyPeers?.();
     offCarry?.();
@@ -154,8 +157,9 @@ export function attachInput(
     disposed = true;
     pointer.dispose();
     held?.release();
-    redraw.stop();
+    // Watched still, so a re-bind's cancel clears the overlay it leaves.
     for (const d of src.dispatchers()) d.cancelAll('cancel');
+    redraw.stop();
     src.context().keymaps?.closeAll();
   };
 }

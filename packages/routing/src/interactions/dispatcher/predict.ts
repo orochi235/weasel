@@ -65,6 +65,7 @@ export function resolveOnly(
   return {
     actionId: winner.action.id,
     action: winner.action,
+    binding: winner.match.binding,
     scope: winner.match.scope,
     ownerId: winner.match.ownerId,
     ...paramsOf(winner.match.binding),

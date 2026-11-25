@@ -3,8 +3,9 @@
  * WebKit gesture events, pointer events, and multi-touch synthesized from
  * them) and routes each event to the dispatcher for the view it landed in.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
+import { createEmitter } from '@weasel-js/registry';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { type ActiveToolContextValue, useActiveToolContext } from '../actions/activeToolContext';
 import { actionsNodeOf } from '../actions/ActionsProvider';
@@ -95,7 +96,8 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
     trace,
     bindingOverrides: () => registryRef.current.bindingOverrides(),
     keymaps,
-    leaderUnbound: kitSettings.get('gestures.keymapUnbound'),
+    // A getter, so a setting changed with no render of this host is read as the next input arrives.
+    get leaderUnbound() { return kitSettings.get('gestures.keymapUnbound'); },
   });
 
   // The flat options are view zero.
@@ -111,7 +113,9 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
     rootTargetRef.current.dispatcher,
     ...(viewsRef.current?.targets() ?? []).map((t) => t.dispatcher),
   ], [rootTargetRef, viewsRef]);
+  const dispatchersChanged = useDispatchersChanged(dispatcher, views?.subscribe);
   const requestRedrawRef = useLatest(requestRedraw);
+  const mountedRef = useMountedRef();
   const cursorRef = useLatest({ painted: paintedCursor, sink: cursorSink });
   const longPressRef = useLatest(longPress);
   const kitSettingsRef = useLatest(kitSettings);
@@ -142,8 +146,9 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
       context: () => ctxRef.current,
       actions: () => registryRef.current,
       dispatchers: allDispatchers,
+      dispatchersChanged,
       heldPointer: () => heldPointer,
-      requestRedraw: () => { requestRedrawRef.current?.(); },
+      requestRedraw: () => { if (mountedRef.current) requestRedrawRef.current?.(); },
       paintedCursor: () => cursorRef.current.painted?.(),
       cursorSink: () => cursorRef.current.sink?.(),
       longPress: () => longPressRef.current,
@@ -164,7 +169,17 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
       carry: carryChannel,
     });
   }, [enabled, keyboard, yieldKeys, canvasRef, pointerChannel, hoverChannel, wheelChannel, pinchChannel, contextMenuChannel, ingestChannel, carryChannel,
-    allDispatchers, clientToLocalRef, controlsRef, ctxRef, heldPointer, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+    allDispatchers, dispatchersChanged, mountedRef, clientToLocalRef, controlsRef, ctxRef, heldPointer, kitSettingsRef, longPressRef, onClickRef, onDoubleClickRef, cursorRef, registryRef, requestRedrawRef, rootTargetRef, viewsRef]);
+}
+
+/** Whether the host is mounted, cleared in the layout phase ahead of the listeners' teardown, so the cancel unmounting makes asks no redraw. */
+function useMountedRef(): { readonly current: boolean } {
+  const mountedRef = useRef(false);
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+  return mountedRef;
 }
 
 /** The `dispatcher` option, else one of the hook's own; a gesture on one swapped out would never hear its release, so it is canceled. */
@@ -178,6 +193,17 @@ function useDispatcherOption(given: Dispatcher | undefined): Dispatcher {
     if (was !== dispatcher) was.cancelAll('cancel');
   }, [dispatcher]);
   return dispatcher;
+}
+
+/** A subscription to changes in the hook's dispatchers: the `dispatcher` option swapped, or a view's added or gone. */
+function useDispatchersChanged(
+  dispatcher: Dispatcher,
+  viewsChanged: ((listener: () => void) => () => void) | undefined,
+): (listener: () => void) => () => void {
+  const [changed] = useState(() => createEmitter());
+  useEffect(() => { changed.emit(); }, [changed, dispatcher]);
+  useEffect(() => viewsChanged?.(() => { changed.emit(); }), [changed, viewsChanged]);
+  return changed.subscribe;
 }
 
 /** The incoming tool must not inherit a live gesture, nor the last-operation panel of one the outgoing tool finished. */

@@ -113,6 +113,8 @@ export interface UiOngoingControl<P = Record<string, unknown>> {
 export interface ResolveOnlyResult {
   actionId: string;
   action: Action;
+  /** The binding that would fire. */
+  binding: GestureBinding;
   scope: BindingScope;
   /** Tool id owning the winning binding; `null` for ambient action bindings. */
   ownerId: string | null;

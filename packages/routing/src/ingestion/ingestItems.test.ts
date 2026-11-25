@@ -16,3 +16,12 @@ describe('an untyped string item', () => {
     expect(itemTypesFromDataTransfer(dt)).toEqual([]);
   });
 });
+
+describe('a source with files but no items', () => {
+  it('offers the files\' types, as the drop materializes them', async () => {
+    const file = new File(['x'], 'a.png', { type: 'image/png' });
+    const filesOnly = { items: [], files: [file] } as unknown as DataTransfer;
+    expect((await itemsFromDataTransfer(filesOnly)).map((i) => i.mime)).toEqual(['image/png']);
+    expect(itemTypesFromDataTransfer(filesOnly)).toEqual([{ pending: 'file', mime: 'image/png' }]);
+  });
+});

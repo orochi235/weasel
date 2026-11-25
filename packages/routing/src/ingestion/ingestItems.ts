@@ -133,6 +133,10 @@ export function itemTypesFromDataTransfer(dt: DataTransfer): readonly IngestItem
       if (keepsString(mime)) pending.push({ pending: 'string', mime });
     }
   }
+  // As in `itemsFromDataTransfer`: a source with `files` but no `items`.
+  if (pending.length === 0) {
+    for (const file of Array.from(dt.files ?? [])) pending.push({ pending: 'file', mime: file.type ? normalizeMime(file.type) : UNKNOWN_MIME });
+  }
   if (pending.length === 0 && Array.from(dt.types ?? []).includes('Files')) pending.push({ pending: 'file', mime: UNKNOWN_MIME });
   return pending as unknown as IngestItem[];
 }

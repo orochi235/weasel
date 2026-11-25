@@ -78,6 +78,12 @@ function hoverHeard(pointersHeld: () => number, ctxNow: DispatchCore['ctxNow']):
   };
 }
 
+/** `at`, routed to the view under it when no pointer is held: the route may still be a released drag's. A held pointer keeps the view it is pinned to. */
+function routeIdle(core: Pick<DispatchCore, 'routeAt'>, pointersHeld: () => number, at: Hover): Hover {
+  if (pointersHeld() === 0) core.routeAt(null, at.clientX, at.clientY);
+  return at;
+}
+
 export function hoverCursorInput(
   core: DispatchCore,
   paintedCursor: () => PaintedCursorState | undefined,
@@ -183,7 +189,7 @@ export function hoverCursorInput(
       const changed = prev.altKey !== last.altKey || prev.ctrlKey !== last.ctrlKey
         || prev.metaKey !== last.metaKey || prev.shiftKey !== last.shiftKey;
       // A modifier changing over a resting pointer is a hover with new modifiers.
-      if (changed && heard.hears()) hoverAt(last);
+      if (changed && heard.hears()) hoverAt(routeIdle(core, pointersHeld, last));
       refreshSoon();
     },
     changed() {
