@@ -57,10 +57,11 @@ export function resolveDrop(
 }
 
 /** Move `id` within `siblings`, a destination's children as the next op will find them, to just above
- *  `above` when it is among them, else to the end. Returns the index to reparent `id` to, or `undefined` to
- *  append. */
+ *  `above` when it is among them; else `id` keeps its index when already among them, or goes to the end.
+ *  Returns the index to reparent `id` to, or `undefined` to append. */
 export function landAbove(siblings: NodeId[], id: NodeId, above: NodeId | null): number | undefined {
   const was = siblings.indexOf(id);
+  if (was >= 0 && (above === null || above === id || !siblings.includes(above))) return was;
   if (was >= 0) siblings.splice(was, 1);
   const hit = above === null ? -1 : siblings.indexOf(above);
   const toIndex = hit >= 0 ? hit + 1 : undefined;
