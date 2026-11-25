@@ -133,6 +133,16 @@ describe('openPointerSession', () => {
     expect(s.active).toBe(false);
   });
 
+  it('ends at a move that still holds a button, but not the one that pressed', () => {
+    const onEnd = vi.fn();
+    const onMove = vi.fn();
+    openPointerSession(el(), down(1, 1), { onEnd, onMove });
+    document.dispatchEvent(move(1, 3, 5, 5));
+    document.dispatchEvent(move(1, 2, 6, 6));
+    expect(onMove).toHaveBeenCalledTimes(1);
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+
   it('does not apply the release rule when the environment reports no buttons', () => {
     // jsdom defaults `buttons` to 0, and a synthesized pointerdown carrying 0
     // means the source is not reporting button state at all. Reading a missed

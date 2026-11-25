@@ -51,11 +51,10 @@ export function startThresholdDrag(
   const origin = opts.origin ?? (e.currentTarget as Element);
   const late = opts.captureAt === 'threshold';
 
-  const maybeActivate = (ev: PointerEvent) => {
-    if (activated) return;
-    if (!pastDragThreshold(start, ev, opts.threshold)) return;
+  const maybeActivate = (ev: PointerEvent, capture: boolean) => {
+    if (activated || !pastDragThreshold(start, ev, opts.threshold)) return;
     activated = true;
-    if (late) session.capture();
+    if (late && capture) session.capture();
     opts.onStart?.(ev);
   };
 
@@ -74,11 +73,13 @@ export function startThresholdDrag(
   // Below the threshold a release nobody saw is no click: where it came is unknown.
   const session = openPointerSession(origin, e, {
     onMove: (ev) => {
-      maybeActivate(ev);
+      maybeActivate(ev, true);
       if (activated) opts.onMove(ev);
     },
     onEnd: (ev) => {
       unlisten();
+      // A missed release ends at a move made after the button came up, so only a real release is a drag's end.
+      if (ev.type === 'pointerup') maybeActivate(ev, false);
       if (activated) opts.onEnd(ev);
       else opts.onClick?.(ev);
     },

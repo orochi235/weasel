@@ -1,7 +1,8 @@
 import { act } from '@testing-library/react';
 import { createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, beforeAll, expect, it } from 'vitest';
+import { page } from 'vitest/browser';
 import { DiagramView, type DiagramViewApi, type DiagramViewProps, diagramScene, dragItemProps, type ItemDrop } from '@weasel-js/diagram';
 
 const node = (id: string, x: number) => ({ id, lines: [id], width: 60, height: 40, at: { x, y: 140 }, pinned: true });
@@ -14,6 +15,8 @@ const SPECS = diagramScene({
   ],
 }, { layout: 'none' });
 const VIEW = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
+beforeAll(() => page.viewport(800, 600));
 
 let root: Root | null = null;
 afterEach(() => {

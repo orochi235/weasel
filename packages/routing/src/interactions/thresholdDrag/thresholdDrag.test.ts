@@ -419,3 +419,28 @@ describe('startThresholdDrag origin', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('startThresholdDrag, a release past the threshold that no move crossed', () => {
+  it('ends a drag, started there, rather than reporting a click', () => {
+    const onStart = vi.fn();
+    const onEnd = vi.fn();
+    const onClick = vi.fn();
+    startThresholdDrag(makeStart(0, 0) as unknown as React.PointerEvent, { onStart, onMove: () => {}, onEnd, onClick });
+    fireUp(40, 0);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onStart).toHaveBeenCalledTimes(1);
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('still reports a click for a missed release past the threshold when asked to', () => {
+    const onClick = vi.fn();
+    const onEnd = vi.fn();
+    const start = { ...makeStart(0, 0), buttons: 1 };
+    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onEnd, onClick, missedRelease: 'click' });
+    const ev = new Event('pointermove') as PointerEvent;
+    Object.assign(ev, { clientX: 300, clientY: 300, pointerId: 1, buttons: 0 });
+    document.dispatchEvent(ev);
+    expect(onEnd).not.toHaveBeenCalled();
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+});

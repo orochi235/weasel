@@ -24,12 +24,13 @@ function reportsButtons(down: { buttons?: number }): boolean {
 }
 
 /**
- * A move with nothing held is the release the document never saw — the pointer
- * came up over another window, a native drag, or an element that swallowed it.
- * Only ask this when {@link reportsButtons} was true for the press.
+ * A move no longer holding any button the press held is the release the document never saw — the pointer
+ * came up over another window, a native drag, or an element that swallowed it, or the pressing button came up
+ * while another was still held, which browsers report as a move. Only ask this when {@link reportsButtons} was
+ * true for the press.
  */
-function isMissedRelease(move: { buttons?: number }): boolean {
-  return move.buttons === 0;
+function isMissedRelease(move: { buttons?: number }, down: { buttons?: number }): boolean {
+  return typeof move.buttons === 'number' && (move.buttons & (down.buttons ?? 0)) === 0;
 }
 
 /** Why a session ended without the pointer being released. */
@@ -164,7 +165,7 @@ export function openPointerSession(
 
   function onMove(e: PointerEvent) {
     if (!active || !mine(e)) return;
-    if (buttonsReported && isMissedRelease(e)) {
+    if (buttonsReported && isMissedRelease(e, down)) {
       const how = typeof opts.missedRelease === 'function' ? opts.missedRelease() : opts.missedRelease;
       if (how === 'cancel') abort('missedrelease');
       else end(e);
