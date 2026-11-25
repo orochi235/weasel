@@ -11,6 +11,7 @@
 import { describe, it, expect } from 'vitest';
 import { actionBindings, reportRouteConflicts, type Action, type Contribution } from '@weasel-js/routing';
 import { buildToolActivateBindings, createToolActivateAction, TOOL_ACTIVATE_ID, type ToolActivateBindingSpec } from 'interactions/actions/defaults/toolActivate';
+import { SELECTION_TRANSFORM_ID } from '@weasel-js/editing';
 import { sweepKit, type Sweep } from './kitSweep.fixture';
 
 type Keybinding = { key: string | string[]; mod?: boolean; alt?: boolean; shift?: boolean };
@@ -31,7 +32,8 @@ const yields = (a: Action): boolean => actionBindings(a).some((b) => b.opts?.yie
 function conflictsIn(sweep: Sweep, inScope: (where: string) => boolean, planted: readonly Contribution<unknown>[] = []): string[] {
   const whereOf = (c: Contribution<unknown>): string => sweep.entries.find((e) => e.entry === c)!.where;
   const tools = [...sweep.tools().filter((t) => inScope(whereOf(t))), ...planted];
-  const ambient = sweep.ambient().filter((t) => inScope(whereOf(t)));
+  // `selection.transform` is resize and rotate in one entry: a canvas mounts it or those two, never both.
+  const ambient = sweep.ambient().filter((t) => inScope(whereOf(t)) && t.id !== SELECTION_TRANSFORM_ID);
   const actions = [...sweep.actions.values()]
     .filter(({ action, where }) => action.id !== TOOL_ACTIVATE_ID && inScope(where))
     .map(({ action }) => action);
