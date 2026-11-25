@@ -190,12 +190,22 @@ describe('transformAgain enabled', () => {
     expect(rig.pose(rig.ids[0])).toMatchObject({ x: 5, y: 0 });
   });
 
-  it('is off where the repeat would change nothing, as a resize of a locked node', () => {
+  it('is off as locked for a resize of a locked node', () => {
     const rig = setup([box(0, 0)]);
     const locked = rig.scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 50), locked: true } as never) as string;
     recordTransform(rig.scene, { kind: 'scale', to: { x: 0, y: 0, width: 2, height: 2 }, anchor: { x: 'min', y: 'min' } }, rig.ids);
     rig.selection.set([asNodeId(locked)]);
-    expect(transformAgainAction.enabled!(rig.deps as never)).toBe(ActionDisabledReason.NotApplicable);
+    expect(transformAgainAction.enabled!(rig.deps as never)).toBe(ActionDisabledReason.Locked);
+    rig.again();
+    expect(rig.pose(locked)).toMatchObject({ x: 50, y: 50, width: 10, height: 10 });
+  });
+
+  it('is off as locked for a rotate of a locked node', () => {
+    const rig = setup([box(0, 0)]);
+    const locked = rig.scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(50, 50), locked: true } as never) as string;
+    recordTransform(rig.scene, { kind: 'rotate', angle: Math.PI / 4, pivot: 'union' }, rig.ids);
+    rig.selection.set([asNodeId(locked)]);
+    expect(transformAgainAction.enabled!(rig.deps as never)).toBe(ActionDisabledReason.Locked);
     rig.again();
     expect(rig.pose(locked)).toMatchObject({ x: 50, y: 50, width: 10, height: 10 });
   });

@@ -121,13 +121,15 @@ function buildGestureContext(
 }
 
 /** What turning `ids`, the shape sources of `selected`, is computed from,
- *  with each one's pose as stored. Null when none of them can turn. */
+ *  with each one's pose as stored. Null when none of them can turn, or, unless `locked` is `'keep'`, when one is
+ *  locked: a replay keeps them so its batch answers `Locked` rather than nothing to do. */
 export function captureTurn(
   scene: Scene<unknown, string, unknown>,
   selected: readonly string[],
   ids: readonly NodeId[],
   deps: Pick<ActionDeps, 'view' | 'poseDescriptor' | 'boundsIncludeStroke' | 'drawnBoxes'>,
   pivot: 'union' | 'each',
+  locked: 'refuse' | 'keep' = 'refuse',
 ): { turn: Turn; originPoses: Map<NodeId, unknown>; poseFrame: PoseFrame<unknown> } | null {
   const view = deps.view;
   const descriptorOf = nodeDescriptors(scene, poseDescriptorOf(deps.poseDescriptor));
@@ -140,7 +142,7 @@ export function captureTurn(
   const { originPoses, origins, visual } = captureOrigins(view, scene, ids, descriptorOf, poseFrame, boxes);
   if (originPoses.size === 0) return null;
   // A turn rewrites every source it turns, so one that is locked stops it (ruled 2026-11-09 for commands).
-  if ([...originPoses.keys()].some((id) => scene.isLocked?.(id) === true)) return null;
+  if (locked === 'refuse' && [...originPoses.keys()].some((id) => scene.isLocked?.(id) === true)) return null;
   // A derived node's chrome draws its own box, not its sources' union.
   const owner = derivedBoxOwner(scene, selected);
   const union = owner === null
