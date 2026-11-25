@@ -32,8 +32,8 @@
 }
 
 .groupBody.groupPairs > * {
-  grid-column: auto;
   /* As a paired list's rows: see `.listPairs`. */
+  min-width: 0;
   align-self: first baseline;
 }
 

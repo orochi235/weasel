@@ -22,9 +22,10 @@ const meta: Meta<DemoArgs> = {
     title: { control: 'text' },
     pack: {
       control: 'inline-radio',
-      options: ['auto-color', 'pairs'] satisfies PropertyListPack[],
+      // A record, so typecheck fails when a packing is added and not offered here.
+      options: Object.keys({ 'auto-color': 0, pairs: 0, 'one-up': 0 } satisfies Record<PropertyListPack, 0>),
       description:
-        "PropertyList packing. 'auto-color' (default) spans non-color rows full-width; 'pairs' packs every row two-per-row.",
+        "PropertyList packing. 'auto-color' (default) spans non-color rows full-width; 'pairs' packs every row two-per-row; 'one-up' spans every row full-width, color rows included.",
     },
     width: { control: { type: 'number', min: 200, max: 600, step: 10 } },
   },

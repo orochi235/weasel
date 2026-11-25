@@ -8,6 +8,7 @@ import {
 import { imeKey } from '@weasel-js/ui-input';
 import { decimal, decimalPlaces, endlessTrack, parseAs, qty, spinKey, type Display } from '@weasel-js/quantity';
 import { dlog } from '../../dlog';
+import { nodeText } from '../../nodeText';
 import { useFieldLocale } from '../../useFieldLocale';
 import { useEditDraft } from '../../useEditDraft';
 import { inlineDirection } from '../../useRovingTabIndex';
@@ -298,7 +299,7 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
   const [draft, setDraft] = useState<string | null>(null);
   const hold = useNativeHold({ disabled, disabledReason, 'aria-describedby': named['aria-describedby'] });
   const locale = { locale: useFieldLocale() };
-  const text = (n: number) => (format ? String(format(n)) : qty(n, display, locale).text);
+  const text = (n: number) => (format ? nodeText(format(n)) : qty(n, display, locale).text);
   const read = (typed: string) => parseAs(typed, display, locale);
   const displayValue = draft !== null ? draft : text(value);
   // The widest value the range can show, which the stylesheet widens the box to
@@ -339,7 +340,17 @@ function EditableReadout({ named, value, min, max, step, reach, settle, toTrack,
           setDraft(text(value));
           e.currentTarget.select();
         }}
-        onChange={(e) => setDraft(e.target.value.replace(/-/g, '−'))}
+        onChange={(e) => {
+          // Swapped in place, so React finds the DOM already holding the draft and leaves the caret where it was.
+          const box = e.currentTarget;
+          const typed = box.value.replace(/-/g, '−');
+          if (typed !== box.value) {
+            const { selectionStart, selectionEnd } = box;
+            box.value = typed;
+            box.setSelectionRange(selectionStart, selectionEnd);
+          }
+          setDraft(typed);
+        }}
         onBlur={commit}
         onClick={(e) => {
           e.preventDefault();
