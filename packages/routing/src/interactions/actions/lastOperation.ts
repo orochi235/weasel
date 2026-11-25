@@ -6,8 +6,8 @@
  * is replayed by its handle (`OngoingHandle.replay`).
  */
 import type { History } from '@weasel-js/history';
-import { prefLeaves, type PrefGroup } from '@weasel-js/prefs-schema';
-import { createEmitter, getOwn, setOwn } from '@weasel-js/registry';
+import { nestPrefValues, prefLeaves, prefValueAt, type PrefGroup } from '@weasel-js/prefs-schema';
+import { createEmitter, getOwn, isPlainObject, setOwn } from '@weasel-js/registry';
 import type { Action } from './action';
 import { resolveParams, type ImmediateInvoker, type OngoingHandle, type OngoingInvoker } from './invoker';
 import { runsInvoker, type ActionTuning } from './tuning';
@@ -87,7 +87,7 @@ interface Held {
   /** Run the operation again with `values`, laid over what its first run was handed beyond them, such as the
    *  point a binding carried. False when it could not run. */
   rerun: (values: Record<string, unknown>) => boolean;
-  /** Hand `values` to the tunings that keep the action's params. */
+  /** Hand the params `values` make to the tunings that keep the action's params. */
   keep: (values: Readonly<Record<string, unknown>>) => void;
   /** The scope it ran in, whose leaving ends it. */
   host: LastOperationHost;
@@ -129,19 +129,33 @@ function soleEntry<T>(stack: EditStack, run: () => T): Watched & { out: T } {
   return { out, ...watch.stop() };
 }
 
-/** `params`, reduced to the leaves of `schema`, each filled from its default where `params` has none. */
-function formValues(schema: PrefGroup, params: Readonly<Record<string, unknown>>): Record<string, unknown> {
+/** One value per leaf of `schema`, by its path: what `read` gives for the path, else the leaf's default. */
+function formValues(schema: PrefGroup, read: (path: string) => unknown): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [path, leaf] of prefLeaves(schema)) {
-    const given = getOwn(params, path);
+    const given = read(path);
     setOwn(out, path, given !== undefined ? given : leaf.default);
   }
   return out;
 }
 
-function without(params: Record<string, unknown> | undefined, keys: Readonly<Record<string, unknown>>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(params ?? {})) if (!Object.hasOwn(keys, k)) setOwn(out, k, v);
+/** The leaves of nested `params`, read by path. */
+const leavesOf = (params: Readonly<Record<string, unknown>>) => (path: string) => prefValueAt(params, path);
+
+/** `params` with each of `values`, keyed by leaf path, set at its path, copying the groups on the way. */
+function withValues(params: Readonly<Record<string, unknown>> | undefined, values: Readonly<Record<string, unknown>>): Record<string, unknown> {
+  const out = { ...params };
+  for (const [path, value] of Object.entries(values)) {
+    const parts = path.split('.');
+    let cursor = out;
+    for (const part of parts.slice(0, -1)) {
+      const branch = getOwn(cursor, part);
+      const copy: Record<string, unknown> = isPlainObject(branch) ? { ...branch } : {};
+      setOwn(cursor, part, copy);
+      cursor = copy;
+    }
+    setOwn(cursor, parts.at(-1)!, value);
+  }
   return out;
 }
 
@@ -186,7 +200,8 @@ export class LastOperationKeeper implements LastOperationStore {
       this.dismiss();
       return false;
     }
-    const values = formValues(held.op.schema, { ...held.op.values, ...patch });
+    const merged = { ...held.op.values, ...patch };
+    const values = formValues(held.op.schema, (path) => getOwn(merged, path));
     this.busy = true;
     let clean = true;
     let ran = true;
@@ -222,7 +237,7 @@ export class LastOperationKeeper implements LastOperationStore {
     }
     held.op = { ...held.op, values };
     this.remember(held.op.id, values);
-    held.keep(values);
+    held.keep(nestPrefValues(values));
     // More than one entry: the next adjustment could undo only one of them.
     if (!clean) this.dismiss();
     else this.listeners.emit();
@@ -251,14 +266,13 @@ export class LastOperationKeeper implements LastOperationStore {
       const schema = schemaOf(resolved);
       if (!schema) return invoker.run(deps, given);
       const restore = host.takeSelection();
-      const values = formValues(schema, resolved);
+      const values = formValues(schema, leavesOf(resolved));
       const stack = editStackOf(history);
       const { out, entry } = soleEntry(stack, () => invoker.run(deps, given));
       if (entry !== null && out !== 'pass') {
-        const rest = without(given, values);
         const op = { id: action.id, label: schema.name || action.label, schema, values };
         const keep = (v: Readonly<Record<string, unknown>>) => host.keep(action.id, v);
-        const rerun = (v: Record<string, unknown>) => host.rerun(action.id, { ...rest, ...v });
+        const rerun = (v: Record<string, unknown>) => host.rerun(action.id, withValues(given, v));
         this.hold({ op, gesture: false, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun, host });
       }
       return out;
@@ -282,7 +296,7 @@ export class LastOperationKeeper implements LastOperationStore {
       let driven = ctx.params;
       const moved: OngoingHandle['onMove'] = (moveCtx) => {
         if (moveCtx.params) driven = moveCtx.params;
-        onMove?.call(handle, moveCtx);
+        return onMove?.call(handle, moveCtx);
       };
       const ended: OngoingHandle['onEnd'] = (endCtx, reason) => {
         let entry: number | null = null;
@@ -295,12 +309,11 @@ export class LastOperationKeeper implements LastOperationStore {
         const resolved = { ...host.paramsOf(id, { ...resolveParams(opts?.params), ...driven }), ...handle.params?.() };
         const schema = schemaOf(resolved);
         if (!schema) return;
-        const values = formValues(schema, resolved);
-        const rest = without(resolved, values);
+        const values = formValues(schema, leavesOf(resolved));
         const op = { id, label: schema.name || label, schema, values };
         const keep = (v: Readonly<Record<string, unknown>>) => host.keep(id, v);
         const rerun = (v: Record<string, unknown>) => {
-          const params = { ...rest, ...v };
+          const params = withValues(resolved, v);
           if (!host.admits(id, params)) return false;
           replay.call(handle, params);
           return true;
@@ -325,7 +338,7 @@ export class LastOperationKeeper implements LastOperationStore {
   }
 
   private remember(id: string, values: Readonly<Record<string, unknown>>): void {
-    this.session.set(id, { params: { ...values } });
+    this.session.set(id, { params: nestPrefValues(values) });
     this.onSession();
   }
 }
