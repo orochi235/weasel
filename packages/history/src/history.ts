@@ -135,7 +135,8 @@ export function createHistory(adapter: unknown, options: CreateHistoryOptions = 
     serialize: () => snapshot({ undoStack, redoStack, ...forks.state(), nextEntryId: recorder.nextEntryId() }, logger),
     recordEntry(ops: Op[], label: string, options?: RecordEntryOptions): void {
       journals.refuse();
-      record(ops, ops, label, options);
+      const kept = ops.slice();
+      record(kept, kept, label, options);
     },
     nextEntryId: recorder.nextEntryId,
     beginJournal: (opts) => journals.begin(history, opts),

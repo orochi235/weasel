@@ -71,4 +71,17 @@ describe('History.recordEntry', () => {
     h.redo();
     expect(adapter.values).toEqual([1, 2, 3]);
   });
+
+  it('keeps its own copy of the ops, so a caller can reuse the array', () => {
+    const adapter = makeArrayAdapter();
+    const h = createHistory(adapter);
+    const buf: Op[] = [];
+    adapter.values.push(1);
+    buf.push(pushOp(1));
+    h.recordEntry(buf, 'one');
+    buf.length = 0;
+
+    h.undo();
+    expect(adapter.values).toEqual([]);
+  });
 });
