@@ -114,7 +114,7 @@ export function applyTheme(el: HTMLElement, theme: Theme, selection: AxisChoice 
   const tokens = options.weights ? blendTheme(theme, options.weights, sel) : resolveTheme(theme, sel);
   const body = [
     ...(scheme ? [`color-scheme: ${scheme};`] : []),
-    ...(stylesScrollbars(Object.keys(tokens)) ? [SCROLLBAR_COLOR_DECL] : []),
+    ...(stylesScrollbars(Object.keys(tokens).map((k) => k.slice('--wzl-'.length))) ? [SCROLLBAR_COLOR_DECL] : []),
     ...declarations(theme, tokens),
   ].join(' ');
   const selector = `${wzlAttr('theme', theme.name)}${picked.map(([a, v]) => wzlAttr(a, v)).join('')}`;

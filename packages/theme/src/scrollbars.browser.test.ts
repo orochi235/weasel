@@ -1,9 +1,15 @@
 import './generated/tokens.css';
-import { afterEach, describe, expect, test } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, test } from 'vitest';
 import { applyTheme } from './applyTheme';
 import { defineTheme, weaselTheme } from './theme';
 
 afterEach(() => document.body.replaceChildren());
+
+// The browser setup hides every scrollbar so layout is the same on every node; these tests read them.
+const hiders = () =>
+  [...document.querySelectorAll('style')].filter((s) => s.textContent?.includes('scrollbar-width: none !important'));
+beforeAll(() => hiders().forEach((s) => (s.sheet!.disabled = true)));
+afterAll(() => hiders().forEach((s) => (s.sheet!.disabled = false)));
 
 /** A scroller with more content than room, under a root choosing `scrollbars`, or none. */
 function scroller(scrollbars?: string): CSSStyleDeclaration {
