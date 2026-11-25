@@ -10,7 +10,7 @@ import type { Action, BindingOptions, InvocationCtx, OngoingHandle } from '@weas
 import type { OperandsDep, CloneEnd } from '@weasel-js/core/engine';
 import type { Scene, NodeId, Op } from '@weasel-js/core';
 import { defaultCommitAdapter, operandMethods, nodeDescriptors, poseDescriptorOf, translatePoseViaDescriptor, type PoseDescriptor, scenePoseFrame, type PoseFrame, SNAP_ROLES } from '@weasel-js/core/engine';
-import { runBehaviorCancel, runBehaviorSettled, copyOps, rootsAmong, translateTargets, carryPose, invertPlane, inPlane, planeOf, selectionLayer, recordTransform, finiteFrame, quantizedPreview } from '@weasel-js/core';
+import { runBehaviorCancel, runBehaviorSettled, copyOps, rootsAmong, translateTargets, carryPose, invertPlane, inPlane, planeOf, selectionLayer, recordTransform, forgetTransform, finiteFrame, quantizedPreview } from '@weasel-js/core';
 import { startCloneBehaviors, type CloneBehaviors } from './behaviors';
 import { beginDragSnap, snappedDelta } from '../move/dragSnap';
 import { createEmitter } from '@weasel-js/registry';
@@ -65,9 +65,11 @@ function rootOf(scratch: CloneScratch, id: NodeId): NodeId {
   return at ?? id;
 }
 
+type Placement = Parameters<CloneEnd['copyOps']>[0];
+
 /** How far a placement moves the copy of `root` from where the drag alone leaves it, in world. */
 function placementShift(
-  scratch: CloneScratch, root: NodeId, placement: Parameters<CloneEnd['copyOps']>[0], dx: number, dy: number,
+  scratch: CloneScratch, root: NodeId, placement: Placement, dx: number, dy: number,
 ): { dx: number; dy: number } {
   const placed = placement.poses.get(root);
   if (placed === undefined) return { dx: 0, dy: 0 };
@@ -82,7 +84,7 @@ function placementShift(
  *  with a `placement`, each copied root goes under its parent instead, at its
  *  pose there when it has one. `null` when a copy would land in a singular
  *  frame, so the clone refuses whole. */
-function placedCopyOps(scratch: CloneScratch, selection: OperandsDep, placement?: Parameters<CloneEnd['copyOps']>[0]): Op[] | null {
+function placedCopyOps(scratch: CloneScratch, selection: OperandsDep, placement?: Placement): Op[] | null {
   const { dx, dy } = scratch.currentDelta;
   const parent = placement?.parentId as NodeId | null | undefined;
   let refused = false;
@@ -118,20 +120,47 @@ function placedCopyOps(scratch: CloneScratch, selection: OperandsDep, placement?
   return [...ops, coreOps.setSelection({ from: selection.get(), to: copies, label: 'Clone' })];
 }
 
+/** How far the copies a `placement` lands sit from their sources, when every root moved alike; else null. */
+function placedOffset(scratch: CloneScratch, placement: Placement | undefined): { dx: number; dy: number } | null {
+  const { dx, dy } = scratch.currentDelta;
+  if (placement === undefined) return { dx, dy };
+  let offset: { dx: number; dy: number } | null = null;
+  for (const root of scratch.ids) {
+    const shift = placementShift(scratch, root, placement, dx, dy);
+    if (offset === null) offset = { dx: dx + shift.dx, dy: dy + shift.dy };
+    else if (offset.dx !== dx + shift.dx || offset.dy !== dy + shift.dy) return null;
+  }
+  return offset;
+}
+
 /** Commit the drag: a behavior's ops when one claims it, else the copies,
- *  which become the selection. Returns whether anything was committed. */
-function commitClone(scratch: CloneScratch, behaviors: CloneBehaviors, selection: OperandsDep): boolean {
+ *  which become the selection. Says whether anything was committed, and the
+ *  offset Transform Again repeats: null unless the commit was copies that all
+ *  moved by one offset. */
+function commitClone(
+  scratch: CloneScratch, behaviors: CloneBehaviors, selection: OperandsDep,
+): { committed: boolean; repeat: { dx: number; dy: number } | null } {
   // False when a container refused the copies: the scene reverted them.
   const apply = (ops: Op[]): boolean => {
     if (!scratch.applyOps) return scratch.scene.applyBatch(ops, 'Clone', defaultCommitAdapter(scratch.scene, operandMethods(selection)));
     scratch.applyOps(ops, 'Clone');
     return true;
   };
-  const answer = behaviors.end(scratch.currentDelta, (placement) => placedCopyOps(scratch, selection, placement));
-  if (answer === null) return false;
-  if (answer !== undefined) return answer.length === 0 || apply(answer);
+  const made = new Map<Op[], Placement>();
+  const answer = behaviors.end(scratch.currentDelta, (placement) => {
+    const ops = placedCopyOps(scratch, selection, placement);
+    if (ops !== null) made.set(ops, placement);
+    return ops;
+  });
+  if (answer === null) return { committed: false, repeat: null };
+  if (answer !== undefined) {
+    if (answer.length === 0) return { committed: true, repeat: null };
+    const committed = apply(answer);
+    return { committed, repeat: committed && made.has(answer) ? placedOffset(scratch, made.get(answer)) : null };
+  }
   const ops = placedCopyOps(scratch, selection);
-  return ops !== null && ops.length > 0 && apply(ops);
+  const committed = ops !== null && ops.length > 0 && apply(ops);
+  return { committed, repeat: committed ? placedOffset(scratch, undefined) : null };
 }
 
 /**
@@ -234,8 +263,10 @@ export const cloneAction: Action & { requires: string[] } = inPlane({
             const { dx, dy } = scratch.currentDelta;
             // A zero-delta drag makes no clone, so its behaviors are canceled.
             if (reason === 'commit' && (dx !== 0 || dy !== 0)) {
-              committed = commitClone(scratch, behaviors, selection);
-              if (committed) recordTransform(scene, { kind: 'duplicate', dx, dy }, selection.get());
+              const commit = commitClone(scratch, behaviors, selection);
+              committed = commit.committed;
+              if (commit.repeat) recordTransform(scene, { kind: 'duplicate', ...commit.repeat }, selection.get());
+              else if (committed) forgetTransform(scene);
             } else runBehaviorCancel(behaviors.list, behaviors.gctx);
           } finally {
             snap.snap?.end();

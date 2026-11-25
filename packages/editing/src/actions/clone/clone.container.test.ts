@@ -96,3 +96,31 @@ describe('cloneAction dropping an envelope into a container', () => {
     expect(scene.get(cb!)!.pose).toMatchObject({ x: SLOT.x - BIN.x + 6, y: SLOT.y - BIN.y });
   });
 });
+
+describe('what a clone leaves Transform Again to repeat', () => {
+  it('the offset a placement moved the copy, not the drag delta', async () => {
+    const { lastTransform } = await import('@weasel-js/core');
+    const f = fixture();
+    const place = {
+      onEnd: (_g: unknown, end: { copyOps: (p: unknown) => unknown }) =>
+        end.copyOps({ parentId: f.bin, poses: new Map([[f.token, SLOT]]) }),
+    };
+    const handle = (cloneAction.invoker as OngoingInvoker).start(f.at(5, 5), { behaviors: [place] } as unknown as BindingOptions) as OngoingHandle;
+    handle.onMove!(f.at(45, 5));
+    handle.onEnd!(f.at(45, 5), 'commit');
+    expect(f.copies()[0]!.parent).toBe(f.bin);
+    expect(lastTransform(f.scene)).toEqual({ kind: 'duplicate', dx: SLOT.x, dy: SLOT.y });
+  });
+
+  it('nothing when a behavior claims the commit with no ops', async () => {
+    const { lastTransform, recordTransform } = await import('@weasel-js/core');
+    const f = fixture();
+    recordTransform(f.scene, { kind: 'translate', dx: 1, dy: 1 }, [f.token]);
+    const opts = { behaviors: [{ onEnd: () => [] }] } as unknown as BindingOptions;
+    const handle = (cloneAction.invoker as OngoingInvoker).start(f.at(5, 5), opts) as OngoingHandle;
+    handle.onMove!(f.at(45, 5));
+    handle.onEnd!(f.at(45, 5), 'commit');
+    expect(f.copies()).toEqual([]);
+    expect(lastTransform(f.scene)).toBeUndefined();
+  });
+});
