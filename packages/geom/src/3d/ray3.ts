@@ -2,7 +2,7 @@
 
 import { nearestPointOnSegment as nearestPointOnSegmentN, squaresHeld } from '../points';
 import { SINGULAR_RATIO } from '../scalar';
-import { add, dot, len, len2, scale, sub, type Vec3 } from './vec3';
+import { add, cross, dot, len, len2, scale, sub, type Vec3 } from './vec3';
 import { transformPoint4, type Mat4 } from './mat4';
 
 /** A ray from `origin` along `direction`, which need not be unit length: the
@@ -49,12 +49,12 @@ export function intersectRayAabb(ray: Ray, box: Aabb): number | null {
 }
 
 /** Plane is `dot(normal, p) === offset`. Null when the ray runs parallel to the
- *  plane to within rounding, or points away from it. */
+ *  plane to within rounding, points away from it, or meets it at no finite `t`. */
 export function intersectRayPlane(ray: Ray, normal: Vec3, offset: number): number | null {
   const denom = dot(normal, ray.direction);
   if (!(Math.abs(denom) > SINGULAR_RATIO * len(normal) * len(ray.direction))) return null;
   const t = (offset - dot(normal, ray.origin)) / denom;
-  return t < 0 ? null : t;
+  return t >= 0 && t < Infinity ? t : null;
 }
 
 /**
@@ -144,7 +144,7 @@ export function nearestPointOnSegment(p: Vec3, a: Vec3, b: Vec3): Vec3 {
 /**
  * The nearest pair of points between a ray and the infinite line through
  * `origin` along `direction`. `t` is the ray parameter (never negative) and
- * `s` the line's. A line parallel to the ray pairs with the ray's origin; a zero direction makes the line
+ * `s` the line's. A line parallel to the ray, to a sine of `SINGULAR_RATIO`, pairs with the ray's origin; a zero direction makes the line
  * the point `origin`, paired with the ray's point nearest it.
  */
 export function nearestPointsRayLine(
@@ -156,14 +156,15 @@ export function nearestPointsRayLine(
   const { v, k: kv } = squarable(direction);
   const w = sub(ray.origin, origin);
   const a = len2(u);
-  const b = dot(u, v);
   const c = len2(v);
-  const d = dot(u, w);
-  const e = dot(v, w);
-  const denom = a * c - b * b;
+  // a·c − b² and b·e − c·d as cross products: the dot-product forms cancel to noise for a line nearly parallel.
+  const uv = cross(u, v);
+  const denom = len2(uv);
   let t = 0;
-  if (a > 0 && c === 0) t = Math.max(0, -d / a);
-  else if (a > 0 && denom > SINGULAR_RATIO * a * c) t = Math.max(0, (b * e - c * d) / denom);
+  if (a > 0 && c === 0) t = Math.max(0, -dot(u, w) / a);
+  else if (a > 0 && Math.sqrt(denom) > SINGULAR_RATIO * Math.sqrt(a) * Math.sqrt(c)) {
+    t = Math.max(0, dot(uv, cross(v, w)) / denom);
+  }
   const onRay = add(ray.origin, scale(u, t));
   const s = c > 0 ? dot(sub(onRay, origin), v) / c : 0;
   return { onRay, onLine: add(origin, scale(v, s)), t: t / ku, s: s / kv };

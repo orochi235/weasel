@@ -31,3 +31,13 @@ describe('intersectRayAabb with a non-finite ray', () => {
     expect(hits).toEqual(['a0']);
   });
 });
+
+describe('BVH raycast with an infinite direction component', () => {
+  it('honors a negative tMax as a finite direction does', () => {
+    const tree = createBvh<string>(2, [['a', [0, 0, 1, 1]]]);
+    const hits: string[] = [];
+    tree.raycast([0.5, 0.5], [0, 1], (k) => { hits.push(k); }, -1);
+    tree.raycast([0.5, 0.5], [Infinity, 1], (k) => { hits.push(k); }, -1);
+    expect(hits).toEqual([]);
+  });
+});
