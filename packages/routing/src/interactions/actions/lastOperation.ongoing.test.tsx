@@ -178,6 +178,18 @@ describe('a gesture as the last operation', () => {
     expect(doc.width).toBe(10 + 4 * 3 + 5);
   });
 
+  it("holds a UI-driven edit at the params its last update handed it", () => {
+    const { registry, store } = setup({ replays: true });
+    const invoker = registry.list().find((a) => a.id === 'stretch')!.invoker;
+    if (invoker?.timing !== 'ongoing') throw new Error('timing');
+    act(() => {
+      const handle = invoker.start({ ...ctxAt(0), params: { factor: 2 } }, { params: { factor: 2 } });
+      handle.onMove?.({ ...ctxAt(4), params: { factor: 6 } });
+      handle.onEnd?.(ctxAt(4), 'commit');
+    });
+    expect(store.get()?.values).toEqual({ factor: 6 });
+  });
+
   it('ends when the active tool changes, leaving what the drag did', () => {
     const { doc, history, registry, store, drag } = setup({ replays: true });
     drag(4, { factor: 2 });
