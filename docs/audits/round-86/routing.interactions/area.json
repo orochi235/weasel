@@ -1,0 +1,83 @@
+{
+ "id": "routing.interactions",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/interactions/browserReservedKeys.ts",
+  "packages/routing/src/interactions/carry/carry.ts",
+  "packages/routing/src/interactions/carry/index.ts",
+  "packages/routing/src/interactions/handleDrag/handleDrag.ts",
+  "packages/routing/src/interactions/keyHelpers.ts",
+  "packages/routing/src/interactions/pointerSession/index.ts",
+  "packages/routing/src/interactions/pointerSession/pointerSession.ts",
+  "packages/routing/src/interactions/pointerSession/swallowClick.ts",
+  "packages/routing/src/interactions/scratchKey.ts",
+  "packages/routing/src/interactions/sweep/index.ts",
+  "packages/routing/src/interactions/sweep/sweep.ts",
+  "packages/routing/src/interactions/thresholdDrag/index.ts",
+  "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+ ],
+ "a": 5,
+ "b": 3,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7,
+ "unfound": 1,
+ "read": {
+  "A": 13,
+  "B": 13
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 7,
+  "unfound": 1
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 18,
+  "testFiles": {
+   "failed": 4,
+   "passed": 3428,
+   "total": 3432
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 1
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.2,
+   "B": 1.4,
+   "match": 0.1,
+   "fix": 17.2,
+   "repair": 0.9
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 1096022,
+  "costUsd": 3.29
+ },
+ "fixCommits": [
+  "28c087908e975b3fa71e5aa74e63c4b518c8ea90",
+  "6ed87e1bb1d5ecc5d50b77285cb36e6b7ba256b7",
+  "f19d22bf7e871e5dadda3af2601bdc161256f625",
+  "40de5b4b430c4bd08d4959858616c0d0949d6a9a",
+  "83dcc78b830423d88efb0ab053f6754d62c3abc0"
+ ]
+}

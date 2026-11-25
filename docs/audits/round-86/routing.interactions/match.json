@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   2
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "The reserved-chord list leaves out chords browsers take and pages cannot override (tab-by-number, back/forward, F5/F12)",
+  "useHandleDrag shifts a fixed- or sticky-positioned rect by a scroll that did not move it",
+  "useHandleDrag's scroll correction ignores an ancestor transform's scale",
+  "A sweep surface inside a shadow root never finds an item",
+  "A carry surface inside a shadow root is never picked"
+ ],
+ "b": [
+  "pointerSession's `escape` listens at document capture, so window-capture Escape handlers still see the Escape that cancels a drag; thresholdDrag decides the same thing at window capture",
+  "useHandleDrag's scroll compensation moves a fixed-position rect element by the document's scroll",
+  "The reserved-chord list misses Cmd/Ctrl+1–9 tab selection and Alt+Left/Right history navigation"
+ ]
+}

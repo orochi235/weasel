@@ -1,0 +1,86 @@
+{
+ "id": "history",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "date": "2026-11-25",
+ "files": [
+  "packages/history/src/createSwapOp.ts",
+  "packages/history/src/entryOps.ts",
+  "packages/history/src/forks.ts",
+  "packages/history/src/history.ts",
+  "packages/history/src/historyTypes.ts",
+  "packages/history/src/index.ts",
+  "packages/history/src/journal.ts",
+  "packages/history/src/journalSlot.ts",
+  "packages/history/src/op.ts",
+  "packages/history/src/recording.ts",
+  "packages/history/src/restore.ts",
+  "packages/history/src/serialized.ts",
+  "packages/history/src/snapshotShape.ts",
+  "packages/history/src/stackTime.ts",
+  "packages/history/src/stackView.ts",
+  "packages/history/src/textOf.ts",
+  "packages/history/src/versionClock.ts",
+  "packages/history/src/walk.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 1,
+ "distinct": 4,
+ "chapman": 5,
+ "unfound": 1,
+ "read": {
+  "A": 18,
+  "B": 18
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 5,
+  "unfound": 1
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 10,
+  "testFiles": {
+   "failed": 3,
+   "passed": 2915,
+   "total": 2918
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.1,
+   "B": 5.9,
+   "match": 0.1,
+   "fix": 9.4
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 969991,
+  "costUsd": 3.2
+ },
+ "fixCommits": [
+  "639d9173c642f29b810ade0607043b697536c1cf",
+  "044daae6c26c592af100b34c1d6ce59cbf2e3e2f",
+  "91e83b7ca1c66538cf23ddab593ee58e8134f913",
+  "c7d2b8bee3cb52abe6ec79db38662a85d779dbca",
+  "008a97fc5c4aa3e76e26845abf156a8ba662e3e0"
+ ]
+}

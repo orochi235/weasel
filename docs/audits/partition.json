@@ -487,6 +487,7 @@
   "id": "apps.shared",
   "files": [
    "apps/shared/buildInfo.ts",
+   "apps/shared/chunkReload.ts",
    "apps/shared/defaultFont.ts",
    "apps/shared/hashRoute.ts",
    "apps/shared/labs.ts",
@@ -531,7 +532,6 @@
    "apps/site/WhatsNew.tsx",
    "apps/site/canvas-kit-demo.css",
    "apps/site/canvasBackend.ts",
-   "apps/site/chunkReload.ts",
    "apps/site/colorMode.ts",
    "apps/site/icons.gen.ts",
    "apps/site/icons.table.ts",
@@ -5776,6 +5776,7 @@
    "packages/routing/src/interactions/browserReservedKeys.ts",
    "packages/routing/src/interactions/carry/carry.ts",
    "packages/routing/src/interactions/carry/index.ts",
+   "packages/routing/src/interactions/elementAt.ts",
    "packages/routing/src/interactions/handleDrag/handleDrag.ts",
    "packages/routing/src/interactions/keyHelpers.ts",
    "packages/routing/src/interactions/pointerSession/index.ts",

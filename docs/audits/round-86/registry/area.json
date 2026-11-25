@@ -1,0 +1,96 @@
+{
+ "id": "registry",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "date": "2026-11-25",
+ "files": [
+  "packages/registry/src/after.ts",
+  "packages/registry/src/codePoint.ts",
+  "packages/registry/src/compositeKey.ts",
+  "packages/registry/src/deepEqual.ts",
+  "packages/registry/src/emitter.ts",
+  "packages/registry/src/extensionRegistry.ts",
+  "packages/registry/src/freshId.ts",
+  "packages/registry/src/getOwn.ts",
+  "packages/registry/src/grade.ts",
+  "packages/registry/src/index.ts",
+  "packages/registry/src/isDev.ts",
+  "packages/registry/src/isFiniteNumber.ts",
+  "packages/registry/src/isPlainObject.ts",
+  "packages/registry/src/latest.ts",
+  "packages/registry/src/match.ts",
+  "packages/registry/src/mixed.ts",
+  "packages/registry/src/part.ts",
+  "packages/registry/src/pbt.fixture.ts",
+  "packages/registry/src/reflectable.ts",
+  "packages/registry/src/sameList.ts",
+  "packages/registry/src/setOwn.ts",
+  "packages/registry/src/testing/hostile.fixture.ts",
+  "packages/registry/src/valueStore.ts",
+  "packages/registry/src/warnOnce.ts",
+  "packages/registry/src/xmlEscape.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 7,
+  "unfound": 2
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 4,
+   "passed": 5510,
+   "total": 5514
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.2,
+   "B": 2.7,
+   "match": 0.1,
+   "fix": 21.4
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 461846,
+  "costUsd": 2.97
+ },
+ "fixCommits": [
+  "9dae067134538d2d61dc3b965bcb5f6be276674f",
+  "537cbea51fb3719c7eef0995cdc571e2eeb6c29f",
+  "51936dd457f87168d04a1700d61b705bd0229d5b",
+  "3e5c8b8a09c696b686a3b34c803520ccd0af49a3",
+  "6d1d7206017e8d0812a7011d82738529b719cfa1",
+  "1d77874f01593aeec1260fcad7070bc2778ece94",
+  "2b3af368d4ff16c78de9033a1d34b5ab7793bb50"
+ ]
+}

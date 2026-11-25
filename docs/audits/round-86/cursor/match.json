@@ -1,0 +1,19 @@
+{
+ "pairs": [
+  [
+   1,
+   0
+  ]
+ ],
+ "a": [
+  "Changing an override puts back a stale cursor when other code wrote the element in between",
+  "Switching the target element or painted state leaves the old one with the base cursor, or with `none`, for good"
+ ],
+ "b": [
+  "Sink leaves its base cursor on the old element when `element()` starts answering another",
+  "Painted-state swap is not cleaned up the way an element swap is",
+  "An invalid `fallback` throws on the CSS tier but is accepted when the same spec resolves painted",
+  "A world-unit brush ring has no one-pixel floor, though the px unit does",
+  "`runs()` passes a fractional `WEASEL_PBT_RUNS` straight to fast-check"
+ ]
+}

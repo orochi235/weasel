@@ -1,0 +1,82 @@
+{
+ "id": "cursor",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "date": "2026-11-25",
+ "files": [
+  "packages/cursor/src/bake.ts",
+  "packages/cursor/src/brushRing.ts",
+  "packages/cursor/src/cursorSink.ts",
+  "packages/cursor/src/glyphs.ts",
+  "packages/cursor/src/index.ts",
+  "packages/cursor/src/mark.ts",
+  "packages/cursor/src/paint.ts",
+  "packages/cursor/src/paintedCursorState.ts",
+  "packages/cursor/src/pbt.fixture.ts",
+  "packages/cursor/src/registry.ts",
+  "packages/cursor/src/resolve.ts",
+  "packages/cursor/src/types.ts"
+ ],
+ "a": 2,
+ "b": 5,
+ "m": 1,
+ "distinct": 6,
+ "chapman": 8,
+ "unfound": 2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 86,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 86,
+  "chapman": 8,
+  "unfound": 2
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 15,
+  "testFiles": {
+   "failed": 4,
+   "passed": 3475,
+   "total": 3479
+  },
+  "gui": true,
+  "baseline": [
+   "packages/forge/src/shell/tree/StoryTree.test.tsx",
+   "apps/theme-editor/src/ThemeEditor.test.tsx",
+   "apps/theme-editor/src/ThemeWorkbench.test.tsx",
+   "apps/theme-editor/src/theme/model.test.ts"
+  ],
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.4,
+   "B": 1.8,
+   "match": 0.1,
+   "fix": 12.2
+  },
+  "nodes": {
+   "A": "earlier",
+   "B": "earlier",
+   "fix": "earlier"
+  },
+  "weightedTokens": 705481,
+  "costUsd": 2.2
+ },
+ "fixCommits": [
+  "39d2790614d2adba24f7b5687cd7e691404d74c0",
+  "36c02f3885d2640582e64db1f743ec60639715d9",
+  "fe8fa63d32dad63796c915efcda70c32f8fa3fb1",
+  "49651dba21e28297ccc4fac07d50b525aa4d38c4",
+  "48ec7b7514622895e43e571834bc124e53fbbcf8",
+  "60c6edd6c775feafdfc1c627559982af8cd8a19e"
+ ]
+}

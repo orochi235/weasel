@@ -1,0 +1,17 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "A failed undo/redo of a coalesced entry unwinds with the wrong partner ops when the coalesced batches listed their keyed ops in different orders",
+  "A suspended journal's own coalesce window survives the parent's edits made while it was suspended"
+ ],
+ "b": [
+  "A failed undo or redo of a coalesced entry whose batches came in a different order leaves the state half-stepped",
+  "A journal's commit notifies the parent's listeners while the journal still counts as active",
+  "`History.recordEntry` and `allForwardOps` docs say `Journal.commit` uses them, and it uses neither"
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "tuneToolOptions' `readBy` is never cleared, so a panel edit of a run no tool read writes into the last tool that did"
+ ],
+ "b": [
+  "useToolOptionValues throws outside a DepRegistryProvider, though its doc promises a silent no-op",
+  "steppedOption can step an off-grid value backwards when the scaled move is smaller than the snap"
+ ]
+}

@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Registering the value a parent already resolves to is not \"no change\": the child mints its own copy that later shadows the parent",
+  "A cached `entries()` keeps an order that its next recompute changes, with no change to that key",
+  "`deepEqual` overflows the stack on a cyclic value"
+ ],
+ "b": [
+  "Registering the value an id already resolves to through the parent is a change, not the no-op the contract promises",
+  "A child registry's clash check sees the parent, but a parent's later registration never checks its children",
+  "Clash warnings dedupe on a source pair that cannot tell an unnamed registrant from source `''`"
+ ]
+}
