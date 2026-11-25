@@ -1,4 +1,4 @@
-import { CHORD_MODIFIERS, chordCodesFor, matchPhase, type PhaseSpec } from '@weasel-js/gestures';
+import { CHORD_MODIFIERS, chordCodesFor, codeLetter, matchPhase, type PhaseSpec } from '@weasel-js/gestures';
 import { getOwn, identityKeyOf } from '@weasel-js/registry';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
@@ -67,12 +67,16 @@ export function viewsTie(
 
 /** Every arg value an entry buckets under, lowercased — `matchKey` is
  *  case-insensitive, so `'h'` and `'H'` are one arg — and each physical key
- *  `code` a key spec names, which fires it whatever key that press types. */
+ *  `code` a key spec names, which fires it whatever key that press types, with the letter or digit that key bears,
+ *  which a press of it types on a Latin layout and so meets a spec naming that key. */
 export function argKeysOf(entry: RegistryEntry): readonly string[] {
   const alts = entry.argAlternatives;
   const args = alts && alts.length > 0 ? [...new Set(alts.map((a) => a.toLowerCase()))] : [(entry.arg ?? '').toLowerCase()];
   const code = 'code' in entry.spec ? entry.spec.code : undefined;
-  return code === undefined ? args : [...args, ...[code].flat().map((c) => `code:${c}`)];
+  if (code === undefined) return args;
+  const codes = [code].flat();
+  const typed = codes.flatMap((c) => codeLetter(c)?.toLowerCase() ?? []).filter((k) => !args.includes(k));
+  return [...new Set([...args, ...typed])].concat(codes.map((c) => `code:${c}`));
 }
 
 /** The `code` args a key spec meets only as a chord: the physical keys bearing its letters or

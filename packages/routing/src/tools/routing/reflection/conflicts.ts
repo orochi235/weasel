@@ -104,40 +104,46 @@ function findConflictsKeyed(
   const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
     viewsTie(e.views, f.views) && phasesTie(e, f) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
-  const conflicts = new Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>();
+  const conflicts: Conflicts = new Map();
   for (const { platform, members } of groups.values()) {
-    // Keep only members that could tie with another member. Members are in
-    // declaration order, and a pair led by a binding that yields is ordered on purpose.
-    const ties = (e: RegistryEntry, i: number, f: RegistryEntry, j: number): boolean =>
-      i !== j && !(i < j ? e : f).yields && tie(e, f);
-    const bucket = foldPlatformCopies(members.filter((e, i) => members.some((f, j) => ties(e, i, f, j))));
-    if (bucket.length < 2) continue;
-    const first = bucket[0];
-    // Two specs that tie in one modifier state usually tie in several, and on
-    // both platforms: one conflict per set of specs, each named by identity so
-    // the key is the same in every pass `findScopedConflicts` makes over them. A pair meeting on
-    // several args (a key and a code, two keys of a list) is one conflict too.
-    const key = compositeKey([first.gesture, targetKey(first), ...bucket.flatMap((e) => [identityKeyOf(e.spec), canonicalModifiers(e.modifiers)])]);
-    const found = conflicts.get(key);
-    if (found) { found.platforms.add(platform); continue; }
-    conflicts.set(key, {
-      conflict: {
-        phase: first.phase,
-        gesture: first.gesture,
-        arg: first.arg,
-        target: first.target,
-        modifiers: first.modifiers,
-        ownerIds: bucket.map((e) => e.ownerId),
-      },
-      bucket,
-      platforms: new Set([platform]),
-    });
+    // Members are in declaration order, and a pair led by a binding that yields is ordered on purpose.
+    const ties = (i: number, j: number): boolean => i !== j && !members[Math.min(i, j)]!.yields && tie(members[i]!, members[j]!);
+    for (const component of tieComponents(members.length, ties)) {
+      addConflict(conflicts, foldPlatformCopies(component.map((i) => members[i]!)), platform);
+    }
   }
   return [...conflicts]
     // Bindings that fire one thing and tie on one platform only are how an
     // action binds a key that `mod` covers there and not on the other.
     .filter(([, c]) => c.platforms.size === PLATFORMS.length || !sameOutcome(c.bucket))
     .map(([key, { conflict }]) => ({ key, conflict }));
+}
+
+type Conflicts = Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>;
+
+/** Record `bucket`, bindings that tie on `platform`, in `conflicts`. */
+function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Platform): void {
+  if (bucket.length < 2) return;
+  const first = bucket[0]!;
+  // Two specs that tie in one modifier state usually tie in several, and on
+  // both platforms: one conflict per set of specs, each named by identity so
+  // the key is the same in every pass `findScopedConflicts` makes over them. A pair meeting on
+  // several args (a key and a code, two keys of a list) is one conflict too.
+  const key = compositeKey([first.gesture, targetKey(first), ...bucket.flatMap((e) => [identityKeyOf(e.spec), canonicalModifiers(e.modifiers)])]);
+  const found = conflicts.get(key);
+  if (found) { found.platforms.add(platform); return; }
+  conflicts.set(key, {
+    conflict: {
+      phase: first.phase,
+      gesture: first.gesture,
+      arg: first.arg,
+      target: first.target,
+      modifiers: first.modifiers,
+      ownerIds: bucket.map((e) => e.ownerId),
+    },
+    bucket,
+    platforms: new Set([platform]),
+  });
 }
 
 /** Whether `mod` in an entry's spec makes it a different press on each platform. */
@@ -152,6 +158,24 @@ function platformBound(e: RegistryEntry): boolean {
  * ctrl+wheel bindings would otherwise both be named beside a binding they
  * collide with, and the conflict would read as a second one per platform.
  */
+/** The indices `0..n-1` grouped by which tie with each other, directly or through another; a lone index is left out. */
+function tieComponents(n: number, ties: (i: number, j: number) => boolean): number[][] {
+  const seen = new Set<number>();
+  const out: number[][] = [];
+  for (let start = 0; start < n; start++) {
+    if (seen.has(start)) continue;
+    seen.add(start);
+    const component = [start];
+    for (let k = 0; k < component.length; k++) {
+      for (let j = 0; j < n; j++) {
+        if (!seen.has(j) && ties(component[k]!, j)) { seen.add(j); component.push(j); }
+      }
+    }
+    if (component.length > 1) out.push(component.sort((a, b) => a - b));
+  }
+  return out;
+}
+
 function foldPlatformCopies(bucket: RegistryEntry[]): RegistryEntry[] {
   const out: RegistryEntry[] = [];
   for (const e of bucket) {

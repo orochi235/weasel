@@ -10,7 +10,7 @@ import { getOwn } from '@weasel-js/registry';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings } from '../interactions/actions/binding';
 import { actionItems, actionItemTitle, type ActionItem } from '../interactions/actions/actionItems';
-import { actionShortcuts } from '../interactions/actions/actionShortcuts';
+import { actionShortcuts, bindingShortcuts } from '../interactions/actions/actionShortcuts';
 import { resolveParams } from '../interactions/actions/invoker';
 import { TOOL_OFFHAND_ID } from '../interactions/actions/toolOffhand';
 import { TOOL_ACTIVATE_ID, toolShortcutsOf } from './toolShortcuts';
@@ -45,16 +45,17 @@ export interface ShortcutsDescription {
   held: readonly ShortcutRow[];
 }
 
-/** What a sheet reads of a tool: its name and glyph. */
-export type ShortcutTool = Pick<AnyTool, 'presentation'>;
+/** What a sheet reads of a tool: its name and glyph, and the keys it binds to actions while live. */
+export type ShortcutTool = Pick<AnyTool, 'presentation'> & Partial<Pick<AnyTool, 'bindings'>>;
 
 /** Options for {@link describeShortcuts}. */
 export interface DescribeShortcutsOptions {
-  /** The tools registered, by id: what names and draws each tool's row. Absent, there are no tool rows, and a held
-   *  tool reads as its id. */
+  /** The tools registered, by id: what names and draws each tool's row, and the keys each binds to an action in
+   *  `actions` while live. Absent, there are no tool rows, and a held tool reads as its id. */
   tools?: Readonly<Record<string, ShortcutTool>>;
   /** The sets the tool rows are grouped by, in order. A tool in two is listed in the first; sets sharing an id are
-   *  one group, headed by the first label given. Tools in none follow under "Other tools". */
+   *  one group, headed by the first label given. Tools in none follow under "Other tools", with the id `other`, which
+   *  no set may take. */
   toolSets?: readonly ToolSet[];
 }
 
@@ -88,7 +89,10 @@ function describeTools(
       group.rows.push(toolRow(id, getOwn(tools, id)!, getOwn(keys, id)));
     }
   };
-  for (const set of sets) take(set.id, set.label ?? groupTitle(set.id), toolIdsOf([set]));
+  for (const set of sets) {
+    if (set.id === OTHER) throw new Error(`describeShortcuts: a tool set may not be named "${OTHER}", the group of tools in no set`);
+    take(set.id, set.label ?? groupTitle(set.id), toolIdsOf([set]));
+  }
   take(OTHER, sets.length === 0 ? 'Tools' : 'Other tools', shown);
   return [...groups].filter(([, g]) => g.rows.length > 0).map(([id, g]) => ({ id, ...g }));
 }
@@ -120,12 +124,23 @@ function heldTools(offhand: Action, tools: Readonly<Record<string, ShortcutTool>
   return rows;
 }
 
+/** The bindings `tools` declare, by the id of the action each names. */
+function toolBindingsByAction(tools: Readonly<Record<string, ShortcutTool>>): Map<string, NonNullable<ShortcutTool['bindings']>> {
+  const out = new Map<string, NonNullable<ShortcutTool['bindings']>>();
+  for (const tool of Object.values(tools)) {
+    for (const b of tool.bindings ?? []) out.set(b.actionId, [...(out.get(b.actionId) ?? []), b]);
+  }
+  return out;
+}
+
 /**
- * The keys `actions` bind (an actions registry's `list()`), as a shortcut sheet lists them. A key with a required
+ * The keys `actions` bind (an actions registry's `list()`), and those `opts.tools` bind to them, as a shortcut sheet
+ * lists them. A key with a required
  * Ctrl or Meta has no chip form (`keySpecShortcut`) and is left out, and a pointer gesture is never listed.
  */
 export function describeShortcuts(actions: readonly Action[], opts: DescribeShortcutsOptions = {}): ShortcutsDescription {
   const tools = opts.tools ?? {};
+  const toolBound = toolBindingsByAction(tools);
   const commands = new Map<string, ShortcutRow[]>();
   const held: ShortcutRow[] = [];
   for (const action of actions) {
@@ -134,13 +149,14 @@ export function describeShortcuts(actions: readonly Action[], opts: DescribeShor
       held.push(...heldTools(action, tools));
       continue;
     }
+    const bindings = [...actionBindings(action), ...(toolBound.get(action.id) ?? [])];
     for (const item of entriesOf(action)) {
-      const pressed = actionShortcuts(action, item.params, 'key');
+      const pressed = bindingShortcuts(action, bindings, item.params, 'key');
       if (pressed.length > 0) {
         const group = action.group ?? OTHER;
         commands.set(group, [...(commands.get(group) ?? []), entryRow(item, pressed)]);
       }
-      const down = actionShortcuts(action, item.params, 'keyHeld');
+      const down = bindingShortcuts(action, bindings, item.params, 'keyHeld');
       if (down.length > 0) held.push(entryRow(item, down));
     }
   }

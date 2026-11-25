@@ -2,11 +2,11 @@
  * Property test of the route-conflict detector against the matcher it describes: two key bindings, each firing
  * its own action, are reported together exactly when some keystroke, on some platform and in some engagement
  * state, matches both at equal specificity, so that declaration order alone picks one. Owners engage on their
- * own, and a keystroke names a key or a physical key `code`.
+ * own, and a keystroke names a key, a physical key `code`, or both, as a press of a lettered key does.
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { matchSpec, specificity, type KeySpec, type PhaseSpec } from '@weasel-js/gestures';
+import { codeLetter, matchSpec, specificity, type KeySpec, type PhaseSpec } from '@weasel-js/gestures';
 import type { Contribution } from '../../../contributions/types';
 import { keyEvents, modSpec, runs, tally, timeoutFor } from '../../../pbt.fixture';
 import { findConflicts } from './conflicts';
@@ -37,6 +37,11 @@ const subsets = <T>(xs: readonly T[]): T[][] => xs.reduce<T[][]>((acc, x) => [..
 const KEYSTROKES = [
   ...EVENT_KEYS.flatMap((key) => keyEvents(key)),
   ...CODES.flatMap((code) => keyEvents(UNNAMED).map((e) => ({ ...e, code }))),
+  // A press of a lettered key on a Latin layout: it types the letter its code bears.
+  ...CODES.flatMap((code) => {
+    const typed = codeLetter(code);
+    return typed === undefined ? [] : keyEvents(typed.toLowerCase()).map((e) => ({ ...e, code }));
+  }),
 ];
 
 interface Bound { owner: string; spec: KeySpec }

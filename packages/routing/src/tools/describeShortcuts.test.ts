@@ -5,6 +5,7 @@ import { buildToolOffhandBindings, createToolOffhandAction } from '../interactio
 import { describeShortcuts } from './describeShortcuts';
 import { TOOL_ACTIVATE_ID } from './toolShortcuts';
 import { toolSet } from './toolSet';
+import { defineTool } from './defineTool';
 
 const run = { timing: 'immediate' as const, run: () => {} };
 const tool = (label: string) => ({ presentation: { label } });
@@ -52,5 +53,23 @@ describe('describeShortcuts', () => {
   it('lists held keys apart: a tool held on its key by name, and a keyHeld action', () => {
     const d = describeShortcuts(actions, { tools });
     expect(d.held.map((r) => [r.label, r.shortcuts[0]!.key])).toEqual([['Hand', ' '], ['Peek', 'Z']]);
+  });
+
+  it('refuses a tool set named "other", the id of the group holding tools in none', () => {
+    expect(() => describeShortcuts(actions, { tools, toolSets: [toolSet('other', ['select'], { label: 'Extras' })] })).toThrow(/other/);
+  });
+
+  it('lists the keys a tool binds to a registered action, as its option steps', () => {
+    const brush = defineTool({
+      id: 'brush', presentation: { label: 'Brush' },
+      options: {
+        actionId: 'paint',
+        prefs: { name: 'Brush', children: { size: { kind: 'number', name: 'Size', description: '', default: 10 } } },
+        size: { option: 'size', plus: 1 },
+      },
+    });
+    const d = describeShortcuts([...actions, ...brush.actions!], { tools: { ...tools, brush } });
+    const tool = d.commands.find((g) => g.id === 'tool');
+    expect(tool?.rows.map((r) => [r.label, r.shortcuts.map((k) => k.key)])).toEqual([['Grow Brush', [']']], ['Shrink Brush', ['[']]]);
   });
 });
