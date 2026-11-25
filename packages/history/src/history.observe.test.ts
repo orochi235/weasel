@@ -107,6 +107,20 @@ describe('History.observe', () => {
     expect(box.v).toBe(0);
   });
 
+  it('reports nothing applied for ops recorded after they ran, a journal commit included', () => {
+    const box = { v: 0 };
+    const history = createHistory(box);
+    const steps: HistoryStep[] = [];
+    history.observe((s) => steps.push(s));
+    const applied = () => steps.map((s) => [s.kind, s.entries.map((e) => e.applied.length)]);
+    history.recordEntry([setOp(0, 1)], 'r', { coalesceKey: 'run' });
+    history.recordEntry([setOp(1, 2)], 'r', { coalesceKey: 'run' });
+    const j = history.beginJournal({ label: 'j' });
+    j.applyOps([setOp(2, 3)], 'a');
+    j.commit();
+    expect(applied()).toEqual([['push', [0]], ['coalesce', [0]], ['push', [0]]]);
+  });
+
   it('stops reporting once released', () => {
     const t = open();
     t.off();

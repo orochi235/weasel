@@ -22,9 +22,12 @@ export interface RecorderEnv {
   logger: HistoryLogger;
 }
 
-function coalesceStep(top: Entry, ops: Op[]): HistoryStep {
-  return { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied: ops }] };
+/** `applied` is what the step itself applied: none of what `recordEntry` records, which already ran. */
+function coalesceStep(top: Entry, ops: Op[], applied: readonly Op[]): HistoryStep {
+  return { kind: 'coalesce', entries: [{ id: top.id, label: top.label, ops, applied }] };
 }
+
+const NONE: readonly Op[] = [];
 
 export function createRecorder(env: RecorderEnv) {
   const { undoStack, forks, clock, applyAllOrNothing, readSelection, now, coalesceWindowMs, historyLimit, logger } = env;
@@ -40,13 +43,13 @@ export function createRecorder(env: RecorderEnv) {
   }
 
   /** Push `entry`, retiring the redo stack and evicting past the limit, and open the coalesce window when
-   *  `anchor` asks. */
-  function push(entry: Entry, anchor: boolean): void {
+   *  `anchor` asks. `ran` says whether this step applied its ops. */
+  function push(entry: Entry, anchor: boolean, ran: boolean): void {
     const at = forks.forkPoint();
     undoStack.push(entry);
     forks.retireRedo(at);
     forks.evictPast(historyLimit);
-    clock.bump(clock.observed() ? stepOf('push', [entry], [entry.forwardOps]) : undefined, anchor);
+    clock.bump(clock.observed() ? stepOf('push', [entry], [ran ? entry.forwardOps : NONE]) : undefined, anchor);
   }
 
   function pushOrCoalesce(applied: Op[], label: string, owned = false): void {
@@ -76,14 +79,14 @@ export function createRecorder(env: RecorderEnv) {
       // stepped, and every step clears it, so a live anchor implies an empty
       // redo stack.
       logger.log(`coalesce '${label}' into entry id=${top.id} (${ops.length} ops)`);
-      clock.bump(clock.observed() ? coalesceStep(top, ops) : undefined, true);
+      clock.bump(clock.observed() ? coalesceStep(top, ops, ops) : undefined, true);
       return;
     }
     logger.log(`push '${label}' (${ops.length} ops)`);
     push({
       id: nextEntryId++, forwardOps: ops, baseOps: ops, label, timestamp: now(), pushes: 1, touchedIds: incoming,
       ...(selectionBefore ? { selectionBefore } : {}),
-    }, true);
+    }, true, true);
   }
 
   /** Record ops that already ran, folding them into the top entry when it
@@ -94,7 +97,7 @@ export function createRecorder(env: RecorderEnv) {
     const top = undoStack[undoStack.length - 1];
     if (key !== undefined && top?.coalesceKey === key && clock.anchored() && forwardOps === baseOps) {
       foldEntry(top, forwardOps, now());
-      clock.bump(clock.observed() ? coalesceStep(top, forwardOps) : undefined, true);
+      clock.bump(clock.observed() ? coalesceStep(top, forwardOps, NONE) : undefined, true);
       return;
     }
     push({
@@ -102,7 +105,7 @@ export function createRecorder(env: RecorderEnv) {
       touchedIds: touchedIdsOf(forwardOps),
       ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
       ...(key !== undefined ? { coalesceKey: key } : {}),
-    }, key !== undefined);
+    }, key !== undefined, false);
   }
 
   return {

@@ -70,7 +70,8 @@ export interface HistoryStep {
     /** What this step applied for the entry, in the order applied: a push's or a
      *  coalesce's ops, a redo's forward ops, an undo's inverses. Applying them, in
      *  order, to a copy of the state the step started from makes the step's change.
-     *  Empty for a step that moved the stacks without applying anything. */
+     *  Empty for a step that moved the stacks without applying anything, as one
+     *  `recordEntry` or a journal's commit makes: those ops ran before it. */
     applied: readonly Op[];
   }[];
 }
