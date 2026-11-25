@@ -72,15 +72,6 @@ describe('GLImageCache', () => {
     const hasClamp = wrapCalls.some((c) => c.args[2] === gl.CLAMP_TO_EDGE);
     expect(hasClamp).toBe(true);
   });
-
-  it('sets REPEAT wrap when repetition is "repeat"', () => {
-    const { gl, calls } = createGLRecorder();
-    const cache = new GLImageCache(webglDevice(gl));
-    cache.upload(fakeImg1, fakeImgData, 'repeat');
-    const wrapCalls = calls.filter((c) => c.name === 'texParameteri');
-    const hasRepeat = wrapCalls.some((c) => c.args[2] === gl.REPEAT);
-    expect(hasRepeat).toBe(true);
-  });
 });
 
 describe('releasing a source', () => {

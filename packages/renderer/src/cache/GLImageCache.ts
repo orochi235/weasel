@@ -6,15 +6,13 @@
  * frees it at once with {@link releaseImageSource}, and `dispose` frees them
  * all.
  *
- * Wrapping is set once at upload time. Texels are stored premultiplied,
- * whatever the source: what samples one divides the alpha back out before
- * any color math (`STRAIGHT_RGB_GLSL`).
+ * Every texture clamps at its edges; a repeating tile is GLTextureCache's.
+ * Texels are stored premultiplied, whatever the source: what samples one
+ * divides the alpha back out before any color math (`STRAIGHT_RGB_GLSL`).
  */
 
-import type { GpuDevice, GpuFilter, GpuTexture, GpuWrap } from '../gpu/types';
+import type { GpuDevice, GpuFilter, GpuTexture } from '../gpu/types';
 import type { ImageTexSource } from './uploadPremultiplied';
-
-export type PatternRepetition = 'repeat' | 'repeat-x' | 'repeat-y' | 'no-repeat';
 
 /**
  * MIN_FILTER strategy for uploaded textures: `'linear'` never mipmaps,
@@ -145,17 +143,12 @@ export class GLImageCache {
     live.delete(this);
   }
 
-  upload(
-    key: object,
-    source: TexSource,
-    repetition?: PatternRepetition,
-  ): GpuTexture {
+  upload(key: object, source: TexSource): GpuTexture {
     this.drawn.at.set(key, this.drawn.frame);
     const existing = this.map.get(key);
     if (existing) return existing;
 
-    const [wrapS, wrapT] = wrapModes(repetition);
-    const tex = this.gpu.createTexture('rgba8', { min: 'linear', mag: 'linear', wrapS, wrapT },
+    const tex = this.gpu.createTexture('rgba8', { min: 'linear', mag: 'linear', wrapS: 'clamp', wrapT: 'clamp' },
       { source, premultiply: true });
     if (this.minification === 'mipmap') {
       this.gpu.generateMipmaps(tex);
@@ -208,14 +201,5 @@ export class GLImageCache {
    *  value the texture already holds. */
   setMagFilter(key: object, filter: GpuFilter): void {
     this.gpu.setSampling(this.texture(key), { mag: filter });
-  }
-}
-
-function wrapModes(rep?: PatternRepetition): [GpuWrap, GpuWrap] {
-  switch (rep) {
-    case 'repeat':   return ['repeat', 'repeat'];
-    case 'repeat-x': return ['repeat', 'clamp'];
-    case 'repeat-y': return ['clamp', 'repeat'];
-    default:         return ['clamp', 'clamp'];
   }
 }
