@@ -59,9 +59,19 @@ export function actionShortcuts(
   params?: Readonly<Record<string, unknown>>,
   kind?: 'key' | 'keyHeld',
 ): readonly ActionShortcut[] {
+  return bindingShortcuts(action, actionBindings(action), params, kind);
+}
+
+/** {@link actionShortcuts} read from `bindings` of `action`, such as its own and those a tool declares for it. */
+export function bindingShortcuts(
+  action: Action,
+  bindings: Iterable<{ spec: GestureSpec; opts?: { params?: unknown } }>,
+  params?: Readonly<Record<string, unknown>>,
+  kind?: 'key' | 'keyHeld',
+): readonly ActionShortcut[] {
   const out: ActionShortcut[] = [];
   const seen = new Set<string>();
-  for (const { spec, opts } of actionBindings(action)) {
+  for (const { spec, opts } of bindings) {
     if (kind && spec.kind !== kind) continue;
     if (params && !paramsMatch(invokedParams(action, resolveParams(opts?.params)), params)) continue;
     const shortcut = keySpecShortcut(spec);
