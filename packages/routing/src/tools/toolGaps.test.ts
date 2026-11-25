@@ -27,6 +27,12 @@ describe('toolGaps', () => {
     expect(toolGaps(held)).toEqual([]);
   });
 
+  it('takes a cursor set on a tool built without defineTool', () => {
+    const { hookName: _, ...rest } = COMPLETE;
+    const tool = { ...rest, eligibility: { focus: true } } as never;
+    expect(toolGaps(tool)).toEqual(['no hookName']);
+  });
+
   it('names a binding whose action is neither the tool\'s own nor registered', () => {
     const tool = defineTool(COMPLETE);
     expect(toolGaps(tool, () => false)).toEqual(['binding box.drag names unregistered action insert']);

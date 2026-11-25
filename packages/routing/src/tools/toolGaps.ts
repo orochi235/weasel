@@ -16,7 +16,8 @@ export function toolGaps(tool: Tool, registered: (actionId: string) => boolean =
   if (!p?.hide) {
     if (!p?.icon) gaps.push('no presentation.icon');
     if (!p?.group) gaps.push('no presentation.group');
-    if (def.cursor == null) gaps.push('no cursor');
+    // `defineTool` always sets `Tool.cursor`, so its authored `def` says whether one was given.
+    if ((tool.def ? def.cursor : tool.cursor) == null) gaps.push('no cursor');
   }
   if (!def.hookName) gaps.push('no hookName');
   const bindings = tool.bindings ?? [];
