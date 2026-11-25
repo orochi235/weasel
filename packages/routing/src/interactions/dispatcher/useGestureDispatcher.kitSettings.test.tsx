@@ -1,13 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { useRef, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { DOUBLE_CLICK_MAX_MS } from '@weasel-js/gestures';
-import { KitSettingsProvider, type KitSettingsOverrides } from '@weasel-js/react';
+import { KitSettingsProvider, useKitSettings, type KitSettingsOverrides, type KitSettingsStore, type WritableKitSettingsStore } from '@weasel-js/react';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { createLongPressStore, LONG_PRESS_MS } from '@weasel-js/gestures';
 import type { LongPressOptions } from './longPressState';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
-import { DepRegistryProvider } from '../actions/depRegistry';
+import { DepRegistryProvider, useDepRegistry } from '../actions/depRegistry';
+import type { DepRegistry } from '../actions/depNode';
+import type { Action } from '../actions/action';
+import type { Contribution } from '../../contributions/types';
 import { ActionsProvider, useActionsRegistry } from '../actions/ActionsProvider';
 
 function Mount({ onDoubleClick, longPress }: { onDoubleClick: () => void; longPress?: LongPressOptions }): ReactNode {
@@ -96,5 +99,43 @@ describe('the long-press hold under a KitSettingsProvider', () => {
 
   it('uses the constant with no provider', () => {
     expect(holdFor(null, { state: createLongPressStore() })).toBe(LONG_PRESS_MS);
+  });
+});
+
+describe('gestures.keymapUnbound', () => {
+  const LOUPE: Contribution = { id: 'loupe', eligibility: { keymap: true }, bindings: [] };
+  const ENTRIES = new Map([[LOUPE.id, LOUPE]]);
+
+  function KeymapMount({ run, reach }: { run: () => void; reach: (s: KitSettingsStore, d: DepRegistry) => void }): ReactNode {
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const actions = useActionsRegistry()!;
+    reach(useKitSettings(), useDepRegistry());
+    useEffect(() => actions.register({
+      id: 'test.three', label: 'Three', defaultBinding: { kind: 'key', key: '3' },
+      invoker: { timing: 'immediate', run: () => run() },
+    } satisfies Action), [actions, run]);
+    useGestureDispatcher({ canvasRef, actions, entriesById: ENTRIES, claimKeys: true });
+    return <canvas ref={canvasRef} />;
+  }
+
+  it('is read as each key arrives, not when the host last rendered', () => {
+    const run = vi.fn();
+    let store: KitSettingsStore | undefined;
+    let deps: DepRegistry | undefined;
+    render(
+      <KitSettingsProvider value={{ gestures: { keymapUnbound: 'modal' } }}>
+        <DepRegistryProvider>
+          <ActiveToolContextProvider>
+            <ActionsProvider>
+              <KeymapMount run={run} reach={(s, d) => { store = s; deps = d; }} />
+            </ActionsProvider>
+          </ActiveToolContextProvider>
+        </DepRegistryProvider>
+      </KitSettingsProvider>,
+    );
+    act(() => { (store as WritableKitSettingsStore).set({ gestures: { keymapUnbound: 'cascade' } }); });
+    act(() => { deps!.get('keymaps')!.push('loupe', 'Loupe'); });
+    act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: '3', code: 'Digit3', cancelable: true })); });
+    expect(run).toHaveBeenCalledOnce();
   });
 });

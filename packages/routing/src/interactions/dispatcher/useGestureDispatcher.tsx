@@ -96,7 +96,8 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
     trace,
     bindingOverrides: () => registryRef.current.bindingOverrides(),
     keymaps,
-    leaderUnbound: kitSettings.get('gestures.keymapUnbound'),
+    // A getter, so a setting changed with no render of this host is read as the next input arrives.
+    get leaderUnbound() { return kitSettings.get('gestures.keymapUnbound'); },
   });
 
   // The flat options are view zero.
