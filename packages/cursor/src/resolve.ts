@@ -16,12 +16,12 @@ export interface CursorGlyphSpec {
   readonly glyph: CursorGlyphName;
   /** A mark set in the glyph's slot, saying what the tool does: `{ glyph: 'crosshair', mark: 'rect' }`. */
   readonly mark?: CursorMarkName;
-  /** Rendered size in CSS px. Default 24, also for one that is not a finite positive number. */
+  /** Rendered size in CSS px. Default 24, also for one that is not a finite positive number; `Infinity` throws. */
   readonly size?: number;
   /**
    * Size in world units instead of `size`, so the glyph tracks zoom — a brush
    * radius ring. Forces the painted tier at every zoom level, because a baked
-   * image would have to be rebuilt on every wheel tick. Ignored unless a finite positive number.
+   * image would have to be rebuilt on every wheel tick. Ignored unless a finite positive number; `Infinity` throws.
    */
   readonly worldRadius?: number;
   /** Clockwise rotation in radians, quantized to 22.5° at bake. Only a glyph that fits its box at every rotation, as
@@ -60,13 +60,17 @@ const positive = (n: number | undefined): number | undefined =>
  *
  * Escalates to painted when the glyph is sized in world units, or when its
  * fixed size is past {@link CURSOR_MAX_CSS_PX} — above which the browser drops
- * the image and silently falls back to the keyword. Throws, on every tier, for a glyph the set lacks, for a mark
+ * the image and silently falls back to the keyword. Throws, on every tier, for an infinite size or world radius, for a
+ * glyph the set lacks, for a mark
  * on a glyph with no slot, for a fallback no cursor value holds, and for an angle that would turn part of the glyph out
  * of its box.
  */
 export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   if (typeof spec === 'string') return { kind: 'css', css: spec };
   const { glyph, mark, fallback } = spec;
+  if (spec.size === Infinity || spec.worldRadius === Infinity) {
+    throw new RangeError(`cursor ${spec.size === Infinity ? 'size' : 'world radius'} Infinity cannot be drawn`);
+  }
   const size = positive(spec.size);
   const worldRadius = positive(spec.worldRadius);
   const marked = mark === undefined ? {} : { mark };

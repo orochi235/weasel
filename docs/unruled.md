@@ -1547,6 +1547,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   on every tier, where the baked image clipped it. Only `resize` and `rotate` are turned in the tree. Rejected: a
   viewBox grown to the turned glyph, which shrinks the drawing at every size. An angle inside the first step paints such a glyph upright, as it
   bakes (2026-11-25, cursor audit 88).
+- 2026-11-25 (my call, cursor audit 88): `resolveCursor` throws a `RangeError` for a size or world radius of
+  `Infinity`, as `cursorFor` refuses that size, where it drew the default 24 px glyph. Minus infinity is negative and
+  still draws at the default, as in `cursorFor`.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
