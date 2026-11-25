@@ -2,6 +2,6 @@
 '@weasel-js/routing': patch
 ---
 
-`startThresholdDrag` treats a release past the threshold as the end of a drag, calling `onStart` then `onEnd`, even when no move crossed the threshold first, rather than reporting it as a click.
+`startThresholdDrag` ends a drag, not a click, on a release past the threshold that no move crossed. It calls `onStart` then `onEnd` there.
 
 <!-- entry: fix -->
