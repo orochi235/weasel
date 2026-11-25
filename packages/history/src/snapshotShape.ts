@@ -55,5 +55,9 @@ export function snapshotFault(snapshot: unknown): string | null {
       seen.add(id);
     }
   }
+  const floor = snapshot.floor ?? 0;
+  for (const [i, b] of ((snapshot.branches ?? []) as { at: number }[]).entries()) {
+    if (b.at !== floor && !seen.has(b.at)) return `branch ${i} forks from entry ${b.at}, which it does not hold`;
+  }
   return null;
 }
