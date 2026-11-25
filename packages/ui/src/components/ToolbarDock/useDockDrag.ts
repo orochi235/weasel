@@ -47,7 +47,7 @@ export interface DockHandleHandlers {
 /** What {@link useDockDrag} gives the dock. */
 export interface DockDrag {
   view: DockDragView | null;
-  /** The layout to draw: the last move made, until `layout` changes or the next move begins; else `layout`. */
+  /** The layout to draw: the last move made, until `layout` changes, else `layout`. The next move starts from it. */
   layout: ToolbarLayout;
   /** Where the last keyboard move landed; empty until one has. */
   announcement: string;
@@ -65,7 +65,7 @@ const same = (a: DockDropMark | FloatPlace | null, b: DockDropMark | FloatPlace 
  * `TEAR_PX` and floats under the pointer in `view.float`; over a dock it may enter it drops into that dock again. The
  * release calls `onLayoutChange` once, and the click it raises is swallowed; Escape cancels, and a drop where the bar
  * already is calls nothing. The move is drawn until `layout` is a new object, which is how a host accepts it; a host
- * that ignores a move keeps seeing it until its next layout. Alt+arrows on a focused handle move the bar by a slot, a row, or a dock, and Alt+Enter
+ * that ignores a move keeps seeing it, and moving from it, until its next layout. Alt+arrows on a focused handle move the bar by a slot, a row, or a dock, and Alt+Enter
  * floats it where it is or docks it again; either keeps focus on the handle and sets `announcement`. A bar drawn as
  * nothing is stepped over and keeps its place.
  */
@@ -118,7 +118,6 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
       threshold: latest.current.dragPx,
       onStart: () => {
         grab = grabBar(el, into, latest.current.docks, bar, latest.current.layout);
-        setHeld(null);
         const unavailable = new Set(grab.boxes.filter((d) => !canEnter(bar, d)).map((d) => d.id));
         setView({ barId, unavailable, empties: grab.emptyDocks, drop: null, float: grab.row ? null : grab.from, size: grab.size });
       },

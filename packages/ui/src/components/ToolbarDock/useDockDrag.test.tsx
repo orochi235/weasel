@@ -186,6 +186,18 @@ describe('dragging a bar by its handle', () => {
 
   // A proxy: jsdom has no pointer capture, so it cannot show a capture at the press retargeting the release and
   // killing the click on the bar. What it can show is that nothing asked for one.
+  it('drags from the move a host has not taken up yet, as drawn', () => {
+    const onChange = vi.fn<(l: ToolbarLayout) => void>();
+    render(<ToolbarDock docks={docks} bars={bars} layout={start([['file', 'view', 'shape']])} movable onLayoutChange={onChange} />);
+    act(() => void fireEvent.keyDown(handle('File'), { key: 'ArrowRight', altKey: true }));
+    press(handle('File'), [150, 15], [[140, 15], [40, 15]]);
+    expect(wrapper('view')).toHaveAttribute('data-dock-drop', 'before');
+    expect(Array.from(document.querySelectorAll('[data-dock-bar]'), (el) => el.getAttribute('data-dock-bar'))).toEqual(['view', 'file', 'shape']);
+    release([40, 15]);
+    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange.mock.calls[1]![0].docks.top).toEqual([['file', 'view', 'shape']]);
+  });
+
   it('captures nothing at the press, only once the press is a drag', () => {
     const capture = vi.fn();
     Element.prototype.setPointerCapture = capture;
