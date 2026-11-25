@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createScene, IDENTITY_POSE_COMPOSITION, RIGID_POSE_COMPOSITION, scenePoseFrame } from '@weasel-js/core/engine';
 import { expectSamePoseForTests as expectSamePose } from '@weasel-js/core/test-seams';
+import { PAGE_AForTests as PAGE_A, ON_PAGEForTests as ON_PAGE, pagedSceneForTests as pagedScene } from '@weasel-js/core/test-seams';
 import { defaultCommitAdapter, type NodeId, type RectPose } from '@weasel-js/core';
 import { swapOps } from './swapOps';
 
@@ -65,5 +66,20 @@ describe('swapOps', () => {
     swap(scene, a, b);
     expect(scene.get(a)!.layer).toBe('top');
     expect(scene.get(b)!.layer).toBe('main');
+  });
+});
+
+describe('swapOps in a paged scene', () => {
+  it('leaves a node following one of the pair on its page when the swap keeps that one on the page', () => {
+    const { scene } = pagedScene();
+    const rect = (x: number) => ({ x, y: 10, width: 10, height: 10 });
+    const g = scene.add({ kind: 'group', layer: 'ink', parent: PAGE_A, data: {}, pose: rect(30) });
+    const b = scene.add({ kind: 'mark', layer: 'ink', parent: g, data: {}, pose: rect(30) });
+    const f = scene.add({ kind: 'mark', layer: 'ink', parent: PAGE_A, data: {}, pose: rect(0), dependsOn: [ON_PAGE] });
+    const ops = swapOps(scene as never, ON_PAGE, b);
+    expect(ops).not.toBeNull();
+    scene.applyBatch(ops!, 'Swap', defaultCommitAdapter(scene as never));
+    expect(scene.get(ON_PAGE)!.parent).toBe(g);
+    expect(scene.get(f)!.parent).toBe(PAGE_A);
   });
 });
