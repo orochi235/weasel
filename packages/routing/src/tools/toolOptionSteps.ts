@@ -144,7 +144,7 @@ export function toolOptionStepIds(toolId: string, options: ToolOptionsSpec): str
 }
 
 /** The step actions for `toolId`'s size and strength options, and the key and
- *  wheel bindings that reach them. */
+ *  wheel bindings that reach them. Each binding yields, as its action declines unless its tool is live. */
 export function toolOptionSteps(
   toolId: string, toolLabel: string, options: ToolOptionsSpec,
 ): { actions: Action[]; bindings: GestureBinding[] } {
@@ -154,12 +154,12 @@ export function toolOptionSteps(
     const action = stepAction(toolId, toolLabel, options, spec);
     if (!action) continue;
     actions.push(action);
-    bindings.push({ spec: STEP_KEYS[spec.name], actionId: action.id, opts: { id: `${action.id}.key` } });
+    bindings.push({ spec: STEP_KEYS[spec.name], actionId: action.id, opts: { id: `${action.id}.key`, yields: true } });
   }
   const wheel = wheelSizeAction(toolId, toolLabel, options);
   if (wheel) {
     actions.push(wheel);
-    bindings.push({ spec: { kind: 'wheel', mods: { shift: true } }, actionId: wheel.id, opts: { id: `${wheel.id}.shiftWheel` } });
+    bindings.push({ spec: { kind: 'wheel', mods: { shift: true } }, actionId: wheel.id, opts: { id: `${wheel.id}.shiftWheel`, yields: true } });
   }
   return { actions, bindings };
 }

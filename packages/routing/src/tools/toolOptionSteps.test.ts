@@ -3,6 +3,8 @@ import { ActionDisabledReason } from '../interactions/actions/action';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { createToolOptionValues, toolOptionParams, type ToolOptionsSpec } from './toolOptions';
 import { toolOptionSteps } from './toolOptionSteps';
+import { defineTool } from './defineTool';
+import { findScopedConflicts } from './routing/reflection/conflicts';
 
 const brush: ToolOptionsSpec = {
   actionId: 'paint',
@@ -26,5 +28,12 @@ describe('step actions of a tool held on its key', () => {
   it('are enabled for the active tool while nothing is held', () => {
     const deps = { activeTool: { active: 'brush', hotkeyStack: [] }, toolOptionValues: createToolOptionValues() };
     expect(enabled('brush', deps)).toBe(true);
+  });
+});
+
+describe('step bindings of two tools held on keys', () => {
+  it('are not reported as a conflict, as only the live tool\'s step runs', () => {
+    const tool = (id: string, key: string) => defineTool({ id, hotkey: { key }, options: brush, presentation: { label: id } });
+    expect(findScopedConflicts({ registry: [tool('brush', 'b'), tool('eraser', 'e')] })).toEqual([]);
   });
 });
