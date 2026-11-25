@@ -28,13 +28,16 @@ export interface KeyHeldEvent extends EventModifiers {
   phase: 'down' | 'up';
 }
 
-/** A scroll-wheel / trackpad scroll, with raw deltas and client coords. */
+/** A scroll-wheel / trackpad scroll, with raw deltas and the pointer's point. */
 export interface WheelEvent extends EventModifiers {
   kind: 'wheel';
   deltaX: number;
   deltaY: number;
+  /** The pointer, canvas-local: client coords minus the canvas's bounding rect. */
   clientX: number;
   clientY: number;
+  /** The pointer in client pixels, when the source knows it: `InvocationCtx.screen`. */
+  screen?: { x: number; y: number };
   /** The world point under the pointer, when the source knows it. */
   x?: number;
   y?: number;
@@ -59,6 +62,8 @@ export interface PinchEvent extends EventModifiers {
    *  the canvas's bounding rect. */
   clientX: number;
   clientY: number;
+  /** The focal point in client pixels, when the source knows it: `InvocationCtx.screen`. */
+  screen?: { x: number; y: number };
   /** The world point under the focal point, when the source knows it. */
   x?: number;
   y?: number;

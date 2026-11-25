@@ -14,7 +14,8 @@ export interface KeymapKeys {
 export function keymapKeys(stack: () => KeymapStack | undefined): KeymapKeys {
   // Leader keys still down, each with whether Cmd was held when it went down.
   const leaders = new Map<string, boolean>();
-  const quiet = new Set<string>();
+  // Keys whose keystroke closed a keymap, the same way.
+  const quiet = new Map<string, boolean>();
   const release = (physical: string): void => {
     if (leaders.delete(physical)) stack()?.release(`key:${physical}`);
   };
@@ -26,13 +27,15 @@ export function keymapKeys(stack: () => KeymapStack | undefined): KeymapKeys {
       const s = stack();
       if (s?.holdOpened(`key:${physical}`)) leaders.set(physical, e.metaKey);
       // Its repeats would otherwise reach whatever the key does outside the keymap it just closed.
-      else if (before !== null && s?.innermost() !== before) quiet.add(physical);
+      else if (before !== null && s?.innermost() !== before) quiet.set(physical, e.metaKey);
     },
     up: (e, physical) => {
       quiet.delete(physical);
       release(physical);
       // macOS sends no keyup for a key released while Cmd is down, so Cmd's own keyup releases it.
-      if (e.key === 'Meta') for (const [k, withCmd] of [...leaders]) if (withCmd) release(k);
+      if (e.key !== 'Meta') return;
+      for (const [k, withCmd] of [...leaders]) if (withCmd) release(k);
+      for (const [k, withCmd] of [...quiet]) if (withCmd) quiet.delete(k);
     },
     clear: () => {
       leaders.clear();

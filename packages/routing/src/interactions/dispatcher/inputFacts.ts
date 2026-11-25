@@ -101,6 +101,19 @@ export function immediateParams(
   return { ...carried(event), mods: modifierStateOf(event), ...resolved };
 }
 
+type Landed = Extract<InputEvent, { kind: 'click' | 'doubleclick' | 'contextmenu' | 'pointerdown' | 'longpress' | 'hover' | 'carry' }>;
+
+/** Where a pointer event landed and what it landed on. */
+function landed(event: Landed): ImmediateParams {
+  return {
+    ...at(event),
+    clientX: event.clientX, clientY: event.clientY,
+    affordance: event.affordance,
+    bodyTarget: event.bodyTarget,
+    bodyKind: event.bodyKind,
+  };
+}
+
 function carried(event: InputEvent): ImmediateParams {
   switch (event.kind) {
     case 'wheel':
@@ -120,41 +133,20 @@ function carried(event: InputEvent): ImmediateParams {
     case 'click':
     case 'doubleclick':
       return {
-        ...at(event),
-        affordance: event.affordance,
+        ...landed(event),
         ...(event.kind === 'click' && event.pressX !== undefined && event.pressY !== undefined
           ? { press: { x: event.pressX, y: event.pressY } } : {}),
       };
-    case 'contextmenu':
-      return {
-        ...at(event),
-        clientX: event.clientX, clientY: event.clientY,
-        affordance: event.affordance,
-        bodyTarget: event.bodyTarget,
-        bodyKind: event.bodyKind,
-      };
     // Only a `stage: 'press'` pointerdown reaches an immediate invoker: the
     // buffered copy matches `drag` specs, which are ongoing.
+    case 'contextmenu':
     case 'pointerdown':
     case 'longpress':
-      return { ...at(event), affordance: event.affordance, bodyTarget: event.bodyTarget };
+      return landed(event);
     case 'hover':
-      return {
-        ...at(event),
-        clientX: event.clientX, clientY: event.clientY,
-        affordance: event.affordance,
-        bodyTarget: event.bodyTarget,
-        held: event.held === true,
-      };
+      return { ...landed(event), held: event.held === true };
     case 'carry':
-      return {
-        ...at(event),
-        clientX: event.clientX, clientY: event.clientY,
-        carry: { type: event.type, value: event.value },
-        affordance: event.affordance,
-        bodyTarget: event.bodyTarget,
-        bodyKind: event.bodyKind,
-      };
+      return { ...landed(event), carry: { type: event.type, value: event.value } };
     case 'drop':
     case 'paste':
       return { items: event.items, via: event.kind, ...at(event) };

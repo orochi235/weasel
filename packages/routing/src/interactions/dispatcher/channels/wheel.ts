@@ -43,6 +43,7 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): {
       deltaY: px.y,
       clientX: local.x,
       clientY: local.y,
+      screen: { x: e.clientX, y: e.clientY },
       x: hitPoint.x,
       y: hitPoint.y,
       ...underPointer(target(), e, hitPoint),

@@ -105,6 +105,7 @@ export function attachInput(
   if (channels.keyboard) {
     listeners.on(keyTarget, 'keydown', keys.onKeyDown, keyCapture);
     listeners.on(keyTarget, 'keyup', keys.onKeyUp, keyCapture);
+    listeners.on(window, 'keyup', keys.lift, true);
   }
   const leaveKeyPeers = channels.keyboard && canvas ? joinSurface(canvas, keys.take) : null;
   listeners.on(window, 'blur', onWindowBlur);

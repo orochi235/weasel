@@ -58,6 +58,25 @@ function cursorOverride(
  * action a click here would route to; no override. Mid-gesture it is the
  * in-flight action's `activeCursor`.
  */
+/**
+ * Whether a binding hears a hover now: always with no pointer held, and with one held only when a
+ * binding hears held moves, asked once a press so a drag nothing listens to is not hit-tested on every move.
+ */
+function hoverHeard(pointersHeld: () => number, ctxNow: DispatchCore['ctxNow']): { hears: () => boolean; forget: () => void } {
+  let heldHeard: boolean | null = null;
+  return {
+    hears: () => {
+      if (pointersHeld() === 0) {
+        heldHeard = null;
+        return true;
+      }
+      heldHeard ??= anyBinding(ctxNow(), (s) => s.kind === 'hover' && s.held !== undefined);
+      return heldHeard;
+    },
+    forget: () => { heldHeard = null; },
+  };
+}
+
 export function hoverCursorInput(
   core: DispatchCore,
   paintedCursor: () => PaintedCursorState | undefined,
@@ -70,19 +89,11 @@ export function hoverCursorInput(
   const { canvas, routeAt, toWorld, target, dispatch, dispatcherNow, ctxNow } = core;
   const override = cursorOverride(canvas, paintedCursor, cursorSink);
   let last: Hover | null = null;
+  /** Whether a gesture was in flight at the last notify. */
+  let flying = false;
   /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
   let facts: { at: Hover; where: UnderPointer } | null = null;
-  /** Whether a binding hears a held pointer's moves, asked once a press, so a
-   *  drag nothing listens to is not hit-tested on every move. */
-  let heldHeard: boolean | null = null;
-  const hears = (): boolean => {
-    if (pointersHeld() === 0) {
-      heldHeard = null;
-      return true;
-    }
-    heldHeard ??= anyBinding(ctxNow(), (s) => s.kind === 'hover' && s.held !== undefined);
-    return heldHeard;
-  };
+  const heard = hoverHeard(pointersHeld, ctxNow);
 
   const resolve = (): void => {
     if (!canvas || !last) return;
@@ -138,11 +149,11 @@ export function hoverCursorInput(
   return {
     moved(e) {
       last = hoverOf(e);
-      if (hears()) hoverAt(last);
+      if (heard.hears()) hoverAt(last);
       refresh();
     },
     released(e) {
-      heldHeard = null;
+      heard.forget();
       last = hoverOf(e);
       refreshSoon();
     },
@@ -165,11 +176,16 @@ export function hoverCursorInput(
       const changed = prev.altKey !== last.altKey || prev.ctrlKey !== last.ctrlKey
         || prev.metaKey !== last.metaKey || prev.shiftKey !== last.shiftKey;
       // A modifier changing over a resting pointer is a hover with new modifiers.
-      if (changed && hears()) hoverAt(last);
+      if (changed && heard.hears()) hoverAt(last);
       refreshSoon();
     },
     changed() {
-      if (canvas && last && dispatcherNow().inFlight().size > 0) override.apply(dispatcherNow().inFlightCursor());
+      const was = flying;
+      flying = dispatcherNow().inFlight().size > 0;
+      if (!canvas || !last) return;
+      if (flying) override.apply(dispatcherNow().inFlightCursor());
+      // The last gesture ended with no release or keyup over the pointer to resolve the idle cursor.
+      else if (was) refreshSoon();
     },
     clear: override.clear,
   };

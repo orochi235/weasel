@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { renderWithKeys as render } from '@weasel-js/react/testing/giveKeys';
 import { useRef } from 'react';
@@ -134,6 +134,25 @@ describe('hover-cursor pump', () => {
     expect(canvas.style.cursor).toBe('copy');
     act(() => { spec = undefined; changed(); });
     expect(canvas.style.cursor).toBe('grabbing');
+  });
+
+  it('drops the in-flight cursor when a window blur ends the gesture over a resting pointer', () => {
+    vi.useFakeTimers();
+    try {
+      const held: Action = {
+        id: 'held', label: 'held', defaultBinding: { kind: 'keyHeld', key: ' ' }, activeCursor: 'grabbing',
+        invoker: { timing: 'ongoing', start: () => ({ onEnd: () => {} }) },
+      };
+      const { container } = render(<Harness><Probe actionDef={held} /></Harness>);
+      const canvas = container.querySelector('canvas')!;
+      act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
+      act(() => { window.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', cancelable: true })); vi.runAllTimers(); });
+      expect(canvas.style.cursor).toBe('grabbing');
+      act(() => { window.dispatchEvent(new Event('blur')); vi.runAllTimers(); });
+      expect(canvas.style.cursor).toBe('');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('an in-flight action with no activeCursor holds its hover hint', () => {
