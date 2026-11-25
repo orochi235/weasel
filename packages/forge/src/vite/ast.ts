@@ -10,9 +10,14 @@ export type Bindings = Map<string, t.Node>;
 /** A file's callees that are forge's `meta` or `story`, and which, keyed as `calleeName` writes them. */
 export type Wrappers = ReadonlyMap<string, 'meta' | 'story'>;
 
+/** The syntax babel reads `file` with: JSX in any JavaScript file and in `.tsx`, TypeScript in any but JavaScript. */
+export function parserPluginsFor(file: string): ParserPlugin[] {
+  const js = /\.[cm]?jsx?$/.test(file);
+  return [...(js ? [] : (['typescript'] as const)), 'decorators-legacy', ...(js || /\.[cm]?tsx$/.test(file) ? (['jsx'] as const) : [])];
+}
+
 export function parseFile(code: string, file: string): t.Program {
-  const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
-  return parse(code, { sourceType: 'module', plugins }).program;
+  return parse(code, { sourceType: 'module', plugins: parserPluginsFor(file) }).program;
 }
 
 /** The local a default export that names no binding of its own is declared as. */

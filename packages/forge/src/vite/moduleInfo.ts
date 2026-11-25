@@ -1,6 +1,6 @@
-import { type ParserPlugin, parse } from '@babel/parser';
+import { parse } from '@babel/parser';
 import type * as t from '@babel/types';
-import { DEFAULT_LOCAL, patternNames } from './ast.ts';
+import { DEFAULT_LOCAL, parserPluginsFor, patternNames } from './ast.ts';
 import { freeNames } from './freeNames.ts';
 
 export interface Import {
@@ -21,8 +21,7 @@ export interface ModuleInfo {
 
 /** What `code`, the source of `file`, imports, exports and declares at its top level. */
 export function moduleInfo(code: string, file: string): ModuleInfo {
-  const plugins: ParserPlugin[] = ['typescript', 'decorators-legacy', ...(/\.[cm]?[jt]sx$/.test(file) ? (['jsx'] as const) : [])];
-  const program = parse(code, { sourceType: 'module', plugins }).program;
+  const program = parse(code, { sourceType: 'module', plugins: parserPluginsFor(file) }).program;
   const imports = new Map<string, Import>();
   const exports = new Map<string, Export>();
   const stars: string[] = [];
