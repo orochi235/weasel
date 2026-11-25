@@ -109,6 +109,8 @@ export function resolve(
     gl.bindFramebuffer(gl.READ_FRAMEBUFFER, via);
   }
   gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, dest.fbo);
+  // A blit writes every enabled draw buffer, so an id target's ids too.
+  if (dest.ids) cache.setDrawBuffers(dest.fbo, 'color');
   gl.blitFramebuffer(0, 0, width, height, x, y, x + width, y + height, gl.COLOR_BUFFER_BIT, gl.NEAREST);
   // Both bindings changed under the cache's single one.
   cache.framebuffer = undefined;

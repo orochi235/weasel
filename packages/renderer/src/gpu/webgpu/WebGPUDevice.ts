@@ -13,6 +13,7 @@ import { Frame, UniformRing } from './wgpuFrame';
 import { DEFAULT_ATTRIBUTE, needsDefaultAttribute, ensurePipeline } from './wgpuPipelines';
 import { NDC_GROUP, WgpuProgram, type WgpuProgramHost } from './wgpuProgram';
 import * as res from './wgpuResources';
+import { mergeSampling } from '../samplingMerge';
 import {
   CanvasTarget, createTarget, deleteTarget, encodeReadIds, encodeReadTexture, encodeResolve, type WgpuTarget,
 } from './wgpuTargets';
@@ -132,7 +133,7 @@ export class WebGPUDevice implements GpuDevice, WgpuProgramHost {
 
   setSampling(texture: GpuTexture, sampling: Partial<GpuSampling>): void {
     const t = texture as res.WgpuTexture;
-    t.sampling = { ...t.sampling, ...sampling };
+    t.sampling = mergeSampling(t.sampling, sampling);
   }
 
   deleteTexture(texture: GpuTexture): void {

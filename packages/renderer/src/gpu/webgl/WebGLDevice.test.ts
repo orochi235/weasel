@@ -6,6 +6,7 @@ import { describe, expect, it } from 'vitest';
 import { createGLRecorder, type GLRecorder } from '../../testing/glRecorder';
 import { PREMULTIPLIED } from '../blend';
 import type { GpuDrawState, GpuStencilState } from '../types';
+import type { GlTexture } from './glResources';
 import { WebGLDevice } from './WebGLDevice';
 
 const VERT = '#version 300 es\nin vec2 a_position;\nvoid main() { gl_Position = vec4(a_position, 0.0, 1.0); }\n';
@@ -305,6 +306,19 @@ describe('WebGLDevice mipmapped textures', () => {
     gpu.writeTexture(tex, { width: 8, height: 8, data: new Uint8Array(256) });
     expect(maxLevels(rec)).toEqual([0]);
   });
+
+  it('keeps the setting a sampling change gives as undefined, in GL and in the record alike', () => {
+    const { rec, gpu } = setup();
+    const { gl } = rec;
+    const tex = gpu.createTexture('rgba8', MIPMAPPED, { width: 4, height: 4, data: new Uint8Array(64) });
+    const minFilters = () => argsOf(rec, 'texParameteri').filter(([, p]) => p === gl.TEXTURE_MIN_FILTER).map(([, , v]) => v);
+    rec.reset();
+    gpu.setSampling(tex, { mipmap: undefined, min: undefined, wrapS: 'repeat' });
+    expect((tex as GlTexture).sampling).toEqual({ ...MIPMAPPED, wrapS: 'repeat' });
+    expect(minFilters()).toEqual([]);
+    gpu.setSampling(tex, { mipmap: false });
+    expect(minFilters()).toEqual([gl.LINEAR]);
+  });
 });
 
 describe('WebGLDevice buffer writes', () => {
@@ -317,6 +331,14 @@ describe('WebGLDevice buffer writes', () => {
     gpu.resizeBuffer(buffer, new Float32Array(4), 'dynamic');
     gpu.writeBuffer(buffer, 4, new Float32Array(3));
     expect(argsOf(rec, 'bufferSubData')).toHaveLength(2);
+  });
+
+  it('writes nothing for a length of 0, which GL would read as the rest of the array', () => {
+    const { rec, gpu } = setup();
+    const buffer = gpu.createBuffer('vertex', 64, 'dynamic');
+    rec.reset();
+    gpu.writeBuffer(buffer, 0, new Float32Array(64), 16, 0);
+    expect(argsOf(rec, 'bufferSubData')).toEqual([]);
   });
 });
 
@@ -432,6 +454,14 @@ describe('WebGLDevice geometry', () => {
 });
 
 describe('WebGLDevice uniforms', () => {
+  it('has a uniform array it looked up, as WebGPU does', () => {
+    const { gpu } = setup();
+    const { program } = drawable(gpu);
+    program.lookupUniformArrays(new Map([['u_ripples', { type: 'vec4', size: 8 }]]));
+    expect(program.array('u_ripples')).toBeDefined();
+    expect(program.has('u_ripples')).toBe(true);
+  });
+
   it('writes nothing for a ranged write of no numbers', () => {
     const { rec, gpu } = setup();
     const { program } = drawable(gpu);
@@ -444,6 +474,17 @@ describe('WebGLDevice uniforms', () => {
 });
 
 describe('WebGLDevice resolve', () => {
+  it('blits into an id target\'s color alone, leaving its ids', () => {
+    const { rec, gpu } = setup();
+    const { gl } = rec;
+    const scratch = gpu.createTarget({ width: 8, height: 8, samples: 4 });
+    const picked = gpu.createTarget({ width: 8, height: 8, ids: true });
+    rec.reset();
+    gpu.resolve(scratch, picked, 8, 8, 0, 0);
+    expect(argsOf(rec, 'drawBuffers')).toEqual([[[gl.COLOR_ATTACHMENT0, gl.NONE]]]);
+    expect(names(rec).indexOf('drawBuffers')).toBeLessThan(names(rec).indexOf('blitFramebuffer'));
+  });
+
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();
     const scratch = gpu.createTarget({ width: 8, height: 8, samples: 4, stencil: true });
