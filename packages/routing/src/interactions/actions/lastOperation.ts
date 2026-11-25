@@ -309,7 +309,6 @@ export class LastOperationKeeper implements LastOperationStore {
     if (held.stack !== held.history) offs.push(held.history.observe(ended));
     const unobserve = () => { for (const off of offs) off(); };
     this.held = { ...held, unobserve };
-    this.remember(held.op.id, held.op.values);
     this.listeners.emit();
   }
 
