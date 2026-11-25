@@ -22,6 +22,8 @@ interface EmptyBox {
 export interface DockGrab {
   boxes: DockBox[];
   drawn: Set<string>;
+  /** The docks the bar may enter that draw no bar, hidden ones aside, shown as strips to drop on. */
+  emptyDocks: string[];
   /** The strips of empty docks the bar may enter; null until the drag has drawn them, a move or two after it began. */
   empties: EmptyBox[] | null;
   /** The extent across its dock of the row the bar sat in; null for a bar that floats. */
@@ -67,10 +69,13 @@ export function grabBar(root: HTMLElement, layer: HTMLElement, docks: readonly D
   const orientation = floating?.orientation ?? (row?.vertical ? 'vertical' : 'horizontal');
   const r = barElement(root, bar.id)?.getBoundingClientRect();
   const l = layer.getBoundingClientRect();
+  const drawn = drawnBars(root);
+  const emptyDocks = docks.filter((d) => canEnter(bar, d) && !dockRows(layout, d.id)?.some((row) => row.some((id) => drawn.has(id)))).map((d) => d.id);
   return {
     boxes,
-    drawn: drawnBars(root),
-    empties: docks.some((d) => canEnter(bar, d) && !dockRows(layout, d.id)?.length) ? null : [],
+    drawn,
+    emptyDocks,
+    empties: emptyDocks.length ? null : [],
     row,
     from: floatHere(root, layer, bar.id, orientation),
     size: { w: r?.width ?? 0, h: r?.height ?? 0 },

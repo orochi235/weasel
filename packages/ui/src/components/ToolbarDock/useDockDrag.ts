@@ -16,6 +16,8 @@ import { isPrimaryPress } from '@weasel-js/gestures';
 export interface DockDragView {
   barId: string;
   unavailable: ReadonlySet<string>;
+  /** The docks the bar may enter that draw no bar, each drawn as a strip it can drop on. */
+  empties: readonly string[];
   drop: DockDropMark | null;
   float: FloatPlace | null;
   /** The bar's size at the press: the room its dock slot keeps while it floats. */
@@ -118,7 +120,7 @@ export function useDockDrag({ root, layer, docks, bars, layout: given, onLayoutC
         grab = grabBar(el, into, latest.current.docks, bar, latest.current.layout);
         setHeld(null);
         const unavailable = new Set(grab.boxes.filter((d) => !canEnter(bar, d)).map((d) => d.id));
-        setView({ barId, unavailable, drop: null, float: grab.row ? null : grab.from, size: grab.size });
+        setView({ barId, unavailable, empties: grab.emptyDocks, drop: null, float: grab.row ? null : grab.from, size: grab.size });
       },
       onMove: (ev) => {
         if (!grab) return;

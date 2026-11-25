@@ -157,8 +157,8 @@ function rowMark(others: readonly { id: string }[], starts: number, index: numbe
 /** `p` along `dock`'s rows and across them. */
 const axes = (dock: DockBox, p: DockPoint) => (dock.vertical ? { along: p.clientY, cross: dock.mirrored ? -p.clientX : p.clientX } : { along: p.clientX, cross: p.clientY });
 
-/** Whether `dock` has rows and `along` falls within its length. */
-const overRows = (dock: DockBox, along: number): boolean => dock.rows.length > 0 && along >= dock.along[0] && along <= dock.along[1];
+/** Whether `dock` draws a bar and `along` falls within its length: one whose bars all draw nothing takes drops on its strip. */
+const overRows = (dock: DockBox, along: number): boolean => dock.rows.some((r) => r.bars.length > 0) && along >= dock.along[0] && along <= dock.along[1];
 
 /** `layout` with `barId` moved to `to`, or null where that changes nothing. */
 export function movedLayout(layout: ToolbarLayout, barId: string, to: BarTarget): ToolbarLayout | null {

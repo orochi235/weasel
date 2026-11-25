@@ -29,7 +29,7 @@ describe('a row’s far end', () => {
   });
 
   describe('dropAt', () => {
-    const row = (bars: DockBox['rows'][number]['bars']): DockBox[] => [{ id: 'top', edge: 'top', vertical: false, along: [0, 1000], rows: [{ start: 0, end: 40, from: 0, to: 1000, bars }] }];
+    const row = (bars: DockBox['rows'][number]['bars']): DockBox[] => [{ id: 'top', edge: 'top', vertical: false, mirrored: false, along: [0, 1000], rows: [{ start: 0, end: 40, from: 0, to: 1000, bars }] }];
     const one = row([{ id: 'a', at: 100, end: false }]);
     const both = row([{ id: 'a', at: 100, end: false }, { id: 'e', at: 900, end: true }]);
 

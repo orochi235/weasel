@@ -6,7 +6,7 @@ import { useBarHosts } from './barHosts';
 import { DockBarContext } from './dockContext';
 import { DOCK_BAR, DOCK_END } from './dockDrop';
 import { FloatingLayer, floatPlaces } from './floatingLayer';
-import { canEnter, dockRows, homeDock, isAtEnd, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
+import { dockRows, homeDock, isAtEnd, isVerticalEdge, resolveLayout, type DockBar, type DockEdge, type DockSpec, type ToolbarLayout } from './layout';
 import { useDockDrag, type DockDrag, type DockDragView } from './useDockDrag';
 import s from './ToolbarDock.module.css';
 
@@ -78,8 +78,7 @@ export function ToolbarDock({ docks, bars, layout, onLayoutChange, movable = fal
   const layer = useRef<HTMLDivElement>(null);
   const move = useDockDrag({ root, layer, docks, bars, layout: resolved, onLayoutChange });
   const { view, layout: shown } = move;
-  const dragged = view ? byId.get(view.barId) : undefined;
-  const empties = dragged ? docks.filter((d) => canEnter(dragged, d) && !(dockRows(shown, d.id)?.length ?? 0)) : [];
+  const empties = view ? docks.filter((d) => view.empties.includes(d.id)) : [];
 
   const hosts = useBarHosts(bars.map((b) => b.id));
   const drawn = (id: string, orientation: BarOrientation) => drawsIn(byId.get(id), orientation);

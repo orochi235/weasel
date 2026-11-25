@@ -77,7 +77,7 @@ function bar(id: string, extra: Partial<DockBar> = {}): DockBar {
     ...extra,
   };
 }
-const bars = [bar('file'), bar('view'), bar('shape'), bar('pin', { docks: ['top'], float: false })];
+const bars = [bar('file'), bar('view'), bar('shape'), bar('pin', { docks: ['top'], float: false }), bar('ghost', { render: () => null })];
 
 function Harness({ initial, onChange, later }: { initial: ToolbarLayout; onChange: (l: ToolbarLayout) => void; later?: boolean }) {
   const [layout, setLayout] = useState(initial);
@@ -217,6 +217,14 @@ describe('a floating bar', () => {
     release([400, 590]);
     expect(onChange.mock.calls[0]![0]).toEqual({ docks: { top: [['view']], bottom: [['file']] }, floating: {} });
     expect(document.querySelector('[data-dock-empty]')).toBeNull();
+  });
+
+  it('docks on the strip a drag shows along a dock whose bars all draw nothing, keeping their place', () => {
+    const onChange = setup(start([['view']], afloat, [['ghost']]));
+    press(handle('File'), [350, 215], [[350, 250], [400, 590]]);
+    expect(document.querySelector('[data-dock-empty="bottom"]')).toHaveAttribute('data-dock-drop', 'row');
+    release([400, 590]);
+    expect(onChange.mock.calls[0]![0].docks).toEqual({ top: [['view']], bottom: [['file'], ['ghost']] });
   });
 
   it('moves to where it is let go over open space', () => {
