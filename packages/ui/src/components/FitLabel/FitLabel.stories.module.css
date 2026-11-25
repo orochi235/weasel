@@ -7,3 +7,50 @@
   resize: horizontal;
   overflow: hidden;
 }
+
+/* Room for a whole status line at its full forms, to narrow from. */
+.wide {
+  inline-size: 720px;
+}
+
+/* A fit scope's element takes the shape of its room whatever its labels show, so only it need be measured. */
+.line {
+  display: flex;
+  align-items: center;
+  gap: var(--wzl-space-3);
+  max-inline-size: 100%;
+  min-inline-size: min(var(--fit-natural, 0px), 100%);
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: var(--wzl-font-size-sm);
+}
+
+.item {
+  flex: none;
+}
+
+.line[data-fit-spent] {
+  color: var(--wzl-danger);
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--wzl-space-2);
+}
+
+.cell {
+  display: flex;
+  justify-content: center;
+  min-inline-size: 0;
+  overflow: hidden;
+  padding-block: var(--wzl-space-1);
+  border: 1px solid var(--wzl-line);
+}
+
+.cellText {
+  display: inline-block;
+  white-space: nowrap;
+  transform: scale(var(--cell-scale, 1));
+  transform-origin: center;
+}

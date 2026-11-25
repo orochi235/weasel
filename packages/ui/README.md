@@ -101,6 +101,42 @@ Every control's `ref` reaches the element focus goes to:
 | `Select`, `MenuButton` | the trigger `<button>` (`Select`'s `id` too) | |
 | `Checkbox`, `Switch` | the `<input>` | `rootRef`: the `<label>` |
 
+## Labels that shorten to fit
+
+A `FitLabel` holds a label's forms, longest first, and shows one picked by the nearest `FitScope`. A scope measures
+one element; while that element overflows, every label in it steps down one form, together, and one with fewer forms
+holds its last. Widening the element past where it stepped brings the full forms back. `labelForms(name, short)`
+builds the list from a control's name and its `short` forms, and the name stays the accessible name whatever shows.
+
+`SegmentedBar` and `Bar` run a scope already, so a `FitLabel` passed to either shortens with no setup; `KeyBank` runs
+one too. For a strip of your own:
+
+```tsx
+function StatusLine() {
+  const ref = useRef<HTMLDivElement>(null);
+  const fit = useFitScope(ref);
+  return (
+    <div ref={ref} className="status">
+      <FitScope value={fit}>
+        <FitLabel forms={['Selection: 3 objects', '3 objects', '3']} />
+        <FitLabel forms={['Zoom: 100%', '100%']} />
+      </FitScope>
+    </div>
+  );
+}
+```
+
+Only the scope's element is measured, so its CSS has to hold it to its room whatever it shows: `overflow: hidden`
+and `max-inline-size: 100%`, plus `min-inline-size: min(var(--fit-natural, 0px), 100%)` for a box sized to its
+content, since `--fit-natural` is its width at the full forms. Once every label is at its last form and it still
+overflows, the element carries `data-fit-spent`, for a layout to give it more room. A scope inside another steps at
+least as far as the outer one, so a control in a strip shortens along with the strip.
+
+Given `scale`, as in `useFitScope(ref, { scale: { min: 0.6, property: '--fit-scale' } })`, the scope also shrinks
+type: members that join through `useFitScale()` each measure the scale their content fits their own box at, and
+every one prints at the smallest any of them needs, floored at `min` and published on the element as `property`.
+`KeyBank` fits its keys' legends this way. The forge stories under `ui/FitLabel` show each of these.
+
 ## License
 
 MIT
