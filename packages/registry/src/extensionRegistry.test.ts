@@ -126,6 +126,20 @@ describe('createExtensionRegistry', () => {
     expect(r.entries().map((e) => e.key)).toEqual(['y', 'x']);
   });
 
+  it('puts an id it releases at its parent\'s place at once, not a tick later', async () => {
+    const parent = make();
+    const child = make(parent);
+    const off = child.register('x', 'mine');
+    parent.register('y', 'p');
+    parent.register('x', 'p');
+    off();
+    const now = child.entries().map((e) => e.key);
+    await Promise.resolve();
+    parent.register('z', 'p');
+    expect(now).toEqual(['y', 'x']);
+    expect(child.entries().map((e) => e.key)).toEqual(['y', 'x', 'z']);
+  });
+
   it('orders its ids among those of a parent another module made', () => {
     const made = make();
     const parent: ExtensionRegistry<string> = {

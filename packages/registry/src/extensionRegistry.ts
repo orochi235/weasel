@@ -88,7 +88,8 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   };
   const parentOrder = knownOrder ?? (foreignParent ? (id: string) => seen.get(id) : undefined);
   const orderOf = (id: string): number | undefined => {
-    const mine = since.get(id);
+    // A released id keeps its `since` until the next tick, to take its place back if registered again; until then it sits where its parent puts it.
+    const mine = held.has(id) ? since.get(id) : undefined;
     const theirs = parentOrder?.(id);
     return mine === undefined ? theirs : theirs === undefined ? mine : Math.min(mine, theirs);
   };
