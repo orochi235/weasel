@@ -41,6 +41,8 @@ interface ToolState {
   hotkeyStack: string[];
 }
 
+const NO_TOOL: ToolState = { active: null, hotkeyStack: [] };
+
 /**
  * One node of the tool tree. A node that `owns` a tool holds its state; one
  * that does not — a scope inside a yoke — reads and writes its yoke's.
@@ -76,7 +78,7 @@ export class ToolNode extends ScopeNode<ToolNode> {
   /** A stable value per owner and state, for `useSyncExternalStore`. */
   snapshot(): ActiveToolContextValue {
     const from = this.owner();
-    const state = from.state ?? { active: null, hotkeyStack: [] };
+    const state = from.state ?? NO_TOOL;
     const cached = this.value;
     if (cached && cached.from === from && cached.state === state) return cached.out;
     const out: ActiveToolContextValue = {
