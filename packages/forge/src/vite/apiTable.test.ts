@@ -243,7 +243,7 @@ export const Input = (_props: InputProps) => null;
   });
 
   it('reads a component that takes no props', () => {
-    expect(api('bare')).toEqual({ props: [], inherited: [], ref: null, sources: [], component: { name: 'Bare', file: at('Chart.ts') } });
+    expect(api('bare')).toEqual({ props: [], inherited: [], ref: null, sources: [at('Chart.ts')], component: { name: 'Bare', file: at('Chart.ts') } });
   });
 
   it('follows the fallback import for a meta with no component', () => {
@@ -315,6 +315,11 @@ export const Input = (_props: InputProps) => null;
     const table = api('chip');
     expect(table?.types?.ChipSize?.text).toBe("type ChipSize = 'sm' | 'md';");
     expect(table?.sources).toContain(at('sizes.ts'));
+  });
+
+  it('lists the files it reads destructured defaults from', () => {
+    expect(api('chip')?.sources).toContain(at('Chip.ts'));
+    expect(api('outer')?.sources).toEqual(expect.arrayContaining([at('Chip.ts'), at('chipImpl.ts')]));
   });
 
   it('reads defaults from a function a wrapping call names, in its file or imported', () => {

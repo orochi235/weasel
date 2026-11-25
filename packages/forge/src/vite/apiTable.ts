@@ -200,7 +200,7 @@ function memberEntry(reading: ApiReading, member: ts.Symbol): ApiMember {
 function destructuredDefaults(reading: ApiReading, declaration: ts.Declaration): { defaults: Map<string, string>; files: string[] } {
   const { tsm, checker } = reading;
   const defaults = new Map<string, string>();
-  const files = new Set<string>();
+  const files = new Set([declaration.getSourceFile().fileName]);
   let node: ts.Node | undefined = declaration;
   for (let depth = 0; node && depth < 32; depth++) {
     if (tsm.isVariableDeclaration(node)) node = node.initializer;
