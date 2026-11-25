@@ -103,4 +103,12 @@ describe('Make Boolean Group across layers', () => {
     const ink = scene.add({ kind: 'mark', layer: 'ink', pose: { x: 320, y: 0, width: 10, height: 10 }, data: {} });
     expect(makeBooleanGroupAction.enabled!({ scene, operands: selectionOf([paper, ink]) } as never)).toBe('not-applicable');
   });
+
+  it('answers null when the scene refuses the batch', () => {
+    const { scene, back, front } = makeScene();
+    scene.setArrivalHandler(() => null);
+    const before = scene.roots;
+    expect(makeBooleanGroup(scene as never, [back, front])).toBeNull();
+    expect(scene.roots).toEqual(before);
+  });
 });
