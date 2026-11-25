@@ -19,6 +19,7 @@ export function useSurfaceRouting(
       views: {
         targets: () => viewRegistry.list().map((r) => ({ id: r.id, ...r.target })),
         resolver: viewRegistry.resolver,
+        subscribe: viewRegistry.subscribe,
       },
       clientToLocal: (clientX: number, clientY: number) => surfaceLocal(viewRegistry.surface(), clientX, clientY),
     };

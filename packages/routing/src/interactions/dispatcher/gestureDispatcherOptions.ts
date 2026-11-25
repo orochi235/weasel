@@ -320,5 +320,7 @@ export interface UseGestureDispatcherOptions {
   views?: {
     targets: () => readonly DispatcherViewTarget[];
     resolver: ViewIdResolver;
+    /** Hear that `targets` may answer differently. Without it, a view's dispatcher is watched for redraws only once an event has dispatched on it. */
+    subscribe?: (listener: () => void) => () => void;
   };
 }

@@ -26,6 +26,8 @@ export interface InputSources
     Pick<PointerInputOptions, 'longPress' | 'kitSettings' | 'onClick' | 'onDoubleClick' | 'clicks' | 'controls'> {
   /** Every live dispatcher — what a cancel-everything has to reach. */
   dispatchers(): Dispatcher[];
+  /** Hear that `dispatchers` may answer differently. Returns the unsubscribe. */
+  dispatchersChanged(listener: () => void): () => void;
   heldPointer(): ((feed: HeldPointerFeed | null) => void) | undefined;
   requestRedraw(): void;
   paintedCursor(): PaintedCursorState | undefined;
@@ -59,6 +61,7 @@ export function attachInput(
     if (!disposed) cursor?.changed();
   });
   redraw.sync(src.dispatchers());
+  const offDispatchers = src.dispatchersChanged(() => { if (!disposed) redraw.sync(src.dispatchers()); });
   const core = createDispatchCore({
     canvas,
     root: src.root,
@@ -142,6 +145,7 @@ export function attachInput(
   return () => {
     if (channels.pointer) src.heldPointer()?.(null);
     listeners.removeAll();
+    offDispatchers();
     releaseSurface?.();
     leaveKeyPeers?.();
     offCarry?.();

@@ -5,7 +5,7 @@
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
-import { useGestureDispatcher } from './useGestureDispatcher';
+import { useGestureDispatcher, type DispatcherViewTarget } from './useGestureDispatcher';
 import { createDispatcher, type Dispatcher } from './dispatcher';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
@@ -89,6 +89,41 @@ describe('requestRedraw', () => {
     redraw.mockClear();
     update({ enabled: false });
     expect(redraw).toHaveBeenCalledTimes(1);
+  });
+
+  it('is asked for by a UI-driven step on a dispatcher swapped in, before any input reaches it', () => {
+    const { redraw, update } = mount();
+    const onEnd = vi.fn();
+    const slide: Action = { id: 'slide', label: 'slide', invoker: { timing: 'ongoing', start: () => ({ onMove: () => {}, onEnd }) } };
+    const next = createDispatcher({ getAction: (id) => (id === slide.id ? slide : undefined) });
+    update({ on: next });
+    redraw.mockClear();
+    act(() => { next.beginUiOngoing('slide', {})?.update({}); });
+    expect(redraw).toHaveBeenCalled();
+  });
+
+  it('is asked for by a UI-driven step on a view\'s dispatcher that appeared after the listeners attached', () => {
+    const redraw = vi.fn();
+    const slide: Action = { id: 'slide', label: 'slide', invoker: { timing: 'ongoing', start: () => ({ onMove: () => {}, onEnd: () => {} }) } };
+    let targets: DispatcherViewTarget[] = [];
+    const listeners = new Set<() => void>();
+    const views = {
+      targets: () => targets,
+      resolver: { begin: () => ({ id: null }), at: () => ({ id: null }), end: () => {} },
+      subscribe: (fn: () => void) => { listeners.add(fn); return () => { listeners.delete(fn); }; },
+    };
+    function Mount(): ReactNode {
+      const canvasRef = useRef<HTMLCanvasElement | null>(null);
+      const registry = useActionsRegistry();
+      useGestureDispatcher({ canvasRef, actions: registry!, entriesById: ENTRIES, requestRedraw: redraw, views });
+      return <canvas ref={canvasRef} />;
+    }
+    render(<DepRegistryProvider><ActiveToolContextProvider><ActionsProvider><Mount /></ActionsProvider></ActiveToolContextProvider></DepRegistryProvider>);
+    const viewDispatcher = createDispatcher({ getAction: (id) => (id === slide.id ? slide : undefined) });
+    targets = [{ id: 'side', dispatcher: viewDispatcher } as DispatcherViewTarget];
+    for (const fn of listeners) fn();
+    act(() => { viewDispatcher.beginUiOngoing('slide', {})?.update({}); });
+    expect(redraw).toHaveBeenCalled();
   });
 
   it('is not asked for by the cancel that unmounting makes', () => {
