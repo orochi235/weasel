@@ -6,7 +6,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { deepEqual } from '@weasel-js/registry';
 import { useLatest } from '@weasel-js/react';
 import { createToolOptionValues, toolOptionParams, type ToolOptionValues } from './toolOptions';
-import { useDepSource, useOptionalDepRegistry } from '../interactions/actions/depRegistry';
+import { useOptionalDepRegistry } from '../interactions/actions/depRegistry';
 import type { ActionsRegistry } from '../interactions/actions/registry';
 import { tuneToolOptions } from './tuneToolOptions';
 import type { Tool } from './types';
@@ -14,7 +14,9 @@ import type { Tool } from './types';
 /** Publish where the host keeps its tools' option values, as the `toolOptionValues`
  *  dep. Silently does nothing outside a `<DepRegistryProvider>`. */
 export function useToolOptionValues(values: ToolOptionValues): void {
-  useDepSource('toolOptionValues', () => values);
+  const registry = useOptionalDepRegistry();
+  const latest = useLatest(values);
+  useEffect(() => registry?.register('toolOptionValues', () => latest.current), [registry, latest]);
 }
 
 /** Every option's value for `tool` in `values`, each read from its slot (`toolOptionParams`): what an options row

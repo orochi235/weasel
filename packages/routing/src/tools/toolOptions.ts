@@ -198,6 +198,12 @@ export function keepToolOptions(
   }
 }
 
+/** The first multiple of `grid` past `value` in `dir`, a float error short of one not counting as one. */
+function nextOnGrid(value: number, grid: number, dir: 1 | -1): number {
+  const k = value / grid;
+  return (dir === 1 ? Math.floor(k + 1e-6) + 1 : Math.ceil(k - 1e-6) - 1) * grid;
+}
+
 /** `value` moved one step up (`dir` 1) or down (-1), within the leaf's bounds
  *  and rounded to its `step`. An endless end steps on to the infinity it stands for, and back. */
 export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionStep, dir: 1 | -1): number {
@@ -211,8 +217,8 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   const scales = scaled !== undefined && value !== 0 && (scaled - value) * dir >= 0;
   const moved = scales ? scaled : value + dir * (plus ?? leaf.step ?? 1);
   const snapped = leaf.step ? Math.round(moved / leaf.step) * leaf.step : moved;
-  // A step that rounds back to where it began still moves one `step`.
-  const stepped = leaf.step && Math.abs(snapped - value) < leaf.step * 1e-6 ? value + dir * leaf.step : snapped;
+  // A step that rounds back to where it began, or past it, still moves on to the next grid point.
+  const stepped = leaf.step && (snapped - value) * dir < leaf.step * 1e-6 ? nextOnGrid(value, leaf.step, dir) : snapped;
   // Past the double range a finite option has nowhere further to go than the largest double.
   const next = Number.isFinite(stepped) ? stepped : dir * Number.MAX_VALUE;
   const clamped = prefClampNumber(leaf, next);

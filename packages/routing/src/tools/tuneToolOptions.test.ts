@@ -14,6 +14,12 @@ const depsOf = (values: ToolOptionValues, active: { active: string | null; hotke
   get: (name: string) => (name === 'toolOptionValues' ? values : name === 'activeTool' ? active : undefined),
 });
 
+/** What the last-operation panel reads when it holds a run: each tuning's form, then its params. */
+const hold = (tunings: readonly ActionTuning[]) => {
+  for (const t of tunings) (t.form as (p: Record<string, unknown>) => unknown)({});
+  for (const t of tunings) (t.params as () => Record<string, unknown>)();
+};
+
 describe('tuneToolOptions', () => {
   it("tunes each tool's action with the values the toolOptionValues dep holds, read per invocation", () => {
     const tunings = new Map<string, ActionTuning>();
@@ -98,9 +104,44 @@ describe('tuneToolOptions', () => {
     tuneToolOptions(registry, depsOf(values, active) as never, [
       defineTool({ id: 'b', options: OPTIONS }), defineTool({ id: 'c', options: OPTIONS }),
     ]);
-    // The operation reads its params while `c` is active; the user then switches tools and adjusts it.
-    for (const t of tunings) (t.params as () => Record<string, unknown>)();
+    // The operation is held while `c` is active; the user then switches tools and adjusts it, which reruns it.
+    hold(tunings);
     active.active = 'select';
+    for (const t of tunings) (t.params as () => Record<string, unknown>)();
+    for (const t of tunings) t.keep!({ radiusPx: 30 });
+    expect(values.get('b')).toEqual({});
+    expect(values.get('c')).toEqual({ radiusPx: 30 });
+  });
+
+  it('keeps a panel change to a run no tool was live for in no tool’s options', () => {
+    const tunings: ActionTuning[] = [];
+    const registry = { tune: (_id: string, t: ActionTuning) => { tunings.push(t); return () => {}; } };
+    const values = createToolOptionValues();
+    const active = { active: 'c' as string | null };
+    tuneToolOptions(registry, depsOf(values, active) as never, [
+      defineTool({ id: 'b', options: OPTIONS }), defineTool({ id: 'c', options: OPTIONS }),
+    ]);
+    hold(tunings);
+    // A later run, from a menu while a tool with no options is active, replaces the held one.
+    active.active = 'select';
+    hold(tunings);
+    for (const t of tunings) t.keep!({ radiusPx: 30 });
+    expect(values.get('b')).toEqual({});
+    expect(values.get('c')).toEqual({});
+  });
+
+  it('keeps a panel change in the options of the run it holds, though another tool’s check read params since', () => {
+    const tunings: ActionTuning[] = [];
+    const registry = { tune: (_id: string, t: ActionTuning) => { tunings.push(t); return () => {}; } };
+    const values = createToolOptionValues();
+    const active = { active: 'c' as string | null };
+    tuneToolOptions(registry, depsOf(values, active) as never, [
+      defineTool({ id: 'b', options: OPTIONS }), defineTool({ id: 'c', options: OPTIONS }),
+    ]);
+    hold(tunings);
+    // `b` becomes active, and its cursor or an enabled check reads the action's params; nothing new is held.
+    active.active = 'b';
+    for (const t of tunings) (t.params as () => Record<string, unknown>)();
     for (const t of tunings) t.keep!({ radiusPx: 30 });
     expect(values.get('b')).toEqual({});
     expect(values.get('c')).toEqual({ radiusPx: 30 });
