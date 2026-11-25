@@ -148,8 +148,11 @@ export const Input = (_props: InputProps) => null;
       at('Knob.ts'),
       `import { forwardRef, memo } from './react';\nexport default memo(forwardRef<HTMLDivElement, { size?: string }>(function Knob({ size = 'md' }, _ref) { return null; }));\n`,
     );
+    mkdirSync(at('node_modules/dep'), { recursive: true });
+    writeFileSync(at('node_modules/dep/index.ts'), `export const Trigger = (_props: { armed?: boolean }) => null;\n`);
+    story('dependency', `import { Trigger } from './node_modules/dep/index';\nimport { Chart } from './Chart';\nexport default { component: Trigger };\n`);
     story('knob', `import Knob from './Knob';\nexport default { component: Knob };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob', 'dependency'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -273,7 +276,12 @@ export const Input = (_props: InputProps) => null;
 
   it("reads the title's import, not a wrapper the story file declares itself", () => {
     expect(api('wrapper', 'Chart')?.ref?.type).toBe('ChartHandle');
-    expect(prop(api('wrapper'), 'shown')).toBeDefined();
+    expect(api('wrapper')).toBeNull();
+  });
+
+  it("reads the title's import, not a dependency's component, as the dependency graph does", () => {
+    expect(api('dependency', 'Chart')?.component?.name).toBe('Chart');
+    expect(api('dependency')).toBeNull();
   });
 
   it('reads the assigned component through a typed meta', () => {

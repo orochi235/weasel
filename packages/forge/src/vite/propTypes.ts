@@ -4,7 +4,7 @@ import type ts from 'typescript';
 import { setOwn } from './ownKeys.ts';
 import type { ArgShape, ArgType } from '../csf/argsToSchema.ts';
 import { apiTable, type ReadApi } from './apiTable.ts';
-import { componentOf } from './componentOf.ts';
+import { componentOf, metaComponentOf } from './componentOf.ts';
 
 /** What a story file's component takes, as argTypes, and the files its props are declared in. */
 export interface PropTable {
@@ -103,7 +103,7 @@ export async function createPropReader(
       const found = sourceOf(file);
       if (!found) return null;
       const { checker, source } = found;
-      const props = componentOf(tsm, checker, source)?.props;
+      const props = metaComponentOf(tsm, checker, source)?.props;
       return props ? propTable(tsm, checker, props, source, skipped) : null;
     },
     api(file, fallback) {

@@ -9,34 +9,50 @@ export interface FoundComponent {
   declaration: ts.Declaration | undefined;
 }
 
+/** The component a story file's default export names as `component`, wherever it is declared: what its args feed. */
+export function metaComponentOf(tsm: typeof ts, checker: ts.TypeChecker, source: ts.SourceFile): FoundComponent | null {
+  const exported = defaultOf(checker, source);
+  if (!exported) return null;
+  const meta = checker.getTypeOfSymbolAtLocation(resolved(tsm, checker, exported), source);
+  const named = meta.getProperty('component');
+  const symbol = named && assigned(tsm, checker, resolved(tsm, checker, exported));
+  return named ? found(checker, source, symbol ?? named) : null;
+}
+
 /**
- * The component a story file's default export names as `component`, else the import named `fallback`: a native
- * `meta()` names none, and a wrapper declared in the story file is not the component, so the title's last segment
- * stands in for either, as it does in the dependency graph.
+ * The component a story file documents, as the dependency graph picks it: the one its default export names as
+ * `component`, else the import named `fallback`. A native `meta()` names none, and neither a wrapper the story file
+ * declares nor a dependency's component is one the graph can key, so the title's last segment stands in for either.
+ * Null when neither names a component the project declares.
  */
 export function componentOf(
   tsm: typeof ts,
   checker: ts.TypeChecker,
   source: ts.SourceFile,
-  fallback?: string,
+  fallback: string | undefined,
 ): FoundComponent | null {
-  const module = checker.getSymbolAtLocation(source);
-  const exported = module && checker.tryGetMemberInModuleExports('default', module);
+  const exported = defaultOf(checker, source);
   if (!exported) return null;
-  const meta = checker.getTypeOfSymbolAtLocation(resolved(tsm, checker, exported), source);
-  let named = meta.getProperty('component');
-  let symbol = named && assigned(tsm, checker, resolved(tsm, checker, exported));
-  // A wrapper the story file declares itself is the story's, not the component's, as the dependency graph reads it.
-  const local = !symbol || symbol.getDeclarations()?.some((declaration) => declaration.getSourceFile() === source);
-  const imported = local && fallback ? importNamed(tsm, checker, source, fallback) : undefined;
-  if (imported) {
-    named = undefined;
-    symbol = imported;
-  }
-  if (!named && !symbol) return null;
+  const outside = (symbol: ts.Symbol | undefined): boolean =>
+    !symbol ||
+    (symbol.getDeclarations() ?? []).some((declaration) => {
+      const file = declaration.getSourceFile();
+      return file === source || file.fileName.split(/[\\/]/).includes('node_modules');
+    });
+  let symbol = assigned(tsm, checker, resolved(tsm, checker, exported));
+  if (outside(symbol)) symbol = fallback ? importNamed(tsm, checker, source, fallback) : undefined;
+  return symbol && !outside(symbol) ? found(checker, source, symbol) : null;
+}
+
+const defaultOf = (checker: ts.TypeChecker, source: ts.SourceFile): ts.Symbol | undefined => {
+  const module = checker.getSymbolAtLocation(source);
+  return module && checker.tryGetMemberInModuleExports('default', module);
+};
+
+function found(checker: ts.TypeChecker, source: ts.SourceFile, symbol: ts.Symbol): FoundComponent | null {
   // The value's own type: a meta typed `Meta` alone would otherwise give a props type of `any`.
-  const type = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(symbol ?? named!, source));
-  const declaration = symbol?.getDeclarations()?.[0];
+  const type = checker.getNonNullableType(checker.getTypeOfSymbolAtLocation(symbol, source));
+  const declaration = symbol.getDeclarations()?.[0];
   for (const part of type.isUnion() ? type.types : [type]) {
     const [call] = part.getCallSignatures();
     const [param] = call?.getParameters() ?? [];
