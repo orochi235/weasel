@@ -39,7 +39,9 @@ const shown = (cursor: ResolvedCursor | null): ResolvedCursor | null =>
  * A sink over `target`. Until `setBase` is called it owns only what it wrote:
  * an override is written and later removed, putting back the cursor it replaced
  * unless other code has written one since, and a cursor some other code put on
- * the element is otherwise left alone.
+ * the element is otherwise left alone. When `element()` starts answering another
+ * element, the one an override was written to is given back what it showed
+ * without it.
  */
 export function createCursorSink(target: CursorSinkTarget): CursorSink {
   type El = { style: { cursor: string } };
@@ -65,6 +67,7 @@ export function createCursorSink(target: CursorSinkTarget): CursorSink {
     // under the native cursor.
     painted?.setOverride(override === null ? null : override.kind === 'painted' ? override : 'none');
     const el = target.element();
+    if (written && written.el !== el) unwrite();
     if (!el) return;
     if (override) {
       const css = cssOf(override);

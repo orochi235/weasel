@@ -83,4 +83,29 @@ describe('createCursorSink', () => {
     sink.setOverride({ kind: 'css', css: '' });
     expect(el.style.cursor).toBe('crosshair');
   });
+
+  it('gives the element an override was on back its cursor when the target element changes', () => {
+    const a = { style: { cursor: 'help' } };
+    const b = { style: { cursor: '' } };
+    let el = a;
+    const sink = createCursorSink({ element: () => el, painted: () => undefined });
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el = b;
+    sink.setOverride(null);
+    expect(a.style.cursor).toBe('help');
+    expect(b.style.cursor).toBe('');
+  });
+
+  it('with a base, leaves the old element on the base and moves the override to the new one', () => {
+    const a = { style: { cursor: '' } };
+    const b = { style: { cursor: '' } };
+    let el = a;
+    const sink = createCursorSink({ element: () => el, painted: () => undefined });
+    sink.setBase({ kind: 'css', css: 'crosshair' });
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    el = b;
+    sink.setOverride({ kind: 'css', css: 'move' });
+    expect(a.style.cursor).toBe('crosshair');
+    expect(b.style.cursor).toBe('move');
+  });
 });
