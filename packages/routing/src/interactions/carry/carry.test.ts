@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addCarrySurface, startCarry } from './carry';
+import { addCarrySurface, startCarry, type CarryStage } from './carry';
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -31,5 +31,20 @@ describe('startCarry', () => {
     startCarry(origin, new PointerEvent('pointerdown', { pointerId: 3, buttons: 1 }), { type: 't', value: 1 }, { onCancel });
     window.dispatchEvent(new Event('blur'));
     expect(onCancel).toHaveBeenCalledWith('blur');
+  });
+
+  it('drops nothing on a release the document never saw, and reports a cancel', () => {
+    const heard = surface();
+    const origin = document.createElement('button');
+    document.body.append(origin);
+    cleanups.push(() => origin.remove());
+    const onEnd = vi.fn();
+    const onCancel = vi.fn();
+    startCarry(origin, new PointerEvent('pointerdown', { pointerId: 3, buttons: 1, clientX: 40, clientY: 40 }), { type: 't', value: 1 }, { onEnd, onCancel });
+    document.dispatchEvent(move(1));
+    document.dispatchEvent(move(0));
+    expect(heard).toEqual(['enter', 'leave']);
+    expect(onEnd).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledWith('missedrelease');
   });
 });

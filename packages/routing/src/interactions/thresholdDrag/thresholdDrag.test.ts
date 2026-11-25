@@ -406,4 +406,16 @@ describe('startThresholdDrag origin', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(onEnd).not.toHaveBeenCalled();
   });
+
+  it('cancels a release it never saw below the threshold rather than reading it as a click', () => {
+    const start = { ...makeStart(), buttons: 1 };
+    const onClick = vi.fn();
+    const onCancel = vi.fn();
+    startThresholdDrag(start as unknown as React.PointerEvent, { onMove: () => {}, onEnd: () => {}, onClick, onCancel });
+    const ev = new Event('pointermove') as PointerEvent;
+    Object.assign(ev, { clientX: 300, clientY: 300, pointerId: 1, buttons: 0 });
+    document.dispatchEvent(ev);
+    expect(onClick).not.toHaveBeenCalled();
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
 });

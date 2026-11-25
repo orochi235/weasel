@@ -212,6 +212,7 @@ export function useDragHandle(
     // No pointer capture: zones are resolved with `elementFromPoint`,
     // which capture would not help, and the source row is free to be removed
     // and re-rendered under the drag.
+    // A release the document never saw was let go somewhere unknown, so the payload drops nowhere.
     live.current = openPointerSession(target, e, {
       onMove: (ev) => {
         if (ghost) { ghost.move(ev); return; }
@@ -241,7 +242,7 @@ export function useDragHandle(
         if (reason === 'aborted' || reason === 'blur') afterRelease(target.ownerDocument, pointerId, dropClickGuard);
         else dropClickGuard();
       },
-    }, { capture: false });
+    }, { capture: false, missedRelease: 'cancel' });
   }, [getPayloadRef, optsRef, kitSettingsRef]);
 
   return { onPointerDown, style: { touchAction: 'none' as const } };

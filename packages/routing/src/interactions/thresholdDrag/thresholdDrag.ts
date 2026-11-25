@@ -24,7 +24,8 @@ export interface ThresholdDragOptions {
   onEnd: (e: PointerEvent) => void;
   /** Released below the threshold — the click the press turned out to be. */
   onClick?: (e: PointerEvent) => void;
-  /** Ended without a release: pointercancel, lost capture, a window blur, Escape during the drag, or `cancel()`. */
+  /** Ended without a release: pointercancel, lost capture, a window blur, Escape during the drag, `cancel()`, or a
+   *  release the document never saw below the threshold. */
   onCancel?: () => void;
 }
 
@@ -81,6 +82,7 @@ export function startThresholdDrag(
   const unlisten = () => keys.removeEventListener('keydown', onKey, true);
   keys.addEventListener('keydown', onKey, true);
 
+  // Below the threshold a release nobody saw is no click: where it came is unknown.
   const session = openPointerSession(origin, e, {
     onMove: (ev) => {
       maybeActivate(ev);
@@ -97,7 +99,7 @@ export function startThresholdDrag(
       releaseLate();
       opts.onCancel?.();
     },
-  }, { capture: !late });
+  }, { capture: !late, missedRelease: () => (activated ? 'end' : 'cancel') });
 
   return {
     isDragging: () => activated,

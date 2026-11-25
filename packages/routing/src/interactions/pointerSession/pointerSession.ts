@@ -41,6 +41,8 @@ export type PointerSessionCancelReason =
   | 'aborted'
   /** The window lost focus, so the release may never come, or come somewhere unseen. */
   | 'blur'
+  /** A move reported no button held, in a session opened with `missedRelease: 'cancel'`. */
+  | 'missedrelease'
   /** A new press arrived on this pointer, so the tracked one had ended. */
   | 'superseded'
   /** Escape was pressed, in a session opened with `escape: true`. */
@@ -67,6 +69,10 @@ export interface PointerSessionOptions {
   escape?: boolean;
   /** A window blur ends the session as canceled, reporting `'blur'`. Default `true`. */
   blur?: boolean;
+  /** What a move reporting no held button, the release the document never saw, ends the session as: `'end'`
+   *  (the default), released at that move's point, or `'cancel'`, reporting `'missedrelease'`, for a caller to
+   *  whom where it was let go matters. A function is asked at that move. */
+  missedRelease?: 'end' | 'cancel' | (() => 'end' | 'cancel');
 }
 
 /** A live drag opened by {@link openPointerSession}. */
@@ -153,7 +159,12 @@ export function openPointerSession(
 
   function onMove(e: PointerEvent) {
     if (!active || !mine(e)) return;
-    if (buttonsReported && isMissedRelease(e)) { end(e); return; }
+    if (buttonsReported && isMissedRelease(e)) {
+      const how = typeof opts.missedRelease === 'function' ? opts.missedRelease() : opts.missedRelease;
+      if (how === 'cancel') abort('missedrelease');
+      else end(e);
+      return;
+    }
     cb.onMove?.(e);
   }
   function onUp(e: PointerEvent) {
