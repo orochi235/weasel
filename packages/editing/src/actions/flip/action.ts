@@ -15,6 +15,7 @@ import { icon } from '../../icons.gen';
 import { FLIP_GROUP } from '../../actionGroups';
 import * as coreOps from '@weasel-js/core/ops';
 import { commitTransform, transformAnswer } from '../lockedWrites';
+import { derivedBoxOwner } from '../derivedBox';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in
@@ -103,7 +104,10 @@ function flipOps(
   }
   let sharedPivot: ReturnType<typeof unionAabb> = null;
   if (pivot === 'union') {
-    sharedPivot = unionAabb([...worlds].map(([id, p]) => boxes.aabb(id, p)));
+    const owner = derivedBoxOwner(scene, selected);
+    sharedPivot = owner
+      ? boxes.aabb(owner, frame.world(owner))
+      : unionAabb([...worlds].map(([id, p]) => boxes.aabb(id, p)));
   } else if (pivot !== 'each') {
     sharedPivot = resolveSpatialReference(pivot, actionReferenceSources(params, pointer, scene, frame, boxes));
     if (sharedPivot === null) return [];
