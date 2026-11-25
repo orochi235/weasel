@@ -3,7 +3,8 @@
  * reload, devtools, tab and window commands, menu accelerators. A binding on
  * one never fires for some users, so kit defaults steer clear of them.
  *
- * `mod` is Cmd on macOS and Ctrl elsewhere, as in a `KeySpec`. The list is
+ * `mod` is Cmd on macOS and Ctrl elsewhere, as in a `KeySpec`; `ctrl` is the Ctrl key on every
+ * platform, so off a Mac it and `mod` are one key. The list is
  * the union across Chrome, Safari, Firefox and Edge on macOS, Windows and
  * Linux, and errs toward listing a chord.
  */
@@ -13,15 +14,17 @@ import { isApplePlatform, type KeySpec } from '@weasel-js/gestures';
 export interface ReservedChord {
   key: string;
   mod?: boolean;
+  /** The Ctrl key itself: beside Cmd on a Mac, the same key as `mod` elsewhere. */
+  ctrl?: boolean;
   alt?: boolean;
   shift?: boolean;
-  /** Taken only off Apple platforms (`'other'`). Absent, taken everywhere. */
-  platform?: 'other';
+  /** Taken only on Apple platforms (`'apple'`) or only off them (`'other'`). Absent, taken everywhere. */
+  platform?: 'apple' | 'other';
   /** Who takes it, for a message. */
   use: string;
 }
 
-const chord = (keys: string, mods: Omit<ReservedChord, 'key' | 'use'>, use: string): ReservedChord[] =>
+const chord = (keys: string | readonly string[], mods: Omit<ReservedChord, 'key' | 'use'>, use: string): ReservedChord[] =>
   [...keys].map((key) => ({ key, ...mods, use }));
 
 /** Every chord the module's header describes, one entry per key. */
@@ -33,6 +36,12 @@ export const BROWSER_RESERVED_CHORDS: readonly ReservedChord[] = [
   ...chord('fevsbthd', { alt: true }, 'menu accelerators and address bar on Windows and Linux'),
   ...chord('ita', { alt: true, shift: true }, 'feedback, toolbar focus and accessibility commands'),
   { key: 'escape', mod: true, platform: 'other', use: 'the Start menu on Windows' },
+  ...chord(['tab', 'pagedown', 'pageup'], { ctrl: true }, 'next and previous tab'),
+  ...chord(['tab'], { ctrl: true, shift: true }, 'previous tab'),
+  ...chord(['tab'], { mod: true, platform: 'apple' }, 'the app switcher on macOS'),
+  ...chord(['tab'], { alt: true, platform: 'other' }, 'the window switcher on Windows and Linux'),
+  ...chord(['arrowleft', 'arrowright'], { mod: true, alt: true, platform: 'apple' }, 'next and previous tab on macOS'),
+  ...chord('fq', { mod: true, ctrl: true, platform: 'apple' }, 'full screen and lock screen on macOS'),
 ];
 
 const lower = (k: string | readonly string[]): string[] => (typeof k === 'string' ? [k] : [...k]).map((x) => x.toLowerCase());
@@ -56,16 +65,18 @@ const stronger = (a: Policy, b: Policy): Policy =>
 
 /** The first reserved chord `spec` can fire on, on an Apple platform or not (default: this one), or
  *  `null` when none. `mod` and the key it stands for there (Meta on Apple, Ctrl elsewhere) are one
- *  key, and the other of Ctrl and Meta must be free to be released, as in `matchModifiers`. */
+ *  key, as in `matchModifiers`. Off Apple, Meta must be free to be released. */
 export function browserReservedChord(spec: KeySpec, apple = isApplePlatform()): ReservedChord | null {
   const keys = keysOf(spec);
   const m = spec.mods ?? {};
   const mod = stronger(m.mod, apple ? m.meta : m.ctrl);
-  const other = apple ? m.ctrl : m.meta;
-  if (!allows(other, false)) return null;
+  if (!apple && !allows(m.meta, false)) return null;
   for (const c of BROWSER_RESERVED_CHORDS) {
-    if (!keys.includes(c.key) || (c.platform === 'other' && apple)) continue;
-    if (allows(mod, c.mod === true) && allows(m.alt, c.alt === true) && allows(m.shift, c.shift === true)) return c;
+    if (!keys.includes(c.key) || c.platform === (apple ? 'other' : 'apple')) continue;
+    const mods = apple
+      ? allows(mod, c.mod === true) && allows(m.ctrl, c.ctrl === true)
+      : allows(mod, c.mod === true || c.ctrl === true);
+    if (mods && allows(m.alt, c.alt === true) && allows(m.shift, c.shift === true)) return c;
   }
   return null;
 }
