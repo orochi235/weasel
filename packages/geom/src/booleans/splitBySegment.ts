@@ -1,8 +1,8 @@
 import type { Path, PathFillRule } from '../path';
 import type { Point } from '../paths/cubicMath';
 import { pathUnion } from './ops';
-import { type Contour, type Station, evalSeg, signedArea, sideCoeffs, signChanges } from './contourSegments';
-import { type Crossing, cutPosition, findCrossings } from './cutCrossings';
+import { type Contour, type Station, signedArea } from './contourSegments';
+import { type Crossing, cutStations, findCrossings } from './cutCrossings';
 import {
   distinctPoints, cutBetween, splitLoops, openClosedCut, interiorLoops, cutOutLoops, polylinesCross,
 } from './cutPolyline';
@@ -186,40 +186,15 @@ export function snipPathByPolyline(path: Path, cut: readonly Point[]): Path[] | 
   return pieces;
 }
 
-/**
- * Where the cut splits one subpath, in order along it. Detections at one point
- * pair off: two there are the path touching the cut and leaving on the side it
- * came from.
- */
+/** Where the cut splits one subpath, in order along it. */
 function snipStations(sub: Subpath, cut: Point[]): Station[] {
-  const raw: Station[] = [];
-  sub.segs.forEach((seg, si) => {
-    for (let k = 0; k + 1 < cut.length; k++) {
-      const a = cut[k];
-      const d = { x: cut[k + 1].x - a.x, y: cut[k + 1].y - a.y };
-      for (const c of signChanges(sideCoeffs(seg, a, d), true)) {
-        const pt = evalSeg(seg, c.t);
-        if (cutPosition(cut, k, pt) !== null) raw.push({ seg: si, t: c.t, pt });
-      }
-    }
-  });
-  raw.sort((x, y) => x.seg - y.seg || x.t - y.t);
-
   const tol = extentOf([sub.segs]) * 1e-9;
   const same = (p: Point, q: Point) => Math.abs(p.x - q.x) <= tol && Math.abs(p.y - q.y) <= tol;
-  const groups: Station[][] = [];
-  for (const st of raw) {
-    const g = groups[groups.length - 1];
-    if (g && same(g[0].pt, st.pt)) g.push(st); else groups.push([st]);
-  }
-  if (sub.closed && groups.length > 1 && same(groups[0][0].pt, groups[groups.length - 1][0].pt)) {
-    groups[0].push(...groups.pop()!);
-  }
   const first = sub.segs[0][0];
   const lastSeg = sub.segs[sub.segs.length - 1];
   const end = lastSeg[lastSeg.length - 1];
-  return groups
-    .filter((g) => g.length % 2 === 1)
-    .map((g) => g[0])
-    .filter((st) => sub.closed || (!same(st.pt, first) && !same(st.pt, end)));
+  return cutStations(sub.segs, sub.closed, cut)
+    .filter((st) => sub.closed || (!same(st.pt, first) && !same(st.pt, end)))
+    .sort((x, y) => x.seg - y.seg || x.t - y.t)
+    .map(({ seg, t, pt }) => ({ seg, t, pt }));
 }
