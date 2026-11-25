@@ -224,7 +224,14 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return null;
   }
 
-  override mount(): () => void { const leave = super.mount(); return () => { dropKeysOf(this); leave(); }; }
+  override mount(): () => void {
+    const leave = super.mount();
+    return () => {
+      dropKeysOf(this);
+      if (this.opHost) this.lastOperation.hostLeft(this.opHost);
+      leave();
+    };
+  }
 
   override activate(opts?: { keys?: boolean }): void {
     if (opts?.keys !== false) takeKeys(this);

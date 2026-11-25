@@ -9,6 +9,7 @@ import type { ActionsRegistry } from './registry';
 import { lastOperationOf } from './useLastOperation';
 import { dynamicActionId } from './actionIds';
 import { buildRuleCtx, type RuleCtx } from '../../eligibility';
+import { InputScope } from './inputScope';
 
 /** The document the test action edits: a width, the selection, and the selection each run started from. */
 interface Doc { width: number; selected: string[]; ranOn: string[][] }
@@ -68,6 +69,29 @@ function setup() {
 }
 
 describe('the last operation', () => {
+  it('ends when the input scope it ran in unmounts', () => {
+    const doc: Doc = { width: 10, selected: [], ranOn: [] };
+    const history = createHistory(doc);
+    let root: ActionsRegistry | null = null;
+    let scoped: ActionsRegistry | null = null;
+    let deps: DepRegistry | null = null;
+    function Root() { root = useActionsRegistry(); return null; }
+    function Scoped() { scoped = useActionsRegistry(); deps = useDepRegistry(); return null; }
+    const tree = (open: boolean) => (
+      <DepRegistryProvider><ActionsProvider><Root />{open ? <InputScope><Scoped /></InputScope> : null}</ActionsProvider></DepRegistryProvider>
+    );
+    const view = render(tree(true));
+    act(() => {
+      deps!.register('history' as DepName, () => history as never);
+      root!.register(widen(doc, history));
+    });
+    act(() => { scoped!.trigger(dynamicActionId('widen'), { by: 3 }); });
+    const store = lastOperationOf(root)!;
+    expect(store.get()).toMatchObject({ id: 'widen' });
+    view.rerender(tree(false));
+    expect(store.get()).toBeNull();
+  });
+
   it('holds a run of an action with params that committed one entry, at the values it used', () => {
     const { registry, store } = setup();
     expect(store.get()).toBeNull();
