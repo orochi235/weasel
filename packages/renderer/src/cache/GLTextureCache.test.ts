@@ -168,4 +168,18 @@ describe('GLTextureCache', () => {
       warn.mockRestore();
     }
   });
+
+  it('replaces() says a registered upload rewrites a font atlas made from the same source', () => {
+    const { gl } = createGLRecorder();
+    const cache = new GLTextureCache(webglDevice(gl));
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      cache.upload('shared', fakeImage);
+      expect(cache.replaces('shared', fakeImage)).toBe(true);
+      cache.uploadRegistered('shared', fakeImage);
+      expect(cache.replaces('shared', fakeImage)).toBe(false);
+    } finally {
+      warn.mockRestore();
+    }
+  });
 });
