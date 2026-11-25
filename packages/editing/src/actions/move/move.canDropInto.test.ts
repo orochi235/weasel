@@ -90,4 +90,26 @@ describe('moveAction — canDropInto', () => {
     drag(scene, { layout: { getLayout: (id: NodeId) => (id === home ? keeps : null) }, canDropInto: refuseInner });
     expect(scene.get(A)!.parent).toBe(OUTER);
   });
+
+  it('is asked only about the dragged roots, not what rides inside one', () => {
+    const scene = makeScene(asNodeId('home'));
+    const asked: string[][] = [];
+    const groupsOnly = (_parent: string, ids: readonly string[]) => {
+      asked.push([...ids]);
+      return ids.every((id) => scene.get(asNodeId(id))!.kind === 'group');
+    };
+    const base = {
+      world: { x: 5, y: 5 }, modifiers: MODS,
+      deps: { operands: { get: () => [A, asNodeId('home')] }, scene, nodeAtPoint: () => INNER, canDropInto: groupsOnly },
+    };
+    const invoker = moveAction.invoker!;
+    if (invoker.timing !== 'ongoing') throw new Error('expected ongoing');
+    const handle = invoker.start(base as unknown as InvocationCtx, { params: { reparentOnDrop: 'top' } } as BindingOptions);
+    const d = { start: { x: 5, y: 5 }, current: { x: 200, y: 200 }, delta: { x: 195, y: 195 } };
+    const at = { ...base, world: d.current, drag: d } as unknown as InvocationCtx;
+    handle.onMove!(at);
+    handle.onEnd!(at, 'commit');
+    expect(scene.get(asNodeId('home'))!.parent).toBe(INNER);
+    expect(asked.every((ids) => !ids.includes(A))).toBe(true);
+  });
 });
