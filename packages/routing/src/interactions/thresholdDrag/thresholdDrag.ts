@@ -46,27 +46,12 @@ export function startThresholdDrag(
   let activated = false;
   const origin = opts.origin ?? (e.currentTarget as Element);
   const late = opts.captureAt === 'threshold';
-  // The session releases only a capture it took itself, so one taken at the threshold is released here.
-  const releaseLate = () => {
-    if (!late || !activated) return;
-    try {
-      origin.releasePointerCapture?.(e.pointerId);
-    } catch {
-      /* already gone */
-    }
-  };
 
   const maybeActivate = (ev: PointerEvent) => {
     if (activated) return;
     if (!pastDragThreshold(start, ev, opts.threshold)) return;
     activated = true;
-    if (late) {
-      try {
-        origin.setPointerCapture?.(ev.pointerId);
-      } catch {
-        /* a pointer already gone: nothing to retarget */
-      }
-    }
+    if (late) session.capture();
     opts.onStart?.(ev);
   };
 
@@ -90,13 +75,11 @@ export function startThresholdDrag(
     },
     onEnd: (ev) => {
       unlisten();
-      releaseLate();
       if (activated) opts.onEnd(ev);
       else opts.onClick?.(ev);
     },
     onCancel: () => {
       unlisten();
-      releaseLate();
       opts.onCancel?.();
     },
   }, { capture: !late, missedRelease: () => (activated ? 'end' : 'cancel') });
