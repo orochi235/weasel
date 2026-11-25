@@ -5,7 +5,7 @@
  */
 import { itemsFromClipboardData, itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
 import { isEditableTarget } from '../../keyHelpers';
-import type { DispatchCore } from '../dispatchCore';
+import { eventTaken, takeEvent, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { dropPreview } from './dropPreview';
 import { inModalOver } from './modal';
@@ -24,12 +24,8 @@ export function ingestInput(core: DispatchCore): {
   const { canvas, routeAt, toWorld, dispatch } = core;
   const preview = dropPreview();
 
-  // Attached to both dragover and dragenter: cancelling dragenter (WHATWG)
-  // guarantees the element stays the active drop target and shows the copy
-  // cursor on entry rather than waiting for the first dragover tick.
-  const onDragOver = (e: DragEvent) => {
-    const dt = e.dataTransfer;
-    if (!dt) { preview.end(); return; }
+  // Routes to the point, so the routed view is the one under the drag after.
+  const resolveDrag = (e: DragEvent, dt: DataTransfer) => {
     routeAt(null, e.clientX, e.clientY);
     const w = toWorld(e.clientX, e.clientY);
     const event: Extract<InputEvent, { kind: 'drop' }> = {
@@ -38,11 +34,22 @@ export function ingestInput(core: DispatchCore): {
       altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
     };
     const ctx = core.ctxNow();
-    const winner = core.dispatcherNow().resolveOnly(event, ctx);
+    return { event, winner: core.dispatcherNow().resolveOnly(event, ctx), ctx };
+  };
+
+  // Attached to both dragover and dragenter: cancelling dragenter (WHATWG)
+  // guarantees the element stays the active drop target and shows the copy
+  // cursor on entry rather than waiting for the first dragover tick.
+  const onDragOver = (e: DragEvent) => {
+    const dt = e.dataTransfer;
+    // A surface nested in this one took the drag; it is the drop target, not this one.
+    if (!dt || eventTaken(e)) { canvas?.classList.remove(DROPOVER_CLASS); preview.end(); return; }
+    const { event, winner, ctx } = resolveDrag(e, dt);
     canvas?.classList.toggle(DROPOVER_CLASS, winner !== null);
     // Left alone, a drag no binding would take stays the page's: no copy
     // cursor, and no `drop` event here to swallow.
     if (!winner) { preview.end(); return; }
+    takeEvent(e);
     preview.show(event, winner, ctx);
     e.preventDefault();
     dt.dropEffect = 'copy';
@@ -58,14 +65,15 @@ export function ingestInput(core: DispatchCore): {
   // No stopPropagation: handled-ness is only known after the async
   // materialization microtask, so a conditional stop (wheel-style) is
   // impossible; an unconditional one would swallow drops the kit doesn't
-  // dispatch. Callers that need exclusivity should gate on the action result.
+  // dispatch. A surface around this one leaves a drop taken here instead.
   const onDrop = (e: DragEvent) => {
     canvas?.classList.remove(DROPOVER_CLASS);
     preview.end();
     const dt = e.dataTransfer;
-    if (!dt) return;
+    if (!dt || eventTaken(e)) return;
     e.preventDefault();
-    routeAt(null, e.clientX, e.clientY);
+    // Which surface owns the drop is settled now, on the item types, as for dragover.
+    if (resolveDrag(e, dt).winner) takeEvent(e);
     const dropView = core.routedView();
     const w = toWorld(e.clientX, e.clientY);
     // Real modifiers forwarded (Option-drag is a copy-drag on macOS); the
