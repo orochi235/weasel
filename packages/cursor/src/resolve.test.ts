@@ -34,6 +34,12 @@ describe('cursorCss', () => {
 });
 
 describe('resolveCursor', () => {
+  it('throws for a fallback no cursor value holds on every tier', () => {
+    expect(() => resolveCursor({ glyph: 'brush', size: 100, fallback: 'a;b' })).toThrow(RangeError);
+    expect(() => resolveCursor({ glyph: 'brush', size: 200, fallback: 'a;b' })).toThrow(RangeError);
+    expect(() => resolveCursor({ glyph: 'brush', worldRadius: 5, fallback: 'a;b' })).toThrow(RangeError);
+  });
+
   it('reads a non-finite angle as none, for the painted tier as for the baked one', () => {
     expect(resolveCursor({ glyph: 'brush', worldRadius: 4, angle: Number.NaN })).toMatchObject({ angle: 0 });
   });
