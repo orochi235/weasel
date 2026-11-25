@@ -341,4 +341,31 @@ describe('useHandleDrag — callbacks from a later render', () => {
       target.remove();
     }
   });
+
+  it('cancels on a window blur, so a release in another app is not committed', () => {
+    const onEnd = vi.fn();
+    const onCancel = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd, onCancel }));
+    const target = mount();
+    result.current.onPointerDown(press(target, 10, 10));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 20, clientY: 10, buttons: 1 }));
+    window.dispatchEvent(new Event('blur'));
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 90, clientY: 90, buttons: 0 }));
+    expect(onCancel).toHaveBeenCalledWith('blur');
+    expect(onEnd).not.toHaveBeenCalled();
+  });
+
+  it('follows a scroll during the drag, so a still pointer reports a point that moved with the page', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    document.body.appendChild(scroller);
+    const target = mount();
+    scroller.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 40 });
+    scroller.remove();
+  });
 });

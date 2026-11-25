@@ -253,4 +253,33 @@ describe('openPointerSession', () => {
     expect(onCancel).not.toHaveBeenCalled();
     expect(s.active).toBe(true);
   });
+
+  it('cancels on a window blur, reporting why, unless opened with blur: false', () => {
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    const s = openPointerSession(el(), down(1, 1), { onCancel, onEnd });
+    window.dispatchEvent(new Event('blur'));
+    expect(onCancel).toHaveBeenCalledWith('blur');
+    expect(s.active).toBe(false);
+
+    const kept = openPointerSession(el(), down(2, 1), { onCancel }, { blur: false });
+    window.dispatchEvent(new Event('blur'));
+    expect(kept.active).toBe(true);
+    kept.cancel();
+  });
+
+  it('cancels on a missed release when asked to, reporting why', () => {
+    const onCancel = vi.fn();
+    const onEnd = vi.fn();
+    openPointerSession(el(), down(1, 1), { onCancel, onEnd }, { missedRelease: 'cancel' });
+    document.dispatchEvent(move(1, 0, 5, 5));
+    expect(onCancel).toHaveBeenCalledWith('missedrelease');
+    expect(onEnd).not.toHaveBeenCalled();
+
+    let how: 'end' | 'cancel' = 'cancel';
+    openPointerSession(el(), down(2, 1), { onCancel, onEnd }, { missedRelease: () => how });
+    how = 'end';
+    document.dispatchEvent(move(2, 0, 5, 5));
+    expect(onEnd).toHaveBeenCalledTimes(1);
+  });
 });

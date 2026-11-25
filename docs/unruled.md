@@ -4204,3 +4204,12 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): `createWarnOnce` throws a `RangeError` for a `cap` that is not a positive integer,
   `Infinity` included, rather than clamp it: `NaN` never forgot a message and `0` warned every time. A cap meaning
   "never forget" is the alternative left open.
+## Audit round eighty-five (2026-11-24): routing's interactions
+
+- 2026-11-24 (the fixer's call): a release the document never saw (a move reporting no button held) cancels a carry,
+  a `useDragHandle` drag, and a `startThresholdDrag` press still below its threshold, reporting `'missedrelease'`,
+  since where it was let go is unknown; a `useHandleDrag` drag, a threshold drag past its threshold, and the dispatcher's
+  drags still end there, released at that move. Dropping or clicking at the move's point, as before, was the
+  alternative. `openPointerSession`'s `missedRelease` option picks either.
+- 2026-11-24 (the fixer's call): every `openPointerSession` cancels on a window blur, reporting `'blur'`, unless
+  opened with `blur: false`. Leaving blur to each caller, as only carry and the dispatcher did, was the alternative.

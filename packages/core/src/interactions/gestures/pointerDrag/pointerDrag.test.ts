@@ -548,4 +548,27 @@ describe('pointerDrag — abandoned render', () => {
     document.body.removeChild(source);
     document.body.removeChild(zoneEl);
   });
+
+  it('drops nothing on a release the document never saw', () => {
+    const onDrop = vi.fn();
+    const { result: zone } = renderHook(() => useDropZone<HTMLDivElement>({ accepts: () => true, onDrop }));
+    const el = document.createElement('div');
+    document.body.appendChild(el);
+    zone.current(el);
+    const fromPoint = vi.spyOn(document, 'elementFromPoint').mockReturnValue(el);
+    const { result: handle } = renderHook(() => useDragHandle(() => ({ kind: 'item', ids: ['x'] })));
+    const source = document.createElement('div');
+    document.body.appendChild(source);
+    handle.current.onPointerDown({
+      pointerType: 'mouse', button: 0, buttons: 1, pointerId: 1, clientX: 0, clientY: 0,
+      currentTarget: source, target: source,
+    } as unknown as React.PointerEvent<HTMLElement>);
+    firePointer('pointermove', { clientX: 30, clientY: 0, buttons: 1 });
+    firePointer('pointermove', { clientX: 40, clientY: 0, buttons: 0 });
+    expect(onDrop).not.toHaveBeenCalled();
+    fromPoint.mockRestore();
+    zone.current(null);
+    source.remove();
+    el.remove();
+  });
 });

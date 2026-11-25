@@ -174,6 +174,24 @@ function indicesOf(items: readonly ReorderItem[], ids: readonly string[]): numbe
 }
 
 /**
+ * Places the ghost of the row pressed by `e` so the point grabbed stays under the pointer. The handler may sit on a
+ * handle inside the row rather than the row itself, so the row is the container's child holding it.
+ */
+function ghostPlacer(
+  container: HTMLElement,
+  rows: Pick<UseReorderDragListOptions, 'rowSelector' | 'groupSelector'>,
+  e: ReactPointerEvent,
+  ids: () => string[],
+): (ev: { clientX: number; clientY: number }) => ReorderGhost {
+  const pressed = e.currentTarget as Element;
+  const rowEl = rowElements(container, rows).find((child) => child.contains(pressed)) ?? pressed;
+  const row = rowEl.getBoundingClientRect();
+  // eslint-disable-next-line no-restricted-syntax -- the ghost is placed at a client point, which DragGhost maps into its seat.
+  const grab = { x: e.clientX - row.left, y: e.clientY - row.top };
+  return (ev) => ({ ids: ids(), left: ev.clientX - grab.x, top: ev.clientY - grab.y, width: row.width });
+}
+
+/**
  * Drag-to-reorder for a list of rows, a column by default or a row with `axis: 'x'`. Dragging a row that is part of
  * the current selection drags the whole selection; dragging any other row
  * drags just that row. Locked rows can neither be dragged nor crossed by a
@@ -234,19 +252,7 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       const { items } = optsRef.current;
       return isNoopDrop(indicesOf(items, draggedIds), t, items.length) ? null : t;
     };
-    // Where in the grabbed row the pointer went down, so the ghost keeps that point under it. The handler may sit on
-    // a handle inside the row rather than the row itself, so the row is the container's child holding it.
-    const pressed = e.currentTarget as Element;
-    const rowEl = rowElements(container, optsRef.current).find((child) => child.contains(pressed)) ?? pressed;
-    const row = rowEl.getBoundingClientRect();
-    // eslint-disable-next-line no-restricted-syntax -- the ghost is placed at a client point, which DragGhost maps into its seat.
-    const grab = { x: e.clientX - row.left, y: e.clientY - row.top };
-    const ghostAt = (ev: { clientX: number; clientY: number }): ReorderGhost => ({
-      ids: draggedIds,
-      left: ev.clientX - grab.x,
-      top: ev.clientY - grab.y,
-      width: row.width,
-    });
+    const ghostAt = ghostPlacer(container, optsRef.current, e, () => draggedIds);
 
     dragRef.current = startThresholdDrag(e, {
       origin: container,
@@ -255,6 +261,8 @@ export function useReorderDragList(opts: UseReorderDragListOptions): ReorderDrag
       threshold: optsRef.current.items[index]?.locked
         ? Number.POSITIVE_INFINITY
         : optsRef.current.threshold,
+      // A press reports its row whether or not the document saw the release.
+      missedRelease: 'click',
       onStart: (ev) => {
         draggedIds = draggedIdsFor(optsRef.current.items, optsRef.current.selectedIds, id, index);
         setState({ draggedIds, targetIndex: liveTarget(ev), ghost: ghostAt(ev) });

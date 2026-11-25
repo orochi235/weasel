@@ -48,6 +48,17 @@ export interface UseHandleDragReturn<T extends HTMLElement | SVGElement> {
   onPointerDown: (e: React.PointerEvent<T>) => void;
 }
 
+/** How far `el`'s scrolling ancestors have scrolled, the document's own scroller among them. */
+function scrollOf(el: Element): { x: number; y: number } {
+  let x = 0;
+  let y = 0;
+  for (let p = el.parentElement; p; p = p.parentElement) {
+    x += p.scrollLeft;
+    y += p.scrollTop;
+  }
+  return { x, y };
+}
+
 function defaultRectEl(target: HTMLElement | SVGElement): Element {
   if (target instanceof SVGElement && target.ownerSVGElement) {
     return target.ownerSVGElement;
@@ -62,7 +73,8 @@ function defaultRectEl(target: HTMLElement | SVGElement): Element {
  * (defaulting to the handle's owning `<svg>`).
  *
  * The rect is measured once, at the press: a handle that moves under its own
- * drag must not shift the space its coordinates are reported in.
+ * drag must not shift the space its coordinates are reported in. A scroll
+ * during the drag still moves it, by what its ancestors scrolled.
  */
 export function useHandleDrag<T extends HTMLElement | SVGElement>(
   opts: UseHandleDragOptions<T>,
@@ -85,8 +97,11 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       const rectEl = getRect ? getRect(target) : defaultRectEl(target);
       // Measured once: by default the box is the handle's own, which the drag moves.
       const box = layoutBoxOf(rectEl);
+      const scrolled = scrollOf(rectEl);
       const localOf = (clientX: number, clientY: number): HandleDragPoint => {
-        const [x, y] = clientToCanvasRect(box, clientX, clientY);
+        const now = scrollOf(rectEl);
+        const at = { ...box, left: box.left - (now.x - scrolled.x), top: box.top - (now.y - scrolled.y) };
+        const [x, y] = clientToCanvasRect(at, clientX, clientY);
         return { x, y };
       };
 

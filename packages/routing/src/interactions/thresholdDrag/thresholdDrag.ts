@@ -24,8 +24,13 @@ export interface ThresholdDragOptions {
   onEnd: (e: PointerEvent) => void;
   /** Released below the threshold — the click the press turned out to be. */
   onClick?: (e: PointerEvent) => void;
-  /** Ended without a release: pointercancel, lost capture, Escape during the drag, or `cancel()`. */
+  /** Ended without a release: pointercancel, lost capture, a window blur, Escape during the drag, `cancel()`, or a
+   *  release the document never saw below the threshold, unless `missedRelease` is `'click'`. */
   onCancel?: () => void;
+  /** What a release the document never saw (a move reporting no held button) means below the threshold: `'cancel'`
+   *  (the default), since where it was let go is unknown, or `'click'`, reported at that move, for a caller whose
+   *  click does not depend on where the press was let go. Past the threshold it always ends the drag. */
+  missedRelease?: 'cancel' | 'click';
 }
 
 /** Handle returned by `startThresholdDrag` exposing live gesture state. */
@@ -45,27 +50,12 @@ export function startThresholdDrag(
   let activated = false;
   const origin = opts.origin ?? (e.currentTarget as Element);
   const late = opts.captureAt === 'threshold';
-  // The session releases only a capture it took itself, so one taken at the threshold is released here.
-  const releaseLate = () => {
-    if (!late || !activated) return;
-    try {
-      origin.releasePointerCapture?.(e.pointerId);
-    } catch {
-      /* already gone */
-    }
-  };
 
   const maybeActivate = (ev: PointerEvent) => {
     if (activated) return;
     if (!pastDragThreshold(start, ev, opts.threshold)) return;
     activated = true;
-    if (late) {
-      try {
-        origin.setPointerCapture?.(ev.pointerId);
-      } catch {
-        /* a pointer already gone: nothing to retarget */
-      }
-    }
+    if (late) session.capture();
     opts.onStart?.(ev);
   };
 
@@ -81,6 +71,7 @@ export function startThresholdDrag(
   const unlisten = () => keys.removeEventListener('keydown', onKey, true);
   keys.addEventListener('keydown', onKey, true);
 
+  // Below the threshold a release nobody saw is no click: where it came is unknown.
   const session = openPointerSession(origin, e, {
     onMove: (ev) => {
       maybeActivate(ev);
@@ -88,16 +79,14 @@ export function startThresholdDrag(
     },
     onEnd: (ev) => {
       unlisten();
-      releaseLate();
       if (activated) opts.onEnd(ev);
       else opts.onClick?.(ev);
     },
     onCancel: () => {
       unlisten();
-      releaseLate();
       opts.onCancel?.();
     },
-  }, { capture: !late });
+  }, { capture: !late, missedRelease: () => (activated || opts.missedRelease === 'click' ? 'end' : 'cancel') });
 
   return {
     isDragging: () => activated,
