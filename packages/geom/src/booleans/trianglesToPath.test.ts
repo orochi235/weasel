@@ -7,6 +7,21 @@ import type { PolygonPath } from '../path';
 import { trianglesToPath } from './trianglesToPath';
 
 describe('trianglesToPath', () => {
+  it('leaves a double-precision mesh far from the origin as it is near it', () => {
+    // A triangle and a sliver below it, half a unit off its bottom edge.
+    const mesh = [0, 0, 3, 0, 0, 3, 1.5, -0.5, 1.6, -2, 1.4, -2];
+    const at = (x0: number) => trianglesToPath(mesh.map((v, i) => (i % 2 === 0 ? v + x0 : v)), [0, 1, 2, 3, 4, 5]);
+    expect(Math.abs(pathSignedArea(at(0)))).toBeCloseTo(4.65, 6);
+    expect(Math.abs(pathSignedArea(at(1e6 + 1 / 3)))).toBeCloseTo(4.65, 3);
+  });
+
+  it('keeps a small double-precision mesh far from the origin', () => {
+    const mesh = [0, 0, 0.003, 0, 0, 0.003];
+    const x0 = 1e6 + 1 / 3;
+    const out = trianglesToPath(mesh.map((v, i) => (i % 2 === 0 ? v + x0 : v)), [0, 1, 2]);
+    expect(Math.abs(pathSignedArea(out))).toBeCloseTo(4.5e-6, 8);
+  });
+
   it('joins triangles sharing an edge into one contour', () => {
     const out = trianglesToPath(new Float32Array([0, 0, 10, 0, 10, 10, 0, 10]), new Uint32Array([0, 1, 2, 0, 2, 3]));
     expect(Math.abs(pathSignedArea(out))).toBeCloseTo(100, 6);

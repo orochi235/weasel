@@ -160,10 +160,12 @@ export function orientBoundaries(contours: Contour[], fillRule: PathFillRule): C
       const len = Math.hypot(s[s.length - 1].x - s[0].x, s[s.length - 1].y - s[0].y);
       if (len > best) { best = len; probe = s; }
     }
-    const p = evalSeg(probe, 0.5);
-    let tan = derivSeg(probe, 0.5);
-    const tl = Math.hypot(tan.x, tan.y);
-    if (tl === 0) continue;
+    // A cubic's one cusp can sit at t = 0.5, where the tangent vanishes.
+    const t = [0.5, 0.25, 0.75].find((u) => speedAt(probe, u) > best * 1e-6);
+    if (t === undefined) continue;
+    const p = evalSeg(probe, t);
+    let tan = derivSeg(probe, t);
+    const tl = speedAt(probe, t);
     tan = { x: tan.x / tl, y: tan.y / tl };
     const left = filled({ x: p.x - tan.y * eps, y: p.y + tan.x * eps });
     const right = filled({ x: p.x + tan.y * eps, y: p.y - tan.x * eps });
@@ -172,3 +174,8 @@ export function orientBoundaries(contours: Contour[], fillRule: PathFillRule): C
   }
   return out;
 }
+
+const speedAt = (s: Contour[number], t: number): number => {
+  const d = derivSeg(s, t);
+  return Math.hypot(d.x, d.y);
+};

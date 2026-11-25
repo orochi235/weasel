@@ -4154,3 +4154,8 @@ Calls the lanes made without a ruling:
 - 2026-11-24 (the fixer's call): a lens comparing in Split shows one pair at its first DPR, as Difference does, so both
   sides of the seam are at the same DPR; its other DPRs show again in Swap or with no comparison. A seam inside each
   DPR's cell, with a seam line and grab strip per cell, was the alternative.
+## Audit round eighty-three (2026-11-24): path booleans
+
+- 2026-11-24 (the fixer's call): when `polygon-clipping` throws on a boolean's inputs, the retry grid is never coarser
+  than 2^-10 of the inputs' extent, and the boolean throws when no grid that fine succeeds. Snapping on, so a small
+  shape far from the origin comes back collapsed with no error, was the alternative.

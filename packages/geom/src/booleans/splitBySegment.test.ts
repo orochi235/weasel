@@ -521,6 +521,18 @@ describe('splitPathByPolyline', () => {
   });
 });
 
+describe('splitPathByPolyline at a joint of the cut', () => {
+  it('cuts the whole length of a cut whose joint only touches a hole', () => {
+    const ring = new PathBuilder()
+      .moveTo(0, 0).lineTo(4, 0).lineTo(4, 4).lineTo(0, 4).close()
+      .moveTo(1, 1).lineTo(1, 3).lineTo(3, 3).lineTo(3, 1).close()
+      .build();
+    const pieces = splitPathByPolyline(ring, [{ x: -1, y: 0.5 }, { x: 2, y: 1 }, { x: 5, y: 0.5 }])!;
+    expect(pieces).toHaveLength(2);
+    expect(pieces.reduce((s, p) => s + area(p), 0)).toBeCloseTo(12, 3);
+  });
+});
+
 describe('snipPathByPolyline', () => {
   const line = new PathBuilder().moveTo(0, 50).lineTo(100, 50).build();
 
@@ -624,6 +636,23 @@ describe('snipPathByPolyline', () => {
     expect(rest[0].closed).toBe(true);
   });
 
+  it('cuts nothing where the path only touches a joint of the cut', () => {
+    const across = new PathBuilder().moveTo(-2, 0).lineTo(2, 0).build();
+    expect(snipPathByPolyline(across, [{ x: -1, y: 1 }, { x: 0, y: 0 }, { x: 1, y: 1 }])).toBeNull();
+    const through = new PathBuilder().moveTo(0, -2).lineTo(0, 2).build();
+    expect(snipPathByPolyline(through, [{ x: -1, y: 1 }, { x: 0, y: 0 }, { x: 1, y: 1 }])).toHaveLength(2);
+  });
+
+  it('cuts where the path crosses the cut at a joint while only touching one segment\'s line', () => {
+    const bent = new PathBuilder().moveTo(-1, -1).lineTo(0, 0).lineTo(-1, 1).build();
+    expect(snipPathByPolyline(bent, [{ x: -2, y: 0 }, { x: 0, y: 0 }, { x: 0, y: 2 }])).toHaveLength(2);
+  });
+
+  it('cuts nothing where the path runs along the cut and returns to the side it came from', () => {
+    const p = new PathBuilder().moveTo(0, -1).lineTo(0, 0).lineTo(2, 0).lineTo(2, -1).build();
+    expect(snipPathByPolyline(p, [{ x: -1, y: 0 }, { x: 3, y: 0 }])).toBeNull();
+  });
+
   it('keeps the fill rule', () => {
     const p = new PathBuilder().setFillRule('evenodd').moveTo(0, 50).lineTo(100, 50).build();
     const pieces = snipPathByPolyline(p, [{ x: 40, y: 0 }, { x: 40, y: 100 }])!;
@@ -650,5 +679,12 @@ describe('tolerances scale with the path', () => {
   it.each([1e-7, 1e-3, 1, 1e6])('snips the outline of a square %f across at both crossings', (k) => {
     const runs = snipPathByPolyline(square(k), [{ x: 0.5 * k, y: -k }, { x: 0.5 * k, y: 2 * k }]);
     expect(runs).toHaveLength(2);
+  });
+});
+
+describe('splitPathBySegment on a cusp', () => {
+  it('halves a teardrop whose cubic has its cusp at the middle', () => {
+    const drop = new PathBuilder().moveTo(0, 0).curveTo(1, 1, 0, 1, 1, 0).close().build();
+    expect(splitPathBySegment(drop, { x: 0.5, y: -1 }, { x: 0.5, y: 2 })).toHaveLength(2);
   });
 });

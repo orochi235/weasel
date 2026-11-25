@@ -8,8 +8,16 @@
 import type { Ring } from './adapter';
 
 /** How near an edge a vertex counts as on it: eight float32 ulps of the
- *  largest coordinate. */
+ *  largest coordinate, or far fewer when the mesh is held in doubles. */
 const ON_EDGE = 2 ** -20;
+const ON_EDGE_64 = 2 ** -40;
+
+/** Whether every coordinate is a float32 value, and so may carry float32's rounding. */
+export function heldAsFloat32(values: ArrayLike<number>): boolean {
+  if (values instanceof Float32Array) return true;
+  for (let i = 0; i < values.length; i++) if (Math.fround(values[i]) !== values[i]) return false;
+  return true;
+}
 
 /** Vertices a tree node holds before it splits. */
 const LEAF = 8;
@@ -60,7 +68,7 @@ export function junctionRings(vertices: ArrayLike<number>, triangles: readonly n
     minX = Math.min(minX, x); minY = Math.min(minY, y);
     maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
   }
-  const eps = scale * ON_EDGE;
+  const eps = scale * (heldAsFloat32(vertices) ? ON_EDGE : ON_EDGE_64);
   const root = build(vertices, [...new Set(triangles)], minX, minY, maxX, maxY, 0);
 
   const onEdge = (p: number, q: number): number[] => {
