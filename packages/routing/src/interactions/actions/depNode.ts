@@ -113,7 +113,7 @@ export function depNodeOf(registry: DepRegistry | null): DepNode | null {
 export function rankedDepRegistry(registry: DepRegistry, rank: number): DepRegistry {
   const ranked: DepRegistry = {
     ...registry,
-    register: (name, source, options) => registry.register(name, source, { rank, ...options }),
+    register: (name, source, options) => registry.register(name, source, { ...options, rank: options?.rank ?? rank }),
   };
   const node = NODES.get(registry);
   if (node) NODES.set(ranked, node);

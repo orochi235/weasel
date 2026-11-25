@@ -85,6 +85,8 @@ interface Held {
   rerun: (values: Record<string, unknown>) => boolean;
   /** Hand `values` to the tunings that keep the action's params. */
   keep: (values: Readonly<Record<string, unknown>>) => void;
+  /** The scope it ran in, whose leaving ends it. */
+  host: LastOperationHost;
   unobserve: () => void;
 }
 
@@ -165,6 +167,11 @@ export class LastOperationKeeper implements LastOperationStore {
   readonly toolLeft = (): void => {
     if (this.held?.gesture) this.dismiss();
   };
+
+  /** The scope `host` reads unmounted: forget an operation that ran in it. */
+  hostLeft(host: LastOperationHost): void {
+    if (this.held?.host === host) this.dismiss();
+  }
 
   readonly adjust = (patch: Readonly<Record<string, unknown>>): boolean => {
     const held = this.held;
@@ -248,7 +255,7 @@ export class LastOperationKeeper implements LastOperationStore {
         const op = { id: action.id, label: schema.name || action.label, schema, values };
         const keep = (v: Readonly<Record<string, unknown>>) => host.keep(action.id, v);
         const rerun = (v: Record<string, unknown>) => host.rerun(action.id, { ...rest, ...v });
-        this.hold({ op, gesture: false, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
+        this.hold({ op, gesture: false, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun, host });
       }
       return out;
     };
@@ -286,9 +293,9 @@ export class LastOperationKeeper implements LastOperationStore {
           replay.call(handle, { ...rest, ...v });
           return true;
         };
-        this.hold({ op, gesture: true, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun });
+        this.hold({ op, gesture: true, entry, stack, history, restore, takeSelection: host.takeSelection, keep, rerun, host });
       };
-      return { ...handle, onEnd: ended };
+      return withOnEnd(handle, ended);
     };
     return { ...invoker, start };
   }
@@ -310,4 +317,23 @@ export class LastOperationKeeper implements LastOperationStore {
     this.session.set(id, { params: { ...values } });
     this.onSession();
   }
+}
+
+/** `handle` with `onEnd` replaced and every other member read live from it, each method called on `handle` itself:
+ *  a copy would split the state of a handle that keeps it on `this`, and drop a class instance's methods. */
+function withOnEnd(handle: OngoingHandle, onEnd: OngoingHandle['onEnd']): OngoingHandle {
+  const bound = new Map<PropertyKey, { of: unknown; fn: unknown }>();
+  return new Proxy(handle, {
+    get(target, key) {
+      if (key === 'onEnd') return onEnd;
+      const value: unknown = Reflect.get(target, key, target);
+      if (typeof value !== 'function') return value;
+      let hit = bound.get(key);
+      if (hit?.of !== value) {
+        hit = { of: value, fn: (value as (...args: unknown[]) => unknown).bind(target) };
+        bound.set(key, hit);
+      }
+      return hit.fn;
+    },
+  });
 }

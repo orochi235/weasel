@@ -55,15 +55,16 @@ function holding(action: Action): Pick<Action, 'requires' | 'enabled' | 'eligibl
     invoker: {
       timing: 'ongoing',
       start: (ctx, opts): OngoingHandle => {
-        const params = resolveParams(opts?.params);
-        const hide = showPreview(action, () => ctx.deps, params, ctx.world);
+        const hide = showPreview(action, () => ctx.deps, resolveParams(opts?.params), ctx.world);
         return {
           // An end's ctx carries no deps, so the run takes the press's.
           onEnd: (_end, reason) => {
             hide();
             if (reason !== 'commit' || invoker?.timing !== 'immediate') return;
-            // Asked again: what the press previewed may have stopped applying while the key was held.
-            if (checkEnabled(action, ctx.deps, ctx.world, params).enabled) invoker.run(ctx.deps, params);
+            // Asked again, at the params a thunk gives now: what the press previewed may have stopped applying while
+            // the key was held.
+            const now = resolveParams(opts?.params);
+            if (checkEnabled(action, ctx.deps, ctx.world, now).enabled) invoker.run(ctx.deps, now);
           },
         };
       },

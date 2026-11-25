@@ -145,4 +145,12 @@ describe('ranked registrations', () => {
     low.register(name, (() => 'own') as never, { rank: 5 });
     expect(low.get(name)).toBe('own');
   });
+
+  it('keep the view\'s rank for a registration whose rank is left undefined', () => {
+    const deps = createDepRegistry();
+    const low = rankedDepRegistry(deps, -1);
+    deps.register(name, (() => 'plain') as never);
+    low.register(name, (() => 'ranked') as never, { rank: undefined });
+    expect(deps.get(name)).toBe('plain');
+  });
 });
