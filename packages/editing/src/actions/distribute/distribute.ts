@@ -11,7 +11,9 @@ export type DistributeAxis = 'x' | 'y';
 
 /** `'centers'` spaces centers equally; `'gaps'` makes the gap between
  *  consecutive items equal. Both measure a rotated item by its ink extent.
- *  Endpoints stay put in both modes. */
+ *  The outer two items stay put: in `'centers'` the first and last by
+ *  center, in `'gaps'` the first and last to start, whose far edge need not
+ *  be the selection's when items overlap. */
 export type DistributeMode = 'centers' | 'gaps';
 
 /** Adapter for `useDistribute`. */
@@ -52,8 +54,8 @@ export interface UseDistributeReturn {
 }
 
 /** Distribute the current multi-selection along `axis`. Requires ≥3 items;
- *  no-op otherwise. Endpoints (min and max along the axis) stay put; the
- *  remaining items are repositioned. Single batch — one undo step.
+ *  no-op otherwise. The outer two items stay put, as `DistributeMode` says
+ *  for each mode; the rest are repositioned. Single batch — one undo step.
  *
  *  The span being divided is a world span: bounds are measured and translated
  *  in world, and each result is stored back in its own parent's frame. A node
