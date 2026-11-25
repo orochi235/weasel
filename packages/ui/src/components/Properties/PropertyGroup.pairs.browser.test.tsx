@@ -49,3 +49,14 @@ test('a nested group in a paired group spans both columns', () => {
   );
   spansPair(document.querySelector('.inner')!);
 });
+
+test('a row with a long label shrinks to its column rather than widening it', () => {
+  group(
+    <>
+      <PropertyField kind="string" label={'Long'.repeat(30)} value="" onChange={() => {}} />
+      <PropertyField kind="number" label="H" value={1} onChange={() => {}} />
+    </>,
+  );
+  const wide = rowOf('Long'.repeat(30)).getBoundingClientRect().width;
+  expect(Math.abs(wide - rowOf('H').getBoundingClientRect().width)).toBeLessThan(1);
+});
