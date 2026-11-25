@@ -1,6 +1,6 @@
 /**
  * An action as a hold: bound to a held key, the press shows what it would do
- * through its `preview`, the release runs it if `enabled` still allows, and a cancel — Escape, through
+ * through its `preview`, the release runs it if its `eligible` rule and `enabled` still allow, and a cancel — Escape, through
  * the kit's cancel-gesture action — takes the preview down and runs nothing.
  */
 import type { Action } from './action';
@@ -8,6 +8,7 @@ import { checkEnabled } from './actionEnabled';
 import { resolveParams, type OngoingHandle } from './invoker';
 import { dynamicActionId, type DynamicActionId } from './actionIds';
 import { showPreview } from './showPreview';
+import { eligibleNow } from '../dispatcher/ranking';
 
 /** The id {@link holdPreview} gives the hold of action `id`. Its params are the action's, which the schema does
  *  not name under this id, so it is a dynamic one. */
@@ -49,7 +50,7 @@ export function holdingLive(hold: Action, action: Action): Action {
 function holding(action: Action): Pick<Action, 'requires' | 'enabled' | 'eligible' | 'invoker'> {
   const { invoker } = action;
   return {
-    ...(action.requires ? { requires: action.requires } : {}),
+    ...(action.eligible ? { requires: [...(action.requires ?? []), 'ruleCtx'] } : action.requires ? { requires: action.requires } : {}),
     ...(action.enabled ? { enabled: action.enabled } : {}),
     ...(action.eligible ? { eligible: action.eligible } : {}),
     invoker: {
@@ -64,6 +65,7 @@ function holding(action: Action): Pick<Action, 'requires' | 'enabled' | 'eligibl
             // Asked again, at the params a thunk gives now: what the press previewed may have stopped applying while
             // the key was held.
             const now = resolveParams(opts?.params);
+            if (action.eligible && !eligibleNow(action, ctx.deps.ruleCtx)) return;
             if (checkEnabled(action, ctx.deps, ctx.world, now).enabled) invoker.run(ctx.deps, now);
           },
         };
