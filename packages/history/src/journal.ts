@@ -261,6 +261,8 @@ export function createJournalInternal(
       if (state !== 'active') throw new Error('Journal is not active');
       // It would go on writing to the adapter while the history counts no journal open.
       if (openChildren().some((c) => c.isActive())) throw new Error('A journal inside this one is still active — commit, cancel, or suspend it first');
+      // The parent may edit beneath it before it resumes, so its next push starts a new entry.
+      inner.seal();
       state = 'suspended';
       onClose?.(true);
       bump();
