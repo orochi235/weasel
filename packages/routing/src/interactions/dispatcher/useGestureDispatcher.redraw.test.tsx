@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
 import { useRef, type ReactNode } from 'react';
 import { useGestureDispatcher } from './useGestureDispatcher';
-import { createDispatcher } from './dispatcher';
+import { createDispatcher, type Dispatcher } from './dispatcher';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActionsProvider, useAction, useActionsRegistry } from '../actions/ActionsProvider';
@@ -30,25 +30,27 @@ const drag: Action = {
 function mount() {
   const redraw = vi.fn();
   const dispatcher = createDispatcher();
-  function Mount(): ReactNode {
+  function Mount({ enabled = true, on = dispatcher }: { enabled?: boolean; on?: Dispatcher }): ReactNode {
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const registry = useActionsRegistry();
     useAction(drag);
-    useGestureDispatcher({ canvasRef, actions: registry!, entriesById: ENTRIES, requestRedraw: redraw, dispatcher });
+    useGestureDispatcher({ canvasRef, actions: registry!, entriesById: ENTRIES, requestRedraw: redraw, dispatcher: on, enabled });
     return <canvas ref={canvasRef} data-testid="c" />;
   }
-  const { unmount } = render(
+  const tree = (props: { enabled?: boolean; on?: Dispatcher }): ReactNode => (
     <DepRegistryProvider>
       <ActiveToolContextProvider>
-        <ActionsProvider><Mount /></ActionsProvider>
+        <ActionsProvider><Mount {...props} /></ActionsProvider>
       </ActiveToolContextProvider>
-    </DepRegistryProvider>,
+    </DepRegistryProvider>
   );
+  const { unmount, rerender } = render(tree({}));
   const canvas = document.querySelector('[data-testid="c"]')!;
   const fire = (on: EventTarget, type: string, x: number): void => {
     act(() => { on.dispatchEvent(new PointerEvent(type, { bubbles: true, pointerId: 1, clientX: x, clientY: 0 })); });
   };
-  return { redraw, dispatcher, canvas, fire, unmount };
+  const update = (props: { enabled?: boolean; on?: Dispatcher }): void => { rerender(tree(props)); };
+  return { redraw, dispatcher, canvas, fire, unmount, update };
 }
 
 describe('requestRedraw', () => {
@@ -77,6 +79,15 @@ describe('requestRedraw', () => {
     fire(document, 'pointermove', 40);
     redraw.mockClear();
     act(() => { dispatcher.cancelAll('cancel'); });
+    expect(redraw).toHaveBeenCalledTimes(1);
+  });
+
+  it('is asked for when turning the listeners off cancels a gesture, the canvas still mounted', () => {
+    const { redraw, canvas, fire, update } = mount();
+    fire(canvas, 'pointerdown', 0);
+    fire(document, 'pointermove', 40);
+    redraw.mockClear();
+    update({ enabled: false });
     expect(redraw).toHaveBeenCalledTimes(1);
   });
 

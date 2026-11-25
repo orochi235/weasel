@@ -56,7 +56,7 @@ export function attachInput(
   let cursor: HoverCursorInput | null = null;
   const redraw = dispatcherWatch(() => {
     src.requestRedraw();
-    cursor?.changed();
+    if (!disposed) cursor?.changed();
   });
   redraw.sync(src.dispatchers());
   const core = createDispatchCore({
@@ -153,8 +153,9 @@ export function attachInput(
     disposed = true;
     pointer.dispose();
     held?.release();
-    redraw.stop();
+    // Watched still, so a re-bind's cancel clears the overlay it leaves.
     for (const d of src.dispatchers()) d.cancelAll('cancel');
+    redraw.stop();
     src.context().keymaps?.closeAll();
   };
 }

@@ -3,7 +3,7 @@
  * WebKit gesture events, pointer events, and multi-touch synthesized from
  * them) and routes each event to the dispatcher for the view it landed in.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { isApplePlatform, type ClickMemory } from '@weasel-js/gestures';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { type ActiveToolContextValue, useActiveToolContext } from '../actions/activeToolContext';
@@ -112,6 +112,12 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
     ...(viewsRef.current?.targets() ?? []).map((t) => t.dispatcher),
   ], [rootTargetRef, viewsRef]);
   const requestRedrawRef = useLatest(requestRedraw);
+  // Cleared in the layout phase, ahead of the listeners' teardown: the cancel unmounting makes asks no redraw.
+  const mountedRef = useRef(false);
+  useLayoutEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
   const cursorRef = useLatest({ painted: paintedCursor, sink: cursorSink });
   const longPressRef = useLatest(longPress);
   const kitSettingsRef = useLatest(kitSettings);
@@ -143,7 +149,7 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
       actions: () => registryRef.current,
       dispatchers: allDispatchers,
       heldPointer: () => heldPointer,
-      requestRedraw: () => { requestRedrawRef.current?.(); },
+      requestRedraw: () => { if (mountedRef.current) requestRedrawRef.current?.(); },
       paintedCursor: () => cursorRef.current.painted?.(),
       cursorSink: () => cursorRef.current.sink?.(),
       longPress: () => longPressRef.current,
