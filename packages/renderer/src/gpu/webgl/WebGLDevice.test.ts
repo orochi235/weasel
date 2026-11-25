@@ -460,6 +460,17 @@ describe('WebGLDevice uniforms', () => {
 });
 
 describe('WebGLDevice resolve', () => {
+  it('blits into an id target\'s color alone, leaving its ids', () => {
+    const { rec, gpu } = setup();
+    const { gl } = rec;
+    const scratch = gpu.createTarget({ width: 8, height: 8, samples: 4 });
+    const picked = gpu.createTarget({ width: 8, height: 8, ids: true });
+    rec.reset();
+    gpu.resolve(scratch, picked, 8, 8, 0, 0);
+    expect(argsOf(rec, 'drawBuffers')).toEqual([[[gl.COLOR_ATTACHMENT0, gl.NONE]]]);
+    expect(names(rec).indexOf('drawBuffers')).toBeLessThan(names(rec).indexOf('blitFramebuffer'));
+  });
+
   it('blits a whole multisampled buffer straight into its destination', () => {
     const { rec, gpu } = setup();
     const scratch = gpu.createTarget({ width: 8, height: 8, samples: 4, stencil: true });
