@@ -104,3 +104,21 @@ describe('Journal.cancel', () => {
     expect(box.x).toBe('0');
   });
 });
+
+describe('Journal.cancel with a journal opened two deep', () => {
+  it('counts a grandchild\'s edit as its parent journal\'s latest', () => {
+    const box: Box = { x: 'a' };
+    const h = createHistory(box);
+    const e = h.beginJournal({ label: 'e' });
+    const c = e.beginJournal({ label: 'c' });
+    const g = c.beginJournal({ label: 'g' });
+    g.suspend();
+    c.suspend();
+    e.applyOps([setX('a', 'b')], 'e edit');
+    h.resumeJournal(c);
+    h.resumeJournal(g);
+    g.applyOps([setX('b', 'c')], 'g edit');
+    e.cancel();
+    expect(box.x).toBe('a');
+  });
+});

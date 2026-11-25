@@ -5,6 +5,8 @@ import { _journalAccessInternal, createHistory, type CreateHistoryOptions, type 
 const RESUMERS = new WeakMap<Journal, () => void>();
 /** A journal opened inside another, to the one it was opened in. */
 const ENCLOSING = new WeakMap<Journal, Journal>();
+/** Each journal, to a subscription hearing every edit made in it or in a journal opened inside it. */
+const EDITS = new WeakMap<Journal, (listener: () => void) => () => void>();
 
 /** Throw when a journal other than `except` is active on a history. Not part of the public API. */
 export function _refuseWhileActiveInternal(active: Journal | null, except?: Journal): void {
@@ -106,8 +108,9 @@ export interface Journal {
 }
 
 /** The journals opened inside one, each dropped as it closes. `depth` reads the enclosing
- *  journal's undo depth, noted at each child's latest edit. */
-export function createChildren(depth: () => number = () => 0) {
+ *  journal's undo depth, noted at each child's latest edit, its own journals' edits included;
+ *  `onEdit` hears each such edit. */
+export function createChildren(depth: () => number = () => 0, onEdit: () => void = () => {}) {
   const children: Journal[] = [];
   /** When each child last changed the adapter, counted in opens and edits, and the depth then. */
   const lastEdit = new Map<Journal, { at: number; depth: number }>();
@@ -118,7 +121,10 @@ export function createChildren(depth: () => number = () => 0) {
     adopt(child: Journal): void {
       children.push(child);
       touched(child);
-      const unobserve = child.observe(() => touched(child));
+      const unobserve = (EDITS.get(child) ?? child.observe)(() => {
+        touched(child);
+        onEdit();
+      });
       const unsubscribe = child.subscribe(() => {
         if (RESUMERS.has(child)) return;
         unobserve();
@@ -166,7 +172,9 @@ export function createJournalInternal(
   type State = 'active' | 'suspended' | 'closed';
   let state: State = 'active';
   const targetId = opts.targetId;
-  const { adopt, openChildren, latestFirst } = createChildren(() => inner.undoDepth());
+  /** Edits made in the journals opened inside this one. */
+  const edited = createEmitter();
+  const { adopt, openChildren, latestFirst } = createChildren(() => inner.undoDepth(), () => edited.emit());
 
   const journal: Journal = {
     targetId,
@@ -251,6 +259,10 @@ export function createJournalInternal(
   };
 
   OWNER.set(journal, parent);
+  EDITS.set(journal, (listener) => {
+    const offOwn = inner.observe(listener), offInside = edited.subscribe(listener);
+    return () => { offOwn(); offInside(); };
+  });
   RESUMERS.set(journal, () => {
     if (state !== 'suspended') throw new Error('Journal is not suspended');
     state = 'active';
