@@ -56,6 +56,18 @@ it('keeps a standalone slider disabled for a reason reachable through its readou
   expect(readout).toHaveAccessibleDescription('Locked');
 });
 
+it('shows the text of a format returning an element, in the box and spoken', () => {
+  render(
+    <PropertyField
+      kind="number" control="slider" label="Gap" value={12} min={0} max={100}
+      format={(v) => <>{v}<sub>px</sub></>} onChange={vi.fn()}
+    />,
+  );
+  const readout = screen.getByRole('spinbutton', { name: 'Gap' }) as HTMLInputElement;
+  expect(readout.value).toBe('12px');
+  expect(readout).toHaveAttribute('aria-valuetext', '12px');
+});
+
 it('keeps the caret after a typed minus sign', async () => {
   const { readout } = slider();
   await userEvent.click(readout);
