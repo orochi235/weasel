@@ -77,7 +77,16 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   const held = new Map<string, Holding>();
   /** When this registry's store came to hold each id it holds. */
   const since = new Map<string, number>();
-  const parentOrder = parent ? orderOfRegistry.get(parent) : undefined;
+  const knownOrder = parent ? orderOfRegistry.get(parent) : undefined;
+  const foreignParent = parent !== null && knownOrder === undefined;
+  /** For a parent this module did not make, which keeps no order to read: when this registry first saw each id. */
+  const seen = new Map<string, number>();
+  const seeParent = (): void => {
+    const ids = new Set(parent!.entries().map((e) => e.key));
+    for (const id of seen.keys()) if (!ids.has(id)) seen.delete(id);
+    for (const id of ids) if (!seen.has(id)) seen.set(id, nextOrder++);
+  };
+  const parentOrder = knownOrder ?? (foreignParent ? (id: string) => seen.get(id) : undefined);
   const orderOf = (id: string): number | undefined => {
     const mine = since.get(id);
     const theirs = parentOrder?.(id);
@@ -118,6 +127,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     entries() {
       const version = getVersion();
       if (cached?.version === version) return cached.entries;
+      if (foreignParent) seeParent();
       const mine = store.entries();
       const inherited = (parent?.entries() ?? []).filter((e) => !store.has(e.key));
       const all = [...inherited, ...mine];
@@ -150,6 +160,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       if (have !== undefined && !same(have, value) && !opts.replace) throw new ExtensionConflictError(kind, id);
       const next: Holding = { token: {}, count: 1 };
       held.set(id, next);
+      if (foreignParent) seeParent();
       if (!since.has(id)) since.set(id, nextOrder++);
       store.set(id, value, opts.source !== undefined ? { source: opts.source } : undefined);
       return createRelease(id, next);

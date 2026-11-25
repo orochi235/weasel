@@ -125,4 +125,17 @@ describe('createExtensionRegistry', () => {
     r.register('x', 'one');
     expect(r.entries().map((e) => e.key)).toEqual(['y', 'x']);
   });
+
+  it('orders its ids among those of a parent another module made', () => {
+    const made = make();
+    const parent: ExtensionRegistry<string> = {
+      name: made.name, parent: null, own: made.own, register: made.register, clear: made.clear,
+      get: made.get, has: made.has, entries: () => made.entries(), subscribe: made.subscribe, getVersion: made.getVersion,
+    };
+    const child = make(parent);
+    parent.register('a', 'p');
+    child.register('x', 'c');
+    parent.register('b', 'p');
+    expect(child.entries().map((e) => e.key)).toEqual(['a', 'x', 'b']);
+  });
 });
