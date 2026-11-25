@@ -61,7 +61,7 @@ export function grabBar(root: HTMLElement, layer: HTMLElement, docks: readonly D
   let row: DockGrab['row'] = null;
   for (const dock of boxes) {
     const at = dock.rows.find((r) => r.bars.some((b) => b.id === bar.id));
-    if (at) row = { vertical: dock.vertical, start: at.start, end: at.end };
+    if (at) row = { vertical: dock.vertical, start: dock.mirrored ? -at.end : at.start, end: dock.mirrored ? -at.start : at.end };
   }
   const floating = floatOf(layout, bar.id);
   const orientation = floating?.orientation ?? (row?.vertical ? 'vertical' : 'horizontal');

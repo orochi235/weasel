@@ -37,6 +37,8 @@ export interface DockBox {
   id: string;
   edge: DockEdge;
   vertical: boolean;
+  /** Whether its rows' `start` and `end` are measured from the right, negated: a left or right dock right to left. */
+  mirrored: boolean;
   along: readonly [number, number];
   rows: RowBox[];
 }
@@ -85,6 +87,8 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
     const edge = docks.find((d) => d.id === id)?.edge ?? 'top';
     const vertical = isVerticalEdge(edge);
     const box = el.getBoundingClientRect();
+    // Right to left, a left or right dock sets its columns from the right, so they are measured from there.
+    const mirrored = vertical && getComputedStyle(el).direction === 'rtl';
     const rows = Array.from(el.querySelectorAll<HTMLElement>(':scope > [data-dock-row]'), (row) => {
       const r = row.getBoundingClientRect();
       const drawn = Array.from(row.querySelectorAll<HTMLElement>(`:scope > [${DOCK_BAR}]`)).filter(isDrawn);
@@ -92,11 +96,11 @@ export function measureDocks(root: HTMLElement, docks: readonly DockSpec[]): Doc
         const b = bar.getBoundingClientRect();
         return { id: bar.getAttribute(DOCK_BAR)!, at: vertical ? b.top + b.height / 2 : b.left + b.width / 2, end: bar.hasAttribute(DOCK_END) };
       });
-      if (vertical) return { start: r.left, end: r.right, from: r.top, to: r.bottom, bars };
+      if (vertical) return { start: mirrored ? -r.right : r.left, end: mirrored ? -r.left : r.right, from: r.top, to: r.bottom, bars };
       const rtl = getComputedStyle(row).direction === 'rtl';
       return { start: r.top, end: r.bottom, from: rtl ? r.right : r.left, to: rtl ? r.left : r.right, bars };
     });
-    return { id, edge, vertical, along: vertical ? [box.top, box.bottom] : [box.left, box.right], rows } as DockBox;
+    return { id, edge, vertical, mirrored, along: vertical ? [box.top, box.bottom] : [box.left, box.right], rows } as DockBox;
   });
 }
 
@@ -151,7 +155,7 @@ function rowMark(others: readonly { id: string }[], starts: number, index: numbe
 }
 
 /** `p` along `dock`'s rows and across them. */
-const axes = (dock: DockBox, p: DockPoint) => (dock.vertical ? { along: p.clientY, cross: p.clientX } : { along: p.clientX, cross: p.clientY });
+const axes = (dock: DockBox, p: DockPoint) => (dock.vertical ? { along: p.clientY, cross: dock.mirrored ? -p.clientX : p.clientX } : { along: p.clientX, cross: p.clientY });
 
 /** Whether `dock` has rows and `along` falls within its length. */
 const overRows = (dock: DockBox, along: number): boolean => dock.rows.length > 0 && along >= dock.along[0] && along <= dock.along[1];
