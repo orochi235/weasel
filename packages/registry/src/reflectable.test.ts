@@ -478,3 +478,15 @@ describe('createValuesReader', () => {
     expect(values()).toEqual([2, 3]);
   });
 });
+
+describe('shadowed', () => {
+  muteClashWarnings();
+
+  it('lists the registrants beneath the live one in stack order, rank before age', () => {
+    const r = createReflectable<string>();
+    r.push('k', 'A', { rank: 1 });
+    r.push('k', 'B');
+    r.push('k', 'C', { rank: 2 });
+    expect(r.entries()[0]!.shadowed.map((s) => s.value)).toEqual(['B', 'A']);
+  });
+});
