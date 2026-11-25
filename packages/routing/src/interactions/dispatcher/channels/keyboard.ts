@@ -56,21 +56,14 @@ const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.clo
 const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
 const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
-/** Drop the key `e` lifts from `down`, and with Cmd's keyup every key that went down with Cmd. */
-function lifted(down: Map<string, { withCmd: boolean }>, e: KeyboardEvent): void {
-  down.delete(physicalKey(e));
-  if (e.key === 'Meta') for (const [k, held] of [...down]) if (held.withCmd) down.delete(k);
-}
-
 export function keyboardInput(core: DispatchCore): {
   onKeyDown: (e: KeyboardEvent) => void;
+  /** A key came up. Heard ahead of every element, so a widget that stops the keyup still releases the key. */
   onKeyUp: (e: KeyboardEvent) => void;
   /** A keystroke the dispatcher holding the keys on this surface declined: handle it as though this one held them. */
   take: TakeKey;
   /** End every held key, as a window that lost focus must: it never delivers the keyup. */
   releaseAll: () => void;
-  /** A key came up, heard ahead of every element, so one whose keyup a widget stops is not pressed again on `arrive`. */
-  lift: (e: KeyboardEvent) => void;
   /** The pointer came over the canvas: press the keys already held for its `over` bindings. */
   arrive: (e: PointerEvent) => void;
   /** The pointer left the canvas: release what its `over` bindings hold. */
@@ -178,5 +171,5 @@ export function keyboardInput(core: DispatchCore): {
     for (const down of releasing) releaseIn(core, down, releaseOf(down, NO_MODS));
   };
 
-  return { onKeyDown, onKeyUp, take, releaseAll, lift: (e) => { lifted(downKeys, e); }, ...followPointer(core, downKeys, heldKeys) };
+  return { onKeyDown, onKeyUp, take, releaseAll, ...followPointer(core, downKeys, heldKeys) };
 }
