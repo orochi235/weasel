@@ -1,0 +1,82 @@
+{
+ "id": "history",
+ "commit": "c3507b2b3df7fe1c7423033bbe868d5f0ce4fbea",
+ "date": "2026-11-24",
+ "files": [
+  "packages/history/src/createSwapOp.ts",
+  "packages/history/src/entryOps.ts",
+  "packages/history/src/forks.ts",
+  "packages/history/src/history.ts",
+  "packages/history/src/historyTypes.ts",
+  "packages/history/src/index.ts",
+  "packages/history/src/journal.ts",
+  "packages/history/src/journalSlot.ts",
+  "packages/history/src/op.ts",
+  "packages/history/src/recording.ts",
+  "packages/history/src/restore.ts",
+  "packages/history/src/serialized.ts",
+  "packages/history/src/snapshotShape.ts",
+  "packages/history/src/stackTime.ts",
+  "packages/history/src/stackView.ts",
+  "packages/history/src/versionClock.ts",
+  "packages/history/src/walk.ts"
+ ],
+ "a": 3,
+ "b": 5,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7,
+ "unfound": 1,
+ "read": {
+  "A": 17,
+  "B": 17
+ },
+ "newCode": {
+  "since": 83,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 83,
+  "chapman": 17,
+  "unfound": 5
+ },
+ "patches": 7,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 2913,
+   "total": 2913
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5,
+   "B": 4.2,
+   "match": 0.2,
+   "fix": 30.6
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 1676319,
+  "costUsd": 5.15
+ },
+ "fixCommits": [
+  "d00660feb11f01ad6e3a0f54954c7fa72c2cd455",
+  "8069d268c18467e5e3047f0bfd74db4b58665610",
+  "531347a02aacb68e6bcd7ffdf5a44a8402f60703",
+  "ae113b238ca1337574e9452d505bdf80ba18b8f2",
+  "4e8f765cfc81950f724a017270e8cbd46d82d7a9",
+  "cc953a6c840cbd89e55d8859913ed85c08430453",
+  "d60f093e85456cad1d4fe3aaf583a0fbed4d0620"
+ ]
+}

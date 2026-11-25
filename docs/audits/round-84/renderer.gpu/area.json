@@ -1,0 +1,78 @@
+{
+ "id": "renderer.gpu",
+ "commit": "c3507b2b3df7fe1c7423033bbe868d5f0ce4fbea",
+ "date": "2026-11-24",
+ "files": [
+  "packages/renderer/src/gpu/blend.ts",
+  "packages/renderer/src/gpu/bufferWrite.ts",
+  "packages/renderer/src/gpu/samplerIndex.ts",
+  "packages/renderer/src/gpu/textureSize.ts",
+  "packages/renderer/src/gpu/types.ts",
+  "packages/renderer/src/gpu/uniformTypes.ts",
+  "packages/renderer/src/gpu/vertexLayout.ts",
+  "packages/renderer/src/gpu/webgl/GlProgram.ts",
+  "packages/renderer/src/gpu/webgl/WebGLDevice.ts",
+  "packages/renderer/src/gpu/webgl/bitmapCanvas.ts",
+  "packages/renderer/src/gpu/webgl/contextAttributes.ts",
+  "packages/renderer/src/gpu/webgl/glCache.ts",
+  "packages/renderer/src/gpu/webgl/glResources.ts",
+  "packages/renderer/src/gpu/webgl/glTargets.ts",
+  "packages/renderer/src/gpu/webgl/openWebGL.ts",
+  "packages/renderer/src/gpu/webgl/uniformUpload.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 2,
+ "distinct": 4,
+ "chapman": 4.3,
+ "unfound": 0.3,
+ "read": {
+  "A": 16,
+  "B": 16
+ },
+ "newCode": {
+  "since": 71,
+  "changedFiles": 1,
+  "findings": 0
+ },
+ "previous": {
+  "round": 71,
+  "chapman": 5.2,
+  "unfound": 3.12
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3116,
+   "total": 3116
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.8,
+   "B": 2.4,
+   "match": 0.1,
+   "fix": 11.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 817365,
+  "costUsd": 2.56
+ },
+ "fixCommits": [
+  "7c01eb4ef15ffbe386b53a7440d31cfeb6590d53",
+  "219ff3738e4b34672f9095449a4e5dd7529431a9",
+  "139fd3ee50a40d451e2df39dd52ffbd17fb22a30",
+  "7364ab09d07514936d7cc3d44f87ccc7fe8bcd53"
+ ]
+}

@@ -1,0 +1,82 @@
+{
+ "id": "ui.components.ToolbarDock",
+ "commit": "c3507b2b3df7fe1c7423033bbe868d5f0ce4fbea",
+ "date": "2026-11-24",
+ "files": [
+  "packages/ui/src/components/ToolbarDock/ToolbarDock.module.css",
+  "packages/ui/src/components/ToolbarDock/ToolbarDock.tsx",
+  "packages/ui/src/components/ToolbarDock/barHosts.ts",
+  "packages/ui/src/components/ToolbarDock/dockContext.ts",
+  "packages/ui/src/components/ToolbarDock/dockDrop.ts",
+  "packages/ui/src/components/ToolbarDock/dockTear.ts",
+  "packages/ui/src/components/ToolbarDock/floatingLayer.tsx",
+  "packages/ui/src/components/ToolbarDock/index.ts",
+  "packages/ui/src/components/ToolbarDock/lab/ToolbarDock.stories.module.css",
+  "packages/ui/src/components/ToolbarDock/lab/ToolbarDock.stories.tsx",
+  "packages/ui/src/components/ToolbarDock/layout.ts",
+  "packages/ui/src/components/ToolbarDock/useDockDrag.ts"
+ ],
+ "a": 9,
+ "b": 9,
+ "m": 6,
+ "distinct": 12,
+ "chapman": 13.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 59,
+  "changedFiles": 1,
+  "findings": 2
+ },
+ "previous": {
+  "round": 59,
+  "chapman": 12.3,
+  "unfound": 3.3
+ },
+ "patches": 12,
+ "verify": {
+  "ok": true,
+  "files": 23,
+  "testFiles": {
+   "failed": 0,
+   "passed": 956,
+   "total": 956
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.5,
+   "B": 3,
+   "match": 0.3,
+   "fix": 23.5
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "teitou",
+   "fix": "studio"
+  },
+  "weightedTokens": 1234594,
+  "costUsd": 3.74
+ },
+ "fixCommits": [
+  "a95f73fc7d0d655c490106abb9ddf129bf818c60",
+  "a8cee5403b7c0ec43b907c586bdbbb17407b35c5",
+  "779efb5726473015adc2695c5b4c96939457c4a9",
+  "589760e837c84b804712fa11ef54600c9c7906b6",
+  "651277365766027e02c8206fde3f40b0e86f9510",
+  "5f26dfa48f9882b06e541bd8d996204727356161",
+  "7a7d0b4f19efc81dfd067975b36cdda465254edc",
+  "9e6854b1306d52ed051fd5b25ed520cc71fecde4",
+  "3117eb7ffa95fa20cd43c99942498a08658224ee",
+  "f7d612ba042cf762ce091514d88876648e3c6d14",
+  "4a5ef11ae0a06eb4ab3cba51156b4a51ef49aa8e",
+  "7a7a91c570433bfacfdcdcc0e5899e7da77199b3"
+ ]
+}

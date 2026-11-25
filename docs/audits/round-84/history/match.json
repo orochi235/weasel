@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   1,
+   1
+  ],
+  [
+   2,
+   2
+  ]
+ ],
+ "a": [
+  "A failed step on an entry whose two halves share uncoalesced ops replays those ops twice while unwinding",
+  "A history without `branching` still rebuilds the branches it is about to drop, and a strict restore throws on them",
+  "A malformed snapshot whose `version` is a BigInt throws a TypeError instead of being refused"
+ ],
+ "b": [
+  "A branching history's kept branches grow without bound under `historyLimit`",
+  "A strict restore into a history without `branching` throws over branches it was going to drop",
+  "`snapshotFault` throws a TypeError for a BigInt or circular `version`, so a best-effort restore also throws",
+  "A restored branch whose `at` names no entry is kept forever and can never be reached or evicted",
+  "The `onEvict` doc lists the wrong set of evictions"
+ ]
+}

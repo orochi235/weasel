@@ -1,0 +1,20 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Rotate records a Transform Again repeat of `frame.delta` even when a behavior's `onEnd` ops replaced the rotate",
+  "`selectFromLasso` aborts the whole lasso when the adapter lacks `hitTestLasso`, instead of falling through or using `hitTestArea`",
+  "Lasso module doc promises `params.mode`, but the action's option surface has no `mode`",
+  "Reorder's `enabled` answers true with no scene while `run` does nothing"
+ ],
+ "b": [
+  "Rotate records a repeatable rotation even when a behavior's own ops were what committed",
+  "Flip with `pivot: 'union'` on a lone path-effect node mirrors about its sources' union, not the box its chrome draws",
+  "`useDistribute` documents that both extremes stay put, but `'gaps'` mode moves the box with the max extent",
+  "Clone's consumer `applyOps` path always reports a commit"
+ ]
+}

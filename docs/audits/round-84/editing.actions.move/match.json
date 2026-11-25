@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "snapBackOrDelete's delete path deletes nested dragged ids separately, so a node already taken by its ancestor's cascade gets a second delete",
+  "A drop within one layout container counts the other dragged children as obstacles at their old poses",
+  "A layout container that refuses with a reason gets two refusal overlays (outline and reason text) when reparent-on-drop is on"
+ ],
+ "b": [
+  "A layout release translates the selection's non-layout roots itself, so page drop and reparent-on-drop never run for them",
+  "Descendants of a root landed in another frame are moved by the difference of two poses stored in different frames"
+ ]
+}

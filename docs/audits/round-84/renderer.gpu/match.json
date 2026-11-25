@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "WebGL `writeBuffer` with `length: 0` writes the rest of `data`, which the bounds check and WebGPU both treat as nothing",
+  "`GlProgram.has` answers false for a uniform array that was looked up, where WebGPU's `has` answers true",
+  "`setSampling` with an explicitly `undefined` field updates the recorded sampling, but GL keeps the old setting"
+ ],
+ "b": [
+  "writeBuffer with `length` 0 passes the bounds check as a 0-byte write, but WebGL writes the rest of the array",
+  "setSampling with an explicitly undefined key records state GL does not hold",
+  "resolve into an id target copies the color into its id attachment too"
+ ]
+}

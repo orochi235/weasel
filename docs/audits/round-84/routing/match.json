@@ -1,0 +1,24 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ],
+  [
+   1,
+   1
+  ]
+ ],
+ "a": [
+  "A multi-variant action row (and an `actions` leaf's rows) drop the leaf's `access`",
+  "An enum readout row drops the leaf's `access`, which every other readout row keeps",
+  "`usePublishSelection` leaves its token, and its selection, in the old provider when the provider in scope changes",
+  "`DepSchema`'s doc says it declares one entry; it declares eight"
+ ],
+ "b": [
+  "A menu `action` leaf naming a multi-variant action, and every `actions` leaf, drop the leaf's `access`",
+  "Enum rows drop the leaf's `access`, unlike every other value row",
+  "`useContributions` reads the mode version with no server snapshot, so it throws under server rendering",
+  "A drop and the drag over it disagree on a string item with no type"
+ ]
+}

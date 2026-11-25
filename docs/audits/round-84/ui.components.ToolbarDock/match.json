@@ -1,0 +1,50 @@
+{
+ "pairs": [
+  [
+   0,
+   5
+  ],
+  [
+   1,
+   3
+  ],
+  [
+   2,
+   2
+  ],
+  [
+   4,
+   1
+  ],
+  [
+   5,
+   0
+  ],
+  [
+   6,
+   6
+  ]
+ ],
+ "a": [
+  "A drag that starts while a move is held measures the held layout, then drops into the host's layout",
+  "Keyboard moves ignore right-to-left direction",
+  "Pointer drops in a left/right dock with several columns fail under RTL",
+  "Empty-dock drop strips use physical insets while the grid mirrors under RTL",
+  "A drop beside the only bar of an RTL row lands on the wrong side",
+  "A dock whose bars all draw nothing cannot be dragged into",
+  "Reported least lengths are never cleared, so a stale `--dock-least` outlives its reporter",
+  "A layout object passed again after a held move is replaced by that move",
+  "Dev-only nowhere warning is keyed without the docks offered, so it does not re-fire when they change"
+ ],
+ "b": [
+  "A dock whose rows hold only bars drawn as nothing can't be dropped into, and shows no empty strip either",
+  "In a right-to-left dock, a single-bar row takes the drop on the wrong side",
+  "Left and right docks can't be dropped into in a right-to-left layout, and their empty strips are on the wrong side",
+  "Alt+Left/Right move a bar the opposite way on screen in a right-to-left top or bottom dock",
+  "Removing the dragged bar from `bars` mid-drag throws",
+  "A held move is dropped when the next pointer drag starts, but kept by keyboard moves, and the drag measures the held arrangement it then discards",
+  "A reported least length outlives the bar content that reported it",
+  "A new-row zone of a dock the bar can't enter blocks one it can",
+  "Announced row number counts rows whose bars are all hidden"
+ ]
+}

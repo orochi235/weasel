@@ -1,0 +1,17 @@
+packages/history/src/createSwapOp.ts
+packages/history/src/entryOps.ts
+packages/history/src/forks.ts
+packages/history/src/history.ts
+packages/history/src/historyTypes.ts
+packages/history/src/index.ts
+packages/history/src/journal.ts
+packages/history/src/journalSlot.ts
+packages/history/src/op.ts
+packages/history/src/recording.ts
+packages/history/src/restore.ts
+packages/history/src/serialized.ts
+packages/history/src/snapshotShape.ts
+packages/history/src/stackTime.ts
+packages/history/src/stackView.ts
+packages/history/src/versionClock.ts
+packages/history/src/walk.ts

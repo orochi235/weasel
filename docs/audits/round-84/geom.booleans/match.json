@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "An even-odd path whose rings meet, when the cut declines, falls back to an XOR that fills a single ring's self-overlap by nonzero",
+  "orientBoundaries probes at an absolute 1e-9 floor with no magnitude term, so a small shape far from the origin loses its contours"
+ ],
+ "b": [
+  "resolveRingFill's even-odd fallback fills a self-overlapping ring by nonzero",
+  "groupRings can loop forever when two rings share every vertex"
+ ]
+}

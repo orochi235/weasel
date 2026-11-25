@@ -1,0 +1,22 @@
+{
+ "pairs": [
+  [
+   2,
+   4
+  ]
+ ],
+ "a": [
+  "Destructured defaults are lost for a component exported as `export default memo(...)` / `forwardRef(...)`",
+  "The dependency graph and the API table pick different components when the meta's `component` comes from a dependency",
+  "`unquoted` mangles non-BMP characters in a C-quoted git path"
+ ],
+ "b": [
+  "Issues endpoint answers any Host and Origin, so a DNS-rebound page can read the private repo, branch, commit and issue list",
+  "`hmrSocketOf` falls back with `??` where vite's client falls back with `||`, so an empty `hmr.host` or `hmr.protocol` throws and fails every capture",
+  "The API table falls back to a story-file-local wrapper when no import matches the title, where the dependency graph finds no component",
+  "`forgeTest` emits nothing for a story file with no indexable stories, so vitest fails it with \"No test suite found\"",
+  "`unquoted` encodes a C-quoted git path one UTF-16 unit at a time, mangling any astral character",
+  "A `var` inside a class `static {}` block is scoped to the wrong function in both scope walkers",
+  "The component's label goes to `gh --label`, a comma-split CSV flag, unescaped"
+ ]
+}

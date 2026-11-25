@@ -1,0 +1,99 @@
+{
+ "id": "routing",
+ "commit": "c3507b2b3df7fe1c7423033bbe868d5f0ce4fbea",
+ "date": "2026-11-24",
+ "files": [
+  "packages/routing/src/ambient/PointerContext.tsx",
+  "packages/routing/src/ambient/SelectionContext.tsx",
+  "packages/routing/src/contributions/assemble.ts",
+  "packages/routing/src/contributions/eligibility.ts",
+  "packages/routing/src/contributions/heldModifier.ts",
+  "packages/routing/src/contributions/index.ts",
+  "packages/routing/src/contributions/merge.ts",
+  "packages/routing/src/contributions/modeShortcuts.ts",
+  "packages/routing/src/contributions/types.ts",
+  "packages/routing/src/contributions/useContributions.ts",
+  "packages/routing/src/dlog.ts",
+  "packages/routing/src/eligibility/deviceProfile.ts",
+  "packages/routing/src/eligibility/exclusive.ts",
+  "packages/routing/src/eligibility/index.ts",
+  "packages/routing/src/eligibility/rule.ts",
+  "packages/routing/src/eligibility/ruleCtx.ts",
+  "packages/routing/src/index.ts",
+  "packages/routing/src/ingestion/ingestItems.ts",
+  "packages/routing/src/internal.ts",
+  "packages/routing/src/kitSettings.ts",
+  "packages/routing/src/menus/MenuHostContext.tsx",
+  "packages/routing/src/menus/compoundRows.ts",
+  "packages/routing/src/menus/menuHost.ts",
+  "packages/routing/src/menus/paths.ts",
+  "packages/routing/src/menus/pickMenu.ts",
+  "packages/routing/src/menus/resolveMenu.ts",
+  "packages/routing/src/menus/separators.ts",
+  "packages/routing/src/menus/types.ts",
+  "packages/routing/src/menus/valueRows.ts",
+  "packages/routing/src/pbt.fixture.ts",
+  "packages/routing/src/react.ts",
+  "packages/routing/src/testing/registerAction.tsx",
+  "packages/routing/src/viewport/clientToCanvas.ts",
+  "packages/routing/src/viewport/useElementSize.ts",
+  "packages/routing/src/vocabulary.ts"
+ ],
+ "a": 4,
+ "b": 4,
+ "m": 2,
+ "distinct": 6,
+ "chapman": 7.3,
+ "unfound": 1.3,
+ "read": {
+  "A": 35,
+  "B": 35
+ },
+ "newCode": {
+  "since": 54,
+  "changedFiles": 2,
+  "findings": 3
+ },
+ "previous": {
+  "round": 54,
+  "chapman": 8,
+  "unfound": 1
+ },
+ "patches": 6,
+ "verify": {
+  "ok": true,
+  "files": 13,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3441,
+   "total": 3441
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 2.7,
+   "B": 2.1,
+   "match": 0.2,
+   "fix": 31.7
+  },
+  "nodes": {
+   "A": "studio",
+   "B": "teitou",
+   "fix": "teitou"
+  },
+  "weightedTokens": 768993,
+  "costUsd": 4.46
+ },
+ "fixCommits": [
+  "6de0b1b81016f3f09e20c70b6d68a464f53b956c",
+  "b51c044e67fe7181256bf48908ccccb7b944f9bb",
+  "caf119c71be348e95b814863355acb1134018664",
+  "8cf3e409f9509da0bc5b02a5f1b8fe0d82b1151e",
+  "4f9cd24c160fc34851f1761d59686bcabd6ac214",
+  "c45291ef54af1fb5e72619187fa8700182d30dfb"
+ ]
+}

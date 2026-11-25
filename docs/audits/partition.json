@@ -3911,6 +3911,7 @@
    "packages/history/src/snapshotShape.ts",
    "packages/history/src/stackTime.ts",
    "packages/history/src/stackView.ts",
+   "packages/history/src/textOf.ts",
    "packages/history/src/versionClock.ts",
    "packages/history/src/walk.ts"
   ]
@@ -5524,6 +5525,7 @@
    "packages/renderer/src/gpu/blend.ts",
    "packages/renderer/src/gpu/bufferWrite.ts",
    "packages/renderer/src/gpu/samplerIndex.ts",
+   "packages/renderer/src/gpu/samplingMerge.ts",
    "packages/renderer/src/gpu/textureSize.ts",
    "packages/renderer/src/gpu/types.ts",
    "packages/renderer/src/gpu/uniformTypes.ts",

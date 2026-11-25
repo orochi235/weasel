@@ -1,0 +1,12 @@
+packages/ui/src/components/ToolbarDock/ToolbarDock.module.css
+packages/ui/src/components/ToolbarDock/ToolbarDock.tsx
+packages/ui/src/components/ToolbarDock/barHosts.ts
+packages/ui/src/components/ToolbarDock/dockContext.ts
+packages/ui/src/components/ToolbarDock/dockDrop.ts
+packages/ui/src/components/ToolbarDock/dockTear.ts
+packages/ui/src/components/ToolbarDock/floatingLayer.tsx
+packages/ui/src/components/ToolbarDock/index.ts
+packages/ui/src/components/ToolbarDock/lab/ToolbarDock.stories.module.css
+packages/ui/src/components/ToolbarDock/lab/ToolbarDock.stories.tsx
+packages/ui/src/components/ToolbarDock/layout.ts
+packages/ui/src/components/ToolbarDock/useDockDrag.ts
