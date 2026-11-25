@@ -26,6 +26,24 @@ function setup(options: CreateHistoryOptions = {}) {
 }
 
 describe('branching off', () => {
+  it('drops the branches of a snapshot restored into it, with a warning', () => {
+    const { history, write } = setup();
+    write(1, 1);
+    history.undo();
+    write(2, 2);
+    expect(history.serialize().branches).toHaveLength(1);
+
+    const warn = vi.fn();
+    const plain = createHistory(null, {
+      branching: false, debug: { log: () => {}, warn }, rebuildOp: (_, args) => setX({ x: 0 }, 0, (args as { to: number }).to),
+    });
+    plain.restore(history.serialize());
+    expect(plain.undoDepth()).toBe(1);
+    plain.undo();
+    expect(plain.branches().map((b) => b.current)).toEqual([true]);
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/branch/));
+  });
+
   it('drops the redo future on a push, as before', () => {
     const { history, write } = setup({ branching: false });
     write(1, 10);

@@ -4160,3 +4160,6 @@ Calls the lanes made without a ruling:
   suspended. Routing it to the history that opened it, as a nested journal is routed, was the alternative.
 - 2026-11-24 (the fixer's call): `createHistory` throws a `RangeError` for `historyLimit: NaN`. Treating it as `0`, as a
   negative limit is, or as unbounded, as an omitted one is, were the alternatives.
+- 2026-11-24 (the fixer's call): a history made without `branching` drops a restored snapshot's branches, warning
+  through its `debug` logger, and restores the rest. Refusing the snapshot, or keeping the branches as before, were
+  the alternatives.

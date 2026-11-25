@@ -254,7 +254,8 @@ export interface CreateHistoryOptions {
    *  Undo and redo still walk one line, the current branch. An entry evicted by
    *  `historyLimit` or `prune` takes along the branches forking from the state
    *  before it, which nothing can return to; the ones forking from the state
-   *  it leaves stay, at the bottom of the undo stack. Default `false`. */
+   *  it leaves stay, at the bottom of the undo stack. Without it, `restore()` drops a
+   *  snapshot's branches. Default `false`. */
   branching?: boolean;
   /** How `restore()` turns a serialized op back into a live one. This engine
    *  knows nothing of any op registry; `@weasel-js/core`'s `createHistory`
