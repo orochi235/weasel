@@ -223,7 +223,8 @@ export interface RecordEntryOptions {
 /** Options for `createHistory`. */
 export interface CreateHistoryOptions {
   /** Window (ms) within which a new entry may merge into the previous one
-   *  via matching `Op.coalesceKey`. Defaults to `0` (no coalescing — every
+   *  via matching `Op.coalesceKey`, which keeps its first batch to undo and
+   *  its latest to redo, so those ops write absolute values. Defaults to `0` (no coalescing — every
    *  `applyOps` pushes a discrete entry). Recommended: ~500ms for typical
    *  rapid-input UX (nudge, per-keystroke text edits). The window resets on
    *  each successful coalesce, so a sustained burst keeps merging, and closes
