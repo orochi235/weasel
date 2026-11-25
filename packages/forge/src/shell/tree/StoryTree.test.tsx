@@ -2,6 +2,7 @@ import { breadcrumb } from '../breadcrumb';
 import { createMemoryAdapter, Lab, type LabContribution, type StorageAdapter } from '@weasel-js/labkit';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { formatRoute } from '../../route/url';
 import { indexEntries, indexId } from '../../story/indexPages';
 import { LibrariesContext, librariesFrom } from '../../story/library';
 import type { IndexEntry } from '../../story/types';
@@ -182,7 +183,7 @@ describe('StoryTree', () => {
     const [title] = trialsOf(slider);
     fireEvent.click(within(title as HTMLElement).getByRole('button', { name: 'Slider' }));
     const sliderIndex = indexId('Kit/Slider');
-    await waitFor(() => expect(location.hash).toBe(`#/${encodeURIComponent(sliderIndex)}`));
+    await waitFor(() => expect(location.hash).toBe(formatRoute({ story: sliderIndex, params: {} })));
   });
 
   it('opens a component folder and runs its index page when its row is clicked', async () => {
@@ -194,7 +195,7 @@ describe('StoryTree', () => {
     await waitFor(() => expect(trialsOf(buttonIndex)).toHaveLength(1));
     expect(button).toHaveAttribute('aria-expanded', 'true');
     expect(allTrials()).toHaveLength(1);
-    expect(location.hash).toBe(`#/${encodeURIComponent(buttonIndex.id)}`);
+    expect(location.hash).toBe(formatRoute({ story: buttonIndex.id, params: {} }));
     expect(button).toHaveAttribute('aria-current', 'true');
     expect(within(within(button).getByRole('group')).getAllByRole('treeitem').map((el) => el.textContent)).toEqual([
       'Primary',
@@ -218,7 +219,7 @@ describe('StoryTree', () => {
 
     fireEvent.click(foldOf(item(treeEl, 'Button')));
     fireEvent.click(within(item(treeEl, 'Button')).getByText('Button'));
-    await waitFor(() => expect(location.hash).toBe(`#/${encodeURIComponent(buttonIndex.id)}`));
+    await waitFor(() => expect(location.hash).toBe(formatRoute({ story: buttonIndex.id, params: {} })));
     expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(within(item(treeEl, 'Slider')).getByText('Slider'));
     await waitFor(() => expect(item(treeEl, 'Slider')).toHaveAttribute('aria-expanded', 'true'));
