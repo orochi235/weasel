@@ -24,9 +24,10 @@ export function rotateOps(
   return ops;
 }
 
-/** Commit the drag as one batch, so one undo entry. Returns whether anything
- *  reached the document. */
-export function commitRotate(session: RotateSession, frame: RotateFrame): boolean {
+/** Commit the drag as one batch, so one undo entry. `committed` says whether
+ *  anything reached the document, and `own` whether what did was the rotation
+ *  itself rather than a behavior's ops. */
+export function commitRotate(session: RotateSession, frame: RotateFrame): { committed: boolean; own: boolean } {
   const { lifecycle } = session;
   const target = {
     scene: session.scene,
@@ -37,13 +38,14 @@ export function commitRotate(session: RotateSession, frame: RotateFrame): boolea
   if (session.behaviors.length > 0) {
     syncGestureCurrent(session.gestureCtx, session.turn, frame.delta);
     const r = reduceBehaviorEnd(session.behaviors, session.gestureCtx);
-    if (r === null) return false;
-    if (r !== undefined) return commitRunOps(target, lifecycle, r);
+    if (r === null) return { committed: false, own: false };
+    if (r !== undefined) return { committed: commitRunOps(target, lifecycle, r), own: false };
   }
-  if (frame.delta === 0) return false;
+  if (frame.delta === 0) return { committed: false, own: false };
   // A node removed mid-drag is skipped, as the move's commit skips it.
   const ids = session.ids.filter((id) => session.scene.get(id) !== undefined);
   const ops = rotateOps(ids, session.originPoses, frame.previews, lifecycle.label);
-  if (ops.length === 0) return false;
-  return commitRunOps(target, lifecycle, ops);
+  if (ops.length === 0) return { committed: false, own: false };
+  const committed = commitRunOps(target, lifecycle, ops);
+  return { committed, own: committed };
 }

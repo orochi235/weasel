@@ -2,7 +2,6 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import { defineTool } from '@weasel-js/core';
 import type { Tool } from '@weasel-js/core';
-import type { LassoHitMode } from '@weasel-js/core/engine';
 import { withToolOptionDefault, type ToolKeybinding, type ToolOptionsSpec } from '@weasel-js/routing';
 import { icon } from '../../icons.gen';
 import type { UseLassoSelectOptions } from '../../actions/lassoSelect/options';
@@ -26,13 +25,9 @@ export const LASSO_TOOL_OPTIONS: ToolOptionsSpec = {
   },
 };
 
-/** Options for `useLassoTool` — the lasso-select action's options plus the
- *  tool's own hit mode and activation key. */
+/** Options for `useLassoTool` — the lasso-select action's options, whose
+ *  `mode` is the tool's `mode` option's default, plus its activation key. */
 export interface UseLassoToolOptions extends UseLassoSelectOptions {
-  /** Hit mode for the action's own selection commit, which runs when no
-   *  behavior claims the gesture: the `mode` option's default. A behavior
-   *  carries its own, as `selectFromLasso({ mode })` does. Default 'intersect'. */
-  mode?: LassoHitMode;
   /** Override the default keybinding (`{ key: 'L' }`). Pass `null` to omit. */
   keybinding?: ToolKeybinding | null;
 }

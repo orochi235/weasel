@@ -183,8 +183,14 @@ describe('reorderForwardAction (descriptor)', () => {
     );
   });
 
-  it('enabled returns true when the selection is non-empty', () => {
-    expect(reorderForwardAction.enabled!({ operands: makeSelection(['b']) } as never)).toBe(true);
+  it('enabled returns true when the selection is non-empty and would move', () => {
+    const scene = makeScene(['a', 'b', 'c']);
+    expect(reorderForwardAction.enabled!({ operands: makeSelection(['b']), scene } as never)).toBe(true);
+  });
+
+  it('enabled returns NotApplicable with no scene, where run does nothing', () => {
+    expect(reorderForwardAction.enabled!({ operands: makeSelection(['b']) } as never)).toBe('not-applicable');
+    expect(reorderBackwardAction.enabled!({ operands: makeSelection(['b']) } as never)).toBe('not-applicable');
   });
 });
 
@@ -298,8 +304,9 @@ describe('reorderBackwardAction (descriptor)', () => {
     );
   });
 
-  it('enabled returns true when the selection is non-empty', () => {
-    expect(reorderBackwardAction.enabled!({ operands: makeSelection(['b']) } as never)).toBe(true);
+  it('enabled returns true when the selection is non-empty and would move', () => {
+    const scene = makeScene(['a', 'b', 'c']);
+    expect(reorderBackwardAction.enabled!({ operands: makeSelection(['b']), scene } as never)).toBe(true);
   });
 });
 
