@@ -132,3 +132,58 @@ describe('seal', () => {
     expect(t.v).toBe(1);
   });
 });
+
+describe('coalesce anchoring, as listeners see it', () => {
+  function setup() {
+    const t = { v: 0 };
+    let clock = 1000;
+    const h = createHistory(t, { coalesceWindowMs: 500, now: () => clock });
+    return { t, h, tick: () => { clock += 10; } };
+  }
+
+  it('keeps a seal a subscriber makes on hearing a push', () => {
+    const { t, h, tick } = setup();
+    const off = h.subscribe(() => h.seal());
+    h.applyOps([setOp(t, 0, 1, 'k')], 'e1');
+    off();
+    tick();
+    h.applyOps([setOp(t, 1, 2, 'k')], 'e2');
+    expect(h.entries().undo.map((e) => e.label)).toEqual(['e1', 'e2']);
+  });
+
+  it('keeps a seal an observer makes on hearing a coalesce', () => {
+    const { t, h, tick } = setup();
+    h.applyOps([setOp(t, 0, 1, 'k')], 'e1');
+    tick();
+    const off = h.observe(() => h.seal());
+    h.applyOps([setOp(t, 1, 2, 'k')], 'e2');
+    off();
+    tick();
+    h.applyOps([setOp(t, 2, 3, 'k')], 'e3');
+    expect(h.entries().undo.map((e) => e.label)).toEqual(['e1', 'e3']);
+  });
+
+  it('does not coalesce into the entry a listener undid onto', () => {
+    const { t, h, tick } = setup();
+    h.applyOps([setOp(t, 0, 1, 'k')], 'e1');
+    tick();
+    let once = true;
+    const off = h.subscribe(() => { if (once) { once = false; h.undo(); } });
+    h.applyOps([setOp(t, 1, 2, 'other')], 'e2');
+    off();
+    tick();
+    h.applyOps([setOp(t, 1, 5, 'k')], 'e3');
+    expect(h.entries().undo.map((e) => e.label)).toEqual(['e1', 'e3']);
+    expect(h.canRedo()).toBe(false);
+  });
+
+  it('keeps a seal a listener makes on hearing a keyed recordEntry', () => {
+    const { t, h, tick } = setup();
+    const off = h.subscribe(() => h.seal());
+    h.recordEntry([setOp(t, 0, 1, 'k')], 'e1', { coalesceKey: 'run' });
+    off();
+    tick();
+    h.recordEntry([setOp(t, 1, 2, 'k')], 'e2', { coalesceKey: 'run' });
+    expect(h.entries().undo.map((e) => e.label)).toEqual(['e1', 'e2']);
+  });
+});
