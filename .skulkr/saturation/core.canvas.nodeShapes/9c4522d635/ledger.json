@@ -1,0 +1,144 @@
+{
+ "area": "core.canvas.nodeShapes",
+ "commit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "files": [
+  "packages/core/src/canvas/nodeShapes/derivedPainter.ts",
+  "packages/core/src/canvas/nodeShapes/groupBoxPainter.ts",
+  "packages/core/src/canvas/nodeShapes/imagePainter.ts",
+  "packages/core/src/canvas/nodeShapes/memo.ts",
+  "packages/core/src/canvas/nodeShapes/nodePaint.ts",
+  "packages/core/src/canvas/nodeShapes/pathPainter.ts",
+  "packages/core/src/canvas/nodeShapes/pathPosePainter.ts",
+  "packages/core/src/canvas/nodeShapes/pickOutline.ts",
+  "packages/core/src/canvas/nodeShapes/poseBox.ts",
+  "packages/core/src/canvas/nodeShapes/rectFallbackPainter.ts",
+  "packages/core/src/canvas/nodeShapes/shapePainter.ts",
+  "packages/core/src/canvas/nodeShapes/strokedBounds.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.14380300000000001,
+   "minutes": 0.18003333333333332,
+   "at": "2026-11-25T12:46:23.304Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.8017610000000002,
+   "minutes": 2.2367500000000002,
+   "at": "2026-11-25T12:48:41.725Z",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.9225852000000001,
+   "minutes": 2.571,
+   "at": "2026-11-25T12:51:16.025Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A non-finite legacy polygon sides or star points count reaches the builder unvalidated and its vertex loop never ends, stalling painting",
+   "where": "packages/core/src/canvas/nodeShapes/shapePainter.ts:99",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Bounds ignore animated trim, so a square-capped smooth shape's cap overhang falls outside the reported drawn box",
+   "where": "packages/core/src/canvas/nodeShapes/shapePainter.ts:73",
+   "severity": "medium",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "strokedBounds includes the stroke ribbon for a stroke with no paint that only draws marker heads, overstating bounds",
+   "where": "packages/core/src/canvas/nodeShapes/strokedBounds.ts:30 (strokedBounds)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "A group's box border bounds use a uniform outset, disagreeing with kit:shape's measurement of the same rect when its stroke protrudes",
+   "where": "packages/core/src/canvas/nodeShapes/groupBoxPainter.ts:61 (groupBoxDrawnBounds)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "FRAMED pick cache keyed on pose identity picks against a stale outline when a pose buffer is mutated in place",
+   "where": "packages/core/src/canvas/nodeShapes/derivedPainter.ts:29 (framedPart)",
+   "severity": "",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "hasStroke duplicates strokeHasInk but omits its non-finite-dash test, so the two disagree on whether a stroke with a non-finite dash draws ink",
+   "where": "packages/core/src/canvas/nodeShapes/nodePaint.ts:136 (hasStroke)",
+   "severity": "",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  }
+ ]
+}

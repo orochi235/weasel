@@ -5,7 +5,7 @@ Repeated blind reviews of the area `core.core.viewport` (23 files) at the frozen
 Each occasion is one review, or one ingested report; its findings are matched against the ledger of distinct
 defects so far. Reviews stop once fewer than one defect is estimated unseen, the chance that the next occasion
 finds something new falls under 15%, or 40 occasions have run.
-Stopped: the next occasion's chance of a new finding is under 15% (9.0%). `skulkr saturate report core.core.viewport` rewrites this file from the ledger.
+Stopped: the next occasion's chance of a new finding is under 15% (9.0%). `skulkr scour report core.core.viewport` rewrites this file from the ledger.
 
 ## Yield by occasion
 
