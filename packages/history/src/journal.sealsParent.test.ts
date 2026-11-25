@@ -35,4 +35,19 @@ describe('a suspended journal', () => {
 
     expect(outer.entries().undo).toHaveLength(2);
   });
+
+  it('ends its own coalescing run, so the edits made beneath it stay undoable', () => {
+    const box: Box = { v: 0 };
+    const parent = createHistory(box, { coalesceWindowMs: 500, now: () => 0 });
+    const j = parent.beginJournal({ label: 'session' });
+    j.applyOps([setOp(0, 1)], 'Move');
+    j.suspend();
+    parent.applyOps([setOp(1, 5)], 'Move');
+    parent.resumeJournal(j);
+    j.applyOps([setOp(5, 2)], 'Move');
+
+    expect(j.entries().undo).toHaveLength(2);
+    j.undo();
+    expect(box.v).toBe(5);
+  });
 });
