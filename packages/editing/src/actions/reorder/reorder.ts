@@ -80,7 +80,7 @@ function reorderEnabled(direction: 'forward' | 'backward') {
     const needs = requiresOperands(deps);
     if (needs !== true) return needs;
     const scene = deps!.scene as Scene<unknown, string, unknown> | undefined;
-    if (!scene) return true;
+    if (!scene) return ActionDisabledReason.NotApplicable;
     const distance = params?.distance ?? 'adjacent';
     const plan = reorderPlan(scene, [...deps!.operands!.get()] as string[], reorderDirection(direction, distance));
     return plan === 'moves' ? true : plan === 'locked' ? ActionDisabledReason.Locked : ActionDisabledReason.NotApplicable;
