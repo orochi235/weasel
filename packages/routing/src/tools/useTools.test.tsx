@@ -113,4 +113,22 @@ describe('useTools hotkey holds', () => {
     act(() => { tools.disengageHotkey(); });
     expect(ctx.hotkeyStack).toEqual(['b']);
   });
+
+  it('releases its holds when it unmounts, under a provider that stays', () => {
+    let tools!: ToolsApi<unknown>;
+    let ctx!: ActiveToolContextValue;
+    function Host(): null {
+      tools = useTools({ registry: { a, b } });
+      return null;
+    }
+    function Probe(): null {
+      ctx = useActiveToolContext();
+      return null;
+    }
+    const { rerender } = render(<ActiveToolContextProvider><Probe /><Host /></ActiveToolContextProvider>);
+    act(() => { ctx.pushHotkey('b'); });
+    act(() => { tools.engageHotkey('a'); });
+    rerender(<ActiveToolContextProvider><Probe /></ActiveToolContextProvider>);
+    expect(ctx.hotkeyStack).toEqual(['b']);
+  });
 });

@@ -1,5 +1,5 @@
 // src/tools/useTools.ts
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import type { ModeRegistry } from '@weasel-js/modes';
 import { setOwn } from '@weasel-js/registry';
 import { dlog } from '../dlog';
@@ -225,6 +225,14 @@ export function useTools<TOverlay = KernelOverlay>(
     },
     [ctx, slottedRef],
   );
+
+  // Holds outlive no canvas: the stack can sit in a provider above this one.
+  const ctxRef = useLatest(ctx);
+  useEffect(() => () => {
+    const holds = holdsRef.current;
+    holdsRef.current = [];
+    for (let i = holds.length - 1; i >= 0; i--) ctxRef.current.popHotkey(holds[i]);
+  }, [ctxRef]);
 
   const disengageHotkey = useCallback(() => {
     const own = holdsRef.current.pop();
