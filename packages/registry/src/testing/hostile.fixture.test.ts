@@ -20,6 +20,13 @@ describe('prototypePolluted', () => {
       Object.defineProperty(Object.prototype, 'toString', toString);
     }
     expect(prototypePolluted()).toBe(false);
+    try {
+      Object.defineProperty(Object.prototype, 'toString', { ...toString, enumerable: true });
+      expect(prototypePolluted()).toBe(true);
+    } finally {
+      Object.defineProperty(Object.prototype, 'toString', toString);
+    }
+    expect(prototypePolluted()).toBe(false);
     const key = Symbol('polluted');
     try {
       proto[key] = 1;

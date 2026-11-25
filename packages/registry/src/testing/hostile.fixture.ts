@@ -86,14 +86,15 @@ export function mutated(valid: fc.Arbitrary<unknown>): fc.Arbitrary<{ value: unk
   });
 }
 
-/** Whether anything added, removed or overwrote a member of `Object.prototype`, as a reader that assigns
+/** Whether anything added, removed, overwrote or redefined a member of `Object.prototype`, as a reader that assigns
  *  `__proto__` would. */
 export function prototypePolluted(): boolean {
   const keys = Reflect.ownKeys(Object.prototype);
   return keys.length !== BASELINE.size || keys.some((k) => !sameMember(BASELINE.get(k), Object.getOwnPropertyDescriptor(Object.prototype, k)));
 }
 const sameMember = (a: PropertyDescriptor | undefined, b: PropertyDescriptor | undefined): boolean =>
-  a !== undefined && b !== undefined && Object.is(a.value, b.value) && a.get === b.get && a.set === b.set;
+  a !== undefined && b !== undefined && Object.is(a.value, b.value) && a.get === b.get && a.set === b.set
+  && a.enumerable === b.enumerable && a.writable === b.writable && a.configurable === b.configurable;
 const BASELINE = new Map(Reflect.ownKeys(Object.prototype).map((k) => [k, Object.getOwnPropertyDescriptor(Object.prototype, k)]));
 
 /** How long {@link longText} is: past anything typed, short enough that a quadratic reader shows. */
