@@ -31,7 +31,8 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
   const record = (symbol: ts.Symbol) => {
     for (const file of filesOf(symbol)) if (!IN_PACKAGES.test(file)) sources.add(file);
   };
-  const defaults = declaration ? destructuredDefaults(reading.tsm, declaration) : new Map<string, string>();
+  const { defaults, files: read } = declaration ? destructuredDefaults(reading, declaration) : { defaults: new Map<string, string>(), files: [] };
+  for (const file of read) if (!IN_PACKAGES.test(file)) sources.add(file);
   const listed: ApiProp[] = [];
   const inherited = new Map<string, { container: string | undefined; pkg: string; count: number }>();
   let ref: ApiRef | null = null;
@@ -192,23 +193,36 @@ function memberEntry(reading: ApiReading, member: ts.Symbol): ApiMember {
   return entry;
 }
 
-/** The defaults the component's own function gives its destructured props, as source text, by prop name. */
-function destructuredDefaults(tsm: typeof ts, declaration: ts.Declaration): Map<string, string> {
+/**
+ * The defaults the component's own function gives its destructured props, as source text, by prop name, and the files
+ * read to find that function: through wrapping calls such as `memo(forwardRef(fn))` and the locals or imports they name.
+ */
+function destructuredDefaults(reading: ApiReading, declaration: ts.Declaration): { defaults: Map<string, string>; files: string[] } {
+  const { tsm, checker } = reading;
   const defaults = new Map<string, string>();
-  let node: ts.Node | undefined = tsm.isVariableDeclaration(declaration) ? declaration.initializer : declaration;
-  while (node && (tsm.isCallExpression(node) || tsm.isParenthesizedExpression(node) || tsm.isAsExpression(node))) {
-    node = tsm.isCallExpression(node) ? node.arguments[0] : node.expression;
+  const files = new Set<string>();
+  let node: ts.Node | undefined = declaration;
+  for (let depth = 0; node && depth < 32; depth++) {
+    if (tsm.isVariableDeclaration(node)) node = node.initializer;
+    else if (tsm.isCallExpression(node)) node = node.arguments[0];
+    else if (tsm.isParenthesizedExpression(node) || tsm.isAsExpression(node) || tsm.isSatisfiesExpression(node)) node = node.expression;
+    else if (tsm.isIdentifier(node)) {
+      let symbol = checker.getSymbolAtLocation(node);
+      if (symbol && symbol.flags & tsm.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
+      node = symbol?.valueDeclaration;
+      if (node) files.add(node.getSourceFile().fileName);
+    } else break;
   }
   if (!node || !(tsm.isArrowFunction(node) || tsm.isFunctionExpression(node) || tsm.isFunctionDeclaration(node))) {
-    return defaults;
+    return { defaults, files: [...files] };
   }
   const pattern = node.parameters[0]?.name;
-  if (!pattern || !tsm.isObjectBindingPattern(pattern)) return defaults;
+  if (!pattern || !tsm.isObjectBindingPattern(pattern)) return { defaults, files: [...files] };
   for (const element of pattern.elements) {
     const key = element.propertyName ?? element.name;
     if (element.initializer && (tsm.isIdentifier(key) || tsm.isStringLiteral(key) || tsm.isNumericLiteral(key))) {
       defaults.set(key.text, element.initializer.getText());
     }
   }
-  return defaults;
+  return { defaults, files: [...files] };
 }

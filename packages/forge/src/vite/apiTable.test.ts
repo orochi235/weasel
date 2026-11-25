@@ -316,4 +316,9 @@ export const Input = (_props: InputProps) => null;
     expect(table?.types?.ChipSize?.text).toBe("type ChipSize = 'sm' | 'md';");
     expect(table?.sources).toContain(at('sizes.ts'));
   });
+
+  it('reads defaults from a function a wrapping call names, in its file or imported', () => {
+    expect(prop(api('chip'), 'size')?.default).toBe("'md'");
+    expect(prop(api('outer'), 'tone')?.default).toBe("'calm'");
+  });
 });
