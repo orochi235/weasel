@@ -1,6 +1,6 @@
 import type { NodeId, Op, Scene } from '@weasel-js/core';
-import { writtenBy } from '@weasel-js/core';
-import { ActionDisabledReason } from '@weasel-js/routing';
+import { writtenBy, commitOps, finishTransformOps } from '@weasel-js/core';
+import { ActionDisabledReason, type ActionDeps } from '@weasel-js/routing';
 
 /** Whether committing `ops` would write the pose or data of a locked node, which the scene's lock guard refuses:
  *  an envelope moves, turns, or mirrors by rewriting its sources, and one of them may be locked. */
@@ -20,4 +20,23 @@ export function anyLocked(scene: Pick<Scene<unknown, string, unknown>, 'isLocked
 export function opsAnswer(scene: Scene<unknown, string, unknown>, ops: readonly Op[]): true | ActionDisabledReason {
   if (ops.length === 0) return ActionDisabledReason.NotApplicable;
   return writesLocked(scene, ops) ? ActionDisabledReason.Locked : true;
+}
+
+/** `enabled`'s answer for a whole-node transform committing `ops`, asked of the batch the `transformFollowers` dep
+ *  finishes, which is what {@link commitTransform} commits: not applicable when the followers refuse it. */
+export function transformAnswer(
+  deps: ActionDeps, scene: Scene<unknown, string, unknown>, ops: Op[], label: string,
+): true | ActionDisabledReason {
+  const all = ops.length > 0 ? finishTransformOps(deps, ops, label) : null;
+  return all ? opsAnswer(scene, all) : ActionDisabledReason.NotApplicable;
+}
+
+/** Commit `ops`, a whole-node transform, as the `transformFollowers` dep finishes it, as one undo entry; nothing when
+ *  the followers refuse it or the finished batch would rewrite a locked node. Returns whether anything committed. */
+export function commitTransform(
+  deps: ActionDeps, scene: Scene<unknown, string, unknown>, ops: Op[], label: string,
+): boolean {
+  const all = ops.length > 0 ? finishTransformOps(deps, ops, label) : null;
+  if (!all || all.length === 0 || writesLocked(scene, all)) return false;
+  return commitOps(deps, all, label);
 }

@@ -1,5 +1,5 @@
 import type { NodeId, Scene, OperandsDep, Bounds, Op, PoseDescriptor, RectPose } from '@weasel-js/core';
-import { shapeSources, uncarried, withoutPageStructure, poseDescriptorOf, nodeDescriptors, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, defaultCommitAdapter, operandMethods, createTransformCommit, requiresOperands, type GeometryProjection } from '@weasel-js/core';
+import { shapeSources, uncarried, withoutPageStructure, poseDescriptorOf, nodeDescriptors, unionAabb, drawnBoxes, type DrawnBoxes, isNoInkExtents, scenePoseFrame, type PoseFrame, actionReferenceSources, resolveSpatialReference, sameValue, finiteThroughout, requiresOperands, type GeometryProjection } from '@weasel-js/core';
 import { multiply, rotate, translate, type Affine, type Rect } from '@weasel-js/geom';
 import {
   flipPoseAboutBounds,
@@ -14,7 +14,7 @@ import type { FlipParams } from '../../actionParamSchema';
 import { icon } from '../../icons.gen';
 import { FLIP_GROUP } from '../../actionGroups';
 import * as coreOps from '@weasel-js/core/ops';
-import { opsAnswer, writesLocked } from '../lockedWrites';
+import { commitTransform, transformAnswer } from '../lockedWrites';
 
 /**
  * The world mirror about `axis` through the center of `pivotWorld`, written in
@@ -182,17 +182,13 @@ export const flipAction = defineAction({
       const selection = deps.operands;
       const scene = deps.scene;
       if (!selection || !scene) return;
-      const ops = flipOpsFor(deps, selection, scene, params);
-      if (ops.length === 0 || writesLocked(scene, ops)) return;
-      const applyOps = createTransformCommit(deps);
-      if (applyOps) applyOps(ops, 'Flip');
-      else scene.applyBatch(ops, 'Flip', defaultCommitAdapter(scene, operandMethods(selection)));
+      commitTransform(deps, scene, flipOpsFor(deps, selection, scene, params), 'Flip');
     },
   },
   enabled: (deps, _at, _carried, params) => {
     const needs = requiresOperands(deps);
     if (needs !== true) return needs;
     if (!deps?.scene) return ActionDisabledReason.NotApplicable;
-    return opsAnswer(deps.scene, flipOpsFor(deps, deps.operands!, deps.scene, params));
+    return transformAnswer(deps, deps.scene, flipOpsFor(deps, deps.operands!, deps.scene, params), 'Flip');
   },
 });

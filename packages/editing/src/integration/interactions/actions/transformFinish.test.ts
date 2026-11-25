@@ -4,7 +4,8 @@ import { createScene, commitTransformOps, type TransformFollower } from '@weasel
 import type { Op } from '@weasel-js/core';
 import type { RectPose } from '@weasel-js/core/engine';
 import { lastTransform } from '@weasel-js/core';
-import { alignRightAction, nudgeRightAction } from '@weasel-js/editing';
+import { alignRightAction, distributeHorizontalAction, flipAction, nudgeRightAction, swapAction, transformSelection } from '@weasel-js/editing';
+import { ActionDisabledReason, type Action } from '@weasel-js/routing';
 import { moveAction } from '../../../actions/move/action';
 import * as coreOps from '@weasel-js/core/ops';
 
@@ -158,5 +159,52 @@ describe('whole-node transforms finish through the transformFollowers dep', () =
     const op = coreOps.insert({ node: { id: 'n', kind: 'mark', layer: 'main', parent: g, data: {}, pose: box(0, 0) }, label: 'Add' });
     expect(commitTransformOps({ scene } as unknown as ActionDeps, [op], 'Add')).toBe(false);
     expect(scene.childrenOf(g)).toEqual([]);
+  });
+});
+
+describe('commands ask enabled of the batch the followers finish, as run commits it', () => {
+  function rig(answer: 'follow' | 'refuse' | 'lock') {
+    const scene = createScene<Record<string, unknown>, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const ids = [box(0, 0), box(30, 7), box(80, 3)].map((pose) => scene.add({ kind: 'mark', layer: 'main', data: {}, pose }));
+    const pinned = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: box(0, 90), locked: answer === 'lock' } as never) as string;
+    const finish = (ops: readonly Op[], label: string) => (answer === 'refuse' ? null : [
+      ...ops, coreOps.setData({ id: pinned, from: {}, to: { followed: label }, label }),
+    ]);
+    const deps = {
+      operands: { get: () => ids, adapterMethods: undefined } as unknown as SelectionApi,
+      scene,
+      transformFollowers: [{ finish, preview: () => [] }],
+    } as unknown as ActionDeps;
+    return { scene, ids, deps };
+  }
+  const commands: [string, Action, Record<string, unknown> | undefined][] = [
+    ['align', alignRightAction, undefined],
+    ['distribute', distributeHorizontalAction, undefined],
+    ['flip', flipAction, { axis: 'x', pivot: 'union' }],
+    ['swap', swapAction, undefined],
+    ['nudge', nudgeRightAction, undefined],
+  ];
+
+  for (const [name, action, params] of commands) {
+    it(`${name}: on when the followers accept, off when they refuse or write a locked node`, () => {
+      const pair = (deps: ActionDeps, ids: string[]) =>
+        (name === 'swap' ? { ...deps, operands: { get: () => ids.slice(0, 2), adapterMethods: undefined } } : deps) as ActionDeps;
+      const ok = rig('follow');
+      expect(action.enabled!(pair(ok.deps, ok.ids), undefined, undefined, params as never)).toBe(true);
+      const refused = rig('refuse');
+      expect(action.enabled!(pair(refused.deps, refused.ids), undefined, undefined, params as never)).toBe(ActionDisabledReason.NotApplicable);
+      const locked = rig('lock');
+      const deps = pair(locked.deps, locked.ids);
+      expect(action.enabled!(deps, undefined, undefined, params as never)).toBe(ActionDisabledReason.Locked);
+      const before = locked.ids.map((id) => locked.scene.get(id)!.pose);
+      expect(() => (action.invoker as ImmediateInvoker).run(deps, params as never)).not.toThrow();
+      expect(locked.ids.map((id) => locked.scene.get(id)!.pose)).toEqual(before);
+    });
+  }
+
+  it('transformSelection commits nothing when the finished batch writes a locked node', () => {
+    const { scene, ids, deps } = rig('lock');
+    expect(transformSelection(deps, { kind: 'translate', dx: 5, dy: 0 }, 'Move')).toBe(false);
+    expect(scene.get(ids[0]!)!.pose).toEqual(box(0, 0));
   });
 });
