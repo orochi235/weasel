@@ -135,7 +135,16 @@ export const Input = (_props: InputProps) => null;
       `import type { Props as TagLook } from './look';\ninterface Props { size?: number }\nexport const Tag = (_props: { look?: TagLook; own?: Props }) => null;\n`,
     );
     story('tag', `import { Tag } from './Tag';\nexport default { component: Tag };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag'].map((n) => at(`${n}.stories.ts`));
+    writeFileSync(at('sizes.ts'), `/** How big a chip is. */\nexport type ChipSize = 'sm' | 'md';\n`);
+    writeFileSync(at('chipTypes.ts'), `import type { ChipSize } from './sizes';\nexport interface ChipProps { size?: ChipSize; tone?: string }\n`);
+    writeFileSync(at('chipImpl.ts'), `import type { ChipProps } from './chipTypes';\nexport function ChipImpl({ tone = 'calm' }: ChipProps) { return null; }\n`);
+    writeFileSync(
+      at('Chip.ts'),
+      `import { forwardRef, memo } from './react';\nimport type { ChipProps } from './chipTypes';\nimport { ChipImpl } from './chipImpl';\nfunction Inner({ size = 'md' }: ChipProps, _ref: unknown) { return null; }\nexport const Chip = memo(forwardRef<HTMLDivElement, ChipProps>(Inner));\nexport const Outer = memo(ChipImpl);\n`,
+    );
+    story('chip', `import { Chip } from './Chip';\nexport default { component: Chip };\n`);
+    story('outer', `import { Outer } from './Chip';\nexport default { component: Outer };\n`);
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -300,5 +309,11 @@ export const Input = (_props: InputProps) => null;
 
   it('lists the files the API is declared in, leaving out packages', () => {
     expect(api('wrapped')?.sources).toEqual([at('Chart.ts')]);
+  });
+
+  it('lists the files of the type definitions it prints', () => {
+    const table = api('chip');
+    expect(table?.types?.ChipSize?.text).toBe("type ChipSize = 'sm' | 'md';");
+    expect(table?.sources).toContain(at('sizes.ts'));
   });
 });

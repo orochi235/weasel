@@ -61,7 +61,7 @@ export function apiTable(reading: ApiReading, declaration: ts.Declaration | unde
     inherited: inheritedRows([...inherited.values()]),
     ref,
     ...(defs.defs.size === 0 ? {} : { types: Object.fromEntries(defs.defs) }),
-    sources: [...sources],
+    sources: [...new Set([...sources, ...defs.files])],
     ...componentOf(reading.tsm, declaration),
   };
 }
