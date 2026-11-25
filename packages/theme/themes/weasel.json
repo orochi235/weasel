@@ -19,13 +19,6 @@
         "comfortable": {},
         "roomy": {}
       }
-    },
-    "scrollbars": {
-      "default": "quiet",
-      "values": {
-        "quiet": {},
-        "native": {}
-      }
     }
   },
   "seeds": {
@@ -577,28 +570,14 @@
       "description": "A disabled control's second cue beside its fade: desaturated onto the neutral ramp, so it reads apart from subtle text at the same alpha. Every rule that fades a control when disabled also sets `filter` to this (npm run check:disabled)."
     },
     "scrollbar-color": {
-      "by": "scrollbars",
-      "quiet": {
-        "value": "color-mix(in srgb, currentColor 35%, transparent) transparent",
-        "type": "string",
-        "description": "`scrollbar-color` for every scroller under a theme root: thumb, then track. Quiet draws a faint thumb on no track; native leaves the platform's own."
-      },
-      "native": {
-        "value": "auto",
-        "type": "string"
-      }
+      "value": "color-mix(in srgb, currentColor 35%, transparent) transparent",
+      "type": "string",
+      "description": "`scrollbar-color` for every scroller under a theme root: thumb, then track. The default draws a faint thumb on no track; `auto` leaves the platform's own."
     },
     "scrollbar-width": {
-      "by": "scrollbars",
-      "quiet": {
-        "value": "thin",
-        "type": "string",
-        "description": "`scrollbar-width` for every scroller: auto, thin or none."
-      },
-      "native": {
-        "value": "auto",
-        "type": "string"
-      }
+      "value": "thin",
+      "type": "string",
+      "description": "`scrollbar-width` for every scroller: auto, thin or none."
     }
   },
   "pins": {

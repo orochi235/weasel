@@ -2,12 +2,16 @@
 '@weasel-js/theme': minor
 ---
 
-Scrollbars are quiet by default, a faint thin thumb on no track, chosen by a new `scrollbars` theme axis.
+Scrollbars are quiet by default: a faint thin thumb on no track, set by two new theme tokens.
 
-`scrollbars: 'native'` (through `applyTheme`, or `axis.scrollbars` in Prefs) leaves them to the platform; win9x and mac-classic default to it. Two tokens drive it, `--wzl-scrollbar-color` and `--wzl-scrollbar-width`, and either can be pinned. `tokens.css` applies them at no specificity, so a class setting `scrollbar-color` or `scrollbar-width` on a scroller still wins. A theme defining neither token leaves scrollbars alone.
+`--wzl-scrollbar-color` and `--wzl-scrollbar-width` drive every scroller, and both are prefs; pin them to `auto` for the platform's own scrollbars. `tokens.css` applies them at no specificity, so a class setting `scrollbar-color` or `scrollbar-width` on a scroller still wins. A theme defining neither token leaves scrollbars alone.
 
 ```ts
-applyTheme(root, weaselTheme, { scrollbars: 'native' });
+defineTheme({
+  name: 'mine',
+  extends: weaselTheme,
+  pins: { 'scrollbar-color': { value: 'auto', type: 'string' }, 'scrollbar-width': { value: 'auto', type: 'string' } },
+});
 ```
 
 <!-- entry: rank=10 new visual api -->

@@ -3,10 +3,6 @@
   "extends": "weasel",
   "description": "Windows 95 and 98: gray faces edged in two-pixel bevels, square corners, a navy-to-blue title strip, and the system's sans at its small sizes. Dark mode is this theme's own; the system never had one.",
   "axes": {
-    "scrollbars": {
-      "default": "native",
-      "values": {}
-    },
     "mode": {
       "default": "light",
       "values": {

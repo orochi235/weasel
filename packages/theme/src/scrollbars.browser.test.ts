@@ -11,22 +11,25 @@ const hiders = () =>
 beforeAll(() => hiders().forEach((s) => (s.sheet!.disabled = true)));
 afterAll(() => hiders().forEach((s) => (s.sheet!.disabled = false)));
 
-/** A scroller with more content than room, under a root choosing `scrollbars`, or none. */
-function scroller(scrollbars?: string): CSSStyleDeclaration {
-  const root = document.createElement('div');
-  if (scrollbars) root.dataset.wzlScrollbars = scrollbars;
+const sheet = document.createElement('style');
+sheet.textContent = '.mine { scrollbar-width: none; scrollbar-color: red blue }';
+document.head.append(sheet);
+
+const native = defineTheme({
+  name: 'native-bars',
+  extends: weaselTheme,
+  pins: { 'scrollbar-color': { value: 'auto', type: 'string' }, 'scrollbar-width': { value: 'auto', type: 'string' } },
+});
+
+/** A scroller inside `parent`, under an element `theme` is applied to when one is given. */
+function scroller(parent: ParentNode = document.body, theme?: Parameters<typeof applyTheme>[1]): CSSStyleDeclaration {
+  const themed = document.createElement('div');
   const pane = document.createElement('div');
-  pane.className = 'pane';
-  pane.innerHTML = '<div class="tall"></div>';
-  root.append(pane);
-  document.body.append(root);
+  themed.append(pane);
+  parent.append(themed);
+  if (theme) applyTheme(themed, theme);
   return getComputedStyle(pane);
 }
-
-const sheet = document.createElement('style');
-sheet.textContent = `.pane { height: 40px; overflow: auto } .tall { height: 400px }
-  .mine { scrollbar-width: none; scrollbar-color: red blue }`;
-document.head.append(sheet);
 
 describe('scrollbars', () => {
   test('are quiet by default: a thin thumb on a transparent track', () => {
@@ -35,8 +38,8 @@ describe('scrollbars', () => {
     expect(style.scrollbarColor).toMatch(/ rgba\(0, 0, 0, 0\)$/);
   });
 
-  test("are the platform's own under native", () => {
-    const style = scroller('native');
+  test("are the platform's own under a theme pinning both tokens to auto", () => {
+    const style = scroller(document.body, native);
     expect(style.scrollbarWidth).toBe('auto');
     expect(style.scrollbarColor).toBe('auto');
   });
@@ -50,19 +53,13 @@ describe('scrollbars', () => {
   });
 
   test.each([
-    ['takes the theme root\'s scrollbar-color', weaselTheme, /rgba\(0, 0, 0, 0\)$/],
+    ["takes the theme root's scrollbar-color", weaselTheme, /rgba\(0, 0, 0, 0\)$/],
     ['leaves it to the platform without scrollbar tokens', defineTheme({ name: 'bare', extends: null }), /^auto$/],
   ])('a shadow root themed by applyTheme %s', (_, theme, expected) => {
     const host = document.createElement('div');
     document.body.append(host);
-    const root = host.attachShadow({ mode: 'open' });
-    const themed = document.createElement('div');
-    const pane = document.createElement('div');
-    themed.append(pane);
-    root.append(themed);
-    // An outer root choosing native, so only the shadow root's own rule can make the color anything else.
-    host.dataset.wzlScrollbars = 'native';
-    applyTheme(themed, theme);
-    expect(getComputedStyle(pane).scrollbarColor).toMatch(expected);
+    // The host pins the platform's, so only the shadow root's own rule can make the color anything else.
+    applyTheme(host, native);
+    expect(scroller(host.attachShadow({ mode: 'open' }), theme).scrollbarColor).toMatch(expected);
   });
 });

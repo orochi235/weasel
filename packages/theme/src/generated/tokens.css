@@ -129,7 +129,7 @@
   --wzl-stance-preview-title-inset: 6px 10px 0;
   /* A disabled control's second cue beside its fade: desaturated onto the neutral ramp, so it reads apart from subtle text at the same alpha. Every rule that fades a control when disabled also sets `filter` to this (npm run check:disabled). */
   --wzl-disabled-filter: grayscale(1);
-  /* `scrollbar-color` for every scroller under a theme root: thumb, then track. Quiet draws a faint thumb on no track; native leaves the platform's own. */
+  /* `scrollbar-color` for every scroller under a theme root: thumb, then track. The default draws a faint thumb on no track; `auto` leaves the platform's own. */
   --wzl-scrollbar-color: color-mix(in srgb, currentColor 35%, transparent) transparent;
   /* `scrollbar-width` for every scroller: auto, thin or none. */
   --wzl-scrollbar-width: thin;
@@ -326,8 +326,6 @@
   --wzl-stance-aside-title-color: var(--wzl-fg-subtle);
   --wzl-stance-advanced-title-color: var(--wzl-fg-subtle);
   --wzl-stance-preview-title-size: var(--wzl-font-size-xs);
-  --wzl-scrollbar-color: color-mix(in srgb, currentColor 35%, transparent) transparent;
-  --wzl-scrollbar-width: thin;
   --wzl-line-subtle: color-mix(in srgb, var(--wzl-fg) 10%, transparent);
   --wzl-line: color-mix(in srgb, var(--wzl-fg) 20%, transparent);
   --wzl-line-strong: color-mix(in srgb, var(--wzl-fg) 40%, transparent);
@@ -525,19 +523,7 @@
   --wzl-font-size: var(--wzl-font-size-md);
 }
 
-[data-wzl-theme='weasel'][data-wzl-scrollbars='quiet'],
-[data-wzl-scrollbars='quiet'] {
-  --wzl-scrollbar-color: color-mix(in srgb, currentColor 35%, transparent) transparent;
-  --wzl-scrollbar-width: thin;
-}
-
-[data-wzl-theme='weasel'][data-wzl-scrollbars='native'],
-[data-wzl-scrollbars='native'] {
-  --wzl-scrollbar-color: auto;
-  --wzl-scrollbar-width: auto;
-}
-
-:where(:root, [data-wzl-theme], [data-wzl-mode], [data-wzl-density], [data-wzl-scrollbars]) {
+:where(:root, [data-wzl-theme], [data-wzl-mode], [data-wzl-density]) {
   scrollbar-color: var(--wzl-scrollbar-color, auto);
 }
 
