@@ -1,5 +1,5 @@
 import { asNodeId, type NodeId, followerOpsFor, keepOnPage, pasteboardOn, placedPage } from '@weasel-js/core';
-import { composeWorldPose, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
+import { composeWorldPose, isPaged, rebaseLocalPose, type PoseAdapter, sceneViewPoseAdapter, poseDescriptorForNode, pageIdOf } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
 import type { LayoutChild, LayoutContainer } from '@weasel-js/core/engine';
 import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
@@ -8,8 +8,8 @@ import { resolveLayoutExits } from '../layout/exits';
 import type { MoveSession } from '../session';
 import { translateOps, unreleasedIds } from '../translate';
 import { rebaseTransformOp } from './rebase';
-import { belowRoots } from './pageDrop';
-import { landedCascadeOps } from './reparent';
+import { belowRoots, pageDropOps, pageDrops } from './pageDrop';
+import { landedCascadeOps, reparentOps, resolveDrop } from './reparent';
 import { containerView, contentBoxOf, draggedInView, opInWorld } from '../layout/view';
 import * as coreOps from '@weasel-js/core/ops';
 
@@ -80,6 +80,24 @@ function releaseFrom(
   return { ops: releasedOps, released };
 }
 
+/** What a page drop, then reparent-on-drop, decides for `roots`, the dragged roots no layout claimed, as
+ *  either would for them dragged alone. `undefined` when neither moves them, `null` when one refuses. */
+function plainRootOps(
+  session: MoveSession, roots: readonly NodeId[], at: { x: number; y: number }, delta: { dx: number; dy: number },
+): Op[] | null | undefined {
+  if (roots.length === 0) return undefined;
+  if (isPaged(session.scene)) {
+    const drops = pageDrops(session, at, delta, roots);
+    if (drops === 'refused') return null;
+    if (drops !== null) return pageDropOps(session, drops, delta, roots);
+  }
+  const mode = session.reparentOnDrop();
+  if (mode === 'off') return undefined;
+  const drop = resolveDrop(session, at);
+  if (drop === null) return undefined;
+  return 'refused' in drop ? null : reparentOps(session, drop, mode, delta, roots);
+}
+
 /** What the source layouts and the exits decide for a drop no container took.
  *  `undefined` when none of them claims any dragged id, `null` when a node they
  *  move would land in a singular frame, so the release refuses whole. */
@@ -87,6 +105,7 @@ export function layoutReleaseOps(
   session: MoveSession,
   delta: { dx: number; dy: number },
   dropCenter: { x: number; y: number } | null,
+  pointer: { x: number; y: number },
 ): Op[] | null | undefined {
   const { dx, dy } = delta;
   // No container accepted the drop. Each source layout gets a say
@@ -155,14 +174,16 @@ export function layoutReleaseOps(
   const landed = new Map([...exits].map(([id, to]) => [id as string, to === null ? null : pageIdOf(scene, to)]));
   const followers = followerOpsFor(scene, landed, session.lifecycle.label);
   if (followers === null) return null;
+  const plain = plainRootOps(session, session.outer.filter((id) => !released.has(id) && !exits.has(id)), pointer, delta);
+  if (plain === null) return null;
   return [
     ...releasedOps,
     ...exitOps,
     ...followers,
-    ...translateOps(
+    ...(plain ?? translateOps(
       session,
       unreleasedIds(session, released).filter((id) => !exits.has(id) && !ridden.has(id)),
       { dx, dy },
-    ),
+    )),
   ];
 }

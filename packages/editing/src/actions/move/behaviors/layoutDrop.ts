@@ -74,7 +74,7 @@ export function layoutDrop(move: MoveGesture): MoveBehavior<unknown> & {
       // reflow distributes per-child poses with no single global delta; not
       // exercised by the geometry contract gate.
       if (drop?.pass) return orAbort(layoutDropOps(session, drop.pass));
-      const release = layoutReleaseOps(session, delta, drop?.dropCenter ?? null);
+      const release = layoutReleaseOps(session, delta, drop?.dropCenter ?? null, end.pointer);
       return release === undefined ? undefined : orAbort(release);
     },
 
