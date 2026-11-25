@@ -12,6 +12,7 @@ export function webkitPinchInput(core: DispatchCore): {
   onGestureEnd: (e: Event) => void;
   /** Whether a claimed pinch is live, in which case it is the only driver. */
   live: () => boolean;
+  /** End the dispatched pinch; the rest of its WebKit gesture, up to the next start, dispatches nothing. */
   end: () => void;
 } {
   const { canvas, routeAt, toWorld, target, dispatch, dispatcherNow, ctxNow } = core;
@@ -22,6 +23,8 @@ export function webkitPinchInput(core: DispatchCore): {
   let pinchLive = false;
   let pinchScale = 1;
   let pinchRotation = 0;
+  // Set by `end` mid-gesture: the stream's cumulative scale outlives the reset baseline.
+  let halted: { claimed: boolean } | null = null;
 
   const endPinch = (): void => {
     pinchLive = false;
@@ -60,7 +63,13 @@ export function webkitPinchInput(core: DispatchCore): {
     };
   };
 
+  const halt = (): void => {
+    halted = { claimed: pinchLive };
+    endPinch();
+  };
+
   const onGestureStart = (e: Event) => {
+    halted = null;
     endPinch();
     if (eventTaken(e)) return;
     // Claimed up front, with a probe at unit scale: Safari starts its own
@@ -76,6 +85,10 @@ export function webkitPinchInput(core: DispatchCore): {
 
   const onGestureChange = (e: Event) => {
     if (eventTaken(e)) return;
+    if (halted) {
+      if (halted.claimed) { takeEvent(e); e.preventDefault(); }
+      return;
+    }
     const g = e as Event & { scale?: number; rotation?: number };
     const scale = typeof g.scale === 'number' && g.scale > 0 ? g.scale : pinchScale;
     const rotation = typeof g.rotation === 'number' ? g.rotation : pinchRotation;
@@ -96,9 +109,10 @@ export function webkitPinchInput(core: DispatchCore): {
   };
 
   const onGestureEnd = (e: Event) => {
-    if (pinchLive) e.preventDefault();
+    if (pinchLive || halted?.claimed) e.preventDefault();
+    halted = null;
     endPinch();
   };
 
-  return { onGestureStart, onGestureChange, onGestureEnd, live: () => pinchLive, end: endPinch };
+  return { onGestureStart, onGestureChange, onGestureEnd, live: () => pinchLive, end: halt };
 }
