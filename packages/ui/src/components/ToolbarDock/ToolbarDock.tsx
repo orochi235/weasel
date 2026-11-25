@@ -32,17 +32,18 @@ export interface ToolbarDockProps {
 
 const EDGES: readonly DockEdge[] = ['top', 'left', 'right', 'bottom'];
 
-const warnedNowhere = new Set<string>();
+/** Each bar warned of, by what it was warned against: its own docks and the docks on offer. */
+const warnedNowhere = new Map<string, string>();
 
-/** Warn once per bar and docks list, in dev, of a bar that can enter none of `docks` and may not float. */
+/** Warn once per bar, its docks and the docks on offer, in dev, of a bar that can enter none of `docks` and may not float. */
 function warnNowhere(docks: readonly DockSpec[], bars: readonly DockBar[]): void {
   if (!isDev()) return;
   for (const bar of bars) {
     if (bar.float || homeDock(docks, bar)) continue;
-    const key = `${bar.id}\0${bar.docks.join('\0')}`;
-    if (warnedNowhere.has(key)) continue;
-    warnedNowhere.add(key);
     const offered = docks.map((d) => `"${d.id}" (${d.edge})`).join(', ') || 'none';
+    const key = `${bar.docks.join('\0')}\0\0${offered}`;
+    if (warnedNowhere.get(bar.id) === key) continue;
+    warnedNowhere.set(bar.id, key);
     console.warn(`weasel: ToolbarDock bar "${bar.id}" lists docks ${JSON.stringify(bar.docks)}, but none of them is a dock it may enter, and it may not float, so it is never drawn. The docks on offer are ${offered}; a left or right dock takes only a bar with \`vertical\`. Fix its \`docks\`, or give it \`vertical\` or \`float\`.`);
   }
 }

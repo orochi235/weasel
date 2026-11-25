@@ -119,4 +119,14 @@ describe('ToolbarDock', () => {
     rerender(<ToolbarDock docks={docks} bars={[sized(false)]} layout={layout} />);
     expect(slot().style.getPropertyValue('--dock-least')).toBe('');
   });
+
+  it('warns again of a bar that still has nowhere to go once the docks on offer change', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const stray: DockBar = { ...bar('stray', 'Stray'), docks: ['side'] };
+    const { rerender } = render(<ToolbarDock docks={docks} bars={[stray]} layout={layout} />);
+    rerender(<ToolbarDock docks={[{ id: 'bottom', edge: 'bottom' }]} bars={[stray]} layout={layout} />);
+    expect(warn).toHaveBeenCalledTimes(2);
+    expect(warn.mock.calls[1]![0]).toContain('The docks on offer are "bottom" (bottom)');
+    warn.mockRestore();
+  });
 });
