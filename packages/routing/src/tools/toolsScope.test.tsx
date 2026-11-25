@@ -36,4 +36,12 @@ describe('ToolsScope', () => {
     view.rerender(<Scope>{[<Canvas key="b" tools={b} />]}</Scope>);
     expect(view.getByTestId('palette').textContent).toBe('b');
   });
+
+  it('keeps the newest canvas when an earlier one publishes new tools', () => {
+    const view = render(<Scope>{[<Canvas key="a" tools={a} />, <Canvas key="b" tools={b} />]}</Scope>);
+    view.rerender(<Scope>{[<Canvas key="a" tools={api('a2')} />, <Canvas key="b" tools={b} />]}</Scope>);
+    expect(view.getByTestId('palette').textContent).toBe('b');
+    view.rerender(<Scope>{[<Canvas key="a" tools={api('a2')} />]}</Scope>);
+    expect(view.getByTestId('palette').textContent).toBe('a2');
+  });
 });

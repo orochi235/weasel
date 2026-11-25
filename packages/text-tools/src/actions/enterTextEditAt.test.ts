@@ -20,7 +20,7 @@ function run(d: ActionDeps, world: typeof AT | undefined) {
 describe('enterTextEditAtAction', () => {
   it('binds a double-click on a body', () => {
     expect(enterTextEditAtAction.defaultBinding).toEqual([
-      expect.objectContaining({ spec: expect.objectContaining({ kind: 'doubleClick' }), opts: { id: 'enterTextEditAt.doubleClick' } }),
+      expect.objectContaining({ spec: expect.objectContaining({ kind: 'doubleClick' }), opts: { id: 'enterTextEditAt.doubleClick', yields: true } }),
     ]);
   });
 

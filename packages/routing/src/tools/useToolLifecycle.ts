@@ -36,14 +36,14 @@ export function useToolLifecycle(opts: ToolLifecycleOptions): void {
       if (entry && isTool(entry)) next.set(id, entry);
     }
     liveRef.current = next;
-    for (const [id, tool] of prev) if (!next.has(id)) fire(id, tool, 'onDeactivate');
+    for (const [id, tool] of prev) if (!sameHooks(tool, next.get(id))) fire(id, tool, 'onDeactivate');
     // An empty slot being seeded has no outgoing tool, so nothing to end. A
     // tool dropped from the registry while it held the slot is switched away from too.
     const switched = prevActiveRef.current !== null && prevActiveRef.current !== active;
     const dropped = active !== null && prev.has(active) && !next.has(active);
     if (switched || dropped) onSwitchRef.current?.();
     prevActiveRef.current = active;
-    for (const [id, tool] of next) if (!prev.has(id)) fire(id, tool, 'onActivate');
+    for (const [id, tool] of next) if (!sameHooks(tool, prev.get(id))) fire(id, tool, 'onActivate');
   });
 
   useEffect(() => () => {
@@ -51,6 +51,11 @@ export function useToolLifecycle(opts: ToolLifecycleOptions): void {
     liveRef.current = new Map();
     for (const [id, tool] of live) fire(id, tool, 'onDeactivate');
   }, []);
+}
+
+/** Whether `b` is live as `a` was: a tool redefined with other focus hooks ends the old and starts the new. */
+function sameHooks(a: Tool<unknown>, b: Tool<unknown> | undefined): boolean {
+  return b !== undefined && a.onActivate === b.onActivate && a.onDeactivate === b.onDeactivate;
 }
 
 function fire(id: string, tool: Tool<unknown>, hook: 'onActivate' | 'onDeactivate'): void {

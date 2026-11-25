@@ -2,7 +2,7 @@ import { createContext, useContext, useLayoutEffect, useState, useSyncExternalSt
 import { createEmitter } from '@weasel-js/registry';
 import type { ToolsApi } from './useTools';
 
-/** Where a canvas publishes its tools, for a palette or a bar inside it or beside it. The canvas that published
+/** Where a canvas publishes its tools, for a palette or a bar inside it or beside it. The canvas that joined
  *  last holds it, as the actions registry of a shared scope follows the canvas that joined it last; when that one
  *  unmounts, the slot goes back to the newest publisher still mounted. */
 class ToolsSlot {
@@ -15,14 +15,17 @@ class ToolsSlot {
 
   subscribe = (listener: () => void): (() => void) => this.changed.subscribe(listener);
 
-  publish(owner: object, tools: ToolsApi): () => void {
-    this.drop(owner);
-    this.published.push({ owner, tools });
+  /** Publishes `tools` for `owner`: in its place when it already has, else as the newest. */
+  publish(owner: object, tools: ToolsApi): void {
+    const entry = this.published.find((p) => p.owner === owner);
+    if (entry) entry.tools = tools;
+    else this.published.push({ owner, tools });
     this.show();
-    return () => {
-      this.drop(owner);
-      this.show();
-    };
+  }
+
+  leave(owner: object): void {
+    this.drop(owner);
+    this.show();
   }
 
   private drop(owner: object): void {
@@ -52,7 +55,9 @@ export function ToolsScope({ children, isolate = false }: { children: ReactNode;
 export function usePublishTools(tools: ToolsApi): void {
   const slot = useContext(ToolsSlotContext);
   const [owner] = useState(() => ({}));
-  useLayoutEffect(() => slot?.publish(owner, tools), [slot, owner, tools]);
+  useLayoutEffect(() => { slot?.publish(owner, tools); }, [slot, owner, tools]);
+  // Apart from publishing, so a new `tools` keeps this canvas's place among the others.
+  useLayoutEffect(() => () => slot?.leave(owner), [slot, owner]);
 }
 
 const NO_SUBSCRIBE = () => () => {};
@@ -61,7 +66,7 @@ const NONE = () => null;
 /**
  * The tools of the canvas this sits in, or beside under a shared `WeaselProvider`: the `ToolsApi` its
  * `onToolsCreated` hands over, kept current as the active tool changes. `null` while no canvas in scope has
- * mounted. Where several canvases share a scope, it is the tools of the newest one to publish still mounted.
+ * mounted. Where several canvases share a scope, it is the tools of the newest one to mount still mounted.
  */
 export function useScopedTools(): ToolsApi | null {
   const slot = useContext(ToolsSlotContext);

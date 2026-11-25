@@ -99,4 +99,51 @@ describe('useTools hotkey holds', () => {
     act(() => { tools.disengageHotkey(); });
     expect(ctx.hotkeyStack).toEqual(['b']);
   });
+
+  it('releases nothing when it holds nothing, leaving a tool held on its key', () => {
+    let tools!: ToolsApi<unknown>;
+    let ctx!: ActiveToolContextValue;
+    function Host(): null {
+      tools = useTools({ registry: { a, b } });
+      ctx = useActiveToolContext();
+      return null;
+    }
+    render(<ActiveToolContextProvider><Host /></ActiveToolContextProvider>);
+    act(() => { ctx.pushHotkey('b'); });
+    act(() => { tools.disengageHotkey(); });
+    expect(ctx.hotkeyStack).toEqual(['b']);
+  });
+
+  it('releases its holds when it unmounts, under a provider that stays', () => {
+    let tools!: ToolsApi<unknown>;
+    let ctx!: ActiveToolContextValue;
+    function Host(): null {
+      tools = useTools({ registry: { a, b } });
+      return null;
+    }
+    function Probe(): null {
+      ctx = useActiveToolContext();
+      return null;
+    }
+    const { rerender } = render(<ActiveToolContextProvider><Probe /><Host /></ActiveToolContextProvider>);
+    act(() => { ctx.pushHotkey('b'); });
+    act(() => { tools.engageHotkey('a'); });
+    rerender(<ActiveToolContextProvider><Probe /></ActiveToolContextProvider>);
+    expect(ctx.hotkeyStack).toEqual(['b']);
+  });
+});
+
+describe('useTools active', () => {
+  it('checks the initial tool on mount only, so a later registry may drop it', () => {
+    let tools!: ToolsApi<unknown>;
+    function Host({ registry }: { registry: Record<string, AnyTool> }): null {
+      tools = useTools({ active: 'a', registry });
+      return null;
+    }
+    const view = render(<ActiveToolContextProvider><Host registry={{ a, b }} /></ActiveToolContextProvider>);
+    act(() => { tools.setActive('b'); });
+    view.rerender(<ActiveToolContextProvider><Host registry={{ b }} /></ActiveToolContextProvider>);
+    expect(tools.active).toBe('b');
+    expect(() => render(<ActiveToolContextProvider><Host registry={{ b }} /></ActiveToolContextProvider>)).toThrow(/not in registry/);
+  });
 });

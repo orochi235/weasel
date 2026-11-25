@@ -44,6 +44,21 @@ describe('steppedOption', () => {
     expect(steppedOption(tenths, 0.3, { option: 's', times: 1.1 }, -1)).toBe(0.2);
   });
 
+  it('moves a scaled option off 0 and up from below it', () => {
+    const free: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0 };
+    const step = { option: 's', times: 1.25 };
+    expect(steppedOption(free, 0, step, 1)).toBe(1);
+    expect(steppedOption(free, 0, step, -1)).toBe(-1);
+    expect(steppedOption(free, -4, step, 1)).toBe(-3);
+    expect(steppedOption(free, 4, step, 1)).toBe(5);
+  });
+
+  it('steps an unbounded infinity back to the largest double', () => {
+    const free: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0 };
+    expect(steppedOption(free, Infinity, { option: 's', times: 2 }, -1)).toBe(Number.MAX_VALUE);
+    expect(steppedOption(free, -Infinity, { option: 's', plus: 1 }, 1)).toBe(-Number.MAX_VALUE);
+  });
+
   it('steps between an endless end and the infinity it stands for', () => {
     const reach: PrefNumber = { kind: 'number', name: 'R', description: '', default: 10, min: 1, max: 100, step: 1, endless: 'max' };
     const step = { option: 'r', times: 1.25 };

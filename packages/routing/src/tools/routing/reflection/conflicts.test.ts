@@ -162,7 +162,7 @@ describe('findConflicts — predicate targets', () => {
     expect(findConflicts([a])).toEqual([]);
   });
 
-  it('DOES flag the same predicate object bound twice', () => {
+  it('DOES flag the same predicate function bound twice', () => {
     const kindOf = () => true;
     const a = tool('a', [
       { spec: { kind: 'drag', target: { kindOf } }, actionId: 'x' },
@@ -170,12 +170,11 @@ describe('findConflicts — predicate targets', () => {
     const b = tool('b', [
       { spec: { kind: 'drag', target: { kindOf } }, actionId: 'y' },
     ]);
-    // Distinct wrapper objects around the same predicate are still distinct
-    // targets by identity; sharing the wrapper is what collides.
+    // Distinct wrappers around one function match the same hits, as a shared wrapper does.
     const shared = { kindOf };
     const c = tool('c', [{ spec: { kind: 'drag', target: shared }, actionId: 'x' }]);
     const d = tool('d', [{ spec: { kind: 'drag', target: shared }, actionId: 'y' }]);
-    expect(findConflicts([a, b])).toEqual([]);
+    expect(findConflicts([a, b])).toHaveLength(1);
     expect(findConflicts([c, d])).toHaveLength(1);
   });
 });
