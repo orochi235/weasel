@@ -123,6 +123,8 @@ export function openPointerSession(
   const pointerId = down.pointerId;
   const doc = origin.ownerDocument ?? document;
   const win = opts.blur === false ? null : doc.defaultView;
+  // Window capture, and stopped there: the Escape that ends a drag must not also close the dialog the drag is in.
+  const keys: EventTarget = doc.defaultView ?? doc;
   const buttonsReported = reportsButtons(down);
   let active = true;
   let captured = opts.capture !== false;
@@ -134,7 +136,7 @@ export function openPointerSession(
     doc.removeEventListener('pointerup', onUp, true);
     doc.removeEventListener('pointercancel', onPointerCancel, true);
     doc.removeEventListener('pointerdown', onRepress, true);
-    if (opts.escape) doc.removeEventListener('keydown', onKey, true);
+    if (opts.escape) keys.removeEventListener('keydown', onKey, true);
     win?.removeEventListener('blur', onBlur);
     origin.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture);
     doc.removeEventListener(LOST_CAPTURE_EVENT, onLostCapture, true);
@@ -182,7 +184,8 @@ export function openPointerSession(
   function onBlur() {
     abort('blur');
   }
-  function onKey(e: KeyboardEvent) {
+  function onKey(ev: Event) {
+    const e = ev as KeyboardEvent;
     if (e.key !== 'Escape' || e.isComposing) return;
     e.preventDefault();
     e.stopPropagation();
@@ -211,7 +214,7 @@ export function openPointerSession(
   doc.addEventListener('pointerup', onUp, true);
   doc.addEventListener('pointercancel', onPointerCancel, true);
   doc.addEventListener('pointerdown', onRepress, true);
-  if (opts.escape) doc.addEventListener('keydown', onKey, true);
+  if (opts.escape) keys.addEventListener('keydown', onKey, true);
   win?.addEventListener('blur', onBlur);
   // Chrome sends it to the document, not the origin, once the origin has left it.
   origin.addEventListener(LOST_CAPTURE_EVENT, onLostCapture);
