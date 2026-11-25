@@ -34,7 +34,7 @@ export const BROWSER_RESERVED_CHORDS: readonly ReservedChord[] = [
   ...chord('ntwrbo', { mod: true, shift: true }, 'private window, reopen or close tab, hard reload, bookmarks, bookmark manager'),
   ...chord('ijck', { mod: true, shift: true }, 'devtools, console and inspector on Windows and Linux; Firefox Browser and Web Console'),
   ...chord('ijcukbrlemhdwfn', { mod: true, alt: true }, 'devtools, console, inspector, view source, bookmarks, reload from origin, downloads, empty caches, minimize all, hide others, Dock, close all, search field'),
-  ...chord('fevsbthd', { alt: true }, 'menu accelerators and address bar on Windows and Linux'),
+  ...chord('fevsbthd', { alt: true, platform: 'other' }, 'menu accelerators and address bar on Windows and Linux'),
   ...chord('ita', { alt: true, shift: true }, 'feedback, toolbar focus and accessibility commands'),
   { key: 'escape', mod: true, platform: 'other', use: 'the Start menu on Windows' },
   ...chord(['tab', 'pagedown', 'pageup'], { ctrl: true }, 'next and previous tab'),

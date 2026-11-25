@@ -11,6 +11,11 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key, mods: { mod: true, shift: true } })).not.toBeNull();
   });
 
+  it('takes Alt+F, a menu accelerator, only off a Mac, where Option+F types a character', () => {
+    expect(browserReservedChord({ kind: 'key', key: 'f', mods: { alt: true } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'f', mods: { alt: true } }, true)).toBeNull();
+  });
+
   it('leaves Alt+J and Mod+Alt+Shift+J free', () => {
     expect(browserReservedChord({ kind: 'key', key: 'j', mods: { alt: true } })).toBeNull();
     expect(browserReservedChord({ kind: 'key', key: 'j', mods: { mod: true, alt: true, shift: true } })).toBeNull();
