@@ -6,3 +6,13 @@ export function elementAt(inTree: Node, x: number, y: number): Element | null {
   const tester = typeof root.elementFromPoint === 'function' ? root : doc;
   return typeof tester.elementFromPoint === 'function' ? tester.elementFromPoint(x, y) : null;
 }
+
+/** Whether `inner` is `outer` or inside it, counting what sits in a shadow root as inside its host. */
+export function containsComposed(outer: Node, inner: Node): boolean {
+  for (let n: Node | null = inner; n; ) {
+    if (outer.contains(n)) return true;
+    const root = n.getRootNode();
+    n = (root as Partial<ShadowRoot>).host ?? null;
+  }
+  return false;
+}

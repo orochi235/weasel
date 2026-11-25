@@ -8,7 +8,7 @@ import {
   openPointerSession,
   type PointerSessionCancelReason,
 } from '../pointerSession';
-import { elementAt } from '../elementAt';
+import { containsComposed, elementAt } from '../elementAt';
 
 /** What a carry brings. `type` is what a `carry` spec's `types` globs filter. */
 export interface CarryPayload {
@@ -85,7 +85,7 @@ function surfaceAt(x: number, y: number): CarrySurface | null {
     if (!hits.has(root)) hits.set(root, elementAt(s.element, x, y));
     const hit = hits.get(root);
     if (hit && !s.element.contains(hit)) continue;
-    if (best && s.element.contains(best.element)) continue;
+    if (best && containsComposed(s.element, best.element)) continue;
     best = s;
   }
   return best;

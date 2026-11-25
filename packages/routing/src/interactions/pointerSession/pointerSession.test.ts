@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { openPointerSession } from './pointerSession';
+import { heldWithin, openPointerSession } from './pointerSession';
 
 function el(): HTMLElement {
   const e = document.createElement('div');
@@ -295,5 +295,18 @@ describe('openPointerSession', () => {
     how = 'end';
     document.dispatchEvent(move(2, 0, 5, 5));
     expect(onEnd).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('heldWithin', () => {
+  it('counts a session from an element in a shadow root inside the surface', () => {
+    const surface = el();
+    const host = document.createElement('div');
+    surface.appendChild(host);
+    const item = document.createElement('div');
+    host.attachShadow({ mode: 'open' }).appendChild(item);
+    const s = openPointerSession(item, down(), {});
+    expect(heldWithin(1, surface)).toBe(true);
+    s.cancel();
   });
 });

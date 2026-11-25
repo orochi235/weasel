@@ -7,6 +7,7 @@
  * above it — thresholds, coordinate spaces, what the drag *means* — belongs to
  * its caller.
  */
+import { containsComposed } from '../elementAt';
 
 /** The DOM event that says capture went away mid-gesture. */
 const LOST_CAPTURE_EVENT = 'lostpointercapture';
@@ -98,7 +99,7 @@ const OPEN = new Map<PointerSession, Element>();
  */
 export function heldWithin(pointerId: number, surface: Element, self?: PointerSession): boolean {
   for (const [session, origin] of OPEN) {
-    if (session !== self && session.pointerId === pointerId && origin !== surface && surface.contains(origin)) return true;
+    if (session !== self && session.pointerId === pointerId && origin !== surface && containsComposed(surface, origin)) return true;
   }
   return false;
 }
