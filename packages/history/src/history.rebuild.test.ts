@@ -118,4 +118,12 @@ describe('RestoreOptions.rebuildOp', () => {
     b.undo();
     expect(dst.x).toBe(0);
   });
+
+  it('reads a hook answering undefined as an op it does not know', () => {
+    const a = createHistory(null);
+    a.applyOps([setX({ x: 0 }, 0, 5)], 'set');
+    const b = createHistory(null, { rebuildOp: () => undefined as unknown as null });
+    const report = b.restore(a.serialize(), { recovery: 'best-effort' });
+    expect(report.unresolved.map((u) => u.reason)).toEqual(['unknown']);
+  });
 });

@@ -110,7 +110,7 @@ export function rebuilt(
       recovery,
       skipped: (name, args, reason) => options.onSkip?.(issue(se, name, args, reason)),
     };
-    const got = rebuild ? rebuild(so.name, so.args, context) : null;
+    const got = rebuild?.(so.name, so.args, context) ?? null;
     if (got !== null && !('unresolved' in got)) return got;
     const u = issue(se, so.name, so.args, got === null ? 'unknown' : got.unresolved);
     unresolved.push(u);
