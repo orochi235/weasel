@@ -409,6 +409,16 @@ describe('createReflectable clash warning', () => {
     expect(r.stack('k').map((s) => s.value)).toEqual(['a', 'b']);
   });
 
+  it('tells an unnamed registrant apart from one whose source is empty', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'a');
+    r.push('k', 'b', { source: 'x' });
+    r.push('k', 'c', { source: '' });
+    r.push('k', 'd', { source: 'x' });
+    expect(warn.mock.calls.map((c) => c[0] as string).filter((m) => m.startsWith('weasel: "x" registered'))).toHaveLength(2);
+  });
+
   it('warns of a clash under a higher-ranked registrant too', () => {
     const warn = spyWarn();
     const r = createReflectable<string>();
