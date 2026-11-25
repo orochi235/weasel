@@ -267,6 +267,7 @@
   --wzl-font-weight-normal: 300;
   --wzl-font-weight-medium: 350;
   --wzl-font-weight-bold: 400;
+  --wzl-font-weight-heavy: 600;
   /* Alias for space-2. The t-shirt names name every other rung of the ladder. */
   --wzl-space-xs: var(--wzl-space-2);
   /* Alias for space-4. The t-shirt names name every other rung of the ladder. */

@@ -198,6 +198,7 @@ export const TOKEN_MANIFEST: readonly TokenManifestEntry[] = [
   { name: '--wzl-font-weight-normal', type: "fontWeight", group: "font", defaultValue: "300", description: "", hook: false },
   { name: '--wzl-font-weight-medium', type: "fontWeight", group: "font", defaultValue: "350", description: "", hook: false },
   { name: '--wzl-font-weight-bold', type: "fontWeight", group: "font", defaultValue: "400", description: "", hook: false },
+  { name: '--wzl-font-weight-heavy', type: "fontWeight", group: "font", defaultValue: "600", description: "", hook: false },
   { name: '--wzl-space-xs', type: "dimension", group: "space", defaultValue: "4px", description: "Alias for space-2. The t-shirt names name every other rung of the ladder.", hook: false },
   { name: '--wzl-space-sm', type: "dimension", group: "space", defaultValue: "8px", description: "Alias for space-4. The t-shirt names name every other rung of the ladder.", hook: false },
   { name: '--wzl-space-md', type: "dimension", group: "space", defaultValue: "12px", description: "Alias for space-6. The t-shirt names name every other rung of the ladder.", hook: false },

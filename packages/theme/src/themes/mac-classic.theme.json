@@ -322,6 +322,10 @@
       "value": 700,
       "type": "fontWeight"
     },
+    "font-weight-heavy": {
+      "value": 700,
+      "type": "fontWeight"
+    },
     "panel-surface": {
       "value": "{surface}",
       "type": "color"

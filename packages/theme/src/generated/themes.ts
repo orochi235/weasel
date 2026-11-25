@@ -61,6 +61,7 @@ export type TokenName =
   | '--wzl-font-size-xs'
   | '--wzl-font-ui'
   | '--wzl-font-weight-bold'
+  | '--wzl-font-weight-heavy'
   | '--wzl-font-weight-light'
   | '--wzl-font-weight-medium'
   | '--wzl-font-weight-normal'
@@ -385,6 +386,7 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-font-weight-heavy': "600",
         '--wzl-space-xs': "4px",
         '--wzl-space-sm': "8px",
         '--wzl-space-md': "12px",
@@ -569,6 +571,7 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-font-weight-heavy': "600",
         '--wzl-space-xs': "4px",
         '--wzl-space-sm': "8px",
         '--wzl-space-md': "12px",
@@ -753,6 +756,7 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-font-weight-heavy': "600",
         '--wzl-space-xs': "4px",
         '--wzl-space-sm': "8px",
         '--wzl-space-md': "12px",
@@ -937,6 +941,7 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-font-weight-heavy': "600",
         '--wzl-space-xs': "4px",
         '--wzl-space-sm': "8px",
         '--wzl-space-md': "12px",
@@ -1121,6 +1126,7 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-font-weight-heavy': "600",
         '--wzl-space-xs': "4px",
         '--wzl-space-sm': "8px",
         '--wzl-space-md': "12px",
@@ -1305,6 +1311,7 @@ export const THEMES = {
         '--wzl-font-weight-normal': "300",
         '--wzl-font-weight-medium': "350",
         '--wzl-font-weight-bold': "400",
+        '--wzl-font-weight-heavy': "600",
         '--wzl-space-xs': "4px",
         '--wzl-space-sm': "8px",
         '--wzl-space-md': "12px",
@@ -2528,6 +2535,10 @@ export const THEME_SOURCES: Readonly<Record<string, ThemeDefinition>> = {
       },
       "font-weight-bold": {
         "value": 400,
+        "type": "fontWeight"
+      },
+      "font-weight-heavy": {
+        "value": 600,
         "type": "fontWeight"
       },
       "space-xs": {
@@ -3794,6 +3805,10 @@ export const BAKED_THEMES: Readonly<Record<string, BakedTheme>> = {
       "font-weight-bold": {
         "type": "fontWeight",
         "value": 400
+      },
+      "font-weight-heavy": {
+        "type": "fontWeight",
+        "value": 600
       },
       "space-xs": {
         "type": "dimension",
