@@ -22,24 +22,8 @@ import { defineAction, resolveParams, setScratch } from '@weasel-js/routing';
 import type { InvocationCtx, OngoingHandle, OngoingOverlay, Point2 } from '@weasel-js/routing';
 import type { LassoSelectDep, ViewApi, LassoHitMode, LassoSelectAdapter, GestureContext, LassoSelectBehavior, LassoSelectPose } from '@weasel-js/core/engine';
 import type { Op } from '@weasel-js/core';
-import { LASSO_VERTICES, isTinyLasso } from './behaviors/selectFromLasso';
+import { LASSO_VERTICES, isTinyLasso, polygonAabb } from './behaviors/selectFromLasso';
 import type {} from '@weasel-js/core';
-import type { Rect } from '@weasel-js/geom';
-
-/** Compute AABB of a polygon (for fallback hit-test when hitTestLasso is absent). */
-function polygonAabb(
-  pts: Point2[],
-): Rect | null {
-  if (pts.length === 0) return null;
-  let minX = pts[0].x, minY = pts[0].y, maxX = pts[0].x, maxY = pts[0].y;
-  for (const p of pts) {
-    if (p.x < minX) minX = p.x;
-    if (p.y < minY) minY = p.y;
-    if (p.x > maxX) maxX = p.x;
-    if (p.y > maxY) maxY = p.y;
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-}
 
 /** The dep's polygon test, or its rect test over the polygon's AABB when it
  *  has none, each hit taken at the depth a click selects. What both the
@@ -51,7 +35,7 @@ function hitTestPolygon(
   view: ViewApi | undefined,
 ): string[] {
   if (dep.hitTestLasso) return targetsOf(dep.hitTestLasso(vertices, mode, view), dep.targetOf);
-  const aabb = polygonAabb(vertices as Point2[]);
+  const aabb = polygonAabb(vertices);
   return aabb ? targetsOf(dep.hitTestArea(aabb, view), dep.targetOf) : [];
 }
 

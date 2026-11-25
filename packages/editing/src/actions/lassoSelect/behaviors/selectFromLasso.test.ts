@@ -33,11 +33,30 @@ function ctx(opts: {
 }
 
 describe('selectFromLasso', () => {
-  it('returns null when adapter has no hitTestLasso', () => {
+  it("asks hitTestArea for the polygon's bounds when the adapter has no hitTestLasso", () => {
     const beh = selectFromLasso();
-    const c = ctx({ vertices: [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 5 }] });
-    (c.adapter as unknown as LassoSelectAdapter).hitTestLasso = undefined;
-    expect(beh.onEnd!(c, { answered: false })).toBeNull();
+    const c = ctx({ vertices: [{ x: 0, y: 2 }, { x: 5, y: 0 }, { x: 4, y: 7 }], selection: ['old'] });
+    const adapter = c.adapter as unknown as LassoSelectAdapter;
+    adapter.hitTestLasso = undefined;
+    const hitTestArea = vi.fn(() => ['a']);
+    adapter.hitTestArea = hitTestArea;
+    const ops = beh.onEnd!(c, { answered: false })!;
+    expect(hitTestArea).toHaveBeenCalledWith({ x: 0, y: 0, width: 5, height: 7 });
+    let setTo: string[] = [];
+    ops[0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
+    expect(setTo).toEqual(['a']);
+  });
+
+  it('still clears on a tiny lasso, and falls through on a real one, with no hit test at all', () => {
+    const beh = selectFromLasso();
+    const tiny = ctx({ vertices: [{ x: 0, y: 0 }], selection: ['old'] });
+    (tiny.adapter as unknown as LassoSelectAdapter).hitTestLasso = undefined;
+    let setTo: string[] = ['unset'];
+    beh.onEnd!(tiny, { answered: false })![0].apply({ setSelection: (ids: string[]) => { setTo = ids; } });
+    expect(setTo).toEqual([]);
+    const real = ctx({ vertices: [{ x: 0, y: 0 }, { x: 5, y: 0 }, { x: 5, y: 5 }] });
+    (real.adapter as unknown as LassoSelectAdapter).hitTestLasso = undefined;
+    expect(beh.onEnd!(real, { answered: false })).toBeUndefined();
   });
 
   it('replaces selection with hits in non-shift mode', () => {
