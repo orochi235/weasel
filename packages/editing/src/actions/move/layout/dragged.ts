@@ -1,8 +1,8 @@
 import type { NodeId } from '@weasel-js/core';
-import { poseDescriptorForNode, translatePoseViaDescriptor, toPlane, type PlaneMap, composeWorldPose, sceneViewPoseAdapter } from '@weasel-js/core/engine';
+import { poseDescriptorForNode, toPlane, type PlaneMap, composeWorldPose, sceneViewPoseAdapter } from '@weasel-js/core/engine';
 import type { LayoutDragged } from '@weasel-js/core/engine';
 import { carryPose, invertPlane, planeOf } from '@weasel-js/core';
-import { grabbedPoseAdapter, planeDelta } from '../delta';
+import { draggedWorldPose, grabbedPoseAdapter } from '../delta';
 import type { MoveSession } from '../session';
 
 export interface DraggedChild {
@@ -16,7 +16,6 @@ export function gatherDragged(session: MoveSession, delta: { dx: number; dy: num
   const scene = session.scene;
   const pc = session.pc;
   const poseAdapter = sceneViewPoseAdapter(scene);
-  const { dx, dy } = delta;
   // Each dragged preview in WORLD: compose the committed start pose up the
   // parent chain, then add the world drag delta (same math as `applyReparent`).
   // The LayoutStrategy contract is world-framed, so every pose handed to it
@@ -31,9 +30,8 @@ export function gatherDragged(session: MoveSession, delta: { dx: number; dy: num
     if (!node) continue;
     const startWorld = composeWorldPose(grabAdapter, id as string, pc.compose);
     const g = poseDescriptorForNode(d, node);
-    const own = planeDelta(session, id, dx, dy);
     const toEdited = invertPlane(planeOf(session.view, node.layer));
-    const world = carryPose(g, translatePoseViaDescriptor(startWorld, own.dx, own.dy, g), toEdited);
+    const world = carryPose(g, draggedWorldPose(session, grabAdapter, id, delta), toEdited);
     const b = g.getBounds(world);
     dragged.push({
       id,

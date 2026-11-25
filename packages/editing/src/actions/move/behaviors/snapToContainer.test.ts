@@ -18,7 +18,7 @@ function makeCtx(): GestureContext<Pose> {
     pointer: { worldX: 5, worldY: 5, clientX: 100, clientY: 100 },
     view: null,
     offset: (from, to) => ({ dx: to.x - from.x, dy: to.y - from.y }),
-    adapter: { getParent: (id: string) => (id === 'oldParent' ? null : 'oldParent') } as any,
+    adapter: { getParent: (id: string) => (id === 'oldParent' ? null : 'oldParent'), getPose: () => ({ x: 0, y: 0 }) } as any,
     scratch: {},
   };
 }
@@ -131,7 +131,7 @@ describe('snapToContainer', () => {
     ctx.draggedIds = ['p1', 'p2', 'p3'];
     ctx.origin.set('p2', { x: 20, y: 0 }).set('p3', { x: 40, y: 0 });
     ctx.current.set('p2', { x: 21, y: 1 }).set('p3', { x: 41, y: 1 });
-    ctx.adapter = { getParent: (id: string) => (id === 'p2' ? 'box' : id === 'oldParent' || id === 'box' ? null : 'oldParent') } as any;
+    ctx.adapter = { ...ctx.adapter, getParent: (id: string) => (id === 'p2' ? 'box' : id === 'oldParent' || id === 'box' ? null : 'oldParent') } as any;
     b.onMove!(ctx, tt(1, 1));
     const ops = b.onEnd!(ctx, translating(ctx)) as any[];
     const moves = ops.filter((op) => op.name === 'transform').map((op) => [op.args.id, op.args.to]);
@@ -139,6 +139,34 @@ describe('snapToContainer', () => {
     expect(moves).toEqual([['p1', { x: 2, y: 3 }], ['p2', { x: 12, y: 3 }], ['p3', { x: 41, y: 1 }]]);
     const reparents = ops.filter((op) => op.name === 'reparent').map((op) => [op.args.id, op.args.toParentId]);
     expect(reparents).toEqual([['p1', 'box'], ['p3', 'box']]);
+  });
+
+  it.each([['an instant container', true], ['a dwelled one', false]])('follows the slot under the pointer in %s', (_, instant) => {
+    const findTarget = (_id: string, x: number): SnapTarget<Pose> => ({ parentId: 'box', slotPose: { x: x < 10 ? 2 : 12, y: 3 } });
+    const b = snapToContainer<Pose>({ dwellMs: 500, findTarget, isInstant: () => instant });
+    const ctx = makeCtx();
+    b.onMove!(ctx, tt(1, 1));
+    ctx.pointer = { ...ctx.pointer, worldX: 15 };
+    b.onMove!(ctx, tt(1, 1));
+    vi.advanceTimersByTime(500);
+    expect(b.onMove!(ctx, tt(1, 1))).toMatchObject({ snap: { slotPose: { x: 12, y: 3 } } });
+    ctx.pointer = { ...ctx.pointer, worldX: 5 };
+    expect(b.onMove!(ctx, tt(1, 1))).toMatchObject({ snap: { slotPose: { x: 2, y: 3 } } });
+    ctx.pointer = { ...ctx.pointer, worldX: 15 };
+    b.onMove!(ctx, tt(1, 1));
+    const ops = b.onEnd!(ctx, moveEnd()) as any[];
+    expect(ops[0].args).toMatchObject({ id: 'p1', to: { x: 12, y: 3 } });
+  });
+
+  it('undoes a snap to the pose the document held, not where a glide showed the node', () => {
+    const target: SnapTarget<Pose> = { parentId: 'box', slotPose: { x: 2, y: 3 } };
+    const b = snapToContainer<Pose>({ dwellMs: 0, findTarget: () => target, isInstant: () => true });
+    const ctx = makeCtx();
+    ctx.origin.set('p1', { x: 7, y: 7 });
+    ctx.adapter = { ...ctx.adapter, getPose: () => ({ x: 4, y: 4 }) } as any;
+    b.onMove!(ctx, tt(1, 1));
+    const ops = b.onEnd!(ctx, moveEnd()) as any[];
+    expect(ops[0].args).toMatchObject({ id: 'p1', from: { x: 4, y: 4 }, to: { x: 2, y: 3 } });
   });
 
   it('onEnd defers (returns undefined) when no snap is active', () => {

@@ -108,6 +108,7 @@ export function pickContainer(
     if (verdict === false) return;
     const refused = refusalOf(verdict);
     const view = containerView(pc, g, worldPose);
+    if (view === null) return;
     const content = contentBoxOf(g, view, poseAdapter, id as string, worldPose);
     if (refused === null && layout.acceptsDrop) {
       const arg: LayoutContainer = { id: id as string, bounds: content, node };

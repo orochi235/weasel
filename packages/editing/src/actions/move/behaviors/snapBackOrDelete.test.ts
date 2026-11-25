@@ -16,6 +16,8 @@ function ctx(originPose: Pose, currentPose: Pose, objectsById: Record<string, an
     view: null,
     adapter: {
       getNode: (id: string) => objectsById[id],
+      getParent: () => null,
+      getNodes: () => [],
     } as any,
     scratch: {},
   };
@@ -52,7 +54,7 @@ describe('snapBackOrDelete', () => {
       c.origin.set(id, { x: 5, y: 5 });
       c.current.set(id, { x: 50, y: 50 });
     }
-    c.adapter = { getNode: (id: string) => nodes.find((n) => n.id === id), getNodes: () => nodes } as any;
+    c.adapter = { getNode: (id: string) => nodes.find((n) => n.id === id), getNodes: () => nodes, getParent: () => null } as any;
     b.onStart!(c);
     const ops = b.onEnd!(c, moveEnd()) as any[];
     expect(ops.map((op) => op.args.node.id)).toEqual(['c', 'b', 'a']);
@@ -69,5 +71,22 @@ describe('snapBackOrDelete', () => {
     const c = ctx({ x: 5, y: 5 }, { x: 50, y: 50 });
     c.snap = { parentId: 'box', slotPose: { x: 0, y: 0 } };
     expect(b.onEnd!(c, moveEnd())).toBeUndefined();
+  });
+
+  it('measures the release on an outermost dragged node, not one carried inside it', () => {
+    const b = snapBackOrDelete<Pose>({ radius: 1, onFreeRelease: 'delete' });
+    const c = ctx({ x: 5, y: 5 }, { x: 5, y: 5 });
+    c.draggedIds = ['a', 'g'];
+    c.origin.set('g', { x: 0, y: 0 });
+    c.current.set('g', { x: 50, y: 50 });
+    c.adapter = { ...c.adapter, getParent: (id: string) => (id === 'a' ? 'g' : null) } as any;
+    expect(b.onEnd!(c, moveEnd())).toHaveLength(2);
+  });
+
+  it('measures the radius in world units under a scaled frame', () => {
+    const b = snapBackOrDelete<Pose>({ radius: 5, onFreeRelease: 'delete' });
+    const c = ctx({ x: 0, y: 0 }, { x: 3, y: 0 });
+    c.frames = { toWorld: (_id: string, p: Pose) => ({ x: p.x * 10, y: p.y * 10 }) } as any;
+    expect(b.onEnd!(c, moveEnd())).toHaveLength(1);
   });
 });

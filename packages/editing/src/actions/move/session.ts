@@ -159,12 +159,13 @@ export function beginMove(
   const gestureCtx = buildGestureContext(ctx, scene, ids, startPoses, adapter, readers);
   for (const b of behaviors) b.onStart?.(gestureCtx);
 
-  const verdict = verdictOf(ctx.deps.canDropInto, ids, scene);
+  const outer = outermost(ids, (id) => scene.get(id)?.parent ?? null);
+  const verdict = verdictOf(ctx.deps.canDropInto, outer, scene);
   const session: MoveSession = {
     startPoses,
     selected: asked,
     ids,
-    outer: outermost(ids, (id) => scene.get(id)?.parent ?? null),
+    outer,
     cascadeIds,
     carried,
     frames,

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import type { InvocationCtx, OngoingInvoker, SelectionApi } from '@weasel-js/routing';
 import { IDENTITY_POSE_COMPOSITION, createScene, asNodeId, type Scene, RECT_POSE_DESCRIPTOR, type PoseDescriptor } from '@weasel-js/core/engine';
-import type { SnapDep, MoveBehavior } from '@weasel-js/core/engine';
+import type { SnapDep, MoveBehavior, LayoutStrategy } from '@weasel-js/core/engine';
 import { moveAction } from './action';
 
 type Rect = { x: number; y: number; width: number; height: number };
@@ -27,10 +27,11 @@ const landingDescriptor: PoseDescriptor<Rect> = {
   },
 };
 
-function drag(behaviors: MoveBehavior<unknown>[] = []) {
+function drag(behaviors: MoveBehavior<unknown>[] = [], more: (scene: Scene<unknown, string, unknown>) => object = () => ({})) {
   const scene = createScene<object, 'main', Rect>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] }) as unknown as Scene<unknown, string, unknown>;
   const id = scene.add({ kind: 'mark', layer: 'main', data: {}, pose: { x: 0, y: 0, width: 10, height: 10 } }) as string;
   const deps = {
+    ...more(scene),
     scene, snap, poseDescriptor: landingDescriptor,
     operands: { get: () => [id], set: () => {} } as unknown as SelectionApi,
   };
@@ -89,5 +90,19 @@ describe('a move whose landing goes away at the same delta', () => {
     handle.onMove!(ctx({ x: 9.2, y: 7.9 }));
     handle.onEnd!(ctx({ x: 9.2, y: 7.9 }), 'commit');
     expect(scene.get(asNodeId(id))!.pose).toMatchObject({ x: 4, y: 3 });
+  });
+
+  it('shows a layout container the dragged pose the landing gives, as the commit stores', () => {
+    const seen: Rect[] = [];
+    const strategy = {
+      childPoses: () => new Map(),
+      acceptsDrop: (_c: unknown, d: { pose: Rect }) => { seen.push(d.pose); return false; },
+    } as unknown as LayoutStrategy<unknown>;
+    const withLayout = (scene: Scene<unknown, string, unknown>) => {
+      const box = scene.add({ kind: 'group', layer: 'main', data: {}, pose: { x: -50, y: -50, width: 200, height: 200 } }) as string;
+      return { layout: { getLayout: (cid: string) => (cid === box ? strategy : null) } };
+    };
+    expect(drag([], withLayout)).toMatchObject({ x: 1 / 3 });
+    expect(seen.at(-1)).toMatchObject({ x: 1 / 3 });
   });
 });

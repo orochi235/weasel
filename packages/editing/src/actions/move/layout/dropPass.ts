@@ -99,6 +99,7 @@ function sourceReflow(
     const g = poseDescriptorForNode(d, srcNode);
     const srcWorld = composeWorldPose(poseAdapter, srcId, pc.compose);
     const view = containerView(pc, g, srcWorld);
+    if (view === null) continue;
     const srcContainer: LayoutContainer = { id: srcId, bounds: contentBoxOf(g, view, poseAdapter, srcId, srcWorld), node: srcNode };
     const srcChildren: LayoutChild<unknown>[] = scene.childrenOf(asNodeId(srcId))
       .filter((cid) => !leaving.has(cid))
