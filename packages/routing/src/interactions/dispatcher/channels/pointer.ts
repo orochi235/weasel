@@ -355,7 +355,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     ...heldMoves(lastSample, (s) => { routeAt(s.pointerId, s.clientX, s.clientY); recognizer.move(s); }),
     dispose() {
       recognizer.reset();
-      for (const session of sessions.values()) session.cancel();
+      for (const [id, session] of sessions) { session.cancel(); routeRelease(id); }
       sessions.clear();
       lastSample.clear();
     },
