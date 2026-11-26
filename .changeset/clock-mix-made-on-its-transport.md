@@ -3,9 +3,9 @@
 '@weasel-js/labkit': major
 ---
 
-`ClockSpec.mix` is handed the clock's blits transport and makes its mix on it, so the mix's time is the clock's `elapsed` and seeks, rate and reverse play reach it directly.
+`ClockSpec.mix` is handed the clock's blits transport and makes its mix on it.
 
-The mix takes no `history` of its own: the transport keeps it. `ClockedMix` now asks only for `now`, and `createClock` throws when the mix made is not on the transport it was given.
+The mix's time is then the clock's `elapsed`, and seeks, rate and reverse play reach it directly. It takes no `history` of its own: the transport keeps it. `ClockedMix` now asks only for `now`, and `createClock` throws when the mix made is not on the transport it was given.
 
 ```ts
 // before
