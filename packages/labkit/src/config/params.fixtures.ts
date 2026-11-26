@@ -55,7 +55,9 @@ export function magicsmokeByHand(): Record<string, ConfigEntry> {
   for (const [group, { label, params }] of Object.entries(MAGICSMOKE)) {
     const leaves: Record<string, ConfigEntry> = {};
     for (const [key, spec] of Object.entries(params) as [string, ParamNumber][]) {
-      const fallback = (MAGICSMOKE_DEFAULTS as Record<string, Record<string, number>>)[group]?.[key];
+      const fallback = (MAGICSMOKE_DEFAULTS as Record<string, Record<string, number>>)[group]?.[
+        key
+      ];
       let leaf = f
         .number(fallback ?? (spec.min as number))
         .range(spec.min as number, spec.max as number)

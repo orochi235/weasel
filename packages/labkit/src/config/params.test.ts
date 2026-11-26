@@ -95,16 +95,18 @@ describe('f.params', () => {
     ] as const) {
       const copy = JSON.parse(JSON.stringify(shape)) as ParamShape;
       expect(copy).toEqual(shape);
-      expect(resolved(f.params(copy, { defaults }))).toEqual(resolved(f.params(shape, { defaults })));
+      expect(resolved(f.params(copy, { defaults }))).toEqual(
+        resolved(f.params(shape, { defaults })),
+      );
     }
   });
 
   it('throws on a default of the wrong type, or a choice that is not an option', () => {
-    expect(() =>
-      f.params({ n: { kind: 'number' } }, { defaults: { n: 'three' } }),
-    ).toThrow(/default given for n is "three", not a number/);
-    expect(() =>
-      f.params({ e: { kind: 'enum', options: ['a'], default: 'z' as 'a' } }),
-    ).toThrow(/not one of its options/);
+    expect(() => f.params({ n: { kind: 'number' } }, { defaults: { n: 'three' } })).toThrow(
+      /default given for n is "three", not a number/,
+    );
+    expect(() => f.params({ e: { kind: 'enum', options: ['a'], default: 'z' as 'a' } })).toThrow(
+      /not one of its options/,
+    );
   });
 });
