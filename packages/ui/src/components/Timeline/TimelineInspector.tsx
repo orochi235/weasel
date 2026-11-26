@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from 'react';
-import type { SampledTrack, Track } from '@weasel-js/animator';
+import { isBlitsEasing, resolveKeyEasing, type SampledTrack, type Track } from '@weasel-js/animator';
 import s from './Timeline.module.css';
 import { EasingPicker } from '../EasingPicker/EasingPicker';
 import { trackAtPath } from './lanes';
@@ -29,10 +29,11 @@ export function TimelineInspector({ tracks, selection, segmentSelection, renderK
   if (segmentSelection) {
     const segment = sampledKeyAt(tracks, segmentSelection);
     if (!segment) return null;
+    const { easing } = segment.key;
     return (
       <div className={s.inspector}>
         <EasingPicker
-          value={segment.key.easing}
+          value={isBlitsEasing(easing) ? resolveKeyEasing(easing) : easing}
           onChange={(next) => { if (edits) onChange(setKeyEasing(tracks, segmentSelection, next)); }}
         />
       </div>

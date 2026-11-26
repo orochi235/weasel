@@ -8,6 +8,7 @@ export type BlitsEasing = Exclude<Easing, string | ((u: number) => number) | { r
 /** What eases the approach into a key: an `EasingSpec`, or an easing blits defines as data. */
 export type KeyEasing = EasingSpec | BlitsEasing;
 
+/** Whether an easing is one of blits' data forms, which `resolveKeyEasing` hands to blits. */
 export function isBlitsEasing(spec: KeyEasing | undefined): spec is BlitsEasing {
   return typeof spec === 'object' && spec !== null && !('bezier' in spec);
 }
