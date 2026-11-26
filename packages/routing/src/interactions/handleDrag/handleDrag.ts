@@ -119,7 +119,8 @@ function stickyScrollerOf(box: Element, scroller: Element, style: CSSStyleDeclar
       const s = scroll.moved();
       if (!stuckX && !stuckY) return s;
       const b = box.getBoundingClientRect();
-      const p = scroller.getBoundingClientRect();
+      // The root's own box scrolls with the page; a box stuck to the viewport sticks to the viewport's edge.
+      const p = scroller === scroller.ownerDocument.documentElement ? { left: 0, top: 0 } : scroller.getBoundingClientRect();
       return { x: stuckX ? p.left - b.left : s.x, y: stuckY ? p.top - b.top : s.y };
     },
   };

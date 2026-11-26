@@ -454,6 +454,31 @@ describe('useHandleDrag — callbacks from a later render', () => {
     scroller.remove();
   });
 
+  it('reads a sticky rect stuck to the viewport against the viewport, not the root box the page scrolls', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const root = document.documentElement;
+    const rootRect = root.getBoundingClientRect;
+    root.getBoundingClientRect = () => ({ left: 0, top: -root.scrollTop, right: 100, bottom: 100, width: 100, height: 100, x: 0, y: -root.scrollTop, toJSON: () => ({}) });
+    const target = mount();
+    target.style.position = 'sticky';
+    target.style.top = '0';
+    // At top 100 unscrolled, stuck at the viewport's top once the page scrolls past it.
+    target.getBoundingClientRect = () => {
+      const top = Math.max(0, 100 - root.scrollTop);
+      return { left: 0, top, right: 100, bottom: top + 100, width: 100, height: 100, x: 0, y: top, toJSON: () => ({}) };
+    };
+    result.current.onPointerDown(press(target, 10, 110));
+    root.scrollTop = 50;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 110 }));
+    root.scrollTop = 200;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 111 }));
+    root.scrollTop = 0;
+    root.getBoundingClientRect = rootRect;
+    target.remove();
+    expect(onMove.mock.calls.map((c) => c[0])).toEqual([{ x: 10, y: 60 }, { x: 10, y: 111 }]);
+  });
+
   it('follows a scroll outside the shadow root the rect is in', () => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
