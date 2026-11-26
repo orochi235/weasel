@@ -3,7 +3,7 @@
  * geometry baked in, with the clip's opacity and trim tracks keyframed on it.
  */
 import type { Clip } from '@weasel-js/animator';
-import { boundsOfPath, identity, multiply, rotatePathAbout, transformPath, type Affine, type Path } from '@weasel-js/geom';
+import { boundsOfPath, identity, multiply, rotatePathAbout, transformPath, type Affine, type Path, type Rect } from '@weasel-js/geom';
 import { tryParseColor } from '@weasel-js/paint';
 import type { SvgNode, SvgPaint, SvgPathNode, SvgStroke } from '@weasel-js/svg';
 import { svgBoundsOf } from '@weasel-js/svg';
@@ -22,10 +22,12 @@ export interface WriteLottieOptions {
   fps?: number;
   /** Called once for each thing the animation cannot carry. */
   onWarn?: (message: string) => void;
+  /** The canvas, in the nodes' coordinates. Default: `svgBoundsOf(nodes)`. */
+  viewBox?: Rect;
 }
 
-/** A path node with everything above it folded in. */
-interface Leaf { node: SvgPathNode; path: Path; opacity: number }
+/** A path node with everything above it folded in: `ctm` maps its path to the root. */
+interface Leaf { node: SvgPathNode; path: Path; ctm: Affine; opacity: number }
 
 const held = <T>(k: T): LottieStatic<T> => ({ a: 0, k });
 const CAPS = { butt: 1, round: 2, square: 3 } as const;
@@ -39,7 +41,12 @@ function leavesOf(nodes: readonly SvgNode[], warn: Warn, ctm: Affine = identity(
   return nodes.flatMap((node): Leaf[] => {
     if (node.hidden) return [];
     if (node.kind === 'group') {
-      return leavesOf(node.children, warn, node.transform ? multiply(ctm, node.transform) : ctm, opacity * (node.opacity ?? 1));
+      const own = node.opacity ?? 1;
+      const leaves = leavesOf(node.children, warn, node.transform ? multiply(ctm, node.transform) : ctm, opacity * own);
+      if (own !== 1 && leaves.length > 1) {
+        warn('a group\'s opacity is applied to each path in it, so where they overlap they show through each other');
+      }
+      return leaves;
     }
     if (node.kind !== 'path') {
       warn(`a ${node.kind} node has no Lottie form here; it is skipped`);
@@ -50,7 +57,7 @@ function leavesOf(nodes: readonly SvgNode[], warn: Warn, ctm: Affine = identity(
       const b = boundsOfPath(path);
       path = rotatePathAbout(path, b.x + b.width / 2, b.y + b.height / 2, node.rotation);
     }
-    return [{ node, path: transformPath(path, ctm), opacity }];
+    return [{ node, path: transformPath(path, ctm), ctm, opacity }];
   });
 }
 
@@ -66,7 +73,17 @@ function colorOf(paint: SvgPaint, alpha: number, what: string, warn: Warn): { c:
   return { c: held([r, g, b, 1]), o: held(a * (paint.opacity ?? 1) * alpha * 100) };
 }
 
-function strokeOf(stroke: SvgStroke, label: string, warn: Warn): LottieStroke | null {
+/** How much `ctm` scales a width: the square root of its area scale, exact where it scales evenly. */
+function widthScaleOf(ctm: Affine, label: string, warn: Warn): number {
+  const [a, b, c, d] = ctm;
+  const tolerance = 1e-9 * Math.max(1, a * a + b * b);
+  if (Math.abs(a * a + b * b - (c * c + d * d)) > tolerance || Math.abs(a * c + b * d) > tolerance) {
+    warn(`${label} is scaled unevenly, which a Lottie stroke width cannot follow; its stroke takes the mean scale`);
+  }
+  return Math.sqrt(Math.abs(a * d - b * c));
+}
+
+function strokeOf(stroke: SvgStroke, ctm: Affine, label: string, warn: Warn): LottieStroke | null {
   const dropped = [
     stroke.dash?.length ? 'dashes' : '',
     stroke.markerStart || stroke.markerMid || stroke.markerEnd ? 'markers' : '',
@@ -80,7 +97,7 @@ function strokeOf(stroke: SvgStroke, label: string, warn: Warn): LottieStroke | 
   }
   const color = colorOf(stroke.paint, stroke.opacity ?? 1, `${label} has a stroke`, warn);
   if (!color) return null;
-  const width = typeof stroke.width === 'number' ? stroke.width : stroke.width.px;
+  const width = (typeof stroke.width === 'number' ? stroke.width : stroke.width.px) * widthScaleOf(ctm, label, warn);
   return {
     ty: 'st', ...color, w: held(width), lc: CAPS[stroke.cap ?? 'butt'], lj: JOINS[stroke.join ?? 'miter'], ml: stroke.miterLimit ?? 4,
   };
@@ -108,7 +125,7 @@ function layerOf(leaf: Leaf, tracks: Map<string, PlannedTrack>, ctx: { fps: numb
   const { fps, warn } = ctx;
   const label = node.id === undefined ? 'a path' : `#${node.id}`;
   const shapes = lottieShapesOf(leaf.path).map((k): LottieShapeItem => ({ ty: 'sh', ks: held(k) }));
-  const stroke = node.stroke ? strokeOf(node.stroke, label, warn) : null;
+  const stroke = node.stroke ? strokeOf(node.stroke, leaf.ctm, label, warn) : null;
   const fill = fillOf(leaf, label, warn);
   const tr: LottieShapeItem = { ty: 'tr', ...transformOf([0, 0], held(100)) };
   const start = tracks.get('trim.start');
@@ -136,7 +153,7 @@ function layerOf(leaf: Leaf, tracks: Map<string, PlannedTrack>, ctx: { fps: numb
  * its first layer on top; group transforms and rotations are baked into the geometry. A track
  * `<id>.opacity` keys the layer's opacity, and `<id>.trim.start` / `<id>.trim.end` (fractions of
  * the path's length) a trim of its stroke; an edge with no track rests where the stroke's own trim
- * puts it. The canvas is `svgBoundsOf(nodes)`. Lottie players loop,
+ * puts it. The canvas is `opts.viewBox`, else `svgBoundsOf(nodes)`. Lottie players loop,
  * so a clip that does not loop warns; so does each track, paint or node this cannot write, through
  * `opts.onWarn`, once each.
  */
@@ -158,7 +175,7 @@ export function writeLottie(nodes: SvgNode[], clip: Clip, opts: WriteLottieOptio
     const props = byId.get(track.id) ?? byId.set(track.id, new Map()).get(track.id)!;
     props.set(track.prop, track);
   }
-  const box = svgBoundsOf(nodes);
+  const box = opts.viewBox ?? svgBoundsOf(nodes);
   const op = Math.max(1, Number(((plan.duration / 1000) * fps).toFixed(4)));
   const origin: LottiePoint = [-box.x, -box.y];
   const leaves = leavesOf(nodes, warn);

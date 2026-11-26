@@ -31,16 +31,18 @@ Tracks are named `<id>.<property>`, as the SVG writers in `@weasel-js/svg/animat
 | Track | Lottie |
 |---|---|
 | `<id>.opacity` | the layer's opacity, in percent |
-| `<id>.trim.start`, `<id>.trim.end` | a trim of the stroke, fractions of the path's length written in percent, its subpaths laid end to end and trimmed as one |
+| `<id>.trim.start`, `<id>.trim.end` | a trim of the stroke, fractions of the path's length written in percent, its subpaths laid end to end and trimmed as one; an edge with no track rests at the stroke's own trim |
 
 Each drawn path is one shape layer holding its subpaths, its solid stroke and its solid fill; the
 last path drawn is the first layer, since Lottie draws its first layer on top. Group transforms and
-rotations are baked into the geometry, and the canvas is the drawing's bounds. Keys become frames
+rotations are baked into the geometry, a stroke's width scaled with them, and the canvas is the
+drawing's bounds unless `viewBox` gives another. Keys become frames
 at `t / 1000 * fps`. A bezier easing becomes the keyframe's tangents, a single end step a hold,
 and any other easing the keyframes that trace it.
 
 Lottie has no field for how often an animation plays, and players loop, so a clip that does not loop
 warns. So does anything else the animation cannot carry: a gradient, a dash, a marker, a text node,
-a track on another property or on an id no path has. Each warning is said once, through `onWarn`.
+a group's opacity over overlapping paths, a transform that scales a stroke unevenly, a track on
+another property or on an id no path has. Each warning is said once, through `onWarn`.
 
 `lottieShapesOf(path)` gives a path's subpaths as Lottie beziers on their own.

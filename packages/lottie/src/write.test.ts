@@ -139,6 +139,27 @@ describe('writeLottie', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('scales a stroke\'s width by a group transform baked into the path', () => {
+    const group = { kind: 'group', transform: [2, 0, 0, 2, 0, 0], children: [path('a')] } as SvgNode;
+    const [layer] = writeLottie([group], clipOf({})).layers;
+    expect(itemsOf(layer.shapes[0], 'st')[0]).toMatchObject({ w: { a: 0, k: 4 } });
+  });
+
+  it('warns where a transform scales a stroke unevenly', () => {
+    const warnings: string[] = [];
+    const group = { kind: 'group', transform: [2, 0, 0, 8, 0, 0], children: [path('a')] } as SvgNode;
+    const [layer] = writeLottie([group], clipOf({}), { onWarn: (m) => warnings.push(m) }).layers;
+    expect(itemsOf(layer.shapes[0], 'st')[0]).toMatchObject({ w: { a: 0, k: 8 } });
+    expect(warnings).toEqual(['#a is scaled unevenly, which a Lottie stroke width cannot follow; its stroke takes the mean scale']);
+  });
+
+  it("warns that a group's opacity reaches each of its paths alone", () => {
+    const warnings: string[] = [];
+    const group = { kind: 'group', opacity: 0.5, children: [path('a'), path('b')] } as SvgNode;
+    writeLottie([group], clipOf({}), { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toEqual(["a group's opacity is applied to each path in it, so where they overlap they show through each other"]);
+  });
+
   it('warns for, and skips, trim tracks on a path with no stroke', () => {
     const warnings: string[] = [];
     const node = path('a', 'M0 0 L10 0 L10 10 Z', { stroke: undefined, fill: { kind: 'solid', color: '#000' } } as Partial<SvgNode>);
@@ -153,4 +174,9 @@ describe('writeLottie', () => {
     expect(warnings).toEqual(['a.stroke-width moves stroke-width, which Lottie cannot animate on a path; it is skipped']);
   });
 
+  it('frames the canvas by the viewBox it is given', () => {
+    const anim = writeLottie([path('a', 'M10 10 L50 10')], clipOf({}), { viewBox: { x: 0, y: 0, width: 100, height: 50 } });
+    expect(anim).toMatchObject({ w: 100, h: 50 });
+    expect(anim.layers[0].ks.p.k).toEqual([-0, -0]);
+  });
 });
