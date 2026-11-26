@@ -13,6 +13,7 @@ import { useStore } from 'zustand/react';
 import { TrialRootContext } from '../clock/contexts';
 import type { LabStore } from '../state/store';
 import { useSurfaceOptional } from '../surface/useSurfaceTile';
+import { bareOf } from './bare';
 import { type PresentationMessageOptions, usePresentationMessages } from './presentationMessages';
 import { type Still, stillOf, useStill } from './still';
 
@@ -38,22 +39,31 @@ interface PresentationContextValue extends Presentation {
   framed: boolean;
   /** Whether the lab started presenting, as an embed does. Fixed for the lab's life. */
   embed: boolean;
+  /** The color a bare embed's URL put behind the lab, while it presents. */
+  bg: string | null;
 }
 
-/** How a lab starts: presenting or not, and held still or not. */
+/** How a lab starts: presenting or not, held still or not, and on what color. */
 export interface PresentationStart {
   presenting: boolean;
   still: Still | null;
+  /** A bare embed's `bg`. */
+  bg: string | null;
 }
 
 /** How `<Lab present still>` and the page's URL say a lab starts. A still is
- *  a presentation, asked for or not. */
+ *  a presentation, asked for or not, and so is a bare embed (`?bare`). */
 export function presentationStart(
   present: boolean | undefined,
   still: boolean | number | undefined,
 ): PresentationStart {
-  const held = stillOf(still);
-  return { presenting: present === true || held !== null || hasPresentParam(), still: held };
+  const bare = bareOf();
+  const held = stillOf(still) ?? bare?.still ?? null;
+  return {
+    presenting: present === true || held !== null || bare !== null || hasPresentParam(),
+    still: held,
+    bg: bare?.bg ?? null,
+  };
 }
 
 /** The class of a lab's root, which says how it is presenting. */
@@ -145,6 +155,7 @@ export function useLabPresentation(
       still,
       framed,
       embed: start.presenting,
+      bg: presenting ? start.bg : null,
     }),
     [
       presenting,
@@ -155,6 +166,7 @@ export function useLabPresentation(
       still,
       framed,
       start.presenting,
+      start.bg,
     ],
   );
 }

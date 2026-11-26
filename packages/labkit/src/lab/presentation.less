@@ -12,7 +12,8 @@
 
 .lk-lab--present {
   --wzl-backdrop: none;
-  background: transparent;
+  // A bare embed's `bg`, set on the root from its URL.
+  background: var(--lk-lab-bg, transparent);
 
   // The starfield is backdrop too, and would land on the host page.
   &::before {

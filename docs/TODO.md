@@ -270,17 +270,21 @@ and vertex color become instances, rather than a registry per property. It is a 
 with before/after numbers. Importers keep an animated element's `transform` as a pose instead of baking it, and
 re-lower animated geometry attributes each sample.
 
-- **(P2) [agent] weasel's named easings aren't data blits, CSS or the GPU can carry** (2026-11-25). geom's 30
-  Penner curves (`EASINGS`) exist only as functions. Planned: a script fits each to a CSS bezier and keeps it where
-  the worst error is ≤ 0.003 (18 of 30: the in and out of quad, cubic, quart, quint, sine, expo, circ and back,
-  plus in-out sine and cubic), and otherwise samples a blits `linear()` with points placed adaptively to ≤ 0.001
-  (17–89 points); it writes a generated table in animator whose names resolve to blits `Easing` values, and a test
-  regenerates it against geom's functions. `Clip` keeps names; `bindClip`, importers and exporters resolve them.
-  Measured 2026-11-25: bezier fit by Nelder–Mead on max error (an upper bound, not proven optimal). Needs blits'
-  sampled curve. The three bounce curves are parabolas, so an exporter writes them exactly instead: a key at each
+- **(P2) [agent] weasel's named easings come from blits' table** (2026-11-25). geom's 30 Penner curves
+  (`EASINGS`) exist only as functions. **Unblocked: blits 1.5.2 (released 2026-11-26) names them in `curve()`, type `PennerName`.** blits takes them (agreed 2026-11-26 with blits-e3, in place of a
+  table in weasel). `curve()` will name every `EASINGS` entry as data a generator script builds from geom's
+  functions: a CSS bezier where the worst error is ≤ 0.003 (18 of 30), otherwise a `linear()` fit to ≤ 0.001.
+
+  Once 1.5.1 ships, the weasel side is:
+  - geom re-exports blits' named curves and drops `cubicBezierEasing` (`packages/geom/src/easingSpec.ts`)
+  - ui's `EasingPicker.tsx:17` reads its control points from them
+  - `Clip` keeps names; `bindClip`, the importers and the exporters resolve them
+
+  Build no weasel-side table. The three bounce curves are parabolas, so an exporter writes them exactly instead: a key at each
   contact and peak (easeOutBounce: 0, 36.364%, 54.545%, 72.727%, 81.818%, 90.909%, 95.455%, 100%), each segment
   eased by quad in `cubic-bezier(1/3, 0, 2/3, 1/3)` or quad out `cubic-bezier(1/3, 2/3, 2/3, 1)`, measured
-  within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. Closes when every weasel easing name plays from the table within those bounds.
+  within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. Closes when every weasel
+  easing name plays from blits' table, and geom and the picker hold no curve data.
 
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
@@ -329,7 +333,7 @@ re-lower animated geometry attributes each sample.
 What weasel still times for itself, read against blits on 2026-11-25. The direction is in CLAUDE.md
 ("animator becomes a front end over blits").
 
-- **(P2) [waiting] Rebuild animator as a front end over blits.** Its commands (start, cancel, `cancelKey`
+- **(P2) [agent] Rebuild animator as a front end over blits.** **Springs unblocked: blits 1.5.2 (2026-11-26) carries them.** Its commands (start, cancel, `cancelKey`
   replace, interrupt that keeps velocity, holds, staggers, live `edit`) each become blits cues, retargets,
   roles and fades, with animator's test suite unchanged as the guard. The places it could lose behavior:
   - `onCancel` timing, and leaving the value where a cancel left it
@@ -342,18 +346,34 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   - `engine/integrator.ts`
   - the Euler branch, the `solvable` gate and the numeric fallbacks in `physicsAnimation.ts`
   - the public `add`/`subtract`/`scale`/`magnitude` options (`types.ts`, `staggerTypes.ts:49`,
-    `stagger.ts:323`). This is a breaking change to the API: a `T` that `axesOf` can't encode throws.
-    Mike's call.
+    `stagger.ts:323`). Ruled to drop them (2026-11-25), with no encoding hook in their place: a `T`
+    that `axesOf` can't encode throws. This is a breaking change to the API.
 
   `cueSpring`'s targetless branch becomes `spring({ stiffness: 0 })`, which also covers damping 0. Rotations
   only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.
   Also waiting on blits' transport fixes (blits TODO), for the clock. Closes when animator keeps no
   scheduling of its own and its suite passes.
-- **(P2) [agent] One easing table, in blits.** geom's `EASINGS` (31 Penner curves and a bezier solver,
-  `packages/geom/src/easings.ts:152`), blits' `named` (5 CSS curves and its own solver) and ui's
-  `EasingPicker.tsx:17` control points are three copies. Move the Penner curves into blits' `curve`, re-export
-  them from geom, and have the picker read them. Closes when geom and the picker hold no curve data.
-- **(P3) [agent] animator's slew on blits' step.** `packages/animator/src/slew.ts` steps its own value.
+- **(P2) [agent] `@weasel-js/clock` on a blits `Transport`.** **blits 1.5.2 (2026-11-26) takes every workaround; weasel-50 reports `clock-on-transport` all green on it, unmerged.** Branch `clock-on-transport` rebuilds
+  `createClock` so that rate, ramp, sync, seek and wake go through one transport. The public API and the
+  run layer (passes, `declare`, `seekable`) stay. On 2026-11-25, 11 of the clock's 13 test files passed
+  unchanged; `clock.pbt` and `calls.pbt` failed on four transport gaps. blits fixed those on 2026-11-26,
+  unreleased, but reproduced the seek gap only at rate 0 or on a ramp to rest. So the negative-rate seek
+  failures may be weasel's own, and get rerun on the release.
+
+  The rebuild still carries workarounds, each a proposed transport change in blits' TODO ("A `Transport`
+  that can be a clock on its own"):
+  - an empty pilot mix, because `now` is NaN with no mix
+  - restore history that grows for the clock's whole life
+  - re-asserting the rate after every seek. This is now known to cut the tape ahead and drop later cues
+    (blits, 2026-11-26).
+  - rebasing before an earlier timestamp
+  - its own wake and `inert` logic
+
+  `mixFollow.ts` stays until `ClockSpec.mix` can join the transport (a `mix?: (t: Transport) => …` form).
+  Until blits takes the workarounds, the rebuild adds code (net +43 lines). Closes when the clock runs on
+  a released transport with no workarounds, both property test files pass, and `ramp.ts` and the clock's
+  own rate math are gone.
+- **(P3) [agent] animator's slew on blits' step.** **Unblocked: blits 1.5.2 exports `slewStep`.** `packages/animator/src/slew.ts` steps its own value.
   blits' `slew` only works inside a mix, so blits first exports a pure step that its signal uses too. Closes
   when `slew.ts` holds no step math.
 - **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
@@ -368,15 +388,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 - **(P2) [maintainer] Write down the weasel–blits seam.** One dated table of what lives where: motion
   values, the clock's bounded run, scheduling, the frame loop, gesture → motion. Write it once the clock
   spike, the springs work and the animator rebuild report. Closes when it's in `docs/`.
-
-## Fonts & type
-
-- **(P2) [agent] klieg parses fonts a second time, and drops weasel's kerning.** klieg parses with opentype.js
-  itself and hands weasel the parsed font through a custom parser (`klieg/packages/core/src/text/outline-face.ts:57`),
-  which skips `@weasel-js/font`'s GPOS kerning. It also keeps a drifted copy of
-  `packages/font/src/outline/sfnt.ts`, which weasel doesn't export. weasel's side: accept an
-  already-parsed font without losing GPOS kerning, and export the sfnt collection helpers. Closes when font
-  offers both and klieg's copy can go.
 
 ## Audio
 
@@ -400,22 +411,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] labkit has no hash state or bare embed view, so every lab writes its own** (read 2026-11-25).
-  agnew, fiddy, beamos, x-pcb, rosee, blinken and klieg each keep a URL-hash codec and their own base64url
-  helper, and most keep a `?bare` view. They disagree on details:
-  - **Version:** only agnew (refuses newer, with a notice naming what was dropped) and blinken (packed
-    binary `FORMAT = 2`, old links still decode) version their state.
-  - **Bare params:** `bg` takes 6 hex digits in fiddy and 3–8 (so alpha) in rosee. agnew's `?bare`
-    ignores `=still` and `bg`.
-
-  labkit already reads `?still` (`packages/labkit/src/lab/still.ts`) and `?present`. Add a versioned
-  `hashState` (JSON or binary codec, a dropped-fields notice) and a `bare` reader beside them. Closes when
-  labkit exports both.
-- **(P2) [agent] Labs describe their params as data, three ways, since `ConfigField` went** (`da26075c79`,
-  2026-11-12). magicsmoke's `ParamSpec` (`src/tuning.ts:141`), agnew's union (`packages/agnew/src/params.ts:3`)
-  and beamos' kind settings (`packages/beamos/src/kinds/kind.ts:3`) are near-identical, and each has its own
-  converter to `f.number().range().step().label()`. labkit offers a plain-data param shape that compiles
-  to `f.schema`. Closes when labkit exports it.
 - **(P1.5) [agent] Two lens implementations each aim their own way** (2026-11-22). labkit's lab lens
   (`packages/labkit/src/loupe/lens/`) is a scene of nodes, a body, a reticle and a leader, with `LensAim` `pinned |
   follow | glass`; hud's `createLoupe` is a HUD window whose aim, follow or pinned, lives in `@weasel-js/loupe`'s
