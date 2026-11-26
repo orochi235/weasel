@@ -1,3 +1,5 @@
+import { slewStep } from '@msb235/blits';
+
 /** Most a slewed value may change per second, in its own units, in each
  *  direction. A direction left out is unlimited: the value jumps to a target
  *  on that side. `0` holds the value where it is. */
@@ -20,16 +22,13 @@ function checkRate(name: string, rate: number | undefined): number {
 export function slewToward(value: number, target: number, dt: number, rates: SlewRates): number {
   const rise = checkRate('rise', rates.rise);
   const fall = checkRate('fall', rates.fall);
-  if (target > value) return Math.min(target, value + reach(rise, dt));
-  if (target < value) return Math.max(target, value - reach(fall, dt));
-  return value;
-}
-
-/** How far `rate` moves a value in `dt` seconds. An unlimited rate jumps whatever the step, and
- *  no time, or a step back, moves a limited one nowhere: `Infinity × 0` would answer NaN. */
-function reach(rate: number, dt: number): number {
-  if (rate === Infinity) return Infinity;
-  return dt > 0 && rate > 0 ? rate * dt : 0;
+  const rate = target > value ? rise : fall;
+  if (rate === Infinity) return target;
+  // No time, a step back, or a held direction moves a limited value nowhere.
+  if (!(dt > 0 && rate > 0)) return value;
+  // blits counts ms per unit. Handed the distance allowed as its time at one per unit, it steps
+  // `rate * dt` exactly, where `1000 * dt / (1000 / rate)` lands an ulp off and misses the target.
+  return slewStep(value, target, rate * dt, { riseMs: 1, fallMs: 1 });
 }
 
 /** A value that follows `target` at limited rates. Both fields are writable:
