@@ -1,7 +1,7 @@
 # Node-data target: one target over any field of a node's data
 
-**Status (2026-11-25): unbuilt.** Branch `node-target`, cut from `anim-import`. Delete this file when the
-work merges. Decision recorded in `docs/TODO.md` "## Animation import" (Mike chose the general target, 2026-11-25).
+**Status (2026-11-25): steps 1 and 2 built, 3 and 4 unbuilt.** Branch `node-target`, cut from `anim-import`.
+Delete this file when the work merges. Its first commit is titled "WIP:"; reword it before the batch. Decision recorded in `docs/TODO.md` "## Animation import" (Mike chose the general target, 2026-11-25).
 
 For: the session building it. Answers: how a clip track named `<id>.<attribute>` moves a scene node's
 data, and how trim and vertex color fold into the same mechanism.
