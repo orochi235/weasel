@@ -36,13 +36,14 @@ it('steps once a burst and once per wheel step of travel after, whatever the del
     let want = 0;
     let travel = 0;
     let last = -Infinity;
+    let sign = 0;
     for (const [d, wait] of events) {
       vi.setSystemTime(Date.now() + wait);
       (wheel.invoker as ImmediateInvoker).run(deps as never, { deltaY: d });
       if (!Number.isFinite(d) || d === 0) { t.hit('ignored'); continue; }
       const dir = d < 0 ? 1 : -1;
       const now = Date.now();
-      if (now - last > WHEEL_SIZE_BURST_MS || (travel !== 0 && Math.sign(travel) !== Math.sign(d))) {
+      if (now - last > WHEEL_SIZE_BURST_MS || sign !== Math.sign(d)) {
         travel = 0;
         want += dir;
       } else {
@@ -53,6 +54,7 @@ it('steps once a burst and once per wheel step of travel after, whatever the del
         if (steps > WHEEL_SIZE_MAX_STEPS) t.hit('huge');
       }
       last = now;
+      sign = Math.sign(d);
       const held = values.get('b').n ?? 0;
       expect(held, `after ${d}`).toBe(want);
     }
