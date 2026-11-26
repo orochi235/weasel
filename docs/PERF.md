@@ -80,3 +80,12 @@ When work merges, retire its entry here in the same change.
   its `lab/` import by path because ui does not export them; removing those needs a published
   subpath.
   Closes when the maintainer has ruled on making the flag forge's default and the ruling is in place.
+
+## Builds
+
+- **(P3) [agent] labkit's `.d.ts` bundle takes ~3.6 GB, almost none of it TypeScript's** (2026-11-25). On
+  teitou and studio after a full build, `scripts/build-dts.mts` peaked at 3.54 GB RSS on `main` (`e6c2ba926b`) and
+  3.68 GB with the animation-import batch, which ran out at the old 3 GB heap cap; the cap is 4 GB now. The
+  TypeScript program it builds holds 2,984 files, none of them another package's source, in 380 MB of heap, so
+  the rest is rollup-plugin-dts bundling 17 entries. Closes when the peak is under 2 GB, or a measurement shows
+  where it goes and that it cannot be.
