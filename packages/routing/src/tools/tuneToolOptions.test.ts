@@ -161,4 +161,20 @@ describe('tuneToolOptions and the step actions', () => {
     const params = (tunings.get('b.grow')!.params as () => Record<string, unknown>)();
     expect(grow.enabled!({ activeTool, toolOptionValues: values } as never, undefined, undefined, params)).toBe(true);
   });
+
+  it('follows the routed tool when given, so a held tool the mode leaves out tunes nothing', () => {
+    const tunings = new Map<string, ActionTuning[]>();
+    const registry = { tune: (id: string, t: ActionTuning) => { tunings.set(id, [...(tunings.get(id) ?? []), t]); return () => {}; } };
+    const values = createToolOptionValues();
+    values.set('b', 'radiusPx', 25);
+    values.set('h', 'radiusPx', 90);
+    const deps = depsOf(values, { active: 'b', hotkeyStack: ['h'] });
+    const sized: ToolOptionsSpec = { ...OPTIONS, size: { option: 'radiusPx', plus: 1 } };
+    const tools = [defineTool({ id: 'b', options: sized }), defineTool({ id: 'h', options: sized })];
+    tuneToolOptions(registry, deps as never, tools, () => 'b');
+    const read = () => Object.assign({}, ...tunings.get('brush')!.map((t) => (t.params as () => Record<string, unknown>)()));
+    expect(read()).toEqual({ radiusPx: 25 });
+    expect(tunings.get('brush')!.map((t) => (t.form as (p: object) => unknown)({}) !== null)).toEqual([true, false]);
+    expect((tunings.get('b.grow')![0]!.params as () => Record<string, unknown>)()).toEqual({ liveTool: 'b' });
+  });
 });

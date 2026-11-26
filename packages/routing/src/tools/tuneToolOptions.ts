@@ -17,11 +17,13 @@ import type { Tool } from './types';
  *  are one setting: a value the panel sets is written back to the dep, for the
  *  tool whose options the panel's run showed, active or not. The panel shows the live tool's options beside the
  *  action's own params (`ActionTuning.form`), so a shape's fill and stroke can be changed after it is drawn.
- *  Returns a release. */
+ *  `routed`, when given, names the tool input routes to (`ToolsApi.routed`), so a held tool the active mode leaves
+ *  out tunes nothing, as it routes nothing. Returns a release. */
 export function tuneToolOptions(
   registry: Pick<ActionsRegistry, 'tune'>,
   deps: Pick<DepRegistry, 'get'> | null,
   tools: Iterable<Tool>,
+  routed?: () => string | null,
 ): () => void {
   const releases: Array<() => void> = [];
   // The tool whose options each action's last held run showed, `null` for none: the one a panel change belongs to.
@@ -29,7 +31,9 @@ export function tuneToolOptions(
   const readBy = new Map<string, string | null>();
   const all = [...tools];
   const ids = new Set(all.map((t) => t.id));
-  const live = (): string | null => liveTool(deps?.get('activeTool'), ids);
+  const live = routed
+    ? (): string | null => { const id = routed(); return id !== null && ids.has(id) ? id : null; }
+    : (): string | null => liveTool(deps?.get('activeTool'), ids);
   for (const tool of all) {
     const options = tool.options;
     if (!options) continue;
