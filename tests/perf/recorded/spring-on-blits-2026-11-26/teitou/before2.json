@@ -1,0 +1,1292 @@
+{
+  "schema": "weasel-perf-result/1",
+  "benchmark": "vitest-bench",
+  "git": {
+    "sha": "9f88bd7006f1daba3a1894244cc475a290450785",
+    "dirty": true
+  },
+  "timestamp": "2026-11-26T16:17:01.841Z",
+  "machine": {
+    "glRenderer": null,
+    "softwareGl": null,
+    "browser": null,
+    "cpu": "Apple M5 Max",
+    "cores": 18,
+    "os": "Darwin 27.2.0 arm64",
+    "node": "v26.13.1",
+    "loadavg": [
+      3.7,
+      5,
+      5.09
+    ]
+  },
+  "params": {
+    "filters": [
+      "tests/perf/bench/animator-on-blits.bench.ts",
+      "-t",
+      "spring"
+    ]
+  },
+  "items": [
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, a spring voice per animation, pull, no sink",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, a spring voice per animation, pull, no sink"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0380829999994603,
+          "unit": "ms",
+          "stat": "median of 25845 samples"
+        },
+        "min": {
+          "value": 0.035083999999187654,
+          "unit": "ms",
+          "stat": "min of 25845 samples"
+        },
+        "mean": {
+          "value": 0.038692698781202066,
+          "unit": "ms",
+          "stat": "mean of 25845 samples"
+        },
+        "rme": {
+          "value": 0.1894023270250355,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, one voice, pull, no sink",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, one voice, pull, no sink"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.040542000000641565,
+          "unit": "ms",
+          "stat": "median of 24449 samples"
+        },
+        "min": {
+          "value": 0.037167000000408734,
+          "unit": "ms",
+          "stat": "min of 24449 samples"
+        },
+        "mean": {
+          "value": 0.0409019251503181,
+          "unit": "ms",
+          "stat": "mean of 24449 samples"
+        },
+        "rme": {
+          "value": 0.17675935779080182,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, a spring voice per animation, pull",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, a spring voice per animation, pull"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.04220800000075542,
+          "unit": "ms",
+          "stat": "median of 22992 samples"
+        },
+        "min": {
+          "value": 0.03895799999918381,
+          "unit": "ms",
+          "stat": "min of 22992 samples"
+        },
+        "mean": {
+          "value": 0.04349510320981222,
+          "unit": "ms",
+          "stat": "mean of 22992 samples"
+        },
+        "rme": {
+          "value": 0.30602909770099407,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, one voice, pull",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, one voice, pull"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.04454099999929895,
+          "unit": "ms",
+          "stat": "median of 21993 samples"
+        },
+        "min": {
+          "value": 0.040957999999591266,
+          "unit": "ms",
+          "stat": "min of 21993 samples"
+        },
+        "mean": {
+          "value": 0.04546914722867842,
+          "unit": "ms",
+          "stat": "mean of 21993 samples"
+        },
+        "rme": {
+          "value": 0.2772009210516326,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > today",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "today"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.05041700000037963,
+          "unit": "ms",
+          "stat": "median of 18709 samples"
+        },
+        "min": {
+          "value": 0.04566700000032142,
+          "unit": "ms",
+          "stat": "min of 18709 samples"
+        },
+        "mean": {
+          "value": 0.05345101165214458,
+          "unit": "ms",
+          "stat": "mean of 18709 samples"
+        },
+        "rme": {
+          "value": 0.6235925601386543,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, a spring voice per animation",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, a spring voice per animation"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.07391700000152923,
+          "unit": "ms",
+          "stat": "median of 13219 samples"
+        },
+        "min": {
+          "value": 0.06829199999992852,
+          "unit": "ms",
+          "stat": "min of 13219 samples"
+        },
+        "mean": {
+          "value": 0.07565204894469732,
+          "unit": "ms",
+          "stat": "mean of 13219 samples"
+        },
+        "rme": {
+          "value": 0.33391498902775235,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, one voice",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, one voice"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.0755829999998241,
+          "unit": "ms",
+          "stat": "median of 13143 samples"
+        },
+        "min": {
+          "value": 0.07012500000018917,
+          "unit": "ms",
+          "stat": "min of 13143 samples"
+        },
+        "mean": {
+          "value": 0.07608665814502318,
+          "unit": "ms",
+          "stat": "mean of 13143 samples"
+        },
+        "rme": {
+          "value": 0.21740241353532513,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, voice per animation (subjects)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, voice per animation (subjects)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.07612499999959255,
+          "unit": "ms",
+          "stat": "median of 12568 samples"
+        },
+        "min": {
+          "value": 0.0684160000000702,
+          "unit": "ms",
+          "stat": "min of 12568 samples"
+        },
+        "mean": {
+          "value": 0.07956988669637162,
+          "unit": "ms",
+          "stat": "mean of 12568 samples"
+        },
+        "rme": {
+          "value": 0.39347985732915813,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, one voice, lanes off",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, one voice, lanes off"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.10720800000126474,
+          "unit": "ms",
+          "stat": "median of 9056 samples"
+        },
+        "min": {
+          "value": 0.09824999999909778,
+          "unit": "ms",
+          "stat": "min of 9056 samples"
+        },
+        "mean": {
+          "value": 0.1104306258833945,
+          "unit": "ms",
+          "stat": "mean of 9056 samples"
+        },
+        "rme": {
+          "value": 0.3762227669748772,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, a spring voice per animation, lanes off",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, a spring voice per animation, lanes off"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.11662500000056752,
+          "unit": "ms",
+          "stat": "median of 8495 samples"
+        },
+        "min": {
+          "value": 0.10729200000059791,
+          "unit": "ms",
+          "stat": "min of 8495 samples"
+        },
+        "mean": {
+          "value": 0.11772439976456409,
+          "unit": "ms",
+          "stat": "mean of 8495 samples"
+        },
+        "rme": {
+          "value": 0.2640478601864767,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, voice per animation (target)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, voice per animation (target)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.11768750000010186,
+          "unit": "ms",
+          "stat": "median of 8044 samples"
+        },
+        "min": {
+          "value": 0.1037079999996422,
+          "unit": "ms",
+          "stat": "min of 8044 samples"
+        },
+        "mean": {
+          "value": 0.12433017889110667,
+          "unit": "ms",
+          "stat": "mean of 8044 samples"
+        },
+        "rme": {
+          "value": 0.5081462230196195,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 1000 nodes > blits, voice per animation (subjects), lanes off",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 1000 nodes",
+        "name": "blits, voice per animation (subjects), lanes off"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.12168750000000728,
+          "unit": "ms",
+          "stat": "median of 7850 samples"
+        },
+        "min": {
+          "value": 0.10920900000019174,
+          "unit": "ms",
+          "stat": "min of 7850 samples"
+        },
+        "mean": {
+          "value": 0.1273895515923565,
+          "unit": "ms",
+          "stat": "mean of 7850 samples"
+        },
+        "rme": {
+          "value": 0.5313545137158139,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, a spring voice per animation, pull, no sink",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, a spring voice per animation, pull, no sink"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.3780000000006112,
+          "unit": "ms",
+          "stat": "median of 2601 samples"
+        },
+        "min": {
+          "value": 0.3443750000005821,
+          "unit": "ms",
+          "stat": "min of 2601 samples"
+        },
+        "mean": {
+          "value": 0.3844682129950178,
+          "unit": "ms",
+          "stat": "mean of 2601 samples"
+        },
+        "rme": {
+          "value": 0.32979040695021583,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, one voice, pull, no sink",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, one voice, pull, no sink"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.40041699999710545,
+          "unit": "ms",
+          "stat": "median of 2467 samples"
+        },
+        "min": {
+          "value": 0.3687080000017886,
+          "unit": "ms",
+          "stat": "min of 2467 samples"
+        },
+        "mean": {
+          "value": 0.4054274300770632,
+          "unit": "ms",
+          "stat": "mean of 2467 samples"
+        },
+        "rme": {
+          "value": 0.354734624557589,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, a spring voice per animation, pull",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, a spring voice per animation, pull"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.40968749999956344,
+          "unit": "ms",
+          "stat": "median of 2390 samples"
+        },
+        "min": {
+          "value": 0.3834999999999127,
+          "unit": "ms",
+          "stat": "min of 2390 samples"
+        },
+        "mean": {
+          "value": 0.41851225815901527,
+          "unit": "ms",
+          "stat": "mean of 2390 samples"
+        },
+        "rme": {
+          "value": 0.4928548528042454,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, one voice, pull",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, one voice, pull"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.45124999999825377,
+          "unit": "ms",
+          "stat": "median of 2137 samples"
+        },
+        "min": {
+          "value": 0.409124999998312,
+          "unit": "ms",
+          "stat": "min of 2137 samples"
+        },
+        "mean": {
+          "value": 0.4680400875058617,
+          "unit": "ms",
+          "stat": "mean of 2137 samples"
+        },
+        "rme": {
+          "value": 0.5878089145073498,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > today",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "today"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.5591039999999339,
+          "unit": "ms",
+          "stat": "median of 1702 samples"
+        },
+        "min": {
+          "value": 0.5024999999986903,
+          "unit": "ms",
+          "stat": "min of 1702 samples"
+        },
+        "mean": {
+          "value": 0.5878533125734252,
+          "unit": "ms",
+          "stat": "mean of 1702 samples"
+        },
+        "rme": {
+          "value": 0.8194122065016655,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, voice per animation (subjects)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, voice per animation (subjects)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.814542000000074,
+          "unit": "ms",
+          "stat": "median of 1189 samples"
+        },
+        "min": {
+          "value": 0.736124999999447,
+          "unit": "ms",
+          "stat": "min of 1189 samples"
+        },
+        "mean": {
+          "value": 0.8414383069806195,
+          "unit": "ms",
+          "stat": "mean of 1189 samples"
+        },
+        "rme": {
+          "value": 0.6285723138018838,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, a spring voice per animation",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, a spring voice per animation"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.8490209999999934,
+          "unit": "ms",
+          "stat": "median of 1142 samples"
+        },
+        "min": {
+          "value": 0.7362910000010743,
+          "unit": "ms",
+          "stat": "min of 1142 samples"
+        },
+        "mean": {
+          "value": 0.8757671138354401,
+          "unit": "ms",
+          "stat": "mean of 1142 samples"
+        },
+        "rme": {
+          "value": 0.6953539269101376,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, one voice",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, one voice"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.9484169999996084,
+          "unit": "ms",
+          "stat": "median of 999 samples"
+        },
+        "min": {
+          "value": 0.7816249999996217,
+          "unit": "ms",
+          "stat": "min of 999 samples"
+        },
+        "mean": {
+          "value": 1.0011152442441795,
+          "unit": "ms",
+          "stat": "mean of 999 samples"
+        },
+        "rme": {
+          "value": 1.0806874896609182,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, one voice, lanes off",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, one voice, lanes off"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.2234170000010636,
+          "unit": "ms",
+          "stat": "median of 789 samples"
+        },
+        "min": {
+          "value": 1.1031250000014552,
+          "unit": "ms",
+          "stat": "min of 789 samples"
+        },
+        "mean": {
+          "value": 1.2680934321925483,
+          "unit": "ms",
+          "stat": "mean of 789 samples"
+        },
+        "rme": {
+          "value": 0.9582789841664712,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, voice per animation (subjects), lanes off",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, voice per animation (subjects), lanes off"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.6182499999995343,
+          "unit": "ms",
+          "stat": "median of 599 samples"
+        },
+        "min": {
+          "value": 1.281875000000582,
+          "unit": "ms",
+          "stat": "min of 599 samples"
+        },
+        "mean": {
+          "value": 1.671297986644454,
+          "unit": "ms",
+          "stat": "mean of 599 samples"
+        },
+        "rme": {
+          "value": 1.2091261380661955,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring frame — 10000 nodes > blits, a spring voice per animation, lanes off",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring frame — 10000 nodes",
+        "name": "blits, a spring voice per animation, lanes off"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.739041000000725,
+          "unit": "ms",
+          "stat": "median of 553 samples"
+        },
+        "min": {
+          "value": 1.300875000000815,
+          "unit": "ms",
+          "stat": "min of 553 samples"
+        },
+        "mean": {
+          "value": 1.8098354321880683,
+          "unit": "ms",
+          "stat": "mean of 553 samples"
+        },
+        "rme": {
+          "value": 2.0678837545169535,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 100 nodes > blits, one voice",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 100 nodes",
+        "name": "blits, one voice"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.06693749999976717,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.06216600000334438,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.06887499999993452,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 8.670149903759786,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 100 nodes > blits, a spring voice per animation",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 100 nodes",
+        "name": "blits, a spring voice per animation"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.13556249999965075,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.12787500000194996,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.13855212499993286,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 6.117643340640637,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 100 nodes > today",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 100 nodes",
+        "name": "today"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.12810349999926984,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.1170830000010028,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.15977062499996464,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 43.54414435372427,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 100 nodes > blits, voice per animation (subjects)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 100 nodes",
+        "name": "blits, voice per animation (subjects)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.14247900000009395,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.12712500000270666,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.48602600000003804,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 166.97795451596218,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 100 nodes > blits, voice per animation (target)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 100 nodes",
+        "name": "blits, voice per animation (target)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.5516879999995581,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.515625,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.5759326249994956,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 10.993829035859935,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 300 nodes > blits, one voice",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 300 nodes",
+        "name": "blits, one voice"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.23650000000088767,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.19770799999969313,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.2504947499996888,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 18.415125681763797,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 300 nodes > today",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 300 nodes",
+        "name": "today"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.25118750000183354,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.2364579999994021,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.305255125000258,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 34.68155076247733,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 300 nodes > blits, a spring voice per animation",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 300 nodes",
+        "name": "blits, a spring voice per animation"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.45043749999967986,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.3937079999996058,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.7398123749999286,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 94.50058832184132,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 300 nodes > blits, voice per animation (subjects)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 300 nodes",
+        "name": "blits, voice per animation (subjects)"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.48652099999890197,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.4060830000016722,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.8425052499997037,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 100.56163813326748,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 300 nodes > blits, voice per animation (target)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 300 nodes",
+        "name": "blits, voice per animation (target)"
+      },
+      "metrics": {
+        "median": {
+          "value": 4.002999500000442,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 3.7840829999986454,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 4.354979124999318,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 21.083681477243793,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 1000 nodes > blits, one voice",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 1000 nodes",
+        "name": "blits, one voice"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.5694379999986268,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.5299159999995027,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 0.8295261250004842,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 73.87209872670111,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 1000 nodes > today",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 1000 nodes",
+        "name": "today"
+      },
+      "metrics": {
+        "median": {
+          "value": 0.7505415000014182,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 0.6917499999981374,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 1.0674271250009042,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 65.55287367147973,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 1000 nodes > blits, a spring voice per animation",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 1000 nodes",
+        "name": "blits, a spring voice per animation"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.3538954999967245,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 1.1728749999965657,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 1.6849268749992916,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 48.21659515530416,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 1000 nodes > blits, voice per animation (subjects)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 1000 nodes",
+        "name": "blits, voice per animation (subjects)"
+      },
+      "metrics": {
+        "median": {
+          "value": 1.4422294999967562,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 1.32958299999882,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 2.0065886249976757,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 46.702897047471495,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 1000 nodes > blits, voice per animation (target)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 1000 nodes",
+        "name": "blits, voice per animation (target)"
+      },
+      "metrics": {
+        "median": {
+          "value": 41.2309165000006,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 40.61233299999731,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 41.602854124999794,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 1.8602446126593435,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 10000 nodes > blits, one voice",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 10000 nodes",
+        "name": "blits, one voice"
+      },
+      "metrics": {
+        "median": {
+          "value": 9.24712499999805,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 6.9693330000009155,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 9.694494749999649,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 25.54847179887662,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 10000 nodes > today",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 10000 nodes",
+        "name": "today"
+      },
+      "metrics": {
+        "median": {
+          "value": 10.79004150000037,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 8.092540999998164,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 10.487703124999825,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 8.37414332521872,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 10000 nodes > blits, a spring voice per animation",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 10000 nodes",
+        "name": "blits, a spring voice per animation"
+      },
+      "metrics": {
+        "median": {
+          "value": 34.78497900000002,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 28.29516699999658,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 34.90260399999988,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 9.323116104845784,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    },
+    {
+      "id": "tests/perf/bench/animator-on-blits.bench.ts > spring start + first frame — 10000 nodes > blits, voice per animation (subjects)",
+      "params": {
+        "file": "tests/perf/bench/animator-on-blits.bench.ts",
+        "group": "spring start + first frame — 10000 nodes",
+        "name": "blits, voice per animation (subjects)"
+      },
+      "metrics": {
+        "median": {
+          "value": 28.58991700000115,
+          "unit": "ms",
+          "stat": "median of 8 samples"
+        },
+        "min": {
+          "value": 26.51104199999827,
+          "unit": "ms",
+          "stat": "min of 8 samples"
+        },
+        "mean": {
+          "value": 43.30314600000111,
+          "unit": "ms",
+          "stat": "mean of 8 samples"
+        },
+        "rme": {
+          "value": 83.36192595078346,
+          "unit": "%",
+          "stat": "relative margin of error on the mean"
+        }
+      }
+    }
+  ]
+}
