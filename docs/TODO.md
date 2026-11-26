@@ -400,11 +400,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   labkit already reads `?still` (`packages/labkit/src/lab/still.ts`) and `?present`. Add a versioned
   `hashState` (JSON or binary codec, a dropped-fields notice) and a `bare` reader beside them. Closes when
   labkit exports both.
-- **(P2) [agent] Labs describe their params as data, three ways, since `ConfigField` went** (`da26075c79`,
-  2026-11-12). magicsmoke's `ParamSpec` (`src/tuning.ts:141`), agnew's union (`packages/agnew/src/params.ts:3`)
-  and beamos' kind settings (`packages/beamos/src/kinds/kind.ts:3`) are near-identical, and each has its own
-  converter to `f.number().range().step().label()`. labkit offers a plain-data param shape that compiles
-  to `f.schema`. Closes when labkit exports it.
 - **(P1.5) [agent] Two lens implementations each aim their own way** (2026-11-22). labkit's lab lens
   (`packages/labkit/src/loupe/lens/`) is a scene of nodes, a body, a reticle and a leader, with `LensAim` `pinned |
   follow | glass`; hud's `createLoupe` is a HUD window whose aim, follow or pinned, lives in `@weasel-js/loupe`'s
