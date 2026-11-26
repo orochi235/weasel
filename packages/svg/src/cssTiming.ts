@@ -4,12 +4,13 @@
  * shorthand's value for it, since the cascade keeps no order between the two.
  */
 import type { ClipKey } from '@weasel-js/animator';
+import { breakpointsOf } from './animate/easing';
 import { declaredOf } from './cascade';
 
-type Warn = (message: string) => void;
 type Bezier = [number, number, number, number];
 /** What eases into a key: a bezier or steps, as a clip writes it; undefined is linear. */
 export type CssEasing = Exclude<ClipKey['easing'], string>;
+type LinearPoint = Extract<CssEasing, { linear: unknown }>['linear'][number];
 
 export type CssDirection = 'normal' | 'reverse' | 'alternate' | 'alternate-reverse';
 export type CssFillMode = 'none' | 'forwards' | 'backwards' | 'both';
@@ -39,7 +40,7 @@ export function cssTime(raw: string): number | null {
 }
 
 /** A CSS `<easing-function>` as a clip key's easing: null where it is none, undefined for linear. */
-export function cssEasing(raw: string, warn: Warn): CssEasing | undefined | null {
+export function cssEasing(raw: string): CssEasing | undefined | null {
   const s = raw.trim().toLowerCase();
   if (Object.hasOwn(NAMED, s)) {
     const named = NAMED[s];
@@ -60,18 +61,33 @@ export function cssEasing(raw: string, warn: Warn): CssEasing | undefined | null
     if (!(Number.isInteger(n) && n > 0)) return null;
     if (pos === 'start' || pos === 'jump-start') return { steps: n, jump: 'start' };
     if (pos === 'end' || pos === 'jump-end') return { steps: n, jump: 'end' };
-    warn(`steps(${fn[2]}) jumps at both ends or neither, which an import cannot carry yet; it is read as steps(${n}, end)`);
-    return { steps: n, jump: 'end' };
+    if (pos === 'jump-both') return { steps: n, jump: 'both' };
+    if (pos === 'jump-none') return n > 1 ? { steps: n, jump: 'none' } : null;
+    return null;
   }
   if (fn[1] === 'linear') {
-    warn(`linear(${fn[2]}) is not carried yet; it is read as linear`);
-    return undefined;
+    const points = args.map(linearPoint);
+    return points.length >= 2 && points.every((p) => p !== null) ? { linear: points as LinearPoint[] } : null;
   }
   return null;
 }
 
+/** One `linear()` stop: an output, then up to two percentages in either order around it. */
+function linearPoint(raw: string): LinearPoint | null {
+  let out: number | undefined;
+  const at: number[] = [];
+  for (const part of raw.split(/\s+/)) {
+    const pct = /^([+-]?(?:\d+\.?\d*|\.\d+))%$/.exec(part);
+    if (pct) at.push(Number(pct[1]) / 100);
+    else if (out === undefined && /^[+-]?(?:\d+\.?\d*|\.\d+)$/.test(part)) out = Number(part);
+    else return null;
+  }
+  if (out === undefined || at.length > 2) return null;
+  return at.length === 0 ? out : at.length === 1 ? [out, at[0]] : [out, at[0], at[1]];
+}
+
 /** A shorthand item's parts, as `animation` lets them come in any order: the first time is the duration, the second the delay. */
-function readShorthand(item: string, warn: Warn): Partial<CssAnimation> {
+function readShorthand(item: string): Partial<CssAnimation> {
   const out: Partial<CssAnimation> = {};
   let times = 0;
   for (const token of item.match(TOKEN) ?? []) {
@@ -85,7 +101,7 @@ function readShorthand(item: string, warn: Warn): Partial<CssAnimation> {
     else if (FILLS.has(word) && out.fill === undefined && word !== 'none') out.fill = word as CssFillMode;
     else if (word === 'running' || word === 'paused') continue;
     else {
-      const e = cssEasing(token, warn);
+      const e = cssEasing(token);
       if (e !== null) out.easing = e;
       else out.name = token;
     }
@@ -96,9 +112,9 @@ function readShorthand(item: string, warn: Warn): Partial<CssAnimation> {
 const LONGHANDS = ['name', 'duration', 'delay', 'timing-function', 'iteration-count', 'direction', 'fill-mode'] as const;
 
 /** `el`'s animations, in the order its `animation-name` lists them; none for `none`. */
-export function animationsOf(el: Element, warn: Warn): CssAnimation[] {
+export function animationsOf(el: Element): CssAnimation[] {
   const shorthand = declaredOf(el, 'animation');
-  const items = shorthand ? splitList(shorthand).map((i) => readShorthand(i, warn)) : [];
+  const items = shorthand ? splitList(shorthand).map((i) => readShorthand(i)) : [];
   const longhand = Object.fromEntries(LONGHANDS.map((l) => [l, declaredOf(el, `animation-${l}`)])) as Record<(typeof LONGHANDS)[number], string | null>;
   const names = longhand.name !== null ? splitList(longhand.name) : items.map((i) => i.name ?? 'none');
   const pick = (l: (typeof LONGHANDS)[number], i: number): string | undefined => {
@@ -111,7 +127,7 @@ export function animationsOf(el: Element, warn: Warn): CssAnimation[] {
     if (name === 'none') return [];
     const item = items[i] ?? {};
     const easingRaw = pick('timing-function', i);
-    const easing = easingRaw === undefined ? ('easing' in item ? item.easing : NAMED_EASE) : cssEasing(easingRaw, warn);
+    const easing = easingRaw === undefined ? ('easing' in item ? item.easing : NAMED_EASE) : cssEasing(easingRaw);
     const count = pick('iteration-count', i);
     return [{
       name,
@@ -150,6 +166,10 @@ export function reversedEasing(e: CssEasing | undefined): CssEasing | undefined 
     const [x1, y1, x2, y2] = e.bezier;
     return { bezier: [1 - x2, 1 - y2, 1 - x1, 1 - y1] };
   }
-  if ('steps' in e) return { ...e, jump: (e as { jump?: string }).jump === 'start' ? 'end' : 'start' } as CssEasing;
+  if ('steps' in e) {
+    const jump = e.jump ?? 'end';
+    return { steps: e.steps, jump: jump === 'start' ? 'end' : jump === 'end' ? 'start' : jump };
+  }
+  if ('linear' in e) return { linear: breakpointsOf(e.linear).reverse().map(({ t, v }): LinearPoint => [1 - v, 1 - t]) };
   return e;
 }

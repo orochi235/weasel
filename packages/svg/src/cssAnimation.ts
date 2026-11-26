@@ -23,12 +23,12 @@ const TRANSFORMS: Readonly<Record<string, string>> = {
 };
 
 /** A `@keyframes` body as stops per property. */
-function stopsOf(body: string, warn: Warn): Map<string, Stop[]> {
+function stopsOf(body: string): Map<string, Stop[]> {
   const out = new Map<string, Stop[]>();
   for (const [, selectors, block] of body.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     const declarations = parseDeclarations(block);
     const ease = declarations.find((d) => d.prop === 'animation-timing-function');
-    const easing = ease ? cssEasing(ease.value, warn) : null;
+    const easing = ease ? cssEasing(ease.value) : null;
     for (const sel of selectors.split(',').map((s) => s.trim().toLowerCase())) {
       const offset = sel === 'from' ? 0 : sel === 'to' ? 1 : sel.endsWith('%') ? Number(sel.slice(0, -1)) / 100 : NaN;
       if (!(offset >= 0 && offset <= 1)) continue;
@@ -126,7 +126,7 @@ function tracksOf(el: Element, id: string, a: CssAnimation, warn: Warn): { track
   if (origin.some((o) => o === null)) warn(`#${id} has a transform-origin in units the import cannot place; it turns about 0 0`);
   const at: [number, number] = [origin[0] ?? 0, origin[1] ?? origin[0] ?? 0];
   const tracks: ClipSampledTrack[] = [];
-  for (const [prop, given] of stopsOf(body, warn)) {
+  for (const [prop, given] of stopsOf(body)) {
     const stops = [...given];
     const base = prop === 'transform' ? 'none' : declaredOf(el, prop) ?? el.getAttribute(prop);
     // A keyframes rule without a 0% or a 100% for a property starts or ends at the element's own value.
@@ -196,7 +196,7 @@ export function readCssAnimations(root: Element, warn: Warn, targets?: Map<Eleme
   let minted = 0;
   for (const el of [root, ...Array.from(root.getElementsByTagName('*'))]) {
     if (declaredOf(el, 'animation') === null && declaredOf(el, 'animation-name') === null) continue;
-    const animations = animationsOf(el, warn);
+    const animations = animationsOf(el);
     if (animations.length === 0) continue;
     if (!el.id) {
       do el.id = `css-${++minted}`; while (el.ownerDocument.querySelectorAll(`[id="${el.id}"]`).length > 1);

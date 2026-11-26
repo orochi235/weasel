@@ -51,6 +51,16 @@ describe('CSS animation import', () => {
     expect(t?.keys[2].easing).toEqual({ steps: 4, jump: 'end' });
   });
 
+  it('carries linear() and steps() jumping at both ends onto the keys, without a warning', () => {
+    const { parsed, track: t } = track(
+      doc('@keyframes f { from { opacity: 0 } 50% { opacity: 0.5; animation-timing-function: steps(3, jump-both) } to { opacity: 1 } } '
+        + '#r { animation: f 1s linear(0, 0.25 75%, 1) }', '<rect id="r" width="10" height="10"/>'),
+      'r.opacity',
+    );
+    expect(t?.keys.map((k) => k.easing)).toEqual([undefined, { linear: [0, [0.25, 0.75], 1] }, { steps: 3, jump: 'both' }]);
+    expect(parsed.warnings).toEqual([]);
+  });
+
   it('gives an animated element with no id one, and warns of an animation no @keyframes defines', () => {
     const parsed = parseSvg(doc('@keyframes f { to { opacity: 0 } } rect { animation: f 1s } circle { animation: nope 1s }',
       '<rect width="10" height="10"/><circle r="4"/>'));
