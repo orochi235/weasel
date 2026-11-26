@@ -4,7 +4,9 @@
  * document writes them, scaled into the node by the factor its import scaled them by.
  */
 import { rgbaToHex, tryParseColor } from '@weasel-js/paint';
-import type { DataLens, Paint, Stroke } from '@weasel-js/core';
+import { createTarget, type Target } from '@weasel-js/animator';
+import { restDataField, showDataField, type DataLens, type NodeId, type Paint, type Stroke } from '@weasel-js/core';
+import type { SvgClipScene } from './smilGeometry';
 
 type Data = Record<string, unknown>;
 type Rgba = [number, number, number, number];
@@ -50,6 +52,34 @@ function dashLens(scale: number): DataLens<Data, number[]> {
     get: (data) => ((data.stroke as Stroke | undefined)?.dash ?? []).map((d) => d / scale),
     with: (data, v) => (typeof data.stroke === 'object' && data.stroke ? { ...data, stroke: { ...(data.stroke as Stroke), dash: v.map((d) => d * scale) } } : data),
   };
+}
+
+/**
+ * One target over the same field of several nodes, as a group's `fill` reaches every node that
+ * takes it: its committed value is the first node's, and each value is shown and written on all.
+ */
+export function createSpreadTarget<T>(scene: SvgClipScene, nodes: readonly string[], lens: DataLens<Data, T>): Target<T> | undefined {
+  const live = nodes.filter((id) => scene.get(id as NodeId));
+  if (live.length === 0) return undefined;
+  const target: Target<T> = createTarget<T>({
+    get: () => lens.get(scene.get(live[0] as NodeId)?.data ?? {}),
+    set(value) {
+      scene.untracked(() => {
+        for (const id of live) {
+          const n = scene.get(id as NodeId);
+          if (n) scene.update(id as NodeId, { data: lens.with(n.data, value) });
+        }
+      });
+    },
+    show(value) {
+      for (const id of live) {
+        if (target.active) showDataField(scene, id, lens, value);
+        else restDataField(scene, id, lens.key);
+      }
+    },
+    publish: () => scene.overrides.commit(),
+  });
+  return target;
 }
 
 /** The lens for paint attribute `attribute`, its lengths scaled by `scale`; undefined for one that is not a paint attribute. */

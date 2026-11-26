@@ -10,7 +10,7 @@
  * Stroke widths, dashes, font sizes, and letter spacing live in data, so
  * they take the clamp separately.
  */
-import type { ParseResult, SvgGroupNode, SvgNode, SvgPathNode } from './types';
+import type { ParseResult, SvgAnimatedFrom, SvgGroupNode, SvgNode, SvgPathNode } from './types';
 import { mapFillPaint } from './fillPaint';
 import { withTransformsBaked } from './bakeTransforms';
 import type { SvgKitLeafData } from './fromKit';
@@ -50,13 +50,13 @@ import { createFadeWalk, type DraftFade, type FadeWalk } from './draftFades';
  *
  * `source` is the id of the element a draft was lowered from, where it has one. A leaf that an
  * opacity animation in the parsed `clip` reaches carries `fade`: what `svgClipBinder` needs to
- * fade it again.
+ * fade it again, and one whose paint an animated element moves carries `animatedFrom`.
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: NodeClip; hidden?: true; source?: string }
+  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: NodeClip; hidden?: true; source?: string; animatedFrom?: SvgAnimatedFrom }
   | {
     kind: 'mark'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; clip?: NodeClip; hidden?: true;
-    source?: string; fade?: DraftFade;
+    source?: string; fade?: DraftFade; animatedFrom?: SvgAnimatedFrom;
     /** A boolean group of the drafts under it, as `svgNodesFromKit` writes one: give it core's
      *  `booleanGroupFields()` and this as `data.boolean`. Its data's `path` is the result as the
      *  file drew it, which the derivation replaces. */
@@ -135,8 +135,8 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     const boxed = source.kind === 'group' ? groupBoxParts(source) : null;
     const n = boxed?.group ?? source;
     const k = inherited * (n.opacity ?? 1);
-    // A leaf an animation fades holds its paint, since the container's would not fade with it.
-    const takes = Object.keys(fades.now.by).length > 0 ? NO_INHERIT : takesOf(n, from, k);
+    // A leaf an animation fades or repaints holds its paint, since the container's would not change with it.
+    const takes = Object.keys(fades.now.by).length > 0 || n.animatedFrom ? NO_INHERIT : takesOf(n, from, k);
     if (n.kind === 'group') {
       const framed = n.textFrame ? framedTextParts(n) : null;
       if (framed) return visitFramedText(n, framed, parentId, k);
@@ -161,6 +161,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         ...(n.clip ? { clip: 'outline' as const } : {}),
         ...(n.hidden ? { hidden: true } : {}),
         ...(n.id !== undefined ? { source: n.id } : {}),
+        ...(n.animatedFrom ? { animatedFrom: n.animatedFrom } : {}),
       };
       drafts.push(draft);
       const at = drafts.length - 1;
@@ -236,6 +237,7 @@ function leafPusher<TData>(
     drafts.push({
       kind: 'mark', id, parentId, pose, data: out, ...(source.hidden ? { hidden: true } : {}),
       ...(source.id !== undefined ? { source: source.id } : {}), ...(fade ? { fade } : {}),
+      ...(source.animatedFrom ? { animatedFrom: source.animatedFrom } : {}),
     });
     return pose;
   };

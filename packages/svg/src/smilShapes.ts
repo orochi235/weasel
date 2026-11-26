@@ -4,7 +4,8 @@
  * a sampled value is lowered against are only to be had then.
  */
 import type { ShapeGeometry } from './lowerLeaf';
-import type { AnimatedShape, AnimatedTransform, Matrix } from './types';
+import { ownValue, setsOwn } from './cascade';
+import type { AnimatedShape, AnimatedTransform, Matrix, SvgAnimatedFrom, SvgAnimatedPaint } from './types';
 
 interface Watch {
   /** Each animated element, with the attributes animated on it (`transform` for an `<animateTransform>`). */
@@ -25,11 +26,11 @@ export function isTransformAnimated(el: Element): boolean {
   return watches.get(el.ownerDocument)?.elements.get(el)?.has('transform') === true;
 }
 
-/** Records shape `el` if it is watched: its geometry, the matrix that geometry went through, and its own paint opacities. */
-export function noteShape(el: Element, tag: string, geometry: () => ShapeGeometry, matrix: Matrix, opacities: { fill: number; stroke: number }): void {
+/** Records shape `el` if it is watched: its geometry, and the matrix that geometry went through. */
+export function noteShape(el: Element, tag: string, geometry: () => ShapeGeometry, matrix: Matrix): void {
   const watch = watches.get(el.ownerDocument);
   if (!watch?.elements.has(el) || !el.id) return;
-  watch.shapes[el.id] = { tag, geometry: geometry(), matrix, fillOpacity: opacities.fill, strokeOpacity: opacities.stroke };
+  watch.shapes[el.id] = { tag, geometry: geometry(), matrix };
 }
 
 /** Records `el`'s transform if it is animated: the matrix above it, and its own. */
@@ -48,4 +49,26 @@ export function takeShapes(doc: Document): { shapes?: Readonly<Record<string, An
     ...(Object.keys(watch.shapes).length > 0 ? { shapes: watch.shapes } : {}),
     ...(Object.keys(watch.transforms).length > 0 ? { transforms: watch.transforms } : {}),
   };
+}
+
+const PAINTS: readonly SvgAnimatedPaint[] = ['fill', 'stroke', 'fill-opacity', 'stroke-opacity'];
+
+/** For each paint property, the animated element `el` takes it from: itself, or the nearest
+ *  element above it that sets it, where that one's is animated. Undefined where none is. */
+export function animatedFromOf(el: Element): SvgAnimatedFrom | undefined {
+  const watch = watches.get(el.ownerDocument);
+  if (!watch) return undefined;
+  let out: SvgAnimatedFrom | undefined;
+  for (const prop of PAINTS) {
+    for (let at: Element | null = el; at; at = at.parentElement) {
+      const animated = watch.elements.get(at)?.has(prop) === true;
+      if (!animated && !setsOwn(at, prop)) continue;
+      if (animated && at.id) {
+        const value = prop === 'fill' || prop === 'stroke' ? 1 : ownValue(at, prop) ?? 1;
+        (out ??= {})[prop] = { id: at.id, value };
+      }
+      break;
+    }
+  }
+  return out;
 }

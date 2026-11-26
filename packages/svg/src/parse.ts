@@ -42,7 +42,7 @@ import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
 import { insideUse, parseUse, spaceOfUse } from './use';
 import { readSmil } from './smil';
-import { isTransformAnimated, noteShape, noteTransform, takeShapes, watchShapes } from './smilShapes';
+import { animatedFromOf, isTransformAnimated, noteShape, noteTransform, takeShapes, watchShapes } from './smilShapes';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
 const quiet = (): void => {};
@@ -215,6 +215,8 @@ function readChild(
   const parsed = Array.isArray(node) ? node : [node];
   if (hidden) for (const n of parsed) n.hidden = true;
   if (el.id && parsed.length === 1 && !insideUse()) parsed[0].id = el.id;
+  const animatedFrom = insideUse() ? undefined : animatedFromOf(el);
+  if (animatedFrom) for (const n of parsed) n.animatedFrom = animatedFrom;
   return parsed;
 }
 
@@ -353,9 +355,7 @@ function parseLeaf(
   if (styleValue(leafStyle, 'fill-rule') === 'evenodd' && path.kind === 'polygon') {
     path = { ...path, fillRule: 'evenodd' };
   }
-  noteShape(el, tag, () => shapeGeometry(el, tag, quiet, fontSizeOf(leafStyle)), baked, {
-    fill: styleValue(leafStyle, 'fill-opacity') ?? 1, stroke: styleValue(leafStyle, 'stroke-opacity') ?? 1,
-  });
+  noteShape(el, tag, () => shapeGeometry(el, tag, quiet, fontSizeOf(leafStyle)), baked);
   const node: SvgPathNode = { kind: 'path', path, fill };
   if (stroke) node.stroke = stroke;
   if (opacity != null) node.opacity = opacity;

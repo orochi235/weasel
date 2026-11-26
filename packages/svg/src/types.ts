@@ -11,6 +11,9 @@ import type {
 } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign, TextFit } from '@weasel-js/text';
 import type { Clip } from '@weasel-js/animator';
+import type { AnimatedShape, AnimatedTransform, SvgAnimatedFrom } from './animationTypes';
+
+export type { AnimatedShape, AnimatedTransform, SvgAnimatedFrom, SvgAnimatedPaint } from './animationTypes';
 
 /**
  * Opaque pass-through bag for namespaced XML content. The package does not
@@ -142,6 +145,9 @@ export interface SvgPathNode {
   /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
    *  has none, as it is not the element. */
   id?: string;
+  /** The animated elements its paint properties come from, where a clip moves them: its own
+   *  element's or a group's it inherits from. */
+  animatedFrom?: SvgAnimatedFrom;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -187,6 +193,9 @@ export interface SvgGroupNode {
   /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
    *  has none, as it is not the element. */
   id?: string;
+  /** The animated elements its paint properties come from, where a clip moves them: its own
+   *  element's or a group's it inherits from. */
+  animatedFrom?: SvgAnimatedFrom;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -252,6 +261,9 @@ export interface SvgTextNode {
   /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
    *  has none, as it is not the element. */
   id?: string;
+  /** The animated elements its paint properties come from, where a clip moves them: its own
+   *  element's or a group's it inherits from. */
+  animatedFrom?: SvgAnimatedFrom;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -302,6 +314,9 @@ export interface SvgImageNode {
   /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
    *  has none, as it is not the element. */
   id?: string;
+  /** The animated elements its paint properties come from, where a clip moves them: its own
+   *  element's or a group's it inherits from. */
+  animatedFrom?: SvgAnimatedFrom;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -374,27 +389,6 @@ export interface ParseResult {
   animatedShapes?: Readonly<Record<string, AnimatedShape>>;
   /** Each element whose `transform` `clip` animates, by id: what `svgClipBinder` moves its drafts' poses by. */
   animatedTransforms?: Readonly<Record<string, AnimatedTransform>>;
-}
-
-/** An element whose `transform` a clip animates. Its drafts are lowered through `above × own`. */
-export interface AnimatedTransform {
-  /** Every transform above the element. */
-  above: Matrix;
-  /** Its own `transform`, as the document wrote it. */
-  own: Matrix;
-}
-
-/** A shape element a clip animates, as the document wrote it. */
-export interface AnimatedShape {
-  /** Its tag, lowercased. */
-  tag: string;
-  /** Its geometry attributes, lengths in user units: `r`, `cx`, `points`, `d` and the rest its tag takes. */
-  geometry: Readonly<Record<string, number | string>>;
-  /** The matrix its geometry was lowered through: every transform above it, and its own unless that became a rotation. */
-  matrix: Matrix;
-  /** Its `fill-opacity` and `stroke-opacity`, which its stored paints carry multiplied into a color's own alpha. */
-  fillOpacity: number;
-  strokeOpacity: number;
 }
 
 export type { SerializeOptions, SvgTextMode } from './serializeOptions';

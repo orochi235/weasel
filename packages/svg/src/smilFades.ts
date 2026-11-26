@@ -16,10 +16,10 @@ import type { StyledRun } from '@weasel-js/text';
 /** A leaf a fade reaches: its node, its fades, and the fill and stroke opacity it shows at full strength. */
 export interface FadedLeaf {
   readonly node: string;
-  readonly source: string | undefined;
   readonly fade: DraftFade;
-  /** Its `fill-opacity` and `stroke-opacity` where a clip moves them; they are divided out of its unfaded paints. */
-  readonly own: { fill?: number; stroke?: number };
+  /** The element its `fill-opacity` and `stroke-opacity` come from where a clip moves them, and
+   *  the value it takes there, which is divided out of its unfaded paints. */
+  readonly own: { fill?: { id: string; value: number }; stroke?: { id: string; value: number } };
 }
 
 type Data = SvgKitLeafData & Record<string, unknown>;
@@ -72,8 +72,8 @@ export function createFadeTargets(
   /** The keys that fade `leaf`, each with whether it reaches fill, stroke, or both. */
   const keysOf = (leaf: FadedLeaf): [string, 'both' | 'fill' | 'stroke'][] => [
     ...Object.keys(leaf.fade.by).map((id): [string, 'both'] => [`${id}.opacity`, 'both']),
-    ...(leaf.own.fill !== undefined ? [[`${leaf.source}.fill-opacity`, 'fill'] as [string, 'fill']] : []),
-    ...(leaf.own.stroke !== undefined ? [[`${leaf.source}.stroke-opacity`, 'stroke'] as [string, 'stroke']] : []),
+    ...(leaf.own.fill ? [[`${leaf.own.fill.id}.fill-opacity`, 'fill'] as [string, 'fill']] : []),
+    ...(leaf.own.stroke ? [[`${leaf.own.stroke.id}.stroke-opacity`, 'stroke'] as [string, 'stroke']] : []),
   ];
 
   const lensOf = (leaf: FadedLeaf): DataLens<Data, [number, number]> => {
@@ -84,8 +84,8 @@ export function createFadeTargets(
     const without = (holder: unknown, own: number | undefined): unknown =>
       own === undefined || !isPaintHolder(holder) || !holder.paint ? holder
         : { ...holder, paint: { ...holder.paint, opacity: own > 0 ? (holder.paint.opacity ?? 1) / own : 1 } };
-    base.fill = without(unfaded.fill, leaf.own.fill) as Data['fill'];
-    base.stroke = without(unfaded.stroke, leaf.own.stroke) as Data['stroke'];
+    base.fill = without(unfaded.fill, leaf.own.fill?.value) as Data['fill'];
+    base.stroke = without(unfaded.stroke, leaf.own.stroke?.value) as Data['stroke'];
     return { key: 'svg:fade', get: () => [1, 1], with: (data, [f, s]) => faded(data, base, f, s) };
   };
   const lenses = new Map(leaves.map((l) => [l, lensOf(l)]));
