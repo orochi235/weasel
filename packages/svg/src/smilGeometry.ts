@@ -6,19 +6,16 @@
  * path and the box together.
  */
 import { createTarget, type Target, type TargetAxes } from '@weasel-js/animator';
-import { boundsOfPath, transformPath, type NodeId, type Path, type PoseOverride, type PoseOverrides } from '@weasel-js/core';
+import { boundsOfPath, transformPath, type DataTargetScene, type NodeId, type Path, type PoseOverride } from '@weasel-js/core';
 import { lerp, type Affine, type Rect } from '@weasel-js/geom';
 import { shapePath, type ShapeGeometry } from './lowerLeaf';
 import type { AnimatedShape } from './types';
 import type { SvgDraftPose } from './draftPose';
 
-/** The part of a scene a geometry target reads and writes. */
-export interface GeometryScene {
-  readonly overrides: PoseOverrides<unknown, unknown>;
-  get(id: NodeId): { pose: SvgDraftPose; data: unknown } | undefined;
-  update(id: NodeId, patch: { data: never }): void;
-  setPose(id: NodeId, pose: never): void;
-  untracked<T>(fn: () => T): T;
+/** The part of a scene `svgClipBinder` reads and writes. A `Scene` of the drafts' poses satisfies it. */
+export interface SvgClipScene extends DataTargetScene<Record<string, unknown>> {
+  get(id: NodeId): { pose: SvgDraftPose; data: Record<string, unknown> } | undefined;
+  setPose(id: NodeId, pose: SvgDraftPose): void;
 }
 
 type Value = number | number[] | string;
@@ -27,7 +24,7 @@ type Value = number | number[] | string;
 interface Shape {
   readonly committed: Record<string, number | string>;
   readonly shown: Map<string, Value>;
-  readonly ply: PoseOverride<unknown, unknown>;
+  readonly ply: PoseOverride<unknown, Record<string, unknown>>;
   /** From the document's coordinates, where the parse put the path, into the node's frame. */
   readonly frame: Affine;
 }
@@ -68,7 +65,7 @@ const quiet = (): void => {};
  * is the target of one attribute of the shape drafted as node `nodeId`, the same one each call.
  * Undefined where the node is gone or the shape does not take the attribute.
  */
-export function createGeometryTargets(scene: GeometryScene): (id: string, shape: AnimatedShape, attribute: string) => Target<Value> | undefined {
+export function createGeometryTargets(scene: SvgClipScene): (id: string, shape: AnimatedShape, attribute: string) => Target<Value> | undefined {
   const shapes = new Map<string, Shape>();
   const targets = new Map<string, Target<Value>>();
 
@@ -109,8 +106,8 @@ export function createGeometryTargets(scene: GeometryScene): (id: string, shape:
         if (!n || !path) return;
         const box = boundsOfPath(transformPath(path, state.frame));
         scene.untracked(() => {
-          scene.update(nid, { data: { ...(n.data as object), path } as never });
-          scene.setPose(nid, { ...n.pose, x: box.x, y: box.y, width: box.width, height: box.height } as never);
+          scene.update(nid, { data: { ...n.data, path } });
+          scene.setPose(nid, { ...n.pose, x: box.x, y: box.y, width: box.width, height: box.height });
         });
       },
       axes: (typeof start === 'string' && attribute === 'd' ? pathDataAxes(start) : undefined) as TargetAxes<Value> | undefined,

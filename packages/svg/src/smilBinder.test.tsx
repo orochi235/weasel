@@ -21,7 +21,7 @@ function play(svg: string) {
   const drafts = svgNodesToKitDrafts(parsed, () => `n${++n}`);
   const specs = svgDraftSpecs(drafts, { layer: 'main', composition: scene.composition as PoseComposition<SvgDraftPose> });
   for (const spec of specs) scene.add(spec as never);
-  const binder = svgClipBinder(scene as never, parsed, drafts);
+  const binder = svgClipBinder(scene, parsed, drafts);
   const live = bindClip(parsed.clip!, binder);
   const timeline = result.current.timeline({ ...live, autoplay: false });
   const at = (ms: number) => {

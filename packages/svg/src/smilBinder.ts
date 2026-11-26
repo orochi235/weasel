@@ -4,20 +4,17 @@
  */
 import type { ClipBinder, Target } from '@weasel-js/animator';
 import { getOwn } from '@weasel-js/registry';
-import { boundsOfPath, sceneDataTarget, type DataTargetScene, type NodeId, type Path } from '@weasel-js/core';
+import { boundsOfPath, sceneDataTarget, type NodeId, type Path } from '@weasel-js/core';
 import type { Affine } from '@weasel-js/geom';
 import type { ParseResult } from './types';
-import type { SvgDraftPose } from './draftPose';
 import type { SvgSceneDraft } from './unpack';
 import { createFadeTargets, type FadedLeaf } from './smilFades';
-import { createGeometryTargets, lerpPathData, type GeometryScene } from './smilGeometry';
+import { createGeometryTargets, lerpPathData, type SvgClipScene } from './smilGeometry';
+
+export type { SvgClipScene } from './smilGeometry';
 import { paintLensFor } from './smilPaints';
 import { createTransformTargets } from './smilTransforms';
 
-/** The part of a scene `svgClipBinder` reads and writes. A `Scene` of the drafts' poses satisfies it. */
-export type SvgClipScene = DataTargetScene<Record<string, unknown>> & GeometryScene & {
-  get(id: NodeId): { pose: SvgDraftPose; data: Record<string, unknown> } | undefined;
-};
 
 const OPACITIES = new Set(['opacity', 'fill-opacity', 'stroke-opacity']);
 

@@ -10,7 +10,7 @@ import { invert, multiply, rotate, transformPoint, type Affine, type PoseLinear 
 import { parseTransform } from './transform';
 import type { AnimatedTransform } from './types';
 import type { SvgDraftPose } from './draftPose';
-import type { GeometryScene } from './smilGeometry';
+import type { SvgClipScene } from './smilGeometry';
 
 /** A shape a transform moves: its node, its pose as the import left it, and the map from the document's coordinates into its frame. */
 interface Moved {
@@ -18,7 +18,7 @@ interface Moved {
   readonly rest: SvgDraftPose;
   readonly frame: Affine;
   readonly frameInverse: Affine;
-  readonly ply: PoseOverride<unknown, unknown>;
+  readonly ply: PoseOverride<unknown, Record<string, unknown>>;
 }
 
 /** The values of each type that leave a point where it is. */
@@ -51,7 +51,7 @@ function poseMovedBy(rest: SvgDraftPose, by: Affine): SvgDraftPose {
  * `<animateTransform>` type of `element` (`translate`, `scale`, `rotate`, `skewX`, `skewY`),
  * moving the shape nodes `nodes`. Undefined where none of them is a shape still in the scene.
  */
-export function createTransformTargets(scene: GeometryScene): (element: string, type: string, record: AnimatedTransform, nodes: readonly string[]) => Target<number[]> | undefined {
+export function createTransformTargets(scene: SvgClipScene): (element: string, type: string, record: AnimatedTransform, nodes: readonly string[]) => Target<number[]> | undefined {
   const targets = new Map<string, Target<number[]>>();
   const elements = new Map<string, { committed: Map<string, number[]>; shown: Map<string, number[]>; moved: Moved[] }>();
 
@@ -91,7 +91,7 @@ export function createTransformTargets(scene: GeometryScene): (element: string, 
       set(value) {
         s.committed.set(type, value);
         const poses = posesFor(s.committed);
-        scene.untracked(() => s.moved.forEach((m, i) => scene.setPose(m.node, (poses[i] ?? m.rest) as never)));
+        scene.untracked(() => s.moved.forEach((m, i) => scene.setPose(m.node, poses[i] ?? m.rest)));
       },
       show(value) {
         if (target.active) s.shown.set(type, value);

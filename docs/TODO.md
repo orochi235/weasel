@@ -267,8 +267,8 @@ waits on; weasel runs against the local blits checkout until a blits release car
 **Imported tracks bind through one general node-data target in core (2026-11-25)**: a `Target` over any field of
 a scene node's data, shown through the same hold mechanism as the pose target with no ops per frame, of which trim
 and vertex color become instances, rather than a registry per property. It is a render-path change, so it ships
-with before/after numbers. Importers keep an animated element's `transform` as a pose instead of baking it, and
-re-lower animated geometry attributes each sample.
+with before/after numbers. An animated `transform` moves each shape's pose by the change from the transform the
+import baked, and animated geometry attributes are re-lowered each sample (`svgClipBinder`, built 2026-11-25).
 
 - **(P2) [agent] weasel's named easings aren't data blits, CSS or the GPU can carry** (2026-11-25). geom's 30
   Penner curves (`EASINGS`) exist only as functions. Planned: a script fits each to a CSS bezier and keeps it where
@@ -288,14 +288,14 @@ re-lower animated geometry attributes each sample.
   clock run through a remap"). Closes when a nested timeline maps onto a blits owner with rate, loop and remap, scrubs
   order-independently, and `Clip` carries them.
 
-- **(P2) [agent] An imported SMIL clip plays nothing yet** (2026-11-25). `parseSvg` reads `<animate>`, `<set>` and
-  `<animateTransform>` into `ParseResult.clip`, tracks named `<node id>.<attribute>` and `<id>.transform.<type>`
-  (`packages/svg/src/smil.ts`), but no binder turns those names into targets: it waits on the node-data target
-  above, on parse keeping an animated element's `transform` as a pose rather than baking it, and on re-lowering
-  animated geometry (`r`, `width`, `d` through the `svg-path` interpolation) each sample. Also left: `animateMotion`
-  (blits: "Keys on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed begins, and an
-  indefinite repeat on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL plays from
-  the import the way a browser plays it, checked against browser frames.
+- **(P2) [agent] Some imported SMIL plays differently from a browser** (2026-11-25). `svgClipBinder`
+  (`packages/svg/src/smilBinder.ts`) plays opacity, paint, geometry and `<animateTransform>` tracks. Left: a text or
+  image under an animated transform stays still (the binder finds a shape's frame from its path); two animated
+  transforms over one shape show only the inner one; a stroke keeps its width under an animated scale; `fill` or
+  `fill-opacity` animated on a group reaches only children taking it as `'inherit'`; `animateMotion` (blits: "Keys
+  on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed begins, and an indefinite repeat
+  on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL plays from the import the way
+  a browser plays it, checked against browser frames.
 
 - **(P2) [agent] CSS animation import in `@weasel-js/svg`** (2026-11-25). `parseStylesheet` skips `@keyframes` whole
   (`packages/svg/src/stylesheet.ts`); read them, resolve `animation-*` through the cascade to each element, and
