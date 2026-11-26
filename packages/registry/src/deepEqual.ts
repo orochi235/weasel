@@ -13,32 +13,42 @@ export interface DeepEqualOptions {
  * (`Object.is`). Values that hold themselves compare by shape: two cycles that unfold alike are equal.
  */
 export function deepEqual(a: unknown, b: unknown, opts: DeepEqualOptions = {}): boolean {
-  return equal(a, b, opts, new Map());
+  const pairs = new Map<object, Set<object>>();
+  // A work list rather than recursion, so input nested however deep cannot overflow the stack.
+  const todo: [unknown, unknown][] = [[a, b]];
+  for (let next = todo.pop(); next; next = todo.pop()) {
+    if (!step(next[0], next[1], opts, pairs, todo)) return false;
+  }
+  return true;
 }
 
-/** `pairs` holds each pair of containers already under comparison, so a cycle reads as equal on its way round. */
-function equal(a: unknown, b: unknown, opts: DeepEqualOptions, pairs: Map<object, Set<object>>): boolean {
+/** Compare `a` and `b` at their top level, queueing on `todo` each pair of values beneath them still to compare.
+ *  `pairs` holds each pair of containers already met, so a cycle reads as equal on its way round. */
+function step(
+  a: unknown, b: unknown, opts: DeepEqualOptions, pairs: Map<object, Set<object>>, todo: [unknown, unknown][],
+): boolean {
   if (Object.is(a, b)) return true;
   if (isPlainArray(a) || isPlainArray(b)) {
     if (!isPlainArray(a) || !isPlainArray(b) || a.length !== b.length) return false;
     if (!enter(pairs, a, b)) return true;
-    for (let i = 0; i < a.length; i++) if (!equal(a[i], b[i], opts, pairs)) return false;
-    return sameKeys(a, b, extraKeysOf, opts, pairs);
+    if (!sameKeys(a, b, extraKeysOf, opts, todo)) return false;
+    for (let i = a.length - 1; i >= 0; i--) todo.push([a[i], b[i]]);
+    return true;
   }
   if (!isPlainObject(a) || !isPlainObject(b)) return false;
   if (!enter(pairs, a, b)) return true;
-  return sameKeys(a, b, keysOf, opts, pairs);
+  return sameKeys(a, b, keysOf, opts, todo);
 }
 
-/** Whether `a` and `b` hold equal values under every key `keys` reads from either. */
+/** Whether `a` and `b` agree on which keys `keys` reads from either, queueing each key's two values on `todo`. */
 function sameKeys(
-  a: object, b: object, keys: (o: object) => Key[], opts: DeepEqualOptions, pairs: Map<object, Set<object>>,
+  a: object, b: object, keys: (o: object) => Key[], opts: DeepEqualOptions, todo: [unknown, unknown][],
 ): boolean {
   const ka = keys(a);
-  if (opts.undefinedAsAbsent) {
-    return [...new Set([...ka, ...keys(b)])].every((k) => equal(own(a, k), own(b, k), opts, pairs));
-  }
-  return ka.length === keys(b).length && ka.every((k) => isOwnEnumerable(b, k) && equal(own(a, k), own(b, k), opts, pairs));
+  const shared = opts.undefinedAsAbsent ? [...new Set([...ka, ...keys(b)])] : ka;
+  if (!opts.undefinedAsAbsent && (ka.length !== keys(b).length || !ka.every((k) => isOwnEnumerable(b, k)))) return false;
+  for (let i = shared.length - 1; i >= 0; i--) todo.push([own(a, shared[i]!), own(b, shared[i]!)]);
+  return true;
 }
 
 /** An array whose prototype is some realm's `Array.prototype`, itself an array, rather than a subclass's. */
