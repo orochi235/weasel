@@ -1546,7 +1546,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-24 (my call, cursor audit 85): `bakeCursor` and `cursorFor` bake a blank fallback as `default`, as a
   missing one, and throw a `RangeError` for one holding `;`, `{` or `}`, which no cursor value holds and which makes the
   browser drop the whole declaration. Since cursor audit 88 (2026-11-25) every fallback is checked: one that is not
-  a cursor keyword, optionally after `url(…)` entries with a hotspot, throws too; CSS-wide keywords such as `inherit`
+  a cursor keyword, optionally after `url(…)` or `image-set(…)` entries with a hotspot, throws too (`image-set` since audit 89); CSS-wide keywords such as `inherit`
   are refused, since a cursor list cannot end in one.
 - 2026-11-25 (my call, cursor audit 86): `resolveCursor` throws that `RangeError` on every tier, a painted spec
   included, so whether a spec is valid does not turn on its size. A painted cursor carries its fallback, which a
