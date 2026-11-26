@@ -367,6 +367,34 @@ export interface ParseResult {
    * the clip cannot carry is among `warnings`.
    */
   clip?: Clip;
+  /**
+   * Each shape `clip` animates, by id, as it was before parsing lowered it: what `svgClipBinder`
+   * lowers a sampled geometry or paint-opacity value against.
+   */
+  animatedShapes?: Readonly<Record<string, AnimatedShape>>;
+  /** Each element whose `transform` `clip` animates, by id: what `svgClipBinder` moves its drafts' poses by. */
+  animatedTransforms?: Readonly<Record<string, AnimatedTransform>>;
+}
+
+/** An element whose `transform` a clip animates. Its drafts are lowered through `above × own`. */
+export interface AnimatedTransform {
+  /** Every transform above the element. */
+  above: Matrix;
+  /** Its own `transform`, as the document wrote it. */
+  own: Matrix;
+}
+
+/** A shape element a clip animates, as the document wrote it. */
+export interface AnimatedShape {
+  /** Its tag, lowercased. */
+  tag: string;
+  /** Its geometry attributes, lengths in user units: `r`, `cx`, `points`, `d` and the rest its tag takes. */
+  geometry: Readonly<Record<string, number | string>>;
+  /** The matrix its geometry was lowered through: every transform above it, and its own unless that became a rotation. */
+  matrix: Matrix;
+  /** Its `fill-opacity` and `stroke-opacity`, which its stored paints carry multiplied into a color's own alpha. */
+  fillOpacity: number;
+  strokeOpacity: number;
 }
 
 export type { SerializeOptions, SvgTextMode } from './serializeOptions';

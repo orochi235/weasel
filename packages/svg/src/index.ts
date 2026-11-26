@@ -37,6 +37,8 @@ export {
 } from './unpack';
 export type { SvgDraftBounds, SvgDraftPose } from './draftPose';
 export { svgDraftSpecs, type SvgDraftSpecsOptions } from './draftSpecs';
+export { svgClipBinder, type SvgClipScene } from './smilBinder';
+export type { DraftFade, Fades } from './draftFades';
 export {
   svgNodesFromKit,
   svgLeafFromKit,

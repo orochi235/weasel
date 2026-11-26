@@ -59,30 +59,50 @@ function lowerLeafPath(
   onWarn: (msg: string) => void,
   fontSize: number | undefined,
 ): Path | null {
-  const x = (name: string): number => readLength(el, name, 'x', 0, onWarn, fontSize);
-  const y = (name: string): number => readLength(el, name, 'y', 0, onWarn, fontSize);
-  const r = (name: string): number => readLength(el, name, 'other', 0, onWarn, fontSize);
-  const radius = (name: string, axis: 'x' | 'y'): number => readLength(el, name, axis, NaN, onWarn, fontSize);
-  if (tag === 'rect') {
-    return rectElementToPath(x('x'), y('y'), x('width'), y('height'), radius('rx', 'x'), radius('ry', 'y'), m);
-  }
-  if (tag === 'circle') return circleToPath(x('cx'), y('cy'), r('r'), m);
+  return shapePath(tag, shapeGeometry(el, tag, onWarn, fontSize), m, onWarn);
+}
+
+/** A shape element's geometry attributes by name: lengths in user units, `points` and `d` as written. */
+export type ShapeGeometry = Readonly<Record<string, number | string>>;
+
+/** Each shape's length attributes, and the axis a percentage of it resolves along; `auto` marks a
+ *  radius whose absence is `NaN`, for `autoRadii`. */
+const LENGTHS: Readonly<Record<string, readonly (readonly [string, 'x' | 'y' | 'other', ('auto')?])[]>> = {
+  rect: [['x', 'x'], ['y', 'y'], ['width', 'x'], ['height', 'y'], ['rx', 'x', 'auto'], ['ry', 'y', 'auto']],
+  circle: [['cx', 'x'], ['cy', 'y'], ['r', 'other']],
+  ellipse: [['cx', 'x'], ['cy', 'y'], ['rx', 'x', 'auto'], ['ry', 'y', 'auto']],
+  line: [['x1', 'x'], ['y1', 'y'], ['x2', 'x'], ['y2', 'y']],
+};
+
+/** The attributes `shapePath` lowers a `<tag>` from, read off `el`. */
+export function shapeGeometry(el: Element, tag: string, onWarn: (msg: string) => void, fontSize?: number): ShapeGeometry {
+  const out: Record<string, number | string> = {};
+  for (const [name, axis, auto] of LENGTHS[tag] ?? []) out[name] = readLength(el, name, axis, auto ? NaN : 0, onWarn, fontSize);
+  if (tag === 'polyline' || tag === 'polygon') out.points = el.getAttribute('points') ?? '';
+  // A shaft the serializer cut back for its heads carries the path as authored.
+  if (tag === 'path') out.d = el.getAttributeNS(WEASEL_NS, 'd') ?? el.getAttribute(`${WEASEL_NS_PREFIX}:d`) ?? el.getAttribute('d') ?? '';
+  return out;
+}
+
+/** A `<tag>` of geometry `g` lowered through `m`, or null where it draws nothing. */
+export function shapePath(tag: string, g: ShapeGeometry, m: Matrix, onWarn: (msg: string) => void): Path | null {
+  const n = (name: string): number => Number(g[name] ?? 0);
+  if (tag === 'rect') return rectElementToPath(n('x'), n('y'), n('width'), n('height'), n('rx'), n('ry'), m);
+  if (tag === 'circle') return circleToPath(n('cx'), n('cy'), n('r'), m);
   if (tag === 'ellipse') {
-    const [rx, ry] = autoRadii(radius('rx', 'x'), radius('ry', 'y'));
-    return ellipseToPath(x('cx'), y('cy'), rx, ry, m);
+    const [rx, ry] = autoRadii(n('rx'), n('ry'));
+    return ellipseToPath(n('cx'), n('cy'), rx, ry, m);
   }
-  if (tag === 'line') return lineToPath(x('x1'), y('y1'), x('x2'), y('y2'), m);
-  if (tag === 'polyline') return svgFilled(polylineToPath(parsePoints(el.getAttribute('points') ?? ''), m));
-  if (tag === 'polygon') return polygonToPath(parsePoints(el.getAttribute('points') ?? ''), m);
+  if (tag === 'line') return lineToPath(n('x1'), n('y1'), n('x2'), n('y2'), m);
+  if (tag === 'polyline') return svgFilled(polylineToPath(parsePoints(String(g.points ?? '')), m));
+  if (tag === 'polygon') return polygonToPath(parsePoints(String(g.points ?? '')), m);
   if (tag === 'path') {
-    // A shaft the serializer cut back for its heads carries the path as authored.
-    const d = el.getAttributeNS(WEASEL_NS, 'd') ?? el.getAttribute(`${WEASEL_NS_PREFIX}:d`) ?? el.getAttribute('d') ?? '';
+    const d = String(g.d ?? '');
     if (!d.trim()) {
       onWarn('<path> with empty d=');
       return null;
     }
-    const raw = pathFromD(d, onWarn);
-    const transformed = transformPath(raw, m);
+    const transformed = transformPath(pathFromD(d, onWarn), m);
     // Reconstitute axis-aligned rectangles so a `{ kind: 'rect' }` source
     // node round-trips back into a `{ kind: 'rect' }` parsed node.
     if (transformed.kind === 'polygon') {

@@ -47,6 +47,30 @@ function reshow(overrides: PoseOverrides<unknown, unknown>, id: NodeId, fields: 
 }
 
 /**
+ * Shows node `id`'s `lens` field at `value` through the scene's overrides, leaving its stored
+ * data alone: one ply per node, whatever number of its fields are shown, each lens applied in
+ * the order its field was first shown. Call `overrides.commit()` once the frame's fields are set.
+ * A target's `show` is the usual caller; one value spread over many nodes calls it per node.
+ */
+export function showDataField<TData, T>(scene: Pick<DataTargetScene<TData>, 'overrides'>, id: string, lens: DataLens<TData, T>, value: T): void {
+  const table = tables(scene.overrides);
+  let f = table.nodes.get(id);
+  if (!f) table.nodes.set(id, f = { shown: new Map(), ply: {} });
+  f.shown.set(lens.key, { lens: lens as DataLens<unknown, unknown>, value });
+  reshow(scene.overrides as PoseOverrides<unknown, unknown>, id as NodeId, f);
+}
+
+/** Stops showing node `id`'s field `key`, so its stored value shows again. Answers whether it was shown. */
+export function restDataField(scene: Pick<DataTargetScene<unknown>, 'overrides'>, id: string, key: string): boolean {
+  const table = tables(scene.overrides);
+  const f = table.nodes.get(id);
+  if (!f?.shown.delete(key)) return false;
+  reshow(scene.overrides as PoseOverrides<unknown, unknown>, id as NodeId, f);
+  if (f.shown.size === 0) table.nodes.delete(id);
+  return true;
+}
+
+/**
  * The target of one field of node `id`'s data in `scene`: the same one on every call with the same
  * `lens.key`, so everything animating the field adds. Its committed value is the field in the
  * node's stored data, written without recording; the value on screen reaches painting and picking
@@ -71,19 +95,9 @@ export function sceneDataTarget<TData, T>(
     table.targets.delete(name);
     return undefined;
   }
-  const overrides = scene.overrides as PoseOverrides<unknown, unknown>;
-  const fields = (): NodeFields => {
-    let f = table.nodes.get(id);
-    if (!f) table.nodes.set(id, f = { shown: new Map(), ply: {} });
-    return f;
-  };
   let last = lens.get(scene.get(nid)!.data);
   const rest = (): void => {
-    const f = table.nodes.get(id);
-    if (!f?.shown.delete(lens.key)) return;
-    reshow(overrides, nid, f);
-    if (f.shown.size === 0) table.nodes.delete(id);
-    if (!scene.get(nid)) table.targets.delete(name);
+    if (restDataField(scene, id, lens.key) && !scene.get(nid)) table.targets.delete(name);
   };
   const target: Target<T> = createTarget<T>({
     get() {
@@ -101,11 +115,9 @@ export function sceneDataTarget<TData, T>(
         rest();
         return;
       }
-      const f = fields();
-      f.shown.set(lens.key, { lens: lens as DataLens<unknown, unknown>, value });
-      reshow(overrides, nid, f);
+      showDataField(scene, id, lens, value);
     },
-    publish: publisherOf(overrides),
+    publish: publisherOf(scene.overrides),
   });
   table.targets.set(name, target as Target<unknown>);
   return target;

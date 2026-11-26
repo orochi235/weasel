@@ -10,7 +10,7 @@
  * Stroke widths, dashes, font sizes, and letter spacing live in data, so
  * they take the clamp separately.
  */
-import type { ParseResult, SvgGroupNode, SvgNode, SvgPaint, SvgPathNode, SvgStroke } from './types';
+import type { ParseResult, SvgGroupNode, SvgNode, SvgPathNode } from './types';
 import { mapFillPaint } from './fillPaint';
 import { withTransformsBaked } from './bakeTransforms';
 import type { SvgKitLeafData } from './fromKit';
@@ -18,23 +18,23 @@ import { fadeFill, fadeRun, fadeStroke } from './fadePaint';
 import { groupTakes, NO_TAKES, takesOf, type Takes } from './draftTakes';
 import { framedTextDraft, framedTextParts, type FramedTextParts } from './framedText';
 import { groupBoxParts } from './groupBox';
-import { hasMarker, solid } from '@weasel-js/paint';
 import {
   boundsOfPath,
-  paintToBoundsUnits,
   getMarker,
   INHERIT,
   registerMarker,
   unionAabb,
   type BooleanShapeOp,
-  type Paint,
   type ImageNodeData,
   type NodeClip,
   type Path,
-  type Stroke,
 } from '@weasel-js/core';
-import { DEFAULT_TEXT_FILL, type StyledRun } from '@weasel-js/text';
+import { DEFAULT_TEXT_FILL } from '@weasel-js/text';
+import { fillDataFromSvg, fillInBoxFrame, runInBoxFrame, strokeDataFromSvg, strokeInBoxFrame } from './draftPaint';
+
+export { fillDataFromSvg, strokeDataFromSvg } from './draftPaint';
 import type { SvgDraftBounds, SvgDraftPose } from './draftPose';
+import { createFadeWalk, type DraftFade, type FadeWalk } from './draftFades';
 
 /**
  * One node the unpack wants the scene to materialize, in parent-before-child
@@ -47,11 +47,16 @@ import type { SvgDraftBounds, SvgDraftPose } from './draftPose';
  * `{ path, fill: null }`, which is the outline a group clips to; its `pose` is
  * the clip's box rather than its children's. A mark declares a clip only when
  * it is read from a `<g>` `options.mark` claims.
+ *
+ * `source` is the id of the element a draft was lowered from, where it has one. A leaf that an
+ * opacity animation in the parsed `clip` reaches carries `fade`: what `svgClipBinder` needs to
+ * fade it again.
  */
 export type SvgSceneDraft<TData = Record<string, unknown>> =
-  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: NodeClip; hidden?: true }
+  | { kind: 'group'; id: string; parentId: string | null; pose: SvgDraftPose; data: SvgKitLeafData; clip?: NodeClip; hidden?: true; source?: string }
   | {
     kind: 'mark'; id: string; parentId: string | null; pose: SvgDraftPose; data: TData; clip?: NodeClip; hidden?: true;
+    source?: string; fade?: DraftFade;
     /** A boolean group of the drafts under it, as `svgNodesFromKit` writes one: give it core's
      *  `booleanGroupFields()` and this as `data.boolean`. Its data's `path` is the result as the
      *  file drew it, which the derivation replaces. */
@@ -82,79 +87,6 @@ export interface SvgNodesToKitDraftsOptions<TData> {
    *  claimed `<g>` itself clips the mark as a group around it. A `<g>` whose
    *  first element is a group, or whose second is not, is a group. */
   mark?(source: SvgGroupNode): boolean;
-}
-
-/** Lower an `SvgPaint` onto the paint of the `kit:path` painter's
- *  `data.fill` — a `Paint`, or `null` for SVG's `fill="none"` (the painter
- *  skips the fill rather than falling back to its default).
- *
- *  A `userSpaceOnUse` gradient is rebased onto the leaf's own box, so it
- *  survives the fit-clamp and the drop-point placement that move the
- *  geometry out from under it. */
-export function fillDataFromSvg(
-  paint: SvgPaint | undefined,
-  box: SvgDraftBounds,
-): Paint | null | undefined {
-  if (!paint) return undefined;
-  if (paint.kind === 'none') return null;
-  if (paint.kind === 'solid') {
-    return paint.opacity != null ? { ...solid(paint.color), opacity: paint.opacity } : solid(paint.color);
-  }
-  return fillInBoxFrame(paint.paint, box);
-}
-
-/** Lower an `SvgStroke` onto the leaf's `data.stroke`, or `undefined` for one
- *  that paints nothing. One that paints no line but carries a marker comes
- *  through with no paint, since SVG still draws its heads. The paint is
- *  rebased onto the leaf's own box the same way a fill is. */
-export function strokeDataFromSvg(
-  stroke: SvgStroke | undefined,
-  box: SvgDraftBounds,
-): Stroke | undefined {
-  if (!stroke) return undefined;
-  const paint = stroke.paint.kind === 'none' ? null : fillDataFromSvg(stroke.paint, box);
-  if (!paint && !hasMarker(stroke)) return undefined;
-  return {
-    ...(paint ? { paint: stroke.opacity !== undefined ? { ...paint, opacity: stroke.opacity } : paint } : {}),
-    width: stroke.width,
-    ...(stroke.cap !== undefined ? { cap: stroke.cap } : {}),
-    ...(stroke.join !== undefined ? { join: stroke.join } : {}),
-    ...(stroke.dash !== undefined ? { dash: stroke.dash } : {}),
-    ...(stroke.dashOffset ? { dashOffset: stroke.dashOffset } : {}),
-    ...(stroke.miterLimit !== undefined ? { miterLimit: stroke.miterLimit } : {}),
-    ...(stroke.align !== undefined ? { align: stroke.align } : {}),
-    ...(stroke.markerStart !== undefined ? { markerStart: stroke.markerStart } : {}),
-    ...(stroke.markerMid !== undefined ? { markerMid: stroke.markerMid } : {}),
-    ...(stroke.markerEnd !== undefined ? { markerEnd: stroke.markerEnd } : {}),
-    ...(stroke.vertexWidths !== undefined ? { vertexWidths: stroke.vertexWidths } : {}),
-    ...(stroke.nib !== undefined ? { nib: stroke.nib } : {}),
-    ...(stroke.varyingWidthJoinThreshold !== undefined ? { varyingWidthJoinThreshold: stroke.varyingWidthJoinThreshold } : {}),
-    ...(stroke.trim !== undefined ? { trim: stroke.trim } : {}),
-  };
-}
-
-/** Rebase a `userSpaceOnUse` gradient onto the leaf's own box. A text node's
- *  paint is already a kit `Paint`, so it comes here directly. */
-function fillInBoxFrame(fill: Paint, box: SvgDraftBounds): Paint {
-  const units = 'units' in fill ? fill.units : undefined;
-  return units === 'world' ? paintToBoundsUnits(fill, box) : fill;
-}
-
-/** The same rebase for a run's own overrides, which `<tspan fill="url(#g)">`
- *  puts on the run rather than on the node. */
-function runInBoxFrame(run: StyledRun, box: SvgDraftBounds): StyledRun {
-  const fill = run.fill ? mapFillPaint(run.fill, (p) => fillInBoxFrame(p, box)) : run.fill;
-  const stroke = run.stroke ? strokeInBoxFrame(run.stroke, box) : run.stroke;
-  if (fill === run.fill && stroke === run.stroke) return run;
-  return { ...run, ...(fill ? { fill } : {}), ...(stroke ? { stroke } : {}) };
-}
-
-/** The same rebase for a `Stroke`'s paint. A stroke with no paint of its own
- *  passes through — there is nothing to rebase. */
-function strokeInBoxFrame(stroke: Stroke, box: SvgDraftBounds): Stroke {
-  if (!stroke.paint) return stroke;
-  const paint = fillInBoxFrame(stroke.paint, box);
-  return paint === stroke.paint ? stroke : { ...stroke, paint };
 }
 
 /**
@@ -189,23 +121,22 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     for (const m of input.markers ?? []) if (getMarker(m.id) === undefined) registerMarker(m);
   }
   const drafts: SvgSceneDraft<TData>[] = [];
-  const pushLeaf = (source: SvgLeafNode, parentId: string | null, pose: SvgDraftPose, data: SvgKitLeafData): SvgDraftPose | null => {
-    const id = nextId(source);
-    const out = options.leaf ? options.leaf(id, { pose, data }, source) : (data as TData);
-    if (out === null) return null;
-    drafts.push({ kind: 'mark', id, parentId, pose, data: out, ...(source.hidden ? { hidden: true } : {}) });
-    return pose;
-  };
+  const fades = createFadeWalk(isNodeList(input) ? undefined : input.clip);
+  const pushLeaf = leafPusher(drafts, nextId, options, fades);
 
   // Returns the pose `n` was drafted with, so a parent container can union
   // its children's axis-aligned boxes; null for empty groups. `inherited` is
   // the product of the enclosing groups' opacities, and `from` what a child
   // that sets no paint can take from its container as `'inherit'`.
-  const visit = (source: SvgNode, parentId: string | null, inherited: number, from: Takes): SvgDraftPose | null => {
+  const visit = (source: SvgNode, parentId: string | null, inherited: number, from: Takes): SvgDraftPose | null =>
+    fades.under(source, () => visitFaded(source, parentId, inherited, from));
+
+  const visitFaded = (source: SvgNode, parentId: string | null, inherited: number, from: Takes): SvgDraftPose | null => {
     const boxed = source.kind === 'group' ? groupBoxParts(source) : null;
     const n = boxed?.group ?? source;
     const k = inherited * (n.opacity ?? 1);
-    const takes = takesOf(n, from, k);
+    // A leaf an animation fades holds its paint, since the container's would not fade with it.
+    const takes = Object.keys(fades.now.by).length > 0 ? NO_INHERIT : takesOf(n, from, k);
     if (n.kind === 'group') {
       const framed = n.textFrame ? framedTextParts(n) : null;
       if (framed) return visitFramedText(n, framed, parentId, k);
@@ -229,6 +160,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
         data: n.clip ? { path: n.clip, fill: null } : {},
         ...(n.clip ? { clip: 'outline' as const } : {}),
         ...(n.hidden ? { hidden: true } : {}),
+        ...(n.id !== undefined ? { source: n.id } : {}),
       };
       drafts.push(draft);
       const at = drafts.length - 1;
@@ -248,7 +180,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
     }
 
     const { pose, data } = leafDraft(n, takes, k);
-    return pushLeaf(n, parentId, pose, data);
+    return pushLeaf(n, parentId, pose, data, () => leafDraft(n, takes, 1).data);
   };
 
   const visitFramedText = (n: SvgGroupNode, parts: FramedTextParts, parentId: string | null, k: number): SvgDraftPose | null => {
@@ -277,7 +209,7 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
       const at = drafts.length;
       const kk = k * (kids.opacity ?? 1);
       const below = groupTakes(kids, takesOf(kids, inner, kk), kk);
-      for (const c of kids.children) poses.push(visit(c, under, kk, below));
+      fades.under(kids, () => { for (const c of kids.children) poses.push(visit(c, under, kk, below)); });
       if (kids.hidden && !kids.boolean) for (const d of drafts.slice(at)) if (d.parentId === under) d.hidden = true;
     }
     for (const c of more) poses.push(visit(c, under, k, inner));
@@ -290,6 +222,23 @@ export function svgNodesToKitDrafts<TData = Record<string, unknown>>(
 
   for (const n of nodes) visit(n, null, 1, NO_TAKES);
   return drafts;
+}
+
+/** What drafts one leaf into `drafts`, answering the pose it was drafted with, or null where `options.leaf` leaves it out. */
+function leafPusher<TData>(
+  drafts: SvgSceneDraft<TData>[], nextId: (source: SvgNode) => string, options: SvgNodesToKitDraftsOptions<TData>, fades: FadeWalk,
+) {
+  return (source: SvgLeafNode, parentId: string | null, pose: SvgDraftPose, data: SvgKitLeafData, unfaded?: () => SvgKitLeafData): SvgDraftPose | null => {
+    const id = nextId(source);
+    const out = options.leaf ? options.leaf(id, { pose, data }, source) : (data as TData);
+    if (out === null) return null;
+    const fade = unfaded && fades.fadeOf(source, unfaded);
+    drafts.push({
+      kind: 'mark', id, parentId, pose, data: out, ...(source.hidden ? { hidden: true } : {}),
+      ...(source.id !== undefined ? { source: source.id } : {}), ...(fade ? { fade } : {}),
+    });
+    return pose;
+  };
 }
 
 /** A leaf's draft pose and its kit-painter data. `takes` says which paints it
