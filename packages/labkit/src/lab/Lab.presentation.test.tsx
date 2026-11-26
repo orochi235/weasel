@@ -70,6 +70,13 @@ describe('<Lab present>', () => {
     expect(presented(container)).toHaveLength(1);
   });
 
+  it('presents a bare embed from `?bare`, on its `bg`', async () => {
+    history.replaceState(null, '', '/?bare&bg=10203080');
+    const { container } = await mountLab();
+    expect(presented(container)).toHaveLength(1);
+    expect(root(container).style.getPropertyValue('--lk-lab-bg')).toBe('#10203080');
+  });
+
   it('keeps a stored lab presenting under its own key', async () => {
     const storage = createMemoryAdapter();
     const { unmount } = await mountLab({ present: true, storageKey: 'lab', storage });

@@ -1,3 +1,4 @@
+export { type Bare, bareOf } from './bare';
 export { Lab } from './Lab';
 export { LabBoundary, type LabBoundaryProps } from './LabBoundary';
 export type { LabCommands, LabContextValue } from './LabContext';
@@ -25,6 +26,7 @@ export type {
   PresentationMessageOptions,
   PresentationState,
 } from './presentationMessages';
+export type { Still } from './still';
 export { TileGrip, type TileGripProps } from './TileGrip';
 export type { PanelDescriptor, TrialLayout, WorkspaceProps } from './Workspace';
 export { Workspace } from './Workspace';
