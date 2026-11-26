@@ -54,12 +54,13 @@ interface Scroller {
 }
 
 /** The properties any value but `none` of which makes a box the containing block of a fixed descendant. */
-const FIXED_HOLDERS = ['transform', 'translate', 'rotate', 'scale', 'perspective', 'filter', 'backdrop-filter'];
+const FIXED_HOLDERS = ['transform', 'translate', 'rotate', 'scale', 'perspective', 'filter', 'backdrop-filter', 'offset-path'];
 
 /** Whether `style` makes its box the containing block of a fixed descendant (and so of an absolute one). */
 const holdsFixed = (style: CSSStyleDeclaration): boolean =>
   FIXED_HOLDERS.some((prop) => !['', 'none'].includes(style.getPropertyValue(prop)))
-  || /transform|translate|rotate|scale|perspective|filter|contain/.test(style.getPropertyValue('will-change'))
+  || style.getPropertyValue('transform-style') === 'preserve-3d'
+  || /transform|translate|rotate|scale|perspective|filter|contain|offset-path/.test(style.getPropertyValue('will-change'))
   || /paint|layout|strict|content/.test(style.getPropertyValue('contain'))
   || /size/.test(style.getPropertyValue('container-type'))
   || /auto|hidden/.test(style.getPropertyValue('content-visibility'));
@@ -69,6 +70,10 @@ const holds = (position: string | undefined, style: CSSStyleDeclaration | undefi
   position === 'fixed' ? !!style && holdsFixed(style)
   : position === 'absolute' ? !!style && (style.position !== 'static' || holdsFixed(style))
   : true;
+
+/** Whether a box with `style` is a scroll container, which `visible` and `clip` on both axes are not. */
+const scrollsBox = (style: CSSStyleDeclaration | undefined): boolean =>
+  !!style && ['overflow-x', 'overflow-y'].some((axis) => ['hidden', 'scroll', 'auto'].includes(style.getPropertyValue(axis)));
 
 /** `el`'s parent in the flat tree, which is the one its box is laid out in: the slot it is assigned to, else its
  *  parent, else the host of the shadow root it tops. */
@@ -93,7 +98,7 @@ function scrollersOf(el: Element): Scroller[] {
       if (position === 'absolute' && n !== root) out.push(scrollerOf(root));
       return out;
     }
-    if (sticky && (p === root || styleOf(p)?.overflow !== 'visible')) {
+    if (sticky && (p === root || scrollsBox(styleOf(p)))) {
       out.push(stickyScrollerOf(sticky, p, styleOf(sticky)));
       sticky = null;
     } else out.push(scrollerOf(p));
@@ -119,7 +124,8 @@ function stickyScrollerOf(box: Element, scroller: Element, style: CSSStyleDeclar
       const s = scroll.moved();
       if (!stuckX && !stuckY) return s;
       const b = box.getBoundingClientRect();
-      const p = scroller.getBoundingClientRect();
+      // The root's own box scrolls with the page; a box stuck to the viewport sticks to the viewport's edge.
+      const p = scroller === scroller.ownerDocument.documentElement ? { left: 0, top: 0 } : scroller.getBoundingClientRect();
       return { x: stuckX ? p.left - b.left : s.x, y: stuckY ? p.top - b.top : s.y };
     },
   };
