@@ -1,12 +1,13 @@
 import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 import {
-  EASINGS, reviveTypedArrays, tagTypedArray, tagTypedArrays, type BezierEasing, type EasingName, type EasingSpec,
+  EASINGS, reviveTypedArrays, tagTypedArray, tagTypedArrays, type BezierEasing, type EasingName,
 } from '@weasel-js/geom';
 import { axisIndexes } from '../axisNames';
 import { checkClip } from './clipShape';
+import { isBlitsEasing, resolveKeyEasing, type BlitsEasing, type KeyEasing } from './keyEasing';
 import type { Target } from '../target';
 import type { Interpolate } from '../types';
-import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineTrack, Track } from './types';
+import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineOptions, TimelineTrack, Track } from './types';
 
 /** A value a clip can hold: what `JSON.stringify` writes and `JSON.parse` reads back. The
  *  object arm is any object, so a pose typed by an interface is one; `toClip` is what refuses
@@ -14,13 +15,14 @@ import type { EventTrack, NestedTimeline, SampledTrack, TimelineEvent, TimelineT
  *  leaves them. */
 export type ClipValue = number | string | boolean | null | ClipValue[] | object;
 
-/** A keyframe as data. Its easing is a built-in's name or bezier control points. */
+/** A keyframe as data. Its easing is a built-in's name, bezier control points, or blits' `steps`
+ *  or `linear`. */
 export interface ClipKey {
   t: number;
   /** A typed array in the live key's value, as a `Path` has, is held as a `TaggedTypedArray`
    *  from `@weasel-js/geom`: `{ __ta: 'f32', data: [...] }`. `bindClip` makes it the array again. */
   value: ClipValue;
-  easing?: EasingName | BezierEasing;
+  easing?: EasingName | BezierEasing | BlitsEasing;
 }
 
 /** A `SampledTrack` as data: what it moves and how it interpolates are names. */
@@ -69,6 +71,13 @@ export interface ClipTimeline {
  *  can read back off a live timeline. */
 export interface Clip extends ClipTimeline {
   version: 1;
+  /** Passes, as `TimelineOptions.loop` counts them: `true` endless, `false` one, `n` that many. */
+  loop?: boolean | number;
+}
+
+/** What `bindClip` gives `animator.timeline`: the clip's tracks and duration, and its loop. */
+export interface BoundClip extends NestedTimeline {
+  loop?: TimelineOptions['loop'];
 }
 
 /** What turns the names in a clip into the live things a timeline plays. */
@@ -153,9 +162,9 @@ function bindTimeline(timeline: ClipTimeline, binder: ClipBinder): NestedTimelin
  * keep those names, so `toClip` can write them back after an editor has changed them.
  * Throws on a name the binder does not resolve, and on a clip with a field of the wrong type, naming it.
  */
-export function bindClip(clip: Clip, binder: ClipBinder): NestedTimeline {
+export function bindClip(clip: Clip, binder: ClipBinder): BoundClip {
   checkClip(clip);
-  return bindTimeline(clip, binder);
+  return defined<BoundClip>({ ...bindTimeline(clip, binder), loop: clip.loop });
 }
 
 const EASING_NAMES = new Map<unknown, EasingName>(
@@ -180,8 +189,16 @@ function finiteOr(n: number, problem: string): number {
   return n;
 }
 
-function easingOf(spec: EasingSpec | undefined, where: string): EasingName | BezierEasing | undefined {
+function easingOf(spec: KeyEasing | undefined, where: string): ClipKey['easing'] {
   if (spec === undefined || typeof spec === 'string') return spec;
+  if (isBlitsEasing(spec)) {
+    try {
+      resolveKeyEasing(spec);
+    } catch (err) {
+      throw new Error(`toClip: ${where} eases a key by ${JSON.stringify(spec)}, which blits refuses: ${(err as Error).message}`);
+    }
+    return JSON.parse(JSON.stringify(spec)) as BlitsEasing;
+  }
   if (typeof spec !== 'function') {
     if (!spec.bezier.every(Number.isFinite)) throw new Error(`toClip: ${where} eases a key by bezier points JSON cannot hold: ${spec.bezier.join(', ')}.`);
     return { bezier: [...spec.bezier] as BezierEasing['bezier'] };
@@ -243,13 +260,15 @@ function timelineToClip(timeline: NestedTimeline, whose: string): ClipTimeline {
 }
 
 /**
- * A live timeline as a clip: `{ tracks, duration }` as `animator.timeline` takes them, or
- * `{ tracks: handle.tracks() }` off a running one. Each track is written by the names it
+ * A live timeline as a clip: `{ tracks, duration, loop }` as `animator.timeline` takes them, or
+ * `{ tracks: handle.tracks(), loop: handle.loop() }` off a running one. Each track is written by the names it
  * carries (`targetName`, `interpolateName`, an event's `name`), which `bindClip` sets and a
  * track written by hand can set too. A typed array in a key's value is written tagged.
  * Throws, naming the track, on anything a clip cannot hold: a function with no name, an
  * `onTick`, or a value JSON would not read back, a time, duration or weight that is not finite among them.
  */
-export function toClip(timeline: NestedTimeline): Clip {
-  return { version: 1, ...timelineToClip(timeline, "the timeline's") };
+export function toClip(timeline: BoundClip): Clip {
+  const { loop } = timeline;
+  if (typeof loop === 'number') finiteOr(loop, 'the timeline loops # times');
+  return defined<Clip>({ version: 1, ...timelineToClip(timeline, "the timeline's"), loop });
 }

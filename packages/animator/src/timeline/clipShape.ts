@@ -4,6 +4,7 @@
  */
 import { EASINGS } from '@weasel-js/geom';
 import type { Clip } from './clip';
+import { resolveKeyEasing, type BlitsEasing } from './keyEasing';
 
 type Raw = Record<string, unknown>;
 
@@ -25,8 +26,16 @@ const optionalString = (v: unknown, where: string): void => need(v === undefined
 function easing(v: unknown, where: string): void {
   if (v === undefined) return;
   if (typeof v === 'string') return need(Object.hasOwn(EASINGS, v), where, `names no built-in easing: "${v}"`);
-  const bezier = isRaw(v) ? v.bezier : undefined;
-  need(Array.isArray(bezier) && bezier.length === 4 && bezier.every((n) => typeof n === 'number'), where, 'is neither an easing name nor four bezier points');
+  need(isRaw(v), where, 'is neither an easing name nor an easing object');
+  if ('bezier' in (v as Raw)) {
+    const { bezier } = v as Raw;
+    return need(Array.isArray(bezier) && bezier.length === 4 && bezier.every((n) => typeof n === 'number'), where, 'is not four bezier points');
+  }
+  try {
+    resolveKeyEasing(v as BlitsEasing);
+  } catch (err) {
+    refuse(where, `is no easing blits takes: ${(err as Error).message}`);
+  }
 }
 
 function sampled(track: Raw, where: string): void {
@@ -78,7 +87,8 @@ function timeline(v: unknown, where: string, depth: number): void {
 /** Throws, naming where, on a clip any field of which `bindClip` reads is of the wrong type. */
 export function checkClip(clip: unknown): asserts clip is Clip {
   need(isRaw(clip), 'the clip', 'is not an object');
-  const { version } = clip as Raw;
+  const { version, loop } = clip as Raw;
   if (version !== 1) throw new Error(`bindClip: this clip is version ${String(version)}, and version 1 is the one understood.`);
+  need(loop === undefined || typeof loop === 'boolean' || typeof loop === 'number', "the clip's loop", 'is neither true, false nor a count');
   timeline(clip, 'the clip', 0);
 }

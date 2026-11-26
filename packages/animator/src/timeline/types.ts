@@ -1,6 +1,7 @@
 import type { AxisRef } from '../axisNames';
 import type { Target } from '../target';
-import type { AnimationHandle, EasingSpec, Interpolate, InterpolatorFactory } from '../types';
+import type { AnimationHandle, Interpolate, InterpolatorFactory } from '../types';
+import type { KeyEasing } from './keyEasing';
 
 /** One keyframe. `easing` shapes the approach INTO this key from the previous
  *  one, so the first key's easing is never consulted. */
@@ -8,8 +9,9 @@ export interface Keyframe<T> {
   /** Time within the track's timeline, in ms. */
   t: number;
   value: T;
-  /** A function, the name of a built-in, or cubic-bezier control points. */
-  easing?: EasingSpec;
+  /** A function, the name of a built-in, cubic-bezier control points, or blits' `steps` or
+   *  `linear` (CSS's `steps()` and `linear()`). */
+  easing?: KeyEasing;
 }
 
 /** A track sampled as a pure function of the playhead. Scrubbing one is free

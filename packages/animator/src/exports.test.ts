@@ -21,6 +21,7 @@ describe('animator public surface', () => {
     expect(typeof animator.sampleTrack).toBe('function');
     expect(typeof animator.bindClip).toBe('function');
     expect(typeof animator.toClip).toBe('function');
+    expect(typeof animator.resolveKeyEasing).toBe('function');
   });
 
   it('does not export createTimeline, which takes an internal seam', () => {

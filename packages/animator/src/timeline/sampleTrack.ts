@@ -1,6 +1,6 @@
 import { keys as keysPatch, type Patch, type Setting } from '@msb235/blits';
-import { resolveEasing } from '@weasel-js/geom';
 import { axesOf } from '../engine/axes';
+import { resolveKeyEasing } from './keyEasing';
 import { targetStops } from './targetStops';
 import type { SampledTrack } from './types';
 
@@ -56,7 +56,7 @@ function build<T>(track: SampledTrack<T>, cache: Map<number, (u: number) => T> |
   }
   if (span <= 0) return out;
 
-  const ease = (k: (typeof keys)[number]) => (k.easing ? resolveEasing(k.easing) : undefined);
+  const ease = (k: (typeof keys)[number]) => (k.easing ? resolveKeyEasing(k.easing) : undefined);
   if (onTarget) {
     const { axes, stops } = onTarget;
     out.patch = keysPatch<number, Out>(

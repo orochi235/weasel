@@ -1,5 +1,5 @@
-import { type EasingFn, type Keyframe } from '@weasel-js/animator';
-import { cubicBezierEasing, lerp, resolveEasing } from '@weasel-js/geom';
+import { resolveKeyEasing, type EasingFn, type Keyframe } from '@weasel-js/animator';
+import { cubicBezierEasing, lerp } from '@weasel-js/geom';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import type { LayerCtx, LayerHit, PlotPoint } from './layerTypes';
 import { activeBezier, type Bezier, type KeyframeLayerState } from './keyframeEdits';
@@ -11,7 +11,7 @@ const SAMPLES_PER_SEGMENT = 16;
 // permanent cache entry per pixel of drag.
 function easingInto(drag: KeyframeLayerState['drag'], keys: readonly Keyframe<number>[], seg: number): EasingFn {
   if (drag?.kind === 'handle' && drag.segment === seg) return cubicBezierEasing(...drag.bezier);
-  return resolveEasing(keys[seg].easing);
+  return resolveKeyEasing(keys[seg].easing);
 }
 
 /** Each segment of `keys` sampled in plot space through its easing, with a handle drag in flight drawn live. */

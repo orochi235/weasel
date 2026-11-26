@@ -21,14 +21,15 @@ export {
 export { cycleVertexColors, type CycleVertexColorsOptions, type CycleHandle } from './colorCycle';
 export { rainbowVertexColors, solidVertexColors } from './colorArrays';
 export type { ColorInterpolate } from './colorInterpolate';
-export { bindClip, sampleTrack, toClip } from './timeline';
+export { bindClip, resolveKeyEasing, sampleTrack, toClip } from './timeline';
 export type {
-  Clip, ClipBinder, ClipEventTrack, ClipKey, ClipSampledTrack, ClipTimeline, ClipTimelineTrack, ClipTrack, ClipValue,
+  BlitsEasing, BoundClip, Clip, ClipBinder, ClipEventTrack, ClipKey, ClipSampledTrack, ClipTimeline, ClipTimelineTrack, ClipTrack, ClipValue,
 } from './timeline';
 export type {
   EventBooking,
   EventBookingHandle,
   EventTrack,
+  KeyEasing,
   Keyframe,
   NestedTimeline,
   SampledTrack,
