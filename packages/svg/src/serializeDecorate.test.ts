@@ -35,6 +35,13 @@ describe('serializeSvg decorate', () => {
     expect(out).toContain('<title>T</title><style>a>b{x:1}c&lt;d&amp;e</style>');
   });
 
+  it('replaces an attribute the element already has, rather than writing it twice', () => {
+    const out = serializeSvg([path({ id: 'a' })], { decorate: { attrsOf: () => ({ 'stroke-width': '5' }) } });
+    expect(out.match(/stroke-width=/g)).toHaveLength(1);
+    expect(out).toMatch(/<path id="a" [^>]*stroke-width="5"/);
+    expect(new DOMParser().parseFromString(out, 'image/svg+xml').querySelector('parsererror')).toBeNull();
+  });
+
   it('escapes attribute values', () => {
     const out = serializeSvg([path({ id: 'a' })], { decorate: { attrsOf: () => ({ 'data-x': 'a"b<c&d' }) } });
     expect(out).toContain('data-x="a&quot;b&lt;c&amp;d"');

@@ -4,9 +4,10 @@ const TAG = /<(\/?)([\w:]+)((?:"[^"]*"|[^">])*)>/g;
 
 /**
  * `xml` with `attrs` added to its first element and `children` written inside
- * it, before its closing tag. That element is the one a node's `id` goes on:
- * an outlined stroke or a stroke group writes more than one, and the rest are
- * left as they are.
+ * it, before its closing tag. An attribute the element already has is
+ * replaced, as an element cannot hold one name twice. That element is the one
+ * a node's `id` goes on: an outlined stroke or a stroke group writes more than
+ * one, and the rest are left as they are.
  */
 export function withDecoration(
   xml: string, attrs: Readonly<Record<string, string>> | undefined, children: string | undefined,
@@ -15,9 +16,11 @@ export function withDecoration(
   if (added === '' && !children) return xml;
   const first = /^<([\w:]+)((?:"[^"]*"|[^">])*)>/.exec(xml);
   if (!first) return xml;
-  const [open, name, inner] = first;
-  const selfClosing = inner.endsWith('/');
-  const head = `<${name}${selfClosing ? inner.slice(0, -1) : inner}${added}`;
+  const [open, name, given] = first;
+  const selfClosing = given.endsWith('/');
+  const names = new Set(Object.keys(attrs ?? {}));
+  const inner = (selfClosing ? given.slice(0, -1) : given).replace(/\s([\w:-]+)="[^"]*"/g, (whole, n: string) => (names.has(n) ? '' : whole));
+  const head = `<${name}${inner}${added}`;
   if (selfClosing) return children ? `${head}>${children}</${name}>${xml.slice(open.length)}` : `${head}/>${xml.slice(open.length)}`;
   const close = closeOf(xml, name, open.length);
   if (close < 0) return `${head}>${xml.slice(open.length)}`;

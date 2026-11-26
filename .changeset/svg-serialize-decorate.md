@@ -14,6 +14,6 @@ serializeSvg(nodes, {
 });
 ```
 
-`style` and `childrenOf` are written as given; attribute values are escaped.
+`style` and `childrenOf` are written as given; attribute values are escaped, and replace an attribute of the same name the element already has.
 
 <!-- entry: api -->
