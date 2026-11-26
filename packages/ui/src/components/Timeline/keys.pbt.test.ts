@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { sampleTrack, type EventTrack, type SampledTrack, type Track } from '@weasel-js/animator';
+import { resolveKeyEasing, sampleTrack, type EventTrack, type SampledTrack, type Track } from '@weasel-js/animator';
 import { runs, tally, timeoutFor, uniform } from '../../pbt.fixture';
 import { deleteKey, insertKey, moveKey, setKeyEasing } from './keys';
 import { trackAtPath } from './lanes';
@@ -149,9 +149,12 @@ describe('insertKey, shrunk', () => {
   it('runs an eased stretch’s easing again over each side of the new key', () => {
     const tr = { kind: 'sampled', onTick: () => {}, keys: [{ t: 0, value: 0 }, { t: 100, value: 100, easing: 'easeInQuad' }] } as unknown as Track;
     const after = insertKey([tr], [0], 50).tracks[0] as SampledTrack<number>;
-    expect(after.keys[1]).toEqual({ t: 50, value: 25, easing: 'easeInQuad' });
-    expect(sampleTrack(after, 25)).toBeCloseTo(6.25, 9);
-    expect(sampleTrack(tr as SampledTrack<number>, 75)).toBeCloseTo(56.25, 9);
-    expect(sampleTrack(after, 75)).toBeCloseTo(43.75, 9);
+    // The value at the new key is the curve's own there; each side then runs the whole curve again.
+    const quad = resolveKeyEasing('easeInQuad');
+    const mid = 100 * quad(0.5);
+    expect(after.keys[1]).toEqual({ t: 50, value: mid, easing: 'easeInQuad' });
+    expect(sampleTrack(after, 25)).toBeCloseTo(mid * quad(0.5), 9);
+    expect(sampleTrack(tr as SampledTrack<number>, 75)).toBeCloseTo(100 * quad(0.75), 9);
+    expect(sampleTrack(after, 75)).toBeCloseTo(mid + (100 - mid) * quad(0.5), 9);
   });
 });

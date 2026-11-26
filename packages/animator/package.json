@@ -52,7 +52,7 @@
     "@weasel-js/registry": "2.0.0"
   },
   "peerDependencies": {
-    "@msb235/blits": "^1.1.0",
+    "@msb235/blits": "^1.5.2",
     "react": ">=18"
   },
   "peerDependenciesMeta": {
@@ -63,6 +63,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@msb235/blits": "1.4.0"
+    "@msb235/blits": "1.5.2"
   }
 }

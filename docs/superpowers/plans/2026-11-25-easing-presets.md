@@ -1,6 +1,12 @@
 # Plan: weasel's named easings as blits easing data
 
-**Status: not built (2026-11-25).** Delete this file when the work merges. The TODO entry is "weasel's named
+**Status (2026-11-26): steps 1–4 and 6 built on branch `easing-presets` (worktree `.worktrees/easing-presets`), not
+merged. It cannot merge until a blits release carries `{ linear }`:** against the published 1.4.0, every `linear()`
+preset throws when played, so the fleet's typecheck and tests fail. Its tests were run locally, one file at a time,
+against blits `main` built from `d283d2fb` and linked into the worktree's own `node_modules/@msb235/blits` (the build
+sits in `/private/tmp/claude-501/blits-pkg`, which a reboot clears; `npm run build` in blits and relink to restore it).
+Left after the release: bump animator's blits pin, run `typecheck:packages` and `test:fleet`, and step 5's benchmark.
+Delete this file when the work merges. The TODO entry is "weasel's named
 easings aren't data blits, CSS or the GPU can carry" (`grep -n "named easings" docs/TODO.md`).
 
 **For:** whoever builds it, most likely the session that lands blits' sampled curve.

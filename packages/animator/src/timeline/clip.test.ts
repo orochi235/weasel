@@ -66,7 +66,7 @@ describe('bindClip', () => {
     const x = bindClip(CLIP, binder()).tracks[0] as SampledTrack<number>;
     const byHand: SampledTrack<number> = {
       kind: 'sampled', target: numberTarget(),
-      keys: [{ t: 0, value: 0 }, { t: 1000, value: 100, easing: easeInOutSine }],
+      keys: [{ t: 0, value: 0 }, { t: 1000, value: 100, easing: 'easeInOutSine' }],
     };
     expect(sampleTrack(x, 250)).toBeCloseTo(sampleTrack(byHand, 250)!, 6);
   });

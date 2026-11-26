@@ -1,5 +1,5 @@
-import { easeOutQuad, resolveEasing, type EasingSpec } from '@weasel-js/geom';
-import type { AnimationHandle, Animator, Target, TargetSpringOptions } from '@weasel-js/animator';
+import { easeOutQuad, type EasingSpec } from '@weasel-js/geom';
+import { resolveKeyEasing, type AnimationHandle, type Animator, type Target, type TargetSpringOptions } from '@weasel-js/animator';
 
 /** A move of a pose between the document pose it began at and the one it commits. */
 interface Ends<TPose> {
@@ -56,7 +56,7 @@ function holds<TPose>(target: Target<TPose>, pose: TPose): boolean {
 export function rewindingTween<TPose>(
   animator: Animator, target: Target<TPose>, o: RewindingTween<TPose>,
 ): AnimationHandle {
-  const ease = resolveEasing(o.easing ?? easeOutQuad);
+  const ease = resolveKeyEasing(o.easing ?? easeOutQuad);
   const { ms } = o;
   let current: AnimationHandle;
 

@@ -1,5 +1,5 @@
 import { curve, type Easing } from '@msb235/blits';
-import { resolveEasing, type EasingFn, type EasingSpec } from '@weasel-js/geom';
+import { EASINGS, resolveEasing, type EasingFn, type EasingSpec } from '@weasel-js/geom';
 
 /** An easing blits defines as data and `EasingSpec` has no form for: `steps` and `linear`, as CSS's
  *  `steps()` and `linear()` are. Written as blits takes it, and run by blits' `curve`. */
@@ -13,8 +13,13 @@ export function isBlitsEasing(spec: KeyEasing | undefined): spec is BlitsEasing 
   return typeof spec === 'object' && spec !== null && !('bezier' in spec);
 }
 
-/** The curve a key's easing stands for: linear with none. Throws, as `curve` and `resolveEasing`
- *  do, on one neither knows. */
+/** The curve an easing stands for, as animation plays it: a name as blits plays it, Penner's
+ *  curves as the bezier or `linear()` blits carries them as; blits' data forms by blits; a bezier
+ *  or a function as `resolveEasing` makes it; linear with none. Throws on a name geom does not have. */
 export function resolveKeyEasing(spec?: KeyEasing): EasingFn {
+  if (typeof spec === 'string') {
+    if (!Object.hasOwn(EASINGS, spec)) throw new Error(`resolveKeyEasing: unknown easing name "${spec}"`);
+    return curve(spec as Easing);
+  }
   return isBlitsEasing(spec) ? curve(spec) : resolveEasing(spec);
 }

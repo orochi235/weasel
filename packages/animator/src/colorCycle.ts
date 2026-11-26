@@ -1,4 +1,5 @@
-import { resolveEasing, wrapPositive } from '@weasel-js/geom';
+import { wrapPositive } from '@weasel-js/geom';
+import { resolveKeyEasing } from './timeline/keyEasing';
 import type { ColorSpace } from '@weasel-js/paint';
 import type { Animator, EasingSpec } from './types';
 import type { VertexColorChannel } from './colorRegistry';
@@ -47,7 +48,7 @@ export function cycleVertexColors(
   const interp = resolveInterpolator(opts);
   const { id, channel } = opts;
   const direction = opts.direction ?? 1;
-  const easing = resolveEasing(opts.easing);
+  const easing = resolveKeyEasing(opts.easing);
 
   const override = (base: readonly number[], tMs: number): number[] => {
     const n = base.length / 4;

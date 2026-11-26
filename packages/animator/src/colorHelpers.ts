@@ -1,4 +1,5 @@
-import { linear, resolveEasing } from '@weasel-js/geom';
+import { linear } from '@weasel-js/geom';
+import { resolveKeyEasing } from './timeline/keyEasing';
 import type { ColorSpace } from '@weasel-js/paint';
 import type {
   AnimationHandle,
@@ -168,7 +169,7 @@ export function staggerVertexColors(
   const interp = resolveInterpolator(opts);
   const { from, to, anchorMs, perAnchorDelay } = opts;
   const n = from.length / 4;
-  const easing = resolveEasing(opts.easing);
+  const easing = resolveKeyEasing(opts.easing);
   if (!(anchorMs >= 0 && anchorMs < Infinity)) {
     throw new RangeError(`staggerVertexColors: anchorMs is a time of at least 0, not ${anchorMs}`);
   }

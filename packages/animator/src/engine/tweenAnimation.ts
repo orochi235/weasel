@@ -1,4 +1,5 @@
-import { easeOutQuad, resolveEasing } from '@weasel-js/geom';
+import { easeOutQuad } from '@weasel-js/geom';
+import { resolveKeyEasing } from '../timeline/keyEasing';
 import type { AnimationHandle, TweenOptions } from '../types';
 import { axesOf } from './axes';
 import type { AnimationContext } from './context';
@@ -27,7 +28,7 @@ export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): Animat
     throw new Error('tween: interpolate or interpolator is required for non-numeric T');
   }
   const id = ctx.nextId();
-  const easing = resolveEasing(o.easing ?? easeOutQuad);
+  const easing = resolveKeyEasing(o.easing ?? easeOutQuad);
   // Precedence: factory > per-tick. Factory is built once at tween start so
   // expensive setup (color space conversion etc.) doesn't repeat per frame.
   const factoryFn = o.interpolator ? o.interpolator(o.from, o.to) : null;
