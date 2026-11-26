@@ -270,17 +270,21 @@ and vertex color become instances, rather than a registry per property. It is a 
 with before/after numbers. Importers keep an animated element's `transform` as a pose instead of baking it, and
 re-lower animated geometry attributes each sample.
 
-- **(P2) [agent] weasel's named easings aren't data blits, CSS or the GPU can carry** (2026-11-25). geom's 30
-  Penner curves (`EASINGS`) exist only as functions. Planned: a script fits each to a CSS bezier and keeps it where
-  the worst error is ≤ 0.003 (18 of 30: the in and out of quad, cubic, quart, quint, sine, expo, circ and back,
-  plus in-out sine and cubic), and otherwise samples a blits `linear()` with points placed adaptively to ≤ 0.001
-  (17–89 points); it writes a generated table in animator whose names resolve to blits `Easing` values, and a test
-  regenerates it against geom's functions. `Clip` keeps names; `bindClip`, importers and exporters resolve them.
-  Measured 2026-11-25: bezier fit by Nelder–Mead on max error (an upper bound, not proven optimal). Needs blits'
-  sampled curve. The three bounce curves are parabolas, so an exporter writes them exactly instead: a key at each
+- **(P2) [waiting] weasel's named easings come from blits' table** (2026-11-25). geom's 30 Penner curves
+  (`EASINGS`) exist only as functions. blits 1.5.1 takes them (agreed 2026-11-26 with blits-e3, in place of a
+  table in weasel). `curve()` will name every `EASINGS` entry as data a generator script builds from geom's
+  functions: a CSS bezier where the worst error is ≤ 0.003 (18 of 30), otherwise a `linear()` fit to ≤ 0.001.
+
+  Once 1.5.1 ships, the weasel side is:
+  - geom re-exports blits' named curves and drops `cubicBezierEasing` (`packages/geom/src/easingSpec.ts`)
+  - ui's `EasingPicker.tsx:17` reads its control points from them
+  - `Clip` keeps names; `bindClip`, the importers and the exporters resolve them
+
+  Build no weasel-side table. The three bounce curves are parabolas, so an exporter writes them exactly instead: a key at each
   contact and peak (easeOutBounce: 0, 36.364%, 54.545%, 72.727%, 81.818%, 90.909%, 95.455%, 100%), each segment
   eased by quad in `cubic-bezier(1/3, 0, 2/3, 1/3)` or quad out `cubic-bezier(1/3, 2/3, 2/3, 1)`, measured
-  within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. Closes when every weasel easing name plays from the table within those bounds.
+  within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. Closes when every weasel
+  easing name plays from blits' table, and geom and the picker hold no curve data.
 
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
@@ -369,10 +373,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   Until blits takes the workarounds, the rebuild adds code (net +43 lines). Closes when the clock runs on
   a released transport with no workarounds, both property test files pass, and `ramp.ts` and the clock's
   own rate math are gone.
-- **(P2) [agent] One easing table, in blits.** geom's `EASINGS` (31 Penner curves and a bezier solver,
-  `packages/geom/src/easings.ts:152`), blits' `named` (5 CSS curves and its own solver) and ui's
-  `EasingPicker.tsx:17` control points are three copies. Move the Penner curves into blits' `curve`, re-export
-  them from geom, and have the picker read them. Closes when geom and the picker hold no curve data.
 - **(P3) [agent] animator's slew on blits' step.** `packages/animator/src/slew.ts` steps its own value.
   blits' `slew` only works inside a mix, so blits first exports a pure step that its signal uses too. Closes
   when `slew.ts` holds no step math.
