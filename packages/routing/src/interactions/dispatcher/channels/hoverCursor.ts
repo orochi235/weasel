@@ -105,6 +105,7 @@ export function hoverCursorInput(
   const resolve = (): void => {
     if (!canvas || !last) return;
     if (pointersHeld() > 0 || dispatcherNow().inFlight().size > 0) {
+      ctxNow().trace?.setLive(null);
       override.apply(dispatcherNow().inFlightCursor());
       return;
     }
@@ -114,14 +115,14 @@ export function hoverCursorInput(
     routeAt(null, h.clientX, h.clientY);
     const w = toWorld(h.clientX, h.clientY);
     const where = facts?.at === h ? facts.where : underPointer(target(), h, w);
-    if (where.affordance?.cursor) {
-      override.apply(where.affordance.cursor);
-      return;
-    }
     const ctx = ctxNow();
     const d = dispatcherNow();
     const press: InputEvent = { kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where };
     if (ctx.trace?.recording()) ctx.trace.setLive(() => d.explain(press, ctx));
+    if (where.affordance?.cursor) {
+      override.apply(where.affordance.cursor);
+      return;
+    }
     const click: InputEvent = { kind: 'click', x: w.x, y: w.y, pressX: w.x, pressY: w.y, ...where };
     const cursorOf = (r: ResolveOnlyResult | null) => (r ? actionCursor(r.action, r.params) : undefined);
     const cursor = cursorOf(d.resolveOnly(press, ctx)) ?? cursorOf(dispatcherNow().resolveOnly(click, ctx));
