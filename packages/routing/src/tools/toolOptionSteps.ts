@@ -99,7 +99,7 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
   const leaf = step ? toolOptionNumberLeaf(options, step.option) : undefined;
   if (!step || !leaf) return null;
   // Keyed by the option values a canvas hands in, so two canvases sharing this tool keep separate bursts.
-  const bursts = new WeakMap<ToolOptionValues, { travel: number; last: number }>();
+  const bursts = new WeakMap<ToolOptionValues, { travel: number; last: number; sign: number }>();
   return {
     id: `${toolId}.wheelSize`,
     label: `Resize ${toolLabel} with the wheel`,
@@ -113,12 +113,13 @@ function wheelSizeAction(toolId: string, toolLabel: string, options: ToolOptions
         const d = dy !== 0 ? dy : finite(params?.deltaX);
         if (!values || d === 0) return;
         let burst = bursts.get(values);
-        if (!burst) bursts.set(values, burst = { travel: 0, last: -Infinity });
+        if (!burst) bursts.set(values, burst = { travel: 0, last: -Infinity, sign: 0 });
         const now = Date.now();
         // A clock set back since the last notch gives a negative gap: a new burst, not one going on.
         const gap = now - burst.last;
-        const fresh = !(gap >= 0 && gap <= WHEEL_SIZE_BURST_MS) || (burst.travel !== 0 && Math.sign(burst.travel) !== Math.sign(d));
+        const fresh = !(gap >= 0 && gap <= WHEEL_SIZE_BURST_MS) || burst.sign !== Math.sign(d);
         burst.last = now;
+        burst.sign = Math.sign(d);
         const dir: 1 | -1 = d < 0 ? 1 : -1;
         if (fresh) {
           burst.travel = 0;

@@ -47,8 +47,16 @@ export function useCanvasToolOptionValues(values: ToolOptionValues | undefined):
   );
 }
 
-/** {@link tuneToolOptions} for as long as the component is mounted. */
-export function useToolOptionTunings(registry: Pick<ActionsRegistry, 'tune'> | null, tools: Readonly<Record<string, Tool>>): void {
+/** {@link tuneToolOptions} for as long as the component is mounted, following `routed` (`ToolsApi.routed`) when
+ *  given. */
+export function useToolOptionTunings(
+  registry: Pick<ActionsRegistry, 'tune'> | null, tools: Readonly<Record<string, Tool>>, routed?: string | null,
+): void {
   const deps = useOptionalDepRegistry();
-  useEffect(() => (registry ? tuneToolOptions(registry, deps, Object.values(tools)) : undefined), [registry, deps, tools]);
+  const latest = useLatest(routed);
+  const follows = routed !== undefined;
+  useEffect(
+    () => (registry ? tuneToolOptions(registry, deps, Object.values(tools), follows ? () => latest.current ?? null : undefined) : undefined),
+    [registry, deps, tools, follows, latest],
+  );
 }

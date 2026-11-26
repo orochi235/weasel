@@ -47,8 +47,8 @@ const ToolsSlotContext = createContext<ToolsSlot | null>(null);
 export function ToolsScope({ children, isolate = false }: { children: ReactNode; isolate?: boolean }) {
   const outer = useContext(ToolsSlotContext);
   const [own] = useState(() => new ToolsSlot());
-  if (outer && !isolate) return <>{children}</>;
-  return <ToolsSlotContext.Provider value={own}>{children}</ToolsSlotContext.Provider>;
+  // One element type whichever slot it hands down, so a change of `isolate` or of the scope above keeps `children` mounted.
+  return <ToolsSlotContext.Provider value={outer && !isolate ? outer : own}>{children}</ToolsSlotContext.Provider>;
 }
 
 /** Publishes a canvas's tools into the slot in scope while the canvas is mounted. */

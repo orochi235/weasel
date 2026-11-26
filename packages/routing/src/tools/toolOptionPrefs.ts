@@ -52,7 +52,23 @@ function widened(key: string, held: PrefLeaf | PrefGroup, next: PrefLeaf | PrefG
     const maxLength = held.maxLength === undefined || next.maxLength === undefined ? undefined : Math.max(held.maxLength, next.maxLength);
     return { ...rest, ...(maxLength === undefined ? {} : { maxLength }) } as PrefString;
   }
+  if (!deepEqual(repairShape(held), repairShape(next))) {
+    throw new Error(`toolOptionsPrefs: the shared option "${key}" is a ${kindOf(held)} declared differently by two tools, and only a number, an enum or a string widens to take both`);
+  }
   return held;
+}
+
+// What a leaf shows or labels, which no repair reads, so two tools may word a shared option each their own way.
+const PRESENTATION = new Set([
+  'name', 'description', 'default', 'tags', 'meta', 'hidden', 'showIf', 'enableIf', 'disabledReason', 'block', 'heading',
+  'icon', 'pair', 'short', 'control', 'placeholder',
+]);
+
+/** `node` less what only presents it, down through every child it holds. */
+function repairShape(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(repairShape);
+  if (!node || typeof node !== 'object') return node;
+  return Object.fromEntries(Object.entries(node).filter(([k]) => !PRESENTATION.has(k)).map(([k, v]) => [k, repairShape(v)]));
 }
 
 function widenedNumber(held: PrefNumber, next: PrefNumber): PrefNumber {
@@ -99,7 +115,8 @@ function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: 
  * key once, as the first tool naming it declares it, with the default the host
  * gives it. A shared number takes the widest bounds of the tools naming it, and
  * each tool reads it held to its own; a shared enum takes every tool's options, and a shared string the longest
- * `maxLength`. Throws where tools name one shared key as leaves of different kinds, or the host gives one a default its leaf does not take. A tool with no options of its own has no group, and a dotted id's group
+ * `maxLength`; any other shared kind must be declared alike by every tool, wording aside. Throws where tools name one
+ * shared key as leaves of different kinds or declare another kind differently, or the host gives one a default its leaf does not take. A tool with no options of its own has no group, and a dotted id's group
  * sits a level down for each dot (`path.brush` in `path`), where the store keeps it.
  */
 export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOptionsPrefsSpec = {}): PrefGroup {
