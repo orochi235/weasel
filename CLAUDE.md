@@ -16,6 +16,11 @@ can't foreclose it: a layout, a scale, an axis or a mark answers positions as th
 lives in, rather than `{x, y}` hard-wired below the point where a renderer picks a dimension. New
 work there keeps that seam; work that finds one closed opens it in the same change.
 
+**Animation's kernel is blits (2026-11-25).** `@msb235/blits` (`~/src/blits`) is the innermost
+kernel — voices, clocks, easing, mixing — and weasel's animation infrastructure runs on it
+(animator already does). A timing or curve capability is built in blits first and carried by
+weasel, never reimplemented beside it; a gap found here gets fixed at the source.
+
 ## Scope: weasel is an engine
 
 weasel is not a utility library, and it is not a depository for features

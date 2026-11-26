@@ -259,11 +259,23 @@ Animated SVG and Lottie come in as scene nodes plus an animator `Clip` whose tra
 package of their own (2026-11-25). Whatever an importer cannot map (SMIL syncbase `begin`, Lottie expressions) is
 reported to the caller, never dropped silently.
 
+**A timing or curve capability lands in blits first (2026-11-25).** blits (`@msb235/blits`, `~/src/blits`) is
+the innermost kernel and animator runs on it; weasel's share of each entry below is carrying the capability in
+`Clip` and binding it to the scene, never a parallel implementation in animator. Each names the blits entry it
+waits on; weasel runs against the local blits checkout until a blits release carries it.
+
 - **(P2) [agent] `Clip` can't hold looping, stepped keys or a sampled easing curve** (2026-11-25). SMIL
-  `repeatCount`, CSS `animation-iteration-count` and Lottie loops need a loop on a clip or track; SMIL
-  `calcMode="discrete"`, CSS `steps()` and Lottie hold keys need a stepped key; CSS `linear()` needs an easing given
-  as samples (`packages/animator/src/timeline/clip.ts`, `ClipKey.easing`). Closes when the live timeline and `Clip`
-  both carry all three and `toClip`/`bindClip` round-trip them.
+  `repeatCount`, CSS `animation-iteration-count` and Lottie loops need a loop on a clip or track (blits voices
+  already `loop`); SMIL `calcMode="discrete"`, CSS `steps()` and Lottie hold keys need stepped easing (blits
+  already has `{ steps, jump }`, geom's `EasingSpec` does not); CSS `linear()` needs an easing given as samples
+  (blits: "A sampled easing curve"). Closes when `Clip` carries all three in blits' forms and `toClip`/`bindClip`
+  round-trip them.
+
+- **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
+  `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
+  multiplies into their children, run backward and loop; a time-remap curve is missing (blits: "An owner's clock
+  driven by a curve"). Closes when a nested timeline maps onto a blits owner with rate, loop and remap, scrubs
+  order-independently, and `Clip` carries them.
 
 - **(P2) [agent] SMIL animation import in `@weasel-js/svg`** (2026-11-25). `<animate>`, `<set>`, `<animateTransform>`
   and `<animateMotion>` read beside `parse.ts` into a `Clip` over the imported nodes, with `begin`/`dur`/
@@ -276,30 +288,24 @@ reported to the caller, never dropped silently.
   add the result to the same `Clip`. Needs the `Clip` entry above. Closes when an SVG animated by CSS alone plays
   from the import as a browser plays it, checked against browser frames.
 
-- **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
-  `at` and `duration` (`packages/animator/src/timeline/types.ts`); `loop` and `timeScale` exist only on the root.
-  Lottie precomps (stretch, time remap curves), a cycle looping inside a longer shot, and a segment played backward
-  all need a nested timeline with its own rate, loop count and an optional time-remap track mapping parent time to
-  child time. Closes when a nested timeline takes all three, scrubs order-independently, and `Clip` carries them.
-
 - **(P3) [agent] Position tracks move in straight lines between keys** (2026-11-25). Each axis lerps on its own, so
   a curve shapes timing only. Lottie gives position keys spatial in/out tangents apart from the timing ease,
-  "roving" keys retimed for constant speed, and auto-orient along the path. Closes when a sampled track can take
-  spatial tangents (path math from `geom/along`), a constant-speed option, and an orient-along-path output, and
-  `Clip` carries them.
+  "roving" keys retimed for constant speed, and auto-orient along the path (blits: "Keys on a vector channel
+  travel a curve"). Closes when `Clip` carries spatial tangents, constant speed and orient-along-path.
 
 - **(P3) [agent] No lifetime window on an animated node** (2026-11-25). Lottie layers have in/out points outside
-  which they don't exist; here that is faked with an opacity or visibility track. Closes when a `Clip` can give a
-  target an in/out window that hides it and skips sampling its tracks outside it.
+  which they don't exist; here that is faked with an opacity or visibility track. A blits voice's own start and
+  end may already be this window; check before adding anything there. Closes when a `Clip` can give a target an
+  in/out window that hides it and skips sampling its tracks outside it.
 
-- **(P3) [agent] Timeline markers are points, not ranges** (2026-11-25). `EventTrack` events have no duration, so a
-  player can't "play `intro`, then loop `idle`" as Lottie markers allow. Closes when a timeline carries named
-  ranges and playback can play or loop one by name, round-tripping through `Clip`.
+- **(P3) [agent] Timeline markers are points, not ranges** (2026-11-25). `EventTrack` events have no duration, and
+  blits marks are points too, so a player can't "play `intro`, then loop `idle`" as Lottie markers allow (blits:
+  "Named ranges on a score"). Closes when `Clip` carries named ranges and playback plays or loops one by name.
 
 - **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
-  scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to `BezierEasing`. A package of its own
-  because Lottie is a scene format, not SVG. Needs the `Clip` entry above. Closes when a set of reference Lottie
-  files plays from the import matching lottie-web's frames.
+  scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing. A package of
+  its own because Lottie is a scene format, not SVG. Needs the `Clip` entry above. Closes when a set of reference
+  Lottie files plays from the import matching lottie-web's frames.
 
 ## Audio
 
