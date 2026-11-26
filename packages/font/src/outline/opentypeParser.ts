@@ -11,7 +11,7 @@
  */
 
 import { OUTLINE_PRECISION, type FaceEmbedding, type OutlineFace, type OutlineParser } from './OutlineFace';
-import { postScriptNameOf, sfntFromCollection, tableOf } from './sfnt';
+import { isDataForkFont, isFontCollection, postScriptNameOf, sfntFromCollection, tableOf } from './sfnt';
 import { checkCff } from './cffCheck';
 import { checkCmap } from './cmapCheck';
 import { isWoff, sfntFromWoff } from './woff';
@@ -19,6 +19,7 @@ import { gposPairKerning, type PairKerning } from './gposKerning';
 import { faceMetricsFromTables, type FaceMetricTables } from '../faceMetrics';
 
 type OpenType = typeof import('opentype.js');
+type OpenTypeFont = import('opentype.js').Font;
 
 let modulePromise: Promise<OpenType> | null = null;
 
@@ -33,34 +34,42 @@ function loadOpenType(): Promise<OpenType> {
 }
 
 /**
- * opentype.js 2.0 publishes ESM under `module` and a UMD bundle under `main`.
- * Only a bundler reads `module`; Node takes the UMD one, whose named exports
- * it cannot detect, so `ns.parse` is `undefined` there and every face fails to
- * load. The registry catches that and degrades to the SDF tier, so a headless
- * consumer, which has no atlas, gets no glyphs and no explanation.
+ * The opentype.js module whatever loaded it: `import * as opentype from 'opentype.js'` passes straight through
+ * here, and `openTypeModuleOf(opentype).parse` is then callable in a bundler and in Node alike.
  *
- * Exported for the test: the suite resolves through vite, which reads
- * `module` and therefore cannot reproduce the shape that breaks.
+ * opentype.js 2.0 publishes ESM under `module` and a UMD bundle under `main`. Only a bundler reads `module`; Node
+ * takes the UMD one, whose named exports it cannot detect, so `ns.parse` is `undefined` there and everything sits
+ * under the interop `default`.
  */
-export function parserOf(ns: OpenType): OpenType['parse'] {
-  const interop = ns as OpenType & { default?: OpenType };
-  return interop.default?.parse ?? ns.parse;
+export function openTypeModuleOf<T extends object>(ns: T): T {
+  return (ns as T & { default?: T }).default ?? ns;
 }
 
 /**
- * Throws unless `ns` is opentype.js 2, whose `toPathData` reads the options object `glyphD` passes.
+ * Throws unless `Path` is opentype.js 2's, whose `toPathData` reads the options object `glyphD` passes.
  * 1.x takes a bare precision and formats every coordinate to a whole em, so each glyph would come
  * out a box with nothing to say so; a broken install that resolved a hoisted 1.x copy did that.
  */
-export function assertOpenType2(ns: OpenType): void {
-  const interop = ns as OpenType & { default?: OpenType };
-  const Path = (interop.default?.Path ?? ns.Path) as unknown as new () => PathData & { moveTo(x: number, y: number): void };
+function assertOpenType2(PathClass: unknown): void {
+  const Path = PathClass as new () => PathData & { moveTo(x: number, y: number): void };
   const probe = new Path();
   probe.moveTo(0.25, 0.5);
   const d = probe.toPathData({ decimalPlaces: 2, optimize: false, flipY: false });
   if (d !== 'M0.25 0.50') {
     throw new Error(`the opentype.js this resolved is older than 2 (its toPathData wrote "${d}" for "M0.25 0.50"); `
       + '@weasel-js/font needs opentype.js 2, so check which copy the install resolves');
+  }
+}
+
+/** Throws unless `parsed` states the units per em and glyph count the `head` and `maxp` tables of `sfnt` do. */
+function assertSameFont(parsed: OpenTypeFont, sfnt: ArrayBuffer): void {
+  const head = tableOf(sfnt, 'head');
+  const maxp = tableOf(sfnt, 'maxp');
+  const upem = head && head.byteLength >= 20 ? head.getUint16(18) : null;
+  const glyphs = maxp && maxp.byteLength >= 6 ? maxp.getUint16(4) : null;
+  if (upem !== parsed.unitsPerEm || glyphs !== parsed.numGlyphs) {
+    throw new Error(`the parsed font (${parsed.unitsPerEm} units per em, ${parsed.numGlyphs} glyphs) was not parsed `
+      + `from these bytes (${upem ?? 'no'} units per em, ${glyphs ?? 'no'} glyphs)`);
   }
 }
 
@@ -72,7 +81,7 @@ export function assertOpenType2(ns: OpenType): void {
  * the miss instead and let the caller's fallback ladder run.
  */
 function createOutlineFace(
-  font: import('opentype.js').Font, gpos: PairKerning | null, sfnt: ArrayBuffer,
+  font: OpenTypeFont, gpos: PairKerning | null, sfnt: ArrayBuffer,
 ): OutlineFace {
   const upem = font.unitsPerEm;
   if (!(Number.isFinite(upem) && upem > 0)) {
@@ -203,16 +212,30 @@ function embeddingOf(font: import('opentype.js').Font, sfnt: ArrayBuffer, ascent
  * name rejects: its first member is usually Regular, and bold text drawn from
  * it is lighter above the outline threshold than below it. A variable font
  * rejects a name other than its default instance's for the same reason.
+ *
+ * With `parsed`, the bytes are the ones that font was parsed from, and nothing parses them again: the face is built
+ * from `parsed`, with the GPOS kerning and the checks a parse of those bytes gets. The bytes must be one font, not a
+ * collection, and must agree with `parsed` on its units per em and glyph count.
  */
-export function createOpenTypeParser(postScriptName?: string): OutlineParser {
+export function createOpenTypeParser(postScriptName?: string, parsed?: OpenTypeFont): OutlineParser {
   return async (bytes: ArrayBuffer): Promise<OutlineFace> => {
     if (isWoff2(bytes)) {
       throw new Error('the file is WOFF2, whose compression the outline parser cannot read; '
         + 'register the face\'s TTF, OTF or WOFF file instead');
     }
-    const ns = await loadOpenType();
-    assertOpenType2(ns);
-    const parse = parserOf(ns);
+    if (parsed && (isFontCollection(bytes) || isDataForkFont(bytes))) {
+      throw new Error('a font registered already parsed needs the bytes of that one font, not of the collection '
+        + 'holding it; pass sfntFromCollection(bytes, name).bytes');
+    }
+    let parse: (single: ArrayBuffer) => OpenTypeFont;
+    if (parsed) {
+      assertOpenType2(parsed.glyphs.get(0).getPath(0, 0, 1).constructor);
+      parse = (single) => { assertSameFont(parsed, single); return parsed; };
+    } else {
+      const ns = openTypeModuleOf(await loadOpenType());
+      assertOpenType2(ns.Path);
+      parse = ns.parse;
+    }
     const member = sfntFromCollection(isWoff(bytes) ? await sfntFromWoff(bytes) : bytes, postScriptName);
     if (!member.matched) {
       throw new Error(
