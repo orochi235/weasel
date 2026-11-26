@@ -35,3 +35,12 @@ function closeOf(xml: string, name: string, from: number): number {
   }
   return -1;
 }
+
+/** Whether `xml` is more than one element side by side, as an outlined stroke is. */
+export function writesSiblings(xml: string): boolean {
+  const first = /^<([\w:]+)((?:"[^"]*"|[^">])*)>/.exec(xml);
+  if (!first) return false;
+  if (first[2].endsWith('/')) return xml.length > first[0].length;
+  const close = closeOf(xml, first[1], first[0].length);
+  return close >= 0 && xml.indexOf('>', close) + 1 < xml.length;
+}

@@ -32,7 +32,7 @@ import { textXml } from './serializeText';
 import { fontFacesXml, withTextMode } from './textModes';
 import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
-import { withDecoration } from './decorateXml';
+import { withDecoration, writesSiblings } from './decorateXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
 import { TEXT_FRAME_ATTR } from './framedText';
 import { GROUP_BOX_ATTR } from './groupBox';
@@ -151,7 +151,15 @@ function nodeXml(
   const leaf = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node, drawn), painted) : kind;
   const { id } = node;
   const named = id === undefined ? leaf : leaf.replace(/^<[\w:]+/, (open) => `${open} id="${escapeAttr(id)}"`);
-  const xml = id === undefined || !decorate ? named : withDecoration(named, decorate.attrsOf?.(id), decorate.childrenOf?.(id));
+  let xml = named;
+  if (id !== undefined && decorate) {
+    const attrs = decorate.attrsOf?.(id);
+    const children = decorate.childrenOf?.(id);
+    if ((attrs || children) && writesSiblings(named)) {
+      warn(`the decoration of node "${id}" reaches only its first element; the node is written as more than one`);
+    }
+    xml = withDecoration(named, attrs, children);
+  }
   if (!node.hidden) return xml;
   // An outlined stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
