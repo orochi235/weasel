@@ -1,6 +1,6 @@
 ---
-'@weasel-js/animator': patch
-'@weasel-js/core': patch
+'@weasel-js/animator': minor
+'@weasel-js/core': minor
 ---
 
 Tweens, color animations, handoffs and core's rewind take an easing as a timeline key does, blits' `steps` and `linear` included.
