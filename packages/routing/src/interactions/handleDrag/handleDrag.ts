@@ -71,6 +71,10 @@ const holds = (position: string | undefined, style: CSSStyleDeclaration | undefi
   : position === 'absolute' ? !!style && (style.position !== 'static' || holdsFixed(style))
   : true;
 
+/** Whether a box with `style` is a scroll container, which `visible` and `clip` on both axes are not. */
+const scrollsBox = (style: CSSStyleDeclaration | undefined): boolean =>
+  !!style && ['overflow-x', 'overflow-y'].some((axis) => ['hidden', 'scroll', 'auto'].includes(style.getPropertyValue(axis)));
+
 /** `el`'s parent in the flat tree, which is the one its box is laid out in: the slot it is assigned to, else its
  *  parent, else the host of the shadow root it tops. */
 const flatParentOf = (el: Element): Element | null =>
@@ -94,7 +98,7 @@ function scrollersOf(el: Element): Scroller[] {
       if (position === 'absolute' && n !== root) out.push(scrollerOf(root));
       return out;
     }
-    if (sticky && (p === root || styleOf(p)?.overflow !== 'visible')) {
+    if (sticky && (p === root || scrollsBox(styleOf(p)))) {
       out.push(stickyScrollerOf(sticky, p, styleOf(sticky)));
       sticky = null;
     } else out.push(scrollerOf(p));

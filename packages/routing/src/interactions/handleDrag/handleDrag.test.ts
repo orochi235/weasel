@@ -415,6 +415,26 @@ describe('useHandleDrag — callbacks from a later render', () => {
     scroller.remove();
   });
 
+  it('sticks a sticky rect in the scroller past an overflow: clip parent, which does not scroll', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    scroller.style.overflow = 'auto';
+    const clipper = document.createElement('div');
+    clipper.style.overflow = 'clip';
+    document.body.appendChild(scroller);
+    scroller.appendChild(clipper);
+    const target = mount();
+    target.style.position = 'sticky';
+    target.style.top = '0';
+    clipper.appendChild(target);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 10 });
+    scroller.remove();
+  });
+
   it('counts the scroll a sticky rect sticks in on the axis it has no inset on', () => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
