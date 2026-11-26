@@ -26,7 +26,7 @@ import { dynamicActionId, type ActionParamsOf, type InvokeParams } from './actio
 import type { ImmediateParams } from '../dispatcher/inputFacts';
 import type { Dispatcher } from '../dispatcher/dispatcher';
 import { validateActionBindings, validateActionId, validateActionDefaultBinding, type ActionsRegistry, type UiOngoingControl } from './registry';
-import { createMenuHost, type MenuHost } from '../../menus/menuHost';
+import { createMenuHost, menuHostView, sameMenuHost, type MenuHost } from '../../menus/menuHost';
 import { MenuHostContext } from '../../menus/MenuHostContext';
 import { pushOwner, ScopeNode } from './scopeNode';
 import { dropKeysOf, holdsKeysNow, takeKeys } from './keyOrder';
@@ -205,17 +205,25 @@ export class ActionsNode extends ScopeNode<ActionsNode> {
     return eligibleNow(a, this.start().deps()?.get('ruleCtx'));
   }
 
-  /** The menu host of this node's tree, made by its root on first ask. Rows
-   *  resolve and run against the active scope, as chrome's `trigger` does. */
+  /** This scope's view of its tree's menu host, made by the root on first ask: the tree's menus, with rows that
+   *  resolve and run against this scope's active node, as its registry's `trigger` does. */
   menuHost(): MenuHost {
+    if (this.host) return this.host;
+    const src = {
+      actions: () => this.registry.list(),
+      depsFor: (a: Action) => this.depsOf(a),
+      eligible: (a: Action) => this.eligibleNow(a),
+      trigger: (id: string, params?: Record<string, unknown>) => this.registry.trigger(dynamicActionId(id), params),
+      activeTool: () => this.start().deps()?.get('activeTool')?.active ?? null,
+    };
     const root = [...this.chain()].at(-1)!;
-    return root.host ??= createMenuHost({
-      actions: () => root.registry.list(),
-      depsFor: (a) => root.depsOf(a),
-      eligible: (a) => root.eligibleNow(a),
-      trigger: (id, params) => root.registry.trigger(dynamicActionId(id), params),
-      activeTool: () => root.start().deps()?.get('activeTool')?.active ?? null,
-    });
+    return this.host = root === this ? createMenuHost(src) : menuHostView(root.menuHost(), src)!;
+  }
+
+  /** The menu host scopes under `outer` take: `outer` itself when it is another host's, this scope's view of its tree's otherwise. */
+  menuHostUnder(outer: MenuHost | null): MenuHost {
+    const own = this.menuHost();
+    return outer && !sameMenuHost(outer, own) ? outer : own;
   }
 
   private dispatcher(): Dispatcher | null {

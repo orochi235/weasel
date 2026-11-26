@@ -47,17 +47,43 @@ export interface MenuHost {
   subscribe(fn: () => void): () => void;
 }
 
+/** The declared menus and the one open menu, shared by every view of one host. */
+interface MenuStore {
+  readonly defs: OwnedMenuDef[];
+  readonly listeners: ReturnType<typeof createEmitter>;
+  open: OpenMenu | null;
+  seq: number;
+}
+
+type HostSources = MenuSources & { activeTool(): string | null };
+
+const STORES = new WeakMap<MenuHost, MenuStore>();
+
 /** Creates the host that decides which context menu is open, from the menus registered to it. */
-export function createMenuHost(src: MenuSources & { activeTool(): string | null }): MenuHost {
-  const defs: OwnedMenuDef[] = [];
-  const listeners = createEmitter();
-  let open: OpenMenu | null = null;
-  let seq = 0;
+export function createMenuHost(src: HostSources): MenuHost {
+  return hostOver({ defs: [], listeners: createEmitter(), open: null, seq: 0 }, src);
+}
+
+/** @internal A view of `host` that resolves and runs its rows against `src`: the same declared menus and the same open
+ *  menu, read for another scope. `null` when `host` was not made by `createMenuHost`. */
+export function menuHostView(host: MenuHost, src: HostSources): MenuHost | null {
+  const store = STORES.get(host);
+  return store ? hostOver(store, src) : null;
+}
+
+/** @internal Whether `a` and `b` are views of one host. */
+export function sameMenuHost(a: MenuHost, b: MenuHost): boolean {
+  const store = STORES.get(a);
+  return store !== undefined && store === STORES.get(b);
+}
+
+function hostOver(store: MenuStore, src: HostSources): MenuHost {
+  const { defs, listeners } = store;
   const emit = () => listeners.emit();
 
   const close = () => {
-    if (!open) return;
-    open = null;
+    if (!store.open) return;
+    store.open = null;
     emit();
   };
 
@@ -69,7 +95,7 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
     return def ? resolveMenu(def, src, req.world, req.params) : [];
   };
 
-  return {
+  const host: MenuHost = {
     define(def, owner = null) {
       const entry = { def, owner };
       defs.push(entry);
@@ -84,8 +110,8 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
         close();
         return false;
       }
-      open = {
-        seq: ++seq, entries, client: req.client, world: req.world,
+      store.open = {
+        seq: ++store.seq, entries, client: req.client, world: req.world,
         ...(req.under ? { under: req.under } : {}),
         ...(req.side ? { side: req.side } : {}),
         source: req.source ?? 'pointer',
@@ -95,9 +121,11 @@ export function createMenuHost(src: MenuSources & { activeTool(): string | null 
     },
     has: (req) => resolve(req).length > 0,
     close,
-    current: () => open,
+    current: () => store.open,
     subscribe(fn) {
       return listeners.subscribe(fn);
     },
   };
+  STORES.set(host, store);
+  return host;
 }
