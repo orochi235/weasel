@@ -35,7 +35,7 @@
     "@weasel-js/registry": "2.0.0"
   },
   "devDependencies": {
-    "@msb235/blits": "1.5.2",
+    "@msb235/blits": "1.5.3",
     "@weasel-js/history": "2.0.0"
   },
   "author": "orochi235",
