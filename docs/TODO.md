@@ -275,7 +275,8 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   the worst error is ≤ 0.003 (18 of 30: the in and out of quad, cubic, quart, quint, sine, expo, circ and back,
   plus in-out sine and cubic), and otherwise samples a blits `linear()` with points placed adaptively to ≤ 0.001
   (17–89 points); it writes a generated table in animator whose names resolve to blits `Easing` values, and a test
-  regenerates it against geom's functions. `Clip` keeps names; `bindClip`, importers and exporters resolve them.
+  regenerates it against geom's functions. `Clip` keeps names; `bindClip`, importers and exporters resolve them. Until it
+  lands, svg's CSS and SMIL writers and `@weasel-js/lottie` sample a named curve in 24 even steps.
   Measured 2026-11-25: bezier fit by Nelder–Mead on max error (an upper bound, not proven optimal). Needs blits'
   sampled curve. The three bounce curves are parabolas, so an exporter writes them exactly instead: a key at each
   contact and peak (easeOutBounce: 0, 36.364%, 54.545%, 72.727%, 81.818%, 90.909%, 95.455%, 100%), each segment

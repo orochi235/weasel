@@ -249,6 +249,33 @@ writes a `kit:image` leaf back as an `SvgImageNode`.
 in (a non-`none` value warns) and written back as `none`, so a source file
 that relied on letterboxing imports stretched.
 
+## Writing an animated SVG
+
+`@weasel-js/svg/animate` writes nodes and an animator `Clip` as one SVG that plays with no script:
+`serializeCssAnimatedSvg` as CSS keyframes, `serializeSmilAnimatedSvg` as SMIL `<animate>` elements.
+Both take `serializeSvg`'s options.
+
+```ts
+import { serializeCssAnimatedSvg } from '@weasel-js/svg/animate';
+
+const svg = serializeCssAnimatedSvg(nodes, {
+  version: 1,
+  loop: true,
+  tracks: [{ kind: 'sampled', target: 'line.trim.end', keys: [{ t: 0, value: 0 }, { t: 800, value: 1 }] }],
+}, { reducedMotion: 'end', onWarn: console.warn });
+```
+
+A track named `<id>.<property>` moves that property of the node with that id, and loops as the clip
+does. A presentation property (`opacity`, `fill`, `stroke-width`, `visibility`, …) moves on any
+node, and `d` on a path; a track on anything else is skipped with a warning. A trim,
+`<id>.trim.start` and `<id>.trim.end`, is drawn as one dash on `pathLength="1"`, so it needs a
+stroked node written as one `<path>`; the node's own trim sets where an edge with no track rests, and
+its own dash gives way to the trim's. `dashTracksOf(clip)` gives that lowering on its own.
+
+`reducedMotion: 'end'` shows a viewer whose system asks for reduced motion each animated property at
+its value at the clip's end, with no animation; the default, `'animate'`, plays it for everyone.
+SMIL has no media query, so a SMIL file always plays.
+
 ## Writing XML by hand
 
 `escapeAttr(s)` and `escapeText(s)`, from `@weasel-js/registry`, are the escaping this package writes XML
