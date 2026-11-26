@@ -264,6 +264,12 @@ the innermost kernel and animator runs on it; weasel's share of each entry below
 `Clip` and binding it to the scene, never a parallel implementation in animator. Each names the blits entry it
 waits on; weasel runs against the local blits checkout until a blits release carries it.
 
+**Imported tracks bind through one general node-data target in core (2026-11-25)**: a `Target` over any field of
+a scene node's data, shown through the same hold mechanism as the pose target with no ops per frame, of which trim
+and vertex color become instances, rather than a registry per property. It is a render-path change, so it ships
+with before/after numbers. Importers keep an animated element's `transform` as a pose instead of baking it, and
+re-lower animated geometry attributes each sample.
+
 - **(P2) [agent] `Clip` can't hold looping, stepped keys or a sampled easing curve** (2026-11-25). SMIL
   `repeatCount`, CSS `animation-iteration-count` and Lottie loops need a loop on a clip or track (blits voices
   already `loop`); SMIL `calcMode="discrete"`, CSS `steps()` and Lottie hold keys need stepped easing (blits
