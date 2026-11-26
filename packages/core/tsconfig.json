@@ -118,6 +118,7 @@
       "@weasel-js/labkit/surface": ["../labkit/src/surface/index.ts"],
       "@weasel-js/labkit/job": ["../labkit/src/job/index.ts"],
       "@weasel-js/labkit/overview": ["../labkit/src/overview/index.ts"],
+      "@weasel-js/labkit/link": ["../labkit/src/link/index.ts"],
       "@weasel-js/labkit/weasel-canvas": ["../labkit/src/passthrough/weasel-canvas.ts"],
       "@weasel-js/labkit/styles.css": ["../labkit/src/styles.dev.ts"],
       "@weasel-js/labkit/loupe": ["../labkit/src/loupe/index.ts"],
