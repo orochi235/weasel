@@ -271,6 +271,15 @@ waits on; weasel runs against the local blits checkout until a blits release car
   (blits: "A sampled easing curve"). Closes when `Clip` carries all three in blits' forms and `toClip`/`bindClip`
   round-trip them.
 
+- **(P2) [agent] weasel's named easings aren't data blits, CSS or the GPU can carry** (2026-11-25). geom's 30
+  Penner curves (`EASINGS`) exist only as functions. Planned: a script fits each to a CSS bezier and keeps it where
+  the worst error is ≤ 0.003 (18 of 30: the in and out of quad, cubic, quart, quint, sine, expo, circ and back,
+  plus in-out sine and cubic), and otherwise samples a blits `linear()` with points placed adaptively to ≤ 0.001
+  (17–89 points); it writes a generated table in animator whose names resolve to blits `Easing` values, and a test
+  regenerates it against geom's functions. `Clip` keeps names; `bindClip`, importers and exporters resolve them.
+  Measured 2026-11-25: bezier fit by Nelder–Mead on max error (an upper bound, not proven optimal). Needs blits'
+  sampled curve. Closes when every weasel easing name plays from the table within those bounds.
+
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
   multiplies into their children, run backward and loop; a remap of a voice's clock is missing (blits: "A voice's
