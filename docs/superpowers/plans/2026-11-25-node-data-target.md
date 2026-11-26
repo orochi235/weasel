@@ -50,3 +50,20 @@ it (tessellation, bounds), is rebuilt each frame. Trim and vertex color today by
 
 1 and 2 are additive and land first, with tests beside `poseTarget.test.tsx`. 3 follows on the svg side.
 4 lands only with its numbers.
+
+## Handoff (2026-11-25, from session weasel-29)
+
+- **Where:** worktree `.worktrees/anim-import`, branch `node-target` (the directory is named for the branch it
+  started on). `anim-import` is the branch in weasel-7a's batch `batch/2026-11-25-anim`; it was rerunning after
+  the labkit heap-cap fix (`ce08e5ccfb`). Don't commit to `anim-import`; once the batch lands, delete that branch
+  only, as this worktree carries `node-target`, and merge `main` into `node-target`.
+- **Next, in order:** step 3 above, step 4 with its benchmarks, then CSS animation import (TODO "CSS animation
+  import"), then the easing presets (`docs/superpowers/plans/2026-11-25-easing-presets.md`; fold its resolver
+  into animator's `resolveKeyEasing`). Nested retiming waits on blits' "A voice's clock run through a remap".
+- **Owed to tracey-93** (`~/src/tracey`, writing Clip exporters): a message when the `Clip` and svg-`id` work
+  reach `main`. Trim tracks are agreed as `<id>.trim.start` / `<id>.trim.end`, fractions of the path.
+- **blits:** `linear` and steps `jump: none|both` are on blits `main` (`07de7aab`), unpushed and unreleased;
+  Mike cuts the release himself. weasel stays pinned to blits 1.4.0, which neither has nor validates them.
+- **Traps:** git in this worktree intermittently fails on `index.lock` (something polls it); rerun the git
+  command alone. A worktree-isolated session refuses compound git commands; run each on its own line. Under zsh a
+  file list in a variable needs `${=files}` to split.
