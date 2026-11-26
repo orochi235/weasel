@@ -1,4 +1,4 @@
-import { kit, mix as createMix, type Transport, transport as createTransport } from '@msb235/blits';
+import { type Transport, transport as createTransport } from '@msb235/blits';
 import { createHistory } from '@weasel-js/history';
 import { createEmitter } from '@weasel-js/registry';
 import { passesOf, placeOf } from './place';
@@ -161,13 +161,15 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   hub.subs.emit();
 }
 
-/** Seeks the transport to `to`, then puts back the rate and ramp the seek reverted. A transport only
- *  seeks ahead under a rate that reaches the time, so ahead it plays at 1 for the seek. */
+/** Seeks the transport to `to`. A seek back restores the rate it had then, so the clock's is put back. */
 function seekTransport(run: Run, to: number): void {
   const t = run.t;
   if (Object.is(to, t.now)) return;
+  if (to > t.now) {
+    t.seek(to);
+    return;
+  }
   const rate = t.rate;
-  if (to > t.now) t.ramp(1, 0);
   t.seek(to);
   t.ramp(rate, 0);
   if (run.ramp) t.ramp(run.ramp.to, run.ramp.left);
@@ -188,8 +190,8 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   const wasChanged = run.changed;
   const before = run.elapsed;
   const counts = !Number.isNaN(run.last) && !run.slept && timestamp >= run.last;
-  // The transport counts host time between syncs; a gap that does not count is rebased out of it.
-  if (!counts) run.t.rebase();
+  // The transport counts host time between syncs; a sync after a sleep only records the time.
+  if (run.slept) run.t.rebase();
   run.t.sync(timestamp);
   if (counts) {
     stepRampLeft(run, hub, timestamp - run.last);
@@ -324,12 +326,10 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
   checkLoop(loop);
-  // Seeking needs history with a tape, and a seek reaches back no further than history keeps.
+  // Seeking back, and a rate below 0, need history with a tape reaching back over the whole run, even with no mix.
   const t = createTransport({ history: { ms: Number.POSITIVE_INFINITY, tape: createHistory } });
-  // Only a mix moves a transport's time, so with none of the host's the clock keeps an empty one on it.
   const mix = spec.mix?.(t) ?? null;
-  if (!mix) createMix(kit({}), { transport: t });
-  // Seeking needs a first sync, and nothing seeks to before it: the run's 0 is that sync's time.
+  // Nothing seeks to before the first sync: the run's 0 is that sync's time.
   t.sync(0);
   t.rebase();
   if (mix && !Object.is(mix.now, t.now)) throw new Error("ClockSpec.mix makes its mix on the transport it is given");
@@ -359,7 +359,6 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     wakeFired: false,
     t,
   };
-  run.rate = 1;
   // The end of the declared run, where a run made endless since (a loop toggle, a duration write, an override)
   // opens at `'end'`; `declare` refuses a declaration that has none.
   let declaredEnd = (spec.duration ?? Number.POSITIVE_INFINITY) * passesOf(loop);
