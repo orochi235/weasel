@@ -41,6 +41,7 @@ import { textFrameAttrOf } from './framedText';
 import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
 import { insideUse, parseUse, spaceOfUse } from './use';
+import { readSmil } from './smil';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
 
@@ -95,6 +96,7 @@ function readDocument(
   for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const clips = collectClipPaths(root, onWarn);
+  const clip = readSmil(root, onWarn);
   let nodes: SvgNode[];
   let markers: ReturnType<typeof ingestMarkers>;
   try {
@@ -108,6 +110,7 @@ function readDocument(
 
   const result: ParseResult = { nodes, warnings };
   if (markers.length > 0) result.markers = markers;
+  if (clip) result.clip = clip;
   if (documentMeta) result.documentMeta = documentMeta;
   const viewBox = parseViewBoxAttr(root.getAttribute('viewBox'));
   if (viewBox) result.viewBox = viewBox;

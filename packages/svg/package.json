@@ -54,6 +54,7 @@
     "@weasel-js/text": "2.0.0"
   },
   "peerDependencies": {
+    "@weasel-js/animator": "2.0.0",
     "@weasel-js/core": "2.0.0",
     "@weasel-js/export": "2.0.0",
     "@weasel-js/text-tools": "2.0.0"

@@ -10,6 +10,7 @@ import type {
   Path, Paint, MarkerEntry, MarkerRef, PoseLinear, ScreenLength, Stroke, StrokeAlign, Fill, StrokeNib, VertexWidth, BooleanShapeOp,
 } from '@weasel-js/core';
 import type { StyledRun, TextStyle, TextVerticalAlign, TextFit } from '@weasel-js/text';
+import type { Clip } from '@weasel-js/animator';
 
 /**
  * Opaque pass-through bag for namespaced XML content. The package does not
@@ -358,6 +359,14 @@ export interface ParseResult {
    * which `unpackSvgFiles` does.
    */
   markers?: MarkerEntry[];
+  /**
+   * The document's SMIL (`<animate>`, `<set>`, `<animateTransform>`) as a clip. Each track names
+   * what it moves as `<node id>.<attribute>`, or `<node id>.transform.<type>` with the type's
+   * numbers (`rotate` is `[angle, cx, cy]`); colors are RGBA in 0..1, and an animated `d` names the
+   * interpolation `svg-path`. An animated element with no `id` is given one, `smil-1` and on. What
+   * the clip cannot carry is among `warnings`.
+   */
+  clip?: Clip;
 }
 
 export type { SerializeOptions, SvgTextMode } from './serializeOptions';
