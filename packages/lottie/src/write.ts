@@ -7,7 +7,9 @@ import { boundsOfPath, identity, multiply, rotatePathAbout, transformPath, type 
 import { tryParseColor } from '@weasel-js/paint';
 import type { SvgNode, SvgPaint, SvgPathNode, SvgStroke } from '@weasel-js/svg';
 import { svgBoundsOf } from '@weasel-js/svg';
-import { createWarnOnce, idsIn, planClip, type Frame, type PlannedTrack, type Warn } from '@weasel-js/svg/animate';
+import {
+  createWarnOnce, nodeKindsIn, planClip, strokeLossWarning, strokelessTrimWarning, trimEdgesOf, type Frame, type PlannedTrack, type Warn,
+} from '@weasel-js/svg/internal';
 import { scalarOf } from './keyframes';
 import { lottieShapesOf } from './shape';
 import type {
@@ -28,9 +30,6 @@ interface Leaf { node: SvgPathNode; path: Path; opacity: number }
 const held = <T>(k: T): LottieStatic<T> => ({ a: 0, k });
 const CAPS = { butt: 1, round: 2, square: 3 } as const;
 const JOINS = { miter: 1, round: 2, bevel: 3 } as const;
-/** The properties this writer keys. */
-const PROPS = new Set(['opacity', 'trim.start', 'trim.end']);
-
 function transformOf(position: LottiePoint, opacity: LottieScalar): LottieTransform {
   return { a: held([0, 0]), p: held(position), s: held([100, 100]), r: held(0), o: opacity };
 }
@@ -73,9 +72,8 @@ function strokeOf(stroke: SvgStroke, label: string, warn: Warn): LottieStroke | 
     stroke.markerStart || stroke.markerMid || stroke.markerEnd ? 'markers' : '',
     stroke.vertexWidths || stroke.nib ? 'a varying width' : '',
     stroke.align && stroke.align !== 'center' ? 'an alignment' : '',
-    stroke.trim ? 'a trim of its own' : '',
   ].filter(Boolean);
-  if (dropped.length > 0) warn(`${label}'s stroke has ${dropped.join(', ')}, which this writer does not write; the stroke is written without`);
+  if (dropped.length > 0) warn(strokeLossWarning(label, dropped));
   if (stroke.paint.kind === 'gradient') {
     warn(`${label} has a gradient stroke, which this writer does not write; it is skipped`);
     return null;
@@ -115,9 +113,11 @@ function layerOf(leaf: Leaf, tracks: Map<string, PlannedTrack>, ctx: { fps: numb
   const tr: LottieShapeItem = { ty: 'tr', ...transformOf([0, 0], held(100)) };
   const start = tracks.get('trim.start');
   const end = tracks.get('trim.end');
+  if (!node.stroke && (start || end)) warn(strokelessTrimWarning(label));
   const groups: LottieGroup[] = [];
-  if (stroke && (start || end)) {
-    const tm: LottieTrim = { ty: 'tm', s: percentOf(start, 0, fps), e: percentOf(end, 100, fps), o: held(0), m: 2 };
+  if (stroke && (start || end || node.stroke?.trim)) {
+    const [from, to] = trimEdgesOf(node);
+    const tm: LottieTrim = { ty: 'tm', s: percentOf(start, from * 100, fps), e: percentOf(end, to * 100, fps), o: held(0), m: 2 };
     groups.push({ ty: 'gr', it: [...shapes, stroke, tm, tr] });
     if (fill) groups.push({ ty: 'gr', it: [...shapes, fill, tr] });
   } else {
@@ -135,25 +135,22 @@ function layerOf(leaf: Leaf, tracks: Map<string, PlannedTrack>, ctx: { fps: numb
  * drawn path is a shape layer with its solid fill and stroke, the last drawn first, as Lottie draws
  * its first layer on top; group transforms and rotations are baked into the geometry. A track
  * `<id>.opacity` keys the layer's opacity, and `<id>.trim.start` / `<id>.trim.end` (fractions of
- * the path's length) a trim of its stroke. The canvas is `svgBoundsOf(nodes)`. Lottie players loop,
+ * the path's length) a trim of its stroke; an edge with no track rests where the stroke's own trim
+ * puts it. The canvas is `svgBoundsOf(nodes)`. Lottie players loop,
  * so a clip that does not loop warns; so does each track, paint or node this cannot write, through
  * `opts.onWarn`, once each.
  */
 export function writeLottie(nodes: SvgNode[], clip: Clip, opts: WriteLottieOptions = {}): LottieAnimation {
   const fps = opts.fps ?? 60;
   const warn = createWarnOnce(opts.onWarn);
-  const plan = planClip(clip, idsIn(nodes), 'Lottie', warn);
+  const plan = planClip(clip, nodeKindsIn(nodes), 'Lottie', warn);
   if (plan.passes !== Infinity) {
     const times = plan.passes === 1 ? 'once' : `${plan.passes} times`;
     warn(`the clip plays ${times}, but Lottie has no field for how often an animation plays and players loop by default`);
   }
   const byId = new Map<string, Map<string, PlannedTrack>>();
   for (const track of plan.tracks) {
-    const label = `#${track.id}.${track.prop}`;
-    if (!PROPS.has(track.prop)) {
-      warn(`${label} has no Lottie property this writer writes; it is skipped`);
-      continue;
-    }
+    const label = `${track.id}.${track.prop}`;
     if ([track.still, ...track.frames].some((f) => f !== undefined && typeof f.value !== 'number')) {
       warn(`${label} holds a value that is not a number; it is skipped`);
       continue;

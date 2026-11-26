@@ -129,4 +129,28 @@ describe('writeLottie', () => {
     const shapes = writeLottie([node], clipOf({ 'a.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }] })).layers[0].shapes;
     expect(shapes.map((g) => g.it.map((i) => i.ty))).toEqual([['sh', 'st', 'tm', 'tr'], ['sh', 'fl', 'tr']]);
   });
+
+  it("rests an edge with no track at the stroke's own trim, and writes a trim with no tracks as it stands", () => {
+    const own = (id: string) => path(id, 'M0 0 L40 0', { stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: 2, trim: { start: 0.25, end: 0.75 } } } as Partial<SvgNode>);
+    const warnings: string[] = [];
+    const [b, a] = writeLottie([own('a'), own('b')], clipOf({ 'a.trim.end': [{ t: 0, value: 0.5 }, { t: 1000, value: 1 }] }), { onWarn: (m) => warnings.push(m) }).layers;
+    expect(itemsOf(a.shapes[0], 'tm')[0]).toMatchObject({ s: { a: 0, k: 25 }, e: { a: 1 } });
+    expect(itemsOf(b.shapes[0], 'tm')[0]).toMatchObject({ s: { a: 0, k: 25 }, e: { a: 0, k: 75 } });
+    expect(warnings).toEqual([]);
+  });
+
+  it('warns for, and skips, trim tracks on a path with no stroke', () => {
+    const warnings: string[] = [];
+    const node = path('a', 'M0 0 L10 0 L10 10 Z', { stroke: undefined, fill: { kind: 'solid', color: '#000' } } as Partial<SvgNode>);
+    const shapes = writeLottie([node], clipOf({ 'a.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }] }), { onWarn: (m) => warnings.push(m) }).layers[0].shapes;
+    expect(shapes.map((g) => g.it.map((i) => i.ty))).toEqual([['sh', 'fl', 'tr']]);
+    expect(warnings).toEqual(["#a's trim tracks move a stroke it does not have; they are skipped"]);
+  });
+
+  it('warns for, and skips, a property Lottie cannot key', () => {
+    const warnings: string[] = [];
+    writeLottie([path('a')], clipOf({ 'a.stroke-width': [{ t: 0, value: 1 }, { t: 1000, value: 2 }] }), { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toEqual(['a.stroke-width moves stroke-width, which Lottie cannot animate on a path; it is skipped']);
+  });
+
 });

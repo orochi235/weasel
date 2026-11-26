@@ -10,6 +10,16 @@ import { serializeAnimated, type ClipPlan, type Frame } from './plan';
 
 interface Rule { statics: string[]; animations: string[] }
 
+/** Properties CSS reads as lengths, which a bare number is not. */
+const LENGTHS = new Set(['stroke-width', 'font-size', 'letter-spacing', 'word-spacing']);
+
+/** `text` as `prop` takes it in CSS: a length in px, path data inside `path()`. */
+function cssValue(prop: string, text: string): string {
+  if (LENGTHS.has(prop) && /^-?[\d.]+(?:e-?\d+)?$/.test(text)) return `${text}px`;
+  if (prop === 'd') return `path("${text}")`;
+  return text;
+}
+
 /** `s` as a CSS identifier, escaping what an identifier cannot hold as it stands. */
 function cssIdent(s: string): string {
   const escape = (c: string): string => `\\${c.codePointAt(0)!.toString(16)} `;
@@ -22,7 +32,7 @@ function framesOf(prop: string, frames: readonly Frame[], duration: number): str
   return frames.map((f, i) => {
     const next = frames[i + 1];
     const timing = next ? `; animation-timing-function: ${cssTimingOf(next.easing)}` : '';
-    return `${numText(offsets[i])}% { ${prop}: ${f.text}${timing} }`;
+    return `${numText(offsets[i])}% { ${prop}: ${cssValue(prop, f.text)}${timing} }`;
   }).join(' ');
 }
 
@@ -50,7 +60,7 @@ function styleOf({ duration, passes, tracks }: ClipPlan): string {
   for (const { id, prop, still, frames: keys } of tracks) {
     const rule = rules.get(id) ?? rules.set(id, { statics: [], animations: [] }).get(id)!;
     if (still !== undefined) {
-      rule.statics.push(`${prop}: ${still.text}`);
+      rule.statics.push(`${prop}: ${cssValue(prop, still.text)}`);
       continue;
     }
     let name = `${cssIdent(id)}-${prop}`;

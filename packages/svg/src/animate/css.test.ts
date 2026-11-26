@@ -94,6 +94,48 @@ describe('serializeCssAnimatedSvg', () => {
     expect(keyframes(out, 'a-opacity')).toMatch(/^ 0% \{ opacity: 0;.*25% \{ opacity: 0;.*50% \{ opacity: 1;.*100% \{ opacity: 1 \}$/);
   });
 
+  it('warns once for, and skips, a property the element cannot take, and a target naming none', () => {
+    const warnings: string[] = [];
+    const out = serializeCssAnimatedSvg([path('a')], clipOf({
+      'a.r': [{ t: 0, value: 1 }, { t: 1000, value: 5 }], nodot: [{ t: 0, value: 1 }, { t: 1000, value: 5 }],
+    }), { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toEqual(['a.r moves r, which CSS cannot animate on a path; it is skipped', 'nodot names no property after its node id; it is skipped']);
+    expect(out).not.toContain('@keyframes');
+  });
+
+  it('gives a length its px, and path data its path()', () => {
+    const out = serializeCssAnimatedSvg([path('a')], clipOf({
+      'a.stroke-width': [{ t: 0, value: 1 }, { t: 1000, value: 3 }], 'a.d': [{ t: 0, value: 'M0 0L5 0' }, { t: 1000, value: 'M0 0L9 0' }],
+    }));
+    expect(keyframes(out, 'a-stroke-width')).toMatch(/0% \{ stroke-width: 1px;.*100% \{ stroke-width: 3px \}/);
+    expect(keyframes(out, 'a-d')).toContain('d: path("M0 0L5 0")');
+  });
+
+  it("rests an edge with no track at the node's own trim, and drops the node's own trim and dash", () => {
+    const warnings: string[] = [];
+    const own = { ...path('a'), stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, trim: { start: 0.25, end: 0 }, dash: [4, 2] } } as SvgNode;
+    const out = serializeCssAnimatedSvg([own], clipOf({ 'a.trim.end': [{ t: 0, value: 0.5 }, { t: 1000, value: 1 }] }), { onWarn: (m) => warnings.push(m) });
+    expect(keyframes(out, 'a-stroke-dashoffset')).toContain('stroke-dashoffset: -0.25');
+    expect(keyframes(out, 'a-stroke-dasharray')).toMatch(/^ 0% \{ stroke-dasharray: 0.25 1.0001;/);
+    expect(out).toMatch(/<path id="a" [^>]*pathLength="1"/);
+    expect(out).not.toMatch(/stroke-dasharray="/);
+    expect(warnings).toEqual(["#a's stroke has dashes, which this writer does not write; the stroke is written without"]);
+  });
+
+  it('skips with a warning a trim on a node not written as one path', () => {
+    const warnings: string[] = [];
+    const group = { kind: 'group', id: 'g', children: [path('a')] } as SvgNode;
+    const filled = { ...path('f'), stroke: undefined, fill: { kind: 'solid', color: '#000' } } as SvgNode;
+    const out = serializeCssAnimatedSvg([group, filled], clipOf({
+      'g.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }], 'f.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }],
+    }), { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toEqual([
+      "#g's trim is drawn as a dash along one <path>, but the node is a group; its trim tracks are skipped",
+      "#f's trim tracks move a stroke it does not have; they are skipped",
+    ]);
+    expect(out).not.toContain('pathLength');
+  });
+
   it('reads back as the clip it wrote, trim as the dash it lowered to', () => {
     const clip = clipOf({
       'a.opacity': [{ t: 0, value: 0 }, { t: 500, value: 1, easing: { bezier: [0.4, 0, 0.2, 1] } }, { t: 1000, value: 0.25 }],

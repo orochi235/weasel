@@ -1,5 +1,5 @@
 import { lerp } from '@weasel-js/geom';
-import { lottieTangentsOf, numText, type Frame } from '@weasel-js/svg/animate';
+import { lottieTangentsOf, rounded as num, type Frame } from '@weasel-js/svg/internal';
 import type { LottieKeyframe, LottieScalar } from './types';
 
 type Tangents = { o: { x: number; y: number }; i: { x: number; y: number } };
@@ -7,7 +7,6 @@ type Tangents = { o: { x: number; y: number }; i: { x: number; y: number } };
 interface Point { t: number; v: number; into: Tangents | 'hold' }
 
 const LINEAR: Tangents = { o: { x: 0, y: 0 }, i: { x: 1, y: 1 } };
-const num = (n: number): number => Number(numText(n));
 
 /**
  * The points `frames` lower to: one per key, plus those an easing Lottie has no tangents for is

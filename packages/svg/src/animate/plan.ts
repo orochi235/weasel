@@ -7,11 +7,15 @@ import type { Clip, ClipKey, ClipSampledTrack } from '@weasel-js/animator';
 import { serializeSvg } from '../serialize';
 import type { SerializeOptions } from '../serializeOptions';
 import { smilKind } from '../smilValues';
-import type { SvgNode } from '../types';
+import { withTrimsDrawn } from '../trimmedStroke';
+import type { SvgNode, SvgPathNode, SvgStroke } from '../types';
 import { numText } from './easing';
-import { dashTracksOf } from './trim';
+import { dashTracksOf, trimEdgesOf, trimmedIdOf, writesOnePath } from './trim';
 
 export type Warn = (message: string) => void;
+
+/** The formats the writers sharing this plan write. */
+export type ClipFormat = 'CSS' | 'SMIL' | 'Lottie';
 
 /** A key of a planned track, with its value as the document writes it. */
 export interface Frame { t: number; value: ClipKey['value']; text: string; easing: ClipKey['easing'] }
@@ -37,13 +41,31 @@ export interface ClipPlan {
 /** The decoration a writer adds to the document. */
 export interface Written { style?: string; childrenOf?(id: string): string | undefined }
 
-export function idsIn(nodes: readonly SvgNode[], out = new Set<string>()): Set<string> {
+/** Each id in `nodes`, with the kind of node that has it. */
+export function nodeKindsIn(nodes: readonly SvgNode[], out = new Map<string, SvgNode['kind']>()): Map<string, SvgNode['kind']> {
   for (const node of nodes) {
-    if (node.id !== undefined) out.add(node.id);
-    if (node.kind === 'group') idsIn(node.children, out);
+    if (node.id !== undefined) out.set(node.id, node.kind);
+    if (node.kind === 'group') nodeKindsIn(node.children, out);
   }
   return out;
 }
+
+/** The properties SVG lets CSS and SMIL animate on any element. */
+const PRESENTATION = new Set([
+  'opacity', 'fill', 'fill-opacity', 'fill-rule', 'stroke', 'stroke-opacity', 'stroke-width', 'stroke-dasharray',
+  'stroke-dashoffset', 'stroke-linecap', 'stroke-linejoin', 'stroke-miterlimit', 'visibility', 'display', 'color',
+  'font-family', 'font-size', 'font-style', 'font-weight', 'letter-spacing', 'word-spacing', 'text-decoration',
+]);
+
+/** What each format can animate on a node of each kind, as the writers write that node. */
+const CARRIES: Record<ClipFormat, Partial<Record<SvgNode['kind'], ReadonlySet<string>>>> = {
+  CSS: { path: new Set([...PRESENTATION, 'd']), group: PRESENTATION, text: PRESENTATION, image: PRESENTATION },
+  SMIL: { path: new Set([...PRESENTATION, 'd']), group: PRESENTATION, text: PRESENTATION, image: PRESENTATION },
+  Lottie: { path: new Set(['opacity', 'trim.start', 'trim.end']) },
+};
+
+/** The element a node of each kind is written as, for warnings. */
+const ELEMENTS: Record<SvgNode['kind'], string> = { path: 'a path', group: 'a group', text: 'text', image: 'an image' };
 
 /** A key's value as `prop` takes it, or null where it has no text form. */
 export function valueText(prop: string, value: ClipKey['value']): string | null {
@@ -89,10 +111,10 @@ export function createWarnOnce(onWarn: Warn | undefined): Warn {
 const TARGET = /^(.*?)\.((?:trim\.)?[^.]+)$/;
 
 /**
- * The tracks of `clip` a writer in `format` can put on the nodes whose ids are in `ids`, warning
- * through `warn` for each it cannot.
+ * The tracks of `clip` a writer in `format` can put on the nodes in `kinds` (see `nodeKindsIn`),
+ * warning through `warn` for each it cannot.
  */
-export function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, warn: Warn): ClipPlan {
+export function planClip(clip: Clip, kinds: ReadonlyMap<string, SvgNode['kind']>, format: ClipFormat, warn: Warn): ClipPlan {
   const sampled = clip.tracks.filter((t): t is ClipSampledTrack => t.kind === 'sampled');
   if (sampled.length < clip.tracks.length) warn(`the clip has event or nested timeline tracks, which ${format} cannot carry; they are skipped`);
   const duration = clip.duration ?? Math.max(0, ...sampled.flatMap((t) => t.keys.map((k) => k.t)));
@@ -105,9 +127,19 @@ export function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, w
       warn(`${target} moves a transform, which this writer does not write yet; it is skipped`);
       continue;
     }
-    const [, id, prop] = TARGET.exec(target) ?? [target, target, ''];
-    if (!ids.has(id)) {
+    const split = TARGET.exec(target);
+    if (!split) {
+      warn(`${target} names no property after its node id; it is skipped`);
+      continue;
+    }
+    const [, id, prop] = split;
+    const kind = kinds.get(id);
+    if (kind === undefined) {
       warn(`the clip moves #${id}, which no node has; its tracks are skipped`);
+      continue;
+    }
+    if (!CARRIES[format][kind]?.has(prop)) {
+      warn(`${target} moves ${prop}, which ${format} cannot animate on ${ELEMENTS[kind]}; it is skipped`);
       continue;
     }
     const keys = track.keys.filter((k) => k.t >= 0 && k.t <= duration);
@@ -124,6 +156,75 @@ export function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, w
   return { duration, passes, tracks };
 }
 
+/** `#label`'s stroke losing `dropped` in a writer: the warning every writer gives alike. */
+export function strokeLossWarning(label: string, dropped: readonly string[]): string {
+  return `${label}'s stroke has ${dropped.join(', ')}, which this writer does not write; the stroke is written without`;
+}
+
+/** A trim on `#label`, which has no stroke: the warning every writer gives alike. */
+export function strokelessTrimWarning(label: string): string {
+  return `${label}'s trim tracks move a stroke it does not have; they are skipped`;
+}
+
+/** `nodes` with `edit` applied to each path node whose id is in `ids`. */
+function withPathsEdited(nodes: readonly SvgNode[], ids: ReadonlySet<string>, edit: (node: SvgPathNode) => SvgPathNode): SvgNode[] {
+  return nodes.map((n) => (n.kind === 'group' ? { ...n, children: withPathsEdited(n.children, ids, edit) }
+    : n.kind === 'path' && n.id !== undefined && ids.has(n.id) ? edit(n) : n));
+}
+
+function pathsIn(nodes: readonly SvgNode[], out = new Map<string, SvgPathNode>()): Map<string, SvgPathNode> {
+  for (const n of nodes) {
+    if (n.kind === 'group') pathsIn(n.children, out);
+    else if (n.kind === 'path' && n.id !== undefined) out.set(n.id, n);
+  }
+  return out;
+}
+
+const bareStroke = ({ trim: _trim, dash: _dash, dashOffset: _offset, ...rest }: SvgStroke): SvgStroke => rest;
+
+/** Why a trim on `id` cannot be drawn as a dash, warning as it goes; null where it can. */
+function trimRefusal(id: string, node: SvgPathNode | undefined, kind: SvgNode['kind']): string | null {
+  if (!node) return `#${id}'s trim is drawn as a dash along one <path>, but the node is ${ELEMENTS[kind]}; its trim tracks are skipped`;
+  if (!node.stroke) return strokelessTrimWarning(`#${id}`);
+  if (!writesOnePath({ ...node, stroke: bareStroke(node.stroke) })) {
+    return `#${id}'s trim is drawn as a dash along one <path>, but the node is not written as one; its trim tracks are skipped`;
+  }
+  return null;
+}
+
+/**
+ * The trims of `clip` as dashes a writer can draw, and `nodes` ready to carry them: each trimmed
+ * node's own trim and dash come off its stroke, its own trim becoming where an edge with no track
+ * rests. A trim on a node that is not one stroked `<path>` is skipped with a warning; one on an id
+ * no node has is left for `planClip` to warn about.
+ */
+function withTrimsAsDashes(nodes: readonly SvgNode[], clip: Clip, warn: Warn): { nodes: SvgNode[]; clip: Clip; trimmed: ReadonlySet<string> } {
+  const paths = pathsIn(nodes);
+  const kinds = nodeKindsIn(nodes);
+  const refused = new Set<string>();
+  const kept = new Set<string>();
+  for (const id of new Set(clip.tracks.map(trimmedIdOf))) {
+    const kind = id === undefined ? undefined : kinds.get(id);
+    if (id === undefined || kind === undefined) continue;
+    const node = paths.get(id);
+    const refusal = trimRefusal(id, node, kind);
+    if (refusal) {
+      warn(refusal);
+      refused.add(id);
+      continue;
+    }
+    kept.add(id);
+    if (node!.stroke!.dash?.length) warn(strokeLossWarning(`#${id}`, ['dashes']));
+  }
+  const tracks = clip.tracks.filter((t) => !refused.has(trimmedIdOf(t) ?? ''));
+  const restOf = (id: string) => {
+    const node = paths.get(id);
+    return node && trimEdgesOf(node);
+  };
+  const { clip: lowered, trimmed } = dashTracksOf({ ...clip, tracks }, restOf);
+  return { nodes: withPathsEdited(nodes, kept, (n) => ({ ...n, stroke: bareStroke(n.stroke!) })), clip: lowered, trimmed };
+}
+
 /**
  * `nodes` written by `serializeSvg` with `clip` added in `format` by `write`, given the plan of
  * what it can carry. Trim tracks are lowered first (see `dashTracksOf`) and their nodes drawn on
@@ -131,12 +232,15 @@ export function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, w
  * added to.
  */
 export function serializeAnimated(
-  nodes: SvgNode[], clip: Clip, opts: SerializeOptions, format: string, write: (plan: ClipPlan, warn: Warn) => Written,
+  given: SvgNode[], clip: Clip, opts: SerializeOptions, format: ClipFormat, write: (plan: ClipPlan, warn: Warn) => Written,
 ): string {
   const warn = createWarnOnce(opts.onWarn);
-  const { clip: lowered, trimmed } = dashTracksOf(clip);
+  const { nodes, clip: lowered, trimmed } = withTrimsAsDashes(given, clip, warn);
+  // A node its own empty trim leaves out is written as nothing, so nothing of the clip can reach it.
+  const drawn = nodeKindsIn(withTrimsDrawn(nodes));
+  const kinds = new Map([...nodeKindsIn(nodes)].filter(([id]) => drawn.has(id)));
   const own = opts.decorate;
-  const written = write(planClip(lowered, idsIn(nodes), format, warn), warn);
+  const written = write(planClip(lowered, kinds, format, warn), warn);
   const style = [own?.style, written.style].filter(Boolean).join('\n');
   const childrenOf = (id: string): string | undefined => {
     const children = [own?.childrenOf?.(id), written.childrenOf?.(id)].filter(Boolean).join('');

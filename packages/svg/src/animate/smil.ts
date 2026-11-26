@@ -18,7 +18,7 @@ interface Point { frame: Frame; into: Span }
 const LINEAR_SPLINE = '0 0 1 1';
 
 /** `a` to `b` at `k`, or null where the values do not lerp. */
-function lerpOf(a: ClipKey['value'], b: ClipKey['value'], k: number): ClipKey['value'] | null {
+function lerpFor(a: ClipKey['value'], b: ClipKey['value'], k: number): ClipKey['value'] | null {
   if (typeof a === 'number' && typeof b === 'number') return lerp(a, b, k);
   if (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v) => typeof v === 'number')) {
     return (a as number[]).map((v, i) => lerp(v, b[i] as number, k));
@@ -44,7 +44,7 @@ function spanPoints(prop: string, from: Frame, to: Frame): Point[] {
   const pts = timing.expand;
   const held = [...(pts[0].t > 0 ? [{ t: 0, v: pts[0].v }] : []), ...pts, ...(pts[pts.length - 1].t < 1 ? [{ t: 1, v: pts[pts.length - 1].v }] : [])];
   for (const p of held) {
-    const value = lerpOf(from.value, to.value, p.v);
+    const value = lerpFor(from.value, to.value, p.v);
     if (value === null) return [{ frame: to, into: { mode: 'linear' } }];
     inserted.push({ frame: frameAt(prop, from.t + p.t * span, value), into: { mode: 'linear' } });
   }
@@ -86,7 +86,7 @@ function animationsOf({ duration, passes, tracks }: ClipPlan, warn: Warn): Map<s
   const out = new Map<string, string>();
   for (const track of tracks) {
     if ([track.still?.text, ...track.frames.map((f) => f.text)].some((text) => text?.includes(';'))) {
-      warn(`#${track.id}.${track.prop} holds a value with a ";", which a SMIL values list cannot; it is skipped`);
+      warn(`${track.id}.${track.prop} holds a value with a ";", which a SMIL values list cannot; it is skipped`);
       continue;
     }
     out.set(track.id, (out.get(track.id) ?? '') + animateOf(track, duration, timing));
@@ -100,7 +100,8 @@ function animationsOf({ duration, passes, tracks }: ClipPlan, warn: Warn): Map<s
  * key), as often as its `loop` says, frozen at its end; a track that never moves is a `<set>`.
  * Trim tracks are drawn as a dash on `pathLength="1"` (see `dashTracksOf`). A track this cannot
  * write, or whose id no node has, is skipped with a warning through `opts.onWarn`; `opts.decorate`
- * is kept and added to.
+ * is kept and added to. SMIL has no media query, so the file plays for a viewer who asks for
+ * reduced motion too; `serializeCssAnimatedSvg` can show such a viewer the end instead.
  */
 export function serializeSmilAnimatedSvg(nodes: SvgNode[], clip: Clip, opts: SerializeOptions = {}): string {
   return serializeAnimated(nodes, clip, opts, 'SMIL', (plan, warn) => {

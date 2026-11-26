@@ -1,8 +1,6 @@
 import { pathToCubicContours, type Path } from '@weasel-js/geom';
-import { numText } from '@weasel-js/svg/animate';
+import { rounded as num } from '@weasel-js/svg/internal';
 import type { LottieBezier, LottiePoint } from './types';
-
-const num = (n: number): number => Number(numText(n));
 
 /**
  * `path` as Lottie beziers, one per subpath, every segment a cubic: a quadratic is raised to one,

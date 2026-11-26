@@ -105,7 +105,14 @@ describe('serializeSmilAnimatedSvg', () => {
   it('warns for, and skips, a value a SMIL values list cannot hold', () => {
     const warnings: string[] = [];
     const out = serializeSmilAnimatedSvg([path('a')], clipOf({ 'a.font-family': [{ t: 0, value: 'a;b' }, { t: 1000, value: 'c' }] }), { onWarn: (m) => warnings.push(m) });
-    expect(warnings).toEqual(['#a.font-family holds a value with a ";", which a SMIL values list cannot; it is skipped']);
+    expect(warnings).toEqual(['a.font-family holds a value with a ";", which a SMIL values list cannot; it is skipped']);
+    expect(out).not.toContain('<animate');
+  });
+
+  it('warns for, and skips, an attribute the element cannot take', () => {
+    const warnings: string[] = [];
+    const out = serializeSmilAnimatedSvg([path('a')], clipOf({ 'a.cx': [{ t: 0, value: 0 }, { t: 1000, value: 5 }] }), { onWarn: (m) => warnings.push(m) });
+    expect(warnings).toEqual(['a.cx moves cx, which SMIL cannot animate on a path; it is skipped']);
     expect(out).not.toContain('<animate');
   });
 
