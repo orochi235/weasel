@@ -429,6 +429,18 @@ describe('createReflectable clash warning', () => {
     expect(warn.mock.calls.map((c) => c[0] as string).filter((m) => m.startsWith('weasel: "x" registered'))).toHaveLength(2);
   });
 
+  it('keeps a bounded memory of the pairs a held key warned of', () => {
+    const warn = spyWarn();
+    const r = createReflectable<string>();
+    r.push('k', 'base', { source: 'base' });
+    for (let i = 0; i < 300; i++) r.push('k', 'o', { source: `plugin-${i}` })();
+    warn.mockClear();
+    r.push('k', 'o', { source: 'plugin-299' })();
+    expect(warn).not.toHaveBeenCalled();
+    r.push('k', 'o', { source: 'plugin-0' })();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
   it('warns of a clash under a higher-ranked registrant too', () => {
     const warn = spyWarn();
     const r = createReflectable<string>();
