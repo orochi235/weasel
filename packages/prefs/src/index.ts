@@ -189,6 +189,21 @@ export { prefFitsHeading, prefHeadingKey } from './heading';
 export type {
   PrefAtPath, PrefFieldsOf, PrefGroupAt, PrefGroupPath, PrefPath, PrefValueAt, PrefValueOf, PrefValuesOf,
 } from '@weasel-js/prefs-schema';
+export {
+  paramDefault,
+  paramDefaults,
+  type ParamBoolean,
+  type ParamColor,
+  type ParamEntry,
+  type ParamEnum,
+  type ParamEnumOption,
+  type ParamGroup,
+  type ParamNumber,
+  type ParamShape,
+  type ParamSpec,
+  type ParamValue,
+  type ParamValues,
+} from '@weasel-js/prefs-schema';
 export type { PrefsMigration } from './migrate';
 export { openPrefs, openPrefsSync, type PrefsOptions } from './open';
 export type { PrefChange, PrefsStore } from './store';

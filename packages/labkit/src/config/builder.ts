@@ -16,6 +16,7 @@ import {
 import { CurveNode } from './curveNode';
 import { configFromPrefs } from './fromPrefs';
 import { NumberNode } from './numberNode';
+import { configFromParams } from './params';
 import { copyTree, setOwn } from './path';
 import type {
   Annotations,
@@ -326,6 +327,9 @@ export const f = {
 
   /** A property schema (`PrefSection`) as an instrument's config: see {@link configFromPrefs}. */
   prefs: configFromPrefs,
+
+  /** A plain-data param description (`ParamShape`) as an instrument's config: see {@link configFromParams}. */
+  params: configFromParams,
 
   /** Collect leaves and groups into an instrument's config, drawn over `options.over` where given. */
   schema<S extends ConfigShape>(

@@ -135,3 +135,18 @@ export type { PresetDescription } from './presets';
 export type {
   PrefAtPath, PrefFieldsOf, PrefGroupAt, PrefGroupPath, PrefPath, PrefValueAt, PrefValueOf, PrefValuesOf,
 } from './paths';
+export {
+  paramDefault,
+  paramDefaults,
+  type ParamBoolean,
+  type ParamColor,
+  type ParamEntry,
+  type ParamEnum,
+  type ParamEnumOption,
+  type ParamGroup,
+  type ParamNumber,
+  type ParamShape,
+  type ParamSpec,
+  type ParamValue,
+  type ParamValues,
+} from './params';
