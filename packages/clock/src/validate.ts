@@ -27,6 +27,10 @@ export const checkSpeed = (speed: number): void => {
     throw new RangeError(`a clock's speed is finite and positive, not ${speed}`);
 };
 
+export const checkKeep = (keep: number): void => {
+  if (!(keep > 0)) throw new RangeError(`a clock keeps a positive span of history, not ${keep}`);
+};
+
 export const checkOrigin = (origin: number): void => {
   if (!Number.isFinite(origin)) throw new RangeError(`a clock's origin is finite, not ${origin}`);
 };

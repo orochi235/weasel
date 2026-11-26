@@ -20,7 +20,7 @@ import {
   setDuration,
 } from './run';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
-import { checkDuration, checkLoop, checkOrigin, checkRampTime, checkRate, checkSpeed, speedsOf } from './validate';
+import { checkDuration, checkLoop, checkOrigin, checkRampTime, checkKeep, checkRate, checkSpeed, speedsOf } from './validate';
 
 export { declaredSpeed } from './run';
 
@@ -41,52 +41,59 @@ export function clockPosition(
   };
 }
 
-/** Seeks the transport to `to`. Under history a seek back restores the rate it had then, so the clock's is put back. */
+/** Seeks the transport to `to`, or as far back as its history reaches. Under history a seek back restores the rate
+ *  and ramp it had then, so the clock's are put back. */
 function seekTransport(run: Run, to: number): void {
   const t = run.t;
-  if (Object.is(to, t.now)) return;
-  if (to > t.now || t.history === undefined) {
-    t.seek(to);
+  const at = Math.max(to, t.horizon);
+  if (Object.is(at, t.now)) return;
+  if (at > t.now || t.history === undefined) {
+    t.seek(at);
     return;
   }
   const rate = t.rate;
-  t.seek(to);
+  const ramp = t.ramping;
+  t.seek(at);
   t.ramp(rate, 0);
-  if (run.ramp) t.ramp(run.ramp.to, run.ramp.left);
+  if (ramp) t.ramp(ramp.to, ramp.left);
 }
 
-/** Counts `dt` real ms off the ramp; settles it. */
-function stepRampLeft(run: Run, hub: Hub, dt: number): void {
-  const ramp = run.ramp;
-  if (!ramp) return;
-  ramp.left -= dt;
-  if (ramp.left > 8 * Number.EPSILON * ramp.over) return;
-  run.ramp = null;
-  hub.subs.emit();
+/** The ms of history a clock with a mix keeps: `keep`, else the run when it ends, else two passes, else a minute. */
+function keepFor(spec: ClockSpec, span: number, duration: number): number {
+  if (spec.keep !== undefined) return spec.keep;
+  if (Number.isFinite(span)) return span;
+  return Number.isFinite(duration) ? 2 * duration : 60_000;
+}
+
+/** The end of the run a sync to `timestamp` would carry the clock to or past, moving toward it; NaN for none. */
+function endCrossed(run: Run, before: number, timestamp: number): number {
+  const ahead = run.t.time(timestamp);
+  if (ahead >= run.span && (run.rate > 0 || ahead > before)) return run.span;
+  if (ahead <= 0 && (run.rate < 0 || ahead < before)) return 0;
+  return Number.NaN;
 }
 
 function syncTo(run: Run, hub: Hub, timestamp: number): void {
   if (!Number.isFinite(timestamp)) throw new RangeError(`a clock syncs to a finite time, not ${timestamp}`);
   const wasChanged = run.changed;
   const before = run.elapsed;
+  const wasRamping = run.t.ramping !== null;
   const counts = !Number.isNaN(run.last) && !run.slept && timestamp >= run.last;
   // The transport counts host time between syncs; a sync after a sleep only records the time.
   if (run.slept) run.t.rebase();
-  run.t.sync(timestamp);
-  if (counts) {
-    stepRampLeft(run, hub, timestamp - run.last);
-    const moved = run.elapsed - before;
-    if (run.elapsed >= run.span && (run.rate > 0 || moved > 0)) {
-      run.ramp = null;
-      run.elapsed = run.span;
-      run.rate = 0;
-      hub.subs.emit();
-    } else if (run.elapsed <= 0 && (run.rate < 0 || moved < 0)) {
-      run.ramp = null;
-      run.elapsed = 0;
-      run.rate = 0;
-      hub.subs.emit();
-    }
+  const end = counts ? endCrossed(run, before, timestamp) : Number.NaN;
+  if (Number.isNaN(end)) {
+    run.t.sync(timestamp);
+    if (counts && wasRamping && run.t.ramping === null) hub.subs.emit();
+  } else {
+    // Stopped where it crosses the end rather than seeking back from past it, which a history kept `keep` ms back
+    // may no longer reach.
+    const at = run.t.when(end);
+    run.t.sync(Number.isFinite(at) ? Math.min(Math.max(at, run.last), timestamp) : timestamp);
+    run.elapsed = end;
+    run.rate = 0;
+    run.t.sync(timestamp);
+    hub.subs.emit();
   }
   run.last = timestamp;
   run.changed = false;
@@ -131,9 +138,8 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
     },
     set rate(next: number) {
       checkRate(next, seekable);
-      if (Object.is(next, run.rate) && run.ramp === null) return;
+      if (Object.is(next, run.rate) && run.t.ramping === null) return;
       run.rate = next;
-      run.ramp = null;
       change(run, hub);
       hub.subs.emit();
     },
@@ -151,7 +157,7 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
       hub.subs.emit();
     },
     get ramping() {
-      return run.ramp !== null;
+      return run.t.ramping !== null;
     },
     ramp(to, over) {
       checkRate(to, seekable);
@@ -160,7 +166,6 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
         clock.rate = to;
         return;
       }
-      run.ramp = { to, left: over, over };
       run.t.ramp(to, over);
       change(run, hub);
       hub.subs.emit();
@@ -206,11 +211,11 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
   checkLoop(loop);
+  if (spec.keep !== undefined) checkKeep(spec.keep);
   // A transport with no mix seeks and runs back as a clock alone. One with a mix seeks it by restoring, which needs
-  // history with a tape reaching back over the whole run; `jump` keeps a seek ahead from moving the rate or a ramp.
-  const t = createTransport(
-    spec.mix ? { history: { ms: Number.POSITIVE_INFINITY, tape: createHistory }, seek: 'jump' } : {},
-  );
+  // history with a tape reaching back `keep` ms; `jump` keeps a seek ahead from moving the rate or a ramp.
+  const keep = keepFor(spec, duration * passesOf(loop), duration);
+  const t = createTransport(spec.mix ? { history: { ms: keep, tape: createHistory }, seek: 'jump' } : {});
   const mix = spec.mix?.(t) ?? null;
   // Nothing seeks to before the first sync: the run's 0 is that sync's time.
   t.sync(0);
@@ -235,7 +240,6 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
       seekTransport(run, to);
     },
     edge: at?.passEnd ?? false,
-    ramp: null,
     last: Number.NaN,
     changed: false,
     slept: false,
@@ -282,7 +286,6 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
       // An end on a pass line of a run made endless is that pass's end, not the next one's start.
       run.edge = spec.start === 'end' && run.elapsed > 0;
       run.rate = openRate;
-      run.ramp = null;
       change(run, hub);
       hub.subs.emit();
     },

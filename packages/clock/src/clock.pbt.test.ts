@@ -235,7 +235,7 @@ describe('createClock — stateful model', () => {
   it('stands inside its run, reads back as pass and phase, and moves as the model says', () => {
     fc.assert(fc.property(playing, commands, (s, cmds) => {
       let handle: ClockHandle;
-      try { handle = createClock({ ...s, mix: emptyMix }); } catch (e) { expect(e).toBeInstanceOf(RangeError); return; }
+      try { handle = createClock({ ...s, mix: emptyMix, keep: Number.POSITIVE_INFINITY }); } catch (e) { expect(e).toBeInstanceOf(RangeError); return; }
       const mix = handle.mix!;
       fc.modelRun(() => ({
         model: { elapsed: handle.clock.elapsed, rate: handle.clock.rate, ramp: null, now: 0, last: null, slept: false },

@@ -35,6 +35,11 @@ export interface ClockSpec {
    *  history, so the mix takes none of its own. Throws when the mix it makes
    *  is not on `transport`. */
   mix?: (transport: Transport) => ClockedMix;
+  /** ms back from `elapsed` that a clock with a `mix` can seek, which bounds
+   *  the history it keeps; a seek further back lands on the earliest time
+   *  kept. Default: the run's length when it ends, else two passes, else one
+   *  minute; `Infinity` keeps it all. Ignored without a `mix`, which seeks anywhere. */
+  keep?: number;
 }
 
 /** What a clock needs of the blits `Mix` that `ClockSpec.mix` makes. */

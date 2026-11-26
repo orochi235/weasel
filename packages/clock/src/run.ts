@@ -16,8 +16,6 @@ export interface Run {
   /** The transport's time; a write seeks it. */
   elapsed: number;
   edge: boolean;
-  /** A ramp the transport is running, and the real ms left of it, for `ramping` and to put it back after a seek. */
-  ramp: { to: number; left: number; over: number } | null;
   last: number;
   t: Transport;
   /** Changed since the last sync, so the next one is due even when paused. */
@@ -36,7 +34,7 @@ export interface Hub {
 }
 
 export const clamp = (run: Run, ms: number): number => Math.min(Math.max(0, ms), run.span);
-export const isInert = (run: Run): boolean => run.rate === 0 && run.ramp === null && !run.changed;
+export const isInert = (run: Run): boolean => run.rate === 0 && run.t.ramping === null && !run.changed;
 export const passAt = (run: Run): number =>
   placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge).pass;
 export const phaseAt = (run: Run): number =>
