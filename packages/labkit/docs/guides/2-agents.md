@@ -163,12 +163,10 @@ plays once (`loop: false`) unless declared otherwise; `start` opens it elsewhere
   discards a recorded future. The one place labkit runs such a clock itself is
   a still at a time: with a `step` declared, `useStill` plays it forward that
   many ms a frame, nothing shown, before the still says it is ready.
-- **`clock.mix`** is how a blits-driven instrument stays seekable: labkit makes
-  one mix per trial and keeps its mix time at `elapsed`, `sync`ing it forward
-  on a host clock of its own and `seek`ing it back, once a frame, before any
-  `onFrame` reader. A blits mix's clock never runs backward, so reverse play is
-  a seek per frame. labkit types the mix structurally (`ClockedMix`) and takes
-  no blits dependency.
+- **`clock.mix`** is how a blits-driven instrument stays seekable: it is
+  handed the trial clock's blits transport and makes its mix there, so the
+  mix's time is `elapsed` and the clock's seeks, rate and reverse play move it
+  directly. The transport keeps the history, so the mix takes none of its own.
 - **Named after blits** (`elapsed`, `rate`, `ramp`, `seek`, `sync`, `rebase`,
   `inert`, `onWake`), which is meant to replace weasel's animation engine: in
   its terms a trial clock is an owner whose voices play under it. Keep new

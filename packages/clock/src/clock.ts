@@ -1,7 +1,6 @@
 import { kit, mix as createMix, type Transport, transport as createTransport } from '@msb235/blits';
 import { createHistory } from '@weasel-js/history';
 import { createEmitter } from '@weasel-js/registry';
-import { followMix } from './mixFollow';
 import { passesOf, placeOf } from './place';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
 import { checkDuration, checkLoop, checkOrigin, checkRampTime, checkRate, checkSpeed, speedsOf } from './validate';
@@ -50,7 +49,6 @@ interface Hub {
   wakes: ReturnType<typeof createEmitter>;
   subs: ReturnType<typeof createEmitter>;
   frames: ReturnType<typeof createEmitter<[elapsed: number, pass: number]>>;
-  follow: (elapsed: number) => void;
   /** Where a new run opens. */
   opening: () => number;
 }
@@ -214,7 +212,6 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   run.slept = isInert(run);
   if (run.elapsed !== before) run.edge = false;
   if (run.elapsed !== before || wasChanged) {
-    hub.follow(run.elapsed);
     hub.frames.emit(run.elapsed, passAt(run));
   }
 }
@@ -329,11 +326,13 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   checkLoop(loop);
   // Seeking needs history with a tape, and a seek reaches back no further than history keeps.
   const t = createTransport({ history: { ms: Number.POSITIVE_INFINITY, tape: createHistory } });
-  // Only a mix moves a transport's time, so the clock keeps an empty one on it.
-  createMix(kit({}), { transport: t });
+  // Only a mix moves a transport's time, so with none of the host's the clock keeps an empty one on it.
+  const mix = spec.mix?.(t) ?? null;
+  if (!mix) createMix(kit({}), { transport: t });
   // Seeking needs a first sync, and nothing seeks to before it: the run's 0 is that sync's time.
   t.sync(0);
   t.rebase();
+  if (mix && !Object.is(mix.now, t.now)) throw new Error("ClockSpec.mix makes its mix on the transport it is given");
   const run: Run = {
     duration,
     loop,
@@ -376,16 +375,13 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   run.elapsed = openAt;
   run.rate = at ? at.rate : openRate;
 
-  const mix = spec.mix?.() ?? null;
   const hub: Hub = {
     wakes: createEmitter(),
     subs: createEmitter(),
     frames: createEmitter<[elapsed: number, pass: number]>(),
-    follow: followMix(mix),
     opening,
   };
   const clock = createClockView(run, hub, seekable, speeds);
-  hub.follow(run.elapsed);
 
   let declared: Declared = {
     duration: spec.duration ?? Number.POSITIVE_INFINITY,

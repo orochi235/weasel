@@ -1,3 +1,4 @@
+import { kit, mix } from '@msb235/blits';
 import { act } from '@testing-library/react';
 import { renderSettled } from '@weasel-js/react/testing/renderSettled';
 import { withIcons } from '@weasel-js/ui/testing/withIcons';
@@ -20,7 +21,7 @@ function NoClock() {
 const mixed: Instrument = {
   name: 'Mixed',
   initialState: () => ({}),
-  clock: { duration: 60_000, mix: () => ({ sync() {}, seek() {}, now: 0 }) },
+  clock: { duration: 60_000, mix: (transport) => mix(kit({}), { transport }) },
   render: (ctx) => {
     trialClock = ctx.trial.clock ?? null;
     return <NoClock />;
