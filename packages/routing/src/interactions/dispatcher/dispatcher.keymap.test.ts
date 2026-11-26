@@ -199,6 +199,19 @@ describe('the dispatcher with a keymap open', () => {
     expect(stack.open().map((k) => k.id)).toEqual(['loupe']);
   });
 
+  it('explains a plain Escape that closes the keymap as firing nothing, even when the keymap binds Escape', () => {
+    const ctx = ctxFor();
+    const entry = ctx.entriesById.get('loupe')!;
+    const withEscape = { ...entry, bindings: [...entry.bindings!, { spec: key('Escape'), actionId: 'inside' }] };
+    const escCtx = { ...ctx, entriesById: new Map([['loupe', withEscape]]) };
+    stack.push('loupe', 'Loupe');
+    const d = createDispatcher();
+    expect(d.resolveOnly(down('Escape'), escCtx)).toBeNull();
+    const record = d.explain(down('Escape'), escCtx);
+    expect(record.fired).toBeNull();
+    expect(record.outcome).toBe('handled');
+  });
+
   it('predicts what a dispatch would do, and changes nothing of the keymap', () => {
     stack.push('loupe', 'Loupe');
     const d = createDispatcher();

@@ -1,0 +1,12 @@
+packages/cursor/src/bake.ts
+packages/cursor/src/brushRing.ts
+packages/cursor/src/cursorSink.ts
+packages/cursor/src/glyphs.ts
+packages/cursor/src/index.ts
+packages/cursor/src/mark.ts
+packages/cursor/src/paint.ts
+packages/cursor/src/paintedCursorState.ts
+packages/cursor/src/pbt.fixture.ts
+packages/cursor/src/registry.ts
+packages/cursor/src/resolve.ts
+packages/cursor/src/types.ts

@@ -1,6 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { render } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { ToolsScope, usePublishTools, useScopedTools } from './toolsScope';
 import type { ToolsApi } from './useTools';
 
@@ -43,5 +43,18 @@ describe('ToolsScope', () => {
     expect(view.getByTestId('palette').textContent).toBe('b');
     view.rerender(<Scope>{[<Canvas key="a" tools={api('a2')} />]}</Scope>);
     expect(view.getByTestId('palette').textContent).toBe('a2');
+  });
+
+  it('keeps its children mounted when `isolate` changes', () => {
+    const unmounted = vi.fn();
+    function Child() {
+      useEffect(() => unmounted, []);
+      return null;
+    }
+    const tree = (isolate: boolean) => <ToolsScope><ToolsScope isolate={isolate}><Child /></ToolsScope></ToolsScope>;
+    const view = render(tree(false));
+    view.rerender(tree(true));
+    view.rerender(tree(false));
+    expect(unmounted).not.toHaveBeenCalled();
   });
 });

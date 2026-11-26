@@ -1,0 +1,8 @@
+{
+ "pairs": [],
+ "a": [
+  "A held key's clash-warning memory grows without bound across distinct source pairs",
+  "deepEqual recurses once per nesting level, so deeply nested input overflows the stack"
+ ],
+ "b": []
+}

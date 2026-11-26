@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "containsComposed reads an `<a>`/`<area>` root's URL `host` string as a shadow host, then throws",
+  "openPointerSession's onEnd says it fires before teardown completes, but teardown runs first"
+ ],
+ "b": [
+  "A sticky rect element stuck to the viewport reads its scroll from the root's rect, which itself scrolls, so the correction comes out inverted",
+  "`transform-style: preserve-3d` (and `offset-path`) are missing from the fixed-containing-block test",
+  "`overflow: clip` is taken for a sticky box's scroll container"
+ ]
+}

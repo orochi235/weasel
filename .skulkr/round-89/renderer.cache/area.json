@@ -1,0 +1,72 @@
+{
+ "id": "renderer.cache",
+ "commit": "5b35b8d8aacd88cbf6c851b42b50665e64bd75f3",
+ "date": "2026-11-25",
+ "files": [
+  "packages/renderer/src/cache/GLImageCache.ts",
+  "packages/renderer/src/cache/GLMeshCache.ts",
+  "packages/renderer/src/cache/GLTextureCache.ts",
+  "packages/renderer/src/cache/GradientRampAtlas.ts",
+  "packages/renderer/src/cache/cache.ts",
+  "packages/renderer/src/cache/markerCommandCache.ts",
+  "packages/renderer/src/cache/outlineMeshCache.ts",
+  "packages/renderer/src/cache/outlineStrokeMeshCache.ts",
+  "packages/renderer/src/cache/strokeMeshCache.ts",
+  "packages/renderer/src/cache/uploadPremultiplied.ts",
+  "packages/renderer/src/cache/whiteTexture.ts"
+ ],
+ "a": 2,
+ "b": 1,
+ "m": 0,
+ "distinct": 3,
+ "chapman": 5,
+ "unfound": 2,
+ "read": {
+  "A": 11,
+  "B": 11
+ },
+ "newCode": {
+  "since": 88,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 88,
+  "chapman": 3,
+  "unfound": 1
+ },
+ "patches": 3,
+ "verify": {
+  "ok": true,
+  "files": 9,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3139,
+   "total": 3139
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 5.6,
+   "B": 5.6,
+   "match": 0.1,
+   "fix": 15
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "msb-uai"
+  },
+  "weightedTokens": 867916,
+  "costUsd": 2.58
+ },
+ "fixCommits": [
+  "e20af406433720d54fef5a799ff8d5c9d55965aa",
+  "07d7525cb0f1d7124261f0805155d33c07c92d8f",
+  "01f463faed12dc75a83a609fc5f85e55f4de9471"
+ ]
+}

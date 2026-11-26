@@ -222,6 +222,14 @@ describe('toolOptionsPrefs: a shared option that is not a number', () => {
     expect(sharedFill(toolOptionsPrefs([tool('a', text(4)), tool('b', text())])).maxLength).toBeUndefined();
   });
 
+  it('throws where two tools declare a list differently, which no widening reconciles', () => {
+    const list = (name: string, maxItems: number) => ({
+      kind: 'list', name, description: '', default: [], maxItems, item: { kind: 'string', name: 'Item', description: '', default: '' },
+    });
+    expect(() => toolOptionsPrefs([tool('a', list('Fill', 2)), tool('b', list('Fill', 5))])).toThrow(/"fill" is a list declared differently/);
+    expect(() => toolOptionsPrefs([tool('a', list('Fill', 2)), tool('b', list('Fills', 2))])).not.toThrow();
+  });
+
   it('throws where two tools name it as different kinds', () => {
     expect(() => toolOptionsPrefs([tool('a', choice('solid')), tool('b', text())])).toThrow(/"fill" is of kind "enum" for one tool and "string"/);
   });

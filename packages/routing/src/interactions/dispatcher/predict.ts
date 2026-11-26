@@ -10,6 +10,7 @@ import type { DispatcherContext, ResolveAllOptions, ResolveOnlyResult, ResolvedC
 import type { DispatchRecord } from './dispatchRecord';
 import type { InputEvent } from './matcher';
 import { routeThroughKeymap } from './keymapRoute';
+import type { Walked } from './ranking';
 import { rank, verdictsOf, walk } from './walk';
 
 /** Whether a binding of the innermost open keymap matches `event`. */
@@ -20,7 +21,7 @@ export function bindsInKeymap(event: InputEvent, ctx: DispatcherContext, engaged
 /** The context a dispatch of `event` walks, with an open keymap's pass applied, and whether its winner would run. */
 function routed(
   event: InputEvent, ctx: DispatcherContext, engaged: ReadonlySet<string>, busy: boolean,
-): { ctx: DispatcherContext; fires: boolean; outcome: 'handled' | 'unhandled' } {
+): { ctx: DispatcherContext; fires: boolean; walks: boolean; outcome: 'handled' | 'unhandled' } {
   let last: DispatcherContext | null = null;
   let fired = false;
   const outcome = routeThroughKeymap(event, ctx, {
@@ -33,8 +34,8 @@ function routed(
     engaged: () => busy,
     quiet: true,
   });
-  if (outcome === undefined) return { ctx, fires: true, outcome: 'handled' };
-  return { ctx: last ?? { ...ctx, keymapPass: 'only' }, fires: outcome === 'handled' && fired, outcome };
+  if (outcome === undefined) return { ctx, fires: true, walks: true, outcome: 'handled' };
+  return { ctx: last ?? { ...ctx, keymapPass: 'only' }, fires: outcome === 'handled' && fired, walks: last !== null, outcome };
 }
 
 export function resolveAll(
@@ -86,7 +87,10 @@ export function explain(
 ): DispatchRecord {
   const route = routed(event, ctx, engaged, busy);
   const r = rank(event, route.ctx, engaged, true);
-  const walked = walk(r, event, route.ctx, null, opts?.evaluateShadowed ?? false);
+  // The keymap settled it without walking any binding (Escape closing it, a taken keystroke): none is shown firing.
+  const walked: Walked = route.walks
+    ? walk(r, event, route.ctx, null, opts?.evaluateShadowed ?? false)
+    : { steps: [], stop: 'exhausted', winner: null };
   const outcome = route.fires ? (walked.winner ? 'handled' : 'unhandled') : route.outcome;
   return buildDispatchRecord(r, walked, event, route.ctx, true, outcome);
 }

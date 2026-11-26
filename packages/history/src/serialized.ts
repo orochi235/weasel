@@ -213,3 +213,8 @@ function entryToSerial(e: Entry, logger: HistoryLogger): SerializedHistoryEntry 
     ...(e.selectionAfter ? { selectionAfter: e.selectionAfter } : {}),
   };
 }
+
+/** The ids an entry touches: its forward half's, and its base half's when coalescing split the two. */
+export function entryTouchedIds(forwardOps: readonly Op[], baseOps: readonly Op[]): ReadonlySet<string> {
+  return touchedIdsOf(baseOps === forwardOps ? forwardOps : [...baseOps, ...forwardOps]);
+}

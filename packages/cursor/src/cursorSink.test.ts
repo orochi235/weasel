@@ -189,4 +189,20 @@ describe('createCursorSink', () => {
     moving.setOverride(null);
     expect(painted.current()?.cursor).toEqual(ring);
   });
+
+  it('with no base set, puts back the painted override its own replaced, unless other code wrote one since', () => {
+    const big = { kind: 'painted', glyph: 'rotate', angle: 0, size: 200 } as const;
+    const { painted, sink } = harness();
+    painted.setOverride(ring);
+    sink.setOverride(big);
+    expect(painted.current()?.cursor).toEqual(big);
+    sink.setOverride({ kind: 'css', css: 'grab' });
+    expect(painted.current()).toBeNull();
+    sink.setOverride(null);
+    expect(painted.current()?.cursor).toEqual(ring);
+    sink.setOverride(big);
+    painted.setOverride('none');
+    sink.setOverride(null);
+    expect(painted.getOverride()).toBe('none');
+  });
 });

@@ -20,12 +20,19 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-25 (my call, audit round 89): `trigger`, `preview`, `begin`, menu rows and the last operation hand an action
+  only the deps its `requires` names, as its own key binding does, rather than giving an action without `requires`
+  the old fixed bag (selection, scene, history, view, activeTool, booleansAdapter) on those paths alone.
 - 2026-11-25 (my call, audit round 88): `describeShortcuts` throws for a tool set with the id `other`, which its group
   of tools in no set uses, rather than merging the two or renaming one. An action whose `group` is `other` still lists
   with the ungrouped actions, under the same "Other" heading either would get.
 - 2026-11-25 (my call, audit round 88): `toolOptionsPrefs` throws for a host's `shared` default that the shared
   option's leaf would repair (a number past every tool's bounds, an enum value no tool lists), as it throws for a kind
   mismatch, rather than repairing the default or keeping it as given.
+- 2026-11-25 (my call, audit round 89): `toolOptionsPrefs` throws for a shared option of a kind it cannot widen (a list,
+  an object, a map, a union, a color, and the rest past number, enum and string) that two tools declare differently in
+  anything but its wording (name, description, default, icon and the like), rather than keeping the first tool's leaf
+  and repairing the second tool's values against it.
 - 2026-11-25: `browserReservedChord` lists the chords every major browser binds even where a page can override them:
   Mod+1–9, Alt+Left/Right off a Mac, Cmd+[ and Cmd+] and Cmd+Shift+[ and ] on one, F5, F11, F12, Alt+F4, Ctrl+F4,
   Ctrl+Shift+Esc, Shift+Esc, and Mod+Shift+Delete. editing's reorder keys (Mod+[ and Mod+], as design apps bind them)
@@ -276,6 +283,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-25 (my call, audit round 89, history lane): `History.restore` refuses a snapshot naming a negative id, floor,
+  fork point or `nextEntryId` as malformed, since a history counting up from one could reach the floor's id 0. Lifting
+  the counter above 0 on restore and keeping the negative ids was the alternative.
 - 2026-11-25 (my call, audit round 88, history lane): `History.restore` refuses a snapshot naming an id, floor, fork
   point or `nextEntryId` beyond ±2^52 as malformed, leaving 2^52 entries before the counter passes `MAX_SAFE_INTEGER`.
   Rejected: throwing at the push that runs out, after its ops have applied.
@@ -1546,7 +1556,7 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-24 (my call, cursor audit 85): `bakeCursor` and `cursorFor` bake a blank fallback as `default`, as a
   missing one, and throw a `RangeError` for one holding `;`, `{` or `}`, which no cursor value holds and which makes the
   browser drop the whole declaration. Since cursor audit 88 (2026-11-25) every fallback is checked: one that is not
-  a cursor keyword, optionally after `url(…)` entries with a hotspot, throws too; CSS-wide keywords such as `inherit`
+  a cursor keyword, optionally after `url(…)` or `image-set(…)` entries with a hotspot, throws too (`image-set` since audit 89); CSS-wide keywords such as `inherit`
   are refused, since a cursor list cannot end in one.
 - 2026-11-25 (my call, cursor audit 86): `resolveCursor` throws that `RangeError` on every tier, a painted spec
   included, so whether a spec is valid does not turn on its size. A painted cursor carries its fallback, which a
@@ -1562,6 +1572,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-25 (my call, cursor audit 88): `resolveCursor` throws a `RangeError` for a size or world radius of
   `Infinity`, as `cursorFor` refuses that size, where it drew the default 24 px glyph. Minus infinity is negative and
   still draws at the default, as in `cursorFor`.
+- 2026-11-25 (my call, cursor audit 89): `brushRing(r, 'world')` and `resolveCursor` throw a `RangeError` for a finite
+  world radius whose drawn size at a zoom of 1 overflows to infinity, as the px unit refuses that overflow, where the
+  layer drew no cursor at all. A zoom that carries a valid radius past the double range still draws nothing.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.
@@ -4292,3 +4305,10 @@ Calls the lanes made without a ruling:
 - 2026-11-25 (the fixer's call): `ExtensionRegistry.register` throws a `TypeError` for an `undefined` value, with no
   override, since `get` answers `undefined` for an id nobody holds and a registered `undefined` could not be told from
   none. Storing it, so the next registration of any value overwrote it without `replace`, was the alternative.
+
+## Audit round eighty-nine (2026-11-25): renderer.cache
+
+- 2026-11-25 (the fixer's call): `GLTextureCache` keeps whichever came first where one id names both a glyph page
+  (`uploadR8`, `uploadRGBA`) and an image (`upload`, `uploadRegistered`), and warns once; an image is never written
+  over a page, and a sweep never deletes one. Rewriting the texture with the later upload, as the font-atlas and
+  registered-texture collision does, was the alternative.

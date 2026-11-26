@@ -1,0 +1,77 @@
+{
+ "id": "routing.interactions",
+ "commit": "5b35b8d8aacd88cbf6c851b42b50665e64bd75f3",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/interactions/browserReservedKeys.ts",
+  "packages/routing/src/interactions/carry/carry.ts",
+  "packages/routing/src/interactions/carry/index.ts",
+  "packages/routing/src/interactions/elementAt.ts",
+  "packages/routing/src/interactions/handleDrag/handleDrag.ts",
+  "packages/routing/src/interactions/keyHelpers.ts",
+  "packages/routing/src/interactions/pointerSession/index.ts",
+  "packages/routing/src/interactions/pointerSession/pointerSession.ts",
+  "packages/routing/src/interactions/pointerSession/swallowClick.ts",
+  "packages/routing/src/interactions/scratchKey.ts",
+  "packages/routing/src/interactions/sweep/index.ts",
+  "packages/routing/src/interactions/sweep/sweep.ts",
+  "packages/routing/src/interactions/thresholdDrag/index.ts",
+  "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+ ],
+ "a": 2,
+ "b": 3,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 14,
+  "B": 14
+ },
+ "newCode": {
+  "since": 88,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 88,
+  "chapman": 23,
+  "unfound": 15
+ },
+ "patches": 5,
+ "verify": {
+  "ok": true,
+  "files": 11,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3440,
+   "total": 3440
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 1.9,
+   "B": 2.9,
+   "match": 0.5,
+   "fix": 23.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "studio"
+  },
+  "weightedTokens": 654294,
+  "costUsd": 2.31
+ },
+ "fixCommits": [
+  "72f85e35b7b0edb655e39c97ddd48d376df36b34",
+  "a6b68f2b1bee827ce172004d53f103fb7bdcc4b4",
+  "198ebe0584dc453b19b4fd66ad873ba9aabe768a",
+  "31fc236210039bb70d1afd97acb8b05584e334d8",
+  "3da3bea63d9c475837ea94652d9ef8d3b771ac8a"
+ ]
+}

@@ -1,0 +1,10 @@
+{
+ "pairs": [],
+ "a": [
+  "GLTextureCache: an id made by uploadR8/uploadRGBA has no source or premultiply record, so a later upload under it rewrites the texture with no collision warning",
+  "GLTextureCache.sweep only runs on a registry version change, so a registered upload made after the frame's sweep for an id the registry no longer holds keeps its texture until some unrelated registration"
+ ],
+ "b": [
+  "A ramp whose bake throws on a full atlas leaves two stop lists naming one row"
+ ]
+}

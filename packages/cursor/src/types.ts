@@ -112,7 +112,7 @@ function walk(d: string, see: (x: number, y: number, r: number) => void): void {
     if (cmd === 'A') {
       for (let i = 0; i + 7 <= nums.length; i += 7) {
         const [rx, ry, , largeArc, sweep, x, y] = nums.slice(i, i + 7) as [number, number, number, number, number, number, number];
-        if (rx !== ry) throw new Error(`cursor glyph path has an elliptical arc (${rx} by ${ry}): ${d}`);
+        if (Math.abs(rx) !== Math.abs(ry)) throw new Error(`cursor glyph path has an elliptical arc (${rx} by ${ry}): ${d}`);
         const dx = x - cx;
         const dy = y - cy;
         const half = Math.hypot(dx, dy) / 2;

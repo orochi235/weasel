@@ -21,6 +21,11 @@ kernel — voices, clocks, easing, mixing — and weasel's animation infrastruct
 (animator already does). A timing or curve capability is built in blits first and carried by
 weasel, never reimplemented beside it; a gap found here gets fixed at the source.
 
+**animator becomes a front end over blits (2026-11-25).** Its start/cancel/replace API stays.
+Underneath, every command turns into a blits schedule (cues, retargets, roles, fades) rather than
+scheduling of its own. The condition is that animator's test suite passes unchanged. A behavior
+that fails it is fixed in blits, or its loss is stated and decided.
+
 ## Scope: weasel is an engine
 
 weasel is not a utility library, and it is not a depository for features

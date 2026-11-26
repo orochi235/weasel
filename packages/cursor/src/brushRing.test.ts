@@ -32,4 +32,11 @@ describe('brushRing', () => {
     expect(() => brushRing(1e307)).toThrow(RangeError);
     expect(() => brushRing(-1e307)).toThrow(RangeError);
   });
+
+  it('refuses a finite world radius whose drawn size overflows, as the px unit does', () => {
+    expect(() => brushRing(1e308, 'world')).toThrow(RangeError);
+    expect(() => brushRing(-1e308, 'world')).toThrow(RangeError);
+    expect(() => resolveCursor({ glyph: 'brush', worldRadius: 1e308 })).toThrow(RangeError);
+    expect(resolveCursor(brushRing(1e307, 'world'))).toMatchObject({ kind: 'painted', worldRadius: 1e307 });
+  });
 });

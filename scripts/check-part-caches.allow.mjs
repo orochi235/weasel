@@ -40,6 +40,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/kernel3d/src/pickIndex.ts', 'replaced whenever the version, overrides or bounds change'],
   ['packages/path-tools/src/constraints/constraintsExtension.ts', 'replaced when the key it is computed from changes'],
   ['packages/path-tools/src/warp/pathWarp.ts', 'replaced by a second set with a result computed elsewhere'],
+  ['packages/routing/src/menus/menuHost.ts', 'set when a host is made from the store it views, and read without being made'],
   ['packages/theme/src/applyTheme.ts', 'replaced on each applyTheme from its arguments, and deleted on release'],
   // renderer, geom, text, font, svg
   ['packages/font/src/atlasResult.ts', 'the value turns on family, weight and style, and is replaced when they differ'],

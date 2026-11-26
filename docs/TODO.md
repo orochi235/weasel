@@ -324,6 +324,60 @@ re-lower animated geometry attributes each sample.
   its own because Lottie is a scene format, not SVG. Closes when a set of reference
   Lottie files plays from the import matching lottie-web's frames.
 
+## Timing on blits
+
+What weasel still times for itself, read against blits on 2026-11-25. The direction is in CLAUDE.md
+("animator becomes a front end over blits").
+
+- **(P2) [waiting] Rebuild animator as a front end over blits.** Its commands (start, cancel, `cancelKey`
+  replace, interrupt that keeps velocity, holds, staggers, live `edit`) each become blits cues, retargets,
+  roles and fades, with animator's test suite unchanged as the guard. The places it could lose behavior:
+  - `onCancel` timing, and leaving the value where a cancel left it
+  - holds' "committed value takes what's left" weighting against blits roles
+  - sampling springs into keyframes for the `Element.animate` handoff
+
+  The rebuild needs blits' `springs` branch (`4dcb727f`, unreleased, 2026-11-25) in a release. That branch
+  closes form every valid spring constant and takes motion arithmetic from the channel. Once it ships,
+  these can go:
+  - `engine/integrator.ts`
+  - the Euler branch, the `solvable` gate and the numeric fallbacks in `physicsAnimation.ts`
+  - the public `add`/`subtract`/`scale`/`magnitude` options (`types.ts`, `staggerTypes.ts:49`,
+    `stagger.ts:323`). This is a breaking change to the API: a `T` that `axesOf` can't encode throws.
+    Mike's call.
+
+  `cueSpring`'s targetless branch becomes `spring({ stiffness: 0 })`, which also covers damping 0. Rotations
+  only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.
+  Also waiting on blits' transport fixes (blits TODO), for the clock. Closes when animator keeps no
+  scheduling of its own and its suite passes.
+- **(P2) [agent] One easing table, in blits.** geom's `EASINGS` (31 Penner curves and a bezier solver,
+  `packages/geom/src/easings.ts:152`), blits' `named` (5 CSS curves and its own solver) and ui's
+  `EasingPicker.tsx:17` control points are three copies. Move the Penner curves into blits' `curve`, re-export
+  them from geom, and have the picker read them. Closes when geom and the picker hold no curve data.
+- **(P3) [agent] animator's slew on blits' step.** `packages/animator/src/slew.ts` steps its own value.
+  blits' `slew` only works inside a mix, so blits first exports a pure step that its signal uses too. Closes
+  when `slew.ts` holds no step math.
+- **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
+  its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` takes bounds, but
+  whether it can bounce or spring at them hasn't been checked. Closes when `useDecayLoop` keeps no integrator.
+- **(P3) [agent] Two elapsed-time trackers.** `packages/react/src/useElapsed.ts`, and the `{elapsed, rate}`
+  that `packages/core/src/canvas/renderWorker/workerAnimations.ts:42` tracks itself, each keep their own
+  time. Closes when both read a clock.
+- **(P2) [maintainer] Who owns the frame loop.** `useVisibleRaf` (pauses when hidden, `onResume` rebases)
+  and blits' `ticker`/`loop()` (fades to rest on blur) are two answers to when frames happen. Settle it
+  together with the clock and scheduling seams. Closes when the seam table below records the call.
+- **(P2) [maintainer] Write down the weasel–blits seam.** One dated table of what lives where: motion
+  values, the clock's bounded run, scheduling, the frame loop, gesture → motion. Write it once the clock
+  spike, the springs work and the animator rebuild report. Closes when it's in `docs/`.
+
+## Fonts & type
+
+- **(P2) [agent] klieg parses fonts a second time, and drops weasel's kerning.** klieg parses with opentype.js
+  itself and hands weasel the parsed font through a custom parser (`klieg/packages/core/src/text/outline-face.ts:57`),
+  which skips `@weasel-js/font`'s GPOS kerning. It also keeps a drifted copy of
+  `packages/font/src/outline/sfnt.ts`, which weasel doesn't export. weasel's side: accept an
+  already-parsed font without losing GPOS kerning, and export the sfnt collection helpers. Closes when font
+  offers both and klieg's copy can go.
+
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
@@ -346,6 +400,22 @@ re-lower animated geometry attributes each sample.
 
 ## Selection, actions & UI panels
 
+- **(P2) [agent] labkit has no hash state or bare embed view, so every lab writes its own** (read 2026-11-25).
+  agnew, fiddy, beamos, x-pcb, rosee, blinken and klieg each keep a URL-hash codec and their own base64url
+  helper, and most keep a `?bare` view. They disagree on details:
+  - **Version:** only agnew (refuses newer, with a notice naming what was dropped) and blinken (packed
+    binary `FORMAT = 2`, old links still decode) version their state.
+  - **Bare params:** `bg` takes 6 hex digits in fiddy and 3–8 (so alpha) in rosee. agnew's `?bare`
+    ignores `=still` and `bg`.
+
+  labkit already reads `?still` (`packages/labkit/src/lab/still.ts`) and `?present`. Add a versioned
+  `hashState` (JSON or binary codec, a dropped-fields notice) and a `bare` reader beside them. Closes when
+  labkit exports both.
+- **(P2) [agent] Labs describe their params as data, three ways, since `ConfigField` went** (`da26075c79`,
+  2026-11-12). magicsmoke's `ParamSpec` (`src/tuning.ts:141`), agnew's union (`packages/agnew/src/params.ts:3`)
+  and beamos' kind settings (`packages/beamos/src/kinds/kind.ts:3`) are near-identical, and each has its own
+  converter to `f.number().range().step().label()`. labkit offers a plain-data param shape that compiles
+  to `f.schema`. Closes when labkit exports it.
 - **(P1.5) [agent] Two lens implementations each aim their own way** (2026-11-22). labkit's lab lens
   (`packages/labkit/src/loupe/lens/`) is a scene of nodes, a body, a reticle and a leader, with `LensAim` `pinned |
   follow | glass`; hud's `createLoupe` is a HUD window whose aim, follow or pinned, lives in `@weasel-js/loupe`'s
