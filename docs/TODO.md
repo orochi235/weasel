@@ -358,15 +358,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   values, the clock's bounded run, scheduling, the frame loop, gesture → motion. Write it once the clock
   spike, the springs work and the animator rebuild report. Closes when it's in `docs/`.
 
-## Fonts & type
-
-- **(P2) [agent] klieg parses fonts a second time, and drops weasel's kerning.** klieg parses with opentype.js
-  itself and hands weasel the parsed font through a custom parser (`klieg/packages/core/src/text/outline-face.ts:57`),
-  which skips `@weasel-js/font`'s GPOS kerning. It also keeps a drifted copy of
-  `packages/font/src/outline/sfnt.ts`, which weasel doesn't export. weasel's side: accept an
-  already-parsed font without losing GPOS kerning, and export the sfnt collection helpers. Closes when font
-  offers both and klieg's copy can go.
-
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
