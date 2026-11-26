@@ -41,11 +41,18 @@ describe('serializeCssAnimatedSvg', () => {
     expect(keyframes(out, 'a-stroke-dashoffset')).toContain('stroke-dashoffset: -0.2');
   });
 
-  it('writes two keys at one time as two selectors at one percentage, in key order', () => {
+  it('writes two keys at one time as a jump, the later key just after the earlier', () => {
     const out = serializeCssAnimatedSvg([path('a')], clipOf({
       'a.opacity': [{ t: 0, value: 0 }, { t: 500, value: 0 }, { t: 500, value: 1 }, { t: 1000, value: 1 }],
     }));
-    expect(keyframes(out, 'a-opacity')).toMatch(/50% \{ opacity: 0;[^}]*\} 50% \{ opacity: 1;/);
+    expect(keyframes(out, 'a-opacity')).toMatch(/ 50% \{ opacity: 0;[^}]*\} 50.0001% \{ opacity: 1;/);
+  });
+
+  it('writes a jump at the end with the earlier key just before 100%', () => {
+    const out = serializeCssAnimatedSvg([path('a')], clipOf({
+      'a.opacity': [{ t: 0, value: 0 }, { t: 1000, value: 0 }, { t: 1000, value: 1 }],
+    }));
+    expect(keyframes(out, 'a-opacity')).toMatch(/ 99.9999% \{ opacity: 0;[^}]*\} 100% \{ opacity: 1 \}$/);
   });
 
   it('hides the stroke through a span where the trim is empty', () => {
@@ -53,7 +60,7 @@ describe('serializeCssAnimatedSvg', () => {
       'a.trim.start': [{ t: 0, value: 0.2 }], 'a.trim.end': [{ t: 0, value: 0.2 }, { t: 500, value: 0.2 }, { t: 1000, value: 0.6 }],
     }));
     expect(keyframes(out, 'a-visibility').replace(/; animation-timing-function: linear/g, ''))
-      .toBe(' 0% { visibility: hidden } 50% { visibility: hidden } 50% { visibility: visible } 100% { visibility: visible }');
+      .toBe(' 0% { visibility: hidden } 50% { visibility: hidden } 50.0001% { visibility: visible } 100% { visibility: visible }');
   });
 
   it('writes no visibility for a trim that is never empty', () => {
@@ -92,8 +99,9 @@ describe('serializeCssAnimatedSvg', () => {
       'a.opacity': [{ t: 0, value: 0 }, { t: 500, value: 1, easing: { bezier: [0.4, 0, 0.2, 1] } }, { t: 1000, value: 0.25 }],
       'b.trim.start': [{ t: 0, value: 0 }, { t: 1000, value: 0.5 }],
       'b.trim.end': [{ t: 0, value: 0.25 }, { t: 1000, value: 1 }],
+      'c.opacity': [{ t: 0, value: 0 }, { t: 500, value: 0 }, { t: 500, value: 1 }, { t: 1000, value: 1 }],
     });
-    const parsed = parseSvg(serializeCssAnimatedSvg([path('a'), path('b')], clip));
+    const parsed = parseSvg(serializeCssAnimatedSvg([path('a'), path('b'), path('c')], clip));
     const back = parsed.clip;
     const lowered = dashTracksOf(clip).clip;
     for (const target of ['a.opacity', 'b.stroke-dasharray', 'b.stroke-dashoffset']) {
@@ -103,6 +111,8 @@ describe('serializeCssAnimatedSvg', () => {
         expect([target, t, got]).toEqual([target, t, Array.isArray(want) ? want.map((w: number) => expect.closeTo(w, 6)) : expect.closeTo(want as number, 6)]);
       }
     }
+    const jump = trackIn(back, 'c.opacity');
+    expect([at(jump, 499.99), at(jump, 500.01)]).toEqual([0, 1]);
     expect(parsed.warnings).toEqual([]);
   });
 });

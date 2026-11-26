@@ -47,11 +47,27 @@ function framesOf(prop: string, keys: readonly ClipKey[], values: readonly strin
   const last = frames[frames.length - 1];
   if (first.t > 0) frames.unshift({ t: 0, value: first.value, easing: undefined });
   if (last.t < duration) frames.push({ t: duration, value: last.value, easing: undefined });
+  const offsets = offsetsOf(frames.map((f) => (f.t / duration) * 100));
   return frames.map((f, i) => {
     const next = frames[i + 1];
     const timing = next ? `; animation-timing-function: ${cssTimingOf(next.easing)}` : '';
-    return `${numText((f.t / duration) * 100)}% { ${prop}: ${f.value}${timing} }`;
+    return `${numText(offsets[i])}% { ${prop}: ${f.value}${timing} }`;
   }).join(' ');
+}
+
+/** The smallest step between keyframes, in percent: two selectors at one offset merge into one. */
+const NUDGE = 0.0001;
+
+/**
+ * Percent offsets with each jump, two keys at one offset, pulled apart: the later key moves
+ * `NUDGE` on, or at 100% the earlier moves `NUDGE` back.
+ */
+function offsetsOf(given: readonly number[]): number[] {
+  const out = [...given];
+  for (let i = 1; i < out.length; i++) if (out[i] <= out[i - 1]) out[i] = out[i - 1] + NUDGE;
+  for (let i = out.length - 1; i >= 0 && out[i] > 100; i--) out[i] = 100;
+  for (let i = out.length - 2; i >= 0; i--) if (out[i] >= out[i + 1]) out[i] = out[i + 1] - NUDGE;
+  return out;
 }
 
 /** The value a track shows at 0: its last key there, else its first. */
