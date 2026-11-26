@@ -4,7 +4,7 @@
 import { setOwn } from '@weasel-js/registry';
 
 /** What every param says about itself besides its kind. */
-interface ParamBase {
+export interface ParamBase {
   /** What a control calls it. Unset, a lab titles the key. */
   label?: string;
   /** Longer help, read under or beside the control. */
@@ -71,7 +71,7 @@ export type ParamEntry = ParamSpec | ParamGroup;
 /** Params and groups by key, in the order a lab lists them. */
 export type ParamShape = { readonly [key: string]: ParamEntry };
 
-type OptionValue<O> = O extends string ? O : O extends { value: infer V } ? V : never;
+export type ParamOptionValue<O> = O extends string ? O : O extends { value: infer V } ? V : never;
 
 /** The value one entry holds. */
 export type ParamValue<E> = E extends { kind: 'group'; params: infer S }
@@ -81,7 +81,7 @@ export type ParamValue<E> = E extends { kind: 'group'; params: infer S }
     : E extends { kind: 'boolean' }
       ? boolean
       : E extends { kind: 'enum'; options: readonly (infer O)[] }
-        ? OptionValue<O>
+        ? ParamOptionValue<O>
         : E extends { kind: 'color' }
           ? string
           : never;

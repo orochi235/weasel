@@ -342,8 +342,8 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   - `engine/integrator.ts`
   - the Euler branch, the `solvable` gate and the numeric fallbacks in `physicsAnimation.ts`
   - the public `add`/`subtract`/`scale`/`magnitude` options (`types.ts`, `staggerTypes.ts:49`,
-    `stagger.ts:323`). This is a breaking change to the API: a `T` that `axesOf` can't encode throws.
-    Mike's call.
+    `stagger.ts:323`). Ruled to drop them (2026-11-25), with no encoding hook in their place: a `T`
+    that `axesOf` can't encode throws. This is a breaking change to the API.
 
   `cueSpring`'s targetless branch becomes `spring({ stiffness: 0 })`, which also covers damping 0. Rotations
   only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.

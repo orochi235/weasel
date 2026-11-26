@@ -138,6 +138,7 @@ export type {
 export {
   paramDefault,
   paramDefaults,
+  type ParamBase,
   type ParamBoolean,
   type ParamColor,
   type ParamEntry,
@@ -145,6 +146,7 @@ export {
   type ParamEnumOption,
   type ParamGroup,
   type ParamNumber,
+  type ParamOptionValue,
   type ParamShape,
   type ParamSpec,
   type ParamValue,
