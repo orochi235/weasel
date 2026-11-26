@@ -110,4 +110,16 @@ describe('History entries touchedIds', () => {
     h.restore(h.serialize());
     expect([...h.entries().undo[0]!.touchedIds].sort()).toEqual(before);
   });
+
+  it('counts both halves of a coalesced journal session in the entry it commits', () => {
+    let t = 0;
+    const keyed = (id: string): Op => ({ ...idOp(id), coalesceKey: 'nudge', invert: () => keyed(id) });
+    const h = createHistory({}, { coalesceWindowMs: 100, now: () => t });
+    const j = h.beginJournal({ label: 'session' });
+    j.applyOps([keyed('a')], 'nudge');
+    t = 10;
+    j.applyOps([keyed('b')], 'nudge');
+    j.commit('Nudge');
+    expect([...h.entries().undo[0]!.touchedIds].sort()).toEqual(['a', 'b']);
+  });
 });
