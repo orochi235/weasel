@@ -111,6 +111,15 @@ describe('serializeCssAnimatedSvg', () => {
     expect(keyframes(out, 'a-d')).toContain('d: path("M0 0L5 0")');
   });
 
+  it('shows a viewer asking for reduced motion each property at its end, by a later rule', () => {
+    const clip = clipOf({ 'a.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }], 'a.opacity': [{ t: 0, value: 0.5 }] });
+    expect(serializeCssAnimatedSvg([path('a')], clip)).not.toContain('prefers-reduced-motion');
+    const out = serializeCssAnimatedSvg([path('a')], clip, { reducedMotion: 'end' });
+    const reduced = /@media \(prefers-reduced-motion: reduce\) \{ (.*) \}$/.exec(out.split('</style>')[0])?.[1];
+    expect(reduced).toBe('#a { animation: none; stroke-dasharray: 1 1.0001; stroke-dashoffset: 0; visibility: visible }');
+    expect(out.indexOf('#a { opacity: 0.5; animation:')).toBeLessThan(out.indexOf('@media'));
+  });
+
   it("rests an edge with no track at the node's own trim, and drops the node's own trim and dash", () => {
     const warnings: string[] = [];
     const own = { ...path('a'), stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, trim: { start: 0.25, end: 0 }, dash: [4, 2] } } as SvgNode;

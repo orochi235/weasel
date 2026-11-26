@@ -8,7 +8,17 @@ import type { SvgNode } from '../types';
 import { cssTimingOf, numText } from './easing';
 import { serializeAnimated, type ClipPlan, type Frame } from './plan';
 
-interface Rule { statics: string[]; animations: string[] }
+interface Rule { statics: string[]; animations: string[]; ends: string[] }
+
+/** What `serializeCssAnimatedSvg` adds to `serializeSvg`'s options. */
+export interface CssAnimatedOptions extends SerializeOptions {
+  /**
+   * What a viewer who asks for reduced motion sees: `'animate'` plays the clip as for anyone;
+   * `'end'` shows every animated property at its value at the clip's end, with no animation, by a
+   * `@media (prefers-reduced-motion: reduce)` rule. Default `'animate'`.
+   */
+  reducedMotion?: 'animate' | 'end';
+}
 
 /** Properties CSS reads as lengths, which a bare number is not. */
 const LENGTHS = new Set(['stroke-width', 'font-size', 'letter-spacing', 'word-spacing']);
@@ -51,14 +61,14 @@ function offsetsOf(given: readonly number[]): number[] {
   return out;
 }
 
-/** The stylesheet playing `plan`. */
-function styleOf({ duration, passes, tracks }: ClipPlan): string {
+/** The stylesheet playing `plan`, and showing its end instead where `reducedMotion` is `'end'`. */
+function styleOf({ duration, passes, tracks }: ClipPlan, reducedMotion: 'animate' | 'end'): string {
   const iterations = passes === Infinity ? 'infinite' : numText(passes);
   const rules = new Map<string, Rule>();
   const frames: string[] = [];
   const names = new Set<string>();
   for (const { id, prop, still, frames: keys } of tracks) {
-    const rule = rules.get(id) ?? rules.set(id, { statics: [], animations: [] }).get(id)!;
+    const rule = rules.get(id) ?? rules.set(id, { statics: [], animations: [], ends: [] }).get(id)!;
     if (still !== undefined) {
       rule.statics.push(`${prop}: ${cssValue(prop, still.text)}`);
       continue;
@@ -68,12 +78,17 @@ function styleOf({ duration, passes, tracks }: ClipPlan): string {
     names.add(name);
     frames.push(`@keyframes ${name} { ${framesOf(prop, keys, duration)} }`);
     rule.animations.push(`${name} ${numText(duration)}ms linear ${iterations} both`);
+    rule.ends.push(`${prop}: ${cssValue(prop, keys[keys.length - 1].text)}`);
   }
   const selectors = [...rules].map(([id, { statics, animations }]) => {
     const declarations = animations.length > 0 ? [...statics, `animation: ${animations.join(', ')}`] : statics;
     return `#${cssIdent(id)} { ${declarations.join('; ')} }`;
   });
-  return [...frames, ...selectors].join('\n');
+  // Later than the rules it overrides, at the same specificity, so it wins by source order alone.
+  const ends = [...rules].filter(([, rule]) => rule.ends.length > 0)
+    .map(([id, rule]) => `#${cssIdent(id)} { animation: none; ${rule.ends.join('; ')} }`);
+  const reduced = reducedMotion === 'end' && ends.length > 0 ? [`@media (prefers-reduced-motion: reduce) { ${ends.join(' ')} }`] : [];
+  return [...frames, ...selectors, ...reduced].join('\n');
 }
 
 /**
@@ -82,10 +97,12 @@ function styleOf({ duration, passes, tracks }: ClipPlan): string {
  * as often as its `loop` says, filling both ways. Trim tracks are drawn as a dash on
  * `pathLength="1"` (see `dashTracksOf`). A track this cannot write, or whose id no node has, is
  * skipped with a warning through `opts.onWarn`; `opts.decorate` is kept and added to.
+ * `opts.reducedMotion` says what a viewer asking for reduced motion sees.
  */
-export function serializeCssAnimatedSvg(nodes: SvgNode[], clip: Clip, opts: SerializeOptions = {}): string {
-  return serializeAnimated(nodes, clip, opts, 'CSS', (plan) => {
-    const style = styleOf(plan);
+export function serializeCssAnimatedSvg(nodes: SvgNode[], clip: Clip, opts: CssAnimatedOptions = {}): string {
+  const { reducedMotion = 'animate', ...rest } = opts;
+  return serializeAnimated(nodes, clip, rest, 'CSS', (plan) => {
+    const style = styleOf(plan, reducedMotion);
     return style ? { style } : {};
   });
 }
