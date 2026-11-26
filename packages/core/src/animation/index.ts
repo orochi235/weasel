@@ -24,6 +24,7 @@ export {
   type PoseTargetOptions, type PoseTargetScene,
 } from './poseTarget';
 export { createWrittenPoseTarget, type WrittenPoseTargetOptions } from './writtenPoseTarget';
+export { sceneDataTarget, type DataLens, type DataTargetScene } from './dataTarget';
 export { sceneClipTargets, type SceneClipTargetsOptions } from './clipTargets';
 export {
   tweenPose, springPose, staggerSpringPose,
