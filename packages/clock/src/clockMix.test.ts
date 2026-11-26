@@ -1,5 +1,4 @@
-import { kit, mix, patch, sum } from '@msb235/blits';
-import { createHistory } from '@weasel-js/history';
+import { kit, type Mix, mix, patch, sum } from '@msb235/blits';
 import { describe, expect, it } from 'vitest';
 import { createClock } from './clock';
 
@@ -14,10 +13,12 @@ const climb = patch<string, Pose>(1000, (phase) => ({ x: phase * 100 }), {
 });
 
 function trial(start?: { elapsed: number; rate: number }) {
-  const m = mix<string, Pose>(K, {
-    history: { ms: 10_000, tape: createHistory },
-  });
-  const handle = createClock({ duration: 2000, rate: 1, mix: () => m }, start);
+  let made: Mix<string, Pose> | undefined;
+  const handle = createClock(
+    { duration: 2000, rate: 1, mix: (transport) => (made = mix<string, Pose>(K, { transport })) },
+    start,
+  );
+  const m = made!;
   handle.clock.sync(0);
   return { ...handle, m, x: () => m.probe(part).x };
 }

@@ -31,12 +31,10 @@
     }
   },
   "dependencies": {
+    "@msb235/blits": "1.5.2",
+    "@weasel-js/history": "2.0.0",
     "@weasel-js/react": "2.0.0",
     "@weasel-js/registry": "2.0.0"
-  },
-  "devDependencies": {
-    "@msb235/blits": "1.5.2",
-    "@weasel-js/history": "2.0.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

@@ -1,7 +1,8 @@
 /**
- * fast-check helpers shared by clock's property tests: run counts, tally guards, clock declarations, and a mix
- * that records how it was driven. Test-only: nothing in the package imports it.
+ * fast-check helpers shared by clock's property tests: run counts, tally guards, clock declarations, and an empty
+ * mix. Test-only: nothing in the package imports it.
  */
+import { kit, mix, type Transport } from '@msb235/blits';
 import fc from 'fast-check';
 import type { Clock, ClockedMix, ClockSpec } from './types';
 
@@ -48,19 +49,8 @@ export const spec: fc.Arbitrary<ClockSpec> = fc.record({
   start: fc.option(fc.oneof(fc.constantFrom(0, 50, 1e9, -5), fc.double({ min: 0, max: 5000, noNaN: true })), { nil: undefined }),
 }, { requiredKeys: [] });
 
-/** A mix as a clock drives it: synced forward on its own host time, sought back. */
-export function fakeMix(): ClockedMix & { host: number; seeks: number } {
-  const mix = {
-    now: 0, host: 0, seeks: 0,
-    sync(timestamp: number) {
-      if (timestamp < mix.host) throw new Error(`a mix's host time went back, from ${mix.host} to ${timestamp}`);
-      mix.now += timestamp - mix.host;
-      mix.host = timestamp;
-    },
-    seek(time: number) { mix.now = time; mix.seeks++; },
-  };
-  return mix;
-}
+/** An empty blits mix on the clock's transport. */
+export const emptyMix = (transport: Transport): ClockedMix => mix(kit({}), { transport });
 
 /** Everything a clock reports, for comparing two. */
 export const reading = (c: Clock) => ({

@@ -9,15 +9,15 @@ import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { clockPosition, createClock } from './clock';
 import { shownInPass } from './hold';
-import { duration, fakeMix, loop, near, rate, reading, runs, spec, tally, timeoutFor } from './pbt.fixture';
+import { duration, emptyMix, loop, near, rate, reading, runs, spec, tally, timeoutFor } from './pbt.fixture';
 import { passesOf } from './place';
-import type { ClockHandle, ClockSpec } from './types';
+import type { ClockedMix, ClockHandle, ClockSpec } from './types';
 
 const RUNS = 200;
 
 /** `slept`: the last sync left the clock inert, so the next one only records the time, as after a rebase. */
 interface Model { elapsed: number; rate: number; ramp: { to: number; left: number; over: number } | null; now: number; last: number | null; slept: boolean }
-interface Real { handle: ClockHandle; mix: ReturnType<typeof fakeMix> }
+interface Real { handle: ClockHandle; mix: ClockedMix }
 
 const t = tally();
 const spanOf = (h: ClockHandle): number => h.clock.duration * passesOf(h.clock.loop);
@@ -88,9 +88,8 @@ const syncCmd = fc.oneof(fc.constantFrom(0, 16, 16.7, 100, 1000, 1e4, 1e7), fc.d
       m.slept = m.rate === 0 && m.ramp === null;
       r.handle.clock.sync(m.now);
       check(m, r);
-      // The mix keeps the clock's time, synced forward and sought back.
-      // The mix's own host time only grows, so far out it keeps the clock's moves to its own precision.
-      expect(Math.abs(r.mix.now - r.handle.clock.elapsed)).toBeLessThanOrEqual(1e-9 * Math.max(1, r.handle.clock.elapsed) + 1e-12 * r.mix.host);
+      // The mix plays on the clock's transport, so its time is the clock's.
+      expect(r.mix.now).toBe(r.handle.clock.elapsed);
       t.count('sync');
     },
     toString: () => `sync(+${dt})`,
@@ -236,8 +235,8 @@ describe('createClock — stateful model', () => {
   it('stands inside its run, reads back as pass and phase, and moves as the model says', () => {
     fc.assert(fc.property(playing, commands, (s, cmds) => {
       let handle: ClockHandle;
-      try { handle = createClock({ ...s, mix: fakeMix }); } catch (e) { expect(e).toBeInstanceOf(RangeError); return; }
-      const mix = handle.mix as ReturnType<typeof fakeMix>;
+      try { handle = createClock({ ...s, mix: emptyMix }); } catch (e) { expect(e).toBeInstanceOf(RangeError); return; }
+      const mix = handle.mix!;
       fc.modelRun(() => ({
         model: { elapsed: handle.clock.elapsed, rate: handle.clock.rate, ramp: null, now: 0, last: null, slept: false },
         real: { handle, mix },

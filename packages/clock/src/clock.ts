@@ -1,9 +1,28 @@
+import { transport as createTransport } from '@msb235/blits';
+import { createHistory } from '@weasel-js/history';
 import { createEmitter } from '@weasel-js/registry';
-import { followMix } from './mixFollow';
-import { passesOf, placeOf } from './place';
-import { type Ramp, stepRamp } from './ramp';
+import { passesOf } from './place';
+import {
+  applyRun,
+  change,
+  clamp,
+  type Declared,
+  declaredOf,
+  declaredSpeed,
+  type Hub,
+  isInert,
+  passAt,
+  passOf,
+  phaseAt,
+  placeIn,
+  type Run,
+  type SpanOverride,
+  setDuration,
+} from './run';
 import type { Clock, ClockHandle, ClockPosition, ClockSpec } from './types';
 import { checkDuration, checkLoop, checkOrigin, checkRampTime, checkRate, checkSpeed, speedsOf } from './validate';
+
+export { declaredSpeed } from './run';
 
 /** Where `clock` stands, for a record to reopen it at; `declared` is the
  *  duration its spec gave, and `declaredOrigin` the origin. */
@@ -22,169 +41,50 @@ export function clockPosition(
   };
 }
 
-/** A clock's moving parts, read and written by the functions below. */
-interface Run {
-  duration: number;
-  loop: boolean | number;
-  span: number;
-  origin: number;
-  speed: number;
-  rate: number;
-  elapsed: number;
-  edge: boolean;
-  ramp: Ramp | null;
-  last: number;
-  /** Changed since the last sync, so the next one is due even when paused. */
-  changed: boolean;
-  /** Inert as of the last sync: the next one only records the time. */
-  slept: boolean;
-  wakeFired: boolean;
-}
-
-interface Hub {
-  wakes: ReturnType<typeof createEmitter>;
-  subs: ReturnType<typeof createEmitter>;
-  frames: ReturnType<typeof createEmitter<[elapsed: number, pass: number]>>;
-  follow: (elapsed: number) => void;
-  /** Where a new run opens. */
-  opening: () => number;
-}
-
-const clamp = (run: Run, ms: number): number => Math.min(Math.max(0, ms), run.span);
-const isInert = (run: Run): boolean => run.rate === 0 && run.ramp === null && !run.changed;
-const passAt = (run: Run): number =>
-  placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge).pass;
-const phaseAt = (run: Run): number =>
-  placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge).phase;
-/** The speed a transport plays a paused clock at, when none is declared. */
-/** The speed `spec` declares: its `speed`, else its `rate` unsigned, else 1. */
-export const declaredSpeed = (spec: ClockSpec): number => spec.speed ?? (Math.abs(spec.rate ?? 0) || 1);
-
-/** Which pass `elapsed` falls in and how far into it, in ms; a pass's end stands as its own. */
-function passOf(run: Run): { pass: number; into: number } {
-  const { pass } = placeOf(run.elapsed, run.duration, passesOf(run.loop), run.edge);
-  return { pass, into: pass === 0 ? run.elapsed : run.elapsed - pass * run.duration };
-}
-
-/** Places `into` ms into pass `pass` of the run, the pass clamped to the run's last and
- *  `into` to the pass; `into` at the pass's end stands as that end, not the next pass's start. */
-function placeIn(run: Run, pass: number, into: number): void {
-  const last = Math.ceil(passesOf(run.loop)) - 1;
-  const within = Math.min(Math.max(0, into), run.duration);
-  const at = Math.min(pass, last);
-  // A pass's end is written as the next pass's start, which is how `placeOf` finds the line. A sum from the later
-  // half of a pass that rounds onto or past that line stands at its end.
-  const line = (at + 1) * run.duration;
-  const sum = at * run.duration + within;
-  const end = within > 0 && (within === run.duration || (within > run.duration / 2 && sum >= line));
-  // Far out a pass's start and the time into it sum past the double range; an endless run holds the largest time.
-  run.elapsed = Math.min(Number.MAX_VALUE, clamp(run, end ? line : sum));
-  run.edge = run.elapsed > 0 && end;
-}
-
-function change(run: Run, hub: Hub): void {
-  run.changed = true;
-  if (run.wakeFired) return;
-  run.wakeFired = true;
-  hub.wakes.emit();
-}
-
-function setDuration(run: Run, hub: Hub, next: number): void {
-  checkDuration(next);
-  if (next === run.duration) return;
-  if (Number.isFinite(run.duration) && Number.isFinite(next)) {
-    const ended = run.elapsed >= run.span;
-    const pass = passAt(run);
-    const phase = phaseAt(run);
-    run.duration = next;
-    run.span = run.duration * passesOf(run.loop);
-    // Not `(pass + phase) * next`: far out, the sum rounds a phase near 1 up into the next pass.
-    if (ended) run.elapsed = run.span;
-    else placeIn(run, pass, phase * next);
-  } else {
-    run.duration = next;
-    run.span = run.duration * passesOf(run.loop);
-    run.elapsed = clamp(run, run.elapsed);
-    run.edge = false;
+/** Seeks the transport to `to`. Under history a seek back restores the rate it had then, so the clock's is put back. */
+function seekTransport(run: Run, to: number): void {
+  const t = run.t;
+  if (Object.is(to, t.now)) return;
+  if (to > t.now || t.history === undefined) {
+    t.seek(to);
+    return;
   }
-  change(run, hub);
+  const rate = t.rate;
+  t.seek(to);
+  t.ramp(rate, 0);
+  if (run.ramp) t.ramp(run.ramp.to, run.ramp.left);
+}
+
+/** Counts `dt` real ms off the ramp; settles it. */
+function stepRampLeft(run: Run, hub: Hub, dt: number): void {
+  const ramp = run.ramp;
+  if (!ramp) return;
+  ramp.left -= dt;
+  if (ramp.left > 8 * Number.EPSILON * ramp.over) return;
+  run.ramp = null;
   hub.subs.emit();
-}
-
-/** The four fields `declare` takes up, resolved. */
-interface Declared {
-  duration: number;
-  origin: number;
-  loop: boolean | number;
-  speed: number;
-}
-
-/** A runtime replacement for the declared `duration` and `origin`; see `ClockHandle.override`. */
-type SpanOverride = { duration?: number; origin?: number } | null;
-
-function declaredOf(spec: ClockSpec): Declared {
-  return {
-    duration: spec.duration ?? Number.POSITIVE_INFINITY,
-    origin: spec.origin ?? 0,
-    loop: spec.loop ?? false,
-    speed: declaredSpeed(spec),
-  };
-}
-
-/** Takes up `declared` with `override` laid over it, keeping the pass and the
- *  shown time within it, clamped. */
-function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride): void {
-  const duration = override?.duration ?? declared.duration;
-  const origin = override?.origin ?? declared.origin;
-  checkDuration(duration);
-  checkOrigin(origin);
-  checkSpeed(declared.speed);
-  checkLoop(declared.loop);
-  const finite = Number.isFinite(run.duration) && Number.isFinite(duration);
-  const { pass, into } = finite ? passOf(run) : { pass: 0, into: run.elapsed };
-  // Moved by the change of origin alone, so an unchanged origin leaves the time within the pass exactly as it was.
-  const within = into + (run.origin - origin);
-  run.duration = duration;
-  run.loop = declared.loop;
-  run.span = duration * passesOf(run.loop);
-  run.origin = origin;
-  run.speed = declared.speed;
-  if (Number.isFinite(duration)) placeIn(run, pass, within);
-  else {
-    run.elapsed = clamp(run, within);
-    run.edge = false;
-  }
-  change(run, hub);
-  hub.subs.emit();
-}
-
-/** ms of clock time over `dt` real ms, ramp included; settles the ramp. */
-function advance(run: Run, hub: Hub, dt: number): number {
-  const step = stepRamp(run.rate, run.ramp, dt);
-  run.rate = step.rate;
-  run.ramp = step.ramp;
-  if (step.settled) hub.subs.emit();
-  return step.area;
 }
 
 function syncTo(run: Run, hub: Hub, timestamp: number): void {
   if (!Number.isFinite(timestamp)) throw new RangeError(`a clock syncs to a finite time, not ${timestamp}`);
   const wasChanged = run.changed;
   const before = run.elapsed;
-  if (!Number.isNaN(run.last) && !run.slept) {
-    // Between frame times far apart, the gap and the move overflow; an endless run stops at the largest time it holds.
-    const moved = advance(run, hub, Math.min(Number.MAX_VALUE, Math.max(0, timestamp - run.last)));
-    run.elapsed = Math.min(Number.MAX_VALUE, run.elapsed + moved);
-    // A ramp that turns back within the frame still reached the end on its way there.
+  const counts = !Number.isNaN(run.last) && !run.slept && timestamp >= run.last;
+  // The transport counts host time between syncs; a sync after a sleep only records the time.
+  if (run.slept) run.t.rebase();
+  run.t.sync(timestamp);
+  if (counts) {
+    stepRampLeft(run, hub, timestamp - run.last);
+    const moved = run.elapsed - before;
     if (run.elapsed >= run.span && (run.rate > 0 || moved > 0)) {
+      run.ramp = null;
       run.elapsed = run.span;
       run.rate = 0;
-      run.ramp = null;
       hub.subs.emit();
     } else if (run.elapsed <= 0 && (run.rate < 0 || moved < 0)) {
+      run.ramp = null;
       run.elapsed = 0;
       run.rate = 0;
-      run.ramp = null;
       hub.subs.emit();
     }
   }
@@ -194,7 +94,6 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   run.slept = isInert(run);
   if (run.elapsed !== before) run.edge = false;
   if (run.elapsed !== before || wasChanged) {
-    hub.follow(run.elapsed);
     hub.frames.emit(run.elapsed, passAt(run));
   }
 }
@@ -262,6 +161,7 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
         return;
       }
       run.ramp = { to, left: over, over };
+      run.t.ramp(to, over);
       change(run, hub);
       hub.subs.emit();
     },
@@ -279,6 +179,7 @@ function createClockView(run: Run, hub: Hub, seekable: boolean, speeds: readonly
     sync: (timestamp) => syncTo(run, hub, timestamp),
     rebase() {
       run.last = Number.NaN;
+      run.t.rebase();
     },
     get inert() {
       return isInert(run);
@@ -305,20 +206,41 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
   checkLoop(loop);
+  // A transport with no mix seeks and runs back as a clock alone. One with a mix seeks it by restoring, which needs
+  // history with a tape reaching back over the whole run; `jump` keeps a seek ahead from moving the rate or a ramp.
+  const t = createTransport(
+    spec.mix ? { history: { ms: Number.POSITIVE_INFINITY, tape: createHistory }, seek: 'jump' } : {},
+  );
+  const mix = spec.mix?.(t) ?? null;
+  // Nothing seeks to before the first sync: the run's 0 is that sync's time.
+  t.sync(0);
+  t.rebase();
+  if (mix && !Object.is(mix.now, t.now)) throw new Error("ClockSpec.mix makes its mix on the transport it is given");
   const run: Run = {
     duration,
     loop,
     span: duration * passesOf(loop),
     origin,
     speed: declaredSpeed(spec),
-    rate: at ? at.rate : openRate,
-    elapsed: 0,
+    get rate() {
+      return t.rate;
+    },
+    set rate(next: number) {
+      t.ramp(next, 0);
+    },
+    get elapsed() {
+      return t.now;
+    },
+    set elapsed(to: number) {
+      seekTransport(run, to);
+    },
     edge: at?.passEnd ?? false,
     ramp: null,
     last: Number.NaN,
     changed: false,
     slept: false,
     wakeFired: false,
+    t,
   };
   // The end of the declared run, where a run made endless since (a loop toggle, a duration write, an override)
   // opens at `'end'`; `declare` refuses a declaration that has none.
@@ -329,20 +251,19 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
     if (!Number.isFinite(end)) throw new RangeError("a run that never ends has no 'end' to start at");
     return end;
   };
-  run.elapsed = at ? clamp(run, at.elapsed) : opening();
-  if (!Number.isFinite(run.elapsed))
+  const openAt = at ? clamp(run, at.elapsed) : opening();
+  if (!Number.isFinite(openAt))
     throw new RangeError(`a clock opens at a time in its run, not ${at ? at.elapsed : spec.start}`);
+  run.elapsed = openAt;
+  run.rate = at ? at.rate : openRate;
 
-  const mix = spec.mix?.() ?? null;
   const hub: Hub = {
     wakes: createEmitter(),
     subs: createEmitter(),
     frames: createEmitter<[elapsed: number, pass: number]>(),
-    follow: followMix(mix),
     opening,
   };
   const clock = createClockView(run, hub, seekable, speeds);
-  hub.follow(run.elapsed);
 
   let declared: Declared = {
     duration: spec.duration ?? Number.POSITIVE_INFINITY,
