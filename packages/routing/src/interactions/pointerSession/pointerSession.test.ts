@@ -24,6 +24,20 @@ beforeEach(() => {
 });
 
 describe('openPointerSession', () => {
+  it('has torn the session down by the time onEnd and onCancel run', () => {
+    const origin = el();
+    const seen: unknown[] = [];
+    const s = openPointerSession(origin, down(), {
+      onEnd: () => seen.push(s.active, heldWithin(1, document.body)),
+    });
+    origin.dispatchEvent(new PointerEvent('pointerup', { pointerId: 1, bubbles: true }));
+    const c = openPointerSession(origin, down(2), {
+      onCancel: () => seen.push(c.active, heldWithin(2, document.body)),
+    });
+    c.cancel();
+    expect(seen).toEqual([false, false, false, false]);
+  });
+
   it('forwards moves for its own pointer and ends on pointerup', () => {
     const onMove = vi.fn();
     const onEnd = vi.fn();

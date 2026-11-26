@@ -23,6 +23,7 @@ export default defineConfig({
     'surface/index': 'src/surface/index.ts',
     'job/index': 'src/job/index.ts',
     'overview/index': 'src/overview/index.ts',
+    'link/index': 'src/link/index.ts',
     'vite/index': 'src/vite/index.ts',
   },
   format: ['esm'],

@@ -57,4 +57,12 @@ describe('deepEqual', () => {
     expect(deepEqual(list(1), list(1))).toBe(true);
     expect(deepEqual(list(1), list(2))).toBe(false);
   });
+
+  it('compares input nested far deeper than the call stack goes', () => {
+    const deep = (n: number) => JSON.parse('['.repeat(n) + ']'.repeat(n)) as unknown;
+    const object = (n: number) => { let o: unknown = 1; for (let i = 0; i < n; i++) o = { o }; return o; };
+    expect(deepEqual(deep(1e5), deep(1e5))).toBe(true);
+    expect(deepEqual(deep(1e5), deep(1e5 - 1))).toBe(false);
+    expect(deepEqual(object(1e5), object(1e5), { undefinedAsAbsent: true })).toBe(true);
+  });
 });

@@ -145,6 +145,7 @@ describe('ActionsRegistry — full coverage', () => {
       reg!.register({
         id: 'foo',
         label: 'Foo',
+        requires: ['selection'],
         invoker: { timing: 'immediate' as const, run: (deps: unknown) => { seen.push(deps); } },
         enabled: (deps) => { seen.push(deps); return true; },
       });

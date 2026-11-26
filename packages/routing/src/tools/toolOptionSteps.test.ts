@@ -50,4 +50,15 @@ describe('the wheel size step', () => {
     expect(toolOptionParams('brush', brush, a).size).toBe(11);
     expect(toolOptionParams('brush', brush, b).size).toBe(11);
   });
+
+  it('steps on the first event of a reversal, even when the burst has no travel left over', () => {
+    const wheel = toolOptionSteps('brush', 'Brush', brush).actions.find((a) => a.id === 'brush.wheelSize')!;
+    const values = createToolOptionValues();
+    const run = (deltaY: number) =>
+      (wheel.invoker as ImmediateInvoker).run({ activeTool: { active: 'brush', hotkeyStack: [] }, toolOptionValues: values } as never, { deltaY });
+    run(-10);
+    expect(toolOptionParams('brush', brush, values).size).toBe(11);
+    run(10);
+    expect(toolOptionParams('brush', brush, values).size).toBe(10);
+  });
 });

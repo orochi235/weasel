@@ -193,6 +193,14 @@ export function sfntFromCollection(
   return at < 0 ? { bytes: null, matched: false, names } : { bytes: members[at].bytes(), matched: true, names };
 }
 
+/**
+ * The PostScript name of each member of a collection or a `.dfont`, in file order, without cutting any member out:
+ * `null` for one that carries none or whose `name` table cannot be read. Empty for a single font.
+ */
+export function collectionNamesOf(bytes: ArrayBuffer): readonly (string | null)[] {
+  return membersOf(bytes)?.map((m) => m.name) ?? [];
+}
+
 interface Member { name: string | null; bytes: () => ArrayBuffer }
 
 /** The fonts a container holds, or `null` when `bytes` is a single font. */

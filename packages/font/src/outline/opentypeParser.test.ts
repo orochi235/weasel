@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { openTypeParser, parserOf } from './opentypeParser';
+import { openTypeModuleOf, openTypeParser } from './opentypeParser';
 import type { OutlineFace } from './OutlineFace';
 
 const INTER_TTF = resolve(import.meta.dirname, '../../../../assets/fonts/inter/inter.ttf');
@@ -107,12 +107,12 @@ describe.skipIf(!existsSync(INTER_TTF))('opentype parser, bundled Inter subset',
   });
 });
 
-describe('parserOf — module interop', () => {
+describe('openTypeModuleOf — module interop', () => {
   const parse = (() => null) as unknown as typeof import('opentype.js').parse;
 
   it('takes the named export when the module has one', () => {
     const ns = { parse } as unknown as typeof import('opentype.js');
-    expect(parserOf(ns)).toBe(parse);
+    expect(openTypeModuleOf(ns).parse).toBe(parse);
   });
 
   it('reaches through `default` when it does not', () => {
@@ -120,7 +120,7 @@ describe('parserOf — module interop', () => {
     // exports, everything under the interop default. Reading `ns.parse` here
     // yields undefined and every face fails to load.
     const ns = { default: { parse } } as unknown as typeof import('opentype.js');
-    expect(parserOf(ns)).toBe(parse);
+    expect(openTypeModuleOf(ns).parse).toBe(parse);
   });
 });
 

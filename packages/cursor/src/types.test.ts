@@ -88,4 +88,11 @@ describe('the fit guards’ dialect', () => {
   it('refuses an elliptical arc, whose bounds a circle does not give', () => {
     expect(() => haloFitsInBox(glyph(24, 'M 2 12 A 100 0.1 0 0 1 2 14 Z'))).toThrow(/elliptical/);
   });
+
+  it('reads a negative arc radius as its size, as SVG does, so a circle written with one is not elliptical', () => {
+    const ring = 'M 12 4 A -8 8 0 1 0 12 20 A 8 -8 0 1 0 12 4 Z';
+    expect(haloFitsInBox(glyph(24, ring))).toBe(true);
+    expect(rotationFitsInBox(glyph(24, ring))).toBe(true);
+    expect(() => haloFitsInBox(glyph(24, 'M 2 12 A -3 4 0 0 1 2 14 Z'))).toThrow(/elliptical/);
+  });
 });

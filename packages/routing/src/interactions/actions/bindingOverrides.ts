@@ -37,8 +37,10 @@ function routeHint(input: BindingOverrideInput): string {
   return 'Pass a route such as \'[*:*] keyDown(z) +mod\', a spec such as key(\'Mod+Z\'), or unbound().';
 }
 
+const warnUnparsed = createWarnOnce();
+
 /** Merge override maps into one, a later map winning per id. A route string
- *  that does not parse is skipped with a warning, leaving the binding as it was. */
+ *  that does not parse is skipped with a warning, once per id and input, leaving the binding as it was. */
 export function resolveBindingOverrides(maps: readonly BindingOverrides[]): ResolvedBindingOverrides {
   if (maps.length === 0) return NO_OVERRIDES;
   const out = new Map<string, GestureSpec | null>();
@@ -47,7 +49,8 @@ export function resolveBindingOverrides(maps: readonly BindingOverrides[]): Reso
       try {
         out.set(id, bindingSpec(input));
       } catch (err) {
-        console.warn(`weasel: binding override "${id}" is not a route: ${(err as Error).message}. ${routeHint(input)}`);
+        const message = (err as Error).message;
+        warnUnparsed(`weasel: binding override "${id}" is not a route: ${message}. ${routeHint(input)}`, `${id}\0${message}`);
       }
     }
   }

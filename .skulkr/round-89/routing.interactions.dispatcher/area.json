@@ -1,0 +1,106 @@
+{
+ "id": "routing.interactions.dispatcher",
+ "commit": "5b35b8d8aacd88cbf6c851b42b50665e64bd75f3",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/interactions/dispatcher/attachInput.ts",
+  "packages/routing/src/interactions/dispatcher/buildDispatchRecord.ts",
+  "packages/routing/src/interactions/dispatcher/channels/carry.ts",
+  "packages/routing/src/interactions/dispatcher/channels/contextMenu.ts",
+  "packages/routing/src/interactions/dispatcher/channels/dropPreview.ts",
+  "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts",
+  "packages/routing/src/interactions/dispatcher/channels/ingest.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keyPeers.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keyboard.ts",
+  "packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts",
+  "packages/routing/src/interactions/dispatcher/channels/listeners.ts",
+  "packages/routing/src/interactions/dispatcher/channels/modal.ts",
+  "packages/routing/src/interactions/dispatcher/channels/overKeys.ts",
+  "packages/routing/src/interactions/dispatcher/channels/pointer.ts",
+  "packages/routing/src/interactions/dispatcher/channels/webkitPinch.ts",
+  "packages/routing/src/interactions/dispatcher/channels/wheel.ts",
+  "packages/routing/src/interactions/dispatcher/deferredStart.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchCore.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchRecord.ts",
+  "packages/routing/src/interactions/dispatcher/dispatchTrace.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcher.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcherApi.ts",
+  "packages/routing/src/interactions/dispatcher/dispatcherWatch.ts",
+  "packages/routing/src/interactions/dispatcher/gestureDispatcherOptions.ts",
+  "packages/routing/src/interactions/dispatcher/gestureFacts.ts",
+  "packages/routing/src/interactions/dispatcher/gestureIds.ts",
+  "packages/routing/src/interactions/dispatcher/gestureRun.ts",
+  "packages/routing/src/interactions/dispatcher/handOff.ts",
+  "packages/routing/src/interactions/dispatcher/inFlightGestures.ts",
+  "packages/routing/src/interactions/dispatcher/inputFacts.ts",
+  "packages/routing/src/interactions/dispatcher/invocationCtx.ts",
+  "packages/routing/src/interactions/dispatcher/keymapRoute.ts",
+  "packages/routing/src/interactions/dispatcher/longPressState.ts",
+  "packages/routing/src/interactions/dispatcher/matcher.ts",
+  "packages/routing/src/interactions/dispatcher/predicates.ts",
+  "packages/routing/src/interactions/dispatcher/predict.ts",
+  "packages/routing/src/interactions/dispatcher/ranking.ts",
+  "packages/routing/src/interactions/dispatcher/testing/dispatcherStubs.ts",
+  "packages/routing/src/interactions/dispatcher/uiOngoing.ts",
+  "packages/routing/src/interactions/dispatcher/underPointer.ts",
+  "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx",
+  "packages/routing/src/interactions/dispatcher/useKeyLease.ts",
+  "packages/routing/src/interactions/dispatcher/usePageActions.ts",
+  "packages/routing/src/interactions/dispatcher/walk.ts"
+ ],
+ "a": 3,
+ "b": 1,
+ "m": 0,
+ "distinct": 4,
+ "chapman": 7,
+ "unfound": 3,
+ "read": {
+  "A": 44,
+  "B": 44
+ },
+ "newCode": {
+  "since": 88,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 88,
+  "chapman": 19,
+  "unfound": 12
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 12,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3467,
+   "total": 3467
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 4.4,
+   "B": 6.2,
+   "match": 0.2,
+   "fix": 15.6
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1288022,
+  "costUsd": 4.11
+ },
+ "fixCommits": [
+  "d723079a0d931e92545ff63903dbbc63b0bd7824",
+  "1fd1e33cf31c94b08771344284211e7d5c298fff",
+  "e5a32c39c95b075742fd8fc5299a33f42557e47e",
+  "55053f92b7c8878f2fe43c9916fd06005104d72a"
+ ]
+}

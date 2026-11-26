@@ -30,6 +30,8 @@ export interface PaintedCursorState {
   /** An affordance's or action's cursor; wins over the base while set.
    *  `'none'` is a CSS cursor showing: nothing is painted, the base included. */
   setOverride(cursor: PaintedCursor | 'none' | null): void;
+  /** The override last set: the cursor, `'none'`, or null. */
+  getOverride(): PaintedCursor | 'none' | null;
   /** Canvas-local CSS px. */
   setPointer(x: number, y: number): void;
   /** Pointer left the surface: nothing to draw until it returns. */
@@ -88,6 +90,9 @@ export function createPaintedCursorState(): PaintedCursorState {
       if (same(override, cursor)) return;
       override = cursor;
       notify();
+    },
+    getOverride() {
+      return override;
     },
     setPointer(x, y) {
       // A moved pointer only matters while something is being painted; a

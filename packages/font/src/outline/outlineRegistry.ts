@@ -35,7 +35,7 @@ import { notifyGlyphReady } from '../glyphReady';
 import type { OutlineFace, OutlineParser } from './OutlineFace';
 import { normalizeVariant, type FontStyle, type FontVariant } from '../fontStyle';
 import { cssString } from '../cssFamily';
-import { openTypeParser } from './opentypeParser';
+import { createOpenTypeParser, openTypeParser } from './opentypeParser';
 import { closeContours } from './closeContours';
 
 /**
@@ -53,6 +53,12 @@ export interface RegisterFontOutlinesOptions {
   /** Override the default opentype.js parser. Mostly a test seam; also the
    *  hook for a consumer who already has a font parser in their bundle. */
   parser?: OutlineParser;
+  /**
+   * The font opentype.js already parsed from this registration's bytes, which then are not parsed again: the face,
+   * GPOS kerning included, is the one the default parser would build from them. The source must be that one font,
+   * not the collection holding it. Not with `parser`.
+   */
+  parsed?: import('opentype.js').Font;
   /**
    * The `@font-face` `src` that gives DOM text this face — what the text edit
    * overlay sets its glyphs in, so they match the canvas's. Defaults to
@@ -102,6 +108,11 @@ const slots = createReflectable<FaceSlot>({ name: 'font outlines' });
 /** Every registered outline face, keyed `family|weight|style`. */
 export const fontOutlineRegistry: Reflection<OutlineFaceInfo> = slots.reflection;
 
+function parserFor({ parser, parsed }: RegisterFontOutlinesOptions): OutlineParser {
+  if (parser && parsed) throw new Error('registerFontOutlines takes a parser or a parsed font, not both');
+  return parser ?? (parsed ? createOpenTypeParser(undefined, parsed) : openTypeParser);
+}
+
 function slotKey(family: string, weight: number, style: FontStyle): string {
   return `${family}|${weight}|${style}`;
 }
@@ -134,7 +145,7 @@ export function registerFontOutlines(
   const slot: FaceSlot = {
     family, weight, style, source,
     cssSrc: opts.cssSrc,
-    parser: opts.parser ?? openTypeParser,
+    parser: parserFor(opts),
     status: 'idle',
     face: null,
     glyphs: new Map(),

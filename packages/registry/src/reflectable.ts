@@ -124,6 +124,9 @@ function registrantOf<V>(value: V, options: PushOptions | undefined): Registrant
   return Object.freeze(registrant);
 }
 
+/** The most pairs of sources a held key remembers warning of; one pushed out warns again when it next clashes. */
+const CLASH_PAIRS_KEPT = 256;
+
 /** The development warning for a push over a same-rank registrant that is not a fallback: once per key and
  *  pair of sources while the key stays held. */
 function createClashWarnings<K, V>(name: string | undefined) {
@@ -136,6 +139,7 @@ function createClashWarnings<K, V>(name: string | undefined) {
       const seen = warned.get(key) ?? new Set<string>();
       if (seen.has(pair)) return;
       warned.set(key, seen.add(pair));
+      if (seen.size > CLASH_PAIRS_KEPT) seen.delete(seen.values().next().value!);
       console.warn(
         `${prefix}: ${named(over)} registered "${String(key)}" over ${named(under)}, which is not an engine default. ` +
         (live ? 'The newer one is live' : 'The newer one is under a higher-ranked registrant, and goes live over it once that one is released') +

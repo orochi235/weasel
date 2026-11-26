@@ -105,7 +105,7 @@ export function checkToolOptionOwner(toolId: string): void {
 }
 
 /** The tool whose options are live: the newest held on its key (of those `among` names, when given), else the
- *  active one. Routing walks held tools the same way. */
+ *  active one. It reads no mode; where one can leave a tool out, `ToolsApi.routed` is the answer. */
 export function liveTool(
   slot: { active: string | null; hotkeyStack?: readonly string[] } | undefined, among?: ReadonlySet<string>,
 ): string | null {

@@ -67,4 +67,16 @@ export interface SerializeOptions {
    * `warmSvg(nodes, { textLayout })` loads them.
    */
   textLayout?: (node: SvgTextNode) => TextPoseLayout | null | undefined;
+  /**
+   * Extra content for an animated document: a `<style>` body for the root, and
+   * per node id, attributes to add to its outermost element and children to
+   * write inside it. `style` and `childrenOf` are raw markup the caller is
+   * responsible for; attribute values are escaped. A node without an id is
+   * never asked.
+   */
+  decorate?: {
+    style?: string;
+    attrsOf?(id: string): Readonly<Record<string, string>> | undefined;
+    childrenOf?(id: string): string | undefined;
+  };
 }

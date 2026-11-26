@@ -90,6 +90,7 @@
    "packages/animator/src/timeline/entry.ts",
    "packages/animator/src/timeline/fireEvents.ts",
    "packages/animator/src/timeline/index.ts",
+   "packages/animator/src/timeline/keyEasing.ts",
    "packages/animator/src/timeline/length.ts",
    "packages/animator/src/timeline/playhead.ts",
    "packages/animator/src/timeline/sampleTrack.ts",
@@ -6073,13 +6074,13 @@
    "packages/svg/src/openSubpathFill.ts",
    "packages/svg/src/paintServers.ts",
    "packages/svg/src/paintThroughMatrix.ts",
-   "packages/svg/src/painterLeaf.ts"
+   "packages/svg/src/painterLeaf.ts",
+   "packages/svg/src/parse.ts"
   ]
  },
  {
   "id": "svg.part2",
   "files": [
-   "packages/svg/src/parse.ts",
    "packages/svg/src/patterns.ts",
    "packages/svg/src/pbt.fixture.ts",
    "packages/svg/src/placeBox.ts",
@@ -6102,6 +6103,9 @@
    "packages/svg/src/serializeOptions.ts",
    "packages/svg/src/serializeText.ts",
    "packages/svg/src/shapes.ts",
+   "packages/svg/src/smil.ts",
+   "packages/svg/src/smilTime.ts",
+   "packages/svg/src/smilValues.ts",
    "packages/svg/src/specificity.ts",
    "packages/svg/src/strokeAttrs.ts",
    "packages/svg/src/strokeOutlineSvg.ts",
@@ -6392,6 +6396,7 @@
    "packages/theme/src/prefs/tokens.ts",
    "packages/theme/src/react.tsx",
    "packages/theme/src/resolveTheme.ts",
+   "packages/theme/src/scrollbars.ts",
    "packages/theme/src/sizer.module.css",
    "packages/theme/src/store.ts",
    "packages/theme/src/testing/computedColor.ts",

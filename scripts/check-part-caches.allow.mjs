@@ -23,6 +23,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/animator/src/elementTarget.ts', 'set at creation from creation arguments, and read without being made'],
   ['packages/animator/src/target.ts', 'a registry of targets: set at creation from its arguments, and tested with has'],
   ['packages/animator/src/targetTable.ts', 'set in createTargetTable from its options, and read without being made'],
+  ['packages/svg/src/smilShapes.ts', 'set for one parse of a document and deleted when takeShapes reads it'],
   ['packages/audio/src/graph/createAudioGraph.ts', 'set at graph creation from its state, and read without being made'],
   ['packages/d3/src/pendingRemovals.ts', 'the emit path reads it without making it'],
   ['packages/d3/src/liveTransitions.ts', 'two other functions read it without making it'],
@@ -40,6 +41,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/kernel3d/src/pickIndex.ts', 'replaced whenever the version, overrides or bounds change'],
   ['packages/path-tools/src/constraints/constraintsExtension.ts', 'replaced when the key it is computed from changes'],
   ['packages/path-tools/src/warp/pathWarp.ts', 'replaced by a second set with a result computed elsewhere'],
+  ['packages/routing/src/menus/menuHost.ts', 'set when a host is made from the store it views, and read without being made'],
   ['packages/theme/src/applyTheme.ts', 'replaced on each applyTheme from its arguments, and deleted on release'],
   // renderer, geom, text, font, svg
   ['packages/font/src/atlasResult.ts', 'the value turns on family, weight and style, and is replaced when they differ'],

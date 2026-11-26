@@ -37,6 +37,8 @@ export {
 } from './unpack';
 export type { SvgDraftBounds, SvgDraftPose } from './draftPose';
 export { svgDraftSpecs, type SvgDraftSpecsOptions } from './draftSpecs';
+export { svgClipBinder, type SvgClipScene } from './smilBinder';
+export type { DraftFade, Fades } from './draftFades';
 export {
   svgNodesFromKit,
   svgLeafFromKit,
@@ -65,6 +67,10 @@ export type {
   SvgPaint,
   SvgStroke,
   SvgInherits,
+  SvgAnimatedFrom,
+  SvgAnimatedPaint,
+  AnimatedShape,
+  AnimatedTransform,
   Matrix,
 } from './types';
 export { IDENTITY_MATRIX } from './types';

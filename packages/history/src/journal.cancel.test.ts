@@ -103,6 +103,20 @@ describe('Journal.cancel', () => {
     outer.cancel();
     expect(box.x).toBe('0');
   });
+
+  it('redoes its own undone edits back to a suspended journal\'s last edit before cancelling it', () => {
+    const box: Box = { x: '0' };
+    const outer = createHistory(box).beginJournal({ label: 'outer' });
+    outer.applyOps([setX('0', 'a')], 'a');
+    const child = outer.beginJournal({ label: 'child' });
+    child.applyOps([setX('a', 'b')], 'b');
+    child.suspend();
+    outer.undo();
+    expect(box.x).toBe('0');
+
+    outer.cancel();
+    expect(box.x).toBe('0');
+  });
 });
 
 describe('Journal.cancel with a journal opened two deep', () => {

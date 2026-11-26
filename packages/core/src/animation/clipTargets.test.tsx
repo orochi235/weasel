@@ -87,4 +87,14 @@ describe('sceneClipTargets', () => {
     expect(at.y + at.height / 2).toBeCloseTo(100 + 50 * Math.SQRT1_2, 3);
     expect(toClip(live)).toEqual(clip);
   });
+
+  it('names a field of a node\'s data `data:<id>.<field>` through the lenses it is given', () => {
+    const { scene, box } = setup();
+    const opacity = { key: 'opacity', get: (d: { opacity?: number }) => d.opacity ?? 1, with: (d: object, v: number) => ({ ...d, opacity: v }) };
+    const targets = sceneClipTargets(scene, { lenses: { opacity } });
+    const target = targets(`data:${box}.opacity`);
+    expect(target?.committed()).toBe(1);
+    expect(targets(`data:${box}.color`)).toBeUndefined();
+    expect(sceneClipTargets(scene)(`data:${box}.opacity`)).toBeUndefined();
+  });
 });

@@ -54,6 +54,8 @@ interface RankedRule extends StyleRule {
  *  declarations. `media` is what they were evaluated against, and sizes the root as a query container. */
 interface BoundSheet {
   readonly rules: readonly RankedRule[];
+  /** Each `@keyframes` body by name, the last of a name standing, as CSS has it. */
+  readonly keyframes: ReadonlyMap<string, string>;
   readonly media: SvgMediaEnvironment;
   readonly onWarn?: (message: string) => void;
 }
@@ -68,7 +70,7 @@ const sheetCache = new WeakMap<Document, BoundSheet>();
 export function bindStylesheets(
   doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
 ): void {
-  sheetCache.set(doc, { rules: collectRules(doc, media, onWarn), media, onWarn });
+  sheetCache.set(doc, { ...collectRules(doc, media, onWarn), media, onWarn });
 }
 
 function documentSheet(doc: Document): BoundSheet {
@@ -76,7 +78,7 @@ function documentSheet(doc: Document): BoundSheet {
   if (cached) return cached;
   const root = doc.documentElement;
   const media = root ? mediaEnvironmentFor(root) : DEFAULT_MEDIA_ENVIRONMENT;
-  const sheet = { rules: collectRules(doc, media), media };
+  const sheet = { ...collectRules(doc, media), media };
   sheetCache.set(doc, sheet);
   return sheet;
 }
@@ -96,8 +98,11 @@ function containersHold(el: Element, containers: readonly string[], media: SvgMe
 
 function collectRules(
   doc: Document, media: SvgMediaEnvironment, onWarn?: (message: string) => void,
-): readonly RankedRule[] {
-  const ctx: StylesheetContext = { media, onWarn, selector: (s) => isValidSelector(doc, s) };
+): Pick<BoundSheet, 'rules' | 'keyframes'> {
+  const keyframes = new Map<string, string>();
+  const ctx: StylesheetContext = {
+    media, onWarn, selector: (s) => isValidSelector(doc, s), onKeyframes: (name, body) => keyframes.set(name, body),
+  };
   const layers = new CascadeLayers();
   const rules: StyleRule[] = [];
   const styles = doc.getElementsByTagNameNS('*', 'style');
@@ -106,9 +111,10 @@ function collectRules(
     rules.push(...parseStylesheet(styles[i].textContent ?? '', rules.length, ctx, layers));
   }
   const ranks = layers.ranks();
-  return rules
-    .map((r) => ({ ...r, rank: ranks.get(r.layer) ?? 0 }))
-    .sort((x, y) => x.rank - y.rank || compareCascade(x, y));
+  return {
+    keyframes,
+    rules: rules.map((r) => ({ ...r, rank: ranks.get(r.layer) ?? 0 })).sort((x, y) => x.rank - y.rank || compareCascade(x, y)),
+  };
 }
 
 function compareCascade(x: StyleRule, y: StyleRule): number {
@@ -135,6 +141,9 @@ function matches(el: Element, selector: string): boolean {
 }
 
 const PROPERTY_NAMES = Object.keys(PROPERTIES) as PropertyName[];
+
+/** Elements whose `fill` attribute is SMIL's `freeze` / `remove`, not the paint. */
+const ANIMATION_TAGS = new Set(['animate', 'set', 'animateTransform', 'animateColor', 'animateMotion']);
 
 /**
  * The cascaded value of every property `el` sets. Lowest to highest:
@@ -171,7 +180,9 @@ const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
     else out.set(prop, rolledBack);
   };
   enterLayer();
+  const timed = ANIMATION_TAGS.has(el.tagName);
   for (const prop of PROPERTY_NAMES) {
+    if (timed && prop === 'fill') continue;
     const attr = el.getAttribute(prop);
     if (attr != null) take(prop, attr, `${prop}="${attr}"`);
   }
@@ -210,6 +221,16 @@ const UNREAD_PAINT_UNSETS = ['fill', 'stroke', 'color'] as const;
  */
 export function ownProp(el: Element, prop: PropertyName): string | null {
   return cascaded(el).get(prop) ?? null;
+}
+
+/** `el`'s cascaded value of any declared property, a presentation property or not (`animation-name`); null where none. */
+export function declaredOf(el: Element, prop: string): string | null {
+  return cascaded(el).get(prop) ?? null;
+}
+
+/** The body of the `@keyframes` named `name` in `doc`'s stylesheets, as written; undefined for none. */
+export function keyframesOf(doc: Document, name: string): string | undefined {
+  return documentSheet(doc).keyframes.get(name);
 }
 
 /** Whether a cascaded value of an inherited property hands on the parent's: `inherit`, or `unset`. */

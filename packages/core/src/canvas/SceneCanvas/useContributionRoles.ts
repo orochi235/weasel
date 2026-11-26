@@ -123,7 +123,7 @@ export function useContributionRoles(
     }
     return () => { for (const u of unregisters) u(); };
   }, [registry, toolRegistry, ambient]);
-  useToolOptionTunings(registry, toolRegistry);
+  useToolOptionTunings(registry, toolRegistry, tools.routed);
 
   const menuHost = useMenuHost();
   useEffect(() => {

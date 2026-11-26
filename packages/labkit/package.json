@@ -90,6 +90,10 @@
       "types": "./dist/overview/index.d.ts",
       "import": "./dist/overview/index.js"
     },
+    "./link": {
+      "types": "./dist/link/index.d.ts",
+      "import": "./dist/link/index.js"
+    },
     "./weasel-canvas": {
       "types": "./dist/passthrough/weasel-canvas.d.ts",
       "import": "./dist/passthrough/weasel-canvas.js"

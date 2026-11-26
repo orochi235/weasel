@@ -26,6 +26,7 @@ export {
 export type { Fields, FieldValues, Variants, VariantValues } from './compound';
 export { configFromPrefs } from './fromPrefs';
 export type { LabOver, OverAccess } from './over';
+export { configFromParams } from './params';
 export {
   configValueAt,
   fillConfigDefaults,

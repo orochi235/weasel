@@ -1,0 +1,12 @@
+{
+ "pairs": [],
+ "a": [
+  "Tool options treat a held tool the active mode disallows as live, while routing skips it",
+  "A wheel reversal is not seen as a new burst when the burst's leftover travel is exactly 0",
+  "ToolsScope remounts its whole subtree when `isolate` changes or an outer scope appears or disappears"
+ ],
+ "b": [
+  "findConflicts merges non-transitive ties into one conflict, naming owners that never tie",
+  "toolOptionsPrefs widens a shared option only for number, enum and string, so other leaf kinds repair against the first tool's bounds"
+ ]
+}

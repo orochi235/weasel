@@ -53,10 +53,9 @@ function useNodes(
   return nodes;
 }
 
-/** Puts a tier's nodes in scope, and its tree's menu host when no
- *  `<ActionsProvider>` above has put one there. */
+/** Puts a tier's nodes in scope, and its view of its tree's menu host unless a host of another tree is in scope. */
 function Provide({ nodes, children }: { nodes: Yoke; children: ReactNode }): ReactElement {
-  const menuHost = useContext(MenuHostContext) ?? nodes.actions.menuHost();
+  const menuHost = nodes.actions.menuHostUnder(useContext(MenuHostContext));
   const outerDeps = useOptionalDepRegistry();
   const deps = useMemo(() => rankedLike(outerDeps, nodes.deps.registry), [outerDeps, nodes]);
   return (

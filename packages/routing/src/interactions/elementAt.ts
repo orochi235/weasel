@@ -22,7 +22,8 @@ export function containsComposed(outer: Node, inner: Node): boolean {
   for (let n: Node | null = inner; n; ) {
     if (outer.contains(n)) return true;
     const root = n.getRootNode();
-    n = (root as Partial<ShadowRoot>).host ?? null;
+    // Only a shadow root's `host` is a node: a detached `<a>` topping its subtree has a URL string there.
+    n = root.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? (root as Partial<ShadowRoot>).host ?? null : null;
   }
   return false;
 }

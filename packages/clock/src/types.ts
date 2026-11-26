@@ -1,3 +1,5 @@
+import type { Transport } from '@msb235/blits';
+
 /**
  * What a caller declares to get a clock: how long a pass runs, how many
  * passes, and how it opens. Shaped like a blits voice spec.
@@ -28,18 +30,15 @@ export interface ClockSpec {
    *  is how a still of a clock that is not seekable reaches its time. Omitted,
    *  such a still stays where the clock opens. */
   step?: number;
-  /** Makes a blits mix, which then plays on this clock: its mix time is kept
-   *  at `elapsed`, synced forward and sought back, so scrubbing and reverse
-   *  reach it. Give it `history` with a `tape` reaching back over the whole
-   *  run, or a seek past it throws. Leave the mix's own `rate` alone; the
-   *  clock's is the one that plays. */
-  mix?: () => ClockedMix;
+  /** Makes a blits mix on `transport`, the clock's own, so its mix time is
+   *  `elapsed` and scrubbing and reverse reach it. The transport keeps the
+   *  history, so the mix takes none of its own. Throws when the mix it makes
+   *  is not on `transport`. */
+  mix?: (transport: Transport) => ClockedMix;
 }
 
-/** What a clock needs of a blits `Mix`. */
+/** What a clock needs of the blits `Mix` that `ClockSpec.mix` makes. */
 export interface ClockedMix {
-  sync(timestamp: number): void;
-  seek(time: number): void;
   readonly now: number;
 }
 

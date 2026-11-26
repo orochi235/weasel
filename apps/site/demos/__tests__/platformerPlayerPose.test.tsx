@@ -28,7 +28,8 @@ function setup() {
     requestFrame: (cb) => { cbs.push(cb); return cbs.length; },
     cancelFrame: () => {},
   }));
-  const player = createPlayerPose(result.current, createScene({ systemLayers: [{ id: 'main' }] }));
+  const scene = createScene({ systemLayers: [{ id: 'main' }] });
+  const player = createPlayerPose(result.current, scene);
   const show = (s: AnimState): SkeletonPose => {
     act(() => {
       now += DT * 1000;

@@ -42,6 +42,7 @@
       "@weasel-js/brush",
       "@weasel-js/modes",
       "@weasel-js/svg",
+      "@weasel-js/lottie",
       "@weasel-js/d3",
       "@weasel-js/diagram",
       "@weasel-js/diagram-elk",

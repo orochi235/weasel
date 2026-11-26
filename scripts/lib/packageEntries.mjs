@@ -21,6 +21,7 @@ const BUILT_FROM = {
   },
   'icons-plugin': { './virtual': 'virtual.d.ts' },
   labkit: { './styles.css': 'src/styles.dev.ts' },
+  svg: { './animate': 'src/animate/index.ts' },
   theme: { './tokens.css': 'src/generated/tokens.css' },
 };
 
