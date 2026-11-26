@@ -60,7 +60,7 @@ describe('a clip with blits easings and a loop', () => {
 });
 
 describe('a named easing', () => {
-  it('plays every geom name as blits carries it, within 0.003 of geom\'s curve', () => {
+  it('plays every geom name within 0.003 of geom\'s curve', () => {
     for (const [name, exact] of Object.entries(EASINGS)) {
       const played = resolveKeyEasing(name as keyof typeof EASINGS);
       for (let i = 0; i <= 100; i++) expect(Math.abs(played(i / 100) - exact(i / 100)), name).toBeLessThanOrEqual(0.003);
@@ -68,6 +68,6 @@ describe('a named easing', () => {
   });
 
   it('throws on a name geom does not have', () => {
-    expect(() => resolveKeyEasing('nope' as never)).toThrow('resolveKeyEasing: unknown easing name "nope"');
+    expect(() => resolveKeyEasing('nope' as never)).toThrow(/unknown easing name "nope"/);
   });
 });

@@ -1,4 +1,5 @@
-import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
+import type { SpringPresetName } from '@weasel-js/geom';
+import type { KeyEasing } from './timeline/keyEasing';
 import type { AxisRef } from './axisNames';
 import type { Target } from './target';
 import type { ShownArray, TargetTable } from './targetTable';
@@ -39,7 +40,7 @@ export interface TargetTweenOptions<T> extends OnTarget<T> {
    *  does not move as it starts. */
   from?: T;
   ms: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   /** The path from `from` to `to`, where a straight line per axis is not it. */
   interpolate?: Interpolate<T>;
   /** As `interpolate`, built once at the start. Takes precedence. */

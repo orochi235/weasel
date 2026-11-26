@@ -1,7 +1,8 @@
 import type { ColorOverrideRegistry } from './colorRegistry';
 import type { TrimOverrideRegistry } from './trimRegistry';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './timeline/types';
-import type { EasingSpec, SpringPresetName } from '@weasel-js/geom';
+import type { SpringPresetName } from '@weasel-js/geom';
+import type { KeyEasing } from './timeline/keyEasing';
 import type { StaggerBuilder, StaggerDelay, StaggerFactory, StaggerOptions } from './staggerTypes';
 import type {
   HoldHandle, HoldOptions, HoldRowsOptions, OnTarget, RowsHoldHandle, TargetDecayOptions, TargetPhysicsOptions, TargetSpringOptions,
@@ -56,7 +57,7 @@ export interface TweenOptions<T> {
   from: T;
   to: T;
   ms: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   /** Required when T is not `number`. For T = number, defaults to linear numeric lerp. */
   interpolate?: Interpolate<T>;
   /** Factory interpolator built once at tween start; takes precedence over `interpolate`. */
@@ -385,7 +386,7 @@ export interface TweenLoopOptions<T> {
   from: T;
   to: T;
   ms: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   /** `restart` (default): from→to every iteration.
    *  `reverse`: to→from every iteration.
    *  `alternate`: even iterations from→to, odd iterations to→from. */

@@ -1,10 +1,9 @@
 import { linear } from '@weasel-js/geom';
-import { resolveKeyEasing } from './timeline/keyEasing';
+import { resolveKeyEasing, type KeyEasing } from './timeline/keyEasing';
 import type { ColorSpace } from '@weasel-js/paint';
 import type {
   AnimationHandle,
   Animator,
-  EasingSpec,
   SpringPresetName,
 } from './types';
 import type { VertexColorChannel } from './colorRegistry';
@@ -22,7 +21,7 @@ export interface TweenVertexColorsOptions {
    *  and be a positive multiple of 4. */
   from: readonly number[];
   ms: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   interpolation?: ColorSpace;
   interpolate?: ColorInterpolate;
   onDone?: () => void;
@@ -52,7 +51,7 @@ function tweenColors(
   animator: Animator,
   opts: { id: string; channel: VertexColorChannel; from: readonly number[]; to: readonly number[]; onDone?: () => void },
   ms: number,
-  easing: EasingSpec | undefined,
+  easing: KeyEasing | undefined,
   colorsAt: (t: number) => number[],
 ): AnimationHandle {
   const { id, channel } = opts;
@@ -152,7 +151,7 @@ export interface StaggerVertexColorsOptions {
   anchorMs: number;
   perAnchorDelay: number;
   origin?: 'first' | 'last' | number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   interpolation?: ColorSpace;
   interpolate?: ColorInterpolate;
   onDone?: () => void;

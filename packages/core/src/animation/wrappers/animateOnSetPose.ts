@@ -2,13 +2,13 @@ import { poseKey, tweenPose, springPose, type PoseAnimationAdapter } from '../po
 import { defaultMotionMs } from '../motionMs';
 import { instantPoseWrite } from './instantPose';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
+import type { Animator, KeyEasing, SpringPresetName } from '@weasel-js/animator';
 
 /** Options for `animateOnSetPose`. */
 export interface AnimateOnSetPoseOptions<TPose> {
   /** Default: a 200ms tween with easeOutQuad, or none under `prefers-reduced-motion`. */
   ms?: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   /** Use a spring instead of a duration tween. Mutually exclusive with ms/easing. */
   spring?: {
     preset?: SpringPresetName;

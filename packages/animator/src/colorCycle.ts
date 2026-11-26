@@ -1,7 +1,8 @@
 import { wrapPositive } from '@weasel-js/geom';
 import { resolveKeyEasing } from './timeline/keyEasing';
 import type { ColorSpace } from '@weasel-js/paint';
-import type { Animator, EasingSpec } from './types';
+import type { Animator } from './types';
+import type { KeyEasing } from './timeline/keyEasing';
 import type { VertexColorChannel } from './colorRegistry';
 import { resolveInterpolator, type ColorInterpolate } from './colorInterpolate';
 
@@ -12,7 +13,7 @@ export interface CycleVertexColorsOptions {
   /** ms for the colors to come round once; positive. `direction` turns them the other way. */
   msPerCycle: number;
   direction?: 1 | -1;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   interpolation?: ColorSpace;
   /** Custom interpolator. Receives two RGBA arrays in 0..1 floats and a
    *  progress `t` in 0..1; returns the blended array in 0..1 floats. */
