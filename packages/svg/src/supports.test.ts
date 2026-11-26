@@ -163,8 +163,7 @@ describe('PROPERTIES is the parser\'s one pathway', () => {
     const bypass = new RegExp(`getAttribute\\(\\s*['"](${names})['"]`);
     expect(Object.keys(files)).toContain('./parse.ts');
     const offenders = Object.entries(files)
-      // An animation element's `fill` is SMIL's `freeze` or `remove`, not the paint property.
-      .filter(([path, src]) => !path.endsWith('.test.ts') && path !== './smil.ts' && bypass.test(src as string))
+      .filter(([path, src]) => !path.endsWith('.test.ts') && bypass.test(src as string))
       .map(([path]) => path);
     expect(offenders).toEqual([]);
   });
