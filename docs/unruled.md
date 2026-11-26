@@ -1562,6 +1562,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-25 (my call, cursor audit 88): `resolveCursor` throws a `RangeError` for a size or world radius of
   `Infinity`, as `cursorFor` refuses that size, where it drew the default 24 px glyph. Minus infinity is negative and
   still draws at the default, as in `cursorFor`.
+- 2026-11-25 (my call, cursor audit 89): `brushRing(r, 'world')` and `resolveCursor` throw a `RangeError` for a finite
+  world radius whose drawn size at a zoom of 1 overflows to infinity, as the px unit refuses that overflow, where the
+  layer drew no cursor at all. A zoom that carries a valid radius past the double range still draws nothing.
 - Open (dither second pass, 2026-11-11): `dither()` takes an output grid whose pitch is 0, `NaN`, or infinite, as
   `deviceGrid` gives for a view scaled to 0, and passes it to the shader, which divides by it. No ruling on whether
   it throws, draws nothing, or falls back to the screen grid.

@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { bakeCursor, quantizeCursorAngle } from './bake';
+import { worldCursorPx } from './paint';
 import { cursorFor, cursorGlyph, cursorVariants } from './registry';
 import { cursorCss, resolveCursor, type CursorGlyphSpec, type ResolvedCursor } from './resolve';
 import { CURSOR_MAX_CSS_PX } from './types';
@@ -33,6 +34,7 @@ function model(spec: CursorGlyphSpec): ResolvedCursor | null {
   const angle = turns(spec) ? raw : 0;
   const worldRadius = positive(spec.worldRadius);
   const size = positive(spec.size);
+  if (worldRadius !== undefined && !Number.isFinite(worldCursorPx(cursorGlyph(spec.glyph, mark), worldRadius, 1))) return null;
   if (worldRadius !== undefined) return { kind: 'painted', glyph: spec.glyph, ...mark, angle, worldRadius, fallback: spec.fallback ?? 'default' };
   if (size !== undefined && size > CURSOR_MAX_CSS_PX) return { kind: 'painted', glyph: spec.glyph, ...mark, angle, size, fallback: spec.fallback ?? 'default' };
   return { kind: 'css', css: bakeCursor(cursorGlyph(spec.glyph, { mark: spec.mark }), { size: size ?? 24, angle, fallback: spec.fallback ?? 'default' }) };

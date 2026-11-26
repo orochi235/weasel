@@ -1,4 +1,5 @@
 import { bakeFallback, paintAngleFor } from './bake';
+import { worldCursorPx } from './paint';
 import { cursorFor, cursorGlyph } from './registry';
 import type { CursorGlyphName, CursorMarkName } from './glyphs';
 import { CURSOR_MAX_CSS_PX } from './types';
@@ -21,7 +22,8 @@ export interface CursorGlyphSpec {
   /**
    * Size in world units instead of `size`, so the glyph tracks zoom — a brush
    * radius ring. Forces the painted tier at every zoom level, because a baked
-   * image would have to be rebuilt on every wheel tick. Ignored unless a finite positive number; `Infinity` throws.
+   * image would have to be rebuilt on every wheel tick. Ignored unless a finite positive number; `Infinity`, or one
+   * whose drawn size at a zoom of 1 overflows, throws.
    */
   readonly worldRadius?: number;
   /** Clockwise rotation in radians, quantized to 22.5° at bake. Only a glyph that fits its box at every rotation, as
@@ -62,7 +64,7 @@ const positive = (n: number | undefined): number | undefined =>
  *
  * Escalates to painted when the glyph is sized in world units, or when its
  * fixed size is past {@link CURSOR_MAX_CSS_PX} — above which the browser drops
- * the image and silently falls back to the keyword. Throws, on every tier, for an infinite size or world radius, for a
+ * the image and silently falls back to the keyword. Throws, on every tier, for an infinite size or world radius, for a world radius whose drawn size overflows, for a
  * glyph the set lacks, for a mark
  * on a glyph with no slot, for a fallback no cursor value holds, and for an angle that would turn part of the glyph out
  * of its box.
@@ -76,9 +78,13 @@ export function resolveCursor(spec: CursorSpec): ResolvedCursor {
   const size = positive(spec.size);
   const worldRadius = positive(spec.worldRadius);
   const marked = mark === undefined ? {} : { mark };
+  const named = cursorGlyph(glyph, marked);
+  if (worldRadius !== undefined && !Number.isFinite(worldCursorPx(named, worldRadius, 1))) {
+    throw new RangeError(`cursor world radius ${worldRadius} overflows when drawn`);
+  }
   // Thrown here on every tier, or a painted spec fails only later, in the painter's draw.
   const angle = paintAngleFor(
-    cursorGlyph(glyph, marked),
+    named,
     spec.angle !== undefined && Number.isFinite(spec.angle) ? spec.angle : 0,
   );
   const fallbackCss = bakeFallback(fallback);
