@@ -273,8 +273,8 @@ waits on; weasel runs against the local blits checkout until a blits release car
 
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
-  multiplies into their children, run backward and loop; a time-remap curve is missing (blits: "An owner's clock
-  driven by a curve"). Closes when a nested timeline maps onto a blits owner with rate, loop and remap, scrubs
+  multiplies into their children, run backward and loop; a remap of a voice's clock is missing (blits: "A voice's
+  clock run through a remap"). Closes when a nested timeline maps onto a blits owner with rate, loop and remap, scrubs
   order-independently, and `Clip` carries them.
 
 - **(P2) [agent] SMIL animation import in `@weasel-js/svg`** (2026-11-25). `<animate>`, `<set>`, `<animateTransform>`
@@ -298,9 +298,11 @@ waits on; weasel runs against the local blits checkout until a blits release car
   end may already be this window; check before adding anything there. Closes when a `Clip` can give a target an
   in/out window that hides it and skips sampling its tracks outside it.
 
-- **(P3) [agent] Timeline markers are points, not ranges** (2026-11-25). `EventTrack` events have no duration, and
-  blits marks are points too, so a player can't "play `intro`, then loop `idle`" as Lottie markers allow (blits:
-  "Named ranges on a score"). Closes when `Clip` carries named ranges and playback plays or loops one by name.
+- **(P3) [agent] Timeline markers are points, not ranges** (2026-11-25). `EventTrack` events have no duration, so a
+  player can't "play `intro`, then loop `idle`" as Lottie markers allow. Ruled 2026-11-25: names stay out of
+  blits; `Clip` carries `ranges` (name to `[start, end]`), and a player helper cues a range as a voice with a
+  linear remap window (blits: "A voice's clock run through a remap"). Closes when `Clip` carries ranges and
+  playback plays or loops one by name.
 
 - **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
   scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing. A package of
