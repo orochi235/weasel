@@ -7,9 +7,11 @@ import type { Action } from '../actions/action';
 import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher } from './useGestureDispatcher';
+import { createDispatchTrace, type DispatchTrace } from './dispatchTrace';
 
-function Probe({ actionDef, enabled = true, keyboard, affordanceAt, classifyTarget }: {
+function Probe({ actionDef, enabled = true, keyboard, affordanceAt, classifyTarget, trace }: {
   actionDef: Action;
+  trace?: DispatchTrace;
   enabled?: boolean;
   keyboard?: boolean;
   affordanceAt?: (p: { x: number; y: number }) => import('../actions/invoker').AffordanceHit | null;
@@ -27,6 +29,7 @@ function Probe({ actionDef, enabled = true, keyboard, affordanceAt, classifyTarg
     ...(keyboard !== undefined ? { keyboard } : {}),
     affordanceAt,
     classifyTarget,
+    ...(trace ? { trace } : {}),
   });
   return <canvas ref={canvasRef} />;
 }
@@ -86,6 +89,29 @@ describe('hover-cursor pump', () => {
     const canvas = container.querySelector('canvas')!;
     act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
     expect(canvas.style.cursor).toBe('nwse-resize');
+  });
+
+  it('keeps the live trace prediction on the point the pointer is at, over an affordance and mid-gesture', () => {
+    const trace = createDispatchTrace(200, true);
+    const { container } = render(
+      <Harness>
+        <Probe
+          actionDef={panAction}
+          trace={trace}
+          classifyTarget={() => ({ bodyTarget: 'empty' })}
+          affordanceAt={(p) => (p.x >= 100 ? { kind: 'handle:min-min', cursor: 'nwse-resize' } : null)}
+        />
+      </Harness>,
+    );
+    const canvas = container.querySelector('canvas')!;
+    act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
+    expect(trace.live()?.input.world).toEqual({ x: 40, y: 40 });
+    act(() => { fire(canvas, 'pointermove', { clientX: 150, clientY: 40 }); });
+    expect(trace.live()?.input.world).toEqual({ x: 150, y: 40 });
+    act(() => { fire(canvas, 'pointermove', { clientX: 40, clientY: 40 }); });
+    act(() => { fire(canvas, 'pointerdown', { clientX: 40, clientY: 40, pointerId: 1 }); });
+    act(() => { fire(canvas, 'pointermove', { clientX: 70, clientY: 70, pointerId: 1 }); });
+    expect(trace.live()).toBeNull();
   });
 
   it('swaps to the in-flight action cursor once the gesture starts', () => {
