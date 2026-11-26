@@ -5,10 +5,22 @@
  */
 import { deepEqual } from '@weasel-js/registry';
 import { sampleTrack, type Clip, type ClipKey, type ClipSampledTrack, type ClipTrack, type SampledTrack } from '@weasel-js/animator';
+import { pathLengthTable } from '@weasel-js/geom';
+import { resolveTrim } from '@weasel-js/stroke';
+import { pathAsSvgDraws } from '../openSubpathFill';
+import { withDashesResolved } from '../resolvedDashes';
+import { writesOutline } from '../strokeOutlineSvg';
+import { withTrimsDrawn } from '../trimmedStroke';
+import type { SvgPathNode } from '../types';
 
 /** The gap after the dash: longer than the whole path, so a second dash never shows. */
 const GAP = 1.0001;
 const TRIM = /^(.*)\.trim\.(start|end)$/;
+
+/** The node id a sampled track trims, or undefined where it is no trim edge with keys. */
+export function trimmedIdOf(track: ClipTrack): string | undefined {
+  return track.kind === 'sampled' && track.keys.length > 0 ? TRIM.exec(track.target ?? '')?.[1] : undefined;
+}
 
 type Edges = [start: ClipKey[] | undefined, end: ClipKey[] | undefined];
 /** An edge at one time: its value just before and just after, and its first key there, if any. */
@@ -16,7 +28,28 @@ interface Side { before: number; after: number; keyed: ClipKey | undefined }
 /** Both edges at one time. */
 interface Moment { t: number; edges: [Side, Side] }
 
-const REST = [0, 1] as const;
+/** Where a trim's start and end edges sit, as fractions of the path's length. */
+export type TrimEdges = readonly [start: number, end: number];
+
+const UNTRIMMED: TrimEdges = [0, 1];
+
+/** Whether `serializeSvg` writes `node` as one `<path>`, so `pathLength` and a dash reach the whole of it. */
+export function writesOnePath(node: SvgPathNode): boolean {
+  const [drawn] = withTrimsDrawn(withDashesResolved([node]));
+  return drawn?.kind === 'path' && !writesOutline(drawn.stroke) && pathAsSvgDraws(drawn).kind === 'path';
+}
+
+/** Where `node`'s own stroke trim puts its edges, as fractions of its path's length; `[0, 1]` untrimmed. */
+export function trimEdgesOf(node: SvgPathNode): TrimEdges {
+  const trim = node.stroke?.trim;
+  if (trim === undefined) return UNTRIMMED;
+  const table = pathLengthTable(node.path);
+  if (!(table.total > 0)) return UNTRIMMED;
+  const whole = { length: table.total };
+  const start = resolveTrim(table, { start: trim.start, end: whole, pace: trim.pace })?.from ?? table.total;
+  const end = resolveTrim(table, { start: { length: 0 }, end: trim.end, pace: trim.pace })?.to ?? 0;
+  return [start / table.total, end / table.total];
+}
 
 function sideAt(keys: ClipKey[] | undefined, rest: number, t: number): Side {
   if (!keys) return { before: rest, after: rest, keyed: undefined };
@@ -71,9 +104,9 @@ function visibilityKeys(moments: Moment[]): ClipKey[] | undefined {
   });
 }
 
-function lowered(id: string, edges: Edges): ClipSampledTrack[] {
+function lowered(id: string, edges: Edges, rest: TrimEdges): ClipSampledTrack[] {
   const times = [...new Set(edges.flatMap((keys) => keys?.map((k) => k.t) ?? []))].sort((a, b) => a - b);
-  const moments = times.map((t): Moment => ({ t, edges: [sideAt(edges[0], REST[0], t), sideAt(edges[1], REST[1], t)] }));
+  const moments = times.map((t): Moment => ({ t, edges: [sideAt(edges[0], rest[0], t), sideAt(edges[1], rest[1], t)] }));
   const label = `#${id} trim`;
   const tracks: ClipSampledTrack[] = [
     { kind: 'sampled', label, target: `${id}.stroke-dasharray`, keys: keysOf(moments, [0, 1], (s, e) => [lengthOf(s, e), GAP]) },
@@ -87,10 +120,13 @@ function lowered(id: string, edges: Edges): ClipSampledTrack[] {
 /**
  * `clip` with each node's `<id>.trim.start` and `<id>.trim.end` tracks replaced by
  * `<id>.stroke-dasharray`, `<id>.stroke-dashoffset` and, where the trimmed span is ever empty,
- * `<id>.visibility` tracks, keyed at every time either edge has a key. An edge with no track holds
- * at 0 (start) or 1 (end). `trimmed` names the nodes those tracks need drawn on `pathLength="1"`.
+ * `<id>.visibility` tracks, keyed at every time either edge has a key. An edge with no track rests
+ * where `restOf(id)` puts it (see `trimEdgesOf`), else at 0 (start) or 1 (end). `trimmed` names the
+ * nodes those tracks need drawn on `pathLength="1"`.
  */
-export function dashTracksOf(clip: Clip): { clip: Clip; trimmed: ReadonlySet<string> } {
+export function dashTracksOf(
+  clip: Clip, restOf: (id: string) => TrimEdges | undefined = () => undefined,
+): { clip: Clip; trimmed: ReadonlySet<string> } {
   const edges = new Map<string, Edges>();
   const tracks: ClipTrack[] = [];
   for (const track of clip.tracks) {
@@ -102,6 +138,6 @@ export function dashTracksOf(clip: Clip): { clip: Clip; trimmed: ReadonlySet<str
     const pair = edges.get(m[1]) ?? edges.set(m[1], [undefined, undefined]).get(m[1])!;
     pair[m[2] === 'start' ? 0 : 1] = (track as ClipSampledTrack).keys;
   }
-  for (const [id, pair] of edges) tracks.push(...lowered(id, pair));
+  for (const [id, pair] of edges) tracks.push(...lowered(id, pair, restOf(id) ?? UNTRIMMED));
   return { clip: { ...clip, tracks }, trimmed: new Set(edges.keys()) };
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Clip, ClipKey, ClipSampledTrack } from '@weasel-js/animator';
-import { dashTracksOf } from './trim';
+import { pathFromD } from '@weasel-js/core';
+import type { SvgPathNode, SvgStroke } from '../types';
+import { dashTracksOf, trimEdgesOf } from './trim';
 
 const clipOf = (tracks: Record<string, ClipKey[]>): Clip => ({
   version: 1, tracks: Object.entries(tracks).map(([target, keys]) => ({ kind: 'sampled', target, keys })),
@@ -36,5 +38,23 @@ describe('dashTracksOf', () => {
       { t: 0, value: [0, 1.0001] }, { t: 500, value: [0, 1.0001] }, { t: 500, value: [0.5, 1.0001] },
     ]);
     expect(keysOf(clip, 'a.visibility')).toEqual([{ t: 0, value: 'hidden' }, { t: 500, value: 'hidden' }, { t: 500, value: 'visible' }]);
+  });
+
+  it('rests an edge with no track where restOf puts it', () => {
+    const { clip } = dashTracksOf(clipOf({ 'a.trim.end': [{ t: 0, value: 0.5 }, { t: 1000, value: 1 }] }), () => [0.25, 1]);
+    expect(keysOf(clip, 'a.stroke-dasharray')).toEqual([{ t: 0, value: [0.25, 1.0001] }, { t: 1000, value: [0.75, 1.0001] }]);
+    expect(keysOf(clip, 'a.stroke-dashoffset')).toEqual([{ t: 0, value: -0.25 }, { t: 1000, value: -0.25 }]);
+  });
+});
+
+describe('trimEdgesOf', () => {
+  const node = (trim?: SvgStroke['trim']): SvgPathNode => ({
+    kind: 'path', path: pathFromD('M0 0 L30 0 L30 10'), fill: { kind: 'none' }, stroke: { paint: { kind: 'solid', color: '#000' }, width: 1, trim },
+  } as SvgPathNode);
+
+  it("reads a node's own trim as fractions of its length, by distance, anchor or default", () => {
+    expect(trimEdgesOf(node())).toEqual([0, 1]);
+    expect(trimEdgesOf(node({ start: 0.25 }))).toEqual([0.25, 1]);
+    expect(trimEdgesOf(node({ start: { length: 10 }, end: { anchor: 1 } }))).toEqual([0.25, 0.75]);
   });
 });
