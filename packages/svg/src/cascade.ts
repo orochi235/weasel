@@ -142,6 +142,9 @@ function matches(el: Element, selector: string): boolean {
 
 const PROPERTY_NAMES = Object.keys(PROPERTIES) as PropertyName[];
 
+/** Elements whose `fill` attribute is SMIL's `freeze` / `remove`, not the paint. */
+const ANIMATION_TAGS = new Set(['animate', 'set', 'animateTransform', 'animateColor', 'animateMotion']);
+
 /**
  * The cascaded value of every property `el` sets. Lowest to highest:
  * presentation attributes, normal rules, normal inline, `!important` rules,
@@ -177,7 +180,9 @@ const cascaded = createPart((el: Element): ReadonlyMap<string, string> => {
     else out.set(prop, rolledBack);
   };
   enterLayer();
+  const timed = ANIMATION_TAGS.has(el.tagName);
   for (const prop of PROPERTY_NAMES) {
+    if (timed && prop === 'fill') continue;
     const attr = el.getAttribute(prop);
     if (attr != null) take(prop, attr, `${prop}="${attr}"`);
   }

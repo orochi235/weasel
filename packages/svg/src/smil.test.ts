@@ -103,6 +103,11 @@ describe('SMIL as a clip', () => {
     expect(keys(tracks[0])).toEqual([[0, [0, 0, 0]], [1000, [90, 5, 5]]]);
   });
 
+  it("reads an animation's fill as its timing, never as a paint", () => {
+    const { warnings } = read('<path d="M0 0L5 0" stroke="#000"><animate attributeName="opacity" values="0;1" dur="1s" fill="freeze"/></path>');
+    expect(warnings).toEqual([]);
+  });
+
   it('steps a set, and a string that does not interpolate', () => {
     const { tracks } = read('<rect id="r" width="1" height="1"/><set href="#r" attributeName="visibility" to="hidden" begin="1s" dur="2s" fill="freeze"/>');
     expect(tracks[0].keys.map((k) => [k.t, k.value, k.easing])).toEqual([[1000, 'hidden', undefined], [3000, 'hidden', { steps: 1 }]]);
