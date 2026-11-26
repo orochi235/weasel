@@ -368,7 +368,8 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   since `batch/2026-11-26-anim` (blits 1.5.3; `ramp.ts`, `mixFollow.ts` and the pilot mix are gone, and
   `ClockSpec.mix` takes the transport). `packages/clock/src/clock.ts` still does for itself:
   - with a mix, history whose tape is `Number.POSITIVE_INFINITY` ms long, so it grows for the clock's life
-  - `seekTransport` re-ramping the rate after a seek back under history, which cuts the tape ahead
+  - `seekTransport` re-ramping the rate after a seek back under history (with calls ahead, blits plays
+    them on rather than cutting the tape)
   - `stepRampLeft` counting the ramp down, and the end-of-run clamps in `syncTo`
   - its own wake and `inert` logic, with a `rebase` after each sleep
 
