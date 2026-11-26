@@ -1,0 +1,99 @@
+import { isBlitsEasing, resolveKeyEasing, type KeyEasing } from '@weasel-js/animator';
+
+type Jump = 'start' | 'end' | 'none' | 'both';
+type Point = { t: number; v: number };
+type Steps = { steps: number; jump?: Jump };
+
+const SAMPLES = 24;
+
+/** A number with at most 4 decimals and no trailing zeros. */
+function numText(n: number): string {
+  return String(Number(n.toFixed(4)) + 0);
+}
+
+function bezierOf(easing: KeyEasing | undefined): readonly [number, number, number, number] | null {
+  return typeof easing === 'object' && easing !== null && 'bezier' in easing ? easing.bezier : null;
+}
+
+function isLinear(easing: KeyEasing | undefined): boolean {
+  return easing === undefined || easing === 'linear';
+}
+
+function stepsOf(easing: KeyEasing | undefined): Steps | null {
+  return isBlitsEasing(easing) && 'steps' in easing ? easing : null;
+}
+
+function sampled(easing: KeyEasing | undefined): number[] {
+  const fn = resolveKeyEasing(easing);
+  return Array.from({ length: SAMPLES + 1 }, (_, i) => fn(i / SAMPLES));
+}
+
+/** The value held through step `k` of `n`. */
+function stepValue(k: number, n: number, jump: Jump): number {
+  if (jump === 'start') return (k + 1) / n;
+  if (jump === 'none') return n > 1 ? k / (n - 1) : 1;
+  if (jump === 'both') return (k + 1) / (n + 1);
+  return k / n;
+}
+
+function staircase({ steps: n, jump = 'end' }: Steps): Point[] {
+  const out: Point[] = [{ t: 0, v: 0 }];
+  for (let k = 0; k < n; k++) {
+    const v = stepValue(k, n, jump);
+    out.push({ t: k / n, v }, { t: (k + 1) / n, v });
+  }
+  out.push({ t: 1, v: 1 });
+  return out.filter((p, i) => i === 0 || p.t !== out[i - 1].t || p.v !== out[i - 1].v);
+}
+
+/** Points a writer inserts where its format has no form for the easing. */
+function expandedOf(easing: KeyEasing | undefined): Point[] {
+  const steps = stepsOf(easing);
+  if (steps) return staircase(steps);
+  return sampled(easing).map((v, i) => ({ t: i / SAMPLES, v }));
+}
+
+function cssLinearPoint(p: number | readonly number[]): string {
+  if (typeof p === 'number') return numText(p);
+  const [out, from, to] = p;
+  const at = (x: number) => `${numText(x * 100)}%`;
+  return [numText(out), from === undefined ? '' : at(from), to === undefined ? '' : at(to)].filter(Boolean).join(' ');
+}
+
+/** The CSS `animation-timing-function` for an easing. */
+export function cssTimingOf(easing: KeyEasing | undefined): string {
+  if (isLinear(easing)) return 'linear';
+  const bezier = bezierOf(easing);
+  if (bezier) return `cubic-bezier(${bezier.map(numText).join(', ')})`;
+  const steps = stepsOf(easing);
+  if (steps) return `steps(${steps.steps}, jump-${steps.jump ?? 'end'})`;
+  if (isBlitsEasing(easing) && 'linear' in easing) return `linear(${easing.linear.map(cssLinearPoint).join(', ')})`;
+  return `linear(${sampled(easing).map(numText).join(', ')})`;
+}
+
+/** How a SMIL `animate` eases into a key, or the points to insert where it has no form for it. */
+export function smilTimingOf(easing: KeyEasing | undefined): {
+  calcMode: 'linear' | 'spline' | 'discrete';
+  keySpline?: string;
+  expand?: Point[];
+} {
+  if (isLinear(easing)) return { calcMode: 'linear' };
+  const bezier = bezierOf(easing);
+  if (bezier) return { calcMode: 'spline', keySpline: bezier.map(numText).join(' ') };
+  const steps = stepsOf(easing);
+  if (steps && steps.steps === 1 && (steps.jump ?? 'end') === 'end') return { calcMode: 'discrete' };
+  return { calcMode: 'linear', expand: expandedOf(easing) };
+}
+
+/** A Lottie keyframe's outgoing and incoming tangents, a hold, or the points to insert. */
+export function lottieTangentsOf(easing: KeyEasing | undefined):
+  | { o: { x: number; y: number }; i: { x: number; y: number } }
+  | { hold: true }
+  | { expand: Point[] } {
+  if (isLinear(easing)) return { o: { x: 0, y: 0 }, i: { x: 1, y: 1 } };
+  const bezier = bezierOf(easing);
+  if (bezier) return { o: { x: bezier[0], y: bezier[1] }, i: { x: bezier[2], y: bezier[3] } };
+  const steps = stepsOf(easing);
+  if (steps && steps.steps === 1 && (steps.jump ?? 'end') === 'end') return { hold: true };
+  return { expand: expandedOf(easing) };
+}
