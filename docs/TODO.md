@@ -264,16 +264,38 @@ the innermost kernel and animator runs on it; weasel's share of each entry below
 `Clip` and binding it to the scene, never a parallel implementation in animator. Each names the blits entry it
 waits on; weasel runs against the local blits checkout until a blits release carries it.
 
+**Imported tracks bind through one general node-data target in core (2026-11-25)**: a `Target` over any field of
+a scene node's data, shown through the same hold mechanism as the pose target with no ops per frame, of which trim
+and vertex color become instances, rather than a registry per property. It is a render-path change, so it ships
+with before/after numbers. Importers keep an animated element's `transform` as a pose instead of baking it, and
+re-lower animated geometry attributes each sample.
+
+- **(P2) [agent] weasel's named easings aren't data blits, CSS or the GPU can carry** (2026-11-25). geom's 30
+  Penner curves (`EASINGS`) exist only as functions. Planned: a script fits each to a CSS bezier and keeps it where
+  the worst error is ≤ 0.003 (18 of 30: the in and out of quad, cubic, quart, quint, sine, expo, circ and back,
+  plus in-out sine and cubic), and otherwise samples a blits `linear()` with points placed adaptively to ≤ 0.001
+  (17–89 points); it writes a generated table in animator whose names resolve to blits `Easing` values, and a test
+  regenerates it against geom's functions. `Clip` keeps names; `bindClip`, importers and exporters resolve them.
+  Measured 2026-11-25: bezier fit by Nelder–Mead on max error (an upper bound, not proven optimal). Needs blits'
+  sampled curve. The three bounce curves are parabolas, so an exporter writes them exactly instead: a key at each
+  contact and peak (easeOutBounce: 0, 36.364%, 54.545%, 72.727%, 81.818%, 90.909%, 95.455%, 100%), each segment
+  eased by quad in `cubic-bezier(1/3, 0, 2/3, 1/3)` or quad out `cubic-bezier(1/3, 2/3, 2/3, 1)`, measured
+  within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. Closes when every weasel easing name plays from the table within those bounds.
+
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
   multiplies into their children, run backward and loop; a remap of a voice's clock is missing (blits: "A voice's
   clock run through a remap"). Closes when a nested timeline maps onto a blits owner with rate, loop and remap, scrubs
   order-independently, and `Clip` carries them.
 
-- **(P2) [agent] SMIL animation import in `@weasel-js/svg`** (2026-11-25). `<animate>`, `<set>`, `<animateTransform>`
-  and `<animateMotion>` read beside `parse.ts` into a `Clip` over the imported nodes, with `begin`/`dur`/
-  `repeatCount`/`keyTimes`/`keySplines`/`calcMode` mapped and anything else reported. Closes when an animated SVG's SMIL plays from the import the way a browser plays it, checked against browser
-  frames.
+- **(P2) [agent] An imported SMIL clip plays nothing yet** (2026-11-25). `parseSvg` reads `<animate>`, `<set>` and
+  `<animateTransform>` into `ParseResult.clip`, tracks named `<node id>.<attribute>` and `<id>.transform.<type>`
+  (`packages/svg/src/smil.ts`), but no binder turns those names into targets: it waits on the node-data target
+  above, on parse keeping an animated element's `transform` as a pose rather than baking it, and on re-lowering
+  animated geometry (`r`, `width`, `d` through the `svg-path` interpolation) each sample. Also left: `animateMotion`
+  (blits: "Keys on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed begins, and an
+  indefinite repeat on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL plays from
+  the import the way a browser plays it, checked against browser frames.
 
 - **(P2) [agent] CSS animation import in `@weasel-js/svg`** (2026-11-25). `parseStylesheet` skips `@keyframes` whole
   (`packages/svg/src/stylesheet.ts`); read them, resolve `animation-*` through the cascade to each element, and
