@@ -81,15 +81,6 @@ When work merges, retire its entry here in the same change.
   subpath.
   Closes when the maintainer has ruled on making the flag forge's default and the ruling is in place.
 
-## Animator
-
-- **(P2) [agent] An animator spring's frame costs 5–6× a blits voice moving the same spring** (2026-11-26). On
-  teitou, `animator-on-blits.bench.ts`'s "spring frame" `today` row takes 0.36 ms at 1,000 springs and 5.3 ms at
-  10,000, where "blits, a spring voice per animation" takes 0.07 and 0.82. A local CPU profile of 1,000 springs
-  puts about 4% in `startPhysics`' tick and a third in blits' `cuedById`, `motions.read` and `stretch.numbers`,
-  likely reached through the `handle.read` that `motionOf` (`engine/codecVoice.ts`) makes per voice per frame
-  (read from self times, not a call tree). Closes when the `today` row is within 2× the blits row.
-
 ## Builds
 
 - **(P3) [agent] labkit's `.d.ts` bundle takes ~3.6 GB, almost none of it TypeScript's** (2026-11-25). On
