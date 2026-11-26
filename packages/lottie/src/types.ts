@@ -39,8 +39,8 @@ export interface LottiePath { ty: 'sh'; nm?: string; ks: LottieStatic<LottieBezi
 export interface LottieFill { ty: 'fl'; c: LottieStatic<number[]>; o: LottieScalar; r: 1 | 2 }
 /** `lc` is the cap (1 butt, 2 round, 3 square) and `lj` the join (1 miter, 2 round, 3 bevel). */
 export interface LottieStroke { ty: 'st'; c: LottieStatic<number[]>; o: LottieScalar; w: LottieScalar; lc: 1 | 2 | 3; lj: 1 | 2 | 3; ml: number }
-/** Trim of the paths before it, edges in percent; `m: 1` trims every path as one. */
-export interface LottieTrim { ty: 'tm'; s: LottieScalar; e: LottieScalar; o: LottieScalar; m: 1 }
+/** Trim of the paths before it, edges in percent; `m: 2` lays the paths end to end and trims them as one. */
+export interface LottieTrim { ty: 'tm'; s: LottieScalar; e: LottieScalar; o: LottieScalar; m: 2 }
 export interface LottieGroupTransform extends LottieTransform { ty: 'tr' }
 
 export type LottieShapeItem = LottiePath | LottieFill | LottieStroke | LottieTrim | LottieGroupTransform;

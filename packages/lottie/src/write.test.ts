@@ -49,7 +49,7 @@ describe('writeLottie', () => {
       'a.trim.end': [{ t: 0, value: 0.2 }, { t: 1000, value: 0.6, easing: { bezier: [0.4, 0, 0.2, 1] } }],
     }));
     const tm = itemsOf(anim.layers[0].shapes[0], 'tm')[0] as LottieTrim;
-    expect(tm).toMatchObject({ m: 1, s: { a: 0, k: 20 }, o: { a: 0, k: 0 } });
+    expect(tm).toMatchObject({ m: 2, s: { a: 0, k: 20 }, o: { a: 0, k: 0 } });
     expect(tm.e).toEqual({
       a: 1,
       k: [{ t: 0, s: [20], o: { x: [0.4], y: [0] }, i: { x: [0.2], y: [1] } }, { t: 60, s: [60] }],
@@ -112,6 +112,16 @@ describe('writeLottie', () => {
     const [layer] = writeLottie([group], clipOf({ 'a.opacity': [{ t: 0, value: 1 }, { t: 1000, value: 0 }] })).layers;
     expect(itemsOf(layer.shapes[0], 'sh')[0]).toMatchObject({ ks: { k: { v: [[5, 0], [15, 0]] } } });
     expect((layer.ks.o.k as { s: number[] }[]).map((k) => k.s[0])).toEqual([50, 0]);
+  });
+
+  it('trims a path with a counter as one: both paths in one group, then a tm laying them end to end', () => {
+    const anim = writeLottie([path('o', 'M0 0 L30 0 L30 30 L0 30 Z M10 10 L10 20 L20 20 L20 10 Z')], clipOf({
+      'o.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }],
+    }));
+    const [group, ...rest] = anim.layers[0].shapes;
+    expect(rest).toEqual([]);
+    expect(group.it.map((i) => i.ty)).toEqual(['sh', 'sh', 'st', 'tm', 'tr']);
+    expect(itemsOf(group, 'tm')[0]).toMatchObject({ m: 2 });
   });
 
   it('keeps a trim off the fill, as SVG trims only the stroke', () => {

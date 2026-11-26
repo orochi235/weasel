@@ -31,7 +31,7 @@ Tracks are named `<id>.<property>`, as the SVG writers in `@weasel-js/svg/animat
 | Track | Lottie |
 |---|---|
 | `<id>.opacity` | the layer's opacity, in percent |
-| `<id>.trim.start`, `<id>.trim.end` | a trim of the stroke, fractions of the path's length written in percent, trimming every subpath as one |
+| `<id>.trim.start`, `<id>.trim.end` | a trim of the stroke, fractions of the path's length written in percent, its subpaths laid end to end and trimmed as one |
 
 Each drawn path is one shape layer holding its subpaths, its solid stroke and its solid fill; the
 last path drawn is the first layer, since Lottie draws its first layer on top. Group transforms and

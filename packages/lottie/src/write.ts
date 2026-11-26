@@ -117,7 +117,7 @@ function layerOf(leaf: Leaf, tracks: Map<string, PlannedTrack>, ctx: { fps: numb
   const end = tracks.get('trim.end');
   const groups: LottieGroup[] = [];
   if (stroke && (start || end)) {
-    const tm: LottieTrim = { ty: 'tm', s: percentOf(start, 0, fps), e: percentOf(end, 100, fps), o: held(0), m: 1 };
+    const tm: LottieTrim = { ty: 'tm', s: percentOf(start, 0, fps), e: percentOf(end, 100, fps), o: held(0), m: 2 };
     groups.push({ ty: 'gr', it: [...shapes, stroke, tm, tr] });
     if (fill) groups.push({ ty: 'gr', it: [...shapes, fill, tr] });
   } else {
