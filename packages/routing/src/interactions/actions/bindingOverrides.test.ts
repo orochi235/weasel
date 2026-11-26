@@ -50,6 +50,21 @@ describe('resolveBindingOverrides', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining("pass key('Mod+Z')"));
     warn.mockRestore();
   });
+
+  it('warns once for an override that does not parse, however often the tree changes', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const root = new ActionsNode(null, true, () => null);
+    const canvas = new ActionsNode(root, false, () => null);
+    canvas.mount();
+    root.registry.overrideBindings({ 'test.once.key': 'Mod+Q' });
+    for (let i = 0; i < 3; i++) {
+      root.registry.mute('test.other')();
+      root.registry.bindingOverrides();
+      canvas.registry.bindingOverrides();
+    }
+    expect(warn.mock.calls.filter(([m]) => String(m).includes('"test.once.key"'))).toHaveLength(1);
+    warn.mockRestore();
+  });
 });
 
 describe('the dispatcher under overrides', () => {
