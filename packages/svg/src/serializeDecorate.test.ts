@@ -50,7 +50,7 @@ describe('serializeSvg decorate', () => {
   });
 
   it('decorates the outermost element of an outlined stroke', () => {
-    const outlined = path({ id: 'o', stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, align: 'inside' } });
+    const outlined = path({ id: 'o', path: pathFromD('M0 0 L50 0 L50 50 Z'), stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, align: 'inner' } });
     const out = serializeSvg([outlined], { decorate: { attrsOf: () => ({ 'data-d': '1' }) } });
     expect(out.match(/data-d="1"/g)).toHaveLength(1);
     expect(out).toMatch(/<path id="o" [^>]*data-d="1"/);
@@ -58,7 +58,7 @@ describe('serializeSvg decorate', () => {
 
   it('warns once, naming the id, when a decorated node is written as sibling elements', () => {
     const warnings: string[] = [];
-    const outlined = path({ id: 'o', stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, align: 'inside' } });
+    const outlined = path({ id: 'o', path: pathFromD('M0 0 L50 0 L50 50 Z'), stroke: { paint: { kind: 'solid', color: '#000' }, width: 2, align: 'inner' } });
     serializeSvg([outlined], { decorate: { attrsOf: () => ({ 'data-d': '1' }) }, onWarn: (m) => warnings.push(m) });
     const ours = warnings.filter((m) => m.includes('decoration'));
     expect(ours).toHaveLength(1);
