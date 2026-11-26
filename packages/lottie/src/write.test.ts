@@ -107,6 +107,13 @@ describe('writeLottie', () => {
     expect(warnings).toEqual(['#g has a gradient fill, which this writer does not write; it is skipped']);
   });
 
+  it('bakes a group\'s transform into the geometry and its opacity into the layer\'s', () => {
+    const group = { kind: 'group', opacity: 0.5, transform: [1, 0, 0, 1, 5, 0], children: [path('a', 'M0 0 L10 0')] } as SvgNode;
+    const [layer] = writeLottie([group], clipOf({ 'a.opacity': [{ t: 0, value: 1 }, { t: 1000, value: 0 }] })).layers;
+    expect(itemsOf(layer.shapes[0], 'sh')[0]).toMatchObject({ ks: { k: { v: [[5, 0], [15, 0]] } } });
+    expect((layer.ks.o.k as { s: number[] }[]).map((k) => k.s[0])).toEqual([50, 0]);
+  });
+
   it('keeps a trim off the fill, as SVG trims only the stroke', () => {
     const node = path('a', 'M0 0 L10 0 L10 10 Z', { fill: { kind: 'solid', color: '#000' } } as Partial<SvgNode>);
     const shapes = writeLottie([node], clipOf({ 'a.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }] })).layers[0].shapes;

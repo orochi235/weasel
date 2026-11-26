@@ -1,3 +1,4 @@
+import { lerp } from '@weasel-js/geom';
 import { lottieTangentsOf, numText, type Frame } from '@weasel-js/svg/animate';
 import type { LottieKeyframe, LottieScalar } from './types';
 
@@ -24,7 +25,7 @@ function pointsOf(frames: readonly Frame[], valueOf: (frame: Frame) => number): 
       const first = pts[0];
       const last = pts[pts.length - 1];
       const held = [...(first.t > 0 ? [{ t: 0, v: first.v }] : []), ...pts, ...(last.t < 1 ? [{ t: 1, v: last.v }] : [])];
-      for (const p of held) out.push({ t: from.t + p.t * (to.t - from.t), v: a + (b - a) * p.v, into: LINEAR });
+      for (const p of held) out.push({ t: lerp(from.t, to.t, p.t), v: lerp(a, b, p.v), into: LINEAR });
     }
     out.push({ t: to.t, v: b, into: 'expand' in tangents ? LINEAR : 'hold' in tangents ? 'hold' : tangents });
   }

@@ -98,9 +98,9 @@ function fillOf({ node, path }: Leaf, label: string, warn: Warn): LottieFill | n
   return { ty: 'fl', ...color, r: path.kind === 'polygon' && path.fillRule === 'evenodd' ? 2 : 1 };
 }
 
-/** A track's value as a scalar in percent, or `fallback` where there is no track. */
-function percentOf(track: PlannedTrack | undefined, fallback: number, fps: number): LottieScalar {
-  const percent = (f: Frame) => (f.value as number) * 100;
+/** A track's value times `factor` as a scalar in percent, or `fallback` where there is no track. */
+function percentOf(track: PlannedTrack | undefined, fallback: number, fps: number, factor = 1): LottieScalar {
+  const percent = (f: Frame) => (f.value as number) * factor * 100;
   if (!track) return held(fallback);
   return track.still ? held(percent(track.still)) : scalarOf(track.frames, percent, fps);
 }
@@ -123,11 +123,9 @@ function layerOf(leaf: Leaf, tracks: Map<string, PlannedTrack>, ctx: { fps: numb
   } else {
     groups.push({ ty: 'gr', it: [...shapes, ...(stroke ? [stroke] : []), ...(fill ? [fill] : []), tr] });
   }
-  const own = tracks.get('opacity');
-  const o = percentOf(own, (node.opacity ?? 1) * 100, fps);
-  const faded = opacity === 1 ? o : o.a === 0 ? held(o.k * opacity) : { a: 1 as const, k: o.k.map((key) => ({ ...key, s: [key.s[0] * opacity] as [number] })) };
+  const o = percentOf(tracks.get('opacity'), (node.opacity ?? 1) * opacity * 100, fps, opacity);
   return {
-    ddd: 0, ind: ctx.ind, ty: 4, nm: node.id ?? `path ${ctx.ind}`, sr: 1, ks: transformOf(ctx.origin, faded), ao: 0,
+    ddd: 0, ind: ctx.ind, ty: 4, nm: node.id ?? `path ${ctx.ind}`, sr: 1, ks: transformOf(ctx.origin, o), ao: 0,
     shapes: groups, ip: 0, op: ctx.op, st: 0, bm: 0,
   };
 }
