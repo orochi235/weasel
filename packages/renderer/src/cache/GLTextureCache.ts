@@ -93,7 +93,11 @@ export class GLTextureCache {
    *  are premultiplied. */
   uploadRegistered(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
     if (this.collidesWithPage(id)) return id;
-    this.registered.add(id);
+    if (!this.registered.has(id)) {
+      this.registered.add(id);
+      // A draw can name an id the registry dropped after this frame's sweep; the next sweep must judge it.
+      this.sweptVersion = -1;
+    }
     this.drew?.(source);
     return this.ensure(id, source, wrap, true);
   }

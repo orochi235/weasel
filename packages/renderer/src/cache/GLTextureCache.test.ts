@@ -148,6 +148,16 @@ describe('GLTextureCache', () => {
       cache.sweep({ getVersion: () => 1, has: () => { asked++; return true; } });
       expect(asked).toBe(0);
     });
+
+    it('is deleted by the next sweep when drawn after the registry dropped it', () => {
+      // A command list built before `unregister` and drawn after the frame's sweep.
+      const { gl } = createGLRecorder();
+      const cache = new GLTextureCache(webglDevice(gl));
+      cache.sweep(live([], 1));
+      cache.uploadRegistered('stale', fakeImage);
+      cache.sweep(live([], 1));
+      expect(cache.has('stale')).toBe(false);
+    });
   });
 
   it('writes an id\'s pixels again, with a warning, when a font atlas and a registered texture share it', () => {
