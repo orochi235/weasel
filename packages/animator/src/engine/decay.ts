@@ -12,14 +12,5 @@ export function decayAsPhysics<T>(o: DecayOptions<T> | TargetDecayOptions<T>): P
     onTick: o.onTick, onDone: o.onDone, cancelKey: o.cancelKey, label: o.label,
   };
   if (o.target) return { ...shared, target: o.target, interrupt: o.interrupt, compositor: o.compositor };
-  return {
-    ...shared,
-    from: o.from,
-    onTick: o.onTick,
-    add: o.add,
-    // DecayOptions doesn't carry subtract; derive from add+scale.
-    subtract: (a, b) => o.add(a, o.scale(b, -1)),
-    scale: o.scale,
-    magnitude: o.magnitude,
-  };
+  return { ...shared, from: o.from, onTick: o.onTick };
 }

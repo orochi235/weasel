@@ -320,8 +320,8 @@ function makeBuilder<TItem>(
           restThreshold: opts.restThreshold,
         };
         if (target) return animator.spring({ ...shared, target });
-        const { interpolate, add, subtract, scale, magnitude } = opts as StaggerSpringOptions<unknown, TItem>;
-        return animator.spring({ ...shared, interpolate, add, subtract, scale, magnitude } as SpringOptions<unknown>);
+        const { interpolate } = opts as StaggerSpringOptions<unknown, TItem>;
+        return animator.spring({ ...shared, interpolate } as SpringOptions<unknown>);
       })) as StaggerBuilder<TItem>['spring'],
   };
 }

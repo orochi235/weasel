@@ -354,25 +354,16 @@ Left open when the CSS, SMIL and Lottie writers landed (2026-11-26).
 What weasel still times for itself, read against blits on 2026-11-25. The direction is in CLAUDE.md
 ("animator becomes a front end over blits").
 
-- **(P2) [agent] Rebuild animator as a front end over blits.** **Springs unblocked: blits 1.5.2 (2026-11-26) carries them.** Its commands (start, cancel, `cancelKey`
+- **(P2) [agent] Rebuild animator as a front end over blits.** Every spring and coast already moves on
+  blits' closed forms. What is left is scheduling: its commands (start, cancel, `cancelKey`
   replace, interrupt that keeps velocity, holds, staggers, live `edit`) each become blits cues, retargets,
   roles and fades, with animator's test suite unchanged as the guard. The places it could lose behavior:
   - `onCancel` timing, and leaving the value where a cancel left it
   - holds' "committed value takes what's left" weighting against blits roles
   - sampling springs into keyframes for the `Element.animate` handoff
 
-  blits 1.5.2 closes form every valid spring constant and takes motion arithmetic from the channel, so
-  these can go:
-  - `engine/integrator.ts`
-  - the Euler branch, the `solvable` gate and the numeric fallbacks in `physicsAnimation.ts`
-  - the public `add`/`subtract`/`scale`/`magnitude` options (`types.ts`, `staggerTypes.ts:49`,
-    `stagger.ts:323`). Ruled to drop them (2026-11-25), with no encoding hook in their place: a `T`
-    that `axesOf` can't encode throws. This is a breaking change to the API.
-
-  `cueSpring`'s targetless branch becomes `spring({ stiffness: 0 })`, which also covers damping 0. Rotations
-  only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.
-  Closes when animator keeps no
-  scheduling of its own and its suite passes.
+  Rotations only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than
+  linear vecs. Closes when animator keeps no scheduling of its own and its suite passes.
 - **(P2) [agent] `@weasel-js/clock` on a blits `Transport`.** **blits 1.5.2 (2026-11-26) takes every workaround; weasel-50 reports `clock-on-transport` all green on it, unmerged.** Branch `clock-on-transport` rebuilds
   `createClock` so that rate, ramp, sync, seek and wake go through one transport. The public API and the
   run layer (passes, `declare`, `seekable`) stay. On 2026-11-25, 11 of the clock's 13 test files passed
@@ -393,9 +384,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   Until blits takes the workarounds, the rebuild adds code (net +43 lines). Closes when the clock runs on
   a released transport with no workarounds, both property test files pass, and `ramp.ts` and the clock's
   own rate math are gone.
-- **(P3) [agent] animator's slew on blits' step.** **Unblocked: blits 1.5.2 exports `slewStep`.** `packages/animator/src/slew.ts` steps its own value.
-  blits' `slew` only works inside a mix, so blits first exports a pure step that its signal uses too. Closes
-  when `slew.ts` holds no step math.
 - **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
   its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` takes bounds, but
   whether it can bounce or spring at them hasn't been checked. Closes when `useDecayLoop` keeps no integrator.

@@ -46,7 +46,7 @@ export interface StaggerTweenOptions<T, TItem> extends StaggerOptions {
 /** Options for the stagger builder's `.spring` in its `onTick` form: a spring per item, where
  *  `from`, `to` and `velocity` may each vary by item. */
 export interface StaggerSpringOptions<T, TItem> extends StaggerOptions,
-  Pick<SpringOptions<T>, 'preset' | 'stiffness' | 'damping' | 'mass' | 'interpolate' | 'add' | 'subtract' | 'scale' | 'magnitude' | 'restThreshold'> {
+  Pick<SpringOptions<T>, 'preset' | 'stiffness' | 'damping' | 'mass' | 'interpolate' | 'restThreshold'> {
   /** Absent: this form hands values to `onTick`. {@link StaggerTargetSpringOptions} moves targets. */
   target?: undefined;
   from: StaggerPerItem<T, TItem>;

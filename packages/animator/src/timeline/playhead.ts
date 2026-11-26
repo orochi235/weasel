@@ -1,3 +1,4 @@
+import { passesOf } from '@msb235/blits';
 import { wrapPositive } from '@weasel-js/geom';
 const finite = (t: number): number => {
   if (!Number.isFinite(t)) throw new RangeError(`a timeline seeks to a finite time, not ${t}`);
@@ -5,7 +6,7 @@ const finite = (t: number): number => {
 };
 
 /** The laps a loop policy allows past the pass it starts on: a count is passes, as a clock's is. */
-const lapsOf = (loop: boolean | number): number => (loop === true ? Infinity : loop === false ? 0 : Math.max(1, loop) - 1);
+const lapsOf = (loop: boolean | number): number => Math.max(1, passesOf(loop)) - 1;
 
 /** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
  *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
