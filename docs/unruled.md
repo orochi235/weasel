@@ -276,6 +276,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 
 ## Scene, move, and history
 
+- 2026-11-25 (my call, audit round 89, history lane): `History.restore` refuses a snapshot naming a negative id, floor,
+  fork point or `nextEntryId` as malformed, since a history counting up from one could reach the floor's id 0. Lifting
+  the counter above 0 on restore and keeping the negative ids was the alternative.
 - 2026-11-25 (my call, audit round 88, history lane): `History.restore` refuses a snapshot naming an id, floor, fork
   point or `nextEntryId` beyond ±2^52 as malformed, leaving 2^52 entries before the counter passes `MAX_SAFE_INTEGER`.
   Rejected: throwing at the push that runs out, after its ops have applied.

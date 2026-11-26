@@ -17,11 +17,20 @@ describe('History.restore — a snapshot of the wrong shape', () => {
     const h = createHistory(undefined);
     const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });
     const top = Number.MAX_SAFE_INTEGER;
-    expect(() => h.restore(snapshotOf({ undoStack: [entry(top)], nextEntryId: 1 }))).toThrow(/within/);
+    expect(() => h.restore(snapshotOf({ undoStack: [entry(top)], nextEntryId: 1 }))).toThrow(/from 0 to/);
     expect(() => h.restore(snapshotOf({ nextEntryId: top }))).toThrow(/nextEntryId/);
     expect(() => h.restore(snapshotOf({ floor: top - 1 }))).toThrow(/floor/);
     expect(h.restore(snapshotOf({ undoStack: [entry(2 ** 52)], nextEntryId: 1 })).restored).toBe(true);
     expect(h.nextEntryId()).toBe(2 ** 52 + 1);
+  });
+
+  it('refuses negative ids, which a later entry could count up to the floor\'s id 0 from', () => {
+    const h = createHistory(undefined);
+    const entry = (id: number) => ({ id, label: 'e', forwardOps: [], baseOps: [] });
+    expect(() => h.restore(snapshotOf({ nextEntryId: -3 }))).toThrow(/nextEntryId/);
+    expect(() => h.restore(snapshotOf({ floor: -5, nextEntryId: 1 }))).toThrow(/floor/);
+    expect(() => h.restore(snapshotOf({ undoStack: [entry(-1)], nextEntryId: 1 }))).toThrow(/from 0 to/);
+    expect(() => h.restore(snapshotOf({ branches: [{ at: -1, entries: [entry(4)] }], nextEntryId: 5 }))).toThrow(/at/);
   });
 
   it('refuses a snapshot in a version it does not read', () => {
