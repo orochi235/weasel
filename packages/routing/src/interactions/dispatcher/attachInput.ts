@@ -71,7 +71,11 @@ export function attachInput(
     actions: src.actions,
     yieldKeys: src.yieldKeys,
     keys: channels.keyboard !== false,
-    uses: () => { redraw.sync(src.dispatchers()); },
+    // `d` may have left the live list with a gesture still held, whose ending must repaint.
+    uses: (d) => {
+      const live = src.dispatchers();
+      redraw.sync(live.includes(d) ? live : [...live, d]);
+    },
     disposed: () => disposed,
   });
   const keys = keyboardInput(core);
