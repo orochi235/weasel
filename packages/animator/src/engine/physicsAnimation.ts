@@ -1,9 +1,7 @@
 import { SPRING_PRESETS } from '@weasel-js/geom';
 import type { AnimationKind, PhysicsHandle, PhysicsOptions } from '../types';
-import { axesOf } from './axes';
-import type { SpringReader } from './codec';
+import { axesOf, type Axes } from './axes';
 import type { AnimationContext } from './context';
-import { stepSpring } from './integrator';
 
 export function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
   const preset = o.preset ? SPRING_PRESETS[o.preset as keyof typeof SPRING_PRESETS] : null;
@@ -14,6 +12,25 @@ export function resolveSpringConstants(o: { preset?: string; stiffness?: number;
   };
 }
 
+/** The length of `v`, or of `v` less `from`, across its axes. */
+function lengthOf(v: readonly number[], from?: readonly number[]): number {
+  let sum = 0;
+  for (let i = 0; i < v.length; i++) {
+    const d = from ? v[i]! - from[i]! : v[i]!;
+    sum += d * d;
+  }
+  return Math.sqrt(sum);
+}
+
+/** `from`'s axes, refused for a value blits can't move as numbers. */
+function requireAxes<T>(from: T, kind: AnimationKind): Axes<T> {
+  const axes = axesOf(from);
+  if (!axes) {
+    throw new Error(`${kind}: \`from\` is not a number, an array of numbers, or a plain object of numeric fields, which are the values it moves`);
+  }
+  return axes;
+}
+
 /** A spring or a coast that hands each frame's value to the caller's `onTick`. */
 export function startPhysics<T>(
   ctx: AnimationContext,
@@ -21,46 +38,28 @@ export function startPhysics<T>(
   kind: AnimationKind,
 ): PhysicsHandle<T> {
   const { codec } = ctx;
-  const id = ctx.nextId();
-  const isNumeric = typeof o.from === 'number';
-  if (!isNumeric && (!o.add || !o.subtract || !o.scale || !o.magnitude)) {
-    throw new Error('physics: add/subtract/scale/magnitude are required for non-numeric T');
-  }
-  const add = o.add ?? ((a: T, b: T) => ((a as unknown as number) + (b as unknown as number)) as unknown as T);
-  const subtract = o.subtract ?? ((a: T, b: T) => ((a as unknown as number) - (b as unknown as number)) as unknown as T);
-  const scale = o.scale ?? ((v: T, k: number) => ((v as unknown as number) * k) as unknown as T);
-  const magnitude = o.magnitude ?? ((v: T) => Math.abs(v as unknown as number));
-  const { stiffness: kBase, damping, mass } = resolveSpringConstants(o);
+  const { stiffness, damping, mass } = resolveSpringConstants(o);
   // Past these, no step of the motion is a number for long: it never rests, and ticks NaN.
-  if (!(mass > 0 && damping >= 0 && kBase >= 0) || !Number.isFinite(mass + damping + kBase)) {
+  if (!(mass > 0 && damping >= 0 && stiffness >= 0) || !Number.isFinite(mass + damping + stiffness)) {
     throw new Error(`${kind}: mass is positive, and damping and stiffness 0 or more, each finite`);
   }
+  const axes = requireAxes(o.from, kind);
+  const checkShape = (v: T, what: string): number[] => {
+    if (axesOf(v)?.shape !== axes.shape) throw new Error(`${kind}: ${what} is not the same shape as \`from\``);
+    return axes.to(v);
+  };
   const restThreshold = o.restThreshold ?? 0.01;
+  let target: { value: T; axes: number[] } | null = o.to == null ? null : { value: o.to, axes: checkShape(o.to, '`to`') };
+  let velocity = o.velocity == null ? new Array<number>(axes.count).fill(0) : checkShape(o.velocity, '`velocity`');
+  let started = false;
 
-  let target: T | null = o.to ?? null;
-  let value = o.from;
-  // Default to zero velocity: assumes scale(_, 0) returns the zero vector of T. Pass an explicit velocity for unusual T where this isn't true.
-  let velocity: T = o.velocity ?? scale(o.from, 0);
-  let lastTime: number | null = null;
-
-  // blits' closed forms need positive damping and mass, and a spring with a target needs
-  // stiffness; decay's handle never takes a target.
-  const solvable = damping > 0 && mass > 0 && (kBase > 0 || kind === 'decay');
-  const fromAxes = solvable ? axesOf(o.from) : null;
-  const sameShape = (v: T | null | undefined): boolean => v == null || axesOf(v)?.shape === fromAxes!.shape;
-  const axes = fromAxes && sameShape(o.to) && sameShape(o.velocity) ? fromAxes : null;
-  let reader: SpringReader | null = null;
-  if (axes) {
-    ctx.seedClock();
-    // Started ahead of `register`, whose `start` listeners may already cancel it.
-    reader = codec.spring({
-      id, axes: axes.count,
-      from: axes.to(o.from),
-      to: o.to == null ? null : axes.to(o.to),
-      velocity: o.velocity == null ? new Array<number>(axes.count).fill(0) : axes.to(o.velocity),
-      stiffness: kBase, damping, mass,
-    });
-  }
+  const id = ctx.nextId();
+  ctx.seedClock();
+  // Started ahead of `register`, whose `start` listeners may already cancel it.
+  const reader = codec.spring({
+    id, axes: axes.count, from: axes.to(o.from), to: target && target.axes, velocity: velocity.slice(),
+    stiffness, damping, mass,
+  });
 
   /** Ends it. As for a tween: canceled from its own onTick, it never completes. */
   const end = (): true => {
@@ -79,59 +78,35 @@ export function startPhysics<T>(
     tick(nowMs, rate) {
       if (ctx.tripwire()) { codec.stop(id); return true; }
       // Played backward, it ends where it started, as a tween does.
-      if (rate < 0 && (nowMs <= 0 || (axes && codec.rewound(id)))) {
-        o.onTick(axes ? axes.from(reader!.motion().value) : o.from);
+      if (rate < 0 && (nowMs <= 0 || codec.rewound(id))) {
+        o.onTick(axes.from(reader.motion().value));
         return end();
       }
-      if (lastTime == null) {
-        lastTime = nowMs;
-        // Already-at-rest short-circuit: decay-mode (target == null)
-        // with starting velocity below threshold should complete
-        // immediately rather than emit a tick and wait a frame.
-        if (target == null && magnitude(velocity) < restThreshold) return end();
-        // The codec's voice has run since registration, so only Euler starts its clock here.
-        if (!axes) {
-          o.onTick(value);
-          return false;
-        }
+      // A coast that starts below the threshold ends on its first frame rather than ticking once.
+      if (!started) {
+        started = true;
+        if (target == null && lengthOf(velocity) < restThreshold) return end();
       }
-      if (axes) {
-        const m = reader!.motion();
-        value = axes.from(m.value);
-        velocity = axes.from(m.velocity);
-      } else {
-        // Semi-implicit Euler, for a T blits cannot move as axes, or constants its closed forms can't solve.
-        const dt = Math.max(-0.064, Math.min(0.064, (nowMs - lastTime) / 1000));
-        const next = stepSpring({ add, subtract, scale }, value, velocity, target, kBase, damping, mass, dt);
-        value = next.value;
-        velocity = next.velocity;
-      }
-      lastTime = nowMs;
-      o.onTick(value);
-      const velRested = magnitude(velocity) < restThreshold;
-      const posRested = target == null
-        ? true
-        : magnitude(subtract(value, target)) < restThreshold;
-      if (!velRested || !posRested) return false;
-      if (target != null) o.onTick(target);
+      const m = reader.motion();
+      velocity = m.velocity;
+      o.onTick(axes.from(m.value));
+      if (!(lengthOf(m.velocity) < restThreshold)) return false;
+      if (target == null) return end();
+      if (!(lengthOf(m.value, target.axes) < restThreshold)) return false;
+      o.onTick(target.value);
       return end();
     },
   });
 
-  const checkShape = (v: T, what: string): void => {
-    if (!sameShape(v)) throw new Error(`physics: ${what} is not the same shape as \`from\``);
-  };
   return {
     ...baseHandle,
     setTarget: (newTo: T | null) => {
-      if (axes && newTo != null) checkShape(newTo, 'setTarget');
-      target = newTo;
-      if (axes && codec.has(id)) codec.retarget(id, newTo == null ? null : axes.to(newTo));
+      target = newTo == null ? null : { value: newTo, axes: checkShape(newTo, 'setTarget') };
+      if (codec.has(id)) codec.retarget(id, target && target.axes);
     },
     setVelocity: (v: T) => {
-      if (axes) checkShape(v, 'setVelocity');
-      velocity = v;
-      if (axes && codec.has(id)) codec.push(id, axes.to(v));
+      velocity = checkShape(v, 'setVelocity');
+      if (codec.has(id)) codec.push(id, velocity);
     },
   };
 }

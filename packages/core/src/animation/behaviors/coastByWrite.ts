@@ -62,9 +62,6 @@ export function coastByWrite<TPose>(a: CoastArgs<TPose>): void {
     velocity: { x: a.vx, y: a.vy },
     friction: a.friction,
     cancelKey,
-    add: (p, q) => ({ x: p.x + q.x, y: p.y + q.y }),
-    scale: (v, k) => ({ x: v.x * k, y: v.y * k }),
-    magnitude: (v) => Math.hypot(v.x, v.y),
     onTick: (delta) => {
       lastValue = delta;
       const frame = new Map<string, TPose | null>();

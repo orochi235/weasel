@@ -46,9 +46,6 @@ describe('an animation canceled from its own onTick', () => {
       from: 0,
       velocity: 1,
       friction: 0.000001,
-      add: (a, b) => a + b,
-      scale: (v, k) => v * k,
-      magnitude: (v) => Math.abs(v),
       onTick: () => handle.cancel(),
       onDone,
     });

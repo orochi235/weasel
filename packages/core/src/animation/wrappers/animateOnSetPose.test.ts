@@ -125,9 +125,6 @@ describe('animateOnSetPose', () => {
         from: 0,
         velocity: 50,
         threshold: 0.5,
-        add: (a, b) => a + b,
-        scale: (v, k) => v * k,
-        magnitude: (v) => Math.abs(v),
         onTick: (x) => {
           writes.push(x);
           // This is the re-entrant call. Without the isTicking() guard,

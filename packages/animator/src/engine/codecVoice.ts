@@ -1,5 +1,5 @@
 import {
-  glide, patch as fnPatch, spring as springPatch, tween as tweenPatch,
+  patch as fnPatch, spring as springPatch, tween as tweenPatch,
   type Handle, type Motion, type Patch,
 } from '@msb235/blits';
 import type { Lanes, Out, Slot } from './lanes';
@@ -87,13 +87,10 @@ export function cueQueued(v: Voice, fault: (id: number, error: unknown) => void)
 // A voice cued now reads voice time 0 at codec time `time`. Each patch holds its subject at rest
 // at `from`, and the codec releases it with a `to` or `push` timed at 0.
 export function cueSpring(slot: Slot, sp: SpringStart): Handle<unknown> {
-  // With no target the spring force is zero whatever the stiffness, leaving damping alone:
-  // velocity falls as exp(-t * damping / mass), a glide whose time constant is mass / damping.
-  const patch: Patch<unknown, Out, void> = sp.to == null
-    ? glide<unknown, Out, number[]>('v', { from: sp.from, ms: (1000 * sp.mass) / sp.damping })
-    : springPatch<unknown, Out, number[]>('v', {
-      from: sp.from, to: sp.from, stiffness: sp.stiffness, damping: sp.damping, mass: sp.mass,
-    });
+  // With no target the spring force is zero whatever the stiffness: a spring of stiffness 0 coasts.
+  const patch: Patch<unknown, Out, void> = springPatch<unknown, Out, number[]>('v', {
+    from: sp.from, to: sp.from, stiffness: sp.to == null ? 0 : sp.stiffness, damping: sp.damping, mass: sp.mass,
+  });
   const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
   if (sp.to) handle.to(slot.key, sp.to, 0);
   handle.push(slot.key, sp.velocity, 0);

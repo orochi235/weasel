@@ -214,7 +214,7 @@ describe('animator.watch', () => {
     act(() => {
       const stop = animator().keepAlive();
       animator().spring<number>({ from: 0, to: 1, onTick: () => {} });
-      animator().decay<number>({ from: 0, velocity: 10, add: (a, b) => a + b, scale: (v, k) => v * k, magnitude: Math.abs, onTick: () => {} });
+      animator().decay<number>({ from: 0, velocity: 10, onTick: () => {} });
       animator().physics<number>({ from: 0, to: null, velocity: 10, onTick: () => {} });
       stop();
     });

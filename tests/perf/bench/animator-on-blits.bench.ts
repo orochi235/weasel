@@ -322,10 +322,7 @@ for (const n of [1000, 10000]) {
 for (const n of [1000, 10000]) {
   for (const k of KINDS) {
     group(`${k.kind} frame — ${n} nodes`, (bench) => {
-      // Today's spring emits its start value on its first frame without
-      // integrating, so it runs a frame behind blits' closed form, plus the
-      // integrator's error: 5 units of a 500-unit swing.
-      const tol = k.kind === 'tween' ? 1e-6 : 5;
+      const tol = 1e-6;
       const today = mountAnimator();
       const tc = nodes(n);
       k.today(today.animator, tc);

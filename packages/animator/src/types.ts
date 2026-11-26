@@ -72,8 +72,9 @@ export interface TweenOptions<T> {
 }
 
 /** A spring animation: runs until the value settles on `to` rather than for a
- *  set duration, so it absorbs an initial velocity naturally. Non-numeric `T`
- *  needs the four vector helpers. */
+ *  set duration, so it absorbs an initial velocity naturally. `T` is a number, an
+ *  array of numbers, or a plain object of numeric fields, and `to` and `velocity` take
+ *  `from`'s shape; any other value throws. */
 export interface SpringOptions<T> {
   /** Absent: this form hands values to `onTick`. The `Target` form of these options moves a target. */
   target?: undefined;
@@ -86,15 +87,8 @@ export interface SpringOptions<T> {
   damping?: number;
   mass?: number;
   interpolate?: Interpolate<T>;
-  /** Vector helpers — required for non-numeric T. When `from`, `to` and `velocity` are numbers, number
-   *  arrays or plain objects of numeric fields of one shape, and stiffness, damping and mass are
-   *  positive, the motion is solved in closed form and these only decide when it has come to rest —
-   *  a `subtract` that wraps an angle won't change the path. */
-  add?: (a: T, b: T) => T;
-  subtract?: (a: T, b: T) => T;
-  scale?: (v: T, k: number) => T;
-  magnitude?: (v: T) => number;
-  /** Distance from the target and speed below which the spring is considered settled: both must be under it. Default 0.01. */
+  /** Distance from the target and speed below which the spring is considered settled: both must be
+   *  under it, each measured as a length across the value's numbers. Default 0.01. */
   restThreshold?: number;
   onTick: (value: T) => void;
   onDone?: () => void;
@@ -105,7 +99,7 @@ export interface SpringOptions<T> {
 
 /** Spring and decay as one animation. With a `to`, a spring pulls toward it;
  *  with `to: null`, the value coasts on its velocity. Either can become the
- *  other mid-flight through the handle. */
+ *  other mid-flight through the handle. `T` is as {@link SpringOptions}'. */
 export interface PhysicsOptions<T> {
   /** Absent: this form hands values to `onTick`. The `Target` form of these options moves a target. */
   target?: undefined;
@@ -118,15 +112,8 @@ export interface PhysicsOptions<T> {
   stiffness?: number;
   damping?: number;
   mass?: number;
+  /** As {@link SpringOptions.restThreshold}; a coast settles on its speed alone. */
   restThreshold?: number;
-  /** Vector helpers — required for non-numeric T. When `from`, `to` and `velocity` are numbers, number
-   *  arrays or plain objects of numeric fields of one shape, and stiffness, damping and mass are
-   *  positive, the motion is solved in closed form and these only decide when it has come to rest —
-   *  a `subtract` that wraps an angle won't change the path. */
-  add?: (a: T, b: T) => T;
-  subtract?: (a: T, b: T) => T;
-  scale?: (v: T, k: number) => T;
-  magnitude?: (v: T) => number;
   onTick: (value: T) => void;
   onDone?: () => void;
   cancelKey?: string;
@@ -144,7 +131,8 @@ export interface PhysicsHandle<T = unknown> extends AnimationHandle {
 }
 
 /** Momentum: coast from `from` at `velocity`, slowing by `friction` each
- *  second until below `threshold`. What a flick-to-pan leaves behind. */
+ *  second until below `threshold`. What a flick-to-pan leaves behind. `T` is as
+ *  {@link SpringOptions}'. */
 export interface DecayOptions<T> {
   /** Absent: this form hands values to `onTick`. The `Target` form of these options moves a target. */
   target?: undefined;
@@ -152,14 +140,8 @@ export interface DecayOptions<T> {
   velocity: T;
   /** Per-second velocity multiplier in (0, 1]; at 1 it coasts on for good. Default 0.95. */
   friction?: number;
-  /** Velocity magnitude below which decay stops. Default 0.5. */
+  /** Speed below which decay stops, measured as a length across the value's numbers. Default 0.5. */
   threshold?: number;
-  /** When `from` and `velocity` are numbers, number arrays or plain objects of numeric fields of one
-   *  shape and `friction` is below 1, the motion is solved in closed form: `add` and `scale` go
-   *  unused and `magnitude` only decides when it has come to rest. */
-  add: (a: T, b: T) => T;
-  scale: (v: T, k: number) => T;
-  magnitude: (v: T) => number;
   onTick: (value: T) => void;
   onDone?: () => void;
   cancelKey?: string;

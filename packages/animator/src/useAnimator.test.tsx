@@ -270,16 +270,16 @@ describe('useAnimator.spring', () => {
     expect(midFlight('wobbly')).toBeCloseTo(midFlight(), 6);
   });
 
-  it('throws if T is non-numeric and vector helpers are missing', () => {
+  it('throws for a T that is not numbers, or a `to` shaped unlike `from`', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
     expect(() =>
-      result.current.spring({
-        from: { x: 0, y: 0 },
-        to: { x: 10, y: 10 },
-        onTick: () => {},
-      } as never),
-    ).toThrow(/add\/subtract\/scale\/magnitude/);
+      result.current.spring({ from: { x: 'a' }, to: { x: 'b' }, onTick: () => {} } as never),
+    ).toThrow(/plain object of numeric fields/);
+    expect(() =>
+      result.current.spring<unknown>({ from: { x: 0, y: 0 }, to: [10, 10], onTick: () => {} }),
+    ).toThrow(/same shape/);
+    expect(result.current.isActive()).toBe(false);
   });
 });
 
@@ -288,7 +288,7 @@ describe('physics constants no motion can follow', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
     const onTick = () => {};
-    const coast = { from: 0, velocity: 100, add: (a: number, b: number) => a + b, scale: (v: number, k: number) => v * k, magnitude: Math.abs, onTick };
+    const coast = { from: 0, velocity: 100, onTick };
     expect(() => result.current.spring({ from: 0, to: 10, mass: 0, onTick })).toThrow(/mass is positive/);
     expect(() => result.current.spring({ from: 0, to: 10, mass: -1, onTick })).toThrow(/mass is positive/);
     expect(() => result.current.physics({ from: 0, to: 10, damping: -5, onTick })).toThrow(/mass is positive/);
@@ -315,9 +315,6 @@ describe('useAnimator.decay', () => {
         velocity: 600, // px/sec
         friction: 0.001,
         threshold: 1,
-        add: (a, b) => a + b,
-        scale: (v, k) => v * k,
-        magnitude: (v) => Math.abs(v),
         onTick: (v) => ticks.push(v),
         onDone,
       });
@@ -337,9 +334,6 @@ describe('useAnimator.decay', () => {
         from: 0,
         velocity: 0.1,
         threshold: 1,
-        add: (a, b) => a + b,
-        scale: (v, k) => v * k,
-        magnitude: (v) => Math.abs(v),
         onTick: () => {},
         onDone,
       });
@@ -665,19 +659,12 @@ describe('useAnimator.physics', () => {
     expect(samples[samples.length - 1]).toBeGreaterThan(beforeKick + 10);
   });
 
-  const vecOps = {
-    add: (a: number[], b: number[]) => a.map((x, i) => x + b[i]!),
-    subtract: (a: number[], b: number[]) => a.map((x, i) => x - b[i]!),
-    scale: (v: number[], k: number) => v.map((x) => x * k),
-    magnitude: (v: number[]) => Math.hypot(...v),
-  };
-
   it('setTarget throws on a target shaped differently from `from`', () => {
     const clock = makeClock();
     const { result } = renderHook(() => useAnimator(clock));
     let handle!: ReturnType<typeof result.current.physics<number[]>>;
     act(() => {
-      handle = result.current.physics<number[]>({ from: [0, 0], to: [10, 10], ...vecOps, onTick: () => {} });
+      handle = result.current.physics<number[]>({ from: [0, 0], to: [10, 10], onTick: () => {} });
     });
     act(() => clock.advance(16));
     expect(() => handle.setTarget([1, 2, 3])).toThrow(/shape/);
@@ -688,7 +675,7 @@ describe('useAnimator.physics', () => {
     const { result } = renderHook(() => useAnimator(clock));
     let handle!: ReturnType<typeof result.current.physics<number[]>>;
     act(() => {
-      handle = result.current.physics<number[]>({ from: [0, 0], to: [10, 10], ...vecOps, onTick: () => {} });
+      handle = result.current.physics<number[]>({ from: [0, 0], to: [10, 10], onTick: () => {} });
     });
     act(() => clock.advance(16));
     expect(() => handle.setVelocity([1, 2, 3])).toThrow(/shape/);
