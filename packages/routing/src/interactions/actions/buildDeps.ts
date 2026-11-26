@@ -1,7 +1,7 @@
 /**
  * Shared dep-bag builder — the single implementation behind both the gesture
- * dispatcher's per-invocation `buildDeps` and `ActionsRegistry.trigger`'s
- * `requires` branch. Reads the action's declared `requires`, resolves each
+ * dispatcher's per-invocation `buildDeps` and every `ActionsRegistry` path that
+ * runs an action (`trigger`, `begin`, `preview`, menu rows). Reads the action's declared `requires`, resolves each
  * name against the `DepRegistry`, and (dev builds only) wraps the bag in a
  * Proxy that warns on undeclared reads.
  */

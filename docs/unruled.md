@@ -20,6 +20,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-25 (my call, audit round 89): `trigger`, `preview`, `begin`, menu rows and the last operation hand an action
+  only the deps its `requires` names, as its own key binding does, rather than giving an action without `requires`
+  the old fixed bag (selection, scene, history, view, activeTool, booleansAdapter) on those paths alone.
 - 2026-11-25 (my call, audit round 88): `describeShortcuts` throws for a tool set with the id `other`, which its group
   of tools in no set uses, rather than merging the two or renaming one. An action whose `group` is `other` still lists
   with the ungrouped actions, under the same "Other" heading either would get.

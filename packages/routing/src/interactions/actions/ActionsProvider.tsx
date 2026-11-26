@@ -41,20 +41,9 @@ import type { History } from '@weasel-js/history';
 /** @internal Provided by `<ActionsProvider>`, `<InputScope>` and `<Yoke>`. */
 export const ActionsContext = createContext<ActionsRegistry | null>(null);
 
-/** The deps an action is invoked with: its declared `requires` when it has
- *  one, the legacy fixed bag otherwise. The fixed bag has no `applyOps`, so an
- *  action that needs the consumer's history must declare it. */
+/** The deps an action is invoked with: its declared `requires`, as the dispatcher builds them. */
 function depsFor(a: Action, r: DepRegistry | null): ActionDeps {
-  if (!r) return {};
-  if (a.requires) return createActionDeps(a, r);
-  return {
-    selection: r.get('selection' as DepName),
-    scene: r.get('scene' as DepName),
-    history: r.get('history' as DepName),
-    view: r.get('view' as DepName),
-    activeTool: r.get('activeTool'),
-    booleansAdapter: r.get('booleansAdapter' as DepName),
-  } as ActionDeps;
+  return r ? createActionDeps(a, r) : {};
 }
 
 /**

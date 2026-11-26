@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { ActionDisabledReason, type Action } from './action';
 import { ActionsNode } from './ActionsProvider';
 import { dynamicActionId } from './actionIds';
+import { createDepRegistry } from './depNode';
 
 describe('ActionsRegistry.trigger', () => {
   it('asks enabled at the world point its params carry', () => {
@@ -42,5 +43,17 @@ describe('ActionsRegistry.trigger', () => {
     root.registry.trigger(dynamicActionId('test.insert'));
     expect(run.mock.calls[0]![1]).toEqual({ kind: 'ellipse' });
     expect(root.registry.paramsOf(dynamicActionId('test.insert'))).toEqual({ kind: 'ellipse' });
+  });
+});
+
+describe('the deps trigger hands an action', () => {
+  it('are its declared requires alone, as the dispatcher builds them', () => {
+    const deps = createDepRegistry();
+    (deps.register as (name: string, make: () => () => unknown) => void)('selection', () => () => ({ marker: 1 }));
+    const node = new ActionsNode(null, true, () => deps);
+    const seen: Record<string, unknown>[] = [];
+    node.registry.register({ id: 'test.bare', label: 'Bare', invoker: { timing: 'immediate', run: (d) => { seen.push({ ...d }); } } });
+    expect(node.registry.trigger(dynamicActionId('test.bare'))).toBe(true);
+    expect(seen).toEqual([{}]);
   });
 });
