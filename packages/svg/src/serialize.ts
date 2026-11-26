@@ -144,7 +144,9 @@ function nodeXml(
 ): string {
   const drawn = node.kind === 'path' ? pathDrawn(node) : null;
   const kind = drawn ? drawnXml(drawn, registry, namespaces, warn, layoutOf, painted) : kindXml(node, registry, namespaces, warn, layoutOf, painted);
-  const xml = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node, drawn), painted) : kind;
+  const leaf = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node, drawn), painted) : kind;
+  const { id } = node;
+  const xml = id === undefined ? leaf : leaf.replace(/^<[\w:]+/, (open) => `${open} id="${escapeAttr(id)}"`);
   if (!node.hidden) return xml;
   // An outlined stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)

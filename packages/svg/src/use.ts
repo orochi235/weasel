@@ -28,6 +28,9 @@ export function spaceOfUse(el: Element, ctm: Matrix, style: StyleContext, onWarn
   return multiply(multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn)), at);
 }
 
+/** Whether a `<use>` is being drawn: what is read now is a copy of its target, not the element. */
+export const insideUse = (): boolean => drawing.length > 0;
+
 /**
  * What `el` draws: its target under `el`'s transform, moved by its `x` and `y`,
  * inheriting from `el` rather than from where the target sits. A `<symbol>`

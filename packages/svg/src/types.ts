@@ -138,6 +138,9 @@ export interface SvgPathNode {
    *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
    *  back as `display="none"`. */
   hidden?: boolean;
+  /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
+   *  has none, as it is not the element. */
+  id?: string;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -180,6 +183,9 @@ export interface SvgGroupNode {
    *  then a group of its content. `svgNodesToKitDrafts` reads it back as that one group. Written as
    *  `data-weasel-group-box`. */
   groupBox?: true;
+  /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
+   *  has none, as it is not the element. */
+  id?: string;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -242,6 +248,9 @@ export interface SvgTextNode {
    *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
    *  back as `display="none"`. */
   hidden?: boolean;
+  /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
+   *  has none, as it is not the element. */
+  id?: string;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }
@@ -289,6 +298,9 @@ export interface SvgImageNode {
    *  `display="none"` here, or a leaf under `visibility="hidden"`. Written
    *  back as `display="none"`. */
   hidden?: boolean;
+  /** The element's `id`, which an animation or a stylesheet names it by. A copy a `<use>` draws
+   *  has none, as it is not the element. */
+  id?: string;
   /** Opaque per-element bag for declared namespaces. See `NamespaceMeta`. */
   meta?: NamespaceMeta;
 }

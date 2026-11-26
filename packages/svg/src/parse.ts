@@ -40,7 +40,7 @@ import { booleanAttrOf } from './booleanGroup';
 import { textFrameAttrOf } from './framedText';
 import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
-import { parseUse, spaceOfUse } from './use';
+import { insideUse, parseUse, spaceOfUse } from './use';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
 
@@ -204,6 +204,7 @@ function readChild(
   if (!node) return [];
   const parsed = Array.isArray(node) ? node : [node];
   if (hidden) for (const n of parsed) n.hidden = true;
+  if (el.id && parsed.length === 1 && !insideUse()) parsed[0].id = el.id;
   return parsed;
 }
 
