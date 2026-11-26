@@ -364,20 +364,16 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 
   Rotations only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than
   linear vecs. Closes when animator keeps no scheduling of its own and its suite passes.
-- **(P2) [agent] The clock's last workarounds over blits' `Transport`.** `createClock` runs on a transport
-  since `batch/2026-11-26-anim` (blits 1.5.3; `ramp.ts`, `mixFollow.ts` and the pilot mix are gone, and
-  `ClockSpec.mix` takes the transport). `packages/clock/src/clock.ts` still does for itself:
-  - with a mix, history whose tape is `Number.POSITIVE_INFINITY` ms long, so it grows for the clock's life
-  - `seekTransport` re-ramping the rate after a seek back under history (with calls ahead, blits plays
-    them on rather than cutting the tape)
-  - `stepRampLeft` counting the ramp down, and the end-of-run clamps in `syncTo`
-  - its own wake and `inert` logic, with a `rebase` after each sleep
-
-  blits 1.5.3 (`ef3b7e4e`) wakes a transport on its own rate and seek and takes an earlier timestamp as
-  zero time, so the last item is weasel's to remove now. The first two need blits to seek a transport
-  with a mix without unbounded history, and to keep a rate across a seek back; blits' TODO has no entry
-  for either since it retired "A `Transport` that can be a clock on its own". Closes when `clock.ts`
-  keeps none of the four and `clock.pbt` and `calls.pbt` still pass.
+- **(P2) [agent] Land branch `clock-ramp-read`: the clock reads blits' ramp and seek floor.** It drops the
+  clock's own ramp count for `Transport.ramping`, clamps seeks to `Transport.horizon`, bounds a mix clock's
+  history by the new `ClockSpec.keep`, and stops a sync at the end of the run with `when` rather than seeking
+  back from past it. Both reads are on blits `main` (`7943b06b`), unreleased. `clock.pbt`'s model property
+  fails on a blits bug, also latent on 1.5.3: after a seek back across a `seek: 'jump'`, calls taped past the
+  jump replay at the wrong mix time (a `ramp` made at 1e15, sought back to 0, replays at 100). blits-e3 put
+  the fix to Mike on 2026-11-26. Re-asserting the rate after a seek back, and the clock's own `inert` and
+  rebase after a sleep, stay: both are documented host use of a transport, ruled with blits on 2026-11-26.
+  Closes when a blits release carries both reads and the jump fix, and the branch merges with `clock.pbt`
+  passing.
 - **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
   its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` takes bounds, but
   whether it can bounce or spring at them hasn't been checked. Closes when `useDecayLoop` keeps no integrator.
