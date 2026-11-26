@@ -50,7 +50,7 @@ function styleOf({ duration, passes, tracks }: ClipPlan): string {
   for (const { id, prop, still, frames: keys } of tracks) {
     const rule = rules.get(id) ?? rules.set(id, { statics: [], animations: [] }).get(id)!;
     if (still !== undefined) {
-      rule.statics.push(`${prop}: ${still}`);
+      rule.statics.push(`${prop}: ${still.text}`);
       continue;
     }
     let name = `${cssIdent(id)}-${prop}`;

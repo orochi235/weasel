@@ -1,0 +1,55 @@
+{
+  "name": "@weasel-js/lottie",
+  "version": "2.0.0",
+  "description": "Writes a @weasel-js/animator clip, with the SVG shapes it moves, as a Lottie animation.",
+  "weasel": {
+    "tier": "other"
+  },
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "author": "orochi235",
+  "homepage": "https://orochi235.github.io/weasel/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/orochi235/weasel.git",
+    "directory": "packages/lottie"
+  },
+  "bugs": {
+    "url": "https://github.com/orochi235/weasel/issues"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "node ../../scripts/package-test.mjs"
+  },
+  "dependencies": {
+    "@weasel-js/geom": "2.0.0",
+    "@weasel-js/paint": "2.0.0"
+  },
+  "peerDependencies": {
+    "@weasel-js/animator": "2.0.0",
+    "@weasel-js/svg": "2.0.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}

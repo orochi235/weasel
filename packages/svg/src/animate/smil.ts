@@ -69,7 +69,7 @@ function pointsOf(prop: string, frames: readonly Frame[]): { points: Point[]; mo
 
 /** One track as an `<animate>`, or a `<set>` where it never moves. */
 function animateOf({ prop, still, frames }: PlannedTrack, duration: number, timing: string): string {
-  if (still !== undefined) return `<set attributeName="${escapeAttr(prop)}" to="${escapeAttr(still)}"${timing}/>`;
+  if (still !== undefined) return `<set attributeName="${escapeAttr(prop)}" to="${escapeAttr(still.text)}"${timing}/>`;
   const { points, mode } = pointsOf(prop, frames);
   const attrs: [string, string][] = [['attributeName', prop]];
   if (mode !== 'linear') attrs.push(['calcMode', mode]);
@@ -85,7 +85,7 @@ function animationsOf({ duration, passes, tracks }: ClipPlan, warn: Warn): Map<s
     : ' fill="freeze"';
   const out = new Map<string, string>();
   for (const track of tracks) {
-    if ([track.still, ...track.frames.map((f) => f.text)].some((text) => text?.includes(';'))) {
+    if ([track.still?.text, ...track.frames.map((f) => f.text)].some((text) => text?.includes(';'))) {
       warn(`#${track.id}.${track.prop} holds a value with a ";", which a SMIL values list cannot; it is skipped`);
       continue;
     }

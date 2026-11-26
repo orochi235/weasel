@@ -20,8 +20,8 @@ export interface Frame { t: number; value: ClipKey['value']; text: string; easin
 export interface PlannedTrack {
   id: string;
   prop: string;
-  /** The value it holds throughout, where it never moves. */
-  still?: string;
+  /** The key it holds throughout, where it never moves. */
+  still?: Frame;
   /** Its keys, held out to 0 and the duration where they stop short of them; empty where `still`. */
   frames: Frame[];
 }
@@ -37,7 +37,7 @@ export interface ClipPlan {
 /** The decoration a writer adds to the document. */
 export interface Written { style?: string; childrenOf?(id: string): string | undefined }
 
-function idsIn(nodes: readonly SvgNode[], out = new Set<string>()): Set<string> {
+export function idsIn(nodes: readonly SvgNode[], out = new Set<string>()): Set<string> {
   for (const node of nodes) {
     if (node.id !== undefined) out.add(node.id);
     if (node.kind === 'group') idsIn(node.children, out);
@@ -68,18 +68,31 @@ function heldOut(frames: Frame[], duration: number): Frame[] {
   ];
 }
 
-/** The value a track shows at 0: its last key there, else its first. */
-function valueAtStart(frames: readonly Frame[]): string {
+/** The key a track shows at 0: its last key there, else its first. */
+function frameAtStart(frames: readonly Frame[]): Frame {
   let i = 0;
   while (i + 1 < frames.length && frames[i + 1].t <= 0) i++;
-  return frames[i].text;
+  return frames[i];
 }
+
+/** `onWarn`, saying each message once. */
+export function createWarnOnce(onWarn: Warn | undefined): Warn {
+  const said = new Set<string>();
+  return (message) => {
+    if (said.has(message)) return;
+    said.add(message);
+    onWarn?.(message);
+  };
+}
+
+/** A track target split into its node id and property; a trim edge's property is `trim.start` or `trim.end`. */
+const TARGET = /^(.*?)\.((?:trim\.)?[^.]+)$/;
 
 /**
  * The tracks of `clip` a writer in `format` can put on the nodes whose ids are in `ids`, warning
  * through `warn` for each it cannot.
  */
-function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, warn: Warn): ClipPlan {
+export function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, warn: Warn): ClipPlan {
   const sampled = clip.tracks.filter((t): t is ClipSampledTrack => t.kind === 'sampled');
   if (sampled.length < clip.tracks.length) warn(`the clip has event or nested timeline tracks, which ${format} cannot carry; they are skipped`);
   const duration = clip.duration ?? Math.max(0, ...sampled.flatMap((t) => t.keys.map((k) => k.t)));
@@ -92,9 +105,7 @@ function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, warn: Wa
       warn(`${target} moves a transform, which this writer does not write yet; it is skipped`);
       continue;
     }
-    const dot = target.lastIndexOf('.');
-    const id = target.slice(0, dot);
-    const prop = target.slice(dot + 1);
+    const [, id, prop] = TARGET.exec(target) ?? [target, target, ''];
     if (!ids.has(id)) {
       warn(`the clip moves #${id}, which no node has; its tracks are skipped`);
       continue;
@@ -107,7 +118,7 @@ function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, warn: Wa
       continue;
     }
     const frames = keys.map((k, i): Frame => ({ t: k.t, value: k.value, text: texts[i]!, easing: k.easing }));
-    if (keys.length === 1 || !(duration > 0)) tracks.push({ id, prop, still: valueAtStart(frames), frames: [] });
+    if (keys.length === 1 || !(duration > 0)) tracks.push({ id, prop, still: frameAtStart(frames), frames: [] });
     else tracks.push({ id, prop, frames: heldOut(frames, duration) });
   }
   return { duration, passes, tracks };
@@ -122,12 +133,7 @@ function planClip(clip: Clip, ids: ReadonlySet<string>, format: string, warn: Wa
 export function serializeAnimated(
   nodes: SvgNode[], clip: Clip, opts: SerializeOptions, format: string, write: (plan: ClipPlan, warn: Warn) => Written,
 ): string {
-  const said = new Set<string>();
-  const warn: Warn = (message) => {
-    if (said.has(message)) return;
-    said.add(message);
-    opts.onWarn?.(message);
-  };
+  const warn = createWarnOnce(opts.onWarn);
   const { clip: lowered, trimmed } = dashTracksOf(clip);
   const own = opts.decorate;
   const written = write(planClip(lowered, idsIn(nodes), format, warn), warn);
