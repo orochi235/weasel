@@ -71,6 +71,7 @@ export type ParamEntry = ParamSpec | ParamGroup;
 /** Params and groups by key, in the order a lab lists them. */
 export type ParamShape = { readonly [key: string]: ParamEntry };
 
+/** The value an enum option stands for: the string itself, or the `value` of a labeled option. */
 export type ParamOptionValue<O> = O extends string ? O : O extends { value: infer V } ? V : never;
 
 /** The value one entry holds. */
