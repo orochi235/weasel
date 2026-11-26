@@ -98,11 +98,6 @@ interface SpringOptions<T> {
   damping?: number;
   mass?: number;
   interpolate?: Interpolate<T>;
-  /** T-shape-aware vector helpers — required for non-numeric T. */
-  add?: (a: T, b: T) => T;
-  subtract?: (a: T, b: T) => T;
-  scale?: (v: T, k: number) => T;
-  magnitude?: (v: T) => number;
   /** Velocity magnitude below which the spring is considered settled. */
   restThreshold?: number;        // default 0.01
   onTick: (value: T) => void;
@@ -117,13 +112,15 @@ interface DecayOptions<T> {
   friction?: number;
   /** Velocity magnitude below which decay stops. Default 0.5. */
   threshold?: number;
-  add: (a: T, b: T) => T;
-  scale: (v: T, k: number) => T;
-  magnitude: (v: T) => number;
   onTick: (value: T) => void;
   onDone?: () => void;
   cancelKey?: string;
 }
+```
+
+The per-call `add`/`subtract`/`scale`/`magnitude` helpers were dropped (2026-11-26): blits springs every value `axesOf` encodes in closed form, and a value it can't encode throws.
+
+```ts
 
 export function useAnimator(opts?: UseAnimatorOptions): Animator;
 ```
