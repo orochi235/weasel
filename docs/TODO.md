@@ -265,9 +265,9 @@ the innermost kernel and animator runs on it; weasel's share of each entry below
 waits on; weasel runs against the local blits checkout until a blits release carries it.
 
 **Imported tracks bind through one general node-data target in core (2026-11-25)**: a `Target` over any field of
-a scene node's data, shown through the same hold mechanism as the pose target with no ops per frame, of which trim
-and vertex color become instances, rather than a registry per property. It is a render-path change, so it ships
-with before/after numbers. An animated `transform` moves each shape's pose by the change from the transform the
+a scene node's data, shown through the same hold mechanism as the pose target with no ops per frame, rather than a
+registry per property. Trim keeps its paint-context registry: measured 2026-11-25, a trim shown through node data
+builds a frame's commands 2.2× slower at 100 and 1,000 nodes (`tests/perf/scene/trim-data-ply.bench.ts`). An animated `transform` moves each shape's pose by the change from the transform the
 import baked, and animated geometry attributes are re-lowered each sample (`svgClipBinder`, built 2026-11-25).
 
 - **(P2) [agent] weasel's named easings aren't data blits, CSS or the GPU can carry** (2026-11-25). geom's 30

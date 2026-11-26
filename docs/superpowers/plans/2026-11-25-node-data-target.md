@@ -1,6 +1,7 @@
 # Node-data target: one target over any field of a node's data
 
-**Status (2026-11-25): steps 1, 2 and 3 built (step 3 as `svgClipBinder`, `fb4ded0e53`); step 4 unbuilt.** Branch `node-target`, cut from `anim-import`.
+**Status (2026-11-25): steps 1, 2 and 3 built (step 3 as `svgClipBinder`, `fb4ded0e53`). Step 4 was measured
+and not built: trim keeps its paint-context path (results under step 4).** Branch `node-target`, cut from `anim-import`.
 Delete this file when the work merges. Its first commit is titled "WIP:"; reword it before the batch. Decision recorded in `docs/TODO.md` "## Animation import" (Mike chose the general target, 2026-11-25).
 
 For: the session building it. Answers: how a clip track named `<id>.<attribute>` moves a scene node's
@@ -45,6 +46,21 @@ it (tessellation, bounds), is rebuilt each frame. Trim and vertex color today by
    animation on 1, 100 and 1,000 path nodes, frame time and allocations, and a still scene for the
    overhead where nothing animates. If the shown-copy rebuild costs past noise, keep a paint-context fast
    path for fields a painter can apply without new geometry, and say so in the report.
+
+   **Measured 2026-11-25** (`tests/perf/scene/trim-data-ply.bench.ts`, one M3 Max fleet node, 5 rounds × 60
+   frames per arm, interleaved; raw runs in `trim-data-ply.runs.jsonl`, digest `trim-data-ply.digest.mjs`).
+   Medians per frame. "Build" is the frame's commands; "render" is the renderer against a recording GL context:
+
+   | nodes | trim moving | build, registry | build, ply | render, registry | render, ply | new space, registry | new space, ply |
+   |------:|:-----------:|----------------:|-----------:|-----------------:|------------:|--------------------:|---------------:|
+   |     1 | yes         |        0.014 ms |   0.030 ms |         0.071 ms |    0.084 ms |             98 KiB |        104 KiB |
+   |   100 | yes         |        0.218 ms |   0.495 ms |         4.687 ms |    4.786 ms |         10,949 KiB |     11,243 KiB |
+   | 1,000 | yes         |        2.341 ms |   5.343 ms |        50.549 ms |   49.534 ms |         11,524 KiB |     12,986 KiB |
+   | 1,000 | no          |        0.827 ms |   0.834 ms |         3.846 ms |    4.032 ms |         10,466 KiB |     10,404 KiB |
+
+   Showing a trim through the data ply builds commands about 2.2× slower, because each frame's new data
+   misses the painter memo. That gap is past noise, so the registry stays as the fast path for a field a painter
+   applies without new geometry. Render time is the same in both arms, and a still scene costs the same either way.
 
 ## Order
 
