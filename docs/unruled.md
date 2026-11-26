@@ -4298,3 +4298,10 @@ Calls the lanes made without a ruling:
 - 2026-11-25 (the fixer's call): `ExtensionRegistry.register` throws a `TypeError` for an `undefined` value, with no
   override, since `get` answers `undefined` for an id nobody holds and a registered `undefined` could not be told from
   none. Storing it, so the next registration of any value overwrote it without `replace`, was the alternative.
+
+## Audit round eighty-nine (2026-11-25): renderer.cache
+
+- 2026-11-25 (the fixer's call): `GLTextureCache` keeps whichever came first where one id names both a glyph page
+  (`uploadR8`, `uploadRGBA`) and an image (`upload`, `uploadRegistered`), and warns once; an image is never written
+  over a page, and a sweep never deletes one. Rewriting the texture with the later upload, as the font-atlas and
+  registered-texture collision does, was the alternative.

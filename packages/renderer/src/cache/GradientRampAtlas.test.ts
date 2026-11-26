@@ -189,6 +189,18 @@ describe('GradientRampAtlas', () => {
     expect(atlas.height).toBe(RAMP_ATLAS_MAX_ROWS);
   });
 
+  it('leaves every row where it was when a ramp on a full atlas fails to bake', () => {
+    const { gl } = createGLRecorder();
+    const atlas = new GradientRampAtlas(webglDevice(gl));
+    const ramps = distinctRamps(RAMP_ATLAS_MAX_ROWS + 1);
+    const rows = ramps.slice(0, RAMP_ATLAS_MAX_ROWS).map((stops) => atlas.upload(stops));
+    const bad: GradStop[] = [{ offset: 0, color: '#ff' }, { offset: 1, color: '#000000' }];
+    expect(() => atlas.upload(bad)).toThrow();
+    // The oldest row is still its own, and the next new ramp recycles it rather than a live row.
+    expect(atlas.wouldReshape(ramps[0])).toBe(false);
+    expect(atlas.upload(ramps.at(-1)!)).toBe(rows[0]);
+  });
+
   describe('wouldReshape()', () => {
     it('is false on an empty atlas, whose first growth moves nothing', () => {
       const { gl } = createGLRecorder();
