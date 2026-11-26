@@ -325,6 +325,33 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   its own because Lottie is a scene format, not SVG. Closes when a set of reference
   Lottie files plays from the import matching lottie-web's frames.
 
+### Animation export follow-ups
+
+Left open when the CSS, SMIL and Lottie writers landed (2026-11-26).
+
+- **(P2) [agent] Lottie draws a span where the SVG writers draw nothing, when a trim's start passes its end.**
+  lottie-web swaps `tm` `s` and `e` when `s > e`; weasel's own trim and the CSS/SMIL dash draw nothing. Reachable
+  through a stroke's own empty trim (`{ start: 0.75, end: 0.25 }` writes `s 75 e 25`) or an own start above a tracked
+  end. Write an empty static trim as `s = e` and clamp or warn where the edges can cross (`packages/lottie/src/write.ts`).
+- **(P3) [agent] `decorate.attrsOf` can rename a node's `id`, and can duplicate `display` on a hidden node.** Keep
+  `id` reserved (keep the node's own, warn), and apply the decoration after `display="none"` is added.
+- **(P3) [agent] Lottie scales a non-scaling stroke.** A `{ px }` width is SVG's `non-scaling-stroke`, but the
+  writer multiplies it by the baked transform's scale and warns about uneven scale for it too. Scale only plain widths.
+- **(P3) [agent] An animated `d` is written onto a path drawn as an outline or as several elements.** Trims already
+  refuse those (`writesOnePath`); `d` should too.
+- **(P3) [agent] Lottie measures trim on local geometry but applies it to transform-baked geometry.** Under uneven
+  scale the fractions disagree with CSS/SMIL, which measure in the element's own space through `pathLength`.
+- **(P3) [agent] A clip of duration 0 written as SMIL reads back as a loop with a key at `t = Infinity`.** The
+  writer emits `<set>` without `dur`, which plays correctly; the importer should read that as one key.
+- **(P3) [agent] Coverage gaps:** `staircase` with `start`/`none`/`both` jumps; Lottie `expand` from `steps` and
+  named curves; `numText` rounding; decoration of nested same-name groups and of hidden, image and text nodes.
+- **(P3) [agent] Smaller writer gaps:** trim values cast to number unchecked (`animate/trim.ts`); the `<style>` body
+  escaped by hand rather than through `escapeText`, and `stringsIn` doesn't scan `decorate`; an easing lost silently
+  when SMIL expands a track whose values can't be lerped; ids containing a `.trim` segment misread by the target
+  pattern; 4-decimal offsets round to 1e-4 of a path's length; the visibility span stays hidden when both trim edges
+  move with different easings and the length rises mid-span.
+- **(P3) [agent] Two inlined exports collide.** Their keyframe names and `#id` selectors are global to the page.
+
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
