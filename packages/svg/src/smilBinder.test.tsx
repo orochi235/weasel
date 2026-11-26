@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { bindClip } from '@weasel-js/animator';
 import { useAnimator } from '@weasel-js/animator/react';
-import { boundsOfPath, createScene, nodeAsShown, type NodeId, type Path, type PoseComposition, type RectPose } from '@weasel-js/core';
+import { boundsOfPath, buildSceneViewCommands, createScene, defaultDrawOne, nodeAsShown, type NodeId, type Path, type PoseComposition, type RectPose } from '@weasel-js/core';
+import type { DrawCommand } from '@weasel-js/renderer';
 import { parseSvg, svgClipBinder, svgDraftSpecs, svgNodesToKitDrafts, type SvgDraftPose } from './index';
 
 type Data = Record<string, unknown>;
@@ -91,6 +92,70 @@ describe('svgClipBinder', () => {
       </path>`));
     at(500);
     expect(boundsOfPath(scene.overrides.read(idOf('p'))!.path!).width).toBeCloseTo(15, 3);
+  });
+
+  it('moves a text under an animated transform', () => {
+    const { at, scene, idOf } = play(doc(`
+      <g id="g">
+        <text id="t" x="0" y="10">hi</text>
+        <animateTransform attributeName="transform" type="translate" from="0 0" to="10 0" dur="1s"/>
+      </g>`));
+    const rest = scene.get(idOf('t'))!.pose.x;
+    at(500);
+    expect((scene.overrides.read(idOf('t'))!.pose as RectPose).x).toBeCloseTo(rest + 5, 5);
+  });
+
+  it('composes a group\'s animated transform with its child\'s', () => {
+    const { at, scene, idOf } = play(doc(`
+      <g id="o">
+        <rect id="r" width="10" height="10">
+          <animateTransform attributeName="transform" type="translate" from="0 0" to="0 10" dur="1s"/>
+        </rect>
+        <animateTransform attributeName="transform" type="translate" from="0 0" to="10 0" dur="1s"/>
+      </g>`));
+    const rest = scene.get(idOf('r'))!.pose;
+    at(500);
+    const pose = scene.overrides.read(idOf('r'))!.pose as RectPose;
+    expect(pose.x).toBeCloseTo(rest.x + 5, 5);
+    expect(pose.y).toBeCloseTo(rest.y + 5, 5);
+  });
+
+  it('draws a stroke under an animated scale inside the scaled frame, so its width scales too', () => {
+    const { at, scene } = play(doc(`
+      <rect id="r" width="10" height="10" fill="none" stroke="#000" stroke-width="2">
+        <animateTransform attributeName="transform" type="scale" from="1" to="3" dur="1s" fill="freeze"/>
+      </rect>`));
+    at(1000);
+    // The stroke keeps its width in data and is drawn inside the group carrying the pose's scale.
+    type Group = Extract<DrawCommand, { kind: 'group' }>;
+    const strokedUnder = (cmds: readonly DrawCommand[], scale: number): [number, number] | null => {
+      for (const c of cmds) {
+        if (c.kind === 'path' && c.stroke) return [scale, c.stroke.width as number];
+        if (c.kind === 'group') {
+          const found = strokedUnder((c as Group).children, scale * ((c as Group).transform?.[0] ?? 1));
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    const [scale, width] = strokedUnder(buildSceneViewCommands(scene, { x: 0, y: 0, scale: { x: 1, y: 1 } }, defaultDrawOne) as DrawCommand[], 1)!;
+    expect(scale).toBeCloseTo(3, 5);
+    expect(width).toBe(2);
+  });
+
+  it('repaints a group\'s animated fill on a child holding a copy of it, and not on one with its own', () => {
+    const { at, shown } = play(doc(`
+      <g id="g" fill="#ff0000" fill-opacity="0">
+        <rect id="a" width="10" height="10"/>
+        <rect id="b" x="20" width="10" height="10" fill="#00ff00" fill-opacity="1"/>
+        <animate attributeName="fill" from="#ff0000" to="#0000ff" dur="1s"/>
+        <animate attributeName="fill-opacity" from="0" to="1" dur="1s"/>
+      </g>`));
+    at(500);
+    expect(fillOf(shown('a')).color).toBe('#800080');
+    expect(fillOf(shown('a')).opacity).toBeCloseTo(0.5, 5);
+    expect(fillOf(shown('b')).color).toBe('#00ff00');
+    expect(fillOf(shown('b')).opacity ?? 1).toBeCloseTo(1, 5);
   });
 
   it('turns a shape about the center its rotate names', () => {

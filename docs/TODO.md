@@ -289,13 +289,10 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   order-independently, and `Clip` carries them.
 
 - **(P2) [agent] Some imported SMIL plays differently from a browser** (2026-11-25). `svgClipBinder`
-  (`packages/svg/src/smilBinder.ts`) plays opacity, paint, geometry and `<animateTransform>` tracks. Left: a text or
-  image under an animated transform stays still (the binder finds a shape's frame from its path); two animated
-  transforms over one shape show only the inner one; a stroke keeps its width under an animated scale; `fill` or
-  `fill-opacity` animated on a group reaches only children taking it as `'inherit'`; `animateMotion` (blits: "Keys
-  on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed begins, and an indefinite repeat
-  on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL plays from the import the way
-  a browser plays it, checked against browser frames.
+  (`packages/svg/src/smilBinder.ts`) plays opacity, paint, geometry and `<animateTransform>` tracks. Left:
+  `animateMotion` (blits: "Keys on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed
+  begins, and an indefinite repeat on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL
+  plays from the import the way a browser plays it, checked against browser frames.
 
 - **(P2) [agent] Some imported CSS animation plays differently from a browser** (2026-11-25). `parseSvg` reads
   `@keyframes` and `animation` into the clip (`packages/svg/src/cssAnimation.ts`, `cssTiming.ts`). Each of these is

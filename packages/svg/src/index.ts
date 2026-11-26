@@ -67,6 +67,10 @@ export type {
   SvgPaint,
   SvgStroke,
   SvgInherits,
+  SvgAnimatedFrom,
+  SvgAnimatedPaint,
+  AnimatedShape,
+  AnimatedTransform,
   Matrix,
 } from './types';
 export { IDENTITY_MATRIX } from './types';

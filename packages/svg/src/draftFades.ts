@@ -21,18 +21,13 @@ export interface DraftFade extends Fades {
 
 export const NO_FADES: Fades = { by: {}, rest: 1 };
 
-const PAINT_OPACITIES = ['fill-opacity', 'stroke-opacity'];
-
-/** The ids whose opacity `clip` moves, and the ids whose fill or stroke opacity it moves. */
-export function fadersOf(clip: Clip | undefined): { opacity: ReadonlySet<string>; paint: ReadonlySet<string> } {
+/** The ids whose opacity `clip` moves. */
+function fadersOf(clip: Clip | undefined): ReadonlySet<string> {
   const opacity = new Set<string>();
-  const paint = new Set<string>();
   for (const t of clip?.tracks ?? []) {
-    if (t.kind !== 'sampled' || !t.target) continue;
-    if (t.target.endsWith('.opacity')) opacity.add(t.target.slice(0, -'.opacity'.length));
-    for (const p of PAINT_OPACITIES) if (t.target.endsWith(`.${p}`)) paint.add(t.target.slice(0, -p.length - 1));
+    if (t.kind === 'sampled' && t.target?.endsWith('.opacity')) opacity.add(t.target.slice(0, -'.opacity'.length));
   }
-  return { opacity, paint };
+  return opacity;
 }
 
 /** `fades` with `n`'s own opacity taken in. */
@@ -57,7 +52,7 @@ export function createFadeWalk(clip: Clip | undefined): FadeWalk {
     now: NO_FADES,
     under(n, visit) {
       const outer = walk.now;
-      (walk as { now: Fades }).now = fadesUnder(outer, n, faders.opacity);
+      (walk as { now: Fades }).now = fadesUnder(outer, n, faders);
       try {
         return visit();
       } finally {
@@ -65,7 +60,8 @@ export function createFadeWalk(clip: Clip | undefined): FadeWalk {
       }
     },
     fadeOf(source, unfaded) {
-      const reached = Object.keys(walk.now.by).length > 0 || (source.id !== undefined && faders.paint.has(source.id));
+      const from = source.animatedFrom;
+      const reached = Object.keys(walk.now.by).length > 0 || from?.['fill-opacity'] !== undefined || from?.['stroke-opacity'] !== undefined;
       return reached ? { ...walk.now, unfaded: unfaded() } : undefined;
     },
   };
