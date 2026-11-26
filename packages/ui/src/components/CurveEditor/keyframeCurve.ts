@@ -1,5 +1,6 @@
 import { resolveKeyEasing, type EasingFn, type Keyframe } from '@weasel-js/animator';
-import { cubicBezierEasing, lerp } from '@weasel-js/geom';
+import { curve } from '@msb235/blits';
+import { clamp, lerp } from '@weasel-js/geom';
 import { hitTestAnchor, hitTestCurve } from './hitTest';
 import type { LayerCtx, LayerHit, PlotPoint } from './layerTypes';
 import { activeBezier, type Bezier, type KeyframeLayerState } from './keyframeEdits';
@@ -10,7 +11,10 @@ const SAMPLES_PER_SEGMENT = 16;
 // fresh spec per pointermove through `resolveEasing` would leave one
 // permanent cache entry per pixel of drag.
 function easingInto(drag: KeyframeLayerState['drag'], keys: readonly Keyframe<number>[], seg: number): EasingFn {
-  if (drag?.kind === 'handle' && drag.segment === seg) return cubicBezierEasing(...drag.bezier);
+  if (drag?.kind === 'handle' && drag.segment === seg) {
+    const [x1, y1, x2, y2] = drag.bezier;
+    return curve({ bezier: [clamp(x1, 0, 1), y1, clamp(x2, 0, 1), y2] });
+  }
   return resolveKeyEasing(keys[seg].easing);
 }
 

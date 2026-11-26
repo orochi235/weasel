@@ -270,22 +270,14 @@ registry per property. Trim keeps its paint-context registry: measured 2026-11-2
 builds a frame's commands 2.2× slower at 100 and 1,000 nodes (`tests/perf/scene/trim-data-ply.bench.ts`). An animated `transform` moves each shape's pose by the change from the transform the
 import baked, and animated geometry attributes are re-lowered each sample (`svgClipBinder`, built 2026-11-25).
 
-- **(P2) [agent] weasel's named easings come from blits' table** (2026-11-25). geom's 30 Penner curves
-  (`EASINGS`) exist only as functions. **Unblocked: blits 1.5.2 (released 2026-11-26) names them in `curve()`, type `PennerName`.** blits takes them (agreed 2026-11-26 with blits-e3, in place of a
-  table in weasel). Until geom re-exports them, svg's CSS and SMIL writers and `@weasel-js/lottie` sample a
-  named curve in 24 even steps. `curve()` will name every `EASINGS` entry as data a generator script builds from geom's
-  functions: a CSS bezier where the worst error is ≤ 0.003 (18 of 30), otherwise a `linear()` fit to ≤ 0.001.
-
-  The weasel side, now that 1.5.2 has shipped:
-  - geom re-exports blits' named curves and drops `cubicBezierEasing` (`packages/geom/src/easingSpec.ts`)
-  - ui's `EasingPicker.tsx:17` reads its control points from them
-  - `Clip` keeps names; `bindClip`, the importers and the exporters resolve them
-
-  Build no weasel-side table. The three bounce curves are parabolas, so an exporter writes them exactly instead: a key at each
-  contact and peak (easeOutBounce: 0, 36.364%, 54.545%, 72.727%, 81.818%, 90.909%, 95.455%, 100%), each segment
-  eased by quad in `cubic-bezier(1/3, 0, 2/3, 1/3)` or quad out `cubic-bezier(1/3, 2/3, 2/3, 1)`, measured
-  within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. Closes when every weasel
-  easing name plays from blits' table, and geom and the picker hold no curve data.
+- **(P3) [agent] Exporters write the bounce curves exactly** (2026-11-26). svg's CSS and SMIL writers and
+  `@weasel-js/lottie` write a named curve as the data blits stores it as (`easingDataOf`), so the three bounce
+  curves go out as blits' `linear()` points, within 0.001. They are parabolas, so an exporter can write them exactly
+  instead: a key at each contact and peak (easeOutBounce: 0, 36.364%, 54.545%, 72.727%, 81.818%, 90.909%, 95.455%,
+  100%), each segment eased by quad in `cubic-bezier(1/3, 0, 2/3, 1/3)` or quad out `cubic-bezier(1/3, 2/3, 2/3, 1)`,
+  measured within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. The writers'
+  `expand` points are joined by straight lines today (`packages/svg/src/animate/easing.ts`), so this needs a per-point
+  easing there. Closes when all three bounce curves export as those keys.
 
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that

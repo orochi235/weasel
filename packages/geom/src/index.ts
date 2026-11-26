@@ -182,7 +182,7 @@ export {
   type EasingFn, type EasingName, type SpringPreset, type SpringPresetName,
 } from './easings';
 export {
-  cubicBezierEasing, resolveEasing, easingBezier, easingLabel, sampleEasing, EASING_NAMES, type BezierEasing, type EasingSpec,
+  resolveEasing, easingBezier, easingDataOf, easingLabel, sampleEasing, EASING_NAMES, type BezierEasing, type EasingData, type EasingSpec,
 } from './easingSpec';
 export { sampleCatmullRom } from './spline/catmullRom';
 export { sampleMonotone } from './spline/monotone';

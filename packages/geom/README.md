@@ -112,12 +112,15 @@ Below the path level, the curve functions work on one segment at a time:
 
 An `EasingFn` maps progress `t` in 0..1 to eased progress. The package exports
 the standard families by name (`easeOutCubic`, `easeInOutSine`,
-`easeOutBounce`, and so on), the same set keyed by name in `EASINGS`, and
-`cubicBezierEasing(x1, y1, x2, y2)` for CSS-style control points.
+`easeOutBounce`, and so on), and the same set keyed by name in `EASINGS`. Each
+is the curve [`@msb235/blits`](https://www.npmjs.com/package/@msb235/blits)'
+`curve()` runs under that name, stored there as a CSS cubic-bezier within 0.003
+of Penner's function or `linear()` points within 0.001; `easingDataOf(name)`
+returns that data, for writing a curve out or converting it to control points.
 
 `EasingSpec` is an easing as a value that can be stored or serialized: a
 function, a name, or `{ bezier: [x1, y1, x2, y2] }`. `resolveEasing` turns any
-of them into the function.
+of them into the function, a bezier through blits' cubic-bezier.
 
 ```ts
 import { resolveEasing } from '@weasel-js/geom';

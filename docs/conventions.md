@@ -114,9 +114,9 @@ collapses a zero-size axis to 0 where `rectToRect` keeps scale 1, and Plot2D's
 parameterizes a polygon by CSS-pixel arc length under the viewBox's anisotropic
 scale, and Powerline carries its own normals. paint's `lerpHueDeg` is CSS Color 4
 hue interpolation, not angle geometry. CurveEditor's Catmull-Rom and monotone
-splines are curves geom does not have, and its bezier easing already goes through
-geom's `cubicBezierEasing` (via core). The scalar `Math.max(lo, Math.min(hi, v))` clamps
-scattered through ui and labkit are not geometry; geom has no scalar clamp. d3
+splines are curves geom does not have, and its bezier easing goes through blits'
+`curve()`, as geom's does. The scalar `Math.max(lo, Math.min(hi, v))` clamps
+scattered through ui and labkit are not geometry, though geom's `clamp` does the same. d3
 and modes do no geometry at all.
 
 ## Tolerances, angles and bounds in geometry

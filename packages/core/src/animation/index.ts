@@ -15,7 +15,6 @@ export {
   SPRING_PRESETS,
 } from '@weasel-js/geom';
 export {
-  cubicBezierEasing,
   resolveEasing,
 } from '@weasel-js/geom';
 export type { BezierEasing, EasingFn, EasingSpec, SpringPreset, SpringPresetName } from '@weasel-js/geom';
