@@ -68,6 +68,19 @@ describe('bakeCursor', () => {
     expect(bakeCursor(PENCIL, { fallback: 'crosshair' })).toMatch(/, crosshair$/);
   });
 
+  it('takes a fallback whose images are image-set(…) or whose hotspot is any CSS number', () => {
+    for (const fallback of [
+      'image-set("a.png" 1x, url(b.png) 2x) 4 4, auto',
+      '-webkit-image-set(url("a.png") 1x type("image/png")), pointer',
+      'url(a.png) 1e1 2, auto',
+      'url(a.png) +4 -.5, auto',
+    ]) {
+      expect(bakeCursor(PENCIL, { fallback }).endsWith(`, ${fallback}`)).toBe(true);
+    }
+    expect(() => bakeCursor(PENCIL, { fallback: 'image-set("a.png" 1x), inherit' })).toThrow(RangeError);
+    expect(() => bakeCursor(PENCIL, { fallback: 'image-set("a.png" 1x, auto' })).toThrow(RangeError);
+  });
+
   it('percent-encodes the payload so no raw # reaches the URI', () => {
     // An unencoded '#' from a color starts a fragment and truncates the SVG.
     const css = bakeCursor(PENCIL, {});

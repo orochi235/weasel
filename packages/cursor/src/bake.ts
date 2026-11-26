@@ -14,7 +14,7 @@ export interface BakeOptions {
    *  {@link CURSOR_ANGLE_STEPS} steps. Default 0. One that turns a glyph not fitting its box at every rotation
    *  throws. */
   readonly angle?: number;
-  /** Keyword drawn if the browser rejects the image, optionally after `url(…)` images of its own. Default 'default',
+  /** Keyword drawn if the browser rejects the image, optionally after `url(…)` or `image-set(…)` images of its own. Default 'default',
    *  also for a blank one; one that does not end a `cursor` value that way throws. */
   readonly fallback?: string;
 }
@@ -38,11 +38,17 @@ const CURSOR_KEYWORDS = new Set([
   'ew-resize', 'ns-resize', 'nesw-resize', 'nwse-resize', 'zoom-in', 'zoom-out',
 ]);
 
-/** `url(…)` with an optional hotspot, then a comma: one image entry of a cursor list. */
-const IMAGE_ENTRY = /^\s*url\(\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'()\\]*)\s*\)(?:\s+-?\d*\.?\d+\s+-?\d*\.?\d+)?\s*,/i;
+const STRING = String.raw`"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'`;
+const NUMBER = String.raw`[+-]?(?:\d*\.)?\d+(?:e[+-]?\d+)?`;
+/** `url(…)` or `image-set(…)` with an optional hotspot, then a comma: one image entry of a cursor list. */
+const IMAGE_ENTRY = new RegExp(
+  String.raw`^\s*(?:url\(\s*(?:${STRING}|[^\s"'()\\]*)\s*\)|(?:-webkit-)?image-set\((?:${STRING}|[^()"']|\((?:${STRING}|[^()"'])*\))*\))` +
+    String.raw`(?:\s+${NUMBER}\s+${NUMBER})?\s*,`,
+  'i',
+);
 
 /** The cursor a baked image falls back to: `fallback`, or 'default' when it is missing or blank. Throws a
- *  `RangeError` for one that is not a cursor keyword, optionally after `url(…)` entries, because the browser drops a
+ *  `RangeError` for one that is not a cursor keyword, optionally after `url(…)` or `image-set(…)` entries, because the browser drops a
  *  `cursor` declaration that does not end in a keyword and keeps the cursor before it. */
 export function bakeFallback(fallback: string | undefined): string {
   if (fallback === undefined || fallback.trim() === '') return 'default';
