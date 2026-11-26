@@ -389,17 +389,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 
 ## Selection, actions & UI panels
 
-- **(P2) [agent] labkit has no hash state or bare embed view, so every lab writes its own** (read 2026-11-25).
-  agnew, fiddy, beamos, x-pcb, rosee, blinken and klieg each keep a URL-hash codec and their own base64url
-  helper, and most keep a `?bare` view. They disagree on details:
-  - **Version:** only agnew (refuses newer, with a notice naming what was dropped) and blinken (packed
-    binary `FORMAT = 2`, old links still decode) version their state.
-  - **Bare params:** `bg` takes 6 hex digits in fiddy and 3–8 (so alpha) in rosee. agnew's `?bare`
-    ignores `=still` and `bg`.
-
-  labkit already reads `?still` (`packages/labkit/src/lab/still.ts`) and `?present`. Add a versioned
-  `hashState` (JSON or binary codec, a dropped-fields notice) and a `bare` reader beside them. Closes when
-  labkit exports both.
 - **(P2) [agent] Labs describe their params as data, three ways, since `ConfigField` went** (`da26075c79`,
   2026-11-12). magicsmoke's `ParamSpec` (`src/tuning.ts:141`), agnew's union (`packages/agnew/src/params.ts:3`)
   and beamos' kind settings (`packages/beamos/src/kinds/kind.ts:3`) are near-identical, and each has its own

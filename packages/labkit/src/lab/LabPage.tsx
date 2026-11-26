@@ -1,6 +1,6 @@
 import { type ColorList, declaredAxisChoice, type Theme } from '@weasel-js/theme';
 import { ThemeProvider, useResolvedColorMode } from '@weasel-js/theme/react';
-import { type ReactNode, useState } from 'react';
+import { type CSSProperties, type ReactNode, useState } from 'react';
 import { AnnotationOptions } from '../annotations/AnnotationOptions';
 import { LabFooterRegion } from '../chrome/LabChrome';
 import type { LabDensity, LabMode } from '../state/types';
@@ -29,6 +29,7 @@ export function LabTheme({
   mode,
   density,
   nebula,
+  bg = null,
   className,
   children,
 }: {
@@ -36,16 +37,19 @@ export function LabTheme({
   mode: LabMode;
   density: LabDensity | undefined;
   nebula?: ColorList;
+  /** The color a presenting lab paints behind its trial. */
+  bg?: string | null;
   className: string;
   children: ReactNode;
 }) {
   const resolvedMode = useResolvedColorMode(mode);
+  const style = nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable');
   return (
     <ThemeProvider
       theme={theme}
       selection={labSelection(theme, resolvedMode, density)}
       className={className}
-      style={nebulaStyle(nebula, theme, resolvedMode, density ?? 'comfortable')}
+      style={bg === null ? style : ({ ...style, ['--lk-lab-bg' as string]: bg } as CSSProperties)}
     >
       {children}
     </ThemeProvider>
@@ -124,6 +128,7 @@ export function LabPage({
       mode={mode}
       density={density}
       nebula={nebula}
+      bg={presentation.bg}
       className={labClassName(presentation)}
     >
       <LabShell

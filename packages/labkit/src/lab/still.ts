@@ -18,7 +18,11 @@ export function stillOf(prop: boolean | number | undefined): Still | null {
   if (typeof location === 'undefined') return null;
   const params = new URLSearchParams(location.search);
   if (!params.has('still')) return null;
-  const text = params.get('still') ?? '';
+  return stillFor(params.get('still') ?? '');
+}
+
+/** The still a URL's `<ms>` text asks for: at that time, or where each clock opens when it is no number. */
+export function stillFor(text: string): Still {
   const at = Number(text);
   return text !== '' && Number.isFinite(at) ? { at } : {};
 }
