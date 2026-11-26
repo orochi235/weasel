@@ -60,7 +60,7 @@ type HostSources = MenuSources & { activeTool(): string | null };
 const STORES = new WeakMap<MenuHost, MenuStore>();
 
 /** Creates the host that decides which context menu is open, from the menus registered to it. */
-export function createMenuHost(src: HostSources): MenuHost {
+export function createMenuHost(src: MenuSources & { activeTool(): string | null }): MenuHost {
   return hostOver({ defs: [], listeners: createEmitter(), open: null, seq: 0 }, src);
 }
 
