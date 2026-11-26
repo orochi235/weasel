@@ -1,4 +1,5 @@
 import { scenePoseFrame } from '@weasel-js/core';
+import { easeInOutQuad, lerp } from '@weasel-js/geom';
 import { describe, expect, it, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { createElement, useLayoutEffect } from 'react';
@@ -309,12 +310,13 @@ describe('useLiveLayout', () => {
     expect(layered.plan!(graphOf(s.scene)).waypoints!.get(long)).toEqual(next);
     act(() => { s.handle().start(); });
     act(() => { s.clock.frames(2); });
-    // Two frames of four, eased in and out: halfway.
+    // Two frames of four, eased in and out: about halfway.
     const shown = s.scene.overrides.read(long)?.path;
     expect(shown?.kind).toBe('polygon');
     const coords = Array.from((shown as { coords: Float32Array }).coords);
     const passes = (p: Vec2) => coords.some((x, i) => i % 2 === 0 && Math.abs(x - p.x) < 1e-3 && Math.abs(coords[i + 1]! - p.y) < 1e-3);
-    for (const [k, p] of was.entries()) expect(passes({ x: (p.x + next[k]!.x) / 2, y: (p.y + next[k]!.y) / 2 })).toBe(true);
+    const u = easeInOutQuad(0.5);
+    for (const [k, p] of was.entries()) expect(passes({ x: lerp(p.x, next[k]!.x, u), y: lerp(p.y, next[k]!.y, u) })).toBe(true);
 
     act(() => { s.clock.frames(2); });
     expect(route()).toEqual(next);
