@@ -56,8 +56,9 @@ function framesOf(prop: string, keys: readonly ClipKey[], values: readonly strin
 
 /** The value a track shows at 0: its last key there, else its first. */
 function valueAtStart(keys: readonly ClipKey[], values: readonly string[]): string {
-  const i = keys.findLastIndex((k) => k.t <= 0);
-  return values[Math.max(0, i)];
+  let i = 0;
+  while (i + 1 < keys.length && keys[i + 1].t <= 0) i++;
+  return values[i];
 }
 
 /** The stylesheet animating `clip` on the nodes whose ids are in `ids`. */
