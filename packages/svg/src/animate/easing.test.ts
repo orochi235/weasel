@@ -1,6 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import { easingDataOf } from '@weasel-js/geom';
-import { cssTimingOf, lottieTangentsOf, smilTimingOf } from './easing';
+import { resolveKeyEasing } from '@weasel-js/animator';
+import { cssTimingOf, exactPointsOf, lottieTangentsOf, smilTimingOf } from './easing';
+
+/** Penner's bounce, as the exact points must give it. */
+const bounceOut = (t: number): number => {
+  const n = 7.5625;
+  const d = 2.75;
+  if (t < 1 / d) return n * t * t;
+  if (t < 2 / d) return n * (t -= 1.5 / d) * t + 0.75;
+  if (t < 2.5 / d) return n * (t -= 2.25 / d) * t + 0.9375;
+  return n * (t -= 2.625 / d) * t + 0.984375;
+};
+const PENNER: Record<'easeOutBounce' | 'easeInBounce' | 'easeInOutBounce', (t: number) => number> = {
+  easeOutBounce: bounceOut,
+  easeInBounce: (t) => 1 - bounceOut(1 - t),
+  easeInOutBounce: (t) => (t < 0.5 ? (1 - bounceOut(1 - 2 * t)) / 2 : (1 + bounceOut(2 * t - 1)) / 2),
+};
 
 describe('cssTimingOf', () => {
   it('writes linear for none and for linear', () => {
@@ -30,7 +46,23 @@ describe('cssTimingOf', () => {
     const data = easingDataOf('easeOutBounce');
     if (!('linear' in data)) throw new Error('easeOutBounce is stored as linear() points');
     expect(cssTimingOf('easeOutBounce').split(',')).toHaveLength(data.linear.length);
-    expect(smilTimingOf('easeOutBounce').expand).toHaveLength(data.linear.length);
+  });
+  it('writes each bounce curve as its contacts and peaks, each segment a quad bezier', () => {
+    for (const name of Object.keys(PENNER) as (keyof typeof PENNER)[]) {
+      const exact = PENNER[name];
+      const pts = exactPointsOf(name)!;
+      for (let i = 1; i < pts.length; i++) {
+        const [a, b] = [pts[i - 1], pts[i]];
+        const seg = resolveKeyEasing({ bezier: pts[i].ease! });
+        for (const u of [0, 0.25, 0.5, 0.75, 1]) {
+          const t = a.t + u * (b.t - a.t);
+          expect(a.v + seg(u) * (b.v - a.v), `${name} at ${t}`).toBeCloseTo(exact(t), 6);
+        }
+      }
+    }
+    expect(exactPointsOf('easeOutBounce')!.map((p) => Number((p.t * 100).toFixed(3)))).toEqual([0, 36.364, 54.545, 72.727, 81.818, 90.909, 95.455, 100]);
+    expect(smilTimingOf('easeOutBounce').expand).toBe(exactPointsOf('easeOutBounce'));
+    expect(exactPointsOf('easeOutBack')).toBeUndefined();
   });
   it('samples a function into 25 points', () => {
     const css = cssTimingOf((t) => t * t);

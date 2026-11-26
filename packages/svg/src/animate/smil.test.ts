@@ -29,6 +29,16 @@ describe('serializeSmilAnimatedSvg', () => {
     });
   });
 
+  it('writes a bounce as a spline key at each contact and peak', () => {
+    const out = serializeSmilAnimatedSvg([path('a')], clipOf({ 'a.opacity': [{ t: 0, value: 0 }, { t: 1000, value: 1, easing: 'easeOutBounce' }] }));
+    expect(animateOf(out, 'opacity')).toMatchObject({
+      calcMode: 'spline',
+      values: '0;1;0.75;1;0.9375;1;0.9844;1',
+      keyTimes: '0;0.3636;0.5455;0.7273;0.8182;0.9091;0.9545;1',
+      keySplines: Array.from({ length: 7 }, (_, i) => (i % 2 === 0 ? '0.3333 0 0.6667 0.3333' : '0.3333 0.6667 0.6667 1')).join(';'),
+    });
+  });
+
   it('repeats as the clip loops, and holds the first and last values out to the ends', () => {
     const out = serializeSmilAnimatedSvg([path('a')], clipOf({ 'a.opacity': [{ t: 250, value: 0 }, { t: 500, value: 1 }] }, { loop: true, duration: 1000 }));
     expect(animateOf(out, 'opacity')).toMatchObject({ values: '0;0;1;1', keyTimes: '0;0.25;0.5;1', repeatCount: 'indefinite' });

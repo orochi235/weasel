@@ -270,15 +270,6 @@ registry per property. Trim keeps its paint-context registry: measured 2026-11-2
 builds a frame's commands 2.2× slower at 100 and 1,000 nodes (`tests/perf/scene/trim-data-ply.bench.ts`). An animated `transform` moves each shape's pose by the change from the transform the
 import baked, and animated geometry attributes are re-lowered each sample (`svgClipBinder`, built 2026-11-25).
 
-- **(P3) [agent] Exporters write the bounce curves exactly** (2026-11-26). svg's CSS and SMIL writers and
-  `@weasel-js/lottie` write a named curve as the data blits stores it as (`easingDataOf`), so the three bounce
-  curves go out as blits' `linear()` points, within 0.001. They are parabolas, so an exporter can write them exactly
-  instead: a key at each contact and peak (easeOutBounce: 0, 36.364%, 54.545%, 72.727%, 81.818%, 90.909%, 95.455%,
-  100%), each segment eased by quad in `cubic-bezier(1/3, 0, 2/3, 1/3)` or quad out `cubic-bezier(1/3, 2/3, 2/3, 1)`,
-  measured within 1e-15; CSS keyframes, SMIL `keySplines` and Lottie per-key beziers all carry it. The writers'
-  `expand` points are joined by straight lines today (`packages/svg/src/animate/easing.ts`), so this needs a per-point
-  easing there. Closes when all three bounce curves export as those keys.
-
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
   multiplies into their children, run backward and loop; a remap of a voice's clock is missing (blits: "A voice's

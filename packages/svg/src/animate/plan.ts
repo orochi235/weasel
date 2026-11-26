@@ -4,6 +4,7 @@
  * caller's decoration.
  */
 import type { Clip, ClipKey, ClipSampledTrack } from '@weasel-js/animator';
+import { lerp } from '@weasel-js/geom';
 import { serializeSvg } from '../serialize';
 import type { SerializeOptions } from '../serializeOptions';
 import { smilKind } from '../smilValues';
@@ -257,4 +258,18 @@ export function serializeAnimated(
       childrenOf,
     },
   });
+}
+
+/** `a` to `b` at `k`, or null where the values do not lerp. */
+export function lerpFor(a: ClipKey['value'], b: ClipKey['value'], k: number): ClipKey['value'] | null {
+  if (typeof a === 'number' && typeof b === 'number') return lerp(a, b, k);
+  if (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v) => typeof v === 'number')) {
+    return (a as number[]).map((v, i) => lerp(v, b[i] as number, k));
+  }
+  return null;
+}
+
+/** A frame inserted at `t`, holding a lerp of two values already written, which always has text. */
+export function frameAt(prop: string, t: number, value: ClipKey['value']): Frame {
+  return { t, value, text: valueText(prop, value)!, easing: undefined };
 }
