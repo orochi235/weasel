@@ -270,8 +270,8 @@ and vertex color become instances, rather than a registry per property. It is a 
 with before/after numbers. Importers keep an animated element's `transform` as a pose instead of baking it, and
 re-lower animated geometry attributes each sample.
 
-- **(P2) [waiting] weasel's named easings come from blits' table** (2026-11-25). geom's 30 Penner curves
-  (`EASINGS`) exist only as functions. blits 1.5.1 takes them (agreed 2026-11-26 with blits-e3, in place of a
+- **(P2) [agent] weasel's named easings come from blits' table** (2026-11-25). geom's 30 Penner curves
+  (`EASINGS`) exist only as functions. **Unblocked: blits 1.5.2 (released 2026-11-26) names them in `curve()`, type `PennerName`.** blits takes them (agreed 2026-11-26 with blits-e3, in place of a
   table in weasel). `curve()` will name every `EASINGS` entry as data a generator script builds from geom's
   functions: a CSS bezier where the worst error is ≤ 0.003 (18 of 30), otherwise a `linear()` fit to ≤ 0.001.
 
@@ -333,7 +333,7 @@ re-lower animated geometry attributes each sample.
 What weasel still times for itself, read against blits on 2026-11-25. The direction is in CLAUDE.md
 ("animator becomes a front end over blits").
 
-- **(P2) [waiting] Rebuild animator as a front end over blits.** Its commands (start, cancel, `cancelKey`
+- **(P2) [agent] Rebuild animator as a front end over blits.** **Springs unblocked: blits 1.5.2 (2026-11-26) carries them.** Its commands (start, cancel, `cancelKey`
   replace, interrupt that keeps velocity, holds, staggers, live `edit`) each become blits cues, retargets,
   roles and fades, with animator's test suite unchanged as the guard. The places it could lose behavior:
   - `onCancel` timing, and leaving the value where a cancel left it
@@ -353,7 +353,7 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.
   Also waiting on blits' transport fixes (blits TODO), for the clock. Closes when animator keeps no
   scheduling of its own and its suite passes.
-- **(P2) [waiting] `@weasel-js/clock` on a blits `Transport`.** Branch `clock-on-transport` rebuilds
+- **(P2) [agent] `@weasel-js/clock` on a blits `Transport`.** **blits 1.5.2 (2026-11-26) takes every workaround; weasel-50 reports `clock-on-transport` all green on it, unmerged.** Branch `clock-on-transport` rebuilds
   `createClock` so that rate, ramp, sync, seek and wake go through one transport. The public API and the
   run layer (passes, `declare`, `seekable`) stay. On 2026-11-25, 11 of the clock's 13 test files passed
   unchanged; `clock.pbt` and `calls.pbt` failed on four transport gaps. blits fixed those on 2026-11-26,
@@ -373,7 +373,7 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   Until blits takes the workarounds, the rebuild adds code (net +43 lines). Closes when the clock runs on
   a released transport with no workarounds, both property test files pass, and `ramp.ts` and the clock's
   own rate math are gone.
-- **(P3) [agent] animator's slew on blits' step.** `packages/animator/src/slew.ts` steps its own value.
+- **(P3) [agent] animator's slew on blits' step.** **Unblocked: blits 1.5.2 exports `slewStep`.** `packages/animator/src/slew.ts` steps its own value.
   blits' `slew` only works inside a mix, so blits first exports a pure step that its signal uses too. Closes
   when `slew.ts` holds no step math.
 - **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
