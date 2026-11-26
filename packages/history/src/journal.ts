@@ -252,7 +252,7 @@ export function createJournalInternal(
     cancel(): void {
       if (state !== 'active') throw new Error('Journal is not active');
       for (const { child, depth } of latestFirst()) {
-        _journalAccessInternal(inner).rewind(depth);
+        _journalAccessInternal(inner).returnTo(depth);
         if (!child.isActive()) RESUMERS.get(child)!();
         child.cancel();
       }

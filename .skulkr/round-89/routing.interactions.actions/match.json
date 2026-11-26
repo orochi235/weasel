@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "A menu host under `<Yoke>` lists and runs against the tree root's active scope, not the yoke's"
+ ],
+ "b": [
+  "A mute made in an ancestor scope does not reach the canvas dispatcher's own-actions list",
+  "An action without `requires` gets the legacy dep bag from `trigger` and an empty bag from the dispatcher",
+  "A binding override that does not parse warns again on every tree change, from every node"
+ ]
+}

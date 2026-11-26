@@ -1,0 +1,11 @@
+{
+ "pairs": [],
+ "a": [
+  "Tearing down the pointer channel mid-drag leaves the pointer pinned in the view resolver, so later hover moves route to the old view",
+  "The hover cursor's live trace prediction goes stale over an affordance with a cursor, and during a gesture",
+  "A release dispatched on a dispatcher no longer among the live ones unsubscribes it from redraws before its gesture ends"
+ ],
+ "b": [
+  "`explain` reports an open keymap's own Escape binding as firing, while dispatch closes the keymap and `resolveOnly` predicts nothing"
+ ]
+}

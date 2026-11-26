@@ -1,0 +1,16 @@
+{
+ "pairs": [
+  [
+   0,
+   0
+  ]
+ ],
+ "a": [
+  "Journal.cancel only rewinds the enclosing journal downward, so a child's edits are undone over a state the enclosing journal has since undone below, and the cancel does not return to where the journal opened",
+  "A committed journal entry's `touchedIds` leave out ids that only its base half touches; the same entry after serialize/restore includes them"
+ ],
+ "b": [
+  "Journal.cancel only rewinds downward, so it misses a suspended child whose enclosing journal undid below the child's edit depth, and cancel leaves residual state",
+  "A restored snapshot with negative ids can make a later entry take id 0, the floor's id, so floor branches and that entry's branches merge into one"
+ ]
+}

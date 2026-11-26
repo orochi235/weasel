@@ -1,0 +1,24 @@
+{
+ "findings": [
+  {
+   "id": "r88-3",
+   "claim": "The wheel-resize burst state lives in the tool definition, so every canvas and registry using that tool shares one burst",
+   "where": "packages/routing/src/tools/toolOptionSteps.ts:107 (wheelSizeAction, `travel` / `last`)",
+   "from": "A",
+   "round": 88,
+   "rounds": [
+    88
+   ]
+  },
+  {
+   "id": "r88-7",
+   "claim": "Conflict checker misses a `code` spec colliding with a `key` spec for the same physical key",
+   "where": "packages/routing/src/tools/routing/reflection/conflictKeys.ts:71 (argKeysOf), :81 (chordArgsOf)",
+   "from": "B",
+   "round": 88,
+   "rounds": [
+    88
+   ]
+  }
+ ]
+}

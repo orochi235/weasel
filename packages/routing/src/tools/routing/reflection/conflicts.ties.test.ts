@@ -10,4 +10,9 @@ describe('findConflicts: one bucket holding separate ties', () => {
     const c = findConflicts([tool('a', ['x']), tool('b', ['x']), tool('c', ['y']), tool('d', ['y'])]);
     expect(c.map((x) => x.ownerIds)).toEqual([['a', 'b'], ['c', 'd']]);
   });
+
+  it('reports each pair of a chain of ties, never naming two that do not tie', () => {
+    const c = findConflicts([tool('a', ['x']), tool('b', ['x', 'y']), tool('c', ['y'])]);
+    expect(c.map((x) => x.ownerIds)).toEqual([['a', 'b'], ['b', 'c']]);
+  });
 });

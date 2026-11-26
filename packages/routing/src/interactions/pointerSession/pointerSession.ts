@@ -54,9 +54,10 @@ export type PointerSessionCancelReason =
 export interface PointerSessionCallbacks {
   /** Every move belonging to this pointer, while it is still held. */
   onMove?: (e: PointerEvent) => void;
-  /** The pointer was released. Fires once, before teardown completes. */
+  /** The pointer was released. Fires once, after teardown: the session is inactive, out of {@link heldWithin}, and
+   *  has released capture. */
   onEnd?: (e: PointerEvent) => void;
-  /** The session ended without a release. Fires once. */
+  /** The session ended without a release. Fires once, after teardown, as `onEnd` does. */
   onCancel?: (reason: PointerSessionCancelReason) => void;
 }
 

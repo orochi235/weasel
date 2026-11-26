@@ -5,7 +5,7 @@
  */
 import type { Op } from './op';
 import { coalesceEntry, foldEntry, recordedOps, sameCoalesceKeys, stepOf, type createApplier } from './entryOps';
-import { touchedIdsOf, type Entry, type HistoryLogger } from './serialized';
+import { entryTouchedIds, touchedIdsOf, type Entry, type HistoryLogger } from './serialized';
 import type { Forks } from './forks';
 import type { VersionClock } from './versionClock';
 import type { HistoryStep, RecordEntryOptions } from './historyTypes';
@@ -99,7 +99,7 @@ export function createRecorder(env: RecorderEnv) {
     }
     push({
       id: nextEntryId++, forwardOps, baseOps, label, timestamp: now(), pushes: 1,
-      touchedIds: touchedIdsOf(forwardOps),
+      touchedIds: entryTouchedIds(forwardOps, baseOps),
       ...(options.selectionBefore ? { selectionBefore: [...options.selectionBefore] } : {}),
       ...(key !== undefined ? { coalesceKey: key } : {}),
     }, key !== undefined);

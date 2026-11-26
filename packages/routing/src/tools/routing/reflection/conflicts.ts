@@ -108,7 +108,7 @@ function findConflictsKeyed(
   for (const { platform, members } of groups.values()) {
     // Members are in declaration order, and a pair led by a binding that yields is ordered on purpose.
     const ties = (i: number, j: number): boolean => i !== j && !members[Math.min(i, j)]!.yields && tie(members[i]!, members[j]!);
-    for (const component of tieComponents(members.length, ties)) {
+    for (const component of tieCliques(members.length, ties)) {
       addConflict(conflicts, foldPlatformCopies(component.map((i) => members[i]!)), platform);
     }
   }
@@ -151,6 +151,34 @@ function platformBound(e: RegistryEntry): boolean {
   return modifierTieKeys(e, 'mac').join() !== modifierTieKeys(e, 'other').join();
 }
 
+/** The largest sets of indices `0..n-1` that all tie with each other, each in order and the sets ordered by their
+ *  members; a lone index is left out. Ties need not be transitive (a view each shares with a third), so a set is
+ *  never joined through a member. */
+function tieCliques(n: number, ties: (i: number, j: number) => boolean): number[][] {
+  const out: number[][] = [];
+  const grow = (clique: number[], candidates: number[], excluded: number[]): void => {
+    if (candidates.length === 0) {
+      if (excluded.length === 0 && clique.length > 1) out.push(clique);
+      return;
+    }
+    // Bron–Kerbosch with a pivot, so a bucket of many bindings that all tie is one pass, not every subset of them.
+    const pivot = candidates[0]!;
+    let rest = [...candidates];
+    let done = [...excluded];
+    for (const v of candidates) {
+      if (v !== pivot && ties(pivot, v)) continue;
+      grow([...clique, v].sort((a, b) => a - b), rest.filter((u) => ties(v, u)), done.filter((u) => ties(v, u)));
+      rest = rest.filter((u) => u !== v);
+      done = [...done, v];
+    }
+  };
+  grow([], Array.from({ length: n }, (_, i) => i), []);
+  return out.sort((a, b) => {
+    for (let i = 0; i < Math.min(a.length, b.length); i++) if (a[i] !== b[i]) return a[i]! - b[i]!;
+    return a.length - b.length;
+  });
+}
+
 /**
  * A bucket with each `mod`-against-`ctrl` pair of one binding's copies — the
  * tie a lone action is excused for — folded to the copy that means the same
@@ -158,24 +186,6 @@ function platformBound(e: RegistryEntry): boolean {
  * ctrl+wheel bindings would otherwise both be named beside a binding they
  * collide with, and the conflict would read as a second one per platform.
  */
-/** The indices `0..n-1` grouped by which tie with each other, directly or through another; a lone index is left out. */
-function tieComponents(n: number, ties: (i: number, j: number) => boolean): number[][] {
-  const seen = new Set<number>();
-  const out: number[][] = [];
-  for (let start = 0; start < n; start++) {
-    if (seen.has(start)) continue;
-    seen.add(start);
-    const component = [start];
-    for (let k = 0; k < component.length; k++) {
-      for (let j = 0; j < n; j++) {
-        if (!seen.has(j) && ties(component[k]!, j)) { seen.add(j); component.push(j); }
-      }
-    }
-    if (component.length > 1) out.push(component.sort((a, b) => a - b));
-  }
-  return out;
-}
-
 function foldPlatformCopies(bucket: RegistryEntry[]): RegistryEntry[] {
   const out: RegistryEntry[] = [];
   for (const e of bucket) {

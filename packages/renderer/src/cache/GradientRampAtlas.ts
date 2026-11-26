@@ -115,8 +115,10 @@ export class GradientRampAtlas {
       return existing;
     }
 
+    // Baked before a row is claimed: a stop that fails to parse must leave every row where it was.
+    const ramp = buildGradientRamp(stops, space);
     const row = this.claimRow();
-    this.writeRow(row, buildGradientRamp(stops, space));
+    this.writeRow(row, ramp);
     this.rowByKey.set(key, row);
     return row;
   }

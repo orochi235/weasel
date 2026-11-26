@@ -1,0 +1,18 @@
+{
+ "pairs": [
+  [
+   2,
+   1
+  ]
+ ],
+ "a": [
+  "A sink's painted override does not put back the override it replaced, though its element write does",
+  "`bakeFallback` refuses valid cursor lists whose images are `image-set(…)` or whose hotspot uses an exponent or `+`",
+  "`brushRing(r, 'world')` with a huge finite radius is accepted, and its painted size overflows to Infinity at draw"
+ ],
+ "b": [
+  "brushRing draws a NaN or negative px radius at the default 24px instead of refusing it",
+  "A finite worldRadius whose drawn size overflows is accepted, where the px path refuses the same overflow",
+  "The fit guards reject a circular arc written with a negative radius as \"elliptical\""
+ ]
+}

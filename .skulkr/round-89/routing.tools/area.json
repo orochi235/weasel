@@ -1,0 +1,89 @@
+{
+ "id": "routing.tools",
+ "commit": "5b35b8d8aacd88cbf6c851b42b50665e64bd75f3",
+ "date": "2026-11-25",
+ "files": [
+  "packages/routing/src/tools/defineTool.ts",
+  "packages/routing/src/tools/describeShortcuts.ts",
+  "packages/routing/src/tools/returnToModeDefault.ts",
+  "packages/routing/src/tools/routeTypes.ts",
+  "packages/routing/src/tools/routing/gestures.ts",
+  "packages/routing/src/tools/routing/index.ts",
+  "packages/routing/src/tools/routing/reflection/conflictKeys.ts",
+  "packages/routing/src/tools/routing/reflection/conflicts.ts",
+  "packages/routing/src/tools/routing/reflection/index.ts",
+  "packages/routing/src/tools/routing/reflection/registry.ts",
+  "packages/routing/src/tools/routing/routeGrammar.ts",
+  "packages/routing/src/tools/toolGaps.ts",
+  "packages/routing/src/tools/toolOptionPrefs.ts",
+  "packages/routing/src/tools/toolOptionSteps.ts",
+  "packages/routing/src/tools/toolOptions.ts",
+  "packages/routing/src/tools/toolSet.ts",
+  "packages/routing/src/tools/toolShortcuts.ts",
+  "packages/routing/src/tools/toolsScope.tsx",
+  "packages/routing/src/tools/tuneToolOptions.ts",
+  "packages/routing/src/tools/types.ts",
+  "packages/routing/src/tools/useModeDefaultTool.ts",
+  "packages/routing/src/tools/useToolLifecycle.ts",
+  "packages/routing/src/tools/useToolOptionValues.ts",
+  "packages/routing/src/tools/useToolShortcuts.ts",
+  "packages/routing/src/tools/useTools.ts"
+ ],
+ "a": 3,
+ "b": 2,
+ "m": 0,
+ "distinct": 5,
+ "chapman": 11,
+ "unfound": 6,
+ "read": {
+  "A": 25,
+  "B": 25
+ },
+ "newCode": {
+  "since": 88,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 88,
+  "chapman": 14,
+  "unfound": 6
+ },
+ "patches": 5,
+ "carried": 2,
+ "verify": {
+  "ok": true,
+  "files": 20,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3401,
+   "total": 3401
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.6,
+   "B": 3.7,
+   "match": 0.1,
+   "fix": 18.4
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 1139126,
+  "costUsd": 3.39
+ },
+ "fixCommits": [
+  "32918d6c600d5974563e934d6ce5a394c1d93d28",
+  "7adef301b4213eb7aa5a33a48fa46c3387b5c4ac",
+  "b7c23ea36dde6bf7c4540d031c1fd33589ebdc11",
+  "6568d5fd8c70ceba55a132dd2e67af3f0abb0caa",
+  "4e41816e0a87ae29e5e13ec3565c9c963b4200a1"
+ ]
+}

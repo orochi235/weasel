@@ -5,14 +5,14 @@ import { textOf } from './textOf';
 /** Ids at or below this leave a restored history 2^52 more entries before its counter passes
  *  `Number.MAX_SAFE_INTEGER`, where two entries would take one id. */
 const MAX_ID = 2 ** 52;
-const isId = (v: unknown): boolean => Number.isSafeInteger(v) && Math.abs(v as number) <= MAX_ID;
+const isId = (v: unknown): boolean => Number.isSafeInteger(v) && (v as number) >= 0 && (v as number) <= MAX_ID;
 const isOptional = (v: unknown, ok: (v: unknown) => boolean): boolean => v === undefined || ok(v);
 const isIdList = (v: unknown): boolean => Array.isArray(v) && v.every((s) => typeof s === 'string');
 const isOps = (v: unknown): boolean => Array.isArray(v) && v.every((o) => isPlainObject(o) && typeof o.name === 'string');
 
 function entryFault(e: unknown): string | null {
   if (!isPlainObject(e)) return 'is not an object';
-  if (!isId(e.id)) return 'has no integer `id` within ±2^52';
+  if (!isId(e.id)) return 'has no integer `id` from 0 to 2^52';
   if (typeof e.label !== 'string') return 'has no string `label`';
   if (!isOps(e.forwardOps)) return 'has `forwardOps` that are not a list of named ops';
   if (!isOps(e.baseOps)) return 'has `baseOps` that are not a list of named ops';
@@ -35,8 +35,8 @@ function entriesFault(list: unknown, where: string): string | null {
 export function snapshotFault(snapshot: unknown): string | null {
   if (!isPlainObject(snapshot)) return 'it is not an object';
   if (snapshot.version !== 1) return `\`version\` is ${snapshot.version === undefined ? 'missing' : textOf(snapshot.version)}, not 1, the only version this reads`;
-  if (!isId(snapshot.nextEntryId)) return '`nextEntryId` is not an integer within ±2^52';
-  if (!isOptional(snapshot.floor, isId)) return '`floor` is not an integer within ±2^52';
+  if (!isId(snapshot.nextEntryId)) return '`nextEntryId` is not an integer from 0 to 2^52';
+  if (!isOptional(snapshot.floor, isId)) return '`floor` is not an integer from 0 to 2^52';
   const fault = entriesFault(snapshot.undoStack, '`undoStack`') ?? entriesFault(snapshot.redoStack, '`redoStack`');
   if (fault) return fault;
   const lists = [snapshot.undoStack, snapshot.redoStack] as { id: number }[][];
@@ -44,7 +44,7 @@ export function snapshotFault(snapshot: unknown): string | null {
     if (!Array.isArray(snapshot.branches)) return '`branches` is not a list';
     for (let i = 0; i < snapshot.branches.length; i++) {
       const b: unknown = snapshot.branches[i];
-      if (!isPlainObject(b) || !isId(b.at)) return `branch ${i} has no integer \`at\` within ±2^52`;
+      if (!isPlainObject(b) || !isId(b.at)) return `branch ${i} has no integer \`at\` from 0 to 2^52`;
       const inner = entriesFault(b.entries, `branch ${i}'s \`entries\``);
       if (inner) return inner;
       if ((b.entries as unknown[]).length === 0) return `branch ${i} has no entries`;
