@@ -32,6 +32,7 @@ import { textXml } from './serializeText';
 import { fontFacesXml, withTextMode } from './textModes';
 import { alignedTextXml, hasAlignedTextStroke } from './alignedTextStroke';
 import { prettyXml } from './prettyXml';
+import { withDecoration } from './decorateXml';
 import { BOOLEAN_ATTR } from './booleanGroup';
 import { TEXT_FRAME_ATTR } from './framedText';
 import { GROUP_BOX_ATTR } from './groupBox';
@@ -63,7 +64,7 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
   }
   // Written first: a marker's def is registered as an element references it,
   // which decides whether its head is seated.
-  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn, opts.textLayout)).join('');
+  const bodyXml = nodes.map((n) => nodeXml(n, registry, namespaces, warn, opts.textLayout, NOTHING_PAINTED, opts.decorate)).join('');
 
   const rootAttrs: string[] = [`xmlns="http://www.w3.org/2000/svg"`];
   // Only when something needs it, so a document of ordinary paints carries no
@@ -89,7 +90,9 @@ export function serializeSvg(given: SvgNode[], opts: SerializeOptions = {}): str
     ? `<title>${escapeText(opts.title)}</title>`
     : '';
 
-  const xml = `<svg ${rootAttrs.join(' ')}>${titleXml}${fontFacesXml(text.faces)}${defsXml}${docMetaXml}${bodyXml}</svg>`;
+  const styleXml = opts.decorate?.style ? `<style>${opts.decorate.style.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</style>` : '';
+
+  const xml = `<svg ${rootAttrs.join(' ')}>${titleXml}${styleXml}${fontFacesXml(text.faces)}${defsXml}${docMetaXml}${bodyXml}</svg>`;
   return opts.pretty ? prettyXml(xml) : xml;
 }
 
@@ -137,16 +140,18 @@ function registerTextPaint(
 }
 
 type LayoutOf = SerializeOptions['textLayout'];
+type Decorate = SerializeOptions['decorate'];
 
 function nodeXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
-  painted: ReadonlySet<string> = NOTHING_PAINTED,
+  painted: ReadonlySet<string> = NOTHING_PAINTED, decorate?: Decorate,
 ): string {
   const drawn = node.kind === 'path' ? pathDrawn(node) : null;
-  const kind = drawn ? drawnXml(drawn, registry, namespaces, warn, layoutOf, painted) : kindXml(node, registry, namespaces, warn, layoutOf, painted);
+  const kind = drawn ? drawnXml(drawn, registry, namespaces, warn, layoutOf, painted, decorate) : kindXml(node, registry, namespaces, warn, layoutOf, painted, decorate);
   const leaf = node.kind === 'path' || node.kind === 'text' ? fitLeafXml(kind, leafInherits(node, drawn), painted) : kind;
   const { id } = node;
-  const xml = id === undefined ? leaf : leaf.replace(/^<[\w:]+/, (open) => `${open} id="${escapeAttr(id)}"`);
+  const named = id === undefined ? leaf : leaf.replace(/^<[\w:]+/, (open) => `${open} id="${escapeAttr(id)}"`);
+  const xml = id === undefined || !decorate ? named : withDecoration(named, decorate.attrsOf?.(id), decorate.childrenOf?.(id));
   if (!node.hidden) return xml;
   // An outlined stroke's outline follows its path, and hides with it.
   return xml.replace(/^<[\w:]+/, (open) => `${open} display="none"`)
@@ -167,15 +172,15 @@ function leafInherits(node: SvgPathNode | SvgTextNode, drawn: SvgPathNode | SvgG
 
 function kindXml(
   node: SvgNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
-  painted: ReadonlySet<string>,
+  painted: ReadonlySet<string>, decorate?: Decorate,
 ): string {
-  if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted);
+  if (node.kind === 'group') return groupXml(node, registry, namespaces, warn, layoutOf, painted, decorate);
   if (node.kind === 'text') {
     const layout = layoutOf?.(node);
     return alignedTextXml(node, registry, namespaces, warn, layout) ?? textXml(node, registry, namespaces, warn, layout);
   }
   if (node.kind === 'image') return imageXml(node, namespaces, warn);
-  return drawnXml(pathDrawn(node), registry, namespaces, warn, layoutOf, painted);
+  return drawnXml(pathDrawn(node), registry, namespaces, warn, layoutOf, painted, decorate);
 }
 
 /** A path as SVG has to be told to draw it: see `pathAsSvgDraws` and `withSeatedHeads`. */
@@ -186,10 +191,10 @@ function pathDrawn(node: SvgPathNode): SvgPathNode | SvgGroupNode {
 
 function drawnXml(
   drawn: SvgPathNode | SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn,
-  layoutOf: LayoutOf, painted: ReadonlySet<string>,
+  layoutOf: LayoutOf, painted: ReadonlySet<string>, decorate?: Decorate,
 ): string {
   return drawn.kind === 'group'
-    ? groupXml(drawn, registry, namespaces, warn, layoutOf, painted)
+    ? groupXml(drawn, registry, namespaces, warn, layoutOf, painted, decorate)
     : pathXml(drawn, registry, namespaces, warn);
 }
 
@@ -240,7 +245,7 @@ function imageXml(node: SvgImageNode, namespaces: Record<string, string>, warn: 
 
 function groupXml(
   node: SvgGroupNode, registry: PaintServerRegistry, namespaces: Record<string, string>, warn: Warn, layoutOf: LayoutOf,
-  painted: ReadonlySet<string> = NOTHING_PAINTED,
+  painted: ReadonlySet<string> = NOTHING_PAINTED, decorate?: Decorate,
 ): string {
   const attrs: string[] = [];
   const paint = groupPaintAttrs(node, registry, warn, painted);
@@ -263,7 +268,7 @@ function groupXml(
   const head = attrs.length > 0
     ? `<g ${attrs.join(' ')}${metaAttrs}>`
     : `<g${metaAttrs}>`;
-  const body = node.children.map((c) => nodeXml(c, registry, namespaces, warn, layoutOf, below)).join('');
+  const body = node.children.map((c) => nodeXml(c, registry, namespaces, warn, layoutOf, below, decorate)).join('');
   return `${head}${body}${metaElementsXml(node.meta, namespaces)}</g>`;
 }
 
