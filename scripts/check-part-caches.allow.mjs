@@ -23,6 +23,7 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/animator/src/elementTarget.ts', 'set at creation from creation arguments, and read without being made'],
   ['packages/animator/src/target.ts', 'a registry of targets: set at creation from its arguments, and tested with has'],
   ['packages/animator/src/targetTable.ts', 'set in createTargetTable from its options, and read without being made'],
+  ['packages/svg/src/smilShapes.ts', 'set for one parse of a document and deleted when takeShapes reads it'],
   ['packages/audio/src/graph/createAudioGraph.ts', 'set at graph creation from its state, and read without being made'],
   ['packages/d3/src/pendingRemovals.ts', 'the emit path reads it without making it'],
   ['packages/d3/src/liveTransitions.ts', 'two other functions read it without making it'],

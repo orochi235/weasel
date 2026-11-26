@@ -3,6 +3,7 @@
  * read: parsing collapses transforms and paint opacities into what each leaf stores, so the facts
  * a sampled value is lowered against are only to be had then.
  */
+import { setOwn } from '@weasel-js/registry';
 import type { ShapeGeometry } from './lowerLeaf';
 import { ownValue, setsOwn } from './cascade';
 import type { AnimatedShape, AnimatedTransform, Matrix, SvgAnimatedFrom, SvgAnimatedPaint } from './types';
@@ -30,14 +31,14 @@ export function isTransformAnimated(el: Element): boolean {
 export function noteShape(el: Element, tag: string, geometry: () => ShapeGeometry, matrix: Matrix): void {
   const watch = watches.get(el.ownerDocument);
   if (!watch?.elements.has(el) || !el.id) return;
-  watch.shapes[el.id] = { tag, geometry: geometry(), matrix };
+  setOwn(watch.shapes, el.id, { tag, geometry: geometry(), matrix });
 }
 
 /** Records `el`'s transform if it is animated: the matrix above it, and its own. */
 export function noteTransform(el: Element, above: Matrix, own: Matrix): void {
   const watch = watches.get(el.ownerDocument);
   if (!el.id || !watch?.elements.get(el)?.has('transform')) return;
-  watch.transforms[el.id] = { above, own };
+  setOwn(watch.transforms, el.id, { above, own });
 }
 
 /** What was recorded in `doc`, which stops watching it. */

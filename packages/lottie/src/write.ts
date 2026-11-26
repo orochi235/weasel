@@ -17,6 +17,7 @@ import type {
   LottieStroke, LottieTransform, LottieTrim,
 } from './types';
 
+/** What `writeLottie` takes beside the scene and the clip. */
 export interface WriteLottieOptions {
   /** Frames a second. Default 60. */
   fps?: number;

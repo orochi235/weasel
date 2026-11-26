@@ -1,5 +1,6 @@
 /** Lowering a basic shape element (`<rect>`, `<path>`, …) to a kit path. */
 
+import { getOwn, setOwn } from '@weasel-js/registry';
 import {
   type Path, type PolygonPath, PATH_L, PATH_M, PATH_Z, pathFromD, transformPath,
 } from '@weasel-js/core';
@@ -77,7 +78,7 @@ const LENGTHS: Readonly<Record<string, readonly (readonly [string, 'x' | 'y' | '
 /** The attributes `shapePath` lowers a `<tag>` from, read off `el`. */
 export function shapeGeometry(el: Element, tag: string, onWarn: (msg: string) => void, fontSize?: number): ShapeGeometry {
   const out: Record<string, number | string> = {};
-  for (const [name, axis, auto] of LENGTHS[tag] ?? []) out[name] = readLength(el, name, axis, auto ? NaN : 0, onWarn, fontSize);
+  for (const [name, axis, auto] of getOwn(LENGTHS, tag) ?? []) setOwn(out, name, readLength(el, name, axis, auto ? NaN : 0, onWarn, fontSize));
   if (tag === 'polyline' || tag === 'polygon') out.points = el.getAttribute('points') ?? '';
   // A shaft the serializer cut back for its heads carries the path as authored.
   if (tag === 'path') out.d = el.getAttributeNS(WEASEL_NS, 'd') ?? el.getAttribute(`${WEASEL_NS_PREFIX}:d`) ?? el.getAttribute('d') ?? '';
@@ -86,7 +87,7 @@ export function shapeGeometry(el: Element, tag: string, onWarn: (msg: string) =>
 
 /** A `<tag>` of geometry `g` lowered through `m`, or null where it draws nothing. */
 export function shapePath(tag: string, g: ShapeGeometry, m: Matrix, onWarn: (msg: string) => void): Path | null {
-  const n = (name: string): number => Number(g[name] ?? 0);
+  const n = (name: string): number => Number(getOwn(g, name) ?? 0);
   if (tag === 'rect') return rectElementToPath(n('x'), n('y'), n('width'), n('height'), n('rx'), n('ry'), m);
   if (tag === 'circle') return circleToPath(n('cx'), n('cy'), n('r'), m);
   if (tag === 'ellipse') {

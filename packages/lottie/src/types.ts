@@ -34,6 +34,7 @@ export interface LottieTransform {
   o: LottieScalar;
 }
 
+/** A path shape: one bezier, held still. */
 export interface LottiePath { ty: 'sh'; nm?: string; ks: LottieStatic<LottieBezier> }
 /** `r` is the fill rule: 1 nonzero, 2 even-odd. Colors are `[r, g, b, a]` in 0..1. */
 export interface LottieFill { ty: 'fl'; c: LottieStatic<number[]>; o: LottieScalar; r: 1 | 2 }
@@ -41,8 +42,10 @@ export interface LottieFill { ty: 'fl'; c: LottieStatic<number[]>; o: LottieScal
 export interface LottieStroke { ty: 'st'; c: LottieStatic<number[]>; o: LottieScalar; w: LottieScalar; lc: 1 | 2 | 3; lj: 1 | 2 | 3; ml: number }
 /** Trim of the paths before it, edges in percent; `m: 2` lays the paths end to end and trims them as one. */
 export interface LottieTrim { ty: 'tm'; s: LottieScalar; e: LottieScalar; o: LottieScalar; m: 2 }
+/** The `tr` item that closes a group and places it. */
 export interface LottieGroupTransform extends LottieTransform { ty: 'tr' }
 
+/** Anything a group lists: a path, a fill, a stroke, a trim, or the closing transform. */
 export type LottieShapeItem = LottiePath | LottieFill | LottieStroke | LottieTrim | LottieGroupTransform;
 
 /** A group of shape items; it ends with its `tr`. */

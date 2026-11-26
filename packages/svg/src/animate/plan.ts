@@ -12,6 +12,7 @@ import type { SvgNode, SvgPathNode, SvgStroke } from '../types';
 import { numText } from './easing';
 import { dashTracksOf, trimEdgesOf, trimmedIdOf, writesOnePath } from './trim';
 
+/** Where a writer reports what it could not write as given. */
 export type Warn = (message: string) => void;
 
 /** The formats the writers sharing this plan write. */
@@ -30,6 +31,7 @@ export interface PlannedTrack {
   frames: Frame[];
 }
 
+/** A clip worked out once into the tracks every writer writes, with its timing. */
 export interface ClipPlan {
   /** One pass, in ms. */
   duration: number;

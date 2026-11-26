@@ -5,6 +5,7 @@
  * turned, scaled or skewed about the box's center. Where several animated transforms reach one
  * leaf, their changes compose, the outer applied last, as the document nests them.
  */
+import { getOwn } from '@weasel-js/registry';
 import { createTarget, type Target } from '@weasel-js/animator';
 import type { NodeId, PoseOverride } from '@weasel-js/core';
 import { invert, multiply, rotate, transformPoint, type Affine, type PoseLinear } from '@weasel-js/geom';
@@ -129,7 +130,7 @@ export function createTransformTargets(scene: SvgClipScene): (element: string, t
     const el = e;
     if (el.leaves.length === 0) return undefined;
     const target: Target<number[]> = createTarget<number[]>({
-      get: () => el.committed.get(type) ?? NEUTRAL[type],
+      get: () => el.committed.get(type) ?? getOwn(NEUTRAL, type)!,
       set(value) {
         el.committed.set(type, value);
         scene.untracked(() => {

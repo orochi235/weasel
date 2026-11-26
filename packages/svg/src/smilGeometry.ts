@@ -5,6 +5,7 @@
  * on screen is shown as an override's `path`, drawn where it is, and a committed one writes the
  * path and the box together.
  */
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { createTarget, type Target, type TargetAxes } from '@weasel-js/animator';
 import { boundsOfPath, transformPath, type DataTargetScene, type NodeId, type Path, type PoseOverride } from '@weasel-js/core';
 import { lerp, type Affine, type Rect } from '@weasel-js/geom';
@@ -77,7 +78,7 @@ export function createGeometryTargets(scene: SvgClipScene): (id: string, shape: 
       return;
     }
     const g: Record<string, number | string> = { ...s.committed };
-    for (const [k, v] of s.shown) g[k] = Array.isArray(v) ? v.join(' ') : v;
+    for (const [k, v] of s.shown) setOwn(g, k, Array.isArray(v) ? v.join(' ') : v);
     const path = lowered(shape, g);
     if (!path) return;
     s.ply.path = transformPath(path, s.frame);
@@ -95,12 +96,12 @@ export function createGeometryTargets(scene: SvgClipScene): (id: string, shape: 
     let s = shapes.get(id);
     if (!s) shapes.set(id, s = { committed: { ...shape.geometry }, shown: new Map(), ply: {}, frame: frameOf(data.path, node.pose) });
     const state = s;
-    const start = state.committed[attribute];
+    const start = getOwn(state.committed, attribute)!;
     const asValue = (v: number | string): Value => (attribute === 'points' ? String(v).trim().split(/[\s,]+/).map(Number) : v);
     const target: Target<Value> = createTarget<Value>({
-      get: () => asValue(state.committed[attribute]),
+      get: () => asValue(getOwn(state.committed, attribute)!),
       set(value) {
-        state.committed[attribute] = Array.isArray(value) ? value.join(' ') : value;
+        setOwn(state.committed, attribute, Array.isArray(value) ? value.join(' ') : value);
         const n = scene.get(nid);
         const path = lowered(shape, state.committed);
         if (!n || !path) return;

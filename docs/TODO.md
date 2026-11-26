@@ -607,11 +607,11 @@ only story runner in the repo.
 
 ## Demos & visual regression
 
-- **(P3) [maintainer] Eight published packages have no badge on the site's Releases chips:** `export`,
+- **(P3) [maintainer] Nine published packages have no badge on the site's Releases chips:** `export`, `lottie`,
   `paint-kinds`, `prefs-editor`, `prefs-schema`, `scale`, `text-tools`, `tiles` and `ui-canvas`. `PACKAGE_ICONS`
   (`apps/site/releaseIcons.ts`) has no entry for them, so their chips draw no glyph; the badges are drawn in
   `apps/site/icons/packages.mjs` and need the maintainer's sketch first. `releaseIcons.test.ts` holds the list
-  and fails on a new package without one. Closes when all eight have one.
+  and fails on a new package without one. Closes when all nine have one.
 
 - **(P3) [waiting] `SegmentsArcView`'s arc test missed by 3.5 px in one full fleet run.** "segments sit on the
   arc, edge to edge, and the well runs one rim past the first and last"
