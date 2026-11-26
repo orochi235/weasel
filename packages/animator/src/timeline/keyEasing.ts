@@ -13,8 +13,9 @@ export function isBlitsEasing(spec: KeyEasing | undefined): spec is BlitsEasing 
   return typeof spec === 'object' && spec !== null && !('bezier' in spec);
 }
 
-/** The curve a key's easing stands for: linear with none. Throws, as `curve` and `resolveEasing`
- *  do, on one neither knows. */
+/** The curve an easing stands for, as animation plays it: blits' data forms by blits, and a name, a
+ *  bezier or a function as `resolveEasing` makes it; linear with none. Throws, as both do, on one
+ *  neither knows. */
 export function resolveKeyEasing(spec?: KeyEasing): EasingFn {
   return isBlitsEasing(spec) ? curve(spec) : resolveEasing(spec);
 }

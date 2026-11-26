@@ -2,7 +2,7 @@ import { createSetPoseOp } from 'core/ops/setPose';
 import { RECT_POSE_DESCRIPTOR, type PoseDescriptor } from 'core/geometry/poseDescriptor';
 import type { Op } from 'core/ops/types';
 import type {
-  AnimationHandle, Animator, EasingSpec, SpringPresetName, StaggerDelay, StaggerOptions,
+  AnimationHandle, Animator, KeyEasing, SpringPresetName, StaggerDelay, StaggerOptions,
 } from '@weasel-js/animator';
 import type { Target } from '@weasel-js/animator';
 import { lerp as lerpNumber } from '@weasel-js/geom';
@@ -25,7 +25,7 @@ export interface TweenPoseOptions<TPose> {
   /** Where the move appears to start. Default: where the node is. Nothing is written there. */
   from?: TPose;
   ms: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   /** Supplies the pose's axes, and its `lerp` is the path the move follows. Without one the
    *  adapter's own descriptor maps the pose and each axis travels in a straight line. */
   geometry?: PoseDescriptor<TPose>;

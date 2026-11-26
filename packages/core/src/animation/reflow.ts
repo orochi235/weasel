@@ -5,13 +5,13 @@ import { documentPose, effectivePose, type PosedNode, type PoseSource } from '..
 import type { NodeId, PoseOverrides } from '../core/scene/types';
 import type { ReflowTransition } from '../layout/types';
 import { animateGlide, createGlide, type Glide } from './reflowGlide';
-import type { Animator, EasingSpec, SpringPresetName } from '@weasel-js/animator';
+import type { Animator, KeyEasing, SpringPresetName } from '@weasel-js/animator';
 
 /** How a reflowed sibling travels: a duration and easing, or a spring. */
 export interface ReflowTransitionOptions<TPose> {
   /** Default 200, and 0 under `prefers-reduced-motion`. Ignored under `spring`. */
   ms?: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   /** Travel on a spring instead of a duration. A retarget starts a new spring
    *  from the pose on screen at the speed the node was moving. */
   spring?: {

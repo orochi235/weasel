@@ -2,7 +2,7 @@ import { tweenPose, type PoseAnimationAdapter } from '../poseHelpers';
 import { defaultMotionMs } from '../motionMs';
 import { setPoseInstant } from './instantPose';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import type { AnimationHandle, Animator, EasingSpec } from '@weasel-js/animator';
+import type { AnimationHandle, Animator, KeyEasing } from '@weasel-js/animator';
 
 /** How nodes enter and leave. `enterFrom` derives the pose a new node starts
  *  at, given where it belongs; `exitTo` derives the pose a departing node
@@ -15,7 +15,7 @@ export interface LifecycleAnimation<TPose> {
   exitTo?: (current: TPose) => TPose;
   /** Default: 200ms, or none under `prefers-reduced-motion`. */
   ms?: number;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   geometry?: PoseDescriptor<TPose>;
 }
 

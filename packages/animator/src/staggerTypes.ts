@@ -1,4 +1,4 @@
-import type { EasingSpec } from '@weasel-js/geom';
+import type { KeyEasing } from './timeline/keyEasing';
 import type { Target } from './target';
 import type { TargetSpringOptions, TargetTweenOptions } from './targetTypes';
 import type { AnimationHandle, Interpolate, InterpolatorFactory, SpringOptions } from './types';
@@ -36,7 +36,7 @@ export interface StaggerTweenOptions<T, TItem> extends StaggerOptions {
   from: StaggerPerItem<T, TItem>;
   to: StaggerPerItem<T, TItem>;
   ms: StaggerPerItem<number, TItem>;
-  easing?: EasingSpec;
+  easing?: KeyEasing;
   interpolate?: Interpolate<T>;
   interpolator?: InterpolatorFactory<T>;
   onTick: (value: T, item: TItem, index: number) => void;

@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { sampleTrack, type EventTrack, type SampledTrack, type Track } from '@weasel-js/animator';
+import { resolveKeyEasing, sampleTrack, type EventTrack, type SampledTrack, type Track } from '@weasel-js/animator';
 import { runs, tally, timeoutFor, uniform } from '../../pbt.fixture';
 import { deleteKey, insertKey, moveKey, setKeyEasing } from './keys';
 import { trackAtPath } from './lanes';
@@ -149,12 +149,12 @@ describe('insertKey, shrunk', () => {
   it('runs an eased stretch’s easing again over each side of the new key', () => {
     const tr = { kind: 'sampled', onTick: () => {}, keys: [{ t: 0, value: 0 }, { t: 100, value: 100, easing: 'easeInQuad' }] } as unknown as Track;
     const after = insertKey([tr], [0], 50).tracks[0] as SampledTrack<number>;
-    // blits' easeInQuad is a bezier within 0.003 of t², so over a span of 100 a value lands within 0.3, and a sample
-    // through the new key, which compounds that with a second span, within 0.6.
-    expect(after.keys[1]).toEqual({ t: 50, value: expect.any(Number), easing: 'easeInQuad' });
-    expect(Math.abs(after.keys[1].value - 25)).toBeLessThan(0.3);
-    expect(Math.abs(sampleTrack(after, 25)! - 6.25)).toBeLessThan(0.6);
-    expect(Math.abs(sampleTrack(tr as SampledTrack<number>, 75)! - 56.25)).toBeLessThan(0.3);
-    expect(Math.abs(sampleTrack(after, 75)! - 43.75)).toBeLessThan(0.6);
+    // The value at the new key is the curve's own there; each side then runs the whole curve again.
+    const quad = resolveKeyEasing('easeInQuad');
+    const mid = 100 * quad(0.5);
+    expect(after.keys[1]).toEqual({ t: 50, value: mid, easing: 'easeInQuad' });
+    expect(sampleTrack(after, 25)).toBeCloseTo(mid * quad(0.5), 9);
+    expect(sampleTrack(tr as SampledTrack<number>, 75)).toBeCloseTo(100 * quad(0.75), 9);
+    expect(sampleTrack(after, 75)).toBeCloseTo(mid + (100 - mid) * quad(0.5), 9);
   });
 });

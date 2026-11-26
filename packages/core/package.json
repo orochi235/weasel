@@ -105,7 +105,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "peerDependencies": {
-    "@msb235/blits": "^1.1.0",
+    "@msb235/blits": "^1.5.3",
     "@weasel-js/font": "2.0.0",
     "react": ">=18"
   },

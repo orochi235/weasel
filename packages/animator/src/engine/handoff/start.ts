@@ -1,4 +1,5 @@
-import { easeOutQuad, resolveEasing } from '@weasel-js/geom';
+import { easeOutQuad } from '@weasel-js/geom';
+import { resolveKeyEasing } from '../../timeline/keyEasing';
 import type { ElementBinding } from '../../elementTarget';
 import { readTarget, stateOf, type TargetState } from '../../target';
 import type {
@@ -70,7 +71,7 @@ export function handOffTween<T>(hs: Handoffs, o: TargetTweenOptions<T>): Animati
   const begun = begin(hs, o as TargetTweenOptions<unknown>, 'tween', (s) => {
     to = axesFor(s.axes, o.to, 'to');
     if (o.from !== undefined) axesFor(s.axes, o.from, 'from');
-    easing = resolveEasing(o.easing ?? easeOutQuad);
+    easing = resolveKeyEasing(o.easing ?? easeOutQuad);
   });
   if (begun === null) return null;
   const { ctx } = hs.host;

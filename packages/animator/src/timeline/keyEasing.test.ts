@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { EASINGS } from '@weasel-js/geom';
 import { bindClip, toClip, type Clip } from './clip';
 import { resolveKeyEasing } from './keyEasing';
 import { sampleTrack } from './sampleTrack';
@@ -55,5 +56,18 @@ describe('a clip with blits easings and a loop', () => {
 
   it('refuses a loop that is not true, false or a count', () => {
     expect(() => bindClip({ ...clip, loop: 'twice' } as never, {})).toThrow("bindClip: the clip's loop is neither true, false nor a count.");
+  });
+});
+
+describe('a named easing', () => {
+  it('plays every geom name within 0.003 of geom\'s curve', () => {
+    for (const [name, exact] of Object.entries(EASINGS)) {
+      const played = resolveKeyEasing(name as keyof typeof EASINGS);
+      for (let i = 0; i <= 100; i++) expect(Math.abs(played(i / 100) - exact(i / 100)), name).toBeLessThanOrEqual(0.003);
+    }
+  });
+
+  it('throws on a name geom does not have', () => {
+    expect(() => resolveKeyEasing('nope' as never)).toThrow(/unknown easing name "nope"/);
   });
 });

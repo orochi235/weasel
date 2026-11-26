@@ -15,8 +15,8 @@ function track(easing: SampledTrack<number>['keys'][number]['easing']): SampledT
 
 describe('sampleTrack easing specs', () => {
   it('accepts a named easing', () => {
-    // easeInQuad at u=0.5 is 0.25.
-    expect(Math.abs(sampleTrack(track('easeInQuad'), 50)! - 25)).toBeLessThan(0.3);
+    // easeInQuad at u=0.5 is 0.25; its preset plays within 0.003 of that.
+    expect(Math.abs(sampleTrack(track('easeInQuad'), 50)! - 25)).toBeLessThanOrEqual(0.3);
   });
 
   it('accepts a bezier easing', () => {
