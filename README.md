@@ -16,6 +16,8 @@ Built for diagram editors, sketch tools, schematic editors, scene composers — 
 
 Every package is published under `@weasel-js` and released together at one version. `npm run check:needs` holds the marks to the code.
 
+The split is drawn for a common pairing: a full authoring app that takes in most of these, and a small distributable player for what it makes, which installs only the runtime packages it needs and none of the editing, chrome or tooling.
+
 <!-- packages:start -->
 
 <img src="docs/badges/react.svg" width="20" height="20" alt="Needs React" title="Needs React"> needs React · <img src="docs/badges/react-optional.svg" width="20" height="20" alt="React only under the /react subpath" title="React only under the /react subpath"> React only under `/react` · <img src="docs/badges/dom.svg" width="20" height="20" alt="Needs a browser" title="Needs a browser"> needs a browser; the rest run in Node or a worker · <img src="docs/badges/webgl2.svg" width="20" height="20" alt="Draws with WebGL2" title="Draws with WebGL2"> WebGL2 · <img src="docs/badges/webaudio.svg" width="20" height="20" alt="Plays through Web Audio" title="Plays through Web Audio"> Web Audio · <img src="docs/badges/standalone.svg" width="20" height="20" alt="Depends on no other weasel package" title="Depends on no other weasel package"> no other weasel package

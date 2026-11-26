@@ -42,6 +42,14 @@ on its own terms — not as the minimum some demo happened to need.
 
 ## What gets its own package
 
+**Plan for two consumers at once: a composer and its player (2026-11-25).** A common shape is a
+full authoring app (an editor, a timeline, a level builder) that takes in most of weasel, beside a
+distributable player for what it makes that ships only the runtime pieces. So package lines are
+drawn where a player would cut: playing, rendering or loading a document must not pull in authoring
+(editing, tools, chrome, prefs, devtools), and a feature split into "runtime" and "authoring" halves
+puts them in separate packages or subpaths rather than one barrel. A design that forces a player to
+install the composer's dependencies is wrong on these grounds alone.
+
 A package either exports functionality that does not need the rest of weasel
 (`geom`, `paint`, `stroke`, `renderer`), or is an obviously well-defined
 functional area (`minimap`, `parallax`, `diagram`). Code that needs core and is
