@@ -197,6 +197,7 @@
       "@weasel-js/stroke": ["./packages/stroke/src/index.ts"],
       "@weasel-js/stroke/test-seams": ["./packages/stroke/src/test-seams.ts"],
       "@weasel-js/svg": ["./packages/svg/src/index.ts"],
+      "@weasel-js/svg/animate": ["./packages/svg/src/animate/index.ts"],
       "@weasel-js/svg/testing/*": ["./packages/svg/src/testing/*"],
       "@weasel-js/symmetry": ["./packages/symmetry/src/index.ts"],
       "@weasel-js/text": ["./packages/text/src/index.ts"],

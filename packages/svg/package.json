@@ -16,6 +16,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./animate": {
+      "types": "./dist/animate.d.ts",
+      "import": "./dist/animate.js"
+    },
     "./package.json": "./package.json"
   },
   "scripts": {

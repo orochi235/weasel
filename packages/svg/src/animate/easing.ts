@@ -7,7 +7,7 @@ type Steps = { steps: number; jump?: Jump };
 const SAMPLES = 24;
 
 /** A number with at most 4 decimals and no trailing zeros. */
-function numText(n: number): string {
+export function numText(n: number): string {
   return String(Number(n.toFixed(4)) + 0);
 }
 
