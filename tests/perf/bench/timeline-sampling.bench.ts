@@ -4,13 +4,12 @@
  * samples N four-key tracks once each at an advancing playhead, the way a
  * timeline's frame does.
  */
-import { resolveEasing } from '@weasel-js/geom';
-import { sampleTrack, type SampledTrack } from '@weasel-js/animator';
+import { resolveKeyEasing, sampleTrack, type SampledTrack } from '@weasel-js/animator';
 import { group } from './group';
 
 /** Read once: a module export read per call adds vitest getter overhead. */
 const sample = sampleTrack;
-const resolve = resolveEasing;
+const resolve = resolveKeyEasing;
 
 /** The sampler as it was before the port, kept here as the baseline. */
 function today(track: SampledTrack<number>, t: number): number | undefined {
