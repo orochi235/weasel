@@ -1,0 +1,74 @@
+{
+ "id": "cursor",
+ "commit": "5b35b8d8aacd88cbf6c851b42b50665e64bd75f3",
+ "date": "2026-11-25",
+ "files": [
+  "packages/cursor/src/bake.ts",
+  "packages/cursor/src/brushRing.ts",
+  "packages/cursor/src/cursorSink.ts",
+  "packages/cursor/src/glyphs.ts",
+  "packages/cursor/src/index.ts",
+  "packages/cursor/src/mark.ts",
+  "packages/cursor/src/paint.ts",
+  "packages/cursor/src/paintedCursorState.ts",
+  "packages/cursor/src/pbt.fixture.ts",
+  "packages/cursor/src/registry.ts",
+  "packages/cursor/src/resolve.ts",
+  "packages/cursor/src/types.ts"
+ ],
+ "a": 3,
+ "b": 3,
+ "m": 1,
+ "distinct": 5,
+ "chapman": 7,
+ "unfound": 2,
+ "read": {
+  "A": 12,
+  "B": 12
+ },
+ "newCode": {
+  "since": 88,
+  "changedFiles": 0,
+  "findings": 0
+ },
+ "previous": {
+  "round": 88,
+  "chapman": 11,
+  "unfound": 3
+ },
+ "patches": 4,
+ "verify": {
+  "ok": true,
+  "files": 16,
+  "testFiles": {
+   "failed": 0,
+   "passed": 3492,
+   "total": 3492
+  },
+  "gui": true,
+  "repairs": 0
+ },
+ "questions": 0,
+ "budgetHit": [],
+ "jobs": {
+  "minutes": {
+   "A": 3.9,
+   "B": 4.3,
+   "match": 0.1,
+   "fix": 16.3
+  },
+  "nodes": {
+   "A": "teitou",
+   "B": "msb-uai",
+   "fix": "teitou"
+  },
+  "weightedTokens": 823752,
+  "costUsd": 2.51
+ },
+ "fixCommits": [
+  "76e2c1664a589625e0797b292d7ab36d08388af7",
+  "30b40b585c4a6db09f96afedc84fd3ad394856d2",
+  "9f118e34058f30c55aaf68bd5d65a9285548d970",
+  "13e9c2eb0bdab47716a15de2b09fe3a3d81a08b9"
+ ]
+}
