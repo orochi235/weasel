@@ -264,13 +264,6 @@ the innermost kernel and animator runs on it; weasel's share of each entry below
 `Clip` and binding it to the scene, never a parallel implementation in animator. Each names the blits entry it
 waits on; weasel runs against the local blits checkout until a blits release carries it.
 
-- **(P2) [agent] `Clip` can't hold looping, stepped keys or a sampled easing curve** (2026-11-25). SMIL
-  `repeatCount`, CSS `animation-iteration-count` and Lottie loops need a loop on a clip or track (blits voices
-  already `loop`); SMIL `calcMode="discrete"`, CSS `steps()` and Lottie hold keys need stepped easing (blits
-  already has `{ steps, jump }`, geom's `EasingSpec` does not); CSS `linear()` needs an easing given as samples
-  (blits: "A sampled easing curve"). Closes when `Clip` carries all three in blits' forms and `toClip`/`bindClip`
-  round-trip them.
-
 - **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
   `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
   multiplies into their children, run backward and loop; a remap of a voice's clock is missing (blits: "A voice's
@@ -279,13 +272,13 @@ waits on; weasel runs against the local blits checkout until a blits release car
 
 - **(P2) [agent] SMIL animation import in `@weasel-js/svg`** (2026-11-25). `<animate>`, `<set>`, `<animateTransform>`
   and `<animateMotion>` read beside `parse.ts` into a `Clip` over the imported nodes, with `begin`/`dur`/
-  `repeatCount`/`keyTimes`/`keySplines`/`calcMode` mapped and anything else reported. Needs the `Clip` entry above.
-  Closes when an animated SVG's SMIL plays from the import the way a browser plays it, checked against browser
+  `repeatCount`/`keyTimes`/`keySplines`/`calcMode` mapped and anything else reported. Closes when an animated SVG's SMIL plays from the import the way a browser plays it, checked against browser
   frames.
 
 - **(P2) [agent] CSS animation import in `@weasel-js/svg`** (2026-11-25). `parseStylesheet` skips `@keyframes` whole
   (`packages/svg/src/stylesheet.ts`); read them, resolve `animation-*` through the cascade to each element, and
-  add the result to the same `Clip`. Needs the `Clip` entry above. Closes when an SVG animated by CSS alone plays
+  add the result to the same `Clip`. `linear()` plays once a blits release carries `{ linear }` (blits branch
+  `linear-easing`). Closes when an SVG animated by CSS alone plays
   from the import as a browser plays it, checked against browser frames.
 
 - **(P3) [agent] Position tracks move in straight lines between keys** (2026-11-25). Each axis lerps on its own, so
@@ -306,7 +299,7 @@ waits on; weasel runs against the local blits checkout until a blits release car
 
 - **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
   scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing. A package of
-  its own because Lottie is a scene format, not SVG. Needs the `Clip` entry above. Closes when a set of reference
+  its own because Lottie is a scene format, not SVG. Closes when a set of reference
   Lottie files plays from the import matching lottie-web's frames.
 
 ## Audio
