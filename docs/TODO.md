@@ -336,8 +336,19 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   - holds' "committed value takes what's left" weighting against blits roles
   - sampling springs into keyframes for the `Element.animate` handoff
 
-  Waiting on the `clock-on-transport` spike and blits' springs work, both in flight. Closes when animator
-  keeps no scheduling of its own and its suite passes.
+  The rebuild needs blits' `springs` branch (`4dcb727f`, unreleased, 2026-11-25) in a release. That branch
+  closes form every valid spring constant and takes motion arithmetic from the channel. Once it ships,
+  these can go:
+  - `engine/integrator.ts`
+  - the Euler branch, the `solvable` gate and the numeric fallbacks in `physicsAnimation.ts`
+  - the public `add`/`subtract`/`scale`/`magnitude` options (`types.ts`, `staggerTypes.ts:49`,
+    `stagger.ts:323`). This is a breaking change to the API: a `T` that `axesOf` can't encode throws.
+    Mike's call.
+
+  `cueSpring`'s targetless branch becomes `spring({ stiffness: 0 })`, which also covers damping 0. Rotations
+  only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.
+  Also waiting on blits' transport fixes (blits TODO), for the clock. Closes when animator keeps no
+  scheduling of its own and its suite passes.
 - **(P2) [agent] One easing table, in blits.** geom's `EASINGS` (31 Penner curves and a bezier solver,
   `packages/geom/src/easings.ts:152`), blits' `named` (5 CSS curves and its own solver) and ui's
   `EasingPicker.tsx:17` control points are three copies. Move the Penner curves into blits' `curve`, re-export
