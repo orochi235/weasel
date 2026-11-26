@@ -364,26 +364,19 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 
   Rotations only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than
   linear vecs. Closes when animator keeps no scheduling of its own and its suite passes.
-- **(P2) [agent] `@weasel-js/clock` on a blits `Transport`.** **blits 1.5.2 (2026-11-26) takes every workaround; weasel-50 reports `clock-on-transport` all green on it, unmerged.** Branch `clock-on-transport` rebuilds
-  `createClock` so that rate, ramp, sync, seek and wake go through one transport. The public API and the
-  run layer (passes, `declare`, `seekable`) stay. On 2026-11-25, 11 of the clock's 13 test files passed
-  unchanged; `clock.pbt` and `calls.pbt` failed on four transport gaps. blits fixed those on 2026-11-26,
-  unreleased, but reproduced the seek gap only at rate 0 or on a ramp to rest. So the negative-rate seek
-  failures may be weasel's own, and get rerun on the release.
+- **(P2) [agent] The clock's last workarounds over blits' `Transport`.** `createClock` runs on a transport
+  since `batch/2026-11-26-anim` (blits 1.5.3; `ramp.ts`, `mixFollow.ts` and the pilot mix are gone, and
+  `ClockSpec.mix` takes the transport). `packages/clock/src/clock.ts` still does for itself:
+  - with a mix, history whose tape is `Number.POSITIVE_INFINITY` ms long, so it grows for the clock's life
+  - `seekTransport` re-ramping the rate after a seek back under history, which cuts the tape ahead
+  - `stepRampLeft` counting the ramp down, and the end-of-run clamps in `syncTo`
+  - its own wake and `inert` logic, with a `rebase` after each sleep
 
-  The rebuild still carries workarounds, each a proposed transport change in blits' TODO ("A `Transport`
-  that can be a clock on its own"):
-  - an empty pilot mix, because `now` is NaN with no mix
-  - restore history that grows for the clock's whole life
-  - re-asserting the rate after every seek. This is now known to cut the tape ahead and drop later cues
-    (blits, 2026-11-26).
-  - rebasing before an earlier timestamp
-  - its own wake and `inert` logic
-
-  `mixFollow.ts` stays until `ClockSpec.mix` can join the transport (a `mix?: (t: Transport) => …` form).
-  Until blits takes the workarounds, the rebuild adds code (net +43 lines). Closes when the clock runs on
-  a released transport with no workarounds, both property test files pass, and `ramp.ts` and the clock's
-  own rate math are gone.
+  blits 1.5.3 (`ef3b7e4e`) wakes a transport on its own rate and seek and takes an earlier timestamp as
+  zero time, so the last item is weasel's to remove now. The first two need blits to seek a transport
+  with a mix without unbounded history, and to keep a rate across a seek back; blits' TODO has no entry
+  for either since it retired "A `Transport` that can be a clock on its own". Closes when `clock.ts`
+  keeps none of the four and `clock.pbt` and `calls.pbt` still pass.
 - **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
   its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` takes bounds, but
   whether it can bounce or spring at them hasn't been checked. Closes when `useDecayLoop` keeps no integrator.
