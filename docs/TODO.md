@@ -349,6 +349,26 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.
   Also waiting on blits' transport fixes (blits TODO), for the clock. Closes when animator keeps no
   scheduling of its own and its suite passes.
+- **(P2) [waiting] `@weasel-js/clock` on a blits `Transport`.** Branch `clock-on-transport` rebuilds
+  `createClock` so that rate, ramp, sync, seek and wake go through one transport. The public API and the
+  run layer (passes, `declare`, `seekable`) stay. On 2026-11-25, 11 of the clock's 13 test files passed
+  unchanged; `clock.pbt` and `calls.pbt` failed on four transport gaps. blits fixed those on 2026-11-26,
+  unreleased, but reproduced the seek gap only at rate 0 or on a ramp to rest. So the negative-rate seek
+  failures may be weasel's own, and get rerun on the release.
+
+  The rebuild still carries workarounds, each a proposed transport change in blits' TODO ("A `Transport`
+  that can be a clock on its own"):
+  - an empty pilot mix, because `now` is NaN with no mix
+  - restore history that grows for the clock's whole life
+  - re-asserting the rate after every seek. This is now known to cut the tape ahead and drop later cues
+    (blits, 2026-11-26).
+  - rebasing before an earlier timestamp
+  - its own wake and `inert` logic
+
+  `mixFollow.ts` stays until `ClockSpec.mix` can join the transport (a `mix?: (t: Transport) => …` form).
+  Until blits takes the workarounds, the rebuild adds code (net +43 lines). Closes when the clock runs on
+  a released transport with no workarounds, both property test files pass, and `ramp.ts` and the clock's
+  own rate math are gone.
 - **(P2) [agent] One easing table, in blits.** geom's `EASINGS` (31 Penner curves and a bezier solver,
   `packages/geom/src/easings.ts:152`), blits' `named` (5 CSS curves and its own solver) and ui's
   `EasingPicker.tsx:17` control points are three copies. Move the Penner curves into blits' `curve`, re-export
