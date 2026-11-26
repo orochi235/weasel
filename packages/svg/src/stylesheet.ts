@@ -27,6 +27,8 @@ export interface StylesheetContext {
   readonly selector?: (selector: string) => boolean;
   /** Receives a notice for each `@import`, which is never fetched. */
   readonly onWarn?: (message: string) => void;
+  /** Receives each `@keyframes` block whose conditions hold: its name and its body as written. */
+  readonly onKeyframes?: (name: string, body: string) => void;
 }
 
 /**
@@ -80,7 +82,7 @@ export class CascadeLayers {
  * any depth, and `@layer` blocks contribute theirs tagged with the layer,
  * which is declared into `layers`. `@container` blocks contribute theirs
  * tagged with the query, which is answered per element. `@import` is reported
- * and not fetched; every other at-rule (`@font-face`, `@keyframes`, …) is
+ * and not fetched; a `@keyframes` block goes to `ctx.onKeyframes`; every other at-rule (`@font-face`, …) is
  * skipped whole, as are nested blocks inside a rule body. `order` continues
  * from `firstOrder` so several sheets share one source order.
  */
@@ -151,6 +153,8 @@ function parseRuleList(
       if (names && names.length <= 1) {
         const inner = names.length ? state.layers.declare(layer, names[0]) : state.layers.declareAnonymous(layer);
         parseRuleList(src, i + 1, bodyEnd, inner, ctx, rules, state);
+      } else if (name === 'keyframes' || name === '-webkit-keyframes') {
+        ctx.onKeyframes?.(unquoted(at[2].trim()), src.slice(i + 1, bodyEnd));
       } else if (name === 'container') {
         const outer = state.containers;
         state.containers = [...(outer ?? []), at[2]];
@@ -175,6 +179,11 @@ function parseRuleList(
     i = end;
     preludeStart = end;
   }
+}
+
+/** A `@keyframes` name, which CSS also takes as a string. */
+function unquoted(name: string): string {
+  return /^(["']).*\1$/.test(name) ? name.slice(1, -1) : name;
 }
 
 function conditionHolds(name: string, condition: string, ctx: StylesheetContext): boolean {

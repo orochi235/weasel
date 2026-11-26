@@ -41,7 +41,7 @@ import { textFrameAttrOf } from './framedText';
 import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
 import { insideUse, parseUse, spaceOfUse } from './use';
-import { readSmil } from './smil';
+import { readAnimations } from './animations';
 import { isTransformAnimated, noteShape, noteTransform, takeShapes, watchShapes } from './smilShapes';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
@@ -99,7 +99,7 @@ function readDocument(
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const clips = collectClipPaths(root, onWarn);
   const animated = new Map<Element, Set<string>>();
-  const clip = readSmil(root, onWarn, animated);
+  const clip = readAnimations(root, onWarn, animated);
   watchShapes(doc, animated);
   let nodes: SvgNode[];
   let markers: ReturnType<typeof ingestMarkers>;

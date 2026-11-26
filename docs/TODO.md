@@ -297,11 +297,14 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL plays from the import the way
   a browser plays it, checked against browser frames.
 
-- **(P2) [agent] CSS animation import in `@weasel-js/svg`** (2026-11-25). `parseStylesheet` skips `@keyframes` whole
-  (`packages/svg/src/stylesheet.ts`); read them, resolve `animation-*` through the cascade to each element, and
-  add the result to the same `Clip`. `linear()` plays once a blits release carries `{ linear }` (blits branch
-  `linear-easing`). Closes when an SVG animated by CSS alone plays
-  from the import as a browser plays it, checked against browser frames.
+- **(P2) [agent] Some imported CSS animation plays differently from a browser** (2026-11-25). `parseSvg` reads
+  `@keyframes` and `animation` into the clip (`packages/svg/src/cssAnimation.ts`, `cssTiming.ts`). Each of these is
+  warned and not carried: `linear()` easing (plays once a blits release carries `{ linear }`, blits branch
+  `linear-easing`); `steps()` jumping at both ends or neither (blits `main` has `jump: none|both`, unreleased); a
+  percentage `transform-origin` or `transform-box`; a transform of more than one function. Also: when an element
+  sets both the `animation` shorthand and a longhand, the longhand wins whatever their order, and
+  `animation-composition` is ignored. Closes when an SVG animated by CSS alone plays from the import as a browser
+  plays it, checked against browser frames.
 
 - **(P3) [agent] Position tracks move in straight lines between keys** (2026-11-25). Each axis lerps on its own, so
   a curve shapes timing only. Lottie gives position keys spatial in/out tangents apart from the timing ease,
