@@ -741,6 +741,14 @@ these entries are what is left of them.
 
 ## Release-gate & build hygiene
 
+- **(P3) [agent] The vitest module cache keeps an importer built against a re-pointed package link** (2026-11-26).
+  In a worktree whose `node_modules/@msb235/blits` symlink was moved from one blits checkout's `src` to another's,
+  `packages/clock/src/clock.ts` kept loading the old target's modules until `.vitest-cache` was deleted. A test file
+  created after the move loaded the new target, so the stale entry was the importer's, not blits'. Seen with the
+  link pointing at blits' TypeScript source served through a scratch `package.json`. Closes when re-pointing a linked
+  package makes its importers resolve it afresh (`scripts/vitest-resolve-cache-key.ts`), shown by a test that moves a
+  link between runs.
+
 - **(P3) [maintainer] Consider a check that a player's packages never reach authoring ones** (2026-11-25). CLAUDE.md
   ("What gets its own package") says package lines are drawn so a distributable player installs only runtime
   packages, never the composer's editing, tools, chrome, prefs or devtools; nothing enforces it. Likely shape: a
