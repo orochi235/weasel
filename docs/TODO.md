@@ -576,6 +576,14 @@ these entries are what is left of them.
 
 ## Release-gate & build hygiene
 
+- **(P3) [maintainer] Consider a check that a player's packages never reach authoring ones** (2026-11-25). CLAUDE.md
+  ("What gets its own package") says package lines are drawn so a distributable player installs only runtime
+  packages, never the composer's editing, tools, chrome, prefs or devtools; nothing enforces it. Likely shape: a
+  `weasel.role` (`runtime` / `authoring`) in each manifest beside `weasel.tier`, and `check:tiers` (or a sibling)
+  failing a `runtime` package whose dependency closure reaches an `authoring` one. Needs the maintainer to rule on
+  whether to build it and how each package is classed. Closes when the check runs in the gate, or the maintainer
+  rules it out.
+
 - **(P2) [agent] The non-browser fleet run needs over 4 GB of heap** (2026-11-25): with every project but `browser` in
   one vitest process, `main` at `73ca57f759` fits under node's default 4 GB heap and either of audit round 86's routing
   branches (`audit86-routing.interactions.dispatcher`, `audit86-routing.interactions.actions`) pushes it over
