@@ -1,4 +1,5 @@
 import { isBlitsEasing, resolveKeyEasing, type KeyEasing } from '@weasel-js/animator';
+import { easingBezier } from '@weasel-js/geom';
 
 type Jump = 'start' | 'end' | 'none' | 'both';
 type Point = { t: number; v: number };
@@ -11,16 +12,26 @@ export function numText(n: number): string {
   return String(Number(n.toFixed(4)) + 0);
 }
 
-function bezierOf(easing: KeyEasing | undefined): readonly [number, number, number, number] | null {
-  return typeof easing === 'object' && easing !== null && 'bezier' in easing ? easing.bezier : null;
+/** A number with at most 4 decimals, as a number. */
+export function rounded(n: number): number {
+  return Number(numText(n));
+}
+
+const bezierOf = (easing: KeyEasing | undefined) => (isBlitsEasing(easing) ? null : easingBezier(easing));
+
+/** Steps of at least one; zero steps never move, which reads as linear. */
+function stepsOf(easing: KeyEasing | undefined): Steps | null {
+  return isBlitsEasing(easing) && 'steps' in easing && easing.steps >= 1 ? easing : null;
 }
 
 function isLinear(easing: KeyEasing | undefined): boolean {
-  return easing === undefined || easing === 'linear';
+  return easing === undefined || easing === 'linear' || (isBlitsEasing(easing) && 'steps' in easing && !stepsOf(easing));
 }
 
-function stepsOf(easing: KeyEasing | undefined): Steps | null {
-  return isBlitsEasing(easing) && 'steps' in easing ? easing : null;
+/** Whether `easing` holds its value to the key and then jumps, as SMIL's discrete and a Lottie hold do. */
+function isHold(easing: KeyEasing | undefined): boolean {
+  const steps = stepsOf(easing);
+  return steps !== null && steps.steps === 1 && (steps.jump ?? 'end') === 'end';
 }
 
 function sampled(easing: KeyEasing | undefined): number[] {
@@ -91,7 +102,8 @@ export function cssTimingOf(easing: KeyEasing | undefined): string {
   const bezier = bezierOf(easing);
   if (bezier) return `cubic-bezier(${bezier.map(numText).join(', ')})`;
   const steps = stepsOf(easing);
-  if (steps) return `steps(${steps.steps}, jump-${steps.jump ?? 'end'})`;
+  // One step with no jump at either end is invalid CSS; it holds the end throughout, as jump-start does.
+  if (steps) return `steps(${steps.steps}, jump-${steps.steps === 1 && steps.jump === 'none' ? 'start' : steps.jump ?? 'end'})`;
   if (isBlitsEasing(easing) && 'linear' in easing) return `linear(${easing.linear.map(cssLinearPoint).join(', ')})`;
   return `linear(${sampled(easing).map(numText).join(', ')})`;
 }
@@ -105,8 +117,7 @@ export function smilTimingOf(easing: KeyEasing | undefined): {
   if (isLinear(easing)) return { calcMode: 'linear' };
   const bezier = bezierOf(easing);
   if (bezier) return { calcMode: 'spline', keySpline: bezier.map(numText).join(' ') };
-  const steps = stepsOf(easing);
-  if (steps && steps.steps === 1 && (steps.jump ?? 'end') === 'end') return { calcMode: 'discrete' };
+  if (isHold(easing)) return { calcMode: 'discrete' };
   return { calcMode: 'linear', expand: expandedOf(easing) };
 }
 
@@ -118,7 +129,6 @@ export function lottieTangentsOf(easing: KeyEasing | undefined):
   if (isLinear(easing)) return { o: { x: 0, y: 0 }, i: { x: 1, y: 1 } };
   const bezier = bezierOf(easing);
   if (bezier) return { o: { x: bezier[0], y: bezier[1] }, i: { x: bezier[2], y: bezier[3] } };
-  const steps = stepsOf(easing);
-  if (steps && steps.steps === 1 && (steps.jump ?? 'end') === 'end') return { hold: true };
+  if (isHold(easing)) return { hold: true };
   return { expand: expandedOf(easing) };
 }

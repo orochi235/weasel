@@ -13,6 +13,12 @@ describe('cssTimingOf', () => {
     expect(cssTimingOf({ steps: 3, jump: 'none' })).toBe('steps(3, jump-none)');
     expect(cssTimingOf({ steps: 2 })).toBe('steps(2, jump-end)');
   });
+  it('writes one step with no jump as jump-start, which CSS allows, and no steps as linear', () => {
+    expect(cssTimingOf({ steps: 1, jump: 'none' })).toBe('steps(1, jump-start)');
+    expect(cssTimingOf({ steps: 0 })).toBe('linear');
+    expect(smilTimingOf({ steps: 0 })).toEqual({ calcMode: 'linear' });
+    expect(lottieTangentsOf({ steps: 0 })).toEqual({ o: { x: 0, y: 0 }, i: { x: 1, y: 1 } });
+  });
   it('writes blits points with percentage inputs', () => {
     expect(cssTimingOf({ linear: [0, [0.8, 0.5], 1] })).toBe('linear(0, 0.8 50%, 1)');
     expect(cssTimingOf({ linear: [0, [0.5, 0.25, 0.75], 1] })).toBe('linear(0, 0.5 25% 75%, 1)');
