@@ -276,6 +276,26 @@ reported to the caller, never dropped silently.
   add the result to the same `Clip`. Needs the `Clip` entry above. Closes when an SVG animated by CSS alone plays
   from the import as a browser plays it, checked against browser frames.
 
+- **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
+  `at` and `duration` (`packages/animator/src/timeline/types.ts`); `loop` and `timeScale` exist only on the root.
+  Lottie precomps (stretch, time remap curves), a cycle looping inside a longer shot, and a segment played backward
+  all need a nested timeline with its own rate, loop count and an optional time-remap track mapping parent time to
+  child time. Closes when a nested timeline takes all three, scrubs order-independently, and `Clip` carries them.
+
+- **(P3) [agent] Position tracks move in straight lines between keys** (2026-11-25). Each axis lerps on its own, so
+  a curve shapes timing only. Lottie gives position keys spatial in/out tangents apart from the timing ease,
+  "roving" keys retimed for constant speed, and auto-orient along the path. Closes when a sampled track can take
+  spatial tangents (path math from `geom/along`), a constant-speed option, and an orient-along-path output, and
+  `Clip` carries them.
+
+- **(P3) [agent] No lifetime window on an animated node** (2026-11-25). Lottie layers have in/out points outside
+  which they don't exist; here that is faked with an opacity or visibility track. Closes when a `Clip` can give a
+  target an in/out window that hides it and skips sampling its tracks outside it.
+
+- **(P3) [agent] Timeline markers are points, not ranges** (2026-11-25). `EventTrack` events have no duration, so a
+  player can't "play `intro`, then loop `idle`" as Lottie markers allow. Closes when a timeline carries named
+  ranges and playback can play or loop one by name, round-tripping through `Clip`.
+
 - **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
   scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to `BezierEasing`. A package of its own
   because Lottie is a scene format, not SVG. Needs the `Clip` entry above. Closes when a set of reference Lottie
