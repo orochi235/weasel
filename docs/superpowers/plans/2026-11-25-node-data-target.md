@@ -31,10 +31,14 @@ it (tessellation, bounds), is rebuilt each frame. Trim and vertex color today by
    value, or the caller's. Nothing in it reads `pose`, so a `Pose3` scene uses it unchanged.
 2. **`sceneClipTargets`** gains `data:<id>.<key>` resolved through a lens table the caller passes
    (`options.lenses: Record<string, Lens>`), so a format names fields and core never learns SVG.
-3. **svg binder**: `svgClipLenses()` in `@weasel-js/svg` maps SMIL attribute names onto the kit drafts
-   `svgNodesToKitDrafts` makes (opacity, fill/stroke color and opacity, stroke-width, dash and offset,
-   geometry attributes re-lowered to the path). `transform.<type>` binds to the pose target, which needs
-   parse to keep an animated element's transform as a pose (today it bakes every transform).
+3. **svg binder**: a `ClipBinder.target` in `@weasel-js/svg` built beside `svgNodesToKitDrafts`, mapping
+   SMIL names onto the kit drafts (opacity, fill/stroke color and opacity, stroke-width, dash and offset,
+   geometry attributes re-lowered to the path). Three facts about `packages/svg/src/unpack.ts` shape it
+   (read 2026-11-25): kit ids come from the caller's `nextId(source)`, so the binder needs the svg id → kit
+   id map that callback sees; a group has no opacity of its own, since `visit` multiplies every enclosing
+   group's opacity into each leaf's paints, so `<g id>.opacity` is one target fanning out to every leaf
+   under it; and `withTransformsBaked` bakes every transform into geometry, so `transform.<type>` needs the
+   unpack to leave an animated element's transform out of the bake and draft it as that node's pose.
 4. **trim and vertex color as instances** (the render-path change): `TrimOverrideRegistry` and
    `ColorOverrideRegistry` become lenses over `stroke.trim` and the vertex-color arrays, and
    `withPaintOverrides` goes. Benchmark before and after on one fleet node (`--kind bench`): a trim
