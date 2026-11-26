@@ -1,5 +1,7 @@
+import { curve, penner, type LinearPoint } from '@msb235/blits';
 import { getOwn } from '@weasel-js/registry';
 import { EASINGS, type EasingFn, type EasingName } from './easings';
+import { clamp } from './scalar';
 
 /** Cubic-bezier control points, CSS `cubic-bezier()` order. The curve's two
  *  endpoints are implicit at (0,0) and (1,1). */
@@ -13,65 +15,11 @@ export interface BezierEasing {
  *  function, which is why the union exists. */
 export type EasingSpec = EasingFn | EasingName | BezierEasing;
 
-const NEWTON_ITERATIONS = 8;
-const NEWTON_MIN_SLOPE = 1e-3;
-const SUBDIVISION_EPSILON = 1e-7;
-// Enough halvings of [0, 1] to reach SUBDIVISION_EPSILON in x, whose slope is at most 3.
-const SUBDIVISION_MAX = 40;
+/** A named curve as data: cubic-bezier control points, or CSS `linear()` points as blits'
+ *  `LinearPoint`s, for a curve no single cubic fits. */
+export type EasingData = BezierEasing | { readonly linear: readonly LinearPoint[] };
 
-function bezierAt(t: number, a1: number, a2: number): number {
-  const c = 3 * a1;
-  const b = 3 * (a2 - a1) - c;
-  const a = 1 - c - b;
-  return ((a * t + b) * t + c) * t;
-}
-
-function bezierSlope(t: number, a1: number, a2: number): number {
-  const c = 3 * a1;
-  const b = 3 * (a2 - a1) - c;
-  const a = 1 - c - b;
-  return (3 * a * t + 2 * b) * t + c;
-}
-
-/** Solve for the bezier parameter that puts the curve at `x`. Newton-Raphson
- *  where the slope allows it, bisection where it does not — the standard
- *  approach, and the one browsers use for `cubic-bezier()`. */
-function solveForX(x: number, x1: number, x2: number): number {
-  let t = x;
-  for (let i = 0; i < NEWTON_ITERATIONS; i++) {
-    const slope = bezierSlope(t, x1, x2);
-    if (slope < NEWTON_MIN_SLOPE) break;
-    t -= (bezierAt(t, x1, x2) - x) / slope;
-  }
-  let lo = 0;
-  let hi = 1;
-  t = Math.min(1, Math.max(0, t));
-  for (let i = 0; i < SUBDIVISION_MAX; i++) {
-    const err = bezierAt(t, x1, x2) - x;
-    if (Math.abs(err) < SUBDIVISION_EPSILON) return t;
-    if (err > 0) hi = t; else lo = t;
-    t = (lo + hi) / 2;
-  }
-  return t;
-}
-
-/** Build the easing curve for four cubic-bezier control points. `x1`/`x2` are
- *  clamped to [0,1] — CSS `cubic-bezier()`'s constraint for a monotone x(t),
- *  which both `solveForX` root-finders assume. `y1`/`y2` are unclamped: an
- *  overshoot easing (back, elastic) needs them outside 0..1. */
-export function cubicBezierEasing(
-  x1: number, y1: number, x2: number, y2: number,
-): EasingFn {
-  const cx1 = Math.min(1, Math.max(0, x1));
-  const cx2 = Math.min(1, Math.max(0, x2));
-  return (t) => {
-    if (t <= 0) return 0;
-    if (t >= 1) return 1;
-    return bezierAt(solveForX(t, cx1, cx2), y1, y2);
-  };
-}
-
-/** Memoized so two equal specs resolve to one function, not a fresh solver per call. */
+/** Memoized so two equal specs resolve to one function, not a fresh curve per call. */
 const bezierCache = new Map<string, EasingFn>();
 const BEZIER_CACHE_LIMIT = 256;
 
@@ -79,7 +27,9 @@ function isBezier(spec: EasingSpec): spec is BezierEasing {
   return typeof spec === 'object' && spec !== null && 'bezier' in spec;
 }
 
-/** Resolve a spec to the function that shapes progress. `undefined` is linear. */
+/** Resolve a spec to the function that shapes progress. `undefined` is linear. A name resolves to blits'
+ *  curve of that name; control points to blits' cubic-bezier, with `x1`/`x2` clamped to [0,1] as CSS
+ *  requires and `y1`/`y2` left free, since an overshoot needs them outside 0..1. */
 export function resolveEasing(spec?: EasingSpec): EasingFn {
   if (spec === undefined) return EASINGS.linear;
   if (typeof spec === 'function') return spec;
@@ -93,7 +43,7 @@ export function resolveEasing(spec?: EasingSpec): EasingFn {
     const key = `${x1},${y1},${x2},${y2}`;
     let fn = bezierCache.get(key);
     if (!fn) {
-      fn = cubicBezierEasing(x1, y1, x2, y2);
+      fn = curve({ bezier: [clamp(x1, 0, 1), y1, clamp(x2, 0, 1), y2] });
       // A handle being dragged resolves a new curve every pointer move.
       if (bezierCache.size >= BEZIER_CACHE_LIMIT) bezierCache.delete(bezierCache.keys().next().value!);
       bezierCache.set(key, fn);
@@ -106,6 +56,18 @@ export function resolveEasing(spec?: EasingSpec): EasingFn {
 /** A spec's control points, for an editor's draggable handles; `null` for a spec that has none. */
 export function easingBezier(spec?: EasingSpec): readonly [number, number, number, number] | null {
   return spec !== undefined && isBezier(spec) ? spec.bezier : null;
+}
+
+const LINEAR_DATA: EasingData = { bezier: [0, 0, 1, 1] };
+
+/** The data a named curve is stored as in blits, for writing it out as CSS, SMIL or Lottie or converting it to
+ *  control points: a cubic-bezier within 0.003 of Penner's function where one fits, otherwise `linear()` points
+ *  within 0.001. `linear` is the straight bezier. */
+export function easingDataOf(name: EasingName): EasingData {
+  if (name === 'linear') return LINEAR_DATA;
+  const data = getOwn(penner, name);
+  if (!data) throw new Error(`easingDataOf: unknown easing name "${name}"`);
+  return data;
 }
 
 /** What an editor shows for a spec.

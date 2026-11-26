@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { resolveEasing, cubicBezierEasing } from './easingSpec';
+import { curve, penner, type PennerName } from '@msb235/blits';
+import { EASING_NAMES, easingDataOf, resolveEasing } from './easingSpec';
 import { easeOutBack, linear } from './easings';
 
 describe('resolveEasing', () => {
@@ -45,74 +46,52 @@ describe('resolveEasing', () => {
   });
 });
 
-describe('cubicBezierEasing', () => {
+describe('resolveEasing of a bezier spec', () => {
   it('reproduces linear for the identity control points', () => {
-    const fn = cubicBezierEasing(1 / 3, 1 / 3, 2 / 3, 2 / 3);
+    const fn = resolveEasing({ bezier: [1 / 3, 1 / 3, 2 / 3, 2 / 3] });
     for (const t of [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]) {
       expect(fn(t)).toBeCloseTo(t, 4);
     }
   });
 
-  it('is monotone non-decreasing for a monotone curve', () => {
-    const fn = cubicBezierEasing(0.4, 0, 0.2, 1);
-    let prev = -Infinity;
-    for (let i = 0; i <= 100; i++) {
-      const v = fn(i / 100);
-      expect(v).toBeGreaterThanOrEqual(prev - 1e-9);
-      prev = v;
-    }
-  });
-
-  it('eases out: ahead of linear through the first half', () => {
-    const fn = cubicBezierEasing(0, 0, 0.2, 1);
-    expect(fn(0.25)).toBeGreaterThan(0.25);
-  });
-
   it('clamps input outside 0..1', () => {
-    const fn = cubicBezierEasing(0.4, 0, 0.2, 1);
+    const fn = resolveEasing({ bezier: [0.4, 0, 0.2, 1] });
     expect(fn(-1)).toBeCloseTo(0, 6);
     expect(fn(2)).toBeCloseTo(1, 6);
   });
 
   it('leaves the unit range for an overshooting curve', () => {
-    const fn = cubicBezierEasing(0.34, 1.56, 0.64, 1);
+    const fn = resolveEasing({ bezier: [0.34, 1.56, 0.64, 1] });
     let max = 0;
     for (let i = 0; i <= 100; i++) max = Math.max(max, fn(i / 100));
     expect(max).toBeGreaterThan(1);
   });
 
   it('clamps x1/x2 outside 0..1, matching the clamped curve', () => {
-    const over = cubicBezierEasing(1.5, 0, 0.2, 1);
-    const clamped = cubicBezierEasing(1, 0, 0.2, 1);
+    const over = resolveEasing({ bezier: [1.5, 0, 0.2, 1] });
+    const clamped = resolveEasing({ bezier: [1, 0, 0.2, 1] });
+    const under = resolveEasing({ bezier: [-0.5, 0, 0.2, 1] });
+    const clampedUnder = resolveEasing({ bezier: [0, 0, 0.2, 1] });
     for (const t of [0, 0.25, 0.5, 0.75, 1]) {
       expect(over(t)).toBeCloseTo(clamped(t), 6);
-    }
-
-    const under = cubicBezierEasing(-0.5, 0, 0.2, 1);
-    const clampedUnder = cubicBezierEasing(0, 0, 0.2, 1);
-    for (const t of [0, 0.25, 0.5, 0.75, 1]) {
       expect(under(t)).toBeCloseTo(clampedUnder(t), 6);
-    }
-  });
-
-  it('stays monotone for a curve whose x1 is out of range', () => {
-    const fn = cubicBezierEasing(1.5, 0, 0.2, 1);
-    let prev = -Infinity;
-    for (let i = 0; i <= 100; i++) {
-      const v = fn(i / 100);
-      expect(v).toBeGreaterThanOrEqual(prev - 1e-9);
-      prev = v;
     }
   });
 });
 
-describe('cubicBezierEasing where Newton gives up', () => {
-  it('solves a flat end to the solver epsilon', () => {
-    const [x1, y1, x2, y2] = [0.42, 0, 1, 1];
-    const bx = (t: number) => 3 * x1 * t * (1 - t) ** 2 + 3 * x2 * t * t * (1 - t) + t ** 3;
-    const by = (t: number) => 3 * y1 * t * (1 - t) ** 2 + 3 * y2 * t * t * (1 - t) + t ** 3;
-    let lo = 0, hi = 1;
-    for (let i = 0; i < 80; i++) { const m = (lo + hi) / 2; if (bx(m) < 0.9999) lo = m; else hi = m; }
-    expect(Math.abs(cubicBezierEasing(x1, y1, x2, y2)(0.9999) - by(lo))).toBeLessThan(1e-6);
+describe('named curves come from blits', () => {
+  it('resolves every name to blits\' curve of that name', () => {
+    for (const name of EASING_NAMES) expect(resolveEasing(name), name).toBe(curve(name));
+  });
+
+  it('gives each name the data blits stores it as', () => {
+    expect(easingDataOf('linear')).toEqual({ bezier: [0, 0, 1, 1] });
+    for (const name of EASING_NAMES.filter((n) => n !== 'linear')) {
+      expect(easingDataOf(name), name).toBe(penner[name as PennerName]);
+    }
+  });
+
+  it('throws on a name that is not a built-in', () => {
+    expect(() => easingDataOf('constructor' as never)).toThrow(/unknown easing/i);
   });
 });

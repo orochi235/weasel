@@ -1666,7 +1666,6 @@
     "cssFamilyName": "function",
     "cssFontFamily": "function",
     "cssFontFamilyLoading": "function",
-    "cubicBezierEasing": "function",
     "cullDrawCommands": "function",
     "cursorCss": "function",
     "cursorFor": "function",

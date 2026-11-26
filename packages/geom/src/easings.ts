@@ -1,3 +1,5 @@
+import { curve, type PennerName } from '@msb235/blits';
+
 /** An easing curve: maps normalized progress `t ∈ [0, 1]` to eased progress.
  *  Curves may leave the 0–1 range in the middle (back, elastic) but should
  *  pass through 0 at 0 and 1 at 1. */
@@ -14,139 +16,84 @@ export interface SpringPreset {
 /** One of the tunings in `SPRING_PRESETS`. */
 export type SpringPresetName = 'gentle' | 'wobbly' | 'stiff' | 'slow';
 
-// --- Polynomial family (degree 1-5).
+// Penner's curves are blits' `curve()` names, stored there as a CSS cubic-bezier within 0.003 of
+// Penner's function or `linear()` points within 0.001, so they also run on blits' GPU path.
 
 /** No easing: constant rate from start to finish. */
-export const linear: EasingFn = (t) => t;
+export const linear: EasingFn = /* @__PURE__ */ curve('linear');
 
-// Quadratic (degree 2)
 /** Accelerates from a standstill, gently. */
-export const easeInQuad: EasingFn = (t) => t * t;
+export const easeInQuad: EasingFn = /* @__PURE__ */ curve('easeInQuad');
 /** Decelerates to a stop, gently. The safe default for UI motion. */
-export const easeOutQuad: EasingFn = (t) => 1 - (1 - t) * (1 - t);
+export const easeOutQuad: EasingFn = /* @__PURE__ */ curve('easeOutQuad');
 /** Accelerates then decelerates, gently. */
-export const easeInOutQuad: EasingFn = (t) =>
-  t < 0.5 ? 2 * t * t : 1 - 2 * (1 - t) * (1 - t);
+export const easeInOutQuad: EasingFn = /* @__PURE__ */ curve('easeInOutQuad');
 
-// Cubic (degree 3)
 /** Accelerates from a standstill, moderately. */
-export const easeInCubic: EasingFn = (t) => t * t * t;
+export const easeInCubic: EasingFn = /* @__PURE__ */ curve('easeInCubic');
 /** Decelerates to a stop, moderately. */
-export const easeOutCubic: EasingFn = (t) => 1 - Math.pow(1 - t, 3);
+export const easeOutCubic: EasingFn = /* @__PURE__ */ curve('easeOutCubic');
 /** Accelerates then decelerates, moderately. */
-export const easeInOutCubic: EasingFn = (t) =>
-  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+export const easeInOutCubic: EasingFn = /* @__PURE__ */ curve('easeInOutCubic');
 
-// Quartic (degree 4)
 /** Accelerates from a standstill, sharply. */
-export const easeInQuart: EasingFn = (t) => t * t * t * t;
+export const easeInQuart: EasingFn = /* @__PURE__ */ curve('easeInQuart');
 /** Decelerates to a stop, sharply. */
-export const easeOutQuart: EasingFn = (t) => 1 - Math.pow(1 - t, 4);
+export const easeOutQuart: EasingFn = /* @__PURE__ */ curve('easeOutQuart');
 /** Accelerates then decelerates, sharply. */
-export const easeInOutQuart: EasingFn = (t) =>
-  t < 0.5 ? 8 * t * t * t * t : 1 - Math.pow(-2 * t + 2, 4) / 2;
+export const easeInOutQuart: EasingFn = /* @__PURE__ */ curve('easeInOutQuart');
 
-// Quintic (degree 5)
 /** Accelerates from a standstill, very sharply. */
-export const easeInQuint: EasingFn = (t) => t * t * t * t * t;
+export const easeInQuint: EasingFn = /* @__PURE__ */ curve('easeInQuint');
 /** Decelerates to a stop, very sharply. */
-export const easeOutQuint: EasingFn = (t) => 1 - Math.pow(1 - t, 5);
+export const easeOutQuint: EasingFn = /* @__PURE__ */ curve('easeOutQuint');
 /** Accelerates then decelerates, very sharply. */
-export const easeInOutQuint: EasingFn = (t) =>
-  t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
-
-// --- Trigonometric / transcendental
+export const easeInOutQuint: EasingFn = /* @__PURE__ */ curve('easeInOutQuint');
 
 /** Accelerates from a standstill along a sine curve — the mildest
  *  acceleration of the built-ins. */
-export const easeInSine: EasingFn = (t) => (t === 1 ? 1 : 1 - Math.cos((t * Math.PI) / 2));
+export const easeInSine: EasingFn = /* @__PURE__ */ curve('easeInSine');
 /** Decelerates to a stop along a sine curve — the mildest
  *  deceleration of the built-ins. */
-export const easeOutSine: EasingFn = (t) => Math.sin((t * Math.PI) / 2);
+export const easeOutSine: EasingFn = /* @__PURE__ */ curve('easeOutSine');
 /** Accelerates then decelerates along a sine curve. */
-export const easeInOutSine: EasingFn = (t) => -(Math.cos(Math.PI * t) - 1) / 2;
+export const easeInOutSine: EasingFn = /* @__PURE__ */ curve('easeInOutSine');
 
 /** Accelerates exponentially: barely moves at first, then rushes. */
-export const easeInExpo: EasingFn = (t) => (t === 0 ? 0 : Math.pow(2, 10 * t - 10));
+export const easeInExpo: EasingFn = /* @__PURE__ */ curve('easeInExpo');
 /** Decelerates exponentially: leaps away, then creeps in. */
-export const easeOutExpo: EasingFn = (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t));
+export const easeOutExpo: EasingFn = /* @__PURE__ */ curve('easeOutExpo');
 /** Exponential at both ends — a very fast middle between two
  *  near-still extremes. */
-export const easeInOutExpo: EasingFn = (t) => {
-  if (t === 0) return 0;
-  if (t === 1) return 1;
-  return t < 0.5
-    ? Math.pow(2, 20 * t - 10) / 2
-    : (2 - Math.pow(2, -20 * t + 10)) / 2;
-};
+export const easeInOutExpo: EasingFn = /* @__PURE__ */ curve('easeInOutExpo');
 
 /** Accelerates along a circular arc: slow start, abrupt arrival. */
-export const easeInCirc: EasingFn = (t) => 1 - Math.sqrt(1 - t * t);
+export const easeInCirc: EasingFn = /* @__PURE__ */ curve('easeInCirc');
 /** Decelerates along a circular arc: abrupt start, slow arrival. */
-export const easeOutCirc: EasingFn = (t) => Math.sqrt(1 - Math.pow(t - 1, 2));
+export const easeOutCirc: EasingFn = /* @__PURE__ */ curve('easeOutCirc');
 /** Circular arcs at both ends. */
-export const easeInOutCirc: EasingFn = (t) =>
-  t < 0.5
-    ? (1 - Math.sqrt(1 - Math.pow(2 * t, 2))) / 2
-    : (Math.sqrt(1 - Math.pow(-2 * t + 2, 2)) + 1) / 2;
-
-// --- Overshoot / oscillate / decay (Penner's named curves).
-// Constants are the well-known defaults; a future iteration could expose
-// per-call tuning (stiffness on back, amplitude/period on elastic).
-
-const C1 = 1.70158;          // back overshoot
-const C2 = C1 * 1.525;       // back inOut
-const C4 = (2 * Math.PI) / 3; // elastic in/out
-const C5 = (2 * Math.PI) / 4.5;
+export const easeInOutCirc: EasingFn = /* @__PURE__ */ curve('easeInOutCirc');
 
 /** Pulls back past the start before moving forward. Overshoots below 0. */
-export const easeInBack: EasingFn = (t) => t * t * (C1 * (t - 1) + t);
+export const easeInBack: EasingFn = /* @__PURE__ */ curve('easeInBack');
 /** Overshoots the target, then settles back onto it. Exceeds 1. */
-export const easeOutBack: EasingFn = (t) => 1 - easeInBack(1 - t);
+export const easeOutBack: EasingFn = /* @__PURE__ */ curve('easeOutBack');
 /** Overshoots at both ends. Leaves the 0–1 range on each side. */
-export const easeInOutBack: EasingFn = (t) =>
-  t < 0.5
-    ? (Math.pow(2 * t, 2) * ((C2 + 1) * 2 * t - C2)) / 2
-    : (Math.pow(2 * t - 2, 2) * ((C2 + 1) * (2 * t - 2) + C2) + 2) / 2;
+export const easeInOutBack: EasingFn = /* @__PURE__ */ curve('easeInOutBack');
 
 /** Oscillates around the start with growing amplitude, then snaps away. */
-export const easeInElastic: EasingFn = (t) => {
-  if (t === 0) return 0;
-  if (t === 1) return 1;
-  return -Math.pow(2, 10 * t - 10) * Math.sin((t * 10 - 10.75) * C4);
-};
+export const easeInElastic: EasingFn = /* @__PURE__ */ curve('easeInElastic');
 /** Springs past the target and wobbles into it. Exceeds 1. */
-export const easeOutElastic: EasingFn = (t) => {
-  if (t === 0) return 0;
-  if (t === 1) return 1;
-  return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * C4) + 1;
-};
+export const easeOutElastic: EasingFn = /* @__PURE__ */ curve('easeOutElastic');
 /** Wobbles at both ends. Leaves the 0–1 range on each side. */
-export const easeInOutElastic: EasingFn = (t) => {
-  if (t === 0) return 0;
-  if (t === 1) return 1;
-  return t < 0.5
-    ? -(Math.pow(2, 20 * t - 10) * Math.sin((20 * t - 11.125) * C5)) / 2
-    : (Math.pow(2, -20 * t + 10) * Math.sin((20 * t - 11.125) * C5)) / 2 + 1;
-};
+export const easeInOutElastic: EasingFn = /* @__PURE__ */ curve('easeInOutElastic');
 
 /** Lands on the target and bounces, in hops of decreasing height. */
-export const easeOutBounce: EasingFn = (t) => {
-  const n1 = 7.5625;
-  const d1 = 2.75;
-  if (t < 1 / d1) return n1 * t * t;
-  if (t < 2 / d1) { t -= 1.5 / d1;   return n1 * t * t + 0.75; }
-  if (t < 2.5 / d1) { t -= 2.25 / d1; return n1 * t * t + 0.9375; }
-  t -= 2.625 / d1;
-  return n1 * t * t + 0.984375;
-};
+export const easeOutBounce: EasingFn = /* @__PURE__ */ curve('easeOutBounce');
 /** Bounces up to the start before departing — `easeOutBounce` reversed. */
-export const easeInBounce: EasingFn = (t) => 1 - easeOutBounce(1 - t);
+export const easeInBounce: EasingFn = /* @__PURE__ */ curve('easeInBounce');
 /** Bounces at both ends. */
-export const easeInOutBounce: EasingFn = (t) =>
-  t < 0.5
-    ? (1 - easeOutBounce(1 - 2 * t)) / 2
-    : (1 + easeOutBounce(2 * t - 1)) / 2;
+export const easeInOutBounce: EasingFn = /* @__PURE__ */ curve('easeInOutBounce');
 
 /** All easings in one bag — useful for demos / pickers. */
 export const EASINGS = {
@@ -161,7 +108,7 @@ export const EASINGS = {
   easeInBack, easeOutBack, easeInOutBack,
   easeInElastic, easeOutElastic, easeInOutElastic,
   easeInBounce, easeOutBounce, easeInOutBounce,
-} as const;
+} as const satisfies Record<PennerName | 'linear', EasingFn>;
 
 /** The name of one of the built-in easing curves. */
 export type EasingName = keyof typeof EASINGS;

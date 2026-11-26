@@ -53,11 +53,11 @@ describe('EasingPicker', () => {
     const onChange = vi.fn();
     render(<EasingPicker value="easeInOutCubic" onChange={onChange} />);
     fireEvent.click(screen.getByRole('button', { name: /convert to bezier/i }));
-    expect(onChange).toHaveBeenCalledWith({ bezier: [0.65, 0, 0.35, 1] });
+    expect(onChange).toHaveBeenCalledWith({ bezier: [0.62489, -0.04052, 0.37511, 1.04052] });
   });
 
   it('converts every named curve that has a cubic to its own control points, never the CSS default', () => {
-    for (const name of ['easeOutExpo', 'easeInQuart', 'easeOutBack', 'easeInOutCirc'] as const) {
+    for (const name of ['easeOutExpo', 'easeInQuart', 'easeOutBack', 'easeInCirc'] as const) {
       const onChange = vi.fn();
       const { unmount } = render(<EasingPicker value={name} onChange={onChange} />);
       fireEvent.click(screen.getByRole('button', { name: /convert to bezier/i }));
@@ -67,7 +67,7 @@ describe('EasingPicker', () => {
   });
 
   it('offers no conversion of a curve no single cubic draws', () => {
-    for (const name of ['easeOutElastic', 'easeInOutBounce'] as const) {
+    for (const name of ['easeOutElastic', 'easeInOutBounce', 'easeInOutQuad', 'easeInOutBack'] as const) {
       const { unmount } = render(<EasingPicker value={name} onChange={() => {}} />);
       expect(screen.queryByRole('button', { name: /convert to bezier/i })).toBeNull();
       unmount();

@@ -149,9 +149,12 @@ describe('insertKey, shrunk', () => {
   it('runs an eased stretch’s easing again over each side of the new key', () => {
     const tr = { kind: 'sampled', onTick: () => {}, keys: [{ t: 0, value: 0 }, { t: 100, value: 100, easing: 'easeInQuad' }] } as unknown as Track;
     const after = insertKey([tr], [0], 50).tracks[0] as SampledTrack<number>;
-    expect(after.keys[1]).toEqual({ t: 50, value: 25, easing: 'easeInQuad' });
-    expect(sampleTrack(after, 25)).toBeCloseTo(6.25, 9);
-    expect(sampleTrack(tr as SampledTrack<number>, 75)).toBeCloseTo(56.25, 9);
-    expect(sampleTrack(after, 75)).toBeCloseTo(43.75, 9);
+    // blits' easeInQuad is a bezier within 0.003 of t², so over a span of 100 a value lands within 0.3, and a sample
+    // through the new key, which compounds that with a second span, within 0.6.
+    expect(after.keys[1]).toEqual({ t: 50, value: expect.any(Number), easing: 'easeInQuad' });
+    expect(Math.abs(after.keys[1].value - 25)).toBeLessThan(0.3);
+    expect(Math.abs(sampleTrack(after, 25)! - 6.25)).toBeLessThan(0.6);
+    expect(Math.abs(sampleTrack(tr as SampledTrack<number>, 75)! - 56.25)).toBeLessThan(0.3);
+    expect(Math.abs(sampleTrack(after, 75)! - 43.75)).toBeLessThan(0.6);
   });
 });

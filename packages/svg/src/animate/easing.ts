@@ -1,5 +1,5 @@
 import { isBlitsEasing, resolveKeyEasing, type KeyEasing } from '@weasel-js/animator';
-import { easingBezier } from '@weasel-js/geom';
+import { easingBezier, easingDataOf } from '@weasel-js/geom';
 
 type Jump = 'start' | 'end' | 'none' | 'both';
 type Point = { t: number; v: number };
@@ -81,6 +81,11 @@ function breakpointsOf(points: readonly (number | readonly number[])[]): Point[]
   return out.map((p) => ({ t: p.t!, v: p.v }));
 }
 
+/** A named curve as the bezier or `linear()` points blits stores it as, so it writes out as data, not samples. */
+function dataOf(easing: KeyEasing | undefined): KeyEasing | undefined {
+  return typeof easing === 'string' && easing !== 'linear' ? easingDataOf(easing) : easing;
+}
+
 /** Points a writer inserts where its format has no form for the easing. */
 function expandedOf(easing: KeyEasing | undefined): Point[] {
   const steps = stepsOf(easing);
@@ -97,7 +102,8 @@ function cssLinearPoint(p: number | readonly number[]): string {
 }
 
 /** The CSS `animation-timing-function` for an easing. */
-export function cssTimingOf(easing: KeyEasing | undefined): string {
+export function cssTimingOf(named: KeyEasing | undefined): string {
+  const easing = dataOf(named);
   if (isLinear(easing)) return 'linear';
   const bezier = bezierOf(easing);
   if (bezier) return `cubic-bezier(${bezier.map(numText).join(', ')})`;
@@ -109,11 +115,12 @@ export function cssTimingOf(easing: KeyEasing | undefined): string {
 }
 
 /** How a SMIL `animate` eases into a key, or the points to insert where it has no form for it. */
-export function smilTimingOf(easing: KeyEasing | undefined): {
+export function smilTimingOf(named: KeyEasing | undefined): {
   calcMode: 'linear' | 'spline' | 'discrete';
   keySpline?: string;
   expand?: Point[];
 } {
+  const easing = dataOf(named);
   if (isLinear(easing)) return { calcMode: 'linear' };
   const bezier = bezierOf(easing);
   if (bezier) return { calcMode: 'spline', keySpline: bezier.map(numText).join(' ') };
@@ -122,10 +129,11 @@ export function smilTimingOf(easing: KeyEasing | undefined): {
 }
 
 /** A Lottie keyframe's outgoing and incoming tangents, a hold, or the points to insert. */
-export function lottieTangentsOf(easing: KeyEasing | undefined):
+export function lottieTangentsOf(named: KeyEasing | undefined):
   | { o: { x: number; y: number }; i: { x: number; y: number } }
   | { hold: true }
   | { expand: Point[] } {
+  const easing = dataOf(named);
   if (isLinear(easing)) return { o: { x: 0, y: 0 }, i: { x: 1, y: 1 } };
   const bezier = bezierOf(easing);
   if (bezier) return { o: { x: bezier[0], y: bezier[1] }, i: { x: bezier[2], y: bezier[3] } };

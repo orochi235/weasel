@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { easingDataOf } from '@weasel-js/geom';
 import { cssTimingOf, lottieTangentsOf, smilTimingOf } from './easing';
 
 describe('cssTimingOf', () => {
@@ -23,8 +24,16 @@ describe('cssTimingOf', () => {
     expect(cssTimingOf({ linear: [0, [0.8, 0.5], 1] })).toBe('linear(0, 0.8 50%, 1)');
     expect(cssTimingOf({ linear: [0, [0.5, 0.25, 0.75], 1] })).toBe('linear(0, 0.5 25% 75%, 1)');
   });
-  it('samples a named curve with no CSS form into 25 points', () => {
-    const css = cssTimingOf('easeOutBack');
+  it('writes a named curve as the bezier or points blits stores it as', () => {
+    expect(cssTimingOf('easeOutBack')).toBe('cubic-bezier(0.3333, 1.5673, 0.6667, 0.9999)');
+    expect(smilTimingOf('easeOutBack')).toEqual({ calcMode: 'spline', keySpline: '0.3333 1.5673 0.6667 0.9999' });
+    const data = easingDataOf('easeOutBounce');
+    if (!('linear' in data)) throw new Error('easeOutBounce is stored as linear() points');
+    expect(cssTimingOf('easeOutBounce').split(',')).toHaveLength(data.linear.length);
+    expect(smilTimingOf('easeOutBounce').expand).toHaveLength(data.linear.length);
+  });
+  it('samples a function into 25 points', () => {
+    const css = cssTimingOf((t) => t * t);
     expect(css).toMatch(/^linear\(/);
     expect(css.split(',')).toHaveLength(25);
     expect(css.startsWith('linear(0, ')).toBe(true);
@@ -65,12 +74,11 @@ describe('smilTimingOf', () => {
       { t: 0, v: 0 }, { t: 0.6, v: 0.5 }, { t: 0.6, v: 0.7 }, { t: 1, v: 1 },
     ]);
   });
-  it('expands a named curve with its endpoints', () => {
-    const { expand } = smilTimingOf('easeInQuad');
-    expect(expand).toHaveLength(25);
+  it('expands a named curve with no spline form to its points, endpoints included', () => {
+    const { expand } = smilTimingOf('easeInOutQuad');
     expect(expand![0]).toEqual({ t: 0, v: 0 });
-    expect(expand![24]).toEqual({ t: 1, v: 1 });
-    expect(expand![12].v).toBeCloseTo(0.25);
+    expect(expand!.at(-1)).toEqual({ t: 1, v: 1 });
+    expect(expand!.find((p) => p.t === 0.25)!.v).toBeCloseTo(0.125, 6);
   });
 });
 

@@ -26,11 +26,12 @@ describe('easings', () => {
     expect(easeOutQuad(0.5)).toBeGreaterThan(0.5);
   });
 
+  // blits stores easeInOutQuad as `linear()` points within 0.001 of Penner's function.
   it('easeInOutQuad is symmetric around 0.5', () => {
     for (const t of [0.1, 0.2, 0.3, 0.4]) {
-      expect(easeInOutQuad(t) + easeInOutQuad(1 - t)).toBeCloseTo(1, 10);
+      expect(Math.abs(easeInOutQuad(t) + easeInOutQuad(1 - t) - 1)).toBeLessThan(0.002);
     }
-    expect(easeInOutQuad(0.5)).toBeCloseTo(0.5, 10);
+    expect(Math.abs(easeInOutQuad(0.5) - 0.5)).toBeLessThan(0.001);
   });
 });
 

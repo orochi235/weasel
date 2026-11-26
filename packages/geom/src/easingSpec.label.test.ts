@@ -48,8 +48,8 @@ describe('sampleEasing', () => {
   });
 
   it('samples the curve, not the input', () => {
-    // easeInQuad at 0.5 is 0.25.
-    expect(sampleEasing('easeInQuad', 3)[1]).toBeCloseTo(0.25, 6);
+    // easeInQuad at 0.5 is 0.25, and blits' bezier for it is within 0.003.
+    expect(Math.abs(sampleEasing('easeInQuad', 3)[1] - 0.25)).toBeLessThan(0.003);
   });
 
   it('samples undefined as linear', () => {

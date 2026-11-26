@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { act, renderHook } from '@testing-library/react';
 import { createScene, derivedDepOf, type NodeId, type RectPose, type Vec2 } from '@weasel-js/core';
+import { easeInOutQuad, lerp } from '@weasel-js/geom';
 import { EDGE_DERIVE_PATH } from './edge';
 import { CLUSTER_DERIVE_POSE, boxAround } from './clusterBox';
 import { layered } from './layered';
@@ -102,7 +103,7 @@ describe('a live run\'s eased routes', () => {
       const union = { x: x0, y: y0, width: Math.max(pb.x + pb.width, pc.x + pc.width) - x0, height: Math.max(pb.y + pb.height, pc.y + pc.height) - y0 };
       const g1 = boxAround(union, { inset: 12 });
       // Downward layered arrives at the cluster by its north face.
-      expect(drawn(s, e).at(-1)).toEqual({ x: g1.x + g1.width / 2, y: g1.y });
+      expect(close(drawn(s, e).at(-1)!, { x: g1.x + g1.width / 2, y: g1.y })).toBe(true);
     }
   });
 
@@ -123,15 +124,16 @@ describe('a live run\'s eased routes', () => {
 
     const { clock, handle } = live(s, 'force');
     act(() => { handle().start(); });
-    // Two frames of four, eased in and out: halfway to the straight line
+    // Two frames of four, eased in and out: about halfway to the straight line
     // between the ends as this frame draws them.
     act(() => { clock.frames(2); });
     const [ca, cc] = [centerOf(shownAt(s, a)), centerOf(shownAt(s, c))];
     const points = drawn(s, long);
+    const u = easeInOutQuad(0.5);
     for (const [k, p] of was.entries()) {
       const t = (k + 1) / (was.length + 1);
       const straight = { x: ca.x + (cc.x - ca.x) * t, y: ca.y + (cc.y - ca.y) * t };
-      expect(points.some((q) => close(q, { x: (p.x + straight.x) / 2, y: (p.y + straight.y) / 2 }))).toBe(true);
+      expect(points.some((q) => close(q, { x: lerp(p.x, straight.x, u), y: lerp(p.y, straight.y, u) }))).toBe(true);
     }
     // Arrived: straight, while the document still holds the bends.
     act(() => { clock.frames(2); });
