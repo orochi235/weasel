@@ -39,6 +39,8 @@ export class GLTextureCache {
   private readonly premultiplied = new Map<string, boolean>();
   /** The ids that came from the texture registry, which a sweep may drop. */
   private readonly registered = new Set<string>();
+  /** The ids made from raw bytes: glyph pages, which no image upload may write over. */
+  private readonly pages = new Set<string>();
   private sweptVersion = -1;
 
   /** `drew` hears of each registry-backed source a draw binds, so the image cache spares it. */
@@ -56,6 +58,7 @@ export class GLTextureCache {
    *  tile in the next. */
   upload(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
     // A font atlas's channels are a distance field, not a color: kept straight.
+    if (this.collidesWithPage(id)) return id;
     this.registered.delete(id);
     return this.ensure(id, source, wrap, false);
   }
@@ -89,6 +92,7 @@ export class GLTextureCache {
    *  the registry drops it. A registered texture is an image, so its texels
    *  are premultiplied. */
   uploadRegistered(id: string, source: TexSource, wrap: TextureWrap = 'clamp'): string {
+    if (this.collidesWithPage(id)) return id;
     this.registered.add(id);
     this.drew?.(source);
     return this.ensure(id, source, wrap, true);
@@ -125,6 +129,23 @@ export class GLTextureCache {
     }
   }
 
+  /** An image under a glyph page's id is refused: writing it would pour RGBA texels over the page. */
+  private collidesWithPage(id: string): boolean {
+    if (!this.pages.has(id)) return false;
+    warnPageCollision(id);
+    return true;
+  }
+
+  /** Claims `id` for a page made from bytes; false when it is already taken. */
+  private claimPage(id: string): boolean {
+    if (!this.map.has(id)) {
+      this.pages.add(id);
+      return true;
+    }
+    if (!this.pages.has(id)) warnPageCollision(id);
+    return false;
+  }
+
   private applyWrap(id: string, tex: GpuTexture, wrap: TextureWrap): void {
     this.gpu.setSampling(tex, { wrapS: wrap, wrapT: wrap });
     this.wraps.set(id, wrap);
@@ -133,7 +154,7 @@ export class GLTextureCache {
   /** Create a single-channel R8 texture from raw bytes (full upload).
    *  No-op if `id` already exists. Same LINEAR/CLAMP sampling as `upload`. */
   uploadR8(id: string, width: number, height: number, data: Uint8Array): void {
-    if (this.map.has(id)) return;
+    if (!this.claimPage(id)) return;
     this.map.set(id, this.gpu.createTexture('r8', CLAMPED, { width, height, data }));
     this.wraps.set(id, 'clamp');
   }
@@ -147,7 +168,7 @@ export class GLTextureCache {
    *  of color glyphs. Mipmapped, as a font atlas must never be, because one is
    *  drawn well below the size it was baked at. No-op if `id` already exists. */
   uploadRGBA(id: string, width: number, height: number, data: Uint8Array): void {
-    if (this.map.has(id)) return;
+    if (!this.claimPage(id)) return;
     const gpu = this.gpu;
     const tex = gpu.createTexture('rgba8', { ...CLAMPED, mipmap: true }, { width, height, data });
     gpu.generateMipmaps(tex);
@@ -180,5 +201,11 @@ export class GLTextureCache {
     this.sources.clear();
     this.premultiplied.clear();
     this.registered.clear();
+    this.pages.clear();
   }
+}
+
+function warnPageCollision(id: string): void {
+  warnOnce(`texture-page:${id}`, `weasel: texture id '${id}' names both a glyph page and an image; `
+    + 'only the one made first is kept');
 }
