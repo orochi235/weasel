@@ -44,6 +44,21 @@ describe('smilTimingOf', () => {
       { t: 1, v: 1 },
     ]);
   });
+  it('expands blits points to exactly their breakpoints', () => {
+    expect(smilTimingOf({ linear: [0, [0.8, 0.5], 1] }).expand).toEqual([
+      { t: 0, v: 0 }, { t: 0.5, v: 0.8 }, { t: 1, v: 1 },
+    ]);
+  });
+  it('places a three-element point as a hold and spaces bare outputs evenly', () => {
+    expect(smilTimingOf({ linear: [0, [0.5, 0.2, 0.6], 0.7, 1] }).expand).toEqual([
+      { t: 0, v: 0 }, { t: 0.2, v: 0.5 }, { t: 0.6, v: 0.5 }, { t: 0.8, v: 0.7 }, { t: 1, v: 1 },
+    ]);
+  });
+  it('clamps an input below the one before it', () => {
+    expect(smilTimingOf({ linear: [0, [0.5, 0.6], [0.7, 0.4], 1] }).expand).toEqual([
+      { t: 0, v: 0 }, { t: 0.6, v: 0.5 }, { t: 0.6, v: 0.7 }, { t: 1, v: 1 },
+    ]);
+  });
   it('expands a named curve with its endpoints', () => {
     const { expand } = smilTimingOf('easeInQuad');
     expect(expand).toHaveLength(25);
@@ -63,8 +78,9 @@ describe('lottieTangentsOf', () => {
   it('holds for a single end step', () => {
     expect(lottieTangentsOf({ steps: 1, jump: 'end' })).toEqual({ hold: true });
   });
-  it('expands blits points', () => {
-    const r = lottieTangentsOf({ linear: [0, 1] });
-    expect(r).toHaveProperty('expand');
+  it('expands blits points to exactly their breakpoints', () => {
+    expect(lottieTangentsOf({ linear: [0, [0.8, 0.5], 1] })).toEqual({
+      expand: [{ t: 0, v: 0 }, { t: 0.5, v: 0.8 }, { t: 1, v: 1 }],
+    });
   });
 });

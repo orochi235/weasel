@@ -46,10 +46,35 @@ function staircase({ steps: n, jump = 'end' }: Steps): Point[] {
   return out.filter((p, i) => i === 0 || p.t !== out[i - 1].t || p.v !== out[i - 1].v);
 }
 
+/** The breakpoints of blits `linear` points, placed as CSS `linear()` places them. */
+function breakpointsOf(points: readonly (number | readonly number[])[]): Point[] {
+  const out: { v: number; t?: number }[] = [];
+  for (const p of points) {
+    if (typeof p === 'number') out.push({ v: p });
+    else if (p[2] === undefined) out.push({ v: p[0], t: p[1] });
+    else out.push({ v: p[0], t: p[1] }, { v: p[0], t: p[2] });
+  }
+  if (out.length === 0) return [{ t: 0, v: 0 }, { t: 1, v: 1 }];
+  out[0].t ??= 0;
+  out[out.length - 1].t ??= 1;
+  let prev = -Infinity;
+  for (const p of out) if (p.t !== undefined) prev = p.t = Math.max(p.t, prev);
+  let from = 0;
+  for (let i = 1; i < out.length; i++) {
+    if (out[i].t === undefined) continue;
+    for (let k = from + 1; k < i; k++) {
+      out[k].t = out[from].t! + ((out[i].t! - out[from].t!) * (k - from)) / (i - from);
+    }
+    from = i;
+  }
+  return out.map((p) => ({ t: p.t!, v: p.v }));
+}
+
 /** Points a writer inserts where its format has no form for the easing. */
 function expandedOf(easing: KeyEasing | undefined): Point[] {
   const steps = stepsOf(easing);
   if (steps) return staircase(steps);
+  if (isBlitsEasing(easing) && 'linear' in easing) return breakpointsOf(easing.linear);
   return sampled(easing).map((v, i) => ({ t: i / SAMPLES, v }));
 }
 
