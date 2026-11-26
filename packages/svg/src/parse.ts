@@ -26,7 +26,7 @@ import {
 } from './cascade';
 import { mediaEnvironmentFor } from './media';
 import { readProperty } from './properties';
-import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf, storable } from './lowerLeaf';
+import { SUPPORTED_LEAF_TAGS, IGNORED_TAGS, lowerLeaf, shapeGeometry, storable } from './lowerLeaf';
 import { parseViewBoxAttr } from './viewBox';
 import { type ClipTable, collectClipPaths, clipFor } from './readClips';
 import { readPaint, readStroke, isNonScalingStroke } from './readPaint';
@@ -41,9 +41,11 @@ import { textFrameAttrOf } from './framedText';
 import { groupBoxAttrOf } from './groupBox';
 import { conditionsHold, drawnChildren } from './conditional';
 import { insideUse, parseUse, spaceOfUse } from './use';
-import { readSmil } from './smil';
+import { readAnimations } from './animations';
+import { animatedFromOf, isTransformAnimated, noteShape, noteTransform, takeShapes, watchShapes } from './smilShapes';
 import { collectDocumentMeta, collectElementMeta } from './readMeta';
 
+const quiet = (): void => {};
 
 /** How deep elements may nest, `<use>` references included, before what is deeper is left undrawn. */
 export const NESTING_LIMIT = 512;
@@ -96,7 +98,9 @@ function readDocument(
   for (const [id, paint] of collectPatterns(root, onWarn)) gradients.set(id, paint);
   const rootStyle = deriveStyle(EMPTY_STYLE, root);
   const clips = collectClipPaths(root, onWarn);
-  const clip = readSmil(root, onWarn);
+  const animated = new Map<Element, Set<string>>();
+  const clip = readAnimations(root, onWarn, animated);
+  watchShapes(doc, animated);
   let nodes: SvgNode[];
   let markers: ReturnType<typeof ingestMarkers>;
   try {
@@ -111,6 +115,9 @@ function readDocument(
   const result: ParseResult = { nodes, warnings };
   if (markers.length > 0) result.markers = markers;
   if (clip) result.clip = clip;
+  const { shapes, transforms } = takeShapes(doc);
+  if (shapes) result.animatedShapes = shapes;
+  if (transforms) result.animatedTransforms = transforms;
   if (documentMeta) result.documentMeta = documentMeta;
   const viewBox = parseViewBoxAttr(root.getAttribute('viewBox'));
   if (viewBox) result.viewBox = viewBox;
@@ -208,6 +215,8 @@ function readChild(
   const parsed = Array.isArray(node) ? node : [node];
   if (hidden) for (const n of parsed) n.hidden = true;
   if (el.id && parsed.length === 1 && !insideUse()) parsed[0].id = el.id;
+  const animatedFrom = insideUse() ? undefined : animatedFromOf(el);
+  if (animatedFrom) for (const n of parsed) n.animatedFrom = animatedFrom;
   return parsed;
 }
 
@@ -309,6 +318,7 @@ function parseLeaf(
   if (!path) return null;
   let rotation: number | undefined;
   let baked = ctm;
+  noteTransform(el, ctm, localTransform);
   if (!isIdentity(localTransform)) {
     // `path` is already through `ctm`, so the element's own transform has to
     // be too before it is compared against these bounds.
@@ -319,7 +329,7 @@ function parseLeaf(
     const angle = worldLocal && decomposeRotation(worldLocal, cx, cy);
     if (!worldLocal) {
       onWarn('leaf transform sits under a singular parent transform; dropped');
-    } else if (angle != null) {
+    } else if (angle != null && !isTransformAnimated(el)) {
       rotation = angle;
     } else {
       // Bake the matrix in — match legacy behavior.
@@ -328,7 +338,7 @@ function parseLeaf(
       path = moved;
       baked = multiply(ctm, localTransform);
       const rotComp = rotationComponent(worldLocal);
-      if (Math.abs(rotComp) > 1e-4) {
+      if (Math.abs(rotComp) > 1e-4 && !isTransformAnimated(el)) {
         onWarn(`leaf transform has a rotational component that can't be cleanly stored as rotation; baked into geometry (may not round-trip identically)`);
       }
     }
@@ -345,6 +355,7 @@ function parseLeaf(
   if (styleValue(leafStyle, 'fill-rule') === 'evenodd' && path.kind === 'polygon') {
     path = { ...path, fillRule: 'evenodd' };
   }
+  noteShape(el, tag, () => shapeGeometry(el, tag, quiet, fontSizeOf(leafStyle)), baked);
   const node: SvgPathNode = { kind: 'path', path, fill };
   if (stroke) node.stroke = stroke;
   if (opacity != null) node.opacity = opacity;
@@ -364,7 +375,9 @@ function parseGroup(
   el: Element, ctm: Matrix, style: StyleContext, from: GroupPaintFrom, gradients: GradientTable,
   clips: ClipTable, onWarn: (m: string) => void, uriToPrefix: Map<string, string>, keepHidden: boolean,
 ): SvgNode {
-  const childCtm = multiply(ctm, parseTransform(el.getAttribute('transform'), onWarn));
+  const own = parseTransform(el.getAttribute('transform'), onWarn);
+  noteTransform(el, ctm, own);
+  const childCtm = multiply(ctm, own);
   const childStyle = deriveStyle(style, el);
   const paint = groupPaint(el, from, childStyle, childCtm, gradients, onWarn);
   const children = parseChildren(drawnChildren(el, onWarn), childCtm, childStyle, paint.children, gradients, clips, onWarn, uriToPrefix, keepHidden);

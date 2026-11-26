@@ -191,9 +191,9 @@ function trackOf(el: Element, target: Element, at: Interval, warn: Warn): ClipSa
 /**
  * The document's SMIL as a clip, or undefined where it has none. An animated element without an
  * `id` is given one, `smil-1` and on, so its node and its tracks name each other; read this before
- * the nodes are.
+ * the nodes are. Each element a track moves is entered in `targets` with what it moves: an attribute, or `transform`.
  */
-export function readSmil(root: Element, warn: Warn): Clip | undefined {
+export function readSmil(root: Element, warn: Warn, targets?: Map<Element, Set<string>>): Clip | undefined {
   const doc = root.ownerDocument;
   const elements = TAGS.flatMap((tag) => Array.from(root.getElementsByTagName(tag)));
   if (elements.length === 0) return undefined;
@@ -220,6 +220,7 @@ export function readSmil(root: Element, warn: Warn): Clip | undefined {
     const track = trackOf(el, target, at, warn);
     if (!track) continue;
     tracks.push(track);
+    if (targets) targets.set(target, (targets.get(target) ?? new Set<string>()).add(el.tagName === 'animateTransform' ? 'transform' : el.getAttribute('attributeName') ?? ''));
     if (!Number.isFinite(at.end)) loops.push(at);
   }
   if (tracks.length === 0) return undefined;

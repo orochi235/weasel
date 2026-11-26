@@ -265,17 +265,18 @@ the innermost kernel and animator runs on it; weasel's share of each entry below
 waits on; weasel runs against the local blits checkout until a blits release carries it.
 
 **Imported tracks bind through one general node-data target in core (2026-11-25)**: a `Target` over any field of
-a scene node's data, shown through the same hold mechanism as the pose target with no ops per frame, of which trim
-and vertex color become instances, rather than a registry per property. It is a render-path change, so it ships
-with before/after numbers. Importers keep an animated element's `transform` as a pose instead of baking it, and
-re-lower animated geometry attributes each sample.
+a scene node's data, shown through the same hold mechanism as the pose target with no ops per frame, rather than a
+registry per property. Trim keeps its paint-context registry: measured 2026-11-25, a trim shown through node data
+builds a frame's commands 2.2× slower at 100 and 1,000 nodes (`tests/perf/scene/trim-data-ply.bench.ts`). An animated `transform` moves each shape's pose by the change from the transform the
+import baked, and animated geometry attributes are re-lowered each sample (`svgClipBinder`, built 2026-11-25).
 
 - **(P2) [agent] weasel's named easings come from blits' table** (2026-11-25). geom's 30 Penner curves
   (`EASINGS`) exist only as functions. **Unblocked: blits 1.5.2 (released 2026-11-26) names them in `curve()`, type `PennerName`.** blits takes them (agreed 2026-11-26 with blits-e3, in place of a
-  table in weasel). `curve()` will name every `EASINGS` entry as data a generator script builds from geom's
+  table in weasel). Until geom re-exports them, svg's CSS and SMIL writers and `@weasel-js/lottie` sample a
+  named curve in 24 even steps. `curve()` will name every `EASINGS` entry as data a generator script builds from geom's
   functions: a CSS bezier where the worst error is ≤ 0.003 (18 of 30), otherwise a `linear()` fit to ≤ 0.001.
 
-  Once 1.5.1 ships, the weasel side is:
+  The weasel side, now that 1.5.2 has shipped:
   - geom re-exports blits' named curves and drops `cubicBezierEasing` (`packages/geom/src/easingSpec.ts`)
   - ui's `EasingPicker.tsx:17` reads its control points from them
   - `Clip` keeps names; `bindClip`, the importers and the exporters resolve them
@@ -292,20 +293,20 @@ re-lower animated geometry attributes each sample.
   clock run through a remap"). Closes when a nested timeline maps onto a blits owner with rate, loop and remap, scrubs
   order-independently, and `Clip` carries them.
 
-- **(P2) [agent] An imported SMIL clip plays nothing yet** (2026-11-25). `parseSvg` reads `<animate>`, `<set>` and
-  `<animateTransform>` into `ParseResult.clip`, tracks named `<node id>.<attribute>` and `<id>.transform.<type>`
-  (`packages/svg/src/smil.ts`), but no binder turns those names into targets: it waits on the node-data target
-  above, on parse keeping an animated element's `transform` as a pose rather than baking it, and on re-lowering
-  animated geometry (`r`, `width`, `d` through the `svg-path` interpolation) each sample. Also left: `animateMotion`
-  (blits: "Keys on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed begins, and an
-  indefinite repeat on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL plays from
-  the import the way a browser plays it, checked against browser frames.
+- **(P2) [agent] Some imported SMIL plays differently from a browser** (2026-11-25). `svgClipBinder`
+  (`packages/svg/src/smilBinder.ts`) plays opacity, paint, geometry and `<animateTransform>` tracks. Left:
+  `animateMotion` (blits: "Keys on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed
+  begins, and an indefinite repeat on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL
+  plays from the import the way a browser plays it, checked against browser frames.
 
-- **(P2) [agent] CSS animation import in `@weasel-js/svg`** (2026-11-25). `parseStylesheet` skips `@keyframes` whole
-  (`packages/svg/src/stylesheet.ts`); read them, resolve `animation-*` through the cascade to each element, and
-  add the result to the same `Clip`. `linear()` plays once a blits release carries `{ linear }` (blits branch
-  `linear-easing`). Closes when an SVG animated by CSS alone plays
-  from the import as a browser plays it, checked against browser frames.
+- **(P2) [agent] Some imported CSS animation plays differently from a browser** (2026-11-25). `parseSvg` reads
+  `@keyframes` and `animation` into the clip (`packages/svg/src/cssAnimation.ts`, `cssTiming.ts`). Each of these is
+  warned and not carried: `linear()` easing (plays once a blits release carries `{ linear }`, blits branch
+  `linear-easing`); `steps()` jumping at both ends or neither (blits `main` has `jump: none|both`, unreleased); a
+  percentage `transform-origin` or `transform-box`; a transform of more than one function. Also: when an element
+  sets both the `animation` shorthand and a longhand, the longhand wins whatever their order, and
+  `animation-composition` is ignored. Closes when an SVG animated by CSS alone plays from the import as a browser
+  plays it, checked against browser frames.
 
 - **(P3) [agent] Position tracks move in straight lines between keys** (2026-11-25). Each axis lerps on its own, so
   a curve shapes timing only. Lottie gives position keys spatial in/out tangents apart from the timing ease,
@@ -328,6 +329,34 @@ re-lower animated geometry attributes each sample.
   its own because Lottie is a scene format, not SVG. Closes when a set of reference
   Lottie files plays from the import matching lottie-web's frames.
 
+
+### Animation export follow-ups
+
+Left open when the CSS, SMIL and Lottie writers landed (2026-11-26).
+
+- **(P2) [agent] Lottie draws a span where the SVG writers draw nothing, when a trim's start passes its end.**
+  lottie-web swaps `tm` `s` and `e` when `s > e`; weasel's own trim and the CSS/SMIL dash draw nothing. Reachable
+  through a stroke's own empty trim (`{ start: 0.75, end: 0.25 }` writes `s 75 e 25`) or an own start above a tracked
+  end. Write an empty static trim as `s = e` and clamp or warn where the edges can cross (`packages/lottie/src/write.ts`).
+- **(P3) [agent] `decorate.attrsOf` can rename a node's `id`, and can duplicate `display` on a hidden node.** Keep
+  `id` reserved (keep the node's own, warn), and apply the decoration after `display="none"` is added.
+- **(P3) [agent] Lottie scales a non-scaling stroke.** A `{ px }` width is SVG's `non-scaling-stroke`, but the
+  writer multiplies it by the baked transform's scale and warns about uneven scale for it too. Scale only plain widths.
+- **(P3) [agent] An animated `d` is written onto a path drawn as an outline or as several elements.** Trims already
+  refuse those (`writesOnePath`); `d` should too.
+- **(P3) [agent] Lottie measures trim on local geometry but applies it to transform-baked geometry.** Under uneven
+  scale the fractions disagree with CSS/SMIL, which measure in the element's own space through `pathLength`.
+- **(P3) [agent] A clip of duration 0 written as SMIL reads back as a loop with a key at `t = Infinity`.** The
+  writer emits `<set>` without `dur`, which plays correctly; the importer should read that as one key.
+- **(P3) [agent] Coverage gaps:** `staircase` with `start`/`none`/`both` jumps; Lottie `expand` from `steps` and
+  named curves; `numText` rounding; decoration of nested same-name groups and of hidden, image and text nodes.
+- **(P3) [agent] Smaller writer gaps:** trim values cast to number unchecked (`animate/trim.ts`); the `<style>` body
+  escaped by hand rather than through `escapeText`, and `stringsIn` doesn't scan `decorate`; an easing lost silently
+  when SMIL expands a track whose values can't be lerped; ids containing a `.trim` segment misread by the target
+  pattern; 4-decimal offsets round to 1e-4 of a path's length; the visibility span stays hidden when both trim edges
+  move with different easings and the length rises mid-span.
+- **(P3) [agent] Two inlined exports collide.** Their keyframe names and `#id` selectors are global to the page.
+
 ## Timing on blits
 
 What weasel still times for itself, read against blits on 2026-11-25. The direction is in CLAUDE.md
@@ -340,8 +369,7 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   - holds' "committed value takes what's left" weighting against blits roles
   - sampling springs into keyframes for the `Element.animate` handoff
 
-  The rebuild needs blits' `springs` branch (`4dcb727f`, unreleased, 2026-11-25) in a release. That branch
-  closes form every valid spring constant and takes motion arithmetic from the channel. Once it ships,
+  blits 1.5.2 closes form every valid spring constant and takes motion arithmetic from the channel, so
   these can go:
   - `engine/integrator.ts`
   - the Euler branch, the `solvable` gate and the numeric fallbacks in `physicsAnimation.ts`
@@ -351,7 +379,7 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 
   `cueSpring`'s targetless branch becomes `spring({ stiffness: 0 })`, which also covers damping 0. Rotations
   only take the curved path once the codec's lanes use `quat()`/`angle()` channels rather than linear vecs.
-  Also waiting on blits' transport fixes (blits TODO), for the clock. Closes when animator keeps no
+  Closes when animator keeps no
   scheduling of its own and its suite passes.
 - **(P2) [agent] `@weasel-js/clock` on a blits `Transport`.** **blits 1.5.2 (2026-11-26) takes every workaround; weasel-50 reports `clock-on-transport` all green on it, unmerged.** Branch `clock-on-transport` rebuilds
   `createClock` so that rate, ramp, sync, seek and wake go through one transport. The public API and the

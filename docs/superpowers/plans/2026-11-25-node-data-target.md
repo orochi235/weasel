@@ -1,0 +1,85 @@
+# Node-data target: one target over any field of a node's data
+
+**Status (2026-11-25): steps 1, 2 and 3 built (step 3 as `svgClipBinder`, `fb4ded0e53`). Step 4 was measured
+and not built: trim keeps its paint-context path (results under step 4).** Branch `node-target`, cut from `anim-import`.
+Delete this file when the work merges. Its first commit is titled "WIP:"; reword it before the batch. Decision recorded in `docs/TODO.md` "## Animation import" (Mike chose the general target, 2026-11-25).
+
+For: the session building it. Answers: how a clip track named `<id>.<attribute>` moves a scene node's
+data, and how trim and vertex color fold into the same mechanism.
+
+## What already exists
+
+`PoseOverride.data(stored)` is a per-node ply that painting, picking, drawn bounds and derivations read
+through `nodeAsShown` (`packages/core/src/core/scene/nodeAsShown.ts`). The shown copy is memoized on
+(data function, stored data), so a writer changes what it shows by replacing the function. The pose
+target (`packages/core/src/animation/poseTarget.ts`) is the model: `createTarget` with `show` installing
+a ply, `set` committing to the document, `rest` clearing the ply, one target per node per scene
+(`scenePoseTarget`'s table).
+
+So the general target needs no new render path. Its cost question is the memo: a value changing every
+frame replaces the function every frame, so the node's shown data, and whatever a painter derives from
+it (tessellation, bounds), is rebuilt each frame. Trim and vertex color today bypass that through
+`NodePaintCtx` (`packages/core/src/canvas/paintOverrides.ts`).
+
+## Design
+
+1. **`sceneDataTarget(scene, id, lens, axes?)`** in `packages/core/src/animation/dataTarget.ts`. A `lens`
+   is `{ key: string; get(data): T; with(data, value): data }`. The target's `get` reads the lens off the
+   committed data, `set` writes `scene.update(id, { data: lens.with(data, v) })` unrecorded (as the pose
+   target writes poses), and `show` installs one ply per node whose `data` composes every live lens on
+   that node: one ply, not one per field, so ten animated fields cost one shown copy a frame. Targets are
+   kept per (scene, id, lens.key), so every animation of one field adds. Axes come from `axesOf` on the
+   value, or the caller's. Nothing in it reads `pose`, so a `Pose3` scene uses it unchanged.
+2. **`sceneClipTargets`** gains `data:<id>.<key>` resolved through a lens table the caller passes
+   (`options.lenses: Record<string, Lens>`), so a format names fields and core never learns SVG.
+3. **svg binder**: a `ClipBinder.target` in `@weasel-js/svg` built beside `svgNodesToKitDrafts`, mapping
+   SMIL names onto the kit drafts (opacity, fill/stroke color and opacity, stroke-width, dash and offset,
+   geometry attributes re-lowered to the path). Three facts about `packages/svg/src/unpack.ts` shape it
+   (read 2026-11-25): kit ids come from the caller's `nextId(source)`, so the binder needs the svg id → kit
+   id map that callback sees; a group has no opacity of its own, since `visit` multiplies every enclosing
+   group's opacity into each leaf's paints, so `<g id>.opacity` is one target fanning out to every leaf
+   under it; and `withTransformsBaked` bakes every transform into geometry, so `transform.<type>` needs the
+   unpack to leave an animated element's transform out of the bake and draft it as that node's pose.
+4. **trim and vertex color as instances** (the render-path change): `TrimOverrideRegistry` and
+   `ColorOverrideRegistry` become lenses over `stroke.trim` and the vertex-color arrays, and
+   `withPaintOverrides` goes. Benchmark before and after on one fleet node (`--kind bench`): a trim
+   animation on 1, 100 and 1,000 path nodes, frame time and allocations, and a still scene for the
+   overhead where nothing animates. If the shown-copy rebuild costs past noise, keep a paint-context fast
+   path for fields a painter can apply without new geometry, and say so in the report.
+
+   **Measured 2026-11-25** (`tests/perf/scene/trim-data-ply.bench.ts`, one M3 Max fleet node, 5 rounds × 60
+   frames per arm, interleaved; raw runs in `trim-data-ply.runs.jsonl`, digest `trim-data-ply.digest.mjs`).
+   Medians per frame. "Build" is the frame's commands; "render" is the renderer against a recording GL context:
+
+   | nodes | trim moving | build, registry | build, ply | render, registry | render, ply | new space, registry | new space, ply |
+   |------:|:-----------:|----------------:|-----------:|-----------------:|------------:|--------------------:|---------------:|
+   |     1 | yes         |        0.014 ms |   0.030 ms |         0.071 ms |    0.084 ms |             98 KiB |        104 KiB |
+   |   100 | yes         |        0.218 ms |   0.495 ms |         4.687 ms |    4.786 ms |         10,949 KiB |     11,243 KiB |
+   | 1,000 | yes         |        2.341 ms |   5.343 ms |        50.549 ms |   49.534 ms |         11,524 KiB |     12,986 KiB |
+   | 1,000 | no          |        0.827 ms |   0.834 ms |         3.846 ms |    4.032 ms |         10,466 KiB |     10,404 KiB |
+
+   Showing a trim through the data ply builds commands about 2.2× slower, because each frame's new data
+   misses the painter memo. That gap is past noise, so the registry stays as the fast path for a field a painter
+   applies without new geometry. Render time is the same in both arms, and a still scene costs the same either way.
+
+## Order
+
+1 and 2 are additive and land first, with tests beside `poseTarget.test.tsx`. 3 follows on the svg side.
+4 lands only with its numbers.
+
+## Handoff (2026-11-25, from session weasel-29)
+
+- **Where:** worktree `.worktrees/anim-import`, branch `node-target` (the directory is named for the branch it
+  started on). `anim-import` is the branch in weasel-7a's batch `batch/2026-11-25-anim`; it was rerunning after
+  the labkit heap-cap fix (`ce08e5ccfb`). Don't commit to `anim-import`; once the batch lands, delete that branch
+  only, as this worktree carries `node-target`, and merge `main` into `node-target`.
+- **Next, in order:** step 3 above, step 4 with its benchmarks, then CSS animation import (TODO "CSS animation
+  import"), then the easing presets (`docs/superpowers/plans/2026-11-25-easing-presets.md`; fold its resolver
+  into animator's `resolveKeyEasing`). Nested retiming waits on blits' "A voice's clock run through a remap".
+- **Owed to tracey-93** (`~/src/tracey`, writing Clip exporters): a message when the `Clip` and svg-`id` work
+  reach `main`. Trim tracks are agreed as `<id>.trim.start` / `<id>.trim.end`, fractions of the path.
+- **blits:** `linear` and steps `jump: none|both` are on blits `main` (`07de7aab`), unpushed and unreleased;
+  Mike cuts the release himself. weasel stays pinned to blits 1.4.0, which neither has nor validates them.
+- **Traps:** git in this worktree intermittently fails on `index.lock` (something polls it); rerun the git
+  command alone. A worktree-isolated session refuses compound git commands; run each on its own line. Under zsh a
+  file list in a variable needs `${=files}` to split.
