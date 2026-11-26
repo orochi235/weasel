@@ -252,6 +252,35 @@ Owner tags, after the priority (2026-10-26):
   not re-read when one changes; the canvas's `useHeldModifiers` is the source, and needs a way into a tool's deps.
   Closes when the pen and spiro trails snap with the held modifiers and redraw when one changes.
 
+## Animation import
+
+Animated SVG and Lottie come in as scene nodes plus an animator `Clip` whose tracks name what they move, with a
+`ClipBinder` returned beside them for `bindClip`. SMIL and CSS animation import go in `@weasel-js/svg`, not a
+package of their own (2026-11-25). Whatever an importer cannot map (SMIL syncbase `begin`, Lottie expressions) is
+reported to the caller, never dropped silently.
+
+- **(P2) [agent] `Clip` can't hold looping, stepped keys or a sampled easing curve** (2026-11-25). SMIL
+  `repeatCount`, CSS `animation-iteration-count` and Lottie loops need a loop on a clip or track; SMIL
+  `calcMode="discrete"`, CSS `steps()` and Lottie hold keys need a stepped key; CSS `linear()` needs an easing given
+  as samples (`packages/animator/src/timeline/clip.ts`, `ClipKey.easing`). Closes when the live timeline and `Clip`
+  both carry all three and `toClip`/`bindClip` round-trip them.
+
+- **(P2) [agent] SMIL animation import in `@weasel-js/svg`** (2026-11-25). `<animate>`, `<set>`, `<animateTransform>`
+  and `<animateMotion>` read beside `parse.ts` into a `Clip` over the imported nodes, with `begin`/`dur`/
+  `repeatCount`/`keyTimes`/`keySplines`/`calcMode` mapped and anything else reported. Needs the `Clip` entry above.
+  Closes when an animated SVG's SMIL plays from the import the way a browser plays it, checked against browser
+  frames.
+
+- **(P2) [agent] CSS animation import in `@weasel-js/svg`** (2026-11-25). `parseStylesheet` skips `@keyframes` whole
+  (`packages/svg/src/stylesheet.ts`); read them, resolve `animation-*` through the cascade to each element, and
+  add the result to the same `Clip`. Needs the `Clip` entry above. Closes when an SVG animated by CSS alone plays
+  from the import as a browser plays it, checked against browser frames.
+
+- **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
+  scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to `BezierEasing`. A package of its own
+  because Lottie is a scene format, not SVG. Needs the `Clip` entry above. Closes when a set of reference Lottie
+  files plays from the import matching lottie-web's frames.
+
 ## Audio
 
 - **(P3) [maintainer] Nobody has listened to the side-scroller's music bed.** `MUSIC_GAIN`
