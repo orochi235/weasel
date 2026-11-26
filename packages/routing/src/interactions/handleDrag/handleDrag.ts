@@ -54,12 +54,13 @@ interface Scroller {
 }
 
 /** The properties any value but `none` of which makes a box the containing block of a fixed descendant. */
-const FIXED_HOLDERS = ['transform', 'translate', 'rotate', 'scale', 'perspective', 'filter', 'backdrop-filter'];
+const FIXED_HOLDERS = ['transform', 'translate', 'rotate', 'scale', 'perspective', 'filter', 'backdrop-filter', 'offset-path'];
 
 /** Whether `style` makes its box the containing block of a fixed descendant (and so of an absolute one). */
 const holdsFixed = (style: CSSStyleDeclaration): boolean =>
   FIXED_HOLDERS.some((prop) => !['', 'none'].includes(style.getPropertyValue(prop)))
-  || /transform|translate|rotate|scale|perspective|filter|contain/.test(style.getPropertyValue('will-change'))
+  || style.getPropertyValue('transform-style') === 'preserve-3d'
+  || /transform|translate|rotate|scale|perspective|filter|contain|offset-path/.test(style.getPropertyValue('will-change'))
   || /paint|layout|strict|content/.test(style.getPropertyValue('contain'))
   || /size/.test(style.getPropertyValue('container-type'))
   || /auto|hidden/.test(style.getPropertyValue('content-visibility'));

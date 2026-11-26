@@ -580,6 +580,9 @@ describe('useHandleDrag — callbacks from a later render', () => {
     ['rotate', '5deg'],
     ['scale', '2'],
     ['content-visibility', 'auto'],
+    ['transform-style', 'preserve-3d'],
+    ['offset-path', 'path("M 0 0 L 10 10")'],
+    ['will-change', 'offset-path'],
   ])('counts a scroll of a box whose %s: %s holds a fixed one', (prop, value) => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
