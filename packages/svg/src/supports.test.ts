@@ -160,10 +160,13 @@ describe('PROPERTIES is the parser\'s one pathway', () => {
   it('is the only way the parser reads a presentation property', () => {
     const files = import.meta.glob('./*.ts', { query: '?raw', import: 'default', eager: true });
     const names = Object.keys(PROPERTIES).join('|');
-    const bypass = new RegExp(`getAttribute\\(\\s*['"](${names})['"]`);
+    const bypass = new RegExp(`getAttribute\\(\\s*['"](${names})['"]`, 'g');
+    // An animation element's `fill` is SMIL's freeze/remove timing attribute, not the paint.
+    const notPresentation: Record<string, readonly string[]> = { './smil.ts': ['fill'] };
     expect(Object.keys(files)).toContain('./parse.ts');
     const offenders = Object.entries(files)
-      .filter(([path, src]) => !path.endsWith('.test.ts') && bypass.test(src as string))
+      .filter(([path, src]) => !path.endsWith('.test.ts')
+        && [...(src as string).matchAll(bypass)].some((m) => !notPresentation[path]?.includes(m[1]!)))
       .map(([path]) => path);
     expect(offenders).toEqual([]);
   });

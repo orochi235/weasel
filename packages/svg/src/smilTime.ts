@@ -3,7 +3,7 @@
  * entries are offsets or another animation's begin or end.
  */
 
-const UNIT_MS: Record<string, number> = { h: 3_600_000, min: 60_000, s: 1000, ms: 1 };
+const UNIT_MS = { h: 3_600_000, min: 60_000, s: 1000, ms: 1 } as const;
 
 /** A SMIL clock value in ms: `02:30:03`, `01:02.5`, `3.2h`, `45min`, `30s`, `5ms` or `12.467` (seconds).
  *  Null for anything else. */
@@ -15,7 +15,7 @@ export function clockValue(raw: string): number | null {
     return ((h ? Number(h) * 60 : 0) + Number(m)) * 60_000 + Number(sec) * 1000;
   }
   const count = /^(\d+(?:\.\d+)?|\.\d+)(h|min|s|ms)?$/.exec(s);
-  return count ? Number(count[1]) * UNIT_MS[count[2] ?? 's'] : null;
+  return count ? Number(count[1]) * UNIT_MS[(count[2] ?? 's') as keyof typeof UNIT_MS] : null;
 }
 
 /** One entry of a `begin` or `end` list: a time on the document's clock, or the begin or end of
