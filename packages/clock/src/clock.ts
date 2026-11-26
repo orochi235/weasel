@@ -161,11 +161,11 @@ function applyRun(run: Run, hub: Hub, declared: Declared, override: SpanOverride
   hub.subs.emit();
 }
 
-/** Seeks the transport to `to`. A seek back restores the rate it had then, so the clock's is put back. */
+/** Seeks the transport to `to`. Under history a seek back restores the rate it had then, so the clock's is put back. */
 function seekTransport(run: Run, to: number): void {
   const t = run.t;
   if (Object.is(to, t.now)) return;
-  if (to > t.now) {
+  if (to > t.now || t.history === undefined) {
     t.seek(to);
     return;
   }
@@ -326,8 +326,11 @@ export function createClock(spec: ClockSpec, at?: ClockPosition): ClockHandle {
   if (spec.speed !== undefined) checkSpeed(spec.speed);
   const loop = spec.loop ?? false;
   checkLoop(loop);
-  // Seeking back, and a rate below 0, need history with a tape reaching back over the whole run, even with no mix.
-  const t = createTransport({ history: { ms: Number.POSITIVE_INFINITY, tape: createHistory } });
+  // A transport with no mix seeks and runs back as a clock alone. One with a mix seeks it by restoring, which needs
+  // history with a tape reaching back over the whole run; `jump` keeps a seek ahead from moving the rate or a ramp.
+  const t = createTransport(
+    spec.mix ? { history: { ms: Number.POSITIVE_INFINITY, tape: createHistory }, seek: 'jump' } : {},
+  );
   const mix = spec.mix?.(t) ?? null;
   // Nothing seeks to before the first sync: the run's 0 is that sync's time.
   t.sync(0);
