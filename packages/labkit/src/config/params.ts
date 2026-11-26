@@ -4,6 +4,7 @@ import {
   type ParamValues,
   paramDefaults,
 } from '@weasel-js/prefs-schema';
+import { getOwn, setOwn } from '@weasel-js/registry';
 import { AUTO } from './auto';
 import type { BaseNode } from './baseNode';
 import { f } from './builder';
@@ -51,13 +52,13 @@ function shapeFor(params: ParamShape, defaults: Record<string, unknown>): Config
   const out: Record<string, ConfigEntry> = {};
   for (const [key, entry] of Object.entries(params)) {
     if (entry.kind !== 'group') {
-      out[key] = leafFor(entry, defaults[key]);
+      setOwn(out, key, leafFor(entry, getOwn(defaults, key)));
       continue;
     }
-    let group = f.group(shapeFor(entry.params, defaults[key] as Record<string, unknown>));
+    let group = f.group(shapeFor(entry.params, getOwn(defaults, key) as Record<string, unknown>));
     if (entry.label !== undefined) group = group.label(entry.label);
     if (entry.description !== undefined) group = group.describe(entry.description);
-    out[key] = group;
+    setOwn(out, key, group);
   }
   return out;
 }

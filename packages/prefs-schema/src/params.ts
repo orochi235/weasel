@@ -1,6 +1,8 @@
 // A library's tunable parameters as plain JSON: no functions, no classes, nothing a lab or
 // a store has to be installed to read. labkit's `f.params` compiles one into a config schema.
 
+import { setOwn } from '@weasel-js/registry';
+
 /** What every param says about itself besides its kind. */
 interface ParamBase {
   /** What a control calls it. Unset, a lab titles the key. */
@@ -135,18 +137,18 @@ function defaultsIn(shape: ParamShape, defaults: unknown, at: string): Record<st
     const path = at === '' ? key : `${at}.${key}`;
     const value = given(defaults, key);
     if (entry.kind === 'group') {
-      out[key] = defaultsIn(entry.params, value, path);
+      setOwn(out, key, defaultsIn(entry.params, value, path));
       continue;
     }
     const own = paramDefault(entry);
     if (value === undefined) {
-      out[key] = own;
+      setOwn(out, key, own);
     } else if (typeof value !== typeof own) {
       throw new Error(
         `prefs-schema: the default given for ${path} is ${JSON.stringify(value)}, not a ${typeof own}.`,
       );
     } else {
-      out[key] = entry.kind === 'enum' ? paramDefault({ ...entry, default: value as string }) : value;
+      setOwn(out, key, entry.kind === 'enum' ? paramDefault({ ...entry, default: value as string }) : value);
     }
   }
   return out;
