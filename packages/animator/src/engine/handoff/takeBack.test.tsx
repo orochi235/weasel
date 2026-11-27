@@ -24,6 +24,27 @@ describe('a run handed to the compositor', () => {
   });
 });
 
+describe('a run taken back to the main thread', () => {
+  it('paused while it plays backward, carries on backward to its start', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    let h: ReturnType<typeof tween>;
+    act(() => { h = tween(animator, e.target, 100); });
+    step(0);
+    step(500);
+    act(() => { h.setTimeScale(-1); });
+    step(100);
+    act(() => { h.pause(); });
+    step(100);
+    act(() => { e.target.commit(e.target.committed()); });
+    act(() => { h.resume(); });
+    for (let i = 0; i < 6; i++) step(100);
+    expect(e.target.read().x).toBeCloseTo(0, 6);
+    expect(e.target.committed().x).toBe(0);
+    expect(animator.isActive()).toBe(false);
+  });
+});
+
 describe('a run whose target setter throws as it is canceled', () => {
   it('still cancels its browser animation and lets go of the target', () => {
     const { animator, step, timeline } = setup();

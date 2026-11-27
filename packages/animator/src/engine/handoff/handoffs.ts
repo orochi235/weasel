@@ -5,7 +5,7 @@ import type { Table } from '../table';
 /** What the runs handed to the compositor need of the animator around them. */
 export interface HandoffHost {
   ctx: AnimationContext;
-  table: Pick<Table, 'animations' | 'clockOf' | 'rateOf' | 'on' | 'retire'>;
+  table: Pick<Table, 'animations' | 'clockOf' | 'rateOf' | 'direction' | 'on' | 'retire'>;
   /** Virtual ms the animator's clock runs per wall ms: 0 while it is paused. */
   pace(): number;
   /** The wall time, on the document timeline, at which the animator's clock reads `elapsed()`. */

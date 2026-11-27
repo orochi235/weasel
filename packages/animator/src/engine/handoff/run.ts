@@ -110,7 +110,8 @@ export function launch(
   const release = (): void => {
     if (gone) return;
     const a = entry();
-    const backward = a ? table.rateOf(a) < 0 : false;
+    // From its time scale, which keeps its sign while it is paused.
+    const backward = a ? a.timeScale * table.direction() < 0 : false;
     const at = local();
     letGo(null);
     child = ends.takeBack(motion, at, backward, () => {
