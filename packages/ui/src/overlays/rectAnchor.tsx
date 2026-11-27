@@ -1,6 +1,6 @@
 import { useState, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
-import s from './Callout.module.css';
+import s from './rectAnchor.module.css';
 
 /** Far past the 1/64px a browser lays out in, and far short of anything seen. */
 const ANCHOR_NUDGE_PX = 1 / 16;
@@ -26,7 +26,7 @@ export function RectAnchor({ rect, nudge, anchorRef }: { rect: Rect; nudge: numb
   return createPortal(
     <span
       ref={anchorRef}
-      data-callout-anchor=""
+      data-rect-anchor=""
       className={s.anchor}
       aria-hidden="true"
       // Dynamic geometry — inline style is the mechanism here, not styling.

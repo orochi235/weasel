@@ -1,8 +1,3 @@
-.anchor {
-  position: fixed;
-  pointer-events: none;
-}
-
 .popover {
   /* RAC sets no z-index. */
   z-index: var(--wzl-z-popover);

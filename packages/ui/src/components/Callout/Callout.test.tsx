@@ -97,7 +97,7 @@ describe('Callout', () => {
       </Callout>,
     );
     expect(screen.getByRole('dialog')).toBeTruthy();
-    const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
+    const anchor = document.body.querySelector('[data-rect-anchor]') as HTMLElement;
     expect(anchor).toBeTruthy();
     expect(anchor.style.left).toBe('120px');
     expect(anchor.style.top).toBe('80px');
@@ -114,7 +114,7 @@ describe('Callout', () => {
       <Callout open anchorRect={{ x, y, width: 40, height: 20 }} title="Here">Anchored</Callout>
     );
     const { rerender } = renderWithIcons(at(10, 10));
-    const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
+    const anchor = document.body.querySelector('[data-rect-anchor]') as HTMLElement;
     const widths = [anchor.style.width];
     rerender(at(90, 60));
     expect(anchor.style.left).toBe('90px');
@@ -134,7 +134,7 @@ describe('Callout', () => {
     const { rerender } = renderWithIcons(
       <Callout open anchorRect={rect} title="Here">Anchored</Callout>,
     );
-    const anchor = document.body.querySelector('[data-callout-anchor]') as HTMLElement;
+    const anchor = document.body.querySelector('[data-rect-anchor]') as HTMLElement;
     const before = anchor.style.width;
     // New object, same numbers: the nudge keys on the values, not identity.
     rerender(<Callout open anchorRect={{ ...rect }} title="Here">Anchored</Callout>);
@@ -286,6 +286,6 @@ describe('Callout', () => {
     }
     renderWithIcons(<Subject />);
     expect(screen.getByRole('dialog')).toBeTruthy();
-    expect(document.body.querySelector('[data-callout-anchor]')).toBeTruthy();
+    expect(document.body.querySelector('[data-rect-anchor]')).toBeTruthy();
   });
 });

@@ -20,7 +20,9 @@ import {
   type OverlayPortalProps,
   type WithoutPortalTarget,
 } from '../../overlays/portalHost';
+import { RectAnchor, useAnchorNudge } from '../../overlays/rectAnchor';
 import { InlineMarkdown } from '../InlineMarkdown';
+import type { Rect } from '@weasel-js/geom';
 import s from './Tooltip.module.css';
 
 /** How long the pointer rests on a trigger before its tooltip opens, in ms. */
@@ -92,24 +94,34 @@ export type TooltipProps = Omit<WithoutPortalTarget<RACTooltipProps>, 'children'
      *  piece and links drawn as their labels; an element is drawn as given. */
     children?: ReactNode;
     className?: string;
+    /**
+     * Anchor to a client-coordinate rect instead of a trigger — the pointer, say, as a zero-size rect at its client
+     * point. The tooltip re-anchors whenever this rect changes, and flips and slides to stay in the viewport as one
+     * on a trigger does. Takes precedence over `triggerRef`; pairs with `open`.
+     */
+    anchorRect?: Rect;
   };
 
 /**
  * Tooltip bubble with an arrow pointing at the trigger. Non-interactive
- * content only (ARIA tooltip semantics). Use inside `<TooltipTrigger>`.
+ * content only (ARIA tooltip semantics). Use inside `<TooltipTrigger>`, or alone with `open` and `anchorRect`.
  *
  * It is placed inside a box drawn at another size as {@link Popover} is: React Aria's own `Tooltip` gives its
  * placement no way to read the trigger or the viewport in the box's px, so this one places itself.
  */
 export function Tooltip(props: TooltipProps) {
-  const { children, className, placement = 'top', offset = 8, portalContainer, open, ...rest } = props;
+  const { children, className, placement = 'top', offset = 8, portalContainer, open, anchorRect, ...rest } = props;
   const { anchor, provide, ready } = useOverlayPortal(portalContainer);
+  const rectRef = useRef<HTMLSpanElement>(null);
+  const nudge = useAnchorNudge(anchorRect);
   return (
     <>
       {anchor}
+      {anchorRect !== undefined && <RectAnchor rect={anchorRect} nudge={nudge} anchorRef={rectRef} />}
       {ready && provide(
         <TooltipOverlay
           {...rest}
+          {...(anchorRect !== undefined ? { triggerRef: rectRef } : {})}
           {...(open !== undefined ? { isOpen: open } : {})}
           placement={placement}
           offset={offset}

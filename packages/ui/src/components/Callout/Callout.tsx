@@ -10,7 +10,7 @@ import { Popover, type PopoverProps } from '../Popover';
 import { useOverlayPortal, type OverlayPortalProps, type WithoutPortalTarget } from '../../overlays/portalHost';
 import { type AppearanceProps, useAppearance } from '../appearance';
 import { useEscapeDismissal } from './useEscapeDismissal';
-import { RectAnchor, useAnchorNudge } from './rectAnchor';
+import { RectAnchor, useAnchorNudge } from '../../overlays/rectAnchor';
 import { CalloutBody } from './CalloutBody';
 import s from './Callout.module.css';
 import type { Rect } from '@weasel-js/geom';

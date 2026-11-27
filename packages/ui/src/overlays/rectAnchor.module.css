@@ -1,0 +1,5 @@
+/* Covers a client-space rect for a popover or tooltip to anchor to; geometry comes from the rect. */
+.anchor {
+  position: fixed;
+  pointer-events: none;
+}
