@@ -2,6 +2,6 @@
 '@weasel-js/forge': patch
 ---
 
-`watchRecovery` stops checking files when a dev server that has restarted closes, and starts each restarted server with no files from the last one.
+`watchRecovery` stops checking files once a restarted dev server closes, and a restarted server starts with none of the last one's files.
 
 <!-- entry: fix -->
