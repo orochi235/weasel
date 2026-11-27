@@ -4,11 +4,11 @@ import type { HoldStore } from './holdStore';
 import type { Reader } from './lanes';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
-/** `value` as the target's axes, refused where it is not the target's shape. */
+/** `value` as the target's axes, refused where it is not the target's shape or not finite. */
 export function axesFor<T>(axes: TargetAxes<T>, value: T, what: string): number[] {
   const a = axes.to(value);
-  if (a.length !== axes.count || !a.every((x) => typeof x === 'number' && !Number.isNaN(x))) {
-    throw new Error(`animator: \`${what}\` is not the target's shape`);
+  if (a.length !== axes.count || !a.every((x) => Number.isFinite(x))) {
+    throw new Error(`animator: \`${what}\` is not the target's shape, in finite numbers`);
   }
   return a;
 }
