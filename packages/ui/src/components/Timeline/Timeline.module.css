@@ -38,6 +38,13 @@
 
 .disclosure { display: inline-flex; flex: none; cursor: pointer; }
 
+/* Chromium drops a math function in `overflow-clip-margin`; a registered length computes to the plain one it takes. */
+@property --timeline-clip-margin {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
 .laneTrack {
   position: relative;
   flex: 1 1 auto;
@@ -46,7 +53,8 @@
   /* Marks before the window's start would paint over the label column and take its presses. The margin keeps a key
      drawn whole, focus ring included, when it sits at either edge. */
   overflow: clip;
-  overflow-clip-margin: calc(var(--wzl-handle-size) * 0.75 + 3px);
+  --timeline-clip-margin: calc(var(--wzl-handle-size) * 0.75 + 3px);
+  overflow-clip-margin: var(--timeline-clip-margin);
 }
 
 .key, .eventMark {
@@ -116,7 +124,7 @@
 }
 
 .lane[data-graph='true'] .laneTrack {
-  overflow-clip-margin: max(calc(var(--wzl-handle-size) * 0.75 + 3px), var(--wzl-timeline-value-axis-w, 32px));
+  --timeline-clip-margin: max(calc(var(--wzl-handle-size) * 0.75 + 3px), var(--wzl-timeline-value-axis-w, 32px));
 }
 
 .nestedBar {
