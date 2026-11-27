@@ -2,7 +2,7 @@
  * A clip and the SVG nodes it moves written as a Lottie animation: one shape layer per path, its
  * geometry baked in, with the clip's opacity and trim tracks keyframed on it.
  */
-import type { Clip } from '@weasel-js/animator';
+import { sampleTrack, type Clip, type SampledTrack } from '@weasel-js/animator';
 import { boundsOfPath, identity, multiply, rotatePathAbout, transformPath, type Affine, type Path, type Rect } from '@weasel-js/geom';
 import { tryParseColor } from '@weasel-js/paint';
 import type { SvgNode, SvgPaint, SvgPathNode, SvgStroke } from '@weasel-js/svg';
@@ -114,6 +114,38 @@ function fillOf({ node, path }: Leaf, label: string, warn: Warn): LottieFill | n
   return { ty: 'fl', ...color, r: path.kind === 'polygon' && path.fillRule === 'evenodd' ? 2 : 1 };
 }
 
+/** An edge's value at a time: its track sampled there, else `rest`. */
+function edgeOf(track: PlannedTrack | undefined, rest: number): (t: number) => number {
+  if (!track) return () => rest;
+  const { still, frames } = track;
+  if (still) return () => still.value as number;
+  const keyed = { kind: 'sampled', keys: frames.map(({ t, value, easing }) => ({ t, value, easing })) } as SampledTrack<number>;
+  return (t) => sampleTrack(keyed, t) as number;
+}
+
+/**
+ * A trim as Lottie's `tm`. lottie-web swaps `s` and `e` where `s > e`, drawing the span between
+ * them where SVG draws nothing, so a trim that never moves and is empty is written as `s = e`, and
+ * one whose edges cross at a frame Lottie draws warns.
+ */
+function trimOf(
+  edges: [start: PlannedTrack | undefined, end: PlannedTrack | undefined], rest: readonly [number, number], label: string,
+  { fps, op, warn }: { fps: number; op: number; warn: Warn },
+): LottieTrim {
+  const [start, end] = edges;
+  const [startAt, endAt] = [edgeOf(start, rest[0]), edgeOf(end, rest[1])];
+  if (!start?.frames.length && !end?.frames.length) {
+    const e = endAt(0) * 100;
+    return { ty: 'tm', s: held(Math.min(startAt(0) * 100, e)), e: held(e), o: held(0), m: 2 };
+  }
+  const drawn = Array.from({ length: Math.ceil(op) + 1 }, (_, k) => (k * 1000) / fps);
+  const times = [...edges.flatMap((track) => track?.frames.map((f) => f.t) ?? []), ...drawn];
+  if (times.some((t) => startAt(t) > endAt(t))) {
+    warn(`${label}'s trim start passes its end while it plays; Lottie draws the span between them there, where SVG draws nothing`);
+  }
+  return { ty: 'tm', s: percentOf(start, rest[0] * 100, fps), e: percentOf(end, rest[1] * 100, fps), o: held(0), m: 2 };
+}
+
 /** A track's value times `factor` as a scalar in percent, or `fallback` where there is no track. */
 function percentOf(track: PlannedTrack | undefined, fallback: number, fps: number, factor = 1): LottieScalar {
   const percent = (f: Frame) => (f.value as number) * factor * 100;
@@ -134,8 +166,7 @@ function layerOf(leaf: Leaf, tracks: Map<string, PlannedTrack>, ctx: { fps: numb
   if (!node.stroke && (start || end)) warn(strokelessTrimWarning(label));
   const groups: LottieGroup[] = [];
   if (stroke && (start || end || node.stroke?.trim)) {
-    const [from, to] = trimEdgesOf(node);
-    const tm: LottieTrim = { ty: 'tm', s: percentOf(start, from * 100, fps), e: percentOf(end, to * 100, fps), o: held(0), m: 2 };
+    const tm = trimOf([start, end], trimEdgesOf(node), label, ctx);
     groups.push({ ty: 'gr', it: [...shapes, stroke, tm, tr] });
     if (fill) groups.push({ ty: 'gr', it: [...shapes, fill, tr] });
   } else {
