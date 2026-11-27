@@ -65,9 +65,6 @@ Then:
   `scour<N>-<area>-b<k>` carries all its fixes, so a batch merges only that one per area. Runs 1-12, including
   the ones in this batch and the in-flight run 11 on nodeShapes and run 12 on `core.canvas.part4`, predate it and
   are not stacked.
-- A background agent from this session is fixing `pass-the-baton` no longer prefixing `[STALE]` to wound-down
-  iTerm tabs, in the chezmoi shared skills. Its result went to the session that started it. If that session is
-  gone, check `git -C ~/.local/share/chezmoi log -3`.
 
 ## Decisions taken in conversation and not visible in the code
 
