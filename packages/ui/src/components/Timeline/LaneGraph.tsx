@@ -92,6 +92,8 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
 
   const onLayerChange = (next: KeyframeLayerState): void => {
     const prev = stateRef.current;
+    // A refused drag's release re-sorts keys that never moved, and its selection with them.
+    if (!edits && !deepEqual(next.keys, prev.keys)) { setLive(null); return; }
     if (next.selectedKey !== null && next.selectedKey !== prev.selectedKey) onSelect(next.selectedKey);
     if (next.selectedSegment !== null && next.selectedSegment !== prev.selectedSegment) onSelectSegment?.(next.selectedSegment);
     if (!next.drag || !edits) { setLive(null); return; }
