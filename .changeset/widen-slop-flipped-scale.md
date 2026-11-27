@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-An outline's ink reach widens a world pick slop by the view's zoom on a flipped (y-up) view too, so picking near a stroke's edge reaches as far as it does on an unflipped one.
+Picking near a stroke's ink edge reaches as far on a flipped (y-up) view as on an unflipped one. `widenSlop` reads a negative scale by its magnitude.
 
 <!-- entry: fix -->

@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-A camera move started through `useViewAnimationOn`, or `useViewAnimation` given an animator, stops when the component that started it unmounts, as one on the hook's own animator already did.
+A camera move on a shared animator stops when the component that started it unmounts. This covers `useViewAnimationOn` and `useViewAnimation` given an animator.
 
 <!-- entry: fix behavior -->
