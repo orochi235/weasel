@@ -15,18 +15,27 @@ export interface VelocityTracker {
  *  action layer builds its own, because an Action descriptor is a static
  *  object and cannot call hooks. */
 export function createVelocityTracker(): VelocityTracker {
+  // The samples within 100ms of the last, after the latest one older than that: the start of the
+  // delta the first of them carries.
   let samples: Sample[] = [];
   return {
     record(dx, dy, t) {
       samples.push({ dx, dy, t });
-      const cutoff = t - 100;
-      samples = samples.filter(s => s.t >= cutoff);
+      const first = samples.findIndex((s) => s.t >= t - 100);
+      samples = samples.slice(Math.max(0, first - 1));
     },
     getVelocity(now) {
-      const s = now === undefined ? samples : samples.filter((p) => p.t >= now - 100);
-      if (s.length < 2) return { vx: 0, vy: 0 };
+      const last = samples[samples.length - 1];
+      if (!last) return { vx: 0, vy: 0 };
+      const cutoff = (now ?? last.t) - 100;
+      const first = samples.findIndex((p) => p.t >= cutoff);
+      if (first === -1) return { vx: 0, vy: 0 };
+      // Two samples or more in the window measure from the first; a lone one, from the sample before it.
+      const from = samples.length - first >= 2 ? first : first - 1;
+      if (from < 0) return { vx: 0, vy: 0 };
+      const s = samples.slice(from);
       // Up to `now`, not the last sample: a pointer at rest fires no moves, so its pause has no sample.
-      const end = Math.max(now ?? -Infinity, s[s.length - 1].t);
+      const end = Math.max(now ?? -Infinity, last.t);
       const dt = end - s[0].t;
       if (dt === 0) return { vx: 0, vy: 0 };
       const totalDx = s.slice(1).reduce((acc, p) => acc + p.dx, 0);
