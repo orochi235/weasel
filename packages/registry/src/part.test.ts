@@ -40,6 +40,16 @@ describe('createPart', () => {
     fail = false;
     expect(partOf(a)).toBe(1);
   });
+
+  it('throws when make reads the part it is making for the same owner, rather than making a second', () => {
+    const owner = {};
+    let reads = 0;
+    const partOf: (o: object) => object = createPart((o: object) => (reads++ === 0 ? { inner: partOf(o) } : {}));
+    expect(() => partOf(owner)).toThrow(/reads the part it is making/);
+    expect(partOf(owner)).toBe(partOf(owner));
+    const plain = createPart(() => ({}));
+    expect(plain(owner)).toBe(plain(owner));
+  });
 });
 
 describe('identityKeyOf', () => {

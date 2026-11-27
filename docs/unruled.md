@@ -4312,3 +4312,6 @@ Calls the lanes made without a ruling:
   (`uploadR8`, `uploadRGBA`) and an image (`upload`, `uploadRegistered`), and warns once; an image is never written
   over a page, and a sweep never deletes one. Rewriting the texture with the later upload, as the font-atlas and
   registered-texture collision does, was the alternative.
+- 2026-11-26 (the fixer's call): registry's `createPart` throws when `make` reads the part it is making for the same
+  owner, since no part exists yet to return. Returning a second part, or one stored by the inner read, was the
+  alternative; either leaves two callers holding different parts for one owner.
