@@ -201,6 +201,9 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
     });
     /** Views skipped for an id another view holds, in the order they arrived; the first takes the id when it frees. */
     const waiting: ViewRegistration[] = [];
+    /** A waiting view handed an id this task. A view rebuilding its registration releases the old one and
+     *  registers the new one in the same commit, so a claim arriving before the task ends takes the id back. */
+    let handedOn: ViewRegistration | null = null;
     const add = (reg: ViewRegistration): void => {
       entriesRef.current.set(reg, seqRef.current++);
       changed();
@@ -209,7 +212,12 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
       resolver,
       register: (reg) => {
         const holder = get(reg.id);
-        if (holder && holder !== reg) {
+        if (holder && holder === handedOn) {
+          handedOn = null;
+          entriesRef.current.delete(holder);
+          waiting.unshift(holder);
+          add(reg);
+        } else if (holder && holder !== reg) {
           console.error(`[weasel] <CanvasView id="${reg.id}">: another view on this canvas already has that id, so this one is skipped until that view goes away. View ids are unique per canvas; rename one.`);
           waiting.push(reg);
         } else add(reg);
@@ -218,8 +226,11 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
           if (at >= 0) { waiting.splice(at, 1); return; }
           if (!entriesRef.current.delete(reg)) return;
           const next = waiting.findIndex((r) => r.id === reg.id);
-          if (next >= 0) add(waiting.splice(next, 1)[0]!);
-          else changed();
+          if (next < 0) { changed(); return; }
+          const promoted = waiting.splice(next, 1)[0]!;
+          add(promoted);
+          handedOn = promoted;
+          queueMicrotask(() => { if (handedOn === promoted) handedOn = null; });
         };
       },
       list: ordered,
