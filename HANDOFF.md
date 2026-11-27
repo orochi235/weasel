@@ -10,7 +10,7 @@ This section rides on the batch branch; delete it in the commit that merges the 
 
 **Where:** branch `batch/2026-11-27-scour`, worktree `.worktrees/batch-2026-11-27-scour`. The session that
 merges works from the main checkout and reaches this tree by path; it never runs `EnterWorktree`. It's registered as
-`inflight` kind `batch`.
+`inflight` kind `batch`, owned by the ended session weasel-7a: take it over first with `inflight add batch/2026-11-27-scour --kind batch --repo ~/src/weasel`, then keep a Monitor on `inflight watch --owner <your session name>`.
 
 **What's in it:** `main` plus every finished scour fixer branch except nodeShapes (`scour11-*`) and
 `forge.vite.part2` (`scour9-*`), which Mike held back because those fix areas aren't done. That means Timeline runs
