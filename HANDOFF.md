@@ -48,16 +48,24 @@ four debounce waits (SingletonExperiment, usePersistedState, PersistedFloatingPa
 through `state/records.fixture.tsx`'s `catchRecords` instead. Waits that follow an unmount or `pagehide` were left
 alone, since they ride the close-time flush.
 
-Plan steps 1 and 2 are done; the oxc check was clean. The `--since 25869ce981` run on `2c9e1f57d3` passed
-18,725 tests and failed only the gate's `lint -w @weasel-js/labkit` (biome: useJob's test formatting, and a
-component defined inside the fixture's factory). `e0568439df` fixes both, and labkit's whole lint passed on
-msb-uai. Now running: `test:fleet -- batch/2026-11-27-scour --since 2c9e1f57d3`, log
-`/private/tmp/claude-501/-Users-mike-src-weasel/5aa89cc6-c55b-42a8-b9b4-bd955561ab8f/scratchpad/fleet-scour-since2.log`.
-Commits after `e0568439df` touch only this file.
+Plan steps 1–3 are done. Both `--since` runs are green, the second on `e0568439df` after labkit's lint fix.
+`test:batch` on `a6ae65814c` then failed the postbuild's `check:unnameable`: `timelineEnd` named a private animator
+type, `Length`. `d68ad8d343` exports it as `LengthReader`, and `check:unnameable --build packages/animator` passed
+on the fleet. The postbuild stopped at check 11 of 17, so checks 12–17 have not been seen.
 
-**Next:** read that run's result. Fix any failure locally first. If it's green, go to step 4 below. The oxc
-script for any re-check is
+Now running, in `/private/tmp/claude-501/-Users-mike-src-weasel/5aa89cc6-c55b-42a8-b9b4-bd955561ab8f/scratchpad/`:
+- `batch-scour.log`: the rest of that `test:batch` (jsdom and gate parts on `a6ae65814c`)
+- `postbuild-d68ad8d.log`: `test:fleet:postbuild` on `d68ad8d343`
+
+**Next:** if both are green, run `test:batch` once on the tip to confirm, then do step 4. Fix any failure locally
+first. The oxc script for any re-check is
 `/private/tmp/claude-501/-Users-mike-src-weasel/7eac4d15-6c0c-47f3-8a50-86007bc3955a/scratchpad/oxcparse.mjs`.
+skulkr-22 is waiting for 41906fd420 (Tooltip anchorRect) on `main`: message it when `main` moves, or if this stalls.
+
+**Next batch:** `fleet-test-help` (tip `4c23e4de88`) is ready. Every script now parses its args through
+`scripts/lib/help.mjs`'s `cli()`, built on `util.parseArgs` in strict mode. It triggers a full run, and it changes how
+`npm run release` passes flags on and how `check:published --wait` reads its value (`--wait=<n>`; `--wait 20` with a
+space is now an error).
 
 **Mike's plan (relayed by weasel-4b, 2026-11-27)**, as it now stands:
 3. A `test:fleet --since` run covering what changed since the last run (running, see above).
@@ -65,13 +73,6 @@ script for any re-check is
    branches, `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree. Also
    remove `.worktrees/repro-main` and `.worktrees/repro-batch`, which were made for the repro (detached, nothing to
    keep). The commit that merges also deletes this section.
-
-**Held for the next batch:** branch `fleet-test-help` (worktree `.worktrees/fleet-test-help`). `test:fleet` and
-`test:batch` used to pass `--help` on to `onto test`, so asking for help started a real run. Session
-fleet-test-help-de is extending this to every script and bin, and Mike wants one declared args format that both
-parses the args and renders `--help`, as commander did (design sent there: a wrapper over `util.parseArgs` with
-`strict`). It reports ready to the batch's merger. Don't fold it into this batch, because it changes build
-tooling, which forces a full run.
 
 ### Elsewhere
 
