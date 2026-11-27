@@ -21,6 +21,7 @@ import type { ViewAt } from './canvasExtension';
 import { aimRectOf, isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
 import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
 import { createViewMarkerRegistry, type ViewMarkerRegistry } from './viewMarkers';
+import { createViewIdClaims } from './viewIdClaims';
 
 /**
  * What a view needs from the surface hosting it.
@@ -199,40 +200,17 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
       toLocal: (clientX, clientY) => surfaceLocal(surfaceRef.current, clientX, clientY),
       occluded: (x, y) => surfaceRef.current?.claimsAbove(x, y) ?? false,
     });
-    /** Views skipped for an id another view holds, in the order they arrived; the first takes the id when it frees. */
-    const waiting: ViewRegistration[] = [];
-    /** A waiting view handed an id this task. A view rebuilding its registration releases the old one and
-     *  registers the new one in the same commit, so a claim arriving before the task ends takes the id back. */
-    let handedOn: ViewRegistration | null = null;
-    const add = (reg: ViewRegistration): void => {
-      entriesRef.current.set(reg, seqRef.current++);
-      changed();
-    };
     const registry: ViewRegistry = {
       resolver,
-      register: (reg) => {
-        const holder = get(reg.id);
-        if (holder && holder === handedOn) {
-          handedOn = null;
-          entriesRef.current.delete(holder);
-          waiting.unshift(holder);
-          add(reg);
-        } else if (holder && holder !== reg) {
-          console.error(`[weasel] <CanvasView id="${reg.id}">: another view on this canvas already has that id, so this one is skipped until that view goes away. View ids are unique per canvas; rename one.`);
-          waiting.push(reg);
-        } else add(reg);
-        return () => {
-          const at = waiting.indexOf(reg);
-          if (at >= 0) { waiting.splice(at, 1); return; }
-          if (!entriesRef.current.delete(reg)) return;
-          const next = waiting.findIndex((r) => r.id === reg.id);
-          if (next < 0) { changed(); return; }
-          const promoted = waiting.splice(next, 1)[0]!;
-          add(promoted);
-          handedOn = promoted;
-          queueMicrotask(() => { if (handedOn === promoted) handedOn = null; });
-        };
-      },
+      register: createViewIdClaims({
+        get,
+        add: (reg) => {
+          entriesRef.current.set(reg, seqRef.current++);
+          changed();
+        },
+        remove: (reg) => entriesRef.current.delete(reg),
+        changed,
+      }),
       list: ordered,
       get,
       viewAt: ({ x, y }, opts) => {
