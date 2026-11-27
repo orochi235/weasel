@@ -109,6 +109,29 @@ describe('Timeline held', () => {
     expect(onPlay).toHaveBeenCalled();
   });
 
+  it('held, the easing picker shows it and the key editor is told', () => {
+    const held: unknown[] = [];
+    renderTimeline((n) => n, {
+      readOnly: true, selection: { trackPath: [0], keyIndex: 1 },
+      renderKeyEditor: (ctx) => { held.push(ctx.held); return null; },
+    });
+    expect(held.at(-1)).toBe('readOnly');
+    fireEvent.click(screen.getByTestId('timeline-segment'));
+    expect(screen.getByRole('combobox')).toHaveAttribute('aria-readonly', 'true');
+  });
+
+  it('disabled, the key editor is told, and unheld, told nothing', () => {
+    const held: unknown[] = [];
+    const { rerender } = renderWithIcons(
+      <Timeline tracks={TRACKS} duration={1000} playhead={0} disabled selection={{ trackPath: [0], keyIndex: 1 }}
+        renderKeyEditor={(ctx) => { held.push(ctx.held); return null; }} />,
+    );
+    expect(held.at(-1)).toBe('disabled');
+    rerender(<Timeline tracks={TRACKS} duration={1000} playhead={0} selection={{ trackPath: [0], keyIndex: 1 }}
+      renderKeyEditor={(ctx) => { held.push(ctx.held); return null; }} />);
+    expect(held.at(-1)).toBeUndefined();
+  });
+
   it('nested scopes: the nearest reason wins, disabled={false} adds nothing, and disabled beats read-only', () => {
     const calls = renderTimeline(
       (n) => <ReadOnly><Disabled reason="Locked"><Disabled reason="Busy">{n}</Disabled></Disabled></ReadOnly>,
