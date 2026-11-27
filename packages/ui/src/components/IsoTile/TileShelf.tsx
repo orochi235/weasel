@@ -17,7 +17,8 @@ export interface TileShelfProps {
   traced?: string | null;
   /** Hears a hover start (the tile's key) or end (`null`). */
   onTrace?: (key: string | null) => void;
-  /** Given, tiles show a pointer cursor and a click passes the tile's key. */
+  /** Given, tiles show a pointer cursor, a click passes the tile's key, and each tile is a button named by its
+   *  `title` that takes focus (tracing its key) and answers Enter and Space. The chart is then a group, not an image. */
   onPick?: (key: string) => void;
   'aria-label': string;
   className?: string;
@@ -49,7 +50,7 @@ export function TileShelf({
   const tracedTile = traced === null ? undefined : layout.groups.flatMap((g) => g.tiles).find((t) => t.item.key === traced);
   const classes = [s.shelf, tracedTile ? s.tracing : '', className].filter(Boolean).join(' ');
   return (
-    <svg className={classes} viewBox={`0 0 ${layout.width} ${base + LABEL}`} width={layout.width} role="img" aria-label={label}>
+    <svg className={classes} viewBox={`0 0 ${layout.width} ${base + LABEL}`} width={layout.width} role={onPick ? 'group' : 'img'} aria-label={label}>
       <line className={s.board} x1={0} x2={layout.width} y1={base} y2={base} />
       {layout.groups.map(({ group, tiles, labelX }) => (
         <g key={group.key} className={s.group} data-traced={tiles.some((t) => t.item.key === traced) ? '' : undefined}>
@@ -57,6 +58,7 @@ export function TileShelf({
             <IsoTile key={item.key} x={x} y={top} width={tileWidth} height={tileHeight} depth={depth}
               tone={item.tone} title={item.title} traced={item.key === traced}
               onPointerEnter={() => setTraced(item.key)} onPointerLeave={() => setTraced(null)}
+              onFocus={() => setTraced(item.key)} onBlur={() => setTraced(null)}
               onClick={onPick ? () => onPick(item.key) : undefined}>
               {item.marked && <circle className={s.dot} cx={x + depth + tileWidth / 2} cy={top - depth - 3.5} r={1.8} />}
             </IsoTile>

@@ -46,6 +46,18 @@ describe('TileStacks', () => {
     expect(tiles(container)[0]!.querySelector('title')?.textContent).toBe('a first');
   });
 
+  it('becomes a group of tile buttons when tiles can be picked, tracing the focused one', () => {
+    const pick = vi.fn();
+    const trace = vi.fn();
+    draw({ onPick: pick, onTrace: trace });
+    expect(screen.getByRole('group', { name: 'Passes' })).toBeInTheDocument();
+    const first = screen.getByRole('button', { name: 'a first' });
+    fireEvent.focus(first);
+    fireEvent.keyDown(first, { key: 'Enter' });
+    expect(trace).toHaveBeenCalledWith('a');
+    expect(pick).toHaveBeenCalledWith('a');
+  });
+
   it('patches an empty column unless told not to, with its hover text', () => {
     const { container } = draw({ emptyTitle: (c) => `column ${c} empty` });
     expect(container.querySelectorAll('svg > polygon')).toHaveLength(1);

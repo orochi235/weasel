@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from 'react';
+import type { KeyboardEvent, ReactElement, ReactNode } from 'react';
 import { sideFaceOf, topFaceOf } from './isoGeometry';
 import s from './IsoTile.module.css';
 
@@ -29,7 +29,12 @@ export interface IsoTileProps {
   traced?: boolean;
   onPointerEnter?: () => void;
   onPointerLeave?: () => void;
-  /** Given, the tile shows a pointer cursor and hears clicks. */
+  /** Keyboard focus arriving, on a tile that has `onClick`. */
+  onFocus?: () => void;
+  /** Keyboard focus leaving, on a tile that has `onClick`. */
+  onBlur?: () => void;
+  /** Given, the tile shows a pointer cursor, hears clicks, and is a button named by its `title`: it takes focus and
+   *  answers Enter and Space. */
   onClick?: () => void;
   /** Drawn after the faces, in the same coordinates: a marker on the tile. */
   children?: ReactNode;
@@ -42,11 +47,20 @@ export interface IsoTileProps {
  * Inside a tile chart, a faded tile shows `--tile-shown` in place of `--tile`; `--tile-lit` (default 1.3) and
  * `--tile-edge` (default 0.5) set the top face's brightness and the faces' edge width.
  */
-export function IsoTile({ x, y, width, height, depth, tone, title, traced = false, onPointerEnter, onPointerLeave, onClick, children }: IsoTileProps): ReactElement {
+export function IsoTile({
+  x, y, width, height, depth, tone, title, traced = false, onPointerEnter, onPointerLeave, onFocus, onBlur, onClick, children,
+}: IsoTileProps): ReactElement {
   const box = { x, y, width, height, depth };
   const className = [s.tile, tone, onClick ? s.pickable : ''].filter(Boolean).join(' ');
+  const press = onClick && ((e: KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    onClick();
+  });
+  const button = onClick ? { role: 'button', tabIndex: 0, 'aria-label': title, onKeyDown: press, onFocus, onBlur } : {};
   return (
-    <g className={className} data-traced={traced ? '' : undefined} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave} onClick={onClick}>
+    <g className={className} data-traced={traced ? '' : undefined} onPointerEnter={onPointerEnter} onPointerLeave={onPointerLeave}
+      onClick={onClick} {...button}>
       {title !== undefined && <title>{title}</title>}
       <rect className={s.face} x={x} y={y} width={width} height={height} />
       <polygon className={`${s.face} ${s.top}`} points={topFaceOf(box)} />

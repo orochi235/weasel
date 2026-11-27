@@ -24,6 +24,6 @@ const [traced, setTraced] = useState<string | null>(null);
 />
 ```
 
-An item is `{ key, tone, title }`, where `tone` is a class that sets `--tile`. `TileStacks` stacks each column's items bottom to top along a numbered axis, with a patch for an empty column and an optional trailing label. `TileShelf` stands items on end in labeled groups, with a dot over a `marked` one. While a key is traced, its tiles keep their tones and the rest fade to `--tile-faded`; the shelf keeps the traced tile's whole group in color and outlines the tile. The traced tile carries `data-traced`, so a tone can restyle it. Without `traced`, each chart keeps its own trace.
+An item is `{ key, tone, title }`, where `tone` is a class that sets `--tile`. `TileStacks` stacks each column's items bottom to top along a numbered axis, with a patch for an empty column and an optional trailing label. `TileShelf` stands items on end in labeled groups, with a dot over a `marked` one. While a key is traced, its tiles keep their tones and the rest fade to `--tile-faded`; the shelf keeps the traced tile's whole group in color and outlines the tile. The traced tile carries `data-traced`, so a tone can restyle it. Without `traced`, each chart keeps its own trace. With `onPick`, each tile is a button named by its `title` that takes keyboard focus, traces its key while focused, and picks on Enter or Space.
 
 <!-- entry: rank=5 new api -->

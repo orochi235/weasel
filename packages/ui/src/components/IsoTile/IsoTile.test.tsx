@@ -57,6 +57,25 @@ describe('IsoTile', () => {
     expect(draw().getAttribute('class')).not.toMatch(/pickable/);
   });
 
+  it('is a focusable button named by its title when it has a click handler, answering Enter and Space', () => {
+    const click = vi.fn();
+    const focus = vi.fn();
+    const blur = vi.fn();
+    const g = draw({ title: 'd1', onClick: click, onFocus: focus, onBlur: blur });
+    expect(g.getAttribute('role')).toBe('button');
+    expect(g.getAttribute('tabindex')).toBe('0');
+    expect(g.getAttribute('aria-label')).toBe('d1');
+    fireEvent.keyDown(g, { key: 'Enter' });
+    fireEvent.keyDown(g, { key: ' ' });
+    fireEvent.keyDown(g, { key: 'a' });
+    fireEvent.focus(g);
+    fireEvent.blur(g);
+    expect([click, focus, blur].map((f) => f.mock.calls.length)).toEqual([2, 1, 1]);
+    const plain = draw({ title: 'd1' });
+    expect(plain.hasAttribute('role')).toBe(false);
+    expect(plain.hasAttribute('tabindex')).toBe(false);
+  });
+
   it('draws its children after the faces', () => {
     const g = render(<svg><IsoTile {...BOX}><circle data-testid="dot" r={1} /></IsoTile></svg>).container.querySelector('g')!;
     expect(g.lastElementChild?.tagName).toBe('circle');

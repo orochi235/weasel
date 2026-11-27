@@ -11,3 +11,7 @@
 .side { filter: brightness(0.7); }
 
 .pickable { cursor: pointer; }
+
+.pickable:focus { outline: none; }
+
+.pickable:focus-visible .face { stroke: var(--wzl-focus-ring); stroke-width: 1.5; }

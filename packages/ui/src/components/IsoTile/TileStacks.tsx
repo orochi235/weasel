@@ -25,7 +25,8 @@ export interface TileStacksProps {
   traced?: string | null;
   /** Hears a hover start (the tile's key) or end (`null`). */
   onTrace?: (key: string | null) => void;
-  /** Given, tiles show a pointer cursor and a click passes the tile's key. */
+  /** Given, tiles show a pointer cursor, a click passes the tile's key, and each tile is a button named by its
+   *  `title` that takes focus (tracing its key) and answers Enter and Space. The chart is then a group, not an image. */
   onPick?: (key: string) => void;
   'aria-label': string;
   className?: string;
@@ -54,7 +55,7 @@ export function TileStacks({
   const tracing = traced !== null && layout.tiles.some((t) => t.item.key === traced);
   const classes = [s.chart, tracing ? s.tracing : '', className].filter(Boolean).join(' ');
   return (
-    <svg className={classes} viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} role="img" aria-label={label}>
+    <svg className={classes} viewBox={`0 0 ${layout.width} ${layout.height}`} width={layout.width} role={onPick ? 'group' : 'img'} aria-label={label}>
       <line className={s.base} x1={0} x2={layout.axisEnd} y1={layout.base} y2={layout.base} />
       {(ticks ?? defaultTicksFor(span)).map((t) => <text key={t} className={s.tick} x={layout.tickX(t)} y={layout.height - 1}>{t}</text>)}
       {showEmpty && layout.empties.map(({ column, x }) => (
@@ -66,6 +67,7 @@ export function TileStacks({
         <IsoTile key={`${column}-${item.key}`} x={x} y={y} width={tileWidth} height={tileHeight} depth={depth}
           tone={item.tone} title={item.title} traced={item.key === traced}
           onPointerEnter={() => setTraced(item.key)} onPointerLeave={() => setTraced(null)}
+              onFocus={() => setTraced(item.key)} onBlur={() => setTraced(null)}
           onClick={onPick ? () => onPick(item.key) : undefined} />
       ))}
       {trailing && <text className={s.trailing} x={layout.trailingX} y={layout.base - 2}>{trailing}</text>}
