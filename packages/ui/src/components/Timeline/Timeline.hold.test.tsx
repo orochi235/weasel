@@ -123,11 +123,11 @@ describe('Timeline held', () => {
   it('disabled, the key editor is told, and unheld, told nothing', () => {
     const held: unknown[] = [];
     const { rerender } = renderWithIcons(
-      <Timeline tracks={TRACKS} duration={1000} playhead={0} disabled selection={{ trackPath: [0], keyIndex: 1 }}
+      <Timeline tracks={TRACKS} duration={1000} playhead={0} onChange={() => {}} onSeek={() => {}} disabled selection={{ trackPath: [0], keyIndex: 1 }}
         renderKeyEditor={(ctx) => { held.push(ctx.held); return null; }} />,
     );
     expect(held.at(-1)).toBe('disabled');
-    rerender(<Timeline tracks={TRACKS} duration={1000} playhead={0} selection={{ trackPath: [0], keyIndex: 1 }}
+    rerender(<Timeline tracks={TRACKS} duration={1000} playhead={0} onChange={() => {}} onSeek={() => {}} selection={{ trackPath: [0], keyIndex: 1 }}
       renderKeyEditor={(ctx) => { held.push(ctx.held); return null; }} />);
     expect(held.at(-1)).toBeUndefined();
   });
