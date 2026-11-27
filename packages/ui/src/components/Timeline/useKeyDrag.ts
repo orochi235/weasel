@@ -55,7 +55,9 @@ export function useKeyDrag(a: KeyDragArgs) {
     // An empty window puts every time at one place, where every stop would be in reach.
     const free = ev.altKey || !(win.to > win.from);
     const pull = width === 0 ? 0 : snapRadiusPx / width;
-    return sliderAt(f, { ...track, stops, pull, free }) - offset;
+    // `sliderAt` clamps before it attracts, so a stop outside the row's reach would be picked and the ghost drawn there.
+    const reach = stops.filter((t) => t >= track.min && t <= track.max);
+    return sliderAt(f, { ...track, stops: reach, pull, free }) - offset;
   });
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
