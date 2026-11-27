@@ -57,8 +57,8 @@ export function startTween<T>(ctx: AnimationContext, o: TweenOptions<T>): Animat
       // Played backward, it ends at its start as it ends at its end going forward.
       const atStart = scale < 0 && (nowMs <= 0 || codec.rewound(id));
       const t = atStart ? 0 : o.ms <= 0 ? 1 : Math.min(1, nowMs / o.ms);
-      // Played backward from its end, it is not done there.
-      const ends = atStart || (t >= 1 && (scale >= 0 || o.ms <= 0));
+      // Played backward from its end, or held still there, it is not done there.
+      const ends = atStart || (t >= 1 && (scale > 0 || o.ms <= 0));
       let value: T;
       if (axes) {
         value = ends ? (atStart ? o.from : o.to) : axes.from(reader.cols, reader.at);
