@@ -1,0 +1,470 @@
+{
+ "run": 13,
+ "area": "core.canvas.SceneCanvas.part2",
+ "commit": "6365f742a8a363cfee9b2c05a28abfe6f650aa54",
+ "on": "main",
+ "ledgerCommit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "started": "2026-11-27T20:28:58.962Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "6365f742a8a363cfee9b2c05a28abfe6f650aa54",
+   "defects": [
+    {
+     "id": "D27",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts"
+     ]
+    },
+    {
+     "id": "D16",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts"
+     ]
+    },
+    {
+     "id": "D20",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts"
+     ]
+    },
+    {
+     "id": "D4",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useDepartureGhostLayer.ts"
+     ]
+    },
+    {
+     "id": "D5",
+     "recurrent": true,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/toolRegistry.ts"
+     ]
+    },
+    {
+     "id": "D24",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/toolRegistry.ts"
+     ]
+    },
+    {
+     "id": "D23",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useCanvasTools.ts"
+     ]
+    },
+    {
+     "id": "D15",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useCanvasTools.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D27",
+     "verdict": "fixed",
+     "line": "[D27] Ghosts paint on layers the view's `layerVisibility` / `layerOrder` hide (scour) — fixed 587d0807f9",
+     "sha": "587d0807f9"
+    },
+    {
+     "id": "D16",
+     "verdict": "fixed",
+     "line": "[D16] Departure ghosts of a removed scrolling container's children leave out its scroll offset (scour) — fixed 9caaeee9fe",
+     "sha": "9caaeee9fe"
+    },
+    {
+     "id": "D20",
+     "verdict": "fixed",
+     "line": "[D20] Departure ghosts are drawn once, not once per copy a container draws (scour) — fixed bf043c0570",
+     "sha": "bf043c0570"
+    },
+    {
+     "id": "D4",
+     "verdict": "fixed",
+     "line": "[D4] Departure ghosts fold an envelope parent's own pose into its children's place (scour) — fixed f218b1912e",
+     "sha": "f218b1912e"
+    },
+    {
+     "id": "D5",
+     "verdict": "fixed",
+     "line": "[D5] A preset's own tool named in `defaultTools` skips the \"inserts nothing\" check (scour) — fixed 8b169de4a1",
+     "sha": "8b169de4a1"
+    },
+    {
+     "id": "D24",
+     "verdict": "fixed",
+     "line": "[D24] `resolveToolRegistry` repeats its patch warnings on every render (scour) — fixed 51c78ebfcf",
+     "sha": "51c78ebfcf"
+    },
+    {
+     "id": "D23",
+     "verdict": "fixed",
+     "line": "[D23] `defaultActiveTool` under a `ToolsApi` takeover throws instead of being ignored (scour) — fixed f45449afca",
+     "sha": "f45449afca"
+    },
+    {
+     "id": "D15",
+     "verdict": "fixed",
+     "line": "[D15] Muting the marker-drag action leaves markers claiming presses (scour) — fixed cf39e4edf1",
+     "sha": "cf39e4edf1"
+    }
+   ],
+   "commits": 9,
+   "branch": "scour13-core.canvas.SceneCanvas.part2-b1",
+   "verify": {
+    "ok": true,
+    "files": 24,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2799,
+     "total": 2799
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 3.7785046000000007,
+   "minutes": 26.868666666666666
+  },
+  {
+   "n": 2,
+   "on": "b43dbd93cc750b8502d1f52e8af2ba5f41dcf8cf",
+   "defects": [
+    {
+     "id": "D21",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts"
+     ]
+    },
+    {
+     "id": "D25",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts"
+     ]
+    },
+    {
+     "id": "D10",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useActionsPropResolver.ts"
+     ]
+    },
+    {
+     "id": "D17",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts"
+     ]
+    },
+    {
+     "id": "D28",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useSceneCanvasLayers.ts"
+     ]
+    },
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useScenePickers.ts"
+     ]
+    },
+    {
+     "id": "D14",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useScenePickers.ts"
+     ]
+    },
+    {
+     "id": "D13",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/toolProps.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D21",
+     "verdict": "fixed",
+     "line": "[D21] the actions prop's warn-once warnings repeat on every render with an inline literal (scour): fixed 59cc90086d",
+     "sha": "59cc90086d"
+    },
+    {
+     "id": "D25",
+     "verdict": "fixed",
+     "line": "[D25] actions={null} mutes the presets' own actions, and only those registered before it (scour): fixed 59cc90086d. `null` now mutes exactly the canvas's standard action ids plus the viewport ids, whenever they register. Any other action stays live, whatever order it registered in.",
+     "sha": "59cc90086d"
+    },
+    {
+     "id": "D10",
+     "verdict": "fixed",
+     "line": "[D10] a full actions[slot] entry whose id differs from its slot registers under entry.id, so the resolver goes stale on every change (scour): fixed 59cc90086d",
+     "sha": "59cc90086d"
+    },
+    {
+     "id": "D17",
+     "verdict": "fixed",
+     "line": "[D17] SceneCanvas passes no style to the dispatcher-overlay layer, so DispatcherOverlayStyle can't reach the paint (scour): fixed af7f533a9d. This adds a public `dispatcherOverlay` layer slot that takes `{ style }`, a pre-built `{ layer }`, or `null`. Before, the canvas's own layer also overwrote a consumer's `dispatcherOverlay` entry.",
+     "sha": "af7f533a9d"
+    },
+    {
+     "id": "D28",
+     "verdict": "not a defect",
+     "line": "[D28] a custom selectionOverlay entry loses its before/after anchors, unlike pathEditingOverlay (scour): not a defect. `selectionOverlay` is a standard slot that `composeOrderedLayers` (`canvas/layerOrder.ts`) always places in canonical order, as it does `grid` and `cellHighlight`. `pathEditingOverlay` is a custom key, which is why its anchors apply.",
+     "sha": null
+    },
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] the finiteness guard sums pick-box fields, so a finite box near 1e308 gets null bounds (scour): fixed cadf45d524",
+     "sha": "cadf45d524"
+    },
+    {
+     "id": "D14",
+     "verdict": "fixed",
+     "line": "[D14] a press routed to a view id the registry doesn't hold loses lod-aware and pixel picking (scour): fixed b1b9b4f0ac. With no view registry mounted at all, a view id still counts as another view's, as the existing pixels test expects.",
+     "sha": "b1b9b4f0ac"
+    },
+    {
+     "id": "D13",
+     "verdict": "fixed",
+     "line": "[D13] the defaultActiveTool doc says any `tools` prop ignores it, but only the takeover form does (scour): fixed 4a635dfddf",
+     "sha": "4a635dfddf"
+    }
+   ],
+   "commits": 7,
+   "branch": "scour13-core.canvas.SceneCanvas.part2-b2",
+   "verify": {
+    "ok": true,
+    "files": 23,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2552,
+     "total": 2552
+    },
+    "gui": true,
+    "repairs": 1
+   },
+   "repairs": 1,
+   "costUsd": 3.247186,
+   "minutes": 28.9126
+  },
+  {
+   "n": 3,
+   "on": "ea7f356b29b6aa9aea837c3d37fba91758e5d572",
+   "defects": [
+    {
+     "id": "D1",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useCanvasCamera.ts"
+     ]
+    },
+    {
+     "id": "D6",
+     "recurrent": true,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useCanvasSelection.ts"
+     ]
+    },
+    {
+     "id": "D12",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useContentBounds.ts"
+     ]
+    },
+    {
+     "id": "D18",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useDispatcherOverlayLayer.ts"
+     ]
+    },
+    {
+     "id": "D2",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useEdgePan.ts"
+     ]
+    },
+    {
+     "id": "D26",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/usePreviewGhostLayer.ts"
+     ]
+    },
+    {
+     "id": "D8",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useSceneCanvasHandle.ts"
+     ]
+    },
+    {
+     "id": "D7",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useSceneCanvasPathEdit.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "- [D1] dropped or rounded-away animation frame on a controlled camera leaves the write flag set (scour): fixed 3c3c5ddc05",
+     "sha": "3c3c5ddc05"
+    },
+    {
+     "id": "D6",
+     "verdict": "fixed",
+     "line": "- [D6] on a scene swap, the selection seed uses the `initial` captured at mount (scour): fixed 25672f4d78",
+     "sha": "25672f4d78"
+    },
+    {
+     "id": "D12",
+     "verdict": "fixed",
+     "line": "- [D12] the cached content box isn't invalidated when the adapter changes (scour): fixed a349352b20",
+     "sha": "a349352b20"
+    },
+    {
+     "id": "D18",
+     "verdict": "fixed",
+     "line": "- [D18] an overlay style field passed as undefined erases its default (scour): fixed cb19d26d2c",
+     "sha": "cb19d26d2c"
+    },
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "- [D2] the edge-pan limit clamps with ancestor-scaled client dimensions (scour): fixed 74db938c33",
+     "sha": "74db938c33"
+    },
+    {
+     "id": "D26",
+     "verdict": "fixed",
+     "line": "- [D26] the preview ghost paints a node under a hidden container still in the scene (scour): fixed a3b5b39b4d",
+     "sha": "a3b5b39b4d"
+    },
+    {
+     "id": "D8",
+     "verdict": "fixed",
+     "line": "- [D8] the handle `addView` returns keeps drawing its id after a re-add (scour): fixed e997216a1e",
+     "sha": "e997216a1e"
+    },
+    {
+     "id": "D7",
+     "verdict": "fixed",
+     "line": "- [D7] `extendClickLocked: undefined` in `selectTool` erases the path-edit lock (scour): fixed 75547cb793",
+     "sha": "75547cb793"
+    }
+   ],
+   "commits": 9,
+   "branch": "scour13-core.canvas.SceneCanvas.part2-b3",
+   "verify": {
+    "ok": true,
+    "files": 27,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2809,
+     "total": 2809
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 2.9137666000000007,
+   "minutes": 22.466933333333333
+  },
+  {
+   "n": 4,
+   "on": "a3ebe59d057627e8b2fb0981c49afe22cf12a2b2",
+   "defects": [
+    {
+     "id": "D11",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useScenePicking.ts"
+     ]
+    },
+    {
+     "id": "D19",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useSceneStandardActions.ts"
+     ]
+    },
+    {
+     "id": "D22",
+     "recurrent": false,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useSelectionOverlayLayer.ts"
+     ]
+    },
+    {
+     "id": "D9",
+     "recurrent": true,
+     "files": [
+      "packages/core/src/canvas/SceneCanvas/useViewportWithoutView.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D11",
+     "verdict": "fixed",
+     "line": "[D11] `routing={[]}` turns off double-click naming of a member's outermost group (scour): fixed 89d093a11b. The fix also covers a `routing` list that classifies nothing as `'group'`: a structural group is now always named.",
+     "sha": "89d093a11b"
+    },
+    {
+     "id": "D19",
+     "verdict": "fixed",
+     "line": "[D19] pinch zoom from `viewport.touchZoom` buried under the kit default when the standard actions re-register under the same ids (scour): fixed 38f51b30bd. `rev` is now the set's identity key (`actionSetKeyOf`), the same key `useActionSet` re-registers on.",
+     "sha": "38f51b30bd"
+    },
+    {
+     "id": "D22",
+     "verdict": "fixed",
+     "line": "[D22] `outline.follow 'shape'` with `poseById` puts handles on the stroke when `boundsIncludeStroke` is false (scour): fixed 7f83fd08c9. The selection overlay takes a new `shapes` option, so tracing no longer shares `scene` with bounds. That adds API, so the commit has a second, `minor` changeset for core and editing.",
+     "sha": "7f83fd08c9"
+    },
+    {
+     "id": "D9",
+     "verdict": "fixed",
+     "line": "[D9] warning that navigation \"does nothing\" when `viewport` only switches it off (scour): fixed 11478f362f",
+     "sha": "11478f362f"
+    }
+   ],
+   "commits": 4,
+   "branch": "scour13-core.canvas.SceneCanvas.part2-b4",
+   "verify": {
+    "ok": true,
+    "files": 18,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2507,
+     "total": 2507
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 1.4952846,
+   "minutes": 12.829233333333333
+  }
+ ]
+}
