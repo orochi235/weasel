@@ -22,7 +22,12 @@ function trackEnd(track: Track): number {
   switch (track.kind) {
     case 'sampled': return track.keys.length ? track.keys[track.keys.length - 1].t : 0;
     case 'event': return track.events.length ? track.events[track.events.length - 1].t : 0;
-    case 'timeline': return track.at + tracksEnd(track.timeline.tracks, track.timeline.duration);
+    case 'timeline': {
+      const end = track.at + tracksEnd(track.timeline.tracks, track.timeline.duration);
+      // Played to its out point, so what it shows is hidden there.
+      const out = track.window?.[1];
+      return out !== undefined && Number.isFinite(out) ? Math.max(end, out) : end;
+    }
   }
 }
 
