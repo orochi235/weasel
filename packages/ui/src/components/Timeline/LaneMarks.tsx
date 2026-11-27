@@ -1,7 +1,8 @@
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactElement } from 'react';
 import type { MarkHold } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
-import { msLabel, spanPercent, type TimeWindow } from './timeScale';
+import { useFieldLocale } from '../../useFieldLocale';
+import { markTimeText, spanPercent, type TimeWindow } from './timeScale';
 import type { LaneRow } from './lanes';
 
 export type { MarkHold };
@@ -19,6 +20,7 @@ export function SegmentMarks({ times, label, offset, win, pct, mark, selectedSeg
   selectedSegment: number | null;
   onSelectSegment?: (keyIndex: number) => void;
 }): ReactElement {
+  const locale = useFieldLocale();
   return (
     <>
       {times.slice(1).map((t, idx) => {
@@ -28,7 +30,7 @@ export function SegmentMarks({ times, label, offset, win, pct, mark, selectedSeg
             key={`seg-${i}`}
             role="button"
             {...mark}
-            aria-label={`${label} segment into ${msLabel(t + offset)}`}
+            aria-label={`${label} segment into ${markTimeText(t + offset, locale)}`}
             aria-current={selectedSegment === i ? 'true' : undefined}
             data-testid="timeline-segment"
             data-segment-index={i}
@@ -55,6 +57,7 @@ export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, onKey
   onKeyDown: (i: number, t: number) => (e: ReactKeyboardEvent<HTMLDivElement>) => void;
 }): ReactElement {
   const event = row.kind === 'event';
+  const locale = useFieldLocale();
   return (
     <>
       {times.map((t, i) => (
@@ -62,7 +65,7 @@ export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, onKey
           key={i}
           role="button"
           {...mark}
-          aria-label={`${row.label} ${event ? 'event' : 'key'} at ${msLabel(t + row.offset)}`}
+          aria-label={`${row.label} ${event ? 'event' : 'key'} at ${markTimeText(t + row.offset, locale)}`}
           aria-current={selection === i ? 'true' : undefined}
           data-testid={event ? 'timeline-event' : 'timeline-key'}
           data-keyframe-index={i}

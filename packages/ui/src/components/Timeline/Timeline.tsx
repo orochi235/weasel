@@ -28,6 +28,9 @@ export interface KeyEditorCtx<T = unknown> {
   commit: (next: Keyframe<T>) => void;
   /** Set the easing shaping the approach into this key. */
   setEasing: (easing: EasingSpec | undefined) => void;
+  /** How the timeline is held, by its props or a scope: while set, `commit` and `setEasing` change nothing, so an
+   *  editor can show itself disabled or read-only. */
+  held: 'disabled' | 'readOnly' | undefined;
 }
 
 /** Props for {@link Timeline}. Times are in ms. `mode`, `selection`, and
@@ -182,7 +185,7 @@ export function Timeline(props: TimelineProps): ReactElement {
         selection={drawn(inspected, rows)}
         segmentSelection={drawn(segmentSelection, rows)}
         renderKeyEditor={renderKeyEditor}
-        edits={edits}
+        held={hold.held}
         onChange={onChange}
       />
     </div>,

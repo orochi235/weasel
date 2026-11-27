@@ -60,6 +60,22 @@ describe('useKeyAndSegment against tracks changed from outside', () => {
     expect(result.current.selection).toEqual({ trackPath: [0], keyIndex: 2 });
   });
 
+  it('keeps a key the timeline moved while the consumer applies the edit a render late, or not at all', () => {
+    const onSelectionChange = vi.fn();
+    const { result, rerender } = renderHook(({ tracks }) => useKeyAndSegment(undefined, tracks, onSelectionChange), { initialProps: { tracks: start } });
+    act(() => result.current.selectKey({ trackPath: [0], keyIndex: 1 }));
+    const edited = [sampled('x', [0, 150, 200]), start[1]];
+    act(() => { result.current.send(edited); result.current.selectKey({ trackPath: [0], keyIndex: 1 }, edited); });
+    rerender({ tracks: start });
+    rerender({ tracks: start.slice() });
+    expect(result.current.selection).toEqual({ trackPath: [0], keyIndex: 1 });
+    rerender({ tracks: edited });
+    expect(result.current.selection).toEqual({ trackPath: [0], keyIndex: 1 });
+    expect(onSelectionChange).not.toHaveBeenLastCalledWith(null);
+    rerender({ tracks: [sampled('x', [0, 50, 150, 200]), start[1]] });
+    expect(result.current.selection).toBeNull();
+  });
+
   it('drops a segment selection by the same rule, and keeps it across the timeline\'s own edits', () => {
     const { result, rerender } = renderHook(({ tracks }) => useKeyAndSegment(undefined, tracks), { initialProps: { tracks: start } });
     act(() => result.current.selectSegment({ trackPath: [1], keyIndex: 1 }));

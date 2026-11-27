@@ -10,7 +10,8 @@ import { applyKeyframeDrag, type KeyframeLayerState } from '../CurveEditor/creat
 import { KeyframeLayer } from '../CurveEditor/KeyframeLayer';
 import type { MarkHold } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
-import { msLabel, TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
+import { useFieldLocale } from '../../useFieldLocale';
+import { markTimeText, TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
 
 /** Keeps the extreme keys inside the lane: at the very edge a key centers on
  *  the lane's border and hangs half into its neighbor. As a percentage of
@@ -80,7 +81,8 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const snapX = useMemo(() => snapTimes.map((t) => keys.find((k) => k.t + offset === t)?.t ?? t - offset), [snapTimes, offset, keys]);
   // Marks are named by the ruler time they sit at.
   const xClamp = useMemo(() => [0, Math.max(0, limit - offset)] as const, [limit, offset]);
-  const formatX = useMemo(() => (x: number) => msLabel(x + offset), [offset]);
+  const locale = useFieldLocale();
+  const formatX = useMemo(() => (x: number) => markTimeText(x + offset, locale), [offset, locale]);
   // By value: a lane builds its hold afresh each render, and a new one rebuilds the layer.
   const { tabIndex = 0, 'aria-disabled': disabled, 'aria-readonly': readOnly, 'aria-describedby': describedBy } = mark ?? {};
   const markHold = useMemo<MarkHold>(

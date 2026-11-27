@@ -4366,3 +4366,8 @@ Calls the lanes made without a ruling:
   component unmounts, though the animator it runs on is shared and lives on. An animation another caller started on
   `viewTarget` goes on. Letting the move finish on the shared animator, writing a channel its starter no longer owns,
   was the alternative.
+## Audit scour (2026-11-26): ui's Timeline
+
+- 2026-11-26 (the fixer's call): a `Timeline` key drag torn down by an unmount (its row removed, or the timeline
+  itself) sends neither `onInput` nor `onCancel`, since the tracks it began from may no longer be the consumer's.
+  Reverting to them as a canceled drag does, which handed back a removed track, was the alternative.

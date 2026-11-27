@@ -40,7 +40,13 @@ export interface KeyDragArgs {
 export function useKeyDrag(a: KeyDragArgs) {
   const { trackRef, window: win, offset, limit = Infinity, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert, onCancel, drags = true } = a;
   const sessionRef = useRef<PointerSession | null>(null);
-  useEffect(() => () => { sessionRef.current?.cancel(); }, []);
+  // A drag torn down by an unmount reports nothing: its press-time tracks are no longer the consumer's.
+  const gone = useRef(false);
+  useEffect(() => {
+    gone.current = false;
+    return () => { gone.current = true; sessionRef.current?.cancel(); };
+  }, []);
+  // A hold that starts mid-drag cancels it, as the graph lane's does.
   useEffect(() => { if (!drags) sessionRef.current?.cancel(); }, [drags]);
   const [drag, setDrag] = useState<{ keyIndex: number; t: number; times: readonly number[] } | null>(null);
   const snapRadiusPx = useSnapRadiusPx();
@@ -60,7 +66,9 @@ export function useKeyDrag(a: KeyDragArgs) {
     // An empty window puts every time at one place, where every stop would be in reach.
     const free = ev.altKey || !(win.to > win.from);
     const pull = width === 0 ? 0 : snapRadiusPx / width;
-    const ruler = sliderAt(f, { ...track, stops, pull, free });
+    // `sliderAt` clamps before it attracts, so a stop outside the row's reach would be picked and the ghost drawn there.
+    const reach = stops.filter((t) => t >= track.min && t <= track.max);
+    const ruler = sliderAt(f, { ...track, stops: reach, pull, free });
     return keyTimes.find((k) => k + offset === ruler) ?? ruler - offset;
   });
 
@@ -105,7 +113,7 @@ export function useKeyDrag(a: KeyDragArgs) {
       // The consumer previewed the move through `onKeyInput`; a drag that ends without a release puts it back.
       onCancel: () => {
         end();
-        if (!previewed) return;
+        if (!previewed || gone.current) return;
         onRevert?.();
         onCancel?.();
       },

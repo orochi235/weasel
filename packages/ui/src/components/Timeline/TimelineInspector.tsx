@@ -17,16 +17,17 @@ function sampledKeyAt(tracks: readonly Track[], sel: KeySelection | null) {
 
 /**
  * The panel under the lanes: an easing picker for a selected segment, or else the consumer's editor for a selected
- * key. Edits are refused unless `edits`.
+ * key. Edits are refused while `held`.
  */
-export function TimelineInspector({ tracks, selection, segmentSelection, renderKeyEditor, edits, onChange }: {
+export function TimelineInspector({ tracks, selection, segmentSelection, renderKeyEditor, held, onChange }: {
   tracks: readonly Track[];
   selection: KeySelection | null;
   segmentSelection: KeySelection | null;
   renderKeyEditor?: (ctx: KeyEditorCtx) => ReactNode;
-  edits: boolean;
+  held: KeyEditorCtx['held'];
   onChange: (next: Track[]) => void;
 }): ReactElement | null {
+  const edits = held === undefined;
   if (segmentSelection) {
     const segment = sampledKeyAt(tracks, segmentSelection);
     if (!segment) return null;
@@ -51,6 +52,7 @@ export function TimelineInspector({ tracks, selection, segmentSelection, renderK
         selection,
         commit: (next) => { if (edits && !deepEqual(next.value, selected.key.value)) onChange(setKeyValue(tracks, selection, next.value)); },
         setEasing: (easing) => { if (edits && !deepEqual(easing, selected.key.easing)) onChange(setKeyEasing(tracks, selection, easing)); },
+        held,
       })}
     </div>
   );
