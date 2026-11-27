@@ -262,4 +262,15 @@ describe('fitViewToBounds — framed bounds and degenerate viewports', () => {
     expect(fitViewToBounds(b, { width: NaN, height: 200 }, CURRENT)).toBe(CURRENT);
     expect(fitViewToBounds(b, { width: 200, height: Infinity }, CURRENT)).toBe(CURRENT);
   });
+
+  it('keeps currentView rather than answer a position past the double range', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 1e300, height: 1e300 },
+      { width: 1e300, height: 1e300 },
+      CURRENT,
+      { minScale: 1e-9, maxScale: 1e-9 },
+    );
+    expect(v).toBe(CURRENT);
+  });
 });

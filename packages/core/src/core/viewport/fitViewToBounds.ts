@@ -46,8 +46,9 @@ export interface FitViewToBoundsOptions {
  * `null` when there is nothing to fit: bounds with no extent on either axis,
  * or not finite. The caller that owns the viewport resolves that to the view
  * Cmd-0 gives (`resetView`). A viewport with no area, or whose size is not
- * finite, cannot be fit into, and returns `currentView` unchanged with a
- * `console.warn`.
+ * finite, cannot be fit into, and neither can bounds whose fitted position
+ * would fall past the double range: both return `currentView` unchanged, with
+ * a `console.warn`.
  */
 export function fitViewToBounds(
   bounds: Bounds,
@@ -107,11 +108,13 @@ export function fitViewToBounds(
     opts.anchor === 'start' && size * Math.abs(scale) > avail + 1e-9
       ? (scale < 0 ? start + size : start) - padding / scale
       : start + size / 2 - viewport / (2 * scale);
-  return {
-    x: place(bounds.x, width, availW, vw, scaleX),
-    y: place(bounds.y, height, availH, vh, scaleY),
-    scale: { x: scaleX, y: scaleY },
-  };
+  const x = place(bounds.x, width, availW, vw, scaleX);
+  const y = place(bounds.y, height, availH, vh, scaleY);
+  if (!Number.isFinite(x) || !Number.isFinite(y)) {
+    console.warn(`[weasel] fitViewToBounds: the fitted position is past the double range (${vw}×${vh}); returning currentView unchanged.`);
+    return currentView;
+  }
+  return { x, y, scale: { x: scaleX, y: scaleY } };
 }
 
 /** Whether `bounds` holds something to fit: finite to its far edges, with extent on at least one axis. The one
