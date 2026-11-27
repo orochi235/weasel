@@ -35,10 +35,11 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
     switch (decl.type) {
       case 'FunctionDeclaration':
       case 'ClassDeclaration':
-        if (!decl.id) return [];
+        if (!decl.id || decl.declare) return [];
         declare(decl.id.name, decl);
         return [decl.id.name];
       case 'VariableDeclaration':
+        if (decl.declare) return [];
         return decl.declarations.flatMap((d) => {
           if (d.id.type === 'Identifier') {
             declare(d.id.name, d.init);

@@ -28,3 +28,11 @@ export function Hoisted() { { var Button = 2; } return Button; }
     expect(refsOf(code, 'Hoisted')).toEqual([]);
   });
 });
+
+describe('moduleInfo exports and imports', () => {
+  it('records no binding for a declare const or a declare class, which exist only as types', () => {
+    const info = moduleInfo('export declare const meta: unknown;\nexport declare class Story {}\ndeclare let x: number;\n', '/r/a.ts');
+    expect([...info.exports.keys()]).toEqual([]);
+    expect([...info.refs.keys()]).toEqual([]);
+  });
+});
