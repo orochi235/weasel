@@ -16,14 +16,23 @@ function axisCurve(x0: number, s0: number, x1: number, s1: number): (t: number) 
   const linear = (t: number) => ({ x: lerp(x0, x1, t), s: lerp(s0, s1, t) });
   if (!(s0 * s1 > 0)) return linear;
   // Equal scales: no fixed point exists on this axis. That is a pure pan.
-  const lnRatio = Math.log1p((s1 - s0) / s0);
+  const ratio = s1 / s0;
+  // log1p stays exact for ratios near 1; far from 1 it would round (s1 - s0) / s0 to -1, and
+  // a difference of logs stays finite where the ratio itself under- or overflows.
+  const lnRatio = Math.abs(ratio - 1) < 0.5
+    ? Math.log1p((s1 - s0) / s0)
+    : Math.log(Math.abs(s1)) - Math.log(Math.abs(s0));
   if (lnRatio === 0) return linear;
-  // Holding the fixed point gives x = x0 + (x1 - x0) * (1 - r^-t) / (1 - r^-1). Taking that
-  // fraction through expm1 stays exact as r nears 1, where the fixed point runs off to infinity.
-  const den = Math.expm1(-lnRatio);
+  const lnS0 = Math.log(Math.abs(s0));
+  const sign = Math.sign(s0);
+  // Holding the fixed point gives x = x0 + (x1 - x0) * (1 - r^-t) / (1 - r^-1). expm1 keeps that
+  // exact as r nears 1; on a zoom-out it is rewritten so that no power of r overflows.
+  const fraction = lnRatio > 0
+    ? (t: number) => Math.expm1(-t * lnRatio) / Math.expm1(-lnRatio)
+    : (t: number) => Math.exp((1 - t) * lnRatio) * (Math.expm1(t * lnRatio) / Math.expm1(lnRatio));
   return (t) => ({
-    x: lerp(x0, x1, Math.expm1(-t * lnRatio) / den),
-    s: s0 * Math.exp(t * lnRatio),
+    x: lerp(x0, x1, fraction(t)),
+    s: t === 0 ? s0 : sign * Math.exp(lnS0 + t * lnRatio),
   });
 }
 
