@@ -79,17 +79,18 @@ interface Lean<V> {
   order: number;
 }
 
-/** What a child does with a hold whose id its parent drops: `take` copies it into the child's own store, and
- *  `untake` removes that copy again, answering whether it was still there to remove. */
+/** What a child does with a hold whose id its parent drops: `take` copies it into the child's own store,
+ *  `holds` answers whether that copy is still there, and `untake` removes it again. */
 interface Takeover<V> {
   take(id: string, lean: Lean<V>): void;
-  untake(id: string, lean: Lean<V>): boolean;
+  holds(id: string, lean: Lean<V>): boolean;
+  untake(id: string, lean: Lean<V>): void;
 }
 
 /** A child's holds through its parent. It hears the parent while it holds any: one the parent replaces with a
  *  different value is dropped, and one whose id the parent drops is taken over. The child also calls `settle`
  *  before notifying its own listeners of the parent, so none of them reads a held id as gone. */
-function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => boolean, { take, untake }: Takeover<V>) {
+function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => boolean, { take, holds, untake }: Takeover<V>) {
   const leans = new Map<string, Lean<V>>();
   let off: (() => void) | null = null;
   const stop = (): void => {
@@ -113,9 +114,13 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
    *  goes on through the parent, or ends as a replacement's would when the parent took a different value. */
   const relean = (id: string, lean: Lean<V>): void => {
     const theirs = parent.get(id);
-    if (theirs === undefined || !untake(id, lean) || !same(theirs, lean.value)) return;
-    leans.set(id, lean);
-    off ??= parent.subscribe(settle);
+    if (theirs === undefined || !holds(id, lean)) return;
+    // Restored before `untake` notifies, so a listener releasing the hold then finds it.
+    if (same(theirs, lean.value)) {
+      leans.set(id, lean);
+      off ??= parent.subscribe(settle);
+    }
+    untake(id, lean);
   };
   return {
     get: (id: string): Lean<V> | undefined => leans.get(id),
@@ -138,13 +143,12 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
 /** Remove the own copy a takeover made of the registration `holding`, if it is still the one `id` holds. */
 function untake<V>(
   store: Reflectable<V>, held: Map<string, Holding>, since: Map<string, number>, id: string, holding: Holding,
-): boolean {
-  if (held.get(id) !== holding) return false;
+): void {
+  if (held.get(id) !== holding) return;
   held.delete(id);
   since.delete(id);
   const live = store.stack(id).at(-1);
   if (live) store.release(id, live);
-  return true;
 }
 
 /** Bring `seen` up to the ids `parent` resolves: drop the gone, and order the new after everything so far. */
@@ -191,7 +195,8 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       since.set(id, lean.order);
       store.set(id, lean.value, lean.source !== undefined ? { source: lean.source } : undefined);
     },
-    untake: (id, lean) => untake(store, held, since, id, lean.holding),
+    holds: (id, lean) => held.get(id) === lean.holding,
+    untake: (id, lean) => { untake(store, held, since, id, lean.holding); },
   }) : null;
 
   const get = (id: string): V | undefined => (store.has(id) ? store.get(id) : parent?.get(id));

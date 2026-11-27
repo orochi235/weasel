@@ -269,4 +269,24 @@ describe('createExtensionRegistry', () => {
     parent.register('b', 'p');
     expect(child.entries().map((e) => e.key)).toEqual(['a', 'x', 'b']);
   });
+
+  it('ends a hold through its parent released by a listener while the parent hands the id back', async () => {
+    const parent = make();
+    const child = make(parent);
+    const offParent = parent.register('x', 'v');
+    const offChild = child.register('x', 'v');
+    offParent();
+    const offParentAgain = parent.register('x', 'v');
+    let released = false;
+    child.subscribe(() => {
+      if (released) return;
+      released = true;
+      offChild();
+    });
+    await Promise.resolve();
+    expect(released).toBe(true);
+    offParentAgain();
+    expect(child.has('x')).toBe(false);
+  });
 });
+
