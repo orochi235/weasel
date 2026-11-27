@@ -177,6 +177,16 @@ describe('Lane', () => {
     expect(onKeyChange).toHaveBeenCalledWith(1, 600);
   });
 
+  it('steps a key past the limit by one step left, and not at all right', () => {
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} limit={300} onKeyChange={onKeyChange} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.keyDown(key, { key: 'ArrowRight' });
+    expect(onKeyChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(key, { key: 'ArrowLeft' });
+    expect(onKeyChange).toHaveBeenCalledWith(1, 490);
+  });
+
   it('lets alt defeat snapping for the drag', () => {
     const onKeyChange = vi.fn();
     render(<Lane {...base} row={laneOf(sampled)} snapTimes={[600]} onKeyChange={onKeyChange} />);
@@ -370,6 +380,15 @@ describe('Lane in graph mode', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysChange={onKeysChange} />);
     fireEvent.keyDown(graphKeys()[1], { key: 'ArrowRight', shiftKey: true });
     expect(onKeysChange.mock.calls[0][0][1].t).toBe(600);
+  });
+
+  it('steps a graphed key past the limit by one step left, and not at all right', () => {
+    const onKeysChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} limit={300} onKeysChange={onKeysChange} />);
+    fireEvent.keyDown(graphKeys()[1], { key: 'ArrowRight' });
+    expect(onKeysChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(graphKeys()[1], { key: 'ArrowLeft' });
+    expect(onKeysChange.mock.calls[0][0][1].t).toBe(490);
   });
 
   it('leaves the selection and focus on a key whose arrow step a read-only lane refuses', () => {

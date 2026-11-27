@@ -5,6 +5,7 @@ import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { arrowMove } from '@weasel-js/quantity';
+import { steppedWithin } from '../CurveEditor/keyframeEdits';
 import { LaneGraph } from './LaneGraph';
 import { rowTimes, timelineSpan, type LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
@@ -171,7 +172,7 @@ function markKeys({ edits, last, onKeyChange, onSelect, refocus }: {
     const dx = arrowMove(e.key, e.shiftKey)?.dx ?? 0;
     if (dx !== 0 && edits) {
       e.preventDefault();
-      const to = Math.max(0, Math.min(last, t + dx * KEY_STEP_MS));
+      const to = steppedWithin(t, t + dx * KEY_STEP_MS, [0, last]);
       if (to !== t) {
         refocus.current = true;
         onKeyChange(i, to);

@@ -91,6 +91,14 @@ export function clampTo(v: number, range?: readonly [number, number]): number {
   return range ? clamp(v, Math.min(range[0], range[1]), Math.max(range[0], range[1])) : v;
 }
 
+/** A step from `from` to `to`, held inside `range`; a value already outside it is never pushed back across `from`. */
+export function steppedWithin(from: number, to: number, range?: readonly [number, number]): number {
+  if (!range) return to;
+  const lo = Math.min(range[0], range[1], from);
+  const hi = Math.max(range[0], range[1], from);
+  return clamp(to, lo, hi);
+}
+
 /**
  * Key `index` nudged by an arrow key's `move`, re-sorted and still selected; null where the bounds hold it still.
  * A step is `step` on each axis, else a hundredth of the plot's range.
@@ -105,8 +113,8 @@ export function nudgedKey(
   const k = state.keys[index];
   const stepX = limits.step?.x ?? Math.abs(range.xMax - range.xMin) / 100;
   const stepY = limits.step?.y ?? Math.abs(range.yMax - range.yMin) / 100;
-  const t = clampTo(k.t + move.dx * stepX, limits.xClamp);
-  const value = clampTo(k.value + move.dy * stepY, limits.yClamp);
+  const t = steppedWithin(k.t, k.t + move.dx * stepX, limits.xClamp);
+  const value = steppedWithin(k.value, k.value + move.dy * stepY, limits.yClamp);
   if (t === k.t && value === k.value) return null;
   return moveKeyTo(state, index, t, value);
 }
