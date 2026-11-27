@@ -42,7 +42,7 @@ describe('createToolActivateAction', () => {
       active: 'select',
       hotkeyStack: [],
       setActive,
-      pushHotkey: () => {},
+      pushHotkey: () => () => {},
       popHotkey: () => {},
     };
     const action = createToolActivateAction([]);
@@ -75,7 +75,7 @@ describe('createToolActivateAction', () => {
       active: 'select',
       hotkeyStack: [],
       setActive,
-      pushHotkey: () => {},
+      pushHotkey: () => () => {},
       popHotkey: () => {},
     };
     const action = createToolActivateAction([]);

@@ -14,6 +14,7 @@ import { useModeDefaultTool } from './useModeDefaultTool';
 import { useActionsRegistry } from '../interactions/actions/ActionsProvider';
 import type { ToolShortcuts } from './toolShortcuts';
 import { useToolShortcuts } from './useToolShortcuts';
+import { liveTool } from './toolOptions';
 
 /** Options for `useTools`: which tools exist, which one starts active, and
  *  which run continuously regardless of the active one. */
@@ -49,7 +50,8 @@ export interface ToolsApi<TOverlay = KernelOverlay> {
    *  tool the active mode allows, else the active tool if the mode allows it,
    *  else `null`. */
   routed: string | null;
-  /** Currently hotkey-engaged tool id (or `null`): the top of the hotkey stack. */
+  /** The newest tool of this registry held on the hotkey stack, or `null`: a hold another canvas's tools make
+   *  through a shared provider is not this one's. */
   hotkeyEngaged: string | null;
   /** Engage a hotkey-slot tool by id. */
   engageHotkey: (id: string) => void;
@@ -195,7 +197,11 @@ export function useTools<TOverlay = KernelOverlay>(
     ...(opts.modes ? { modes: opts.modes } : {}),
   });
 
-  const hotkeyEngaged = ctx.hotkeyStack.at(-1) ?? null;
+  // The stack can sit in a provider shared by several canvases, so only a hold on a tool of this registry counts.
+  const hotkeyEngaged = useMemo(
+    () => liveTool({ active: null, hotkeyStack: ctx.hotkeyStack }, new Set(Object.keys(slotted.registry))),
+    [ctx.hotkeyStack, slotted],
+  );
 
   // Refs so the memoized callbacks below see latest values without
   // re-creating themselves.
@@ -216,33 +222,31 @@ export function useTools<TOverlay = KernelOverlay>(
 
   // The holds this api made, newest last. A held key (Space for the hand)
   // shares the stack, so releasing ours by its top would release that one.
-  const holdsRef = useRef<string[]>([]);
+  const holdsRef = useRef<{ id: string; release: () => void }[]>([]);
   const engageHotkey = useCallback(
     (id: string) => {
       if (!Object.hasOwn(slottedRef.current.registry, id)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('tools', 'hotkey engaged:', id);
-      holdsRef.current.push(id);
-      ctx.pushHotkey(id);
+      holdsRef.current.push({ id, release: ctx.pushHotkey(id) });
     },
     [ctx, slottedRef],
   );
 
   // Holds outlive no canvas: the stack can sit in a provider above this one.
-  const ctxRef = useLatest(ctx);
   useEffect(() => () => {
     const holds = holdsRef.current;
     holdsRef.current = [];
-    for (let i = holds.length - 1; i >= 0; i--) ctxRef.current.popHotkey(holds[i]);
-  }, [ctxRef]);
+    for (let i = holds.length - 1; i >= 0; i--) holds[i]!.release();
+  }, []);
 
   const disengageHotkey = useCallback(() => {
     const own = holdsRef.current.pop();
     if (own === undefined) return;
-    dlog('tools', 'hotkey disengaged:', own);
-    ctx.popHotkey(own);
-  }, [ctx]);
+    dlog('tools', 'hotkey disengaged:', own.id);
+    own.release();
+  }, []);
 
   // May be called while rendering, so it reads this render's tools, not a ref.
   const has = useCallback(

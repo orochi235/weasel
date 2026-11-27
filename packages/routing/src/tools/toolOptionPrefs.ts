@@ -72,7 +72,10 @@ function repairShape(node: unknown): unknown {
 }
 
 function widenedNumber(held: PrefNumber, next: PrefNumber): PrefNumber {
-  const { min: _min, max: _max, endless: _endless, ...rest } = held;
+  const {
+    min: _min, max: _max, endless: _endless, step: _step, scale: _scale, stops: _stops, minAt: _minAt, maxAt: _maxAt,
+    clearable: _clearable, ...rest
+  } = held;
   const min = held.min === undefined || next.min === undefined ? undefined : Math.min(held.min, next.min);
   const max = held.max === undefined || next.max === undefined ? undefined : Math.max(held.max, next.max);
   const a = endsOf(held.endless);
@@ -80,8 +83,20 @@ function widenedNumber(held: PrefNumber, next: PrefNumber): PrefNumber {
   const lo = a.lo || b.lo;
   const hi = a.hi || b.hi;
   const endless = lo && hi ? 'both' : lo ? 'min' : hi ? 'max' : undefined;
+  // A constraint only one tool holds would refuse or misdraw the other's values, so it is kept only where both agree.
+  const step = held.step === next.step ? held.step : undefined;
+  const scale = held.scale === next.scale && (held.scale !== 'log' || (min !== undefined && min > 0)) ? held.scale : undefined;
+  const stops = held.stops || next.stops ? [...new Set([...(held.stops ?? []), ...(next.stops ?? [])])].sort((x, y) => x - y) : undefined;
+  const minAt = deepEqual(held.minAt, next.minAt) ? held.minAt : undefined;
+  const maxAt = deepEqual(held.maxAt, next.maxAt) ? held.maxAt : undefined;
+  const clearable = held.clearable === true || next.clearable === true;
+  // A tool that clears the field without a default of its own reads unset, which a numeric default would hide.
+  const unset = clearable && (held.default === undefined || next.default === undefined);
   return {
     ...rest, ...(min === undefined ? {} : { min }), ...(max === undefined ? {} : { max }), ...(endless ? { endless } : {}),
+    ...(step === undefined ? {} : { step }), ...(scale === undefined ? {} : { scale }), ...(stops ? { stops } : {}),
+    ...(minAt === undefined ? {} : { minAt }), ...(maxAt === undefined ? {} : { maxAt }),
+    ...(clearable ? { clearable: true } : {}), ...(unset ? { default: undefined } : {}),
   } as PrefNumber;
 }
 
@@ -95,7 +110,7 @@ function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: 
   for (const part of parts.slice(0, -1)) {
     const node = getOwn(at, part);
     if (node && !isGroup(node)) throw new Error(`toolOptionsPrefs: tool "${toolId}" would keep its options inside an option at "${part}"`);
-    const next = node ?? { name: '', children: {} };
+    const next = node ?? { name: part, children: {} };
     if (!node) setOwn(at, part, next);
     at = (next as PrefGroup).children as Record<string, PrefLeaf | PrefGroup>;
   }
@@ -113,19 +128,27 @@ function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: 
  * The prefs group `tools`' options are kept in: a group per tool holding its
  * own options, and a {@link SHARED_TOOL_OPTIONS} group holding each shared
  * key once, as the first tool naming it declares it, with the default the host
- * gives it. A shared number takes the widest bounds of the tools naming it, and
- * each tool reads it held to its own; a shared enum takes every tool's options, and a shared string the longest
+ * gives it. A shared number takes the widest bounds of the tools naming it, a
+ * `step`, `scale` or bound read from the holder only where they agree, every
+ * tool's `stops`, and `clearable` where any is; each tool reads it held to its own; a shared enum takes every tool's options, and a shared string the longest
  * `maxLength`; any other shared kind must be declared alike by every tool, wording aside. Throws where tools name one
- * shared key as leaves of different kinds or declare another kind differently, or the host gives one a default its leaf does not take. A tool with no options of its own has no group, and a dotted id's group
- * sits a level down for each dot (`path.brush` in `path`), where the store keeps it.
+ * shared key as leaves of different kinds or declare another kind differently, the host gives one a default its leaf
+ * does not take or a default for a key no tool shares, or two tools of one id declare different options; one tool
+ * listed twice is placed once. A tool with no options of its own has no group, and a dotted id's group sits a level
+ * down for each dot (`path.brush` in `path`), named for the segment until a tool of that id names it.
  */
 export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOptionsPrefsSpec = {}): PrefGroup {
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   const shared: Record<string, PrefLeaf | PrefGroup> = {};
+  const seen = new Map<string, ToolOptionsSpec>();
   for (const tool of tools) {
     const options = tool.options;
     if (!options) continue;
     checkToolOptionOwner(tool.id);
+    const prior = seen.get(tool.id);
+    if (prior === options) continue;
+    if (prior) throw new Error(`toolOptionsPrefs: two tools named "${tool.id}" declare different options`);
+    seen.set(tool.id, options);
     const own: Record<string, PrefLeaf | PrefGroup> = {};
     for (const [key, leaf] of Object.entries(options.prefs.children)) {
       const slot = toolOptionSlot(tool.id, options, key);
@@ -139,7 +162,8 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
   }
   for (const [key, value] of Object.entries(spec.shared ?? {})) {
     const leaf = getOwn(shared, key);
-    if (!leaf || !('kind' in leaf)) continue;
+    if (!leaf) throw new Error(`toolOptionsPrefs: the host gives a default for the shared option "${key}", which no tool names`);
+    if (!('kind' in leaf)) continue;
     const invalid = Symbol('invalid');
     if (!deepEqual(repairPrefValue({ ...leaf, default: invalid } as PrefLeaf, value), value)) {
       throw new Error(`toolOptionsPrefs: the host's default ${JSON.stringify(value)} for the shared option "${key}" is not a value any tool naming it takes`);

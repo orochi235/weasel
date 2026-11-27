@@ -58,11 +58,21 @@ describe('toolOptionsPrefs', () => {
   });
 
   it('gives a shared key the default the host names', () => {
-    const schema = toolOptionsPrefs([RECT, STAR], { name: 'T', shared: { fill: '#ffffff', nope: 1 } });
+    const schema = toolOptionsPrefs([RECT, STAR], { name: 'T', shared: { fill: '#ffffff' } });
     const shared = (schema.children[SHARED_TOOL_OPTIONS] as { children: Record<string, { default: unknown }> }).children;
     expect(shared.fill.default).toBe('#ffffff');
     expect(Object.keys(shared)).toEqual(['fill']);
     expect(schema.name).toBe('T');
+  });
+
+  it('refuses a host default for a key no tool shares', () => {
+    expect(() => toolOptionsPrefs([RECT, STAR], { shared: { fil: '#f00' } })).toThrow(/"fil".*no tool names/);
+  });
+
+  it('places a tool listed twice once, and refuses two tools of one id with different options', () => {
+    const schema = toolOptionsPrefs([RECT, STAR, { ...RECT }]);
+    expect(Object.keys(schema.children)).toEqual(['rect', 'star', SHARED_TOOL_OPTIONS]);
+    expect(() => toolOptionsPrefs([RECT, { id: 'rect', options: STAR.options }])).toThrow(/two tools named "rect"/);
   });
 });
 
@@ -96,6 +106,20 @@ describe('toolOptionsPrefs: a shared number', () => {
     const open = sized('open', 30);
     delete (open.options.prefs.children.radiusPx as { max?: number }).max;
     expect(sharedLeaf(toolOptionsPrefs([sized('big', 400), open])).max).toBeUndefined();
+  });
+
+  it('keeps a step, scale or holder bound only where every tool naming it agrees, and clears where any tool does', () => {
+    const a = sized('a', 100, 1);
+    Object.assign(a.options.prefs.children.radiusPx, { scale: 'log', step: 1, stops: [10] });
+    const b = sized('b', 50, 0);
+    Object.assign(b.options.prefs.children.radiusPx, { clearable: true, default: undefined, step: 0.5, stops: [5, 10] });
+    const leaf = sharedLeaf(toolOptionsPrefs([a, b])) as Record<string, unknown>;
+    expect([leaf.min, leaf.max, leaf.scale, leaf.step, leaf.stops, leaf.clearable]).toEqual([0, 100, undefined, undefined, [5, 10], true]);
+    expect(leaf.default).toBeUndefined();
+    const c = sized('c', 200, 2);
+    Object.assign(c.options.prefs.children.radiusPx, { scale: 'log', step: 1 });
+    const kept = sharedLeaf(toolOptionsPrefs([a, c])) as Record<string, unknown>;
+    expect([kept.scale, kept.step, kept.clearable, kept.default]).toEqual(['log', 1, undefined, 20]);
   });
 });
 
@@ -183,6 +207,12 @@ describe('tool options of a dotted tool id in a prefs store', () => {
   it('nests a dotted id’s group where the store keeps it, beside the options of the tool it sits in', () => {
     const schema = toolOptionsPrefs([sized('path.brush'), sized('path', 'pen')]);
     expect([...prefLeaves(schema).keys()]).toEqual(['path.brush.size', 'path.pen']);
+  });
+
+  it('names the group of a dotted id’s parent for its segment when no tool of that id has options', () => {
+    const schema = toolOptionsPrefs([sized('path.brush')]);
+    expect((schema.children.path as { name: string }).name).toBe('path');
+    expect((toolOptionsPrefs([sized('path.brush'), sized('path', 'pen')]).children.path as { name: string }).name).toBe('Brush');
   });
 });
 

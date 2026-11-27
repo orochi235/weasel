@@ -26,7 +26,9 @@ export interface ActiveToolContextValue {
   active: string | null;
   hotkeyStack: string[];
   setActive(id: string | null): void;
-  pushHotkey(id: string): void;
+  /** Hold `id` on top of the stack. Returns a release removing this hold alone, wherever it then sits, so a release
+   *  never takes a later hold of the same tool. */
+  pushHotkey(id: string): () => void;
   /**
    * Disengage a hotkey-held tool. With `id`, removes that tool's own entry
    * wherever it now sits — holds do not have to come up in the order they went
@@ -39,9 +41,16 @@ export interface ActiveToolContextValue {
 interface ToolState {
   active: string | null;
   hotkeyStack: string[];
+  /** One token per `hotkeyStack` entry, so a release finds its own hold among holds of one tool. */
+  holds: object[];
 }
 
-const NO_TOOL: ToolState = { active: null, hotkeyStack: [] };
+const NO_TOOL: ToolState = { active: null, hotkeyStack: [], holds: [] };
+
+function withoutHold(s: ToolState, i: number): ToolState {
+  if (i < 0) return s;
+  return { ...s, hotkeyStack: s.hotkeyStack.filter((_, j) => j !== i), holds: s.holds.filter((_, j) => j !== i) };
+}
 
 /**
  * One node of the tool tree. A node that `owns` a tool holds its state; one
@@ -56,7 +65,7 @@ export class ToolNode extends ScopeNode<ToolNode> {
     // A new scope starts on the tool in effect around it, so a tool a
     // consumer seeded above a canvas before it mounted is not lost.
     this.state = owns
-      ? { active: initialActive ?? parent?.owner().state?.active ?? null, hotkeyStack: [] }
+      ? { active: initialActive ?? parent?.owner().state?.active ?? null, hotkeyStack: [], holds: [] }
       : null;
   }
 
@@ -85,15 +94,13 @@ export class ToolNode extends ScopeNode<ToolNode> {
       active: state.active,
       hotkeyStack: state.hotkeyStack,
       setActive: (id) => this.update((s) => (s.active === id ? s : { ...s, active: id })),
-      pushHotkey: (id) => this.update((s) => ({ ...s, hotkeyStack: [...s.hotkeyStack, id] })),
+      pushHotkey: (id) => {
+        const hold = {};
+        this.update((s) => ({ ...s, hotkeyStack: [...s.hotkeyStack, id], holds: [...s.holds, hold] }));
+        return () => this.update((s) => withoutHold(s, s.holds.indexOf(hold)));
+      },
       popHotkey: (id) =>
-        this.update((s) => {
-          const stack = s.hotkeyStack;
-          if (stack.length === 0) return s;
-          if (id === undefined) return { ...s, hotkeyStack: stack.slice(0, -1) };
-          const i = stack.lastIndexOf(id);
-          return i === -1 ? s : { ...s, hotkeyStack: [...stack.slice(0, i), ...stack.slice(i + 1)] };
-        }),
+        this.update((s) => withoutHold(s, id === undefined ? s.hotkeyStack.length - 1 : s.hotkeyStack.lastIndexOf(id))),
     };
     this.value = { from, state, out };
     return out;
