@@ -18,6 +18,7 @@ import { deriveParallaxView, type PlaneMap } from 'core/viewport/parallax';
 import type { View } from 'core/viewport/view';
 import type { Departures } from '../../animation/departures';
 import { isCustomEntry, type LayersMap } from '../layerSlots';
+import { sceneLayerPaintedFrom } from '../drawEnvelope';
 import { wrapWithPoseRotation } from '../poseRotation';
 import { createLayerPlaneLookup } from '../pickWalk';
 import { planeTransform } from '../planeClips';
@@ -37,7 +38,7 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
   return useMemo<RenderLayer<unknown>>(() => ({
     id: 'departure-ghost',
     label: 'Departing nodes',
-    draw: (_data, view, dims) => {
+    draw: (data, view, dims) => {
       const slot = slotRef.current;
       const leaving = departures.shown();
       if (leaving.length === 0 || !slot || isCustomEntry(slot) || !slot.drawOne) return [];
@@ -52,11 +53,11 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       } as PoseAdapter<TPose>);
       // As the scene paints it: a hidden node and its subtree are not drawn, nor one under a
       // hidden container still in the scene, nor a
-      // node on a hidden layer; a node is drawn at the slot's drawn pose; one
+      // node on a layer the scene or the drawing view hides; a node is drawn at the slot's drawn pose; one
       // on a parallax layer is drawn through its plane's view and carried
       // into its parent's world.
       const planeOf = createLayerPlaneLookup(sc.layers, view);
-      const shown = new Set(sc.layers.filter((l) => l.visible).map((l) => l.id as string));
+      const paints = sceneLayerPaintedFrom(data, sc.layers);
       const viewOf = (layer: string): View => {
         const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;
         return parallax ? deriveParallaxView(view, parallax) : view;
@@ -69,11 +70,11 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const layer = r.node.layer;
         const plane = planeOf?.(layer) ?? null;
         const v = viewOf(layer);
-        const drawn = shown.has(layer) && slot.drawnPose ? slot.drawnPose(r.node, pose) : pose;
+        const drawn = paints(layer) && slot.drawnPose ? slot.drawnPose(r.node, pose) : pose;
         const scaled = pixelScaleCtx(v, dims.dpr);
         // A removed container is gone from the scene, so what its children inherit is read from the removal.
         const ctx = inheritsPaint(r.node) ? { ...scaled, inherited: inheritedPaintOf(r.node, above()) } : scaled;
-        const children: DrawCommand[] = shown.has(layer)
+        const children: DrawCommand[] = paints(layer)
           ? wrapWithPoseRotation(drawOne(r.node, drawn, v, ctx), drawn) : [];
         const kids: DrawCommand[] = [];
         for (const c of r.children) {

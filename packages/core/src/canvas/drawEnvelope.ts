@@ -6,7 +6,7 @@
  * answers for view zero in every view. A layer drawn by a bare consumer may
  * get plain data, so each reader has an "unwired" answer rather than throwing.
  */
-import type { ChromeState } from 'core/selection/chromeState';
+import { paintsLayer, type ChromeState } from 'core/selection/chromeState';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import type { GesturePreviewSource } from './gestureBounds';
 import type { DebugSink } from '../debug/types';
@@ -31,6 +31,17 @@ export function chromeStateFrom(data: unknown): ChromeState | null {
  *  `undefined` when the caller passed plain data or the id is unknown. */
 export function effectivePoseFrom(data: unknown, id: string): unknown {
   return thunk(data, 'getEffectivePose')?.(id) ?? undefined;
+}
+
+/** Whether the drawing view paints scene layer `id`: the scene shows it, and the view's
+ *  `layerVisibility` / `layerOrder` keep it. Plain data reads as a view that hides nothing. */
+export function sceneLayerPaintedFrom(
+  data: unknown,
+  layers: readonly { id: string; visible: boolean }[],
+): (id: string) => boolean {
+  const shown = new Set(layers.filter((l) => l.visible).map((l) => l.id));
+  const view = chromeStateFrom(data);
+  return (id) => shown.has(id) && paintsLayer(view, id);
 }
 
 /** This view's chrome-caps predicate, or `null` when the caller passed plain

@@ -85,6 +85,18 @@ describe('useDepartureGhostLayer', () => {
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([34]);
   });
 
+  it("draws no ghost of a node on a layer the drawing view's layerVisibility hides", () => {
+    const scene = createScene<null, 'main' | 'off', RectPose>({ systemLayers: [{ id: 'main' }, { id: 'off' }] });
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'off', pose: at(0), data: null, parent: null, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = removal(g, at(30), [{ node: k, pose: at(4), children: [] }]);
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene: scene as never, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 1 }]),
+    }));
+    const data = { getChromeState: () => ({ layerIsPainted: (layer: string) => layer !== 'off' }) };
+    expect(rectsIn(result.current.draw(data, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([34]);
+  });
+
   it('draws no ghost of a hidden node, nor of anything under it', () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: null, children: [] } as unknown as N;
