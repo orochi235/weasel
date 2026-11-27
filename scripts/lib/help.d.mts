@@ -4,6 +4,8 @@ export interface CliOption {
   multiple?: boolean;
   default?: boolean | string | boolean[] | string[];
   placeholder?: string;
+  /** For a string option that may stand alone: the value a bare `--name` takes. Its value then goes only after `=`. */
+  bare?: string;
   description: string;
 }
 export interface CliSpec {

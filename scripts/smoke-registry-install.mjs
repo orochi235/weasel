@@ -20,7 +20,16 @@ import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'no
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { DEFAULT_DELAYS_MS, waitMinutes } from './lib/await-published.mjs';
+import { cli } from './lib/help.mjs';
 import { publishableWorkspaces } from './lib/workspaces.mjs';
+
+const { values } = cli(import.meta.url, {
+  summary: 'Installs every published package from the registry into an empty tree outside the repo, and checks that npm can resolve the release.',
+  options: {
+    wait: { type: 'string', bare: '15', placeholder: '<minutes>', description: 'retry a failed install for up to <minutes>' },
+    keep: { type: 'boolean', description: 'keep the install tree afterward' },
+  },
+});
 
 const packages = publishableWorkspaces().map(({ manifest }) => ({
   name: manifest.name,
@@ -28,8 +37,8 @@ const packages = publishableWorkspaces().map(({ manifest }) => ({
 }));
 
 const workDir = mkdtempSync(join(tmpdir(), 'weasel-registry-smoke-'));
-const keep = process.argv.includes('--keep');
-const budgetMs = waitMinutes(process.argv.slice(2), { label: 'test:smoke:registry', defaultMinutes: 15 }) * 60_000;
+const keep = values.keep ?? false;
+const budgetMs = waitMinutes(values.wait, 'test:smoke:registry') * 60_000;
 
 // No `dependencies` — the install below is the whole point, and pre-declaring
 // them would let a lockfile or a workspace link answer instead of the registry.

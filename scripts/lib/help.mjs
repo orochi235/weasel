@@ -28,14 +28,15 @@ function parseOptionsOf(options = {}) {
 }
 
 /** The left-hand column for one option: `-n, --dry-run` or `    --since <ref>`. */
-function flagOf(name, { type, short, placeholder }) {
-  const value = type === 'string' ? ` ${placeholder ?? '<value>'}` : '';
+function flagOf(name, { type, short, placeholder, bare }) {
+  const shown = placeholder ?? '<value>';
+  const value = type !== 'string' ? '' : bare !== undefined ? `[=${shown}]` : ` ${shown}`;
   return `${short ? `-${short}, ` : '    '}--${name}${value}`;
 }
 
 /** The right-hand column for one option, with its default when it has a telling one. */
-function describedOf({ description = '', default: fallback, multiple }) {
-  const repeat = multiple ? ' (repeatable)' : '';
+function describedOf({ description = '', default: fallback, multiple, bare }) {
+  const repeat = `${multiple ? ' (repeatable)' : ''}${bare !== undefined ? ` (alone: ${bare})` : ''}`;
   const shown = fallback === undefined || fallback === false || (Array.isArray(fallback) && fallback.length === 0);
   return `${description}${repeat}${shown ? '' : ` (default: ${Array.isArray(fallback) ? fallback.join(',') : fallback})`}`;
 }
@@ -103,6 +104,14 @@ function splitPassthrough(argv, options) {
   return { own, rest };
 }
 
+/** `arg` with the value its option takes alone filled in: `--wait` as `--wait=60`. */
+function withBareValue(arg, options = {}) {
+  for (const [name, { short, bare }] of Object.entries(options)) {
+    if (bare !== undefined && (arg === `--${name}` || (short && arg === `-${short}`))) return `--${name}=${bare}`;
+  }
+  return arg;
+}
+
 /**
  * How many positionals a usage string like `<from> [<to>]` or `<file>…` takes: each word is one,
  * `[…]` makes it optional and a trailing `…` (or `...`) lets it repeat.
@@ -138,7 +147,9 @@ export function parseCli(name, spec, argv) {
   const ownArgs = argv.includes('--') ? argv.slice(0, argv.indexOf('--')) : argv;
   if (ownArgs.includes('-h') || ownArgs.includes('--help')) return { help: helpOf(commandName, active) };
   const options = parseOptionsOf(active.options);
-  const { own, rest } = active.passthrough ? splitPassthrough(argv, options) : { own: argv, rest: [] };
+  const split = active.passthrough ? splitPassthrough(argv, options) : { own: argv, rest: [] };
+  const { rest } = split;
+  const own = split.own.map((arg) => withBareValue(arg, active.options));
   let parsed;
   try {
     parsed = parseArgs({ args: own, options, strict: true, allowPositionals: true });

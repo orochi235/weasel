@@ -17,8 +17,15 @@
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 import { hasVersion, registryBase } from './lib/registry.mjs';
 import { awaitPublished, waitMinutes } from './lib/await-published.mjs';
+import { cli } from './lib/help.mjs';
 
-const minutes = waitMinutes(process.argv.slice(2), { label: 'check:published', defaultMinutes: 60 });
+const { values } = cli(import.meta.url, {
+  summary: "Checks that every publishable workspace's current version is on the registry.",
+  options: {
+    wait: { type: 'string', bare: '60', placeholder: '<minutes>', description: 'poll anything missing for up to <minutes>; npm holds a fresh upload as staged for up to 55' },
+  },
+});
+const minutes = waitMinutes(values.wait, 'check:published');
 const packages = publishableWorkspaces().map(({ manifest: { name, version } }) => ({ name, version }));
 
 const { missing } = await awaitPublished(packages, {

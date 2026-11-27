@@ -58,6 +58,14 @@ describe('parseCli', () => {
     expect(parseCli('x', { summary: 's', positionals: '<file>' }, [])).toHaveProperty('error');
   });
 
+  it('gives a flag that may stand alone its bare value, and takes another after =', () => {
+    const waits: CliSpec = { summary: 's', options: { wait: { type: 'string', bare: '60', placeholder: '<minutes>', description: 'wait' } } };
+    expect(parseCli('x', waits, ['--wait'])).toMatchObject({ values: { wait: '60' } });
+    expect(parseCli('x', waits, ['--wait=5'])).toMatchObject({ values: { wait: '5' } });
+    expect(parseCli('x', waits, [])).toMatchObject({ values: {} });
+    expect(helpOf('x', waits)).toMatch(/--wait\[=<minutes>\] {2}wait \(alone: 60\)/);
+  });
+
   it('parses what the table declares', () => {
     expect(parseCli('x', spec, ['HEAD', '--since=main', '-n'])).toEqual({
       command: undefined,

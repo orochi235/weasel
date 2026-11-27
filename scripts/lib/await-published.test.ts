@@ -89,11 +89,8 @@ describe('awaitPublished', () => {
 });
 
 describe('waitMinutes', () => {
-  const opts = { label: 'test', defaultMinutes: 15 };
-
-  it('is 0 without the flag, the default for a bare one, and the number given', () => {
-    expect(waitMinutes(['--keep'], opts)).toBe(0);
-    expect(waitMinutes(['--wait'], opts)).toBe(15);
-    expect(waitMinutes(['--wait=4'], opts)).toBe(4);
+  it('is 0 without a value and the number given otherwise', () => {
+    expect(waitMinutes(undefined, 'test')).toBe(0);
+    expect(waitMinutes('4', 'test')).toBe(4);
   });
 });
