@@ -1350,6 +1350,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-23 (my call, audit round 77): folding a nested row on a `Timeline` drops a key or segment selection on a
   row under it, reporting `null` to `onSelectionChange`, and a `selection` a consumer gives on a row not drawn opens
   no inspector, as Delete already deletes nothing for it. Keeping a hidden selection live in both was the alternative.
+- 2026-11-26 (my call, Timeline scour): a read-only `LayeredCurveEditor` still refuses every press and key by default,
+  and `readOnlyPresses` lets them reach its layers while the consumer refuses the edits they report; `Timeline`'s
+  graph sets it, so read-only keys and segments select there as in dope mode. Letting a generic layer editor pass
+  presses when read-only by default was the alternative, which would trust every layer to refuse its own edits.
 
 ## Diagram, audio, and labkit
 

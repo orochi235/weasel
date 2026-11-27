@@ -101,7 +101,7 @@ export function Timeline(props: TimelineProps): ReactElement {
 
   const onRootKeyDown = (e: ReactKeyboardEvent<HTMLDivElement>): void => {
     if (e.defaultPrevented || isEditableTarget(e.target)) return;
-    if (e.key === 'Escape' && segmentSelection && !hold.disabled) {
+    if (e.key === 'Escape' && segmentSelection && !hold.disabled && onTimeline(e)) {
       e.preventDefault();
       dropSegment();
       return;

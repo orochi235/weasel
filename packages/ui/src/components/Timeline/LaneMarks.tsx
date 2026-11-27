@@ -62,7 +62,7 @@ export function KeyMarks({ row, times, pct, mark, selection, draggedIndex, onKey
           key={i}
           role="button"
           {...mark}
-          aria-label={`${row.label} key at ${msLabel(t + row.offset)}`}
+          aria-label={`${row.label} ${event ? 'event' : 'key'} at ${msLabel(t + row.offset)}`}
           aria-current={selection === i ? 'true' : undefined}
           data-testid={event ? 'timeline-event' : 'timeline-key'}
           data-keyframe-index={i}
