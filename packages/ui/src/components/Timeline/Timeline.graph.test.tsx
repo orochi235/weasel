@@ -127,7 +127,7 @@ describe('Timeline event marks', () => {
   it('names an event crossing as an event, not a key', () => {
     const events = [{ kind: 'event', label: 'step', events: [{ t: 300, fire: () => {} }] }] as Track[];
     renderWithIcons(<Timeline tracks={events} duration={1000} playhead={0} onSeek={() => {}} onChange={() => {}} />);
-    expect(screen.getByTestId('timeline-event')).toHaveAccessibleName('step event at 300 ms');
+    expect(screen.getByTestId('timeline-event')).toHaveAccessibleName('step event at 300ms');
   });
 });
 

@@ -73,7 +73,7 @@ describe('Timeline key drags echoed through onInput', () => {
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onCancel).toHaveBeenCalledTimes(1);
     expect(screen.getAllByTestId('timeline-key').map((k) => k.getAttribute('aria-label'))).toEqual(
-      ['x key at 0 ms', 'x key at 500 ms'],
+      ['x key at 0ms', 'x key at 500ms'],
     );
   });
 

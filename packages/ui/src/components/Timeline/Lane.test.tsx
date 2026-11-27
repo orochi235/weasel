@@ -173,8 +173,8 @@ describe('Lane', () => {
     rerender(<Lane {...base} row={laneOf(echoed)} />);
     const keyNames = screen.getAllByTestId('timeline-key').map((k) => k.getAttribute('aria-label'));
     const segNames = screen.getAllByTestId('timeline-segment').map((k) => k.getAttribute('aria-label'));
-    expect(keyNames).toEqual(['x key at 0 ms', 'x key at 200 ms', 'x key at 400 ms']);
-    expect(segNames).toEqual(['x segment into 200 ms', 'x segment into 400 ms']);
+    expect(keyNames).toEqual(['x key at 0ms', 'x key at 200ms', 'x key at 400ms']);
+    expect(segNames).toEqual(['x segment into 200ms', 'x segment into 400ms']);
   });
 
   it('reports live times through the drag and one commit at its end', () => {
