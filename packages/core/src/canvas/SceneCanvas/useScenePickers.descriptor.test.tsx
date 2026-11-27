@@ -52,4 +52,16 @@ describe('useScenePickers — non-rect poses', () => {
     expect(result.current.tool.boundsOf(id)).toBeNull();
     expect(result.current.tool.pickEvery({ x: 0, y: 0 })).toEqual([]);
   });
+
+  it('reports the bounds of a pose far out along the double range, whose fields sum past it', () => {
+    const far = { ...CIRCLE_POSE_DESCRIPTOR, getBounds: () => ({ x: 1e308, y: 1e308, width: 1, height: 1 }) };
+    const { result } = renderHook(() => {
+      const scene = useScene<object, 'default', CirclePose>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'default' }] });
+      const adapter = useSceneAdapter(scene, { poseDescriptor: far });
+      return { scene, tool: useScenePickers({ scene, adapter, poseDescriptor: far }) };
+    });
+    let id = '';
+    act(() => { id = result.current.scene.add({ kind: 'mark', layer: 'default', pose: circle(10, 10, 5), data: {} }); });
+    expect(result.current.tool.boundsOf(id)).toEqual({ x: 1e308, y: 1e308, width: 1, height: 1 });
+  });
 });
