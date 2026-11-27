@@ -1,6 +1,6 @@
 import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Affine, type Path } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
-import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
+import type { NodeInk, NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { DrawCommand } from '@weasel-js/renderer';
@@ -122,6 +122,8 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
   drawnBounds: (node, _pose, ctx) => derivedDrawnBounds(node, ctx),
   ink: (node, _pose, ctx) => {
     const d = node.data as PaintData | null;
+    const parts = derivedPartsOf(ctx?.derivedPath);
+    if (parts !== undefined) return partsInk(parts, d, ctx);
     const stroke = resolveStroke(d?.stroke, ctx?.inherited?.stroke);
     return {
       filled: resolveFill(d?.fill, ctx?.inherited?.fill) !== null,
@@ -130,6 +132,22 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     };
   },
 };
+
+/** The ink of a path drawn in `parts`, each in its own paint: filled if any part is, and reaching as far as
+ *  the farthest part's stroke on each side. It names no stroke, since no one stroke runs along the whole path. */
+function partsInk(parts: readonly DerivedPart[], d: PaintData | null, ctx: NodeInkCtx | undefined): NodeInk {
+  const ink: NodeInk = { filled: false, outset: 0, inset: 0 };
+  for (const part of parts) {
+    const { fill, stroke } = resolvePartPaint(part, d, ctx?.inherited);
+    const r = inkReach(stroke, ctx?.scale);
+    ink.filled ||= fill !== null;
+    ink.outset = Math.max(ink.outset, r.outset);
+    ink.inset = Math.max(ink.inset, r.inset);
+    if (r.outsetPx !== undefined) ink.outsetPx = Math.max(ink.outsetPx ?? 0, r.outsetPx);
+    if (r.insetPx !== undefined) ink.insetPx = Math.max(ink.insetPx ?? 0, r.insetPx);
+  }
+  return ink;
+}
 
 /**
  * Whether a derived path in `parts` covers the world point (x, y): each part

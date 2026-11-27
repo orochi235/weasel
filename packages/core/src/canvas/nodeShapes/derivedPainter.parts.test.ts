@@ -3,6 +3,8 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { INHERIT, type Fill, type Stroke, solid, solidStroke } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
 import { DERIVED_PAINTER, partsCover } from './derivedPainter';
+import { nodeBroadBox, type Box2 } from 'canvas/pickIndex/nodeBroadBox';
+import { AUTO_POSE_DESCRIPTOR } from 'core/geometry/autoPoseDescriptor';
 
 const RECT = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as const;
 const NODE_FILL: Fill = { paint: solid('#ff0000') };
@@ -77,5 +79,26 @@ describe('kit:derived — picking a path in parts under a pose', () => {
     pose.rotation = Math.PI / 2;
     expect(partsCover(node, parts, pose, 90, 5, {})).toBe(false);
     expect(partsCover(node, parts, pose, 50, 40, {})).toBe(true);
+  });
+});
+
+describe('kit:derived — the ink of a path in parts', () => {
+  const unpainted = { id: 'n', data: { fill: null, stroke: null }, dependsOn: ['a'], derivePath: 'k' };
+  const placeholder = { x: 0, y: 0, width: 0, height: 0 };
+  const parts: DerivedPart[] = [
+    { path: RECT, stroke: solidStroke('#00ff00', 20) },
+    { path: { ...RECT, x: 30 }, fill: { paint: solid('#00ff00') } },
+  ];
+
+  it("reports each part's own paint, filled if any part is and reaching as far as the widest stroke", () => {
+    const ink = DERIVED_PAINTER.ink!(unpainted as never, placeholder as never, { derivedPath: pathFromParts(parts)! });
+    expect(ink).toMatchObject({ filled: true, outset: 10, inset: 10 });
+  });
+
+  it("grows the node's pick box by the widest part's stroke", () => {
+    const out: Box2 = [0, 0, 0, 0];
+    nodeBroadBox(unpainted, placeholder, pathFromParts(parts)!, undefined, AUTO_POSE_DESCRIPTOR as never, out);
+    expect(out[0]).toBeLessThanOrEqual(-10);
+    expect(out[1]).toBeLessThanOrEqual(-10);
   });
 });

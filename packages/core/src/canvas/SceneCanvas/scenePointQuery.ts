@@ -29,7 +29,7 @@ export function scenePointQuery<TPose>(
         // that follows it, or it rejects points the refinement would have
         // claimed. A stroke reaches past the pose box by `outset` — a whole
         // stroke width for an outer align — on top of the pointer slop.
-        const ink = shapePicking ? findShapeInk(n as never, pose, { scale, inherited, shapes }) : null;
+        const ink = shapePicking ? findShapeInk(n as never, pose, { scale, inherited, shapes, derivedPath: derived }) : null;
         // A derived node's pose is a placeholder — typically zero-sized at
         // the origin — so its own box rejects every point the path covers.
         // The path is the region to test instead, and `poseContains` already
