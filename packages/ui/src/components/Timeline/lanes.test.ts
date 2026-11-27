@@ -76,6 +76,13 @@ describe('buildLanes', () => {
     expect(beside.map((r) => r.label)).toEqual(['blink', 'blink', 'o']);
   });
 
+  it('folds the rows under an empty-labeled timeline apart from top-level rows of the same name', () => {
+    const inner = nested('a', 0, []);
+    const rows = buildLanes([nested('', 0, [inner]), nested('a', 0, [])], new Set(['']));
+    expect(rows.map((r) => r.label)).toEqual(['', 'a', 'a']);
+    expect(rows[1].fold).not.toBe(rows[2].fold);
+  });
+
   it('gives each row a path-derived key', () => {
     const rows = buildLanes([sampled('x', [0]), sampled('y', [0])], new Set());
     expect(rows.map((r) => r.key)).toEqual(['0', '1']);

@@ -44,7 +44,7 @@ export function buildLanes(
       const name = foldName(track);
       const n = seen.get(`${track.kind}:${name}`) ?? 0;
       seen.set(`${track.kind}:${name}`, n + 1);
-      const fold = `${parent}${parent ? '/' : ''}${name}${n > 0 ? `#${n}` : ''}`;
+      const fold = `${depth > 0 ? `${parent}/` : ''}${name}${n > 0 ? `#${n}` : ''}`;
       out.push({
         key: nextPath.join('.'),
         fold,
