@@ -267,4 +267,17 @@ describe('useFrameLoop — recovery', () => {
     expect(paint).toHaveBeenCalledTimes(4);
     window.removeEventListener('error', onError);
   });
+
+  it('paintNow says whether pixels landed, and schedules a frame when they did not', async () => {
+    const loopRef = { current: null as FrameLoop | null };
+    const results = [false, true];
+    const paint = vi.fn(() => results.shift() ?? true);
+    render(<Host loopRef={loopRef} paint={paint} />);
+    let landed: boolean | undefined;
+    act(() => { landed = loopRef.current!.paintNow(); });
+    expect(landed).toBe(false);
+    expect(paint).toHaveBeenCalledTimes(1);
+    await act(async () => { await frame(); await frame(); });
+    expect(paint).toHaveBeenCalledTimes(2);
+  });
 });

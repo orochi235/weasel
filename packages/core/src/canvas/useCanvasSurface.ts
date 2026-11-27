@@ -60,8 +60,9 @@ export function useCanvasSurface(
   return { ...loop, lease };
 }
 
-/** Paints a commit that resized the surface in place. Returns whether this commit did. */
-function usePaintOnResize(size: CanvasSurfaceOptions['size'], paintNow: () => void): { readonly current: boolean } {
+/** Paints a commit that resized the surface in place, or on the next frame if that paint does not land.
+ *  Returns whether this commit resized. */
+function usePaintOnResize(size: CanvasSurfaceOptions['size'], paintNow: () => boolean): { readonly current: boolean } {
   const last = useRef<{ width: number; height: number } | null>(null);
   const resized = useRef(false);
   const width = size?.width ?? 0;
