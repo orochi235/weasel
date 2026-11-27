@@ -88,3 +88,17 @@ describe('Timeline Delete on a lane away from its keys', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('Timeline ruler under a window held by the consumer', () => {
+  it('leaves the wheel to the page when nothing hears the window change', () => {
+    renderWithIcons(<Timeline {...base} tracks={tracks()} window={{ from: 0, to: 500 }} />);
+    expect(fireEvent.wheel(screen.getByTestId('timeline-ruler'), { deltaY: 100, clientX: 250 })).toBe(true);
+  });
+
+  it('still takes the wheel for a window the consumer hears', () => {
+    const onWindowChange = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} window={{ from: 0, to: 500 }} onWindowChange={onWindowChange} />);
+    expect(fireEvent.wheel(screen.getByTestId('timeline-ruler'), { deltaY: 100, clientX: 250 })).toBe(false);
+    expect(onWindowChange).toHaveBeenCalledTimes(1);
+  });
+});
