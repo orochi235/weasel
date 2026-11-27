@@ -55,7 +55,7 @@ export interface SceneCanvasToolProps {
 
   /** Initial active-slot tool id. Default: `'select'` when it is
    *  registered, otherwise none — a canvas can run on ambient bindings
-   *  alone. Must be one of the registered tools. Ignored when the consumer
-   *  supplies their own `tools` prop. */
+   *  alone. Must be one of the registered tools. Ignored under a full
+   *  `ToolsApi` takeover in `tools`; the patch form of `tools` keeps it. */
   defaultActiveTool?: string;
 }
