@@ -107,6 +107,20 @@ describe('toolOptionsPrefs: a shared number', () => {
     delete (open.options.prefs.children.radiusPx as { max?: number }).max;
     expect(sharedLeaf(toolOptionsPrefs([sized('big', 400), open])).max).toBeUndefined();
   });
+
+  it('keeps a step, scale or holder bound only where every tool naming it agrees, and clears where any tool does', () => {
+    const a = sized('a', 100, 1);
+    Object.assign(a.options.prefs.children.radiusPx, { scale: 'log', step: 1, stops: [10] });
+    const b = sized('b', 50, 0);
+    Object.assign(b.options.prefs.children.radiusPx, { clearable: true, default: undefined, step: 0.5, stops: [5, 10] });
+    const leaf = sharedLeaf(toolOptionsPrefs([a, b])) as Record<string, unknown>;
+    expect([leaf.min, leaf.max, leaf.scale, leaf.step, leaf.stops, leaf.clearable]).toEqual([0, 100, undefined, undefined, [5, 10], true]);
+    expect(leaf.default).toBeUndefined();
+    const c = sized('c', 200, 2);
+    Object.assign(c.options.prefs.children.radiusPx, { scale: 'log', step: 1 });
+    const kept = sharedLeaf(toolOptionsPrefs([a, c])) as Record<string, unknown>;
+    expect([kept.scale, kept.step, kept.clearable, kept.default]).toEqual(['log', 1, undefined, 20]);
+  });
 });
 
 describe('prefsToolOptionValues', () => {

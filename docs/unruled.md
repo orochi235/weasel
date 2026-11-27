@@ -29,6 +29,11 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-11-25 (my call, audit round 88): `toolOptionsPrefs` throws for a host's `shared` default that the shared
   option's leaf would repair (a number past every tool's bounds, an enum value no tool lists), as it throws for a kind
   mismatch, rather than repairing the default or keeping it as given.
+- 2026-11-27 (my call, audit round scour fix 10): `toolOptionsPrefs` throws for a host `shared` default whose key no
+  tool shares, as it throws for one a tool's leaf would repair, rather than dropping it; a host whose tool set varies
+  passes only the keys its tools share. A shared number keeps `step`, `scale`, `minAt` and `maxAt` only where every
+  tool naming it agrees, takes every tool's `stops`, and is `clearable` (with no default, where a clearing tool
+  declares none) when any tool's leaf is.
 - 2026-11-25 (my call, audit round 89): `toolOptionsPrefs` throws for a shared option of a kind it cannot widen (a list,
   an object, a map, a union, a color, and the rest past number, enum and string) that two tools declare differently in
   anything but its wording (name, description, default, icon and the like), rather than keeping the first tool's leaf
