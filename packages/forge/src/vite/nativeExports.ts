@@ -1,6 +1,6 @@
 import type * as t from '@babel/types';
 import { getOwn } from './ownKeys.ts';
-import { type Bindings, calleeName, isLiteralValue, type Wrappers } from './ast.ts';
+import { type Bindings, calleeName, isLiteralValue, stringLiteral, type Wrappers } from './ast.ts';
 
 type Fn = t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration;
 
@@ -74,16 +74,21 @@ function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: n
 const isGlobal = (node: t.Node, scope: Scope): boolean =>
   node.type === 'Identifier' && !scope.bindings.has(node.name) && !scope.imports.has(node.name);
 
-/** `Object`'s methods that hand back the object they are given. */
-const PASS_THROUGH = new Set(['freeze', 'seal', 'preventExtensions']);
+/** `Object`'s methods that hand back the object they are given first. */
+const PASS_THROUGH = new Set(['freeze', 'seal', 'preventExtensions', 'defineProperty', 'defineProperties', 'setPrototypeOf']);
+
+/** The name a member expression reads, written as `.name` or `['name']`. */
+const memberName = (node: t.MemberExpression): string | undefined =>
+  node.computed ? stringLiteral(node.property) : node.property.type === 'Identifier' ? node.property.name : undefined;
 
 /** What an `Object.assign` call copies from, or what a pass-through `Object` call hands back; else null. */
 function objectCallSources(node: t.CallExpression, scope: Scope): readonly t.Node[] | null {
   const { callee } = node;
-  if (callee.type !== 'MemberExpression' || callee.computed || callee.property.type !== 'Identifier') return null;
+  if (callee.type !== 'MemberExpression') return null;
   if (callee.object.type !== 'Identifier' || callee.object.name !== 'Object' || !isGlobal(callee.object, scope)) return null;
-  if (callee.property.name === 'assign') return node.arguments;
-  return PASS_THROUGH.has(callee.property.name) ? node.arguments.slice(0, 1) : null;
+  const name = memberName(callee);
+  if (name === 'assign') return node.arguments;
+  return name !== undefined && PASS_THROUGH.has(name) ? node.arguments.slice(0, 1) : null;
 }
 
 /** Whether calling `fn` may hand back a story. */
@@ -99,9 +104,10 @@ export function mayCallStory(node: t.Node | undefined, scope: Scope, depth = 0):
 /**
  * Whether a native file's export may be what forge's `story` returned, which is all the loader takes. A call is one
  * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread,
- * `Object.assign`, or `Object.freeze`) or a choice is one when something it copies or chooses from is. What cannot be
- * read stays in: an import nothing resolved, a method of anything but a literal or a global, a function a call made,
- * a chain longer than it follows.
+ * `Object.assign`, or an `Object` method like `freeze` that hands back its first argument) or a choice is one when
+ * something it copies or chooses from is. What cannot be read stays in: an import
+ * nothing resolved, a method of anything but a literal or a global, a function a call made, a chain longer than it
+ * follows.
  */
 export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): boolean {
   if (!node || depth > 16) return true;

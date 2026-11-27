@@ -41,4 +41,16 @@ export const B = story({ render: () => null });
     expect(names(code)).toEqual(['B']);
   });
 
+  it('keeps a story passed through every Object method that hands back its first argument', () => {
+    const code = `
+const Basic = story({ render: () => null });
+export const Defined = Object.defineProperty(story({ render: () => null }), 'x', { value: 1 });
+export const Described = Object.defineProperties(Basic, {});
+export const Reparented = Object.setPrototypeOf(Basic, null);
+export const Computed = Object['freeze'](Basic);
+export const value = Object.defineProperty({ a: 1 }, 'x', { value: 1 });
+`;
+    expect(names(code)).toEqual(['Defined', 'Described', 'Reparented', 'Computed']);
+  });
+
 });
