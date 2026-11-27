@@ -127,7 +127,7 @@ interface Held {
 
 /** Identifies a set of custom programs by their ids, in order. */
 export const shaderKeyOf = (shaders: readonly ShaderProgramHandle[] | undefined): string =>
-  shaders?.map((h) => h.id).join('|') ?? '';
+  (shaders && shaders.length > 0 ? JSON.stringify(shaders.map((h) => h.id)) : '');
 
 function free(held: Held): void {
   const set = TENANTS.get(held.canvas);
