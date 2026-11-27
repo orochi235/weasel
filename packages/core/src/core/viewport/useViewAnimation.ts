@@ -47,7 +47,7 @@ export interface ViewAnimationApi {
   animate(to: View | ((base: View) => View), opts?: ViewAnimationOptions): void;
   /** `fitViewToBounds` composed with `animate`. `false`, and nothing moves, when there is nothing
    *  to fit; the caller that owns the viewport resolves that to the view Cmd-0 gives. Into a viewport
-   *  with no area it moves nothing, and calls `onDone` at once. */
+   *  with no area it moves nothing, stopping a move in flight, and calls `onDone` at once. */
   animateToBounds(bounds: Bounds, dims: ViewportDims, opts?: AnimateToBoundsOptions): boolean;
   /** Cancel. The view stays where it is — no jump to the target. */
   stop(): void;
@@ -196,8 +196,12 @@ function createViewAnimation(
       const fitted = fitViewToBounds(bounds, dims, current, opts);
       if (fitted === null) return false;
       // `current` back: a viewport with no area, which the view is already fit to as well as it can be.
-      if (fitted === current) opts.onDone?.();
-      else animate(fitted, opts);
+      if (fitted === current) {
+        stop();
+        opts.onDone?.();
+      } else {
+        animate(fitted, opts);
+      }
       return true;
     },
     stop,
