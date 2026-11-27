@@ -52,3 +52,34 @@ describe('a paused looping timeline seeked to its duration', () => {
     expect(handle.time()).toBeCloseTo(30, 6);
   });
 });
+
+describe('a paused timeline at the end of its last lap', () => {
+  it('fires the event at its end and finishes only once it plays', () => {
+    const fire = vi.fn();
+    const onDone = vi.fn();
+    const { handle, advance } = makeTimeline({ duration: 100, onDone, tracks: [{ kind: 'event', events: [{ t: 100, fire }] }] });
+    advance(40);
+    handle.pause();
+    handle.seek(100);
+    expect(advance(40)).toBe(false);
+    expect(onDone).not.toHaveBeenCalled();
+    handle.resume();
+    expect(advance(50)).toBe(true);
+    expect(fire).toHaveBeenCalledTimes(1);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+
+  it('holds a timeline made paused with no length until it plays', () => {
+    const fire = vi.fn();
+    const onDone = vi.fn();
+    const { handle, advance } = makeTimeline({ autoplay: false, onDone, tracks: [{ kind: 'event', events: [{ t: 0, fire }] }] });
+    handle.pause();
+    expect(advance(0)).toBe(false);
+    expect(advance(16)).toBe(false);
+    expect(onDone).not.toHaveBeenCalled();
+    handle.resume();
+    expect(advance(32)).toBe(true);
+    expect(fire).toHaveBeenCalledTimes(1);
+    expect(onDone).toHaveBeenCalledTimes(1);
+  });
+});
