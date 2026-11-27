@@ -15,13 +15,16 @@ function lapsOf(loop: boolean | number): number {
   return Math.max(1, passes) - 1;
 }
 
+/** Whole laps of `duration` in `t`, held short of Infinity, so a lap count stays a number. */
+const lapsIn = (t: number, duration: number): number => Math.min(t / duration, Number.MAX_VALUE);
+
 /** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
  *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
 function lessLaps(t: number, laps: number, duration: number): number {
   // No laps of an endless duration are none, not `NaN`.
   if (laps === 0) return t;
   const span = laps * duration;
-  return Number.isFinite(span) ? t - span : wrapPositive(t, duration);
+  return Number.isSafeInteger(laps) && Number.isFinite(span) ? t - span : wrapPositive(t, duration);
 }
 
 /** The playhead and its offset from the entry's clock, which stands at `now`, `laps` laps back.
@@ -29,7 +32,8 @@ function lessLaps(t: number, laps: number, duration: number): number {
 function lapBack(playhead: number, offset: number, now: number, laps: number, duration: number): [number, number] {
   const span = laps * duration;
   const kept = offset - span;
-  if (Number.isFinite(span) && Number.isFinite(kept)) return [playhead - span, kept];
+  // Past 2^53 laps the product is no longer exact, and `playhead - span` lands outside the lap.
+  if (Number.isSafeInteger(laps) && Number.isFinite(span) && Number.isFinite(kept)) return [playhead - span, kept];
   const next = wrapPositive(playhead, duration);
   return [next, next - now];
 }
@@ -41,7 +45,7 @@ export interface Landing { at: number; laps: number }
  *  lands in a later lap, `laps` on, and a time on a seam is the end of the lap before. */
 export function landing(t: number, duration: number, lapsLeft: number): Landing {
   const to = Math.max(0, finite(t));
-  const laps = duration > 0 && to > duration ? Math.min(Math.ceil(to / duration) - 1, lapsLeft) : 0;
+  const laps = duration > 0 && to > duration ? Math.min(Math.ceil(lapsIn(to, duration)) - 1, lapsLeft) : 0;
   return { at: Math.min(lessLaps(to, laps, duration), duration), laps };
 }
 
@@ -51,8 +55,8 @@ export function landing(t: number, duration: number, lapsLeft: number): Landing 
  *  count below 0. */
 function lapsCrossed(playhead: number, duration: number, loopsLeft: number, lap: number): number {
   if (duration <= 0) return 0;
-  return playhead >= duration ? Math.min(Math.floor(playhead / duration), loopsLeft)
-    : playhead < 0 ? -Math.min(Math.ceil(-playhead / duration), lap) : 0;
+  return playhead >= duration ? Math.min(Math.floor(lapsIn(playhead, duration)), loopsLeft)
+    : playhead < 0 ? -Math.min(Math.ceil(lapsIn(-playhead, duration)), lap) : 0;
 }
 
 /** A timeline's position: where its playhead stands against the animator entry's clock, and the

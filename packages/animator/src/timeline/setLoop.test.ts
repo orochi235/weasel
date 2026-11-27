@@ -52,5 +52,12 @@ describe('setLoop', () => {
     expect(handle.loop()).toBe(false);
   });
 
+  it('stays endless through an advance whose lap count passes the double range', () => {
+    const { handle, advance } = makeTimeline({ duration: 0.5, loop: true });
+    advance(1e308);
+    expect(handle.loop()).toBe(true);
+    expect(handle.time()).toBeGreaterThanOrEqual(0);
+    expect(handle.time()).toBeLessThanOrEqual(0.5);
+  });
 
 });
