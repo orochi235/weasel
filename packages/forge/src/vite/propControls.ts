@@ -105,7 +105,16 @@ export function propControls(
     },
     async transform(code, id) {
       if (!stories().includes(id)) return undefined;
-      const props = await (reader ??= createPropReader(root, stories, options));
+      if (!reader) {
+        const building: Promise<PropReader | null> = createPropReader(root, stories, options).catch((err: unknown) => {
+          // Dropped, so the story after a fix to what broke it (often tsconfig.json) builds the reader again.
+          if (reader === building) reader = null;
+          this.warn(`prop controls and the API table are off for this story: the TypeScript reader failed: ${messageOf(err)}`);
+          return null;
+        });
+        reader = building;
+      }
+      const props = await reader;
       if (!props) return undefined;
       const added = storyExports(props, id, fallbackOf(id), readings, (message) => this.warn(message), typedoc);
       if (!added.code) return undefined;
