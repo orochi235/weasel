@@ -1,6 +1,6 @@
 import '@weasel-js/theme/tokens.css';
 import { cleanup, render } from '@testing-library/react';
-import { afterEach, expect, test } from 'vitest';
+import { afterEach, expect, test, vi } from 'vitest';
 import type { Track } from '@weasel-js/animator';
 import { Timeline } from '@weasel-js/ui/components/Timeline';
 
@@ -47,5 +47,33 @@ test('lanes that scroll keep their tracks as wide as the ruler', () => {
     expect(track.right).toBeCloseTo(ruler.right, 0);
   } finally {
     if (hide) hide.disabled = false;
+  }
+});
+
+test.each([{ readOnly: true }, { disabled: true }])('held %o, the ruler does not show a scrub cursor', (held) => {
+  const { getByTestId } = render(
+    <Timeline tracks={tracks} duration={2000} playhead={0} onChange={() => {}} onSeek={() => {}} {...held} />,
+  );
+  expect(getComputedStyle(getByTestId('timeline-ruler')).cursor).toBe('default');
+});
+
+test("a graph lane's value labels sit inside the track's clip, in the label column", async () => {
+  const { getAllByTestId } = render(
+    <div style={{ width: 600 }}>
+      <Timeline tracks={tracks} duration={2000} playhead={0} mode="graph" onChange={() => {}} onSeek={() => {}} />
+    </div>,
+  );
+  const track = getAllByTestId('timeline-lane-track')[0]!;
+  const labels = await vi.waitFor(() => {
+    const found = [...track.querySelectorAll('[data-plot-element="tick-label"][data-axis="y"]')];
+    expect(found.length).toBeGreaterThan(0);
+    return found;
+  });
+  const edge = track.getBoundingClientRect().left;
+  const margin = parseFloat(getComputedStyle(track).overflowClipMargin);
+  for (const label of labels) {
+    const box = label.getBoundingClientRect();
+    expect(box.right).toBeLessThan(edge);
+    expect(box.left).toBeGreaterThanOrEqual(edge - margin);
   }
 });
