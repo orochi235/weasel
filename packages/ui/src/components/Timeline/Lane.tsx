@@ -227,7 +227,7 @@ function AfterEnd({ end, win }: { end: number; win: TimeWindow }) {
 }
 
 /** A keyboard move can re-sort the key to another index, and a delete selects another: set `refocus` and focus follows
- *  the selected key there once the lane renders. */
+ *  the selected key there once the lane renders, or with none, the nearest focusable element around the lane. */
 function useFocusFollowsKey(trackRef: RefObject<HTMLDivElement | null>, selection: number | null) {
   const refocus = useRef(false);
   useEffect(() => {
@@ -237,7 +237,9 @@ function useFocusFollowsKey(trackRef: RefObject<HTMLDivElement | null>, selectio
     // Not from wherever focus went since: a key that asked for this may have changed nothing.
     const at = document.activeElement;
     if (at !== null && at !== document.body && ![...(marks ?? [])].includes(at as HTMLElement)) return;
-    if (selection !== null) [...(marks ?? [])].find((m) => m.getAttribute('data-keyframe-index') === String(selection))?.focus();
+    const next = selection === null ? undefined : [...(marks ?? [])].find((m) => m.getAttribute('data-keyframe-index') === String(selection));
+    // With no key left to take it, focus stays inside the timeline rather than falling to the page.
+    (next ?? trackRef.current?.closest<HTMLElement>('[tabindex]'))?.focus();
   });
   return refocus;
 }

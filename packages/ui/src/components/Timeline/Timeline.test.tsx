@@ -269,6 +269,21 @@ describe('Timeline', () => {
     }
   });
 
+  it.each(['dope', 'graph'] as const)('keeps focus in the timeline once Delete removes a row\'s only key, in %s mode', (mode) => {
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 100, value: 1 }], onTick: () => {} },
+      ] as Track[]);
+      return <Timeline {...base} mode={mode} tracks={value} onChange={setValue} />;
+    }
+    renderWithIcons(<Host />);
+    const key = document.querySelector<HTMLElement>('[data-keyframe-index]')!;
+    key.focus();
+    fireEvent.keyDown(key, { key: 'Delete' });
+    expect(document.querySelector('[data-keyframe-index]')).toBeNull();
+    expect(screen.getByTestId('timeline-root')).toBe(document.activeElement);
+  });
+
   it('deletes the key Delete is pressed on, not another one selected', () => {
     const onChange = vi.fn();
     const three = [
