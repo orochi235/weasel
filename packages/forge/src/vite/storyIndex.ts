@@ -101,6 +101,8 @@ export function createStoryIndex(options: StoryIndexOptions): StoryIndex {
         // `read` has already logged a file that fails to parse.
         continue;
       }
+      // An unlink, or a reset, while the answer was being decided has the final word.
+      if (byFile !== current || !current.has(file)) continue;
       const before = wrappersOf.get(file);
       wrappersOf.set(file, next);
       if (sameResolution(before, next)) continue;
