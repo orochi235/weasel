@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PrefNumber } from '@weasel-js/prefs-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { defineTool } from './defineTool';
-import { createToolOptionValues, steppedOption, toolOptionParams, type ToolOptionsSpec } from './toolOptions';
+import { createToolOptionValues, steppedOption, toolOptionParams, withToolOptionDefault, type ToolOptionsSpec } from './toolOptions';
 import { toolOptionSteps, WHEEL_SIZE_BURST_MS, WHEEL_SIZE_STEP_PX } from './toolOptionSteps';
 
 const OPTIONS: ToolOptionsSpec = {
@@ -61,6 +61,12 @@ describe('steppedOption', () => {
     expect(steppedOption(free, 4, step, 1)).toBe(5);
   });
 
+  it('keeps a step on a value past 12 significant digits, rather than rounding it to 12', () => {
+    const big: PrefNumber = { kind: 'number', name: 'Big', description: '', default: 0 };
+    expect(steppedOption(big, 1000000000009, { option: 'big', plus: 0.2 }, 1)).toBeCloseTo(1000000000009.2, 3);
+    expect(steppedOption(leaf('strength'), 0.6, OPTIONS.strength!, 1)).toBe(0.7);
+  });
+
   it('steps an unbounded infinity back to the largest double', () => {
     const free: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0 };
     expect(steppedOption(free, Infinity, { option: 's', times: 2 }, -1)).toBe(Number.MAX_VALUE);
@@ -74,6 +80,25 @@ describe('steppedOption', () => {
     expect(steppedOption(reach, Infinity, step, 1)).toBe(Infinity);
     expect(steppedOption(reach, Infinity, step, -1)).toBe(100);
     expect(steppedOption(reach, 1, step, -1)).toBe(1);
+  });
+});
+
+describe('withToolOptionDefault', () => {
+  it('holds a starting value to the leaf\'s bounds, as it holds a held value', () => {
+    expect(toolOptionParams('b', withToolOptionDefault(OPTIONS, 'radiusPx', 500), undefined).radiusPx).toBe(100);
+    expect(toolOptionParams('b', withToolOptionDefault(OPTIONS, 'radiusPx', 0), undefined).radiusPx).toBe(2);
+    expect(toolOptionParams('b', withToolOptionDefault(OPTIONS, 'radiusPx', 12), undefined).radiusPx).toBe(12);
+  });
+
+  it('keeps the declared default, and warns, for a starting value the leaf cannot read', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(withToolOptionDefault(OPTIONS, 'radiusPx', 'big')).toBe(OPTIONS);
+      expect(withToolOptionDefault(OPTIONS, 'radiusPx', Number.NaN)).toBe(OPTIONS);
+      expect(warn).toHaveBeenCalledTimes(2);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
@@ -103,11 +128,23 @@ describe('toolOptionParams', () => {
     expect(toolOptionParams('b', OPTIONS, undefined)).toEqual({ radiusPx: 40, strength: 0.6 });
   });
 
-  it('reads a held value that is not a finite number as the default', () => {
+  it('reads a held NaN as the default', () => {
     const values = createToolOptionValues();
     values.set('b', 'radiusPx', Number.NaN);
-    values.set('b', 'strength', Infinity);
     expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 40, strength: 0.6 });
+  });
+
+  it('reads an infinity its leaf has no endless end for as the bound it passes, as a tool sharing the option may hold one', () => {
+    const values = createToolOptionValues();
+    values.set('b', 'radiusPx', -Infinity);
+    values.set('b', 'strength', Infinity);
+    expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 2, strength: 1 });
+    const unbounded: ToolOptionsSpec = {
+      ...OPTIONS,
+      prefs: { ...OPTIONS.prefs, children: { reach: { kind: 'number', name: 'Reach', description: '', default: 10 } } },
+    };
+    values.set('b', 'reach', Infinity);
+    expect(toolOptionParams('b', unbounded, values)).toEqual({ reach: 10 });
   });
 
   it('reads the infinity an endless end stands for as held', () => {

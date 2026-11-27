@@ -56,7 +56,13 @@ export function toolIdsOf<TId extends string>(entries: readonly ToolEntry<TId>[]
   return out;
 }
 
-/** `set` less every id `omit` names. Keeps `set`'s id with a `-without` suffix, its `stack`, and the sets inside
+/** A group id as a heading: `path-edit` reads `Path edit`. What a set without a `label` is headed by. */
+export function groupTitleFor(id: string): string {
+  const words = id.replace(/[-_.]+/g, ' ').trim();
+  return words.length === 0 ? id : words[0]!.toUpperCase() + words.slice(1);
+}
+
+/** `set` less every id `omit` names. Keeps `set`'s id with a `-without` suffix, its `stack`, its heading, and the sets inside
  *  it, each less the same ids and dropped once empty, so a stack nested in `set` is still one. */
 export function withoutTools<TId extends string>(set: ToolSet<TId>, ...omit: readonly ToolEntry<TId>[]): ToolSet<TId> {
   const gone = new Set<string>(toolIdsOf(omit));
@@ -69,10 +75,10 @@ export function withoutTools<TId extends string>(set: ToolSet<TId>, ...omit: rea
     if (members.length === 0) return null;
     return members.every((m, i) => m === inner.members[i]) && members.length === inner.members.length
       ? inner
-      : toolSet(`${inner.id}-without`, members, { stack: inner.stack, label: inner.label });
+      : toolSet(`${inner.id}-without`, members, { stack: inner.stack, label: inner.label ?? groupTitleFor(inner.id) });
   };
   const kept = cut(set);
-  return toolSet(`${set.id}-without`, kept?.members ?? [], { stack: set.stack, label: set.label });
+  return toolSet(`${set.id}-without`, kept?.members ?? [], { stack: set.stack, label: set.label ?? groupTitleFor(set.id) });
 }
 
 /** The ids of each set `entries` hold, at any depth, that is marked `stack`, sets inside it opened: the

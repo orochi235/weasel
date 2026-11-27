@@ -23,6 +23,12 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-11-27 (my call, scour of routing interactions): `swallowNextClick` holds its guard until a click, the next
   press or key in the target's window, or 500 ms, rather than to the end of the release's task, so a touch tap's later
   click is still swallowed. A script's `click()` within 500 ms of a drag, with no press or key between, is swallowed too.
+- 2026-11-27 (my call, scour fix 10): a tool option held at an infinity its leaf has no endless end for reads as the
+  leaf's bound on that side (`max` for `Infinity`), as a finite value past it does, and as its default only when the
+  leaf has no bound there. A held `NaN` still reads as the default.
+- 2026-11-27 (my call, scour fix 10): `withToolOptionDefault` repairs a caller's starting value as a held value is
+  repaired, and warns and keeps the declared default for one the leaf cannot read (a string for a number, `NaN`)
+  rather than throwing.
 - 2026-11-25 (my call, audit round 89): `trigger`, `preview`, `begin`, menu rows and the last operation hand an action
   only the deps its `requires` names, as its own key binding does, rather than giving an action without `requires`
   the old fixed bag (selection, scene, history, view, activeTool, booleansAdapter) on those paths alone.

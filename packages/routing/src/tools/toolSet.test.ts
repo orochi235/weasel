@@ -17,6 +17,13 @@ describe('tool sets', () => {
     expect(toolIdsOf([all])).toContain('pen');
   });
 
+  it('keeps the heading an unlabeled set had through withoutTools, at any depth', () => {
+    const cut = withoutTools(toolSet('path-edit', ['knife', toolSet('pen-tools', ['pen', 'pencil'])]), 'pencil');
+    expect(cut.label).toBe('Path edit');
+    expect((cut.members[1] as typeof cut).label).toBe('Pen tools');
+    expect(withoutTools(toolSet('x', ['a', 'b'], { label: 'Mine' }), 'a').label).toBe('Mine');
+  });
+
   it('answers membership through nested sets', () => {
     expect(toolSetHas(all, 'pencil')).toBe(true);
     expect(toolSetHas(all, 'hand')).toBe(false);

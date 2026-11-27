@@ -83,12 +83,18 @@ export function shareToolOptions(options: ToolOptionsSpec, share: ToolOptionShar
   return { ...options, share: { ...options.share, ...share } };
 }
 
-/** `options` with `option`'s default made `value`: a tool hook's way to take a starting value from its caller.
- *  `undefined`, or an option it does not declare, leaves `options` as they are. */
+/** `options` with `option`'s default made `value`, repaired as a held value is (a number held to the leaf's bounds):
+ *  a tool hook's way to take a starting value from its caller. `undefined`, or an option it does not declare, leaves
+ *  `options` as they are; so does a value the leaf cannot read, with a warning. */
 export function withToolOptionDefault(options: ToolOptionsSpec, option: string, value: unknown): ToolOptionsSpec {
   const leaf = value === undefined ? undefined : toolOptionLeaf(options, option);
   if (!leaf) return options;
-  return { ...options, prefs: { ...options.prefs, children: { ...options.prefs.children, [option]: { ...leaf, default: value } as PrefLeaf } } };
+  const repaired = readHeld(leaf, value);
+  if (repaired === undefined) {
+    console.warn(`weasel: tool option "${option}" cannot start at ${String(value)}; it keeps its default`);
+    return options;
+  }
+  return { ...options, prefs: { ...options.prefs, children: { ...options.prefs.children, [option]: { ...leaf, default: repaired } as PrefLeaf } } };
 }
 
 /** The actions `options` are params of. */
@@ -136,8 +142,14 @@ export function toolOptionNumberLeaf(options: ToolOptionsSpec, option: string): 
 /** What `held` reads as for `leaf`, or `undefined` for nothing it can read. */
 function readHeld(leaf: PrefLeaf, held: unknown): unknown {
   if (prefValueAbsent(leaf, held)) return undefined;
-  if (leaf.kind === 'number' && !(typeof held === 'number' && (Number.isFinite(held) || endlessAllows((leaf as PrefNumber).endless, held)))) {
-    return undefined;
+  if (leaf.kind === 'number') {
+    if (typeof held !== 'number' || Number.isNaN(held)) return undefined;
+    // An infinity this leaf has no endless end for, as a tool sharing the option may hold, reads as the bound it passes.
+    if (!Number.isFinite(held) && !endlessAllows((leaf as PrefNumber).endless, held)) {
+      const bound = held > 0 ? (leaf as PrefNumber).max : (leaf as PrefNumber).min;
+      if (bound === undefined) return undefined;
+      held = bound;
+    }
   }
   // Repaired against a default nothing else can be, so a value clamped onto the real default still reads.
   const repaired = repairPrefValue({ ...leaf, default: REJECTED } as PrefLeaf, held);
@@ -222,7 +234,9 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   // Past the double range a finite option has nowhere further to go than the largest double.
   const next = Number.isFinite(stepped) ? stepped : dir * Number.MAX_VALUE;
   const clamped = prefClampNumber(leaf, next);
-  // Sheds a sum's float noise (`0.6 + 0.1`), at any magnitude, unless shedding it would undo the step.
+  // Sheds a sum's float noise (`0.6 + 0.1`), at any magnitude, unless shedding it would undo the step or move it by
+  // more than noise: past 12 digits, rounding to them can be a larger move than the step itself.
   const tidy = Number(clamped.toPrecision(12));
-  return clamped !== value && (tidy - value) * dir > 0 && prefClampNumber(leaf, tidy) === tidy ? tidy : clamped;
+  const noise = Math.abs(tidy - clamped) <= Math.abs(clamped - value) * 1e-6;
+  return clamped !== value && noise && (tidy - value) * dir > 0 && prefClampNumber(leaf, tidy) === tidy ? tidy : clamped;
 }
