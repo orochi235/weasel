@@ -16,6 +16,15 @@ export const DEFAULT_MAX_ZOOM = 8;
 
 export { normalizeZoom, ZOOM_FLOOR };
 
+/**
+ * `zoom` held to `[min, max]` and then to the zoom invariant. A zoom past the
+ * double range, as an unbounded `max` lets through, is held at the largest
+ * double rather than read as no zoom and dropped to the floor.
+ */
+export function clampZoom(zoom: number, min: number, max: number): number {
+  return normalizeZoom(Math.min(max, Number.MAX_VALUE, Math.max(min, zoom)));
+}
+
 let warned = false;
 
 /** @internal Once per session, in dev builds only. */

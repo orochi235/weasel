@@ -1,6 +1,6 @@
-import { normalizeZoom, viewScreenToWorld } from '@weasel-js/geom';
+import { viewScreenToWorld } from '@weasel-js/geom';
 import { normalizeView, type View, type ZoomFactor, type ZoomBound } from './view';
-import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
+import { clampZoom, DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
 /** Optional clamp bounds for `zoomAt`. Defaults: {@link DEFAULT_MIN_ZOOM} /
  *  {@link DEFAULT_MAX_ZOOM} (per axis). */
@@ -14,7 +14,7 @@ export interface ZoomClampOptions {
  *  value would flip the axis, and so would reading the sign of a product a
  *  factor of 0 made `-0`. */
 function clampScale(scale: number, factor: number, min: number, max: number): number {
-  const magnitude = normalizeZoom(Math.min(max, Math.max(min, Math.abs(scale * factor))));
+  const magnitude = clampZoom(Math.abs(scale * factor), min, max);
   return scale < 0 ? -magnitude : magnitude;
 }
 

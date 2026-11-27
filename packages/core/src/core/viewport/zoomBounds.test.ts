@@ -5,6 +5,7 @@ import { screenToWorld } from './viewTransform';
 import { zoomAt } from './zoomAt';
 import { wheelZoom } from './wheelHandler';
 import { fitViewToBounds } from './fitViewToBounds';
+import { fitZoom } from './fitSize';
 
 const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
 
@@ -84,6 +85,25 @@ describe('zoom producers stay inside the invariant', () => {
   it('fitViewToBounds with an unbounded maxScale over bounds too thin to measure', () => {
     const v = fitViewToBounds({ x: 0, y: 0, width: Number.MIN_VALUE, height: Number.MIN_VALUE }, { width: 100, height: 100 }, HOME, { maxScale: Infinity })!;
     expect(finitePositive(v.scale.x)).toBe(true);
+    expect(Number.isFinite(v.x)).toBe(true);
+  });
+});
+
+describe('a zoom past the double range under an unbounded clamp', () => {
+  const free = { min: 0, max: Infinity };
+
+  it('zoomAt holds a flipped axis at the largest double, not the floor', () => {
+    const next = zoomAt({ x: 0, y: 0, scale: { x: 1e300, y: -1e300 } }, { x: 0, y: 0 }, 1e10, free);
+    expect(next.scale).toEqual({ x: Number.MAX_VALUE, y: -Number.MAX_VALUE });
+  });
+
+  it('fitZoom fits content too thin for any finite zoom at the largest double', () => {
+    expect(fitZoom(100, 100, Number.MIN_VALUE, Number.MIN_VALUE, free)).toBe(Number.MAX_VALUE);
+  });
+
+  it('fitViewToBounds does the same', () => {
+    const v = fitViewToBounds({ x: 0, y: 0, width: Number.MIN_VALUE, height: Number.MIN_VALUE }, { width: 100, height: 100 }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { minScale: 0, maxScale: Infinity })!;
+    expect(v.scale).toEqual({ x: Number.MAX_VALUE, y: Number.MAX_VALUE });
     expect(Number.isFinite(v.x)).toBe(true);
   });
 });
