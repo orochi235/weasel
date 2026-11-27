@@ -188,6 +188,8 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - 2026-11-11 (my call, kernel3d second property pass): `orbitBy`, `dollyBy`, `panBy`, and `dollyToward` return the
   camera as it was for an input that is `NaN` or would carry its target, angles, or distance past the double range.
   An infinite or zero dolly factor still reaches the distance limits, as before.
+- 2026-11-27 (my call, canvas scour fix 12): a tool whose static cursor spec `resolveCursor` rejects is logged once,
+  as a `cursor()` that throws is, and shows no cursor of its own; the canvas renders on rather than throwing.
 
 ## Snapping
 
