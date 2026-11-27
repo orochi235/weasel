@@ -115,6 +115,10 @@
   padding-inline-end: calc(var(--wzl-space-3) + var(--wzl-timeline-value-axis-w, 32px));
 }
 
+.lane[data-graph='true'] .laneTrack {
+  overflow-clip-margin: max(calc(var(--wzl-handle-size) * 0.75 + 3px), var(--wzl-timeline-value-axis-w, 32px));
+}
+
 .nestedBar {
   position: absolute;
   top: 4px;
