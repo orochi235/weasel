@@ -10,7 +10,7 @@ This section rides on the batch branch; delete it in the commit that merges the 
 
 **Where:** branch `batch/2026-11-27-scour`, worktree `.worktrees/batch-2026-11-27-scour`. The session that
 merges works from the main checkout and reaches this tree by path; it never runs `EnterWorktree`. It's registered as
-`inflight` kind `batch`, owned by the ended session weasel-7a: take it over first with `inflight add batch/2026-11-27-scour --kind batch --repo ~/src/weasel`, then keep a Monitor on `inflight watch --owner <your session name>`.
+`inflight` kind `batch`, owned by weasel-fe: take it over first with `inflight add batch/2026-11-27-scour --kind batch --repo ~/src/weasel`, then keep a Monitor on `inflight watch --owner <your session name>`.
 
 **What's in it:** `main` plus every finished scour fixer branch except nodeShapes (`scour11-*`) and
 `forge.vite.part2` (`scour9-*`), which Mike held back because those fix areas aren't done. That means Timeline runs
@@ -39,33 +39,38 @@ lists them.
 
 ### State and next step
 
-The last fleet run (`--since main` on `25869ce981`) failed 10 of 47,177. Commits since then fix 8 of them:
-typecheck, `typecheck:packages` and lint (an unused `normalizeZoom` import), the kitActionParams allowlist entry,
-and the four Timeline tests. **Still open: two labkit failures, both seen only inside the suite-sized run.**
+**The two labkit failures are understood and fixed** (`9d559de079`, `2c9e1f57d3`). Both raced real time against
+`waitFor`'s 1 s deadline: useJob's runs paused on 2 ms timers, and the SingletonExperiment test waited out the
+record cache's 300 ms write debounce. The repro, labkit's whole project 3 times each on `main` and on this batch at
+once on teitou (load 22–34), passed every time on both commits. The two tests took ~55 ms and ~315 ms, so only
+full-suite load breaks them and the batch didn't cause them. useJob's tests now hold runs on gates the test opens;
+four debounce waits (SingletonExperiment, usePersistedState, PersistedFloatingPanel, Lab.persist's discard) flush
+through `state/records.fixture.tsx`'s `catchRecords` instead. Waits that follow an unmount or `pagehide` were left
+alone, since they ride the close-time flush.
 
-- `packages/labkit/src/job/useJob.test.tsx` › "discards results from a run its key superseded" (`'running'`, expected `'done'`)
-- `packages/labkit/src/state/SingletonExperiment.test.tsx` › "persists config changes to storage" (storage `undefined`)
+Plan steps 1 and 2 are done; the oxc check was clean. Step 3 is running: `test:fleet -- batch/2026-11-27-scour
+--since 25869ce981` on `2c9e1f57d3`, log
+`/private/tmp/claude-501/-Users-mike-src-weasel/5aa89cc6-c55b-42a8-b9b4-bd955561ab8f/scratchpad/fleet-scour-since.log`
+(jobs `6db0cf0c` on studio and `267371fa` on msb-uai; `onto jobs` shows them). Commits after it touch only this file,
+so its result stands for the tip.
 
-Alone, both files pass: once on teitou (16 of 16), and five times on msb-uai with verbose output and one worker
-(job `9dfc4ff8`, every iteration exit 0). No branch in the batch touches labkit. Both tests end in a `waitFor` with
-the default 1 s timeout. weasel-4b's read: "persists config changes" takes about 320 ms alone, which looks like a
-debounced write waited out on real time, and "discards results" depends on the order its runs finish in. Check
-whether each waits on real timers, and move it to fake timers or to waiting on the condition itself.
+**Next:** read that run's result. If any test fails, fix it locally first. If it's green, go to step 4 below. The oxc
+script for any re-check is
+`/private/tmp/claude-501/-Users-mike-src-weasel/7eac4d15-6c0c-47f3-8a50-86007bc3955a/scratchpad/oxcparse.mjs`.
 
-**Mike's plan (relayed by weasel-4b, 2026-11-27).** No suite-sized run goes out until both failures are understood,
-and there should not be two more of them.
-1. Reproduce the failures the way the batch run hits them: labkit's whole project with the batch run's project and
-   pool settings, not just the two files, and `main` run beside it for comparison. Then read both tests and fix the
-   real cause, rather than rerunning until green.
-2. Before any fleet run, run the oxc transform check: `node <scratch>/oxcparse.mjs <list>`, where `<list>` is a file
-   holding `git diff main --name-only --diff-filter=AM | grep -E '\.tsx?$'`. It catches the duplicate declarations
-   that cost two runs. The script is in this session's scratchpad and may be gone; it is about 15 lines over
-   `rolldown/experimental`'s `transformSync`.
-3. `npm --prefix /Users/mike/src/weasel run test:fleet -- <tip> --since 25869ce981`, never `--since main`. Only the
-   tests reached by the fixes since the failed run need running; the run's other tests were seen passing.
+**Mike's plan (relayed by weasel-4b, 2026-11-27)**, as it now stands:
+3. `npm --prefix /Users/mike/src/weasel run test:fleet -- <tip> --since 25869ce981`, never `--since main` (running).
 4. Once green, `npm run test:batch -- <tip>` once. Then fast-forward `main`, push, and delete the merged scour
-   branches, `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree. The
-   commit that merges also deletes this section.
+   branches, `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree. Also
+   remove `.worktrees/repro-main` and `.worktrees/repro-batch`, which were made for the repro (detached, nothing to
+   keep). The commit that merges also deletes this section.
+
+**Held for the next batch:** branch `fleet-test-help` (worktree `.worktrees/fleet-test-help`). `test:fleet` and
+`test:batch` used to pass `--help` on to `onto test`, so asking for help started a real run. Session
+fleet-test-help-de is extending this to every script and bin, and Mike wants one declared args format that both
+parses the args and renders `--help`, as commander did (design sent there: a wrapper over `util.parseArgs` with
+`strict`). It reports ready to the batch's merger. Don't fold it into this batch, because it changes build
+tooling, which forces a full run.
 
 ### Elsewhere
 
