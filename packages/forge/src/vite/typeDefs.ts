@@ -52,8 +52,9 @@ export function addTypeDefs(reading: TypeDefReading, from: ts.Node, text: string
  */
 export function addTypeDef(reading: TypeDefReading, symbol: ts.Symbol, into: TypeDefs, name = symbol.getName()): void {
   const { tsm, checker } = reading;
-  const declaration = symbol.getDeclarations()?.find((d) => definedBy(tsm, d));
-  if (!definedBy(tsm, declaration)) return;
+  const declarations = (symbol.getDeclarations() ?? []).filter((d) => definedBy(tsm, d));
+  const declaration = declarations[0];
+  if (!declaration) return;
   const seen = into.seen.get(name);
   if (seen !== undefined) {
     if (seen !== declaration) {
@@ -63,14 +64,15 @@ export function addTypeDef(reading: TypeDefReading, symbol: ts.Symbol, into: Typ
     return;
   }
   into.seen.set(name, declaration);
-  const file = declaration.getSourceFile();
-  if (reading.skipped(file.fileName) || IN_PACKAGES.test(file.fileName)) return;
+  const files = declarations.map((d) => d.getSourceFile());
+  if (files.some(({ fileName }) => reading.skipped(fileName) || IN_PACKAGES.test(fileName))) return;
   const printer = tsm.createPrinter({ removeComments: true });
-  const def: ApiTypeDef = {
-    text: printer.printNode(tsm.EmitHint.Unspecified, declaration, file).replace(/^(export\s+)?(default\s+)?(declare\s+)?/, ''),
-  };
+  const printed = declarations.map((d) =>
+    printer.printNode(tsm.EmitHint.Unspecified, d, d.getSourceFile()).replace(/^(export\s+)?(default\s+)?(declare\s+)?/, ''),
+  );
+  const def: ApiTypeDef = { text: printed.join('\n') };
   const description = tsm.displayPartsToString(symbol.getDocumentationComment(checker)).replace(/\s+/g, ' ').trim();
   if (description) def.description = description;
   into.defs.set(name, def);
-  into.files.add(file.fileName);
+  for (const { fileName } of files) into.files.add(fileName);
 }
