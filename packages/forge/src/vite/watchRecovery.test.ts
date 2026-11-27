@@ -104,6 +104,15 @@ describe('watchRecovery', () => {
     expect(await get('/part.ts')).toContain('part = 1');
   });
 
+  it('drops a served file deleted with no event from the page once the watcher has been quiet', async () => {
+    const { root, get, warnings } = await start([watchRecovery({ quietMs: QUIET_MS })], { 'part.ts': 'export const part = 0;\n' });
+    expect(await get('/part.ts')).toContain('part = 0');
+    rmSync(join(root, 'part.ts'));
+    await expect.poll(() => warnings, PUSHED).toEqual([expect.stringContaining('[watch] part.ts was deleted with no file event')]);
+    await new Promise((done) => setTimeout(done, QUIET_MS * 4));
+    expect(warnings).toHaveLength(1);
+  });
+
   it('hands an importer that accepts the module a hot update rather than a reload', async () => {
     const { root, get, pushed } = await start([watchRecovery({ quietMs: QUIET_MS })], {
       'main.ts': `import { part } from './part.ts';\nconsole.log(part);\nimport.meta.hot?.accept(() => {});\n`,

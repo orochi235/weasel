@@ -85,24 +85,30 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
     for (const [url, served] of fileOfUrl) if (served === file) fileOfUrl.delete(url);
   };
 
-  const missed = (file: string) => {
+  /** The event the watcher owes for a served file: `change` when it was modified since read, `unlink` when gone. */
+  const missed = (file: string): 'change' | 'unlink' | undefined => {
     const modules = stamps.get(file);
+    if (!modules) return undefined;
     const now = mtimeOf(file);
-    if (!modules || now === undefined) return false;
-    for (const stamp of modules.values()) if (stamp !== now) return true;
-    return false;
+    if (now === undefined) return 'unlink';
+    for (const stamp of modules.values()) if (stamp !== now) return 'change';
+    return undefined;
   };
 
-  const recover = (file: string, outcome: string) => {
+  const recover = (file: string, event: 'change' | 'unlink', outcome: string) => {
     if (!server) return;
-    restamp(file);
-    for (const environment of Object.values(server.environments)) environment.moduleGraph.onFileChange(file);
-    server.config.logger.warn(`[watch] ${relative(server.config.root, file)} changed with no file event; ${outcome}`, {
-      timestamp: true,
-    });
+    const name = relative(server.config.root, file);
+    if (event === 'unlink') {
+      forget(file);
+      server.config.logger.warn(`[watch] ${name} was deleted with no file event; dropping it from the page`, { timestamp: true });
+    } else {
+      restamp(file);
+      for (const environment of Object.values(server.environments)) environment.moduleGraph.onFileChange(file);
+      server.config.logger.warn(`[watch] ${name} changed with no file event; ${outcome}`, { timestamp: true });
+    }
     replaying = true;
     try {
-      server.watcher.emit('change', file);
+      server.watcher.emit(event, file);
     } finally {
       replaying = false;
     }
@@ -110,7 +116,10 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
 
   const sweep = () => {
     if (Date.now() - lastEvent < quietMs) return;
-    for (const file of stamps.keys()) if (missed(file)) recover(file, 'pushing it to the page');
+    for (const file of [...stamps.keys()]) {
+      const event = missed(file);
+      if (event) recover(file, event, 'pushing it to the page');
+    }
   };
 
   const self: Plugin = {
@@ -143,7 +152,8 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
         } catch {
           // A malformed URL is vite's to answer.
         }
-        if (file && missed(file)) recover(file, 'serving the new text');
+        const event = file && missed(file);
+        if (event) recover(file, event, 'serving the new text');
         next();
       });
       if (quietMs <= LONGEST_TIMER_MS) {
