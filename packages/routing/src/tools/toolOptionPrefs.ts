@@ -122,10 +122,15 @@ function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: 
 export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOptionsPrefsSpec = {}): PrefGroup {
   const children: Record<string, PrefLeaf | PrefGroup> = {};
   const shared: Record<string, PrefLeaf | PrefGroup> = {};
+  const seen = new Map<string, ToolOptionsSpec>();
   for (const tool of tools) {
     const options = tool.options;
     if (!options) continue;
     checkToolOptionOwner(tool.id);
+    const prior = seen.get(tool.id);
+    if (prior === options) continue;
+    if (prior) throw new Error(`toolOptionsPrefs: two tools named "${tool.id}" declare different options`);
+    seen.set(tool.id, options);
     const own: Record<string, PrefLeaf | PrefGroup> = {};
     for (const [key, leaf] of Object.entries(options.prefs.children)) {
       const slot = toolOptionSlot(tool.id, options, key);

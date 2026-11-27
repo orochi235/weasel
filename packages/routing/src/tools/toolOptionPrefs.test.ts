@@ -64,6 +64,12 @@ describe('toolOptionsPrefs', () => {
     expect(Object.keys(shared)).toEqual(['fill']);
     expect(schema.name).toBe('T');
   });
+
+  it('places a tool listed twice once, and refuses two tools of one id with different options', () => {
+    const schema = toolOptionsPrefs([RECT, STAR, { ...RECT }]);
+    expect(Object.keys(schema.children)).toEqual(['rect', 'star', SHARED_TOOL_OPTIONS]);
+    expect(() => toolOptionsPrefs([RECT, { id: 'rect', options: STAR.options }])).toThrow(/two tools named "rect"/);
+  });
 });
 
 describe('toolOptionsPrefs: a shared number', () => {
