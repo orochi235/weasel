@@ -1,7 +1,7 @@
 import type { View } from './view';
 import { clampZoom, DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
-import { type FramedRect as Bounds, normalizeZoom, poseFrameOf } from '@weasel-js/geom';
+import { type FramedRect as Bounds, poseFrameOf } from '@weasel-js/geom';
 import { createWarnOnce } from '@weasel-js/registry';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 export type { Bounds };
