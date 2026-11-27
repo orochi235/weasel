@@ -103,11 +103,23 @@ describe('toolOptionParams', () => {
     expect(toolOptionParams('b', OPTIONS, undefined)).toEqual({ radiusPx: 40, strength: 0.6 });
   });
 
-  it('reads a held value that is not a finite number as the default', () => {
+  it('reads a held NaN as the default', () => {
     const values = createToolOptionValues();
     values.set('b', 'radiusPx', Number.NaN);
-    values.set('b', 'strength', Infinity);
     expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 40, strength: 0.6 });
+  });
+
+  it('reads an infinity its leaf has no endless end for as the bound it passes, as a tool sharing the option may hold one', () => {
+    const values = createToolOptionValues();
+    values.set('b', 'radiusPx', -Infinity);
+    values.set('b', 'strength', Infinity);
+    expect(toolOptionParams('b', OPTIONS, values)).toEqual({ radiusPx: 2, strength: 1 });
+    const unbounded: ToolOptionsSpec = {
+      ...OPTIONS,
+      prefs: { ...OPTIONS.prefs, children: { reach: { kind: 'number', name: 'Reach', description: '', default: 10 } } },
+    };
+    values.set('b', 'reach', Infinity);
+    expect(toolOptionParams('b', unbounded, values)).toEqual({ reach: 10 });
   });
 
   it('reads the infinity an endless end stands for as held', () => {

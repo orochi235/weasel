@@ -20,6 +20,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-27 (my call, scour fix 10): a tool option held at an infinity its leaf has no endless end for reads as the
+  leaf's bound on that side (`max` for `Infinity`), as a finite value past it does, and as its default only when the
+  leaf has no bound there. A held `NaN` still reads as the default.
 - 2026-11-25 (my call, audit round 89): `trigger`, `preview`, `begin`, menu rows and the last operation hand an action
   only the deps its `requires` names, as its own key binding does, rather than giving an action without `requires`
   the old fixed bag (selection, scene, history, view, activeTool, booleansAdapter) on those paths alone.

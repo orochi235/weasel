@@ -136,8 +136,14 @@ export function toolOptionNumberLeaf(options: ToolOptionsSpec, option: string): 
 /** What `held` reads as for `leaf`, or `undefined` for nothing it can read. */
 function readHeld(leaf: PrefLeaf, held: unknown): unknown {
   if (prefValueAbsent(leaf, held)) return undefined;
-  if (leaf.kind === 'number' && !(typeof held === 'number' && (Number.isFinite(held) || endlessAllows((leaf as PrefNumber).endless, held)))) {
-    return undefined;
+  if (leaf.kind === 'number') {
+    if (typeof held !== 'number' || Number.isNaN(held)) return undefined;
+    // An infinity this leaf has no endless end for, as a tool sharing the option may hold, reads as the bound it passes.
+    if (!Number.isFinite(held) && !endlessAllows((leaf as PrefNumber).endless, held)) {
+      const bound = held > 0 ? (leaf as PrefNumber).max : (leaf as PrefNumber).min;
+      if (bound === undefined) return undefined;
+      held = bound;
+    }
   }
   // Repaired against a default nothing else can be, so a value clamped onto the real default still reads.
   const repaired = repairPrefValue({ ...leaf, default: REJECTED } as PrefLeaf, held);
