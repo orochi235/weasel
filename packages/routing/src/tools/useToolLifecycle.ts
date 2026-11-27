@@ -26,6 +26,8 @@ export function useToolLifecycle(opts: ToolLifecycleOptions): void {
   // Each live tool as last seen, so one that leaves the registry still hears it is no longer live.
   const liveRef = useRef<ReadonlyMap<string, Tool<unknown>>>(new Map());
   const prevActiveRef = useRef(active);
+  // The active tool whose switch-away already ran when it left the registry, until it returns or the slot moves.
+  const droppedRef = useRef<string | null>(null);
   const onSwitchRef = useLatest(opts.onSwitch);
 
   useEffect(() => {
@@ -39,9 +41,12 @@ export function useToolLifecycle(opts: ToolLifecycleOptions): void {
     for (const [id, tool] of prev) if (!sameHooks(tool, next.get(id))) fire(id, tool, 'onDeactivate');
     // An empty slot being seeded has no outgoing tool, so nothing to end. A
     // tool dropped from the registry while it held the slot is switched away from too.
-    const switched = prevActiveRef.current !== null && prevActiveRef.current !== active;
+    const prevActive = prevActiveRef.current;
+    const switched = prevActive !== null && prevActive !== active && prevActive !== droppedRef.current;
     const dropped = active !== null && prev.has(active) && !next.has(active);
     if (switched || dropped) onSwitchRef.current?.();
+    const stillGone = active !== null && active === droppedRef.current && !next.has(active);
+    droppedRef.current = dropped || stillGone ? active : null;
     prevActiveRef.current = active;
     for (const [id, tool] of next) if (!sameHooks(tool, prev.get(id))) fire(id, tool, 'onActivate');
   });
