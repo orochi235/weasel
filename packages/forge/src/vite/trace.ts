@@ -59,12 +59,14 @@ export function createTracer(read: (file: string) => string): (resolve: ResolveI
         return next ? declaring(next, exp.imported, depth + 1, seen) : null;
       }
       if (name === 'default') return null;
+      // A name two `export *` modules declare differently is ambiguous, and the module exports neither.
+      const found = new Set<string>();
       for (const spec of mod.stars) {
         const next = await trace.target(spec, at);
-        const found = next ? await declaring(next, name, depth + 1, seen) : null;
-        if (found) return found;
+        const binding = next ? await declaring(next, name, depth + 1, seen) : null;
+        if (binding) found.add(binding);
       }
-      return null;
+      return found.size === 1 ? [...found][0]! : null;
     };
     return trace;
   };
