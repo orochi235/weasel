@@ -83,9 +83,9 @@ export function createToolOffhandAction(bindings: BoundGesture[]): Action {
         const activeTool = ctx.deps.activeTool;
         const toolId = resolveParams(opts?.params)?.toolId as string | undefined;
         if (!activeTool || !toolId) return {};
-        activeTool.pushHotkey(toolId);
+        const release = activeTool.pushHotkey(toolId);
         return {
-          onEnd: () => { activeTool.popHotkey(toolId); },
+          onEnd: () => release(),
         };
       },
     },

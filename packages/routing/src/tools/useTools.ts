@@ -222,33 +222,31 @@ export function useTools<TOverlay = KernelOverlay>(
 
   // The holds this api made, newest last. A held key (Space for the hand)
   // shares the stack, so releasing ours by its top would release that one.
-  const holdsRef = useRef<string[]>([]);
+  const holdsRef = useRef<{ id: string; release: () => void }[]>([]);
   const engageHotkey = useCallback(
     (id: string) => {
       if (!Object.hasOwn(slottedRef.current.registry, id)) {
         throw new Error(`engageHotkey: "${id}" not in registry`);
       }
       dlog('tools', 'hotkey engaged:', id);
-      holdsRef.current.push(id);
-      ctx.pushHotkey(id);
+      holdsRef.current.push({ id, release: ctx.pushHotkey(id) });
     },
     [ctx, slottedRef],
   );
 
   // Holds outlive no canvas: the stack can sit in a provider above this one.
-  const ctxRef = useLatest(ctx);
   useEffect(() => () => {
     const holds = holdsRef.current;
     holdsRef.current = [];
-    for (let i = holds.length - 1; i >= 0; i--) ctxRef.current.popHotkey(holds[i]);
-  }, [ctxRef]);
+    for (let i = holds.length - 1; i >= 0; i--) holds[i]!.release();
+  }, []);
 
   const disengageHotkey = useCallback(() => {
     const own = holdsRef.current.pop();
     if (own === undefined) return;
-    dlog('tools', 'hotkey disengaged:', own);
-    ctx.popHotkey(own);
-  }, [ctx]);
+    dlog('tools', 'hotkey disengaged:', own.id);
+    own.release();
+  }, []);
 
   // May be called while rendering, so it reads this render's tools, not a ref.
   const has = useCallback(

@@ -33,8 +33,9 @@ describe('createToolOffhandAction', () => {
     expect(arr[1].opts.params.toolId).toBe('eyedropper');
   });
 
-  it('start reads params.toolId, pushes it; onEnd pops', () => {
-    const pushSpy = vi.fn();
+  it('start reads params.toolId, pushes it; onEnd releases that hold', () => {
+    const releaseSpy = vi.fn();
+    const pushSpy = vi.fn(() => releaseSpy);
     const popSpy = vi.fn();
     const activeTool = {
       active: 'select',
@@ -55,9 +56,10 @@ describe('createToolOffhandAction', () => {
       { params: { toolId: 'hand' } },
     );
     expect(pushSpy).toHaveBeenCalledWith('hand');
-    expect(popSpy).not.toHaveBeenCalled();
+    expect(releaseSpy).not.toHaveBeenCalled();
     handle.onEnd?.({} as never, 'commit');
-    expect(popSpy).toHaveBeenCalledTimes(1);
+    expect(releaseSpy).toHaveBeenCalledTimes(1);
+    expect(popSpy).not.toHaveBeenCalled();
   });
 
   it('start resolves thunk-form params at call time', () => {

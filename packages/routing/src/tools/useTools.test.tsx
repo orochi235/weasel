@@ -100,6 +100,22 @@ describe('useTools hotkey holds', () => {
     expect(ctx.hotkeyStack).toEqual(['b']);
   });
 
+  it('releases its own hold of a tool, not a later hold of the same tool on its key', () => {
+    let tools!: ToolsApi<unknown>;
+    let ctx!: ActiveToolContextValue;
+    function Host(): null {
+      tools = useTools({ registry: { a, b } });
+      ctx = useActiveToolContext();
+      return null;
+    }
+    render(<ActiveToolContextProvider><Host /></ActiveToolContextProvider>);
+    act(() => { tools.engageHotkey('a'); });
+    act(() => { ctx.pushHotkey('b'); });
+    act(() => { ctx.pushHotkey('a'); });
+    act(() => { tools.disengageHotkey(); });
+    expect(ctx.hotkeyStack).toEqual(['b', 'a']);
+  });
+
   it('releases nothing when it holds nothing, leaving a tool held on its key', () => {
     let tools!: ToolsApi<unknown>;
     let ctx!: ActiveToolContextValue;
