@@ -59,8 +59,8 @@ export function createTimeline(
     lastVirtual = virtualNow;
     const rate = scale ?? (entry.isPaused() ? 0 : entry.timeScale());
     crossings.frame(rate);
-    // A held playhead at the end of a lap, the last one's included, has not reached it until it plays.
-    const parked = rate === 0 && pos.time() >= pos.duration();
+    // A held playhead a seek left on the seam is the end of its lap until it plays.
+    const parked = rate === 0 && pos.onSeam();
     if (!parked) pos.advance(virtualNow, crossings.wrapped);
 
     const finished = pos.atEnd(false) && !parked;

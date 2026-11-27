@@ -72,6 +72,8 @@ export interface Playhead {
   lapsLeft(): number;
   loop(): boolean | number;
   setLoop(loop: boolean | number): void;
+  /** Whether it stands on a seam with laps left: where a seek to the end of a lap leaves it. */
+  onSeam(): boolean;
   /** Whether it stands at the end it plays toward: going forward the end of its last lap, as one
    *  on a seam goes on into the next, and played backward the start of its first lap, as one
    *  exactly on a later lap's start goes on into the lap behind. */
@@ -92,7 +94,6 @@ export function createPlayhead(duration: number, loop: boolean | number): Playhe
   let lap = 0;
   let loopsLeft = lapsOf(loop);
   const take = (laps: number): void => { loopsLeft -= laps; lap += laps; };
-  // On a seam with laps left, where a seek to the end of a lap leaves it.
   const onSeam = (): boolean => duration > 0 && t === duration && loopsLeft > 0;
 
   return {
@@ -106,6 +107,7 @@ export function createPlayhead(duration: number, loop: boolean | number): Playhe
     lapsLeft: () => loopsLeft,
     loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft + 1),
     setLoop(next) { loopsLeft = lapsOf(next); },
+    onSeam,
     atEnd: (backward) => (backward ? t <= 0 && lap === 0 : t >= duration && !onSeam()),
     advance(virtualNow, wrapped) {
       t = virtualNow + offset;
