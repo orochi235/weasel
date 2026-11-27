@@ -402,6 +402,12 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 
 ## Selection, actions & UI panels
 
+- **(P3) [agent] A `CurveEditor` key dragged back to the pixel it was pressed on commits a value it never had**
+  (2026-11-27). In a `Timeline`'s graph mode, a key at value 0 pressed, dragged away and returned to its press point
+  commits value `-1.5e-16`: the drag reads its value back from the pointer's y through the plot's scale, so the
+  round trip misses, and `onLayerCommit`'s `deepEqual` sees an edit. Found writing `Lane.test.tsx`'s offset-row snap
+  test. Closes when a key returned to its press point commits nothing, with a test in `createKeyframeLayer.test.tsx`.
+
 - **(P1) [agent] A view toggle forgets its setting unless someone hand-writes a pref for it** (2026-11-26). A
   `Checkbox` or a segmented switch that changes how a view looks (collapse these rows, order by that) starts life
   as `useState` and resets on every reload. Making it stick means declaring a `pref.boolean` or `pref.enum` in the
