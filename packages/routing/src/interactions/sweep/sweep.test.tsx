@@ -125,6 +125,20 @@ describe('createSweepAction', () => {
     expect(entered).toEqual(['a', 'a']);
   });
 
+  it('enters the item an element under the pointer is re-keyed to', () => {
+    const entered: string[] = [];
+    const { at } = setup({ sweep: { begin: () => ({ enter: (i) => {
+      entered.push(i.key);
+      if (i.key === 'a') (i.element as HTMLElement).dataset.key = 'z';
+    } }) } });
+    act(() => {
+      pointer(at(1), 'pointerdown', 1);
+      pointer(at(1), 'pointermove', 9);
+      pointer(at(1), 'pointerup', 9);
+    });
+    expect(entered).toEqual(['a', 'z']);
+  });
+
   it('enters the pressed item, then every item the drag crosses, in order', () => {
     const entered: string[] = [];
     const end = vi.fn();

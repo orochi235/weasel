@@ -91,6 +91,14 @@ function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number,
   return null;
 }
 
+/** Whether `b` is another item than `a`. A key that is an object may be built afresh on each call, so for one the
+ *  element decides; otherwise the key does, so an element recycled for another item counts as a change. */
+function isOther<K>(a: SweepItem<K> | null, b: SweepItem<K>): boolean {
+  if (!a) return true;
+  if (Object.is(a.key, b.key)) return false;
+  return (typeof b.key !== 'object' && typeof b.key !== 'function') || b.key === null || a.element !== b.element;
+}
+
 /**
  * An action that sweeps the items of `opts.surface()`, bound by default to
  * {@link SWEEP_SPEC} on the ambient tier: the lowest rank a drag binding can hold. Its
@@ -127,7 +135,7 @@ export function createSweepAction<K>(opts: SweepOptions<K>): Action {
           const item = itemAt(surface, opts.keyOf, x, y);
           // A gap ends the item, so the one it left is entered again when the drag comes back.
           if (!item) current = null;
-          else if (!current || (item.element !== current.element && !Object.is(item.key, current.key))) {
+          else if (isOther(current, item)) {
             current = item;
             run.enter(item);
           }
