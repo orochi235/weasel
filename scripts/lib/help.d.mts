@@ -10,6 +10,7 @@ export interface CliSpec {
   /** What the usage line calls the command; `node <path>` when left out. */
   name?: string;
   summary: string;
+  /** The positionals as the usage line shows them; also how many it takes (see arityOf). */
   positionals?: string;
   options?: Record<string, CliOption>;
   passthrough?: boolean;
@@ -22,6 +23,7 @@ export interface CliParse {
   positionals: string[];
   rest: string[];
 }
+export function arityOf(positionals?: string): { min: number; max: number };
 export function usageLineOf(name: string, spec: CliSpec): string;
 export function helpOf(name: string, spec: CliSpec): string;
 export function parseCli(name: string, spec: CliSpec, argv: string[]): { help: string } | { error: string } | CliParse;

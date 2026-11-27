@@ -21,10 +21,6 @@ const { positionals, rest } = cli(import.meta.url, {
   passthrough: true,
   notes: 'Any other flag goes to test:fleet (`node scripts/fleet-test.mjs --help`).',
 });
-if (positionals.length > 1) {
-  console.error(`fleet-batch: one commit at most, not ${positionals.join(' ')}`);
-  process.exit(2);
-}
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const say = (line) => console.log(`test-batch: ${line}`);

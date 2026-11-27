@@ -104,6 +104,21 @@ function splitPassthrough(argv, options) {
 }
 
 /**
+ * How many positionals a usage string like `<from> [<to>]` or `<file>…` takes: each word is one,
+ * `[…]` makes it optional and a trailing `…` (or `...`) lets it repeat.
+ */
+export function arityOf(positionals = '') {
+  let min = 0;
+  let max = 0;
+  for (const word of positionals.match(/\[[^\]]*\]\S*|\S+/g) ?? []) {
+    const repeats = /(…|\.\.\.)\]?$/.test(word);
+    if (!word.startsWith('[')) min += 1;
+    max = repeats ? Infinity : max + 1;
+  }
+  return { min, max };
+}
+
+/**
  * Parses `argv` under `spec`. The answer is `{ help }` (text to print, exit 0), `{ error }` (exit 2),
  * or the parse: `{ command, values, positionals, rest }`.
  */
@@ -137,9 +152,10 @@ export function parseCli(name, spec, argv) {
     const why = named ? `unknown command '${named}'` : 'a command is required';
     return { error: `${why}\n${usageLineOf(name, spec)}\nRun \`${name} --help\` for the commands.` };
   }
-  if (!active.positionals && parsed.positionals.length > 0) {
-    return { error: `unexpected argument '${parsed.positionals[0]}'\n${usageLineOf(commandName, active)}` };
-  }
+  const { min, max } = arityOf(active.positionals);
+  const count = parsed.positionals.length;
+  if (count > max) return { error: `unexpected argument '${parsed.positionals[max]}'\n${usageLineOf(commandName, active)}` };
+  if (count < min) return { error: `missing ${active.positionals}\n${usageLineOf(commandName, active)}` };
   return { command, values, positionals: parsed.positionals, rest };
 }
 

@@ -19,10 +19,6 @@ const { positionals } = cli(import.meta.url, {
   positionals: '[<checkout>]',
   notes: '<checkout> is another tree to read in place of this one, for checking its build.',
 });
-if (positionals.length > 1) {
-  console.error(`check:idle-deps — one checkout at most, not ${positionals.join(' ')}`);
-  process.exit(2);
-}
 
 const BUILT = /\.(?:[cm]?js|d\.[cm]?ts|css)$/;
 const SPECIFIER = /["'](@weasel-js\/[a-z0-9-]+)(?:\/[^"'\s]*)?["']/g;

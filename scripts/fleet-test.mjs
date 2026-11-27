@@ -43,10 +43,6 @@ const { values, positionals, rest } = cli(import.meta.url, {
   passthrough: true,
   notes: 'Any other flag goes to `onto test`, e.g. `--node studio`.',
 });
-if (positionals.length > 1) {
-  console.error(`fleet-test: one commit at most, not ${positionals.join(' ')}`);
-  process.exit(2);
-}
 const { since, full = false, 'no-checks': noChecks = false } = values;
 const ontoArgs = rest;
 const { commit, branch, tree, drop, git } = openCommitTree(ROOT, positionals[0] ?? 'HEAD', 'fleet-');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { helpOf, parseCli, type CliSpec } from './help.mjs';
+import { arityOf, helpOf, parseCli, type CliSpec } from './help.mjs';
 
 const spec: CliSpec = {
   summary: 'Does a thing.',
@@ -43,6 +43,19 @@ describe('parseCli', () => {
   it('rejects positionals when the spec declares none', () => {
     const parsed = parseCli('x', { summary: 's' }, ['stray']);
     expect('error' in parsed && parsed.error).toMatch(/unexpected argument 'stray'/);
+  });
+
+  it('reads how many positionals a usage string takes', () => {
+    expect(arityOf()).toEqual({ min: 0, max: 0 });
+    expect(arityOf('[<ref>]')).toEqual({ min: 0, max: 1 });
+    expect(arityOf('<from> [<to>]')).toEqual({ min: 1, max: 2 });
+    expect(arityOf('<file>…')).toEqual({ min: 1, max: Infinity });
+    expect(arityOf('[<pkg>...]')).toEqual({ min: 0, max: Infinity });
+  });
+
+  it('holds the positionals to that count', () => {
+    expect(parseCli('x', spec, ['a', 'b'])).toEqual({ error: "unexpected argument 'b'\nusage: x [options] [<ref>]" });
+    expect(parseCli('x', { summary: 's', positionals: '<file>' }, [])).toHaveProperty('error');
   });
 
   it('parses what the table declares', () => {

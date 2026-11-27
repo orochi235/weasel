@@ -17,10 +17,6 @@ const { positionals } = cli(import.meta.url, {
   positionals: '[<checkout>]',
   notes: '<checkout> is another tree to read in place of this one, for checking its build.',
 });
-if (positionals.length > 1) {
-  console.error(`check:bundled-deps — one checkout at most, not ${positionals.join(' ')}`);
-  process.exit(2);
-}
 
 const VENDORED = /node_modules\/((?:@[^/]+\/)?[^/]+)\//;
 
