@@ -198,9 +198,13 @@ const LITERALS: ReadonlySet<string> = new Set([
   'TSEnumDeclaration',
   'JSXElement',
   'JSXFragment',
+  // An operator's result is a primitive, never an object a call returned.
+  'UnaryExpression',
+  'BinaryExpression',
+  'UpdateExpression',
 ]);
 
-/** Whether `node` is written out as a value, through casts and top-level `const`s, so no call produced it. */
+/** Whether `node` is written out as a value or made by an operator, through casts and top-level `const`s, so no call returned it. */
 export function isLiteralValue(node: t.Node | undefined, bindings: Bindings, depth = 0): boolean {
   if (!node || depth > 16) return false;
   switch (node.type) {

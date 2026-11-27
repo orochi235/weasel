@@ -66,4 +66,14 @@ export const Called = call(() => story({ render: () => null }));
     expect(names(code)).toEqual(['Param', 'Local', 'Called']);
   });
 
+  it('leaves out values an operator makes, a global, and a constructed global', () => {
+    const code = `
+export const MIN = -1;
+export const label = 'a' + 'b';
+export const none = undefined;
+export const map = new Map();
+export const Basic = story({ render: () => null });
+`;
+    expect(names(code)).toEqual(['Basic']);
+  });
 });

@@ -145,11 +145,11 @@ export function mayCallStory(node: t.Node | undefined, scope: Scope, depth = 0):
 
 /**
  * Whether a native file's export may be what forge's `story` returned, which is all the loader takes. A call is one
- * when it calls `story` or a function that returns such a call; a value written out is not, and a copy (a spread,
+ * when it calls `story` or a function that returns such a call. A value written out, made by an operator, read from a
+ * global, or built by a global's constructor (`undefined`, `-1`, `new Map()`) is not. A copy (a spread,
  * `Object.assign`, or an `Object` method like `freeze` that hands back its first argument) or a choice is one when
- * something it copies or chooses from is. What cannot be read stays in: an import
- * nothing resolved, a method of anything but a literal or a global, a function a call made, a chain longer than it
- * follows.
+ * something it copies or chooses from is. What cannot be read stays in: an import nothing resolved, a method of
+ * anything but a literal or a global, a function a call made, a chain longer than it follows.
  */
 export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): boolean {
   if (!node || depth > 16) return true;
@@ -162,9 +162,11 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
       return mayBeStory(node.expression, scope, depth + 1);
     case 'Identifier':
       if (scope.locals?.has(node.name)) return true;
-      return scope.bindings.has(node.name)
-        ? mayBeStory(scope.bindings.get(node.name), scope, depth + 1)
-        : (scope.foreign?.value(node.name) ?? true);
+      if (scope.bindings.has(node.name)) return mayBeStory(scope.bindings.get(node.name), scope, depth + 1);
+      return scope.imports.has(node.name) && (scope.foreign?.value(node.name) ?? true);
+    case 'NewExpression':
+      // A constructor can hand back an object of its own, but no global one hands back a story.
+      return !isGlobal(node.callee, scope);
     case 'CallExpression': {
       const { callee } = node;
       const sources = objectCallSources(node, scope);
