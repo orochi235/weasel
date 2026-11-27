@@ -620,6 +620,48 @@ describe('useHandleDrag — callbacks from a later render', () => {
     holder.remove();
   });
 
+  it('measures an SVG handle in an iframe against its owning svg', () => {
+    const onStart = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<SVGElement>({ onMove: () => {}, onStart }));
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    const svg = doc.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const dot = doc.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    svg.appendChild(dot);
+    doc.body.appendChild(svg);
+    mockRect(svg, { left: 100, top: 100 });
+    mockRect(dot, { left: 150, top: 150 });
+    dot.setPointerCapture = vi.fn();
+    dot.releasePointerCapture = vi.fn();
+    result.current.onPointerDown({ ...press(dot as unknown as HTMLDivElement, 110, 110), currentTarget: dot } as unknown as React.PointerEvent<SVGElement>);
+    expect(onStart.mock.calls[0]![0]).toEqual({ x: 10, y: 10 });
+    frame.remove();
+  });
+
+  it('moves the rect by a scroll at the scale a transform shows an iframe scroller at', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const frame = document.createElement('iframe');
+    document.body.appendChild(frame);
+    const doc = frame.contentDocument!;
+    const scroller = doc.createElement('div');
+    doc.body.appendChild(scroller);
+    mockRect(scroller, { left: 0, top: 0, width: 200, height: 200 });
+    Object.defineProperty(scroller, 'offsetWidth', { value: 100 });
+    Object.defineProperty(scroller, 'offsetHeight', { value: 100 });
+    const target = doc.createElement('div') as HTMLDivElement;
+    mockRect(target, { left: 0, top: 0 });
+    target.setPointerCapture = vi.fn();
+    target.releasePointerCapture = vi.fn();
+    scroller.appendChild(target);
+    result.current.onPointerDown(press(target, 20, 20));
+    scroller.scrollTop = 10;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 20, clientY: 20 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 20, y: 40 });
+    frame.remove();
+  });
+
   it('leaves out a scroll between an absolute rect and its containing block, which does not move it', () => {
     const onMove = vi.fn();
     const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));

@@ -108,7 +108,7 @@ function scrollersOf(el: Element): Scroller[] {
 
 /** A scroller that moves what it holds by its own scroll offset. */
 function scrollerOf(el: Element): Scroller {
-  const scale = el instanceof HTMLElement ? clientScaleOf(el) : { x: 1, y: 1 };
+  const scale = clientScaleOf(el);
   return { moved: () => ({ x: el.scrollLeft * scale.x, y: el.scrollTop * scale.y }) };
 }
 
@@ -144,10 +144,7 @@ function scrollOf(scrollers: readonly Scroller[]): { x: number; y: number } {
 }
 
 function defaultRectEl(target: HTMLElement | SVGElement): Element {
-  if (target instanceof SVGElement && target.ownerSVGElement) {
-    return target.ownerSVGElement;
-  }
-  return target;
+  return ('ownerSVGElement' in target ? target.ownerSVGElement : null) ?? target;
 }
 
 /**

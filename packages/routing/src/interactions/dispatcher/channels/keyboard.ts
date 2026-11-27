@@ -1,5 +1,5 @@
 /** The keyboard channel: window keydown and keyup as `key` and `keyHeld` input. */
-import { codeLetter } from '@weasel-js/gestures';
+import { codeLetter, isElement } from '@weasel-js/gestures';
 import { isOneChar } from '@weasel-js/registry';
 import { focusedControlOwnsKey, isEditableTarget } from '../../keyHelpers';
 import { noteRefusal } from '../../actions/refusal';
@@ -51,7 +51,7 @@ const typedMods = (e: KeyboardEvent) => ({ altKey: e.altKey, ctrlKey: e.ctrlKey 
 const fieldChord = (e: KeyboardEvent): boolean => e.ctrlKey || e.metaKey;
 
 /** True inside an open ARIA menu, which owns every key typed in it. */
-const inMenu = (t: EventTarget | null): boolean => t instanceof Element && t.closest('[role="menu"]') !== null;
+const inMenu = (t: EventTarget | null): boolean => isElement(t) && t.closest('[role="menu"]') !== null;
 
 const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
 const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();

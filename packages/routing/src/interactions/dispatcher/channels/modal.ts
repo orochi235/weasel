@@ -1,3 +1,4 @@
+import { isElement } from '@weasel-js/gestures';
 /** Whether a key or a paste landed in a modal dialog that the canvas sits behind. */
 
 const DIALOG = '[role="dialog"], [role="alertdialog"]';
@@ -25,7 +26,7 @@ function hiddenBehind(el: Element): boolean {
  * A canvas inside the dialog keeps its keys.
  */
 export function inModalOver(target: EventTarget | null, canvas: HTMLElement | null): boolean {
-  if (!(target instanceof Element)) return false;
+  if (!isElement(target)) return false;
   for (let el: Element | null = target; el; el = el.parentElement) {
     const aria = el.matches(DIALOG);
     if (!aria && el.tagName !== 'DIALOG') continue;

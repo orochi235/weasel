@@ -4,6 +4,7 @@
  * on the event stack; dispatch happens when materialization resolves.
  */
 import { itemsFromClipboardData, itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
+import { isNode } from '@weasel-js/gestures';
 import { isEditableTarget } from '../../keyHelpers';
 import { eventTaken, takeEvent, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
@@ -57,7 +58,7 @@ export function ingestInput(core: DispatchCore): {
 
   const onDragLeave = (e: DragEvent) => {
     // A drag moving onto one of the element's own children has not left it.
-    if (e.relatedTarget instanceof Node && canvas?.contains(e.relatedTarget)) return;
+    if (isNode(e.relatedTarget) && canvas?.contains(e.relatedTarget)) return;
     canvas?.classList.remove(DROPOVER_CLASS);
     preview.end();
   };
