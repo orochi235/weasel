@@ -211,6 +211,29 @@ describe('readTypedoc on the shapes a component and its props are declared in', 
     const thing = readTypedoc(project(handle, fn(500, props)), 0).component('Thing', FILE)!;
     expect(thing.members.get('value')).toEqual({ description: 'The current value.', signatures: [] });
   });
+
+  it('reads the props and instance members of a class component', () => {
+    const thing: TdReflection = {
+      id: 600,
+      name: 'Thing',
+      variant: 'declaration',
+      kind: 128,
+      sources,
+      extendedTypes: [react('Component', to(100, 'ButtonProps'), { type: 'intrinsic', name: 'any' })],
+      children: [
+        {
+          id: 601,
+          name: 'focus',
+          variant: 'declaration',
+          kind: 2048,
+          signatures: [{ id: 602, name: 'focus', variant: 'signature', kind: 4096, comment: said('Moves focus here.'), type: { type: 'intrinsic', name: 'void' } }],
+        },
+      ],
+    };
+    const docs = readTypedoc(project(thing), 0).component('Thing', FILE)!;
+    expect(docs.props.get('label')).toEqual({ description: 'The text.' });
+    expect(docs.members.get('focus')).toEqual({ description: 'Moves focus here.', signatures: ['() => void'] });
+  });
 });
 
 describe('withTypedoc', () => {

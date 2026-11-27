@@ -87,6 +87,8 @@ export interface TdReflection {
   /** A type parameter's default. */
   default?: TdType;
   inheritedFrom?: TdType;
+  /** A class's or interface's `extends`. */
+  extendedTypes?: TdType[];
 }
 
 /** Where an export is: the names of the modules it is in, outermost first, and its own name. */

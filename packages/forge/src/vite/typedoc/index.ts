@@ -49,7 +49,9 @@ export function readTypedoc(project: unknown, mtime: number, href?: TypedocHref)
       if (!found) return null;
       const props = new Map<string, TdReflection>();
       const handle: TdType[] = [];
-      collect(index, propsTypeOf(found), props, handle, new Set());
+      collect(index, propsTypeOf(index, found), props, handle, new Set());
+      // A class component's ref holds its instance.
+      if (found.kind === Kind.Class) handle.push({ type: 'reference', target: found.id, name: found.name });
       const ref = props.get('ref');
       if (ref?.type) handle.push(ref.type);
       props.delete('ref');
@@ -98,9 +100,18 @@ function exportIn(index: TdIndex, name: string, file: string): TdReflection | un
   return own.length === 1 ? own[0] : undefined;
 }
 
-/** A function component's first parameter; a value's type, such as `forwardRef`'s exotic component. */
-const propsTypeOf = (component: TdReflection): TdType | undefined =>
-  component.signatures?.[0]?.parameters?.[0]?.type ?? component.type;
+/**
+ * A function component's first parameter; a class component's `P` in `Component<P>`; a value's type, such as
+ * `forwardRef`'s exotic component.
+ */
+function propsTypeOf(index: TdIndex, component: TdReflection, seen = new Set<number>()): TdType | undefined {
+  if (component.kind !== Kind.Class) return component.signatures?.[0]?.parameters?.[0]?.type ?? component.type;
+  const [base] = component.extendedTypes ?? [];
+  if (!base || seen.has(component.id)) return undefined;
+  seen.add(component.id);
+  const declared = inProject(index, base);
+  return declared ? propsTypeOf(index, declared, seen) : base.typeArguments?.[0];
+}
 
 const inProject = (index: TdIndex, type: TdType): TdReflection | undefined =>
   type.type === 'reference' && typeof type.target === 'number' ? index.byId.get(type.target) : undefined;
