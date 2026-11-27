@@ -103,4 +103,14 @@ describe('invalid-zoom dev warning', () => {
     at(Number.NaN);
     expect(warn).toHaveBeenCalledTimes(1);
   });
+
+  it('describes the zoom rule a flipped view also keeps', async () => {
+    vi.resetModules();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fresh = await import('./view');
+    fresh.normalizeView({ x: 0, y: 0, scale: { x: 1, y: Number.NaN } });
+    const message = String(warn.mock.calls[0]?.[0]);
+    expect(message).not.toMatch(/positive/);
+    expect(message).toMatch(/negative axis is a flipped one/);
+  });
 });

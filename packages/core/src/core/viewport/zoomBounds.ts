@@ -23,7 +23,7 @@ export function warnInvalidView(what: string): void {
   if (warned || !isDev()) return;
   warned = true;
   console.warn(
-    `[weasel] a view was given ${what} and has been clamped. A view's zoom is ` +
-    'always positive and finite, and its position finite; see ZOOM_FLOOR.',
+    `[weasel] a view was given ${what} and has been clamped. Each axis of a view's zoom is ` +
+    'finite and at least ZOOM_FLOOR in magnitude (a negative axis is a flipped one), and its position finite.',
   );
 }
