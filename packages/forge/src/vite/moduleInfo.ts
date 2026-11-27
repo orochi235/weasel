@@ -17,6 +17,8 @@ export interface ModuleInfo {
   stars: string[];
   /** Per top-level binding, the names its declaration refers to and does not declare itself. */
   refs: Map<string, Set<string>>;
+  /** `const a = b`: each top-level const bound to nothing but another name, to that name. */
+  aliases: Map<string, string>;
 }
 
 /** What `code`, the source of `file`, imports, exports and declares at its top level. */
@@ -26,6 +28,7 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
   const exports = new Map<string, Export>();
   const stars: string[] = [];
   const refs = new Map<string, Set<string>>();
+  const aliases = new Map<string, string>();
   /** `const { a: b } = ns`: each name destructured off a top-level identifier, which may be a namespace import. */
   const picked: { local: string; from: string; imported: string }[] = [];
   const declare = (name: string, node: t.Node | null | undefined) => refs.set(name, node ? freeNames(node) : new Set());
@@ -43,6 +46,8 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
         return decl.declarations.flatMap((d) => {
           if (d.id.type === 'Identifier') {
             declare(d.id.name, d.init);
+            const target = decl.kind === 'const' && d.init ? bareName(d.init) : null;
+            if (target) aliases.set(d.id.name, target);
             return [d.id.name];
           }
           const names = patternNames(d.id);
@@ -116,7 +121,23 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
     const ns = imports.get(from);
     if (ns?.imported === '*' && !imports.has(local)) imports.set(local, { spec: ns.spec, imported });
   }
-  return { imports, exports, stars, refs };
+  return { imports, exports, stars, refs, aliases };
+}
+
+/** The name `expr` is, through parentheses and type-only wrappers, or null when it is anything else. */
+function bareName(expr: t.Expression): string | null {
+  switch (expr.type) {
+    case 'Identifier':
+      return expr.name;
+    case 'ParenthesizedExpression':
+    case 'TSAsExpression':
+    case 'TSSatisfiesExpression':
+    case 'TSNonNullExpression':
+    case 'TSTypeAssertion':
+      return bareName(expr.expression);
+    default:
+      return null;
+  }
 }
 
 function nameOf(node: t.Identifier | t.StringLiteral): string {
