@@ -1,4 +1,4 @@
-import { CHORD_MODIFIERS, chordCodesFor, codeLetter, matchPhase, type PhaseSpec } from '@weasel-js/gestures';
+import { CHORD_MODIFIERS, chordCodesFor, codeLetter, type PhaseSpec } from '@weasel-js/gestures';
 import { getOwn, identityKeyOf } from '@weasel-js/registry';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
@@ -90,22 +90,44 @@ export function chordArgsOf(entry: RegistryEntry): readonly string[] {
 
 const phaseOf = (e: RegistryEntry): PhaseSpec | undefined => ('phase' in e.spec ? e.spec.phase : undefined);
 
+/** What one phase atom asks of the engagement state: nothing, whether any channel is engaged, or whether one is. */
+type PhaseNeed = null | { any: boolean } | { channel: string; engaged: boolean };
+
+function phaseNeedsOf(spec: PhaseSpec, owner: string): PhaseNeed[] {
+  const atoms = typeof spec === 'string' ? [{ channel: '&', phase: spec }] : spec;
+  if (atoms.length === 0) return [null];
+  return atoms.map((atom): PhaseNeed => {
+    if (atom.phase === '*') return null;
+    if (atom.channel === '*') return { any: atom.phase === 'engaged' };
+    return { channel: atom.channel === '&' ? owner : atom.channel, engaged: atom.phase === 'engaged' };
+  });
+}
+
+/** Whether one engagement state meets both needs. Channels are unbounded, so "some channel engaged" can always be
+ *  met by one neither need names. */
+function needsMeet(p: PhaseNeed, q: PhaseNeed): boolean {
+  if (p === null || q === null) return true;
+  if ('any' in p && 'any' in q) return p.any === q.any;
+  if ('any' in p || 'any' in q) {
+    const any = ('any' in p ? p : q) as { any: boolean };
+    const one = ('any' in p ? q : p) as { engaged: boolean };
+    return any.any || !one.engaged;
+  }
+  const a = p as { channel: string; engaged: boolean };
+  const b = q as { channel: string; engaged: boolean };
+  return a.channel !== b.channel || a.engaged === b.engaged;
+}
+
 /** Whether two bindings' phases both hold in some engagement state: each
  *  owner engaged or idle on its own, and any channel either one names, or
- *  none of them, engaged as well. */
+ *  none of them, engaged as well. A phase holds when any of its atoms does, and
+ *  each atom reads one channel, so two phases meet when some pair of their atoms does. */
 export function phasesTie(e: RegistryEntry, f: RegistryEntry): boolean {
   const a = phaseOf(e);
   const b = phaseOf(f);
   if (a === undefined || b === undefined) return true;
-  const named = [a, b].flatMap((p) => (typeof p === 'string' ? [] : p.map((atom) => atom.channel)))
-    .filter((c) => c !== '&' && c !== '*');
-  const channels = [...new Set([e.ownerId, f.ownerId, ...named, '\u0000other'])];
-  for (let bits = 0; bits < 1 << channels.length; bits++) {
-    const engagedChannels = new Set(channels.filter((_, i) => (bits & (1 << i)) !== 0));
-    if (matchPhase(a, { selfChannel: e.ownerId, engagedChannels })
-      && matchPhase(b, { selfChannel: f.ownerId, engagedChannels })) return true;
-  }
-  return false;
+  const bNeeds = phaseNeedsOf(b, f.ownerId);
+  return phaseNeedsOf(a, e.ownerId).some((p) => bNeeds.some((q) => needsMeet(p, q)));
 }
 
 /** Bucket key for an entry's target slot. Predicate targets all render as
