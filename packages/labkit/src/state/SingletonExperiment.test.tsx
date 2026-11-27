@@ -2,7 +2,7 @@ import { act, render, renderHook, screen, waitFor } from '@testing-library/react
 import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it, vi } from 'vitest';
 import { labPrefix } from './labRecords';
-import { catchRecords } from './records.fixture';
+import { CatchRecords, createCatch, flushCaught } from './records.fixture';
 import { SingletonExperimentProvider } from './SingletonExperiment';
 import { useTrialState } from './useTrialState';
 
@@ -51,7 +51,7 @@ describe('SingletonExperimentProvider', () => {
 
   it('persists config changes to storage', async () => {
     const backing = new Map<string, unknown>();
-    const records = catchRecords();
+    const records = createCatch();
     const Probe = () => {
       const h = useTrialState<State, Config>();
       return (
@@ -63,12 +63,12 @@ describe('SingletonExperimentProvider', () => {
     render(
       <Provider backing={backing}>
         <Probe />
-        <records.Catch />
+        <CatchRecords into={records} />
       </Provider>,
     );
     const go = await screen.findByText('go');
     act(() => go.click());
-    await records.flush();
+    await flushCaught(records);
     expect(backing.get(`${labPrefix('test')}trial:test`)).toMatchObject({
       config: { width: 200 },
     });

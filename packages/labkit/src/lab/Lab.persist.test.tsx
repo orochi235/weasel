@@ -8,7 +8,7 @@ import type { Instrument } from '../instrument/types';
 import { CURRENT_DOCUMENT_VERSION } from '../state/document';
 import { labPrefix } from '../state/labRecords';
 import { labIndexedDbAdapter, resetDefaultStorage } from '../state/labStorage';
-import { catchRecords } from '../state/records.fixture';
+import { CatchRecords, createCatch, flushCaught } from '../state/records.fixture';
 import { Lab } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
 
@@ -167,10 +167,10 @@ describe('<Lab> with a storageKey', () => {
         return data as object;
       },
     };
-    const records = catchRecords();
+    const records = createCatch();
     renderWithIcons(
       <Lab instruments={[picky]} storageKey="bad" storage={createMemoryAdapter(backing)}>
-        <records.Catch />
+        <CatchRecords into={records} />
       </Lab>,
     );
     await screen.findByTestId('stub-content');
@@ -184,7 +184,7 @@ describe('<Lab> with a storageKey', () => {
       screen.getByRole('button', { name: 'Discard Trial "Mine" (Stub)' }).click(),
     );
     expect(screen.queryByRole('list', { name: 'Stored records that failed to load' })).toBeNull();
-    await records.flush();
+    await flushCaught(records);
     expect(backing.has(`${P}trial:broken`)).toBe(false);
     expect(backing.has(`${P}trial:ok`)).toBe(true);
   });

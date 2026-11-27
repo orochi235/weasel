@@ -8,19 +8,35 @@ import type { RecordCache } from '@weasel-js/storage';
 import { useContext } from 'react';
 import { PersistenceContext } from './Persistence';
 
-/** `Catch`, rendered under a `<Lab>`, `<Persistence>` or `SingletonExperimentProvider`, takes its records;
- *  `flush` sends their queued writes and fails if one did not land. */
-export function catchRecords(): { Catch: () => null; flush: () => Promise<void> } {
-  let records: RecordCache | null = null;
-  const Catch = (): null => {
-    records = useContext(PersistenceContext);
-    return null;
+/** Where `<CatchRecords>` puts the records it takes. */
+export interface CaughtRecords {
+  records: RecordCache | null;
+  take: (records: RecordCache | null) => void;
+}
+
+/** An empty catch for `<CatchRecords into>`. */
+export function createCatch(): CaughtRecords {
+  const caught: CaughtRecords = {
+    records: null,
+    take: (records) => {
+      caught.records = records;
+    },
   };
-  const flush = async (): Promise<void> => {
-    await act(async () => {
-      if (!records) throw new Error('catchRecords: render <Catch /> under the provider first');
-      if (!(await records.flush())) throw new Error('catchRecords: a queued write did not land');
-    });
-  };
-  return { Catch, flush };
+  return caught;
+}
+
+/** Rendered under a `<Lab>`, `<Persistence>` or `SingletonExperimentProvider`, hands its records to `into`. */
+export function CatchRecords({ into }: { into: CaughtRecords }): null {
+  into.take(useContext(PersistenceContext));
+  return null;
+}
+
+/** Sends the caught records' queued writes, and fails if one did not land. */
+export async function flushCaught(caught: CaughtRecords): Promise<void> {
+  await act(async () => {
+    if (!caught.records)
+      throw new Error('flushCaught: render <CatchRecords> under the provider first');
+    if (!(await caught.records.flush()))
+      throw new Error('flushCaught: a queued write did not land');
+  });
 }

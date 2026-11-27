@@ -4,7 +4,7 @@ import type { ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { labPrefix } from '../state/labRecords';
 import { Persistence } from '../state/Persistence';
-import { catchRecords } from '../state/records.fixture';
+import { CatchRecords, createCatch, flushCaught } from '../state/records.fixture';
 import { PersistedFloatingPanel } from './PersistedFloatingPanel';
 
 // The shared stub reports one size for every element, which makes the panel and
@@ -46,13 +46,13 @@ function drag(panel: HTMLElement) {
 describe('PersistedFloatingPanel', () => {
   const PLACE = `${labPrefix('fp')}value:lab:legend`;
 
-  const records = catchRecords();
+  const records = createCatch();
 
   function persisted(backing: Map<string, unknown>, ui: ReactElement) {
     return render(
       <Persistence storageKey="fp" storage={createMemoryAdapter(backing)}>
         <div>{ui}</div>
-        <records.Catch />
+        <CatchRecords into={records} />
       </Persistence>,
     );
   }
@@ -67,7 +67,7 @@ describe('PersistedFloatingPanel', () => {
     );
     await waitFor(() => expect(panelIn(container)).not.toBeNull());
     drag(panelIn(container) as HTMLElement);
-    await records.flush();
+    await flushCaught(records);
     expect(backing.get(PLACE)).toMatchObject({ x: expect.any(Number), y: expect.any(Number) });
     expect(backing.get(PLACE)).toHaveProperty('anchor');
   });

@@ -28,7 +28,10 @@ const drain = (): Promise<void> => act(() => new Promise<void>((r) => setTimeout
 async function* counter(
   n: number,
   signal: AbortSignal,
-  { failAt, pause = () => Promise.resolve() }: { failAt?: number; pause?: (i: number) => Promise<void> } = {},
+  {
+    failAt,
+    pause = () => Promise.resolve(),
+  }: { failAt?: number; pause?: (i: number) => Promise<void> } = {},
 ): AsyncGenerator<JobEvent<number>> {
   yield { kind: 'total', total: n };
   for (let i = 0; i < n; i++) {
