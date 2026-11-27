@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { makeTimeline } from './createTimeline.test-harness';
 
 describe('setLoop', () => {
@@ -60,4 +60,15 @@ describe('setLoop', () => {
     expect(handle.time()).toBeLessThanOrEqual(0.5);
   });
 
+  it('revives a finished timeline seeked to its seam once laps are left, as a live one plays on', () => {
+    const fire = vi.fn();
+    const { handle, advance } = makeTimeline({ duration: 100, tracks: [{ kind: 'event', events: [{ t: 10, fire }] }] });
+    advance(150);
+    expect(advance(150)).toBe(true);
+    handle.setLoop(true);
+    handle.seek(100);
+    advance(130);
+    expect(handle.time()).toBeCloseTo(30, 6);
+    expect(fire).toHaveBeenCalledTimes(2);
+  });
 });
