@@ -139,6 +139,37 @@ describe('createSweepAction', () => {
     expect(entered).toEqual(['a', 'z']);
   });
 
+  it("finds an item in the surface's own shadow root, which the document hit-tests as the surface", () => {
+    const surface = document.createElement('div');
+    document.body.append(surface);
+    const shadow = surface.attachShadow({ mode: 'open' });
+    const item = document.createElement('button');
+    item.dataset.key = 'a';
+    shadow.append(item);
+    document.elementFromPoint = () => surface;
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => item;
+    const sweep = createSweepAction({ surface: () => surface, keyOf: (el) => (el as HTMLElement).dataset.key, begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: 5, y: 5 })).toBe(true);
+    surface.remove();
+  });
+
+  it('finds an item slotted into a surface inside a shadow root', () => {
+    const host = document.createElement('div');
+    const item = document.createElement('button');
+    item.dataset.key = 'a';
+    host.append(item);
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const surface = document.createElement('div');
+    surface.append(document.createElement('slot'));
+    shadow.append(surface);
+    document.elementFromPoint = () => host;
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => item;
+    const sweep = createSweepAction({ surface: () => surface, keyOf: (el) => (el as HTMLElement).dataset.key, begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: 5, y: 5 })).toBe(true);
+    host.remove();
+  });
+
   it('enters the pressed item, then every item the drag crosses, in order', () => {
     const entered: string[] = [];
     const end = vi.fn();

@@ -9,7 +9,7 @@
 import { ANY_MODS, type GestureSpec } from '@weasel-js/gestures';
 import { ActionDisabledReason, type Action } from '../actions/action';
 import type { InvocationCtx } from '../actions/invoker';
-import { elementAt } from '../elementAt';
+import { elementAt, flatParentOf } from '../elementAt';
 
 /** One item a sweep reaches: its key, and the element `keyOf` named it from. */
 export interface SweepItem<K> {
@@ -79,14 +79,27 @@ const STEP_PX = 4;
 /** The most points hit-tested along one move: a move longer than this many steps is a jump, tested more sparsely. */
 const MAX_STEPS = 4096;
 
-/** The item under client point (`x`, `y`) in `surface`, or `null`. */
+/** The innermost element at client point (`x`, `y`): `el`, or what its open shadow roots hold there. */
+function deepestAt(el: Element, x: number, y: number): Element {
+  for (let depth = 0; depth < 64; depth++) {
+    const inner = el.shadowRoot?.elementFromPoint?.(x, y);
+    if (!inner || inner === el) break;
+    el = inner;
+  }
+  return el;
+}
+
+/** The item under client point (`x`, `y`) in `surface`, read up the flat tree so items in its shadow root or slotted
+ *  into it count, or `null`. */
 function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number, y: number): SweepItem<K> | null {
   if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
-  let el = elementAt(surface, x, y);
-  if (!el || !surface.contains(el)) return null;
-  for (; el && el !== surface; el = el.parentElement) {
+  const hit = elementAt(surface, x, y);
+  let found: SweepItem<K> | null = null;
+  for (let el = hit && deepestAt(hit, x, y); el; el = flatParentOf(el)) {
+    if (el === surface) return found;
+    if (found) continue;
     const key = keyOf(el);
-    if (key !== undefined) return { key, element: el };
+    if (key !== undefined) found = { key, element: el };
   }
   return null;
 }

@@ -3,6 +3,7 @@ import { useLatest } from '@weasel-js/react';
 import { clientScaleOf, clientToCanvasRect, layoutBoxOf } from '../../viewport/clientToCanvas';
 import { openPointerSession, type PointerSession, type PointerSessionCancelReason } from '../pointerSession';
 import { isPrimaryPress } from '@weasel-js/gestures';
+import { flatParentOf } from '../elementAt';
 
 /** A 2D point in the rect element's local coordinate space. */
 export interface HandleDragPoint {
@@ -74,11 +75,6 @@ const holds = (position: string | undefined, style: CSSStyleDeclaration | undefi
 /** Whether a box with `style` is a scroll container, which `visible` and `clip` on both axes are not. */
 const scrollsBox = (style: CSSStyleDeclaration | undefined): boolean =>
   !!style && ['overflow-x', 'overflow-y'].some((axis) => ['hidden', 'scroll', 'auto'].includes(style.getPropertyValue(axis)));
-
-/** `el`'s parent in the flat tree, which is the one its box is laid out in: the slot it is assigned to, else its
- *  parent, else the host of the shadow root it tops. */
-const flatParentOf = (el: Element): Element | null =>
-  el.assignedSlot ?? el.parentElement ?? (el.parentNode as Partial<ShadowRoot> | null)?.host ?? null;
 
 /** The ancestors whose scrolling moves `el` on screen: each box's containing block, up the chain, but not the
  *  viewport a fixed box is held by. */
