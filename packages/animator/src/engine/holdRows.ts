@@ -83,8 +83,7 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
     touch,
     release(r) {
       if (!ctx.has(id)) return;
-      leave(r?.commit !== false);
-      ctx.finish(id);
+      try { leave(r?.commit !== false); } finally { ctx.finish(id); }
     },
   };
 }

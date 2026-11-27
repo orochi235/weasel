@@ -42,8 +42,7 @@ export function startHold<T>(ctx: AnimationContext, o: HoldOptions<T>): HoldHand
     touch: held.touch,
     release(r) {
       if (!ctx.has(id)) return;
-      held.leave(r?.commit !== false);
-      ctx.finish(id);
+      try { held.leave(r?.commit !== false); } finally { ctx.finish(id); }
     },
   };
 }
