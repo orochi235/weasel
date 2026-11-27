@@ -4312,3 +4312,9 @@ Calls the lanes made without a ruling:
   (`uploadR8`, `uploadRGBA`) and an image (`upload`, `uploadRegistered`), and warns once; an image is never written
   over a page, and a sweep never deletes one. Rewriting the texture with the later upload, as the font-atlas and
   registered-texture collision does, was the alternative.
+
+## Scour round seven (2026-11-27): core's viewport
+
+- 2026-11-27 (the fixer's call): `useDecayLoop`'s `start` throws a `TypeError` for `viewBounds` with a `boundary` but
+  neither a `position` nor an `initialPosition`, with no override. Checking the bounds from the origin, as before, was
+  the alternative.

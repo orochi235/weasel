@@ -304,4 +304,14 @@ describe('useDecayLoop', () => {
     expect(ticks[1]).toBeCloseTo(0.5);
     expect(x).toBeCloseTo(10);
   });
+
+  it('refuses viewBounds with a boundary but no position to check them from', () => {
+    const onTick = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    expect(() => result.current.start({
+      velocity: { vx: 1, vy: 0 }, viewBounds: { minX: 0 }, boundary: 'stop', onTick,
+    })).toThrow(TypeError);
+    act(() => { stepRAF(16); });
+    expect(onTick).not.toHaveBeenCalled();
+  });
 });

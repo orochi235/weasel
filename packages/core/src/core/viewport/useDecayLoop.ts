@@ -40,7 +40,8 @@ export interface DecayLoopOptions {
    *   by `SPRING_DAMPING` per bounce so the motion settles naturally.
    */
   boundary?: 'stop' | 'bounce' | 'spring';
-  /** Starting position for internal boundary tracking, used when no `position` is given. */
+  /** Starting position for internal boundary tracking, used when no `position` is given.
+   *  `viewBounds` with a `boundary` needs one of the two. */
   initialPosition?: { x: number; y: number };
   /** Reads the live position each frame for boundary checks, so a move made by
    *  anything else mid-coast is seen. Without it, the loop tracks its own sum of
@@ -150,6 +151,9 @@ export function useDecayLoop() {
 
   const start = useCallback((config: DecayLoopOptions) => {
     checkInertia('useDecayLoop', config);
+    if (config.viewBounds && config.boundary && !config.position && !config.initialPosition) {
+      throw new TypeError('useDecayLoop: viewBounds with a boundary needs a position or an initialPosition to check them from');
+    }
     cancel();
     const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, position, onTick, onEnd } = config;
     const speed = Math.hypot(velocity.vx, velocity.vy);
