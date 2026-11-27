@@ -4,6 +4,7 @@ import type { HoldRowsOptions, RowsHoldHandle } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
 import type { HoldLayer } from './holdStore';
 import { coverOf, enterHold, leaveHold } from './holds';
+import { each } from './table';
 
 /** Holds rows of a table in a layer of the table's holds whose values and weights the caller
  *  writes: one row on the animator's table for all of them. */
@@ -48,10 +49,13 @@ export function startHoldRows(ctx: AnimationContext, o: HoldRowsOptions): RowsHo
     ctx.wake();
   };
   const leave = (commit: boolean): void => {
-    for (const row of [...held.keys()]) letGo(row, commit);
-    store.drop(layer);
-    rows.refill();
-    ctx.wake();
+    try {
+      each([...held.keys()], (row) => letGo(row, commit));
+    } finally {
+      store.drop(layer);
+      rows.refill();
+      ctx.wake();
+    }
   };
   try {
     for (const [row, s] of targets) {

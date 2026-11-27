@@ -31,5 +31,6 @@ describe('a hold whose setter throws as it commits', () => {
     fail = true;
     expect(() => h.release()).toThrow('set');
     expect(a.animator.isActive('k')).toBe(false);
+    for (const r of [0, 2, 3]) expect(table.target(r).active).toBe(false);
   });
 });
