@@ -168,7 +168,9 @@ export function leaveTarget(ctx: AnimationContext, s: TargetState, commit: (() =
 
 /** The targets one animator is moving. */
 export interface TargetBook {
-  /** Throws where another animator is moving `s`. */
+  /** What this animator puts in `TargetState.owner` on the targets it moves. */
+  readonly token: TargetOwner;
+  /** Throws where another animator is moving `s`, on the main thread or the compositor. */
   check(s: TargetState): void;
   /** Counts one more animation on `s`. Throws where another animator is moving it. */
   attach(s: TargetState): void;
@@ -224,9 +226,11 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
     }
   };
   const check = (s: TargetState): void => {
-    if (s.owner && s.owner !== token) throw new Error('animator: this target is being moved by another animator');
+    const by = s.owner ?? s.handoff?.owner;
+    if (by && by !== token) throw new Error('animator: this target is being moved by another animator');
   };
   return {
+    token,
     check,
     attach(s) {
       check(s);

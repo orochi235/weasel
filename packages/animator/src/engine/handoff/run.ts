@@ -119,6 +119,7 @@ export function launch(
     read: () => motion.at(local()),
     release,
     stop: () => { table.retire(id); },
+    owner: ctx.targets.token,
   };
 
   seed.compositor = true;

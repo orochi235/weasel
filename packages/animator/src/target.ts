@@ -165,6 +165,8 @@ export interface Handoff {
   release(): void;
   /** Cancels it, as `Target.stop` does. */
   stop(): void;
+  /** The animator it runs on, as `TargetState.owner` names one. */
+  readonly owner: TargetOwner;
 }
 
 /** What an animator keeps on a target it is moving. */
