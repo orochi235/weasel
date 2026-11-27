@@ -185,11 +185,12 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
   const moveOptions = opts?.move;
   const wiredMoveOptions = useMemo<MoveOptions<TPose>>(() => moveOptions ?? {}, [moveOptions]);
 
+  const viewRegistry = useOptionalViewRegistry();
   const wiredHitBody = usePointPick({
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
     alphaOf, layerIsPainted, isPointerInteractive,
     readIds: picking === 'pixels' ? readIds : undefined,
-    lod,
+    lod, viewRegistry,
   });
 
   // Read through a ref: this is the chrome's bounds source, and a caller's
@@ -243,7 +244,6 @@ export function useScenePickers<TData, TLayer extends string, TPose>(
 
   // Input routed to a view names only its id; the pick takes that view's camera and layer gate,
   // as hover there does, or the surface's camera for an id no view on this canvas holds.
-  const viewRegistry = useOptionalViewRegistry();
   const askedBy = useCallback((viewId?: string | null): PickView | undefined =>
     (viewId == null ? undefined
       : declaredPickView(viewRegistry, viewId) ?? { ...(getViewRef.current?.() ?? { scale: { x: 1, y: 1 } }), viewId }),
@@ -291,10 +291,11 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
   isPointerInteractive: ((id: string) => boolean) | undefined;
   readIds: UseScenePickersArgs<TData, TLayer, TPose>['readIds'];
   lod: UseScenePickersArgs<TData, TLayer, TPose>['lod'];
+  viewRegistry: Pick<ViewRegistry, 'get'> | null;
 }): (world: WorldPoint, view?: PickView | null) => string[] {
   const {
     scene, d, pickEveryProp, shapePicking, pickTolerancePx, getView,
-    alphaOf, layerIsPainted, isPointerInteractive, readIds, lod,
+    alphaOf, layerIsPainted, isPointerInteractive, readIds, lod, viewRegistry,
   } = args;
   // Default pickEvery: walk renderOrder() forward (back-to-front) and collect
   // every node whose pose contains the world point. Order matches the
@@ -316,7 +317,7 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
       const own = getView?.() ?? null;
       const asked = view ?? own;
       const read = readIds?.();
-      if (read && own && askedOwnView(view, own)) {
+      if (read && own && askedOwnView(view, own, viewRegistry)) {
         const camera = cameraOf(own);
         if (camera) {
           const screen = {
@@ -337,13 +338,13 @@ function usePointPick<TData, TLayer extends string, TPose>(args: {
         ...(viewLayers ? { layerIsPainted: viewLayers } : {}),
         ...(camera ? { camera } : {}),
         // The rungs drawn are this canvas's own; another view's pick reads its own drawing.
-        ...(lod && own && askedOwnView(view, own) ? { lod } : {}),
+        ...(lod && own && askedOwnView(view, own, viewRegistry) ? { lod } : {}),
       });
       const pointQuery = scenePointQuery<TPose>(d as PoseDescriptor<unknown>, shapePicking, pickTolerancePx);
       return pickWalk<TPose>(src, pointQuery(world.x, world.y, asked?.scale ?? { x: 1, y: 1 }));
     };
   }, [scene, pickEveryProp, shapePicking, pickTolerancePx, getView,
-      alphaOf, layerIsPainted, d, readIds, lod]);
+      alphaOf, layerIsPainted, d, readIds, lod, viewRegistry]);
   const wiredHitBody = useMemo(() => {
     if (!isPointerInteractive) return walk;
     return (world: WorldPoint, view?: PickView | null): string[] =>
@@ -363,10 +364,13 @@ function reachableHits<TData, TLayer extends string, TPose>(scene: Scene<TData, 
 }
 
 /** Whether a pick asked with `view` is asked for the surface's own camera and gates, which
- *  are what its id frames were painted with. */
-function askedOwnView(view: PickView | null | undefined, own: Pick<PickView, 'scale' | 'x' | 'y'>): boolean {
+ *  are what its id frames were painted with. An id the canvas's view registry does not hold asks with the surface's. */
+function askedOwnView(
+  view: PickView | null | undefined, own: Pick<PickView, 'scale' | 'x' | 'y'>, registry: Pick<ViewRegistry, 'get'> | null,
+): boolean {
   if (!view) return true;
-  if (view.viewId != null || view.alphaOf || view.layerIsPainted) return false;
+  if (view.viewId != null && (!registry || registry.get(view.viewId))) return false;
+  if (view.alphaOf || view.layerIsPainted) return false;
   return view.scale.x === own.scale.x && view.scale.y === own.scale.y
     && (view.x === undefined || view.x === own.x) && (view.y === undefined || view.y === own.y);
 }
