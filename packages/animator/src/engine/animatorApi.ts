@@ -141,11 +141,12 @@ export function createAnimatorApi(host: ApiHost): Animator {
     cancel: (handle) => table.retire(handle.id),
     cancelKey: (key) => table.cancelByKey(key),
     cancelAll: () => {
+      // Halted before the reports and the last show, which may start what needs the next frame.
       table.cancelAll(() => {
         clock.frameT = null;
+        host.halt();
         ctx.targets.show();
       });
-      host.halt();
     },
     isActive: (key) => {
       if (key == null) return animations.size > 0;

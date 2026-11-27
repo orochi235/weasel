@@ -55,10 +55,13 @@ export function createHostedAnimator(host: AnimatorHost): HostedAnimator {
     resumed: () => core.resumed(),
     dispose() {
       if (disposed) return;
-      core.api.cancelAll();
-      colorOverrides.clearAll();
-      trimOverrides.clearAll();
-      disposed = true;
+      try {
+        core.api.cancelAll();
+      } finally {
+        colorOverrides.clearAll();
+        trimOverrides.clearAll();
+        disposed = true;
+      }
     },
   };
 }
