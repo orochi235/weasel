@@ -23,14 +23,16 @@
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { relative, resolve, sep } from 'node:path';
 import ports from './dev-ports.json' with { type: 'json' };
+import { cli } from './lib/help.mjs';
 import { moduleRegions } from './lib/bundle-regions.mjs';
 
-const [modulePath, needle, origin = `http://localhost:${ports.site}`] = process.argv.slice(2);
-
-if (!modulePath || !needle) {
-  console.error('usage: node scripts/is-it-stale.mjs <module-path> <needle> [origin]');
-  process.exit(2);
-}
+const { positionals } = cli(import.meta.url, {
+  summary:
+    "Is the dev server serving your edit? Checks whether <needle> is in the file on disk (DISK), in the dev server's transform of the module (SERVER), and in no stale pre-bundled copy in a Vite cache dir (BUNDLE). Exits 1 when any layer disagrees.",
+  positionals: '<module-path> <needle> [<origin>]',
+  notes: `origin defaults to http://localhost:${ports.site} (the site).\nExample: node scripts/is-it-stale.mjs packages/renderer/src/draw.ts u_tileOrigin`,
+});
+const [modulePath, needle, origin = `http://localhost:${ports.site}`] = positionals;
 
 const results = [];
 

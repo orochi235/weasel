@@ -13,9 +13,16 @@
 //   node scripts/link-workspaces.mjs [worktree]      default: the current directory
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, rmSync, symlinkSync, unlinkSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { cli } from './lib/help.mjs';
 import { MODULE_CACHE_ROOT } from './lib/module-cache.mjs';
 
-const root = resolve(process.argv[2] ?? '.');
+const { positionals } = cli(import.meta.url, {
+  summary:
+    "Gives a worktree nested in the main checkout an install of its own without `npm ci`, by linking each workspace package and each package-level node_modules from the main checkout's install. Refused when the two lockfiles differ.",
+  positionals: '[<worktree>]',
+  notes: 'worktree defaults to the current directory.',
+});
+const root = resolve(positionals[0] ?? '.');
 const read = (p) => readFileSync(p, 'utf8');
 
 let host = null;

@@ -16,12 +16,16 @@ import { chromium } from 'playwright';
 import { stories } from '../apps/forge/viteShared.ts';
 import { autoTitle } from '../packages/forge/src/vite/autoTitle.ts';
 import { indexFile } from '../packages/forge/src/vite/indexFile.ts';
+import { cli } from './lib/help.mjs';
 
-const [base, ...only] = process.argv.slice(2);
-if (!base) {
-  console.error('usage: node scripts/find-css-ties.mjs <forge-url> [story-id ...]');
-  process.exit(2);
-}
+const { positionals } = cli(import.meta.url, {
+  summary:
+    'Finds style rules that a labkit class and a weasel-ui CSS module both set at identical specificity, where injection order picks the winner, in stories served by a running forge.',
+  positionals: '<forge-url> [<story-id>…]',
+  notes:
+    'With no story ids, every story titled labkit/… is checked. Start forge first (emilia up dev:forge).\nExample: node scripts/find-css-ties.mjs http://localhost:33453 labkit-lab-fullchrome--all-chrome',
+});
+const [base, ...only] = positionals;
 
 const CANARY_CSS = '.lk-canary-tie { width: 1px } ._canary_tie_ { width: 2px }';
 

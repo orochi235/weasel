@@ -17,6 +17,7 @@ import { cp, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { cli } from './lib/help.mjs';
 import { packTarballs } from './lib/pack-tree.mjs';
 import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
 import { closure, diagnostics, exportSubpaths, importTarget } from './smoke-consumer-types.mjs';
@@ -158,6 +159,7 @@ export async function smokeInstalledConsumers({ repoRoot, workDir, tarballDir, f
       say(run(consumer.run, dir, 'run'));
       await writeFile(join(dir, 'smoke-entries.json'), JSON.stringify(await entriesOf(consumer, dir)));
       await cp(join(repoRoot, 'scripts', 'lib', 'consumer-entries.mjs'), join(dir, 'smoke-entries.mjs'));
+      await cp(join(repoRoot, 'scripts', 'lib', 'help.mjs'), join(dir, 'help.mjs'));
       say(run(['node', 'smoke-entries.mjs', ...(consumer.env ? [consumer.env] : [])], dir, `importing every ${consumer.entries === 'all' ? '' : 'no-DOM '}entry`));
     } catch (err) {
       fail(`${tag}: ${err.command ?? ''} FAILED`, err.message);
@@ -166,8 +168,13 @@ export async function smokeInstalledConsumers({ repoRoot, workDir, tarballDir, f
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  const { values } = cli(import.meta.url, {
+    summary:
+      'Installs each small consumer under tests/consumers/ outside the repo, from packed tarballs of the weasel packages it reaches, then typechecks it, runs it and imports each entry.',
+    options: { keep: { type: 'boolean', description: 'leave the temp directory for a look instead of deleting it' } },
+  });
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
-  const keep = process.argv.includes('--keep');
+  const keep = values.keep;
   const workDir = await mkdtemp(join(tmpdir(), 'weasel-consumers-'));
   const done = () => {
     if (keep) console.log(`[smoke] consumers left at ${workDir}`);

@@ -7,6 +7,12 @@
 //   node scripts/audit-yield.mjs            per-round totals and the lane × round table
 //   node scripts/audit-yield.mjs --json     one record per merged lane branch
 import { execFileSync } from 'node:child_process';
+import { cli } from './lib/help.mjs';
+
+const { values } = cli(import.meta.url, {
+  summary: 'Fix commits per audit round and lane, read from the merges of audit branches: per-round totals and the lane × round table.',
+  options: { json: { type: 'boolean', description: 'one JSON record per merged lane branch instead' } },
+});
 
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
 
@@ -33,7 +39,7 @@ for (const line of merges) {
 
 const records = [...lanes.values()].sort((a, b) => a.round - b.round || a.lane.localeCompare(b.lane));
 
-if (process.argv.includes('--json')) {
+if (values.json) {
   for (const r of records) console.log(JSON.stringify(r));
   process.exit(0);
 }

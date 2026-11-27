@@ -21,6 +21,7 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { cli } from './lib/help.mjs';
 import { addPending, hasTrustedPublish, listsPublisher, readPending, writePending } from './lib/first-publish.mjs';
 import { fetchPackument } from './lib/registry.mjs';
 import { publishablePackageNames, repoRoot } from './lib/workspaces.mjs';
@@ -96,15 +97,22 @@ function registered(pkg) {
   }
 }
 
-const argvIn = process.argv.slice(2);
-const args = new Set(argvIn);
-const dryRun = args.has('--dry-run');
-const listOnly = args.has('--list');
-// `--otp=123456` skips the interactive 2FA prompt. A code is good for ~30s, so
-// it will not carry a full sweep on its own.
-const otp = argvIn.find((a) => a.startsWith('--otp='));
+const { values, positionals } = cli(import.meta.url, {
+  summary:
+    'Registers this repository\'s release workflow as the npm trusted publisher (OIDC) for each named package, or for every publishable one when none is named.',
+  positionals: '[<package>…]',
+  options: {
+    'dry-run': { type: 'boolean', description: 'print each npm call instead of making it' },
+    list: { type: 'boolean', description: "show each package's current trust config instead of setting it" },
+    otp: { type: 'string', placeholder: '<code>', description: 'skip the interactive 2FA prompt; a code lasts ~30s, so not a whole sweep' },
+  },
+  notes: 'A package is named in full (@weasel-js/geom) or bare (kernel3d). Name the ones you are seeding: the full sweep is one 2FA-challenged `npm trust` call per package.',
+});
+const dryRun = values['dry-run'];
+const listOnly = values.list;
+const otp = values.otp === undefined ? undefined : `--otp=${values.otp}`;
 const all = publishablePackageNames();
-const packages = selectPackages(all, argvIn.filter((a) => !a.startsWith('--')));
+const packages = selectPackages(all, positionals);
 const slug = repoSlug();
 const npmCmd = npmCommand();
 

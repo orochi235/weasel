@@ -16,13 +16,20 @@ import { availableParallelism } from 'node:os';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
+import { cli } from './lib/help.mjs';
 import { tscArgv } from './lib/tsc.mjs';
 
+const { positionals: named } = cli(import.meta.url, {
+  summary:
+    'Typechecks each package alone under its own tsconfig.json (the program an editor shows for its files), following a solution-style config to the configs it references.',
+  positionals: '[<package>…]',
+  notes:
+    'Name packages by directory (routing ui) to check only those; none checks every package.\nWEASEL_TYPECHECK_JOBS=<n> sets how many programs check at once.',
+});
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 exitUnlessOwnInstall(ROOT);
 const require = createRequire(import.meta.url);
 const ts = require('typescript');
-const named = process.argv.slice(2);
 const packages = readdirSync(join(ROOT, 'packages'))
   .filter((name) => existsSync(join(ROOT, 'packages', name, 'tsconfig.json')))
   .filter((name) => named.length === 0 || named.includes(name))

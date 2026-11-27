@@ -6,37 +6,35 @@ import { Project, Node } from 'ts-morph';
 import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { cli } from './lib/help.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PACKAGES = join(ROOT, 'packages');
 
-const args = process.argv.slice(2);
-if (args.includes('--help') || args.includes('-h')) {
-  console.log(`Usage: node scripts/audit-jsdoc.mjs [options]
-
-Enumerates the public exports of every package under packages/ (resolved
+const { values } = cli(import.meta.url, {
+  summary: `Enumerates the public exports of every package under packages/ (resolved
 through each package.json "exports" map, mapped back from dist/ to src/) and
-reports which have no JSDoc block at their definition site.
-
-Options:
-  --pkg <name>    Restrict to one package, by directory name (e.g. geom).
-  --json          Emit the full record set as JSON instead of a summary.
-  --undocumented  List every undocumented symbol with its definition site.
-  --quiet         Summary table only.
-  --exclude <a,b> Drop these packages from the report (by directory name).
-  --check         Exit 1 when an export is undocumented, or an @internal one is
-                  reachable through a consumer entry.
-`);
-  process.exit(0);
-}
-const only = args.includes('--pkg') ? args[args.indexOf('--pkg') + 1] : null;
-const asJson = args.includes('--json');
-const listUndocumented = args.includes('--undocumented');
-const quiet = args.includes('--quiet');
-const check = args.includes('--check');
+reports which have no JSDoc block at their definition site.`,
+  options: {
+    pkg: { type: 'string', placeholder: '<name>', description: 'restrict to one package, by directory name (e.g. geom)' },
+    json: { type: 'boolean', description: 'emit the full record set as JSON instead of a summary' },
+    undocumented: { type: 'boolean', description: 'list every undocumented symbol with its definition site' },
+    quiet: { type: 'boolean', description: 'summary table only' },
+    exclude: { type: 'string', placeholder: '<a,b>', description: 'drop these packages from the report (by directory name)' },
+    check: {
+      type: 'boolean',
+      description: 'exit 1 when an export is undocumented, or an @internal one is reachable through a consumer entry',
+    },
+  },
+});
+const only = values.pkg ?? null;
+const asJson = values.json;
+const listUndocumented = values.undocumented;
+const quiet = values.quiet;
+const check = values.check;
 // Packages to leave out of the report entirely (still scanned, so a symbol
 // defined elsewhere but re-exported through them is not lost).
-const exclude = args.includes('--exclude') ? args[args.indexOf('--exclude') + 1].split(',') : [];
+const exclude = values.exclude ? values.exclude.split(',') : [];
 
 /**
  * Public entry source files for a package. A package-level `entries.ts` (the

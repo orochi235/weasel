@@ -6,8 +6,14 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from '../lib/help.mjs';
 import { isChangesetFile } from './bumps.mjs';
 import { lintChangeset } from './lint.ts';
+
+cli(import.meta.url, {
+  summary: 'Checks that every pending changeset in .changeset/ carries a valid entry marker and reads as one change.',
+  notes: 'The writing rules: docs/releasing.md, "Writing a changeset".',
+});
 
 const DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '.changeset');
 const files = existsSync(DIR) ? readdirSync(DIR).filter(isChangesetFile).sort() : [];

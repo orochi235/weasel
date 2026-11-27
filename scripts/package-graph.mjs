@@ -12,6 +12,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { cli } from './lib/help.mjs';
 import { importSpecifiers, isBare } from './lib/imports.mjs';
 import { packageEntries } from './lib/packageEntries.mjs';
 import { closureOf, readPackages, tierProblems } from './lib/package-tiers.mjs';
@@ -108,11 +109,13 @@ function toSvg(out, category) {
 }
 
 async function main() {
-  const outDir = process.argv[2] ?? join(tmpdir(), 'weasel-package-graph');
-  if (outDir.startsWith('-')) {
-    console.error('usage: node scripts/package-graph.mjs [outDir]  (it takes no flags)');
-    process.exit(2);
-  }
+  const { positionals } = cli(import.meta.url, {
+    summary:
+      'Draws the @weasel-js package dependency graph as SVG and 2x PNG: base (core and what it depends on), top (everything else), and all. Fails on a tier problem.',
+    positionals: '[<outDir>]',
+    notes: 'outDir defaults to <tmpdir>/weasel-package-graph, overwritten each run.',
+  });
+  const outDir = positionals[0] ?? join(tmpdir(), 'weasel-package-graph');
   mkdirSync(outDir, { recursive: true });
   const packages = readPackages();
   const problems = tierProblems(packages);

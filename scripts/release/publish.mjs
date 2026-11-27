@@ -4,7 +4,26 @@
 import { spawn } from 'node:child_process';
 import { accessSync, constants } from 'node:fs';
 import { delimiter, join } from 'node:path';
+import { cli } from '../lib/help.mjs';
 import { repoRoot } from '../lib/workspaces.mjs';
+
+// `changeset publish`'s own flags (@changesets/cli 3), declared rather than passed through so a
+// mistyped one stops here instead of reaching a real publish that ignores it.
+const PUBLISH_FLAGS = {
+  tag: { type: 'string', placeholder: '<name>', description: 'publish under this npm dist-tag' },
+  otp: { type: 'string', placeholder: '<code>', description: 'one-time password for npm publish' },
+  'from-pack-dir': { type: 'string', placeholder: '<dir>', description: 'publish from a packed output directory' },
+  'no-git-tag': { type: 'boolean', description: 'create no git tag for the release' },
+};
+const { values } = cli(import.meta.url, {
+  summary:
+    "Publishes every package with a new version to npm: `changeset publish`, with scripts/npm-shim first on PATH so a publish retried inside npm's staging window is not read as a failure.",
+  options: PUBLISH_FLAGS,
+  notes: 'Each option is handed to `changeset publish` as given.',
+});
+const forwarded = Object.entries(values).flatMap(([name, value]) =>
+  value === true ? [`--${name}`] : typeof value === 'string' ? [`--${name}`, value] : [],
+);
 
 // The shim is handed an absolute npm so it can never find itself on PATH.
 // `npm run` sets npm_execpath to the CLI that launched it; otherwise take the
@@ -22,7 +41,7 @@ function findRealNpm() {
 }
 const realNpm = findRealNpm();
 
-const child = spawn('changeset', ['publish', ...process.argv.slice(2)], {
+const child = spawn('changeset', ['publish', ...forwarded], {
   stdio: 'inherit',
   env: {
     ...process.env,

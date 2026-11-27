@@ -13,7 +13,14 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import type { JSONOutput } from 'typedoc';
+import { cli } from './lib/help.mjs';
 import { readProject } from './lib/reference/project.ts';
+
+cli(import.meta.url, {
+  summary:
+    "Splits TypeDoc's dist/typedoc.json into one reference file per package under dist-demo/reference/, for the site's package pages.",
+  notes: 'Run after `typedoc`; `npm run build:api` runs both.',
+});
 
 const DIR = resolve(import.meta.dirname, '../dist-demo/reference');
 const INPUT = resolve(import.meta.dirname, '../dist/typedoc.json');

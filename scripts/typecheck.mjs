@@ -13,7 +13,14 @@ import { copyFileSync, existsSync, readdirSync, renameSync, rmSync, statSync } f
 import { join } from 'node:path';
 import { fleetBranch } from './lib/fleet-tree.mjs';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
+import { cli } from './lib/help.mjs';
 import { tscArgv } from './lib/tsc.mjs';
+
+cli(import.meta.url, {
+  summary:
+    "Typechecks the root program and the browser tests' (packages/tsconfig.json) at once, incrementally, and exits nonzero when either fails.",
+  notes: 'On a fleet node, a branch other than main keeps build info of its own under .tsbuildinfo/, seeded from main\'s.',
+});
 
 const ROOT = join(import.meta.dirname, '..');
 exitUnlessOwnInstall(ROOT);
