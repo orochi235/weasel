@@ -20,4 +20,27 @@ describe('findScopedConflicts — a hotkey action over a lower tier', () => {
     const ambientAction = { id: 'leave', label: 'leave', defaultBinding: escape, invoker: { timing: 'immediate', run: () => {} } } as never;
     expect(shadowsOf(findScopedConflicts({ registry: [], actions: [hotkey('open', escape), ambientAction] }))).toEqual(['open,leave']);
   });
+
+  it('reports an untargeted click over a tool\'s click on `empty`', () => {
+    const c = findScopedConflicts({ registry: [tool('t', { kind: 'click', target: 'empty' })], actions: [hotkey('pick', { kind: 'click' })] });
+    expect(shadowsOf(c)).toEqual(['pick,t']);
+  });
+
+  it('reports a bare key over a tool\'s key with an optional Shift', () => {
+    const c = findScopedConflicts({ registry: [tool('t', { kind: 'key', key: 'x', mods: { shift: 'optional' } })], actions: [hotkey('h', { kind: 'key', key: 'x' })] });
+    expect(shadowsOf(c)).toEqual(['h,t']);
+  });
+
+  it('reports a required Shift over a tool\'s optional one', () => {
+    const c = findScopedConflicts({ registry: [tool('t', { kind: 'key', key: 'x', mods: { shift: 'optional' } })], actions: [hotkey('h', { kind: 'key', key: 'x', mods: { shift: true } })] });
+    expect(shadowsOf(c)).toEqual(['h,t']);
+  });
+
+  it('says nothing where no press meets both', () => {
+    const c = findScopedConflicts({
+      registry: [tool('t', { kind: 'key', key: 'x', mods: { shift: true } }), tool('u', { kind: 'click', target: 'empty' })],
+      actions: [hotkey('h', { kind: 'key', key: 'x' }), hotkey('k', { kind: 'click', target: 'selected-body' })],
+    });
+    expect(c).toEqual([]);
+  });
 });

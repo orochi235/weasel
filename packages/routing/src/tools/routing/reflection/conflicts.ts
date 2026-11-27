@@ -6,9 +6,10 @@ import type { ParsedModifiers } from '../routeGrammar';
 import { formatRoute } from '../routeGrammar';
 import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { specificity } from '@weasel-js/gestures';
-import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
+import { ALWAYS, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
-import { argKeysOf, chordArgsOf, modifierTieKeys, phasesTie, PLATFORMS, sameOutcome, targetKey, typesMeet, viewsTie, type Platform } from './conflictKeys';
+import { argKeysOf, chordArgsOf, modifierTieKeys, phasesTie, PLATFORMS, rulesCanHoldTogether, sameOutcome, targetKey, typesMeet, viewsTie, type Platform } from './conflictKeys';
+import { shadowOf } from './shadows';
 import { compositeKey, identityKeyOf } from '@weasel-js/registry';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
@@ -228,13 +229,6 @@ export interface ToolScopes {
   overrides?: ResolvedBindingOverrides;
 }
 
-/** Whether two rules can hold at once: never when {@link rulesExclusive}
- *  proves it, and given the modes, only when one of them lets both hold. */
-function rulesCanHoldTogether(a: Rule, b: Rule, modes: readonly ActiveMode[]): boolean {
-  if (rulesExclusive(a, b)) return false;
-  return modes.some((m) => ruleCanHoldIn(a, m) && ruleCanHoldIn(b, m));
-}
-
 const KIT_MODES: readonly ActiveMode[] = DEFAULT_MODES.map(activeModeOf);
 
 /** An action's `defaultBinding`s in the shape the route registry reads, so a
@@ -331,14 +325,17 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   // A hotkey-tier action outranks whichever tool holds the active slot and every ambient entry. A
   // pair already reported as a tie, a held tool's, is not reported again.
   const tied = (a: string, b: string): boolean => reported.some(({ conflict: c }) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
+  const ruleOf = (e: Contribution<unknown>): Rule => rules.get(e) ?? ALWAYS;
+  const shadows: Conflict[] = [];
   for (const action of [...hotkeyActions, ...gatedHotkey]) {
-    for (const tool of [...registry, ...ambient, ...gatedActions]) {
-      if (tied(action.id, tool.id)) continue;
-      add(findConflictsKeyed([action, tool], rules, modes).map((k) => ({ ...k, conflict: { ...k.conflict, shadows: true } })));
+    for (const lower of [...registry, ...ambient, ...gatedActions]) {
+      if (tied(action.id, lower.id) || !rulesCanHoldTogether(ruleOf(action), ruleOf(lower), modes)) continue;
+      const shadow = shadowOf(action, lower);
+      if (shadow) shadows.push(shadow);
     }
   }
 
-  return reported.map((r) => r.conflict);
+  return [...reported.map((r) => r.conflict), ...shadows];
 }
 
 /**

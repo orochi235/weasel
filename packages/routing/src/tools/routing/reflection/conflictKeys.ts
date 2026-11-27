@@ -3,6 +3,8 @@ import { getOwn, identityKeyOf } from '@weasel-js/registry';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
 import { PREDICATE_TARGET, type RegistryEntry } from './registry';
+import { ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
+import type { ActiveMode } from '@weasel-js/modes';
 
 /** The two ways `mod` resolves: to `meta` on a Mac, to `ctrl` elsewhere. */
 export type Platform = 'mac' | 'other';
@@ -136,4 +138,11 @@ export function targetKey(entry: RegistryEntry): string {
   if (typeof pred !== 'object' || pred === null) return PREDICATE_TARGET;
   const kindOf = (pred as { kindOf?: unknown }).kindOf;
   return `${PREDICATE_TARGET}${identityKeyOf(typeof kindOf === 'function' ? kindOf : pred)}`;
+}
+
+/** Whether two rules can hold at once: never when `rulesExclusive`
+ *  proves it, and given the modes, only when one of them lets both hold. */
+export function rulesCanHoldTogether(a: Rule, b: Rule, modes: readonly ActiveMode[]): boolean {
+  if (rulesExclusive(a, b)) return false;
+  return modes.some((m) => ruleCanHoldIn(a, m) && ruleCanHoldIn(b, m));
 }
