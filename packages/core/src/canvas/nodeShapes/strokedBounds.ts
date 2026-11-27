@@ -169,6 +169,27 @@ export function strokedPoseBox(
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
 }
 
+interface PathStrokedRecord {
+  stroke: Stroke;
+  scale: number;
+  screen: ScreenMap | undefined;
+  box: Bounds | null;
+}
+
+const PATH_STROKED = new WeakMap<Path, PathStrokedRecord>();
+
+/**
+ * {@link strokedBounds}, kept per path, which is immutable, on the stroke, the scale and the screen map: a
+ * snap reads the drawn box of every candidate on each pointer move, and a node that stays put keeps its path.
+ */
+export function strokedPathBounds(path: Path, stroke: Stroke, scale: number, screen?: ScreenMap): Bounds | null {
+  const held = PATH_STROKED.get(path);
+  if (held && held.stroke === stroke && held.scale === scale && sameMap(held.screen, screen)) return held.box;
+  const box = strokedBounds(path, stroke, scale, screen);
+  PATH_STROKED.set(path, { stroke, scale, screen, box });
+  return box;
+}
+
 function sameMap(m: ScreenMap | undefined, n: ScreenMap | undefined): boolean {
   if (m === n) return true;
   return !!m && !!n && m[0] === n[0] && m[1] === n[1] && m[2] === n[2] && m[3] === n[3];

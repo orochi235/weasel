@@ -7,7 +7,7 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import { PAINT_SLOT } from './memo';
 import { inkReach, inkStroke, pathCommand, pathPaintOf, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import { poseBoxBounds } from './poseBox';
-import { strokedBounds } from './strokedBounds';
+import { strokedPathBounds } from './strokedBounds';
 
 type PaintData = { fill?: Fill | Inherit | null; stroke?: Stroke | Inherit | null; vertexColors?: number[] };
 
@@ -37,7 +37,7 @@ export const PATH_POSE_PAINTER: NodeShapeEntry<unknown, Path> = {
   drawnBounds: (node, pose, ctx) => {
     const own = boundsOfPath(pose);
     const stroke = paintOf(node, ctx?.inherited).stroke;
-    const stroked = stroke ? strokedBounds(pose, stroke, ctx?.scale ?? 1, ctx?.screen) : null;
+    const stroked = stroke ? strokedPathBounds(pose, stroke, ctx?.scale ?? 1, ctx?.screen) : null;
     return stroked === null ? own : unionBounds([own, stroked]) ?? own;
   },
 };
