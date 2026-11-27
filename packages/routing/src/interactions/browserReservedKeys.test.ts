@@ -113,4 +113,23 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key: 'x', code: 'Backquote', mods: { mod: true } }, true)?.use).toMatch(/window/);
     expect(browserReservedChord({ kind: 'key', key: 'Escape', mods: { mod: true, alt: true } }, true)?.use).toMatch(/Force Quit/);
   });
+
+  it('takes the system chords around a browser: the window menu, input sources, the emoji viewer, and quit or log out', () => {
+    expect(browserReservedChord({ kind: 'key', key: ' ', mods: { alt: true } }, false)?.use).toMatch(/window menu/);
+    expect(browserReservedChord({ kind: 'key', key: ' ', mods: { ctrl: true } }, true)?.use).toMatch(/input source/);
+    expect(browserReservedChord({ kind: 'key', key: ' ', mods: { mod: true, ctrl: true } }, true)?.use).toMatch(/emoji/);
+    expect(browserReservedChord({ kind: 'key', key: 'q', mods: { mod: true, shift: true } }, true)?.use).toMatch(/log out/);
+    expect(browserReservedChord({ kind: 'key', key: 'q', mods: { ctrl: true, shift: true } }, false)?.use).toMatch(/quit/);
+    expect(browserReservedChord({ kind: 'key', key: ' ', mods: { alt: true } }, true)).toBeNull();
+  });
+
+  it('takes the Windows and Super key chords off a Mac, which the desktop keeps', () => {
+    for (const key of ['l', 'd', 'e', 'r', 'Tab']) {
+      expect(browserReservedChord({ kind: 'key', key, mods: { meta: true } }, false)?.use).toMatch(/Windows/);
+    }
+    expect(browserReservedChord({ kind: 'key', key: 's', mods: { meta: true, shift: true } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'ArrowLeft', mods: { meta: true, ctrl: true } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'l', mods: { meta: 'optional' } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'l', mods: { meta: true, alt: true } }, false)).toBeNull();
+  });
 });
