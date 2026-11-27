@@ -1,8 +1,8 @@
-import { resolve } from 'node:path';
 import type { ViteDevServer } from 'vite';
 import type { IndexEntry } from '../story/types.ts';
 import { captureEntry, captureFrameEntry } from './capture/entries.ts';
 import { frameEntry, shellEntry } from './entries.ts';
+import { posixResolve } from './posixPath.ts';
 
 export const PREFIX = 'virtual:forge/';
 
@@ -39,8 +39,8 @@ export interface VirtualModuleState {
 /** The source of every virtual module but `deps.js`, by name. */
 export function virtualModules(options: VirtualModuleOptions, src: VirtualModuleState): Record<string, () => string> {
   const configModule = (path: string | undefined) =>
-    path ? `export { default } from ${JSON.stringify(resolve(src.root(), path))};\n` : 'export default {};\n';
-  const frameStyles = () => (options.frameStyles ?? []).map((path) => resolve(src.root(), path));
+    path ? `export { default } from ${JSON.stringify(posixResolve(src.root(), path))};\n` : 'export default {};\n';
+  const frameStyles = () => (options.frameStyles ?? []).map((path) => posixResolve(src.root(), path));
   return {
     'index.js': () => `export default ${JSON.stringify(src.index())};\n`,
     'importers.js': () => {

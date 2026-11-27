@@ -157,7 +157,7 @@ export function forge(options: ForgeOptions): Plugin[] {
         // The pages are virtual, so vite's scan finds no entry of its own to crawl for dependencies.
         const entries = [
           ...options.stories,
-          ...[options.frameConfig, options.shellConfig].flatMap((path) => (path ? [resolve(at, path)] : [])),
+          ...[options.frameConfig, options.shellConfig].flatMap((path) => (path ? [posixResolve(at, path)] : [])),
           ...ownEntries(['shell', 'frame']),
         ];
         const optimizeDeps = { entries };

@@ -4,6 +4,7 @@ import { indexStoryResolved } from './indexStory.ts';
 import { ownEntries } from './ownEntries.ts';
 import { storybookShims } from './storybookShims.ts';
 import { isStoryFile } from './storyGlob.ts';
+import { posixResolve } from './posixPath.ts';
 
 /** Options for the `forgeTest` vite plugin. */
 export interface ForgeTestOptions {
@@ -35,7 +36,7 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
         const at = resolve(config.root ?? process.cwd());
         const entries = [
           ...options.stories,
-          ...(options.frameConfig ? [resolve(at, options.frameConfig)] : []),
+          ...(options.frameConfig ? [posixResolve(at, options.frameConfig)] : []),
           ...ownEntries(['test']),
         ];
         return { optimizeDeps: { entries } };
@@ -71,7 +72,7 @@ export function forgeTest(options: ForgeTestOptions): Plugin[] {
           // shell.css draws the story host; frame.css still holds the boundary's fault rule.
           `import "@weasel-js/forge/shell.css";`,
           `import "@weasel-js/forge/frame.css";`,
-          ...(options.frameConfig ? [`import __forge_frame_config from ${q(resolve(root, options.frameConfig))};`] : []),
+          ...(options.frameConfig ? [`import __forge_frame_config from ${q(posixResolve(root, options.frameConfig))};`] : []),
           `const __forge_file = ${q(id)};`,
           `const __forge_title = ${q(title)};`,
           `const __forge_timeout = ${TIMEOUT_MS};`,

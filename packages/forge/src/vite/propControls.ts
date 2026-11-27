@@ -1,4 +1,4 @@
-import { resolve } from 'node:path';
+import { posixResolve } from './posixPath.ts';
 import type { Plugin } from 'vite';
 import { PROP_ARG_TYPES_EXPORT } from '../csf/propArgTypes.ts';
 import { API_EXPORT } from '../story/api.ts';
@@ -99,7 +99,7 @@ export function propControls(
       reader = null;
       typedoc = undefined;
       if (typedocOptions !== false && readings.api) {
-        const file = resolve(root, typedocOptions.json ?? 'dist/typedoc.json');
+        const file = posixResolve(root, typedocOptions.json ?? 'dist/typedoc.json');
         typedoc = { file, ...typedocSource(file, typedocOptions.href) };
       }
     },
