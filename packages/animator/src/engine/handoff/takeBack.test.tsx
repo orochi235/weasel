@@ -57,6 +57,23 @@ describe('a run taken back to the main thread', () => {
     expect(animator.live().map((r) => r.kind)).toEqual(['hold']);
     error.mockRestore();
   });
+
+  it('leaves the table when what carries it on is retired for a throw', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    let bad = false;
+    const easing = (u: number) => { if (bad) throw new Error('easing'); return u; };
+    act(() => { tween(animator, e.target, 100, { easing }); });
+    step(0);
+    step(500);
+    act(() => { animator.hold({ target: e.target, value: { x: 7 } }); });
+    bad = true;
+    for (let i = 0; i < 3; i++) step(100);
+    expect(error).toHaveBeenCalled();
+    expect(animator.live().map((r) => r.kind)).toEqual(['hold']);
+    error.mockRestore();
+  });
 });
 
 describe('a run whose target setter throws as it is canceled', () => {

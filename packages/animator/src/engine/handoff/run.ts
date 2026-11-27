@@ -60,6 +60,8 @@ export function launch(
   let placed: Placed = { id, animation: animate(binding, s, motion), offset: 0 };
   let child: AnimationHandle | null = null;
   let gone = false;
+  /** Its own cancel is under way, which cancels its continuation in turn. */
+  let canceling = false;
   /** The browser animation reached its end, or its start played backward. */
   let finished = false;
   /** Asks for the frame that ends the run once the browser animation has: the run asks for no
@@ -122,6 +124,9 @@ export function launch(
     if (a?.paused) child.pause();
     if (a && a.timeScale !== 1) child.setTimeScale(a.timeScale);
     ctx.defer(id, Infinity);
+    // Whichever way its continuation leaves, finished or canceled, this run leaves with it.
+    const childId = child.id;
+    table.watchCompletion(childId, () => { if (!canceling) table.retire(id); });
   };
   const handoff = {
     read: () => motion.at(local()),
@@ -146,6 +151,7 @@ export function launch(
     return false;
   };
   seed.onCancel = () => {
+    canceling = true;
     if (child) { child.cancel(); return; }
     if (gone) return;
     const value = motion.at(local());
