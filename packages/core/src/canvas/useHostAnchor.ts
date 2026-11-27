@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useLatest, useVisibleRaf, watchElementMove, watchResize } from '@weasel-js/react';
 import {
   hostAnchorCss, hostAnchorRect,
@@ -70,7 +70,8 @@ export function useHostAnchor(
   // the tab is hidden rather than dropping it.
   const raf = useVisibleRaf(recompute);
 
-  useEffect(() => {
+  // A layout effect, so the first paint already carries the position.
+  useLayoutEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- measures layout
     recompute();
     const schedule = () => raf.request();

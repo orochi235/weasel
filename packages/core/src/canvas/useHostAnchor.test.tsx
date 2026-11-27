@@ -79,3 +79,40 @@ describe('useHostAnchor against a page with scrollbars', () => {
     }
   });
 });
+
+describe('useHostAnchor on its first paint', () => {
+  // The panel's ref is left off: its state update alone would flush the passive effects early.
+  it('positions the panel in the commit that mounts it, before passive effects run', async () => {
+    const { createRoot } = await import('react-dom/client');
+    const env = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
+    const wasAct = env.IS_REACT_ACT_ENVIRONMENT;
+    env.IS_REACT_ACT_ENVIRONMENT = false;
+    const host = document.createElement('div');
+    host.getBoundingClientRect = () => ({ x: 40, y: 30, left: 40, top: 30, width: 10, height: 10, right: 50, bottom: 40 }) as DOMRect;
+    document.body.appendChild(host);
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    function Probe() {
+      const { style } = useHostAnchor(() => host, { align: { x: 'start', y: 'start' }, offset: { x: 0, y: 0 } });
+      return <div data-top={style?.top ?? 'none'} />;
+    }
+    const root = createRoot(container);
+    try {
+      // A mutation observer's callback runs once the task that committed the panel ends, before a passive effect's.
+      const firstPaint = new Promise<string | null>((resolve) => {
+        const watch = new MutationObserver(() => {
+          watch.disconnect();
+          resolve(container.firstElementChild?.getAttribute('data-top') ?? null);
+        });
+        watch.observe(container, { childList: true });
+      });
+      root.render(<Probe />);
+      expect(await firstPaint).toBe('30');
+    } finally {
+      root.unmount();
+      container.remove();
+      host.remove();
+      env.IS_REACT_ACT_ENVIRONMENT = wasAct;
+    }
+  });
+});
