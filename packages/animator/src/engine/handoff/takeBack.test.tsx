@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { element, setup } from './testing/fakeAnimate';
@@ -42,6 +42,20 @@ describe('a run taken back to the main thread', () => {
     expect(e.target.read().x).toBeCloseTo(0, 6);
     expect(e.target.committed().x).toBe(0);
     expect(animator.isActive()).toBe(false);
+  });
+
+  it('leaves the table when its onDone throws', () => {
+    const { animator, step, timeline } = setup();
+    const e = element(timeline);
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    act(() => { tween(animator, e.target, 100, { onDone: () => { throw new Error('done'); } }); });
+    step(0);
+    step(500);
+    act(() => { animator.hold({ target: e.target, value: { x: 7 } }); });
+    for (let i = 0; i < 6; i++) step(100);
+    expect(error).toHaveBeenCalled();
+    expect(animator.live().map((r) => r.kind)).toEqual(['hold']);
+    error.mockRestore();
   });
 });
 

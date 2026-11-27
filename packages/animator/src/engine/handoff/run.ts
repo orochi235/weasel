@@ -117,8 +117,7 @@ export function launch(
     child = ends.takeBack(motion, at, backward, () => {
       if (!ctx.has(id)) return;
       ctx.reportEnd(id);
-      ends.onDone?.();
-      ctx.finish(id);
+      try { ends.onDone?.(); } finally { ctx.finish(id); }
     });
     if (a?.paused) child.pause();
     if (a && a.timeScale !== 1) child.setTimeScale(a.timeScale);
