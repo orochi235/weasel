@@ -159,6 +159,7 @@ describe('readTypedoc on a lone component', () => {
       },
     ],
   });
+  const label: TdReflection = { id: 5, name: 'label', variant: 'declaration', kind: 1024, comment: text('The label.') };
 
   it('documents a prop declared as a method from its signature\'s comment', () => {
     const onSelect: TdReflection = {
@@ -170,6 +171,11 @@ describe('readTypedoc on a lone component', () => {
     };
     const docs = readTypedoc(lone('src/Button.tsx', [onSelect]), 0).component('Button', '/repo/src/Button.tsx');
     expect(docs?.props.get('onSelect')?.description).toBe('Called on a pick.');
+  });
+
+  it('matches a source TypeDoc wrote above its base path, with ../', () => {
+    const docs = readTypedoc(lone('../other/src/Button.tsx', [label]), 0).component('Button', '/repo/other/src/Button.tsx');
+    expect(docs?.props.get('label')?.description).toBe('The label.');
   });
 });
 

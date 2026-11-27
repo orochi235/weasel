@@ -72,7 +72,7 @@ const suffixOf = (e: TdReflection, at: string): number =>
   Math.max(
     0,
     ...(e.sources ?? []).map(({ fileName }) => {
-      const tail = slashed(fileName).replace(/^\.\//, '');
+      const tail = slashed(fileName).replace(/^(?:\.\.?\/)+/, '');
       return at.endsWith(`/${tail}`) ? tail.length : 0;
     }),
   );
