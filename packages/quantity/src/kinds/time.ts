@@ -1,3 +1,4 @@
+import { getOwn } from '@weasel-js/registry';
 import type { DisplayKind, Part } from '../kind';
 import type { Unit } from '../units';
 
@@ -12,7 +13,7 @@ const SECONDS: Readonly<Record<string, number>> = {
 
 /** Seconds in one `unit`: a value tagged `ms` counts thousandths. Untagged, or in a unit that is not a time, 1. */
 export function secondsPer(unit: Unit | undefined): number {
-  return (unit === undefined ? undefined : SECONDS[unit]) ?? 1;
+  return (unit === undefined ? undefined : getOwn(SECONDS, unit)) ?? 1;
 }
 
 /**

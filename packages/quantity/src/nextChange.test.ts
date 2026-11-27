@@ -11,6 +11,7 @@ import {
   searchedChange,
   tag,
   textOf,
+  parseAs,
   partsOf,
   type Display,
   type Quantity,
@@ -84,7 +85,8 @@ describe('instant', () => {
   const at = Date.UTC(2026, 10, 26, 14, 32, 5) / 1000;
 
   it('writes a date and time from epoch seconds', () => {
-    expect(present(tag(at, instant({ timeZone: 'UTC' })), undefined, en).text).toBe('Nov 26, 2026, 2:32 PM');
+    // ICU puts a narrow no-break space before PM in newer releases.
+    expect(present(tag(at, instant({ timeZone: 'UTC' })), undefined, en).text).toMatch(/^Nov 26, 2026, 2:32\sPM$/);
     expect(present(tag(at, instant({ iso: 'minute', timeZone: 'UTC' })), undefined, en).text).toBe('2026-11-26 14:32');
     expect(present(tag(at, instant({ iso: 'second', timeZone: 'UTC' })), undefined, en).text).toBe('2026-11-26 14:32:05');
     expect(
@@ -104,10 +106,16 @@ describe('instant', () => {
     expect(present(tag(0, instant({ iso: 'date', timeZone: 'UTC', origin: Date.UTC(2000, 0, 1) })), undefined, en).text).toBe('2000-01-01');
   });
 
-  it('reads typed ISO text back', () => {
-    const d = instant({ timeZone: 'UTC' });
-    expect(partsOf(tag(at, d), undefined, en).some((p) => p.type === 'hour')).toBe(true);
-    expect(textOf(partsOf(tag(at, d), undefined, en))).toBe('Nov 26, 2026, 2:32 PM');
+  it('names each field it writes as a part', () => {
+    const parts = partsOf(tag(at, instant({ iso: 'minute', timeZone: 'UTC' })), undefined, en);
+    expect(parts.filter((p) => p.type !== 'literal').map((p) => p.type)).toEqual(['year', 'month', 'day', 'hour', 'minute']);
+    expect(textOf(parts)).toBe('2026-11-26 14:32');
+  });
+
+  it('reads typed ISO text back, in the unit it is tagged with', () => {
+    expect(parseAs('2026-11-26T14:32:05Z', instant())).toBe(at);
+    expect(parseAs('2026-11-26T14:32:05Z', instant(), { unit: 'ms' })).toBe(at * 1000);
+    expect(parseAs('not a date', instant())).toBeNaN();
   });
 
   it('changes when its last shown field does', () => {
