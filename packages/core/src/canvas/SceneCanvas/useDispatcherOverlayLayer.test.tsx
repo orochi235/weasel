@@ -328,6 +328,14 @@ describe('useDispatcherOverlayLayer', () => {
       expect(path.stroke).toEqual({ paint: { color: '#00ff00' }, width: 3 });
     });
 
+    it('falls back to the defaults for a style field or role passed as undefined', () => {
+      const style = { stroke: undefined, lineWidth: undefined, dash: undefined, roles: { cut: undefined } };
+      const [cut] = collectPaths(drawRun(CUT, 'cut', style as never));
+      expect(cut!.stroke).toEqual({ paint: { color: '#e23b3b' }, width: 1, dash: [6, 4] });
+      const [tether] = collectPaths(drawRun(CUT, 'tether', style as never));
+      expect(tether!.stroke).toEqual({ paint: { color: '#a48bd4' }, width: 1, dash: [3, 3] });
+    });
+
     it('drops a run under two points', () => {
       expect(drawRun([{ x: 1, y: 1 }], 'cut')).toEqual([]);
     });
