@@ -96,7 +96,7 @@ export function Lane(props: LaneProps): ReactElement {
           onPressEmpty?.();
         }}
         onKeyDown={(e) => {
-          // The timeline deletes the key as this bubbles up; focus goes to the key selected after it.
+          // The timeline deletes the key as this bubbles up; focus goes to the key it selects in its place.
           if (deletes && (e.key === 'Delete' || e.key === 'Backspace') && (e.target as Element).closest('[data-keyframe-index]')) refocusRef.current = true;
         }}
         onDoubleClick={(e) => {

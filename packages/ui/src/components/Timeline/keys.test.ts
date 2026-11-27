@@ -120,6 +120,12 @@ describe('deleteKey', () => {
     expect(r.selection).toEqual({ trackPath: [0], keyIndex: 0 });
   });
 
+  it('selects the new first key when the first key goes', () => {
+    const r = deleteKey([track([0, 100, 200])], { trackPath: [0], keyIndex: 0 });
+    expect(r.selection).toEqual({ trackPath: [0], keyIndex: 0 });
+    expect(times(r.tracks)).toEqual([100, 200]);
+  });
+
   it('clears the selection when the last key goes', () => {
     const r = deleteKey([track([0])], { trackPath: [0], keyIndex: 0 });
     expect(r.selection).toBeNull();
