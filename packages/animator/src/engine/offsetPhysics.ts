@@ -1,9 +1,8 @@
 import { stateOf, type Behind, type TargetState } from '../target';
 import type { AnimationKind, PhysicsHandle, TargetPhysicsOptions } from '../types';
 import type { AnimationContext, AnimationSeed } from './context';
-import { absorb, axesFor, comeOut, commitOffset, commitOver, leaveTarget, goBehind, minus, norm, plus, setBeside, takeUp, times, travel } from './offsets';
+import { absorb, axesFor, comeOut, commitOffset, commitOver, leaveTarget, goBehind, minus, plus, setBeside, takeUp, times, travel } from './offsets';
 import { resolveSpringConstants } from './physicsAnimation';
-import { earliestRest } from './springRest';
 import { createSpringVoices, type SpringVoices, type SpringVoicesOptions } from './springVoices';
 
 const any = (a: readonly number[]): boolean => a.some((x) => x !== 0);
@@ -19,26 +18,33 @@ export function constantsFor(o: Parameters<typeof resolveSpringConstants>[0], ki
 
 type Along = readonly number[];
 
-/** When a spring or a coast with no `onTick` can next be at rest. Until then its tick, which
- *  only asks whether it is, has nothing to do. */
+/** When a spring or a coast can next have landed, from blits. Until then its tick reads no voice:
+ *  one with no `onTick` is not ticked, and one with is only shows its value. */
 function restWaits(
-  ctx: AnimationContext,
-  id: number,
-  quiet: boolean,
-  c: { stiffness: number; damping: number; mass: number },
-  threshold: number,
+  ctx: AnimationContext, id: number, quiet: boolean, voices: () => SpringVoices, land: () => void,
 ) {
-  // Nothing pulls a coast, so it is at rest once it is slow.
-  const until = (value: Along, velocity: Along, coast: boolean): number =>
-    earliestRest(value, velocity, coast ? 0 : c.stiffness, c.damping, c.mass, threshold);
+  /** On its own clock, the soonest it can have landed; 0 asks the next tick to read it. */
+  let from = 0;
   return {
-    /** The `due` it registers with. */
-    first: (value: Along, velocity: Along, coast: boolean): number | undefined =>
-      (quiet ? until(value, velocity, coast) : undefined),
-    /** Leaves it unticked until then. Answers false, as the tick of one still moving does. */
-    again(value: Along, velocity: Along, coast: boolean): false {
-      if (quiet) ctx.defer(id, until(value, velocity, coast));
+    /** Whether a tick at `nowMs` can tell nothing yet. Played backward, every tick reads. */
+    early: (nowMs: number, scale: number): boolean => scale >= 0 && nowMs < from,
+    /** Waits until it can have landed. Answers false, as the tick of one still moving does. */
+    again(nowMs: number, scale: number): false {
+      const left = voices().landsIn();
+      if (quiet) ctx.defer(id, left);
+      else from = scale > 0 ? nowMs + left : 0;
       return false;
+    },
+    /** A write has moved it. One with no `onTick` waits on once a frame has read the move, unticked
+     *  meanwhile, and lands then if that frame landed it. */
+    moved(): void {
+      from = 0;
+      if (!quiet) return;
+      ctx.afterFrame(() => {
+        if (!ctx.has(id)) return;
+        if (voices().landed()) land();
+        else ctx.defer(id, voices().landsIn());
+      });
     },
   };
 }
@@ -83,7 +89,10 @@ export function startOffsetPhysics<T>(
   const zeros = (): number[] => new Array<number>(ax.count).fill(0);
 
   const id = interrupted?.id ?? ctx.nextId();
-  const waits = restWaits(ctx, id, !o.onTick, constants, restThreshold);
+  const waits = restWaits(ctx, id, !o.onTick, () => voices, () => {
+    finish();
+    ctx.finish(id);
+  });
   const interrupts = o.interrupt !== false;
   const seed = {
     id, kind, cancelKey: o.cancelKey, label: o.label, target: s, keepExisting: !interrupts,
@@ -105,7 +114,7 @@ export function startOffsetPhysics<T>(
   if (o.to != null) commitOver(ctx, s as never, o.to);
   ctx.seedClock();
   const { voices, behind } = startVoices(
-    ctx, s as never, { id, nextId: ctx.nextId, ...constants }, move, start, velocity ?? zeros(), dest == null,
+    ctx, s as never, { id, nextId: ctx.nextId, ...constants, threshold: restThreshold }, move, start, velocity ?? zeros(), dest == null,
   );
 
   let left = false;
@@ -128,25 +137,23 @@ export function startOffsetPhysics<T>(
   const shows = (own: readonly number[]): T => ax.from(plus(dest ?? ax.to(s.get()), own));
 
   let ticked = false;
-  seed.due = waits.first(start, velocity ?? zeros(), dest == null);
+  if (!o.onTick) seed.due = 0;
   seed.onCancel = () => leave(true);
   seed.onRate = (_paused, _timeScale, rate) => voices.rate(rate);
   seed.velocity = () => voices.own().velocity;
   seed.tick = (nowMs, scale) => {
     if (ctx.tripwire()) { leave(true); return true; }
-    const own = voices.own();
     if (scale < 0 && (nowMs <= 0 || voices.rewound())) {
-      o.onTick?.(shows(own.value));
+      o.onTick?.(shows(voices.own().value));
       return ctx.has(id) ? finish(true) : true;
     }
     // A coast too slow to move ends at once rather than emit a tick and wait a frame.
-    if (!ticked && dest == null && norm(own.velocity) < restThreshold) return finish();
+    if (!ticked && dest == null && voices.landed()) return finish();
     ticked = true;
-    o.onTick?.(shows(own.value));
+    if (o.onTick) o.onTick(shows(voices.own().value));
     if (!ctx.has(id)) return true;
-    if (norm(own.velocity) >= restThreshold || (dest && norm(own.value) >= restThreshold)) {
-      return waits.again(own.value, own.velocity, dest == null);
-    }
+    if (waits.early(nowMs, scale)) return false;
+    if (!voices.landed()) return waits.again(nowMs, scale);
     if (dest) o.onTick?.(ax.from(dest));
     return ctx.has(id) ? finish() : true;
   };
@@ -165,7 +172,7 @@ export function startOffsetPhysics<T>(
         dest = null;
         voices.rest(minus(own.value, moved), own.velocity, true);
         voices.settleMove();
-        waits.again(own.value, own.velocity, true);
+        waits.moved();
         return;
       }
       const to = axesFor(ax, next, 'setTarget');
@@ -177,14 +184,13 @@ export function startOffsetPhysics<T>(
       if (dest == null) voices.rest(own.value, own.velocity, false);
       dest = to;
       voices.move(shift);
-      waits.again(plus(own.value, shift), own.velocity, false);
+      waits.moved();
       ctx.targets.showNow(s as never);
     },
     setVelocity(v) {
       if (left) return;
-      const pushed = axesFor(ax, v, 'setVelocity');
-      waits.again(voices.own().value, pushed, dest == null);
-      voices.push(pushed);
+      voices.push(axesFor(ax, v, 'setVelocity'));
+      waits.moved();
     },
   };
 }

@@ -2,7 +2,6 @@ import { SPRING_PRESETS } from '@weasel-js/geom';
 import type { AnimationKind, PhysicsHandle, PhysicsOptions } from '../types';
 import { axesOf, type Axes } from './axes';
 import type { AnimationContext } from './context';
-import { earliestRest } from './springRest';
 
 export function resolveSpringConstants(o: { preset?: string; stiffness?: number; damping?: number; mass?: number }) {
   const preset = o.preset ? SPRING_PRESETS[o.preset as keyof typeof SPRING_PRESETS] : null;
@@ -13,13 +12,10 @@ export function resolveSpringConstants(o: { preset?: string; stiffness?: number;
   };
 }
 
-/** The length of `v`, or of `v` less `from`, across its axes. */
-function lengthOf(v: readonly number[], from?: readonly number[]): number {
+/** The length of `v` across its axes. */
+function lengthOf(v: readonly number[]): number {
   let sum = 0;
-  for (let i = 0; i < v.length; i++) {
-    const d = from ? v[i]! - from[i]! : v[i]!;
-    sum += d * d;
-  }
+  for (const x of v) sum += x * x;
   return Math.sqrt(sum);
 }
 
@@ -53,21 +49,19 @@ export function startPhysics<T>(
   let target: { value: T; axes: number[] } | null = o.to == null ? null : { value: o.to, axes: checkShape(o.to, '`to`') };
   let velocity = o.velocity == null ? new Array<number>(axes.count).fill(0) : checkShape(o.velocity, '`velocity`');
   let started = false;
-  /** The soonest on its clock it can be at rest; until then a frame shows its value from blits'
-   *  lane and reads no motion. 0 asks the next frame to read it. */
+  /** On its clock, the soonest it can have landed, from blits; until then a tick reads no voice.
+   *  0 asks the next tick to read it. */
   let restFrom = 0;
-  const restAfter = (nowMs: number, m: { value: number[]; velocity: number[] }): number => {
-    const off = target ? m.value.map((x, i) => x - target!.axes[i]!) : m.value;
-    return nowMs + earliestRest(off, m.velocity, target ? stiffness : 0, damping, mass, restThreshold);
-  };
 
   const id = ctx.nextId();
   ctx.seedClock();
   // Started ahead of `register`, whose `start` listeners may already cancel it.
   const reader = codec.spring({
     id, axes: axes.count, from: axes.to(o.from), to: target && target.axes, velocity: velocity.slice(),
-    stiffness, damping, mass,
+    stiffness, damping, mass, settle: restThreshold,
   });
+  // With no stiffness nothing pulls it to its target, and blits lands it where its coast stops.
+  const landed = (): boolean => codec.landed(id) && !(target && stiffness === 0);
 
   /** Ends it. As for a tween: canceled from its own onTick, it never completes. */
   const end = (): true => {
@@ -95,16 +89,11 @@ export function startPhysics<T>(
         started = true;
         if (target == null && lengthOf(velocity) < restThreshold) return end();
       }
-      // Backward, its clock runs against the bound, so every frame reads.
-      if (rate < 0) restFrom = 0;
-      const m = rate >= 0 && nowMs < restFrom ? null : reader.motion();
       o.onTick(axes.from(reader.cols, reader.at));
-      if (!m) return false;
-      velocity = m.velocity;
-      const still = lengthOf(m.velocity) < restThreshold
-        && (target == null || lengthOf(m.value, target.axes) < restThreshold);
-      if (!still) {
-        if (rate >= 0) restFrom = restAfter(nowMs, m);
+      // Backward, its clock runs against the bound, so every tick reads.
+      if (rate >= 0 && nowMs < restFrom) return false;
+      if (!landed()) {
+        restFrom = rate > 0 ? nowMs + codec.landsIn(id) : 0;
         return false;
       }
       if (target) o.onTick(target.value);

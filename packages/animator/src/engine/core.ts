@@ -121,6 +121,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       if (!frame.framing()) host.requestFrame();
     },
     wake: () => { if (!frame.framing()) host.requestFrame(); },
+    afterFrame: (cb) => { afterTicks.push(cb); if (!frame.framing()) host.requestFrame(); },
     tripwire: host.tripwire,
     fail,
     interrupt: (key, by) => table.cancelByKey(key, by as ActiveAnimation),
