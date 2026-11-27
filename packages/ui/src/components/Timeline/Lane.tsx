@@ -34,13 +34,13 @@ export interface LaneProps {
   /** Index of the selected key on THIS row, or null. */
   selection: number | null;
   onSelectionChange: (keyIndex: number) => void;
-  /** Live during a dope-sheet drag. */
-  onKeyInput: (keyIndex: number, toMs: number) => void;
+  /** Live during a dope-sheet drag. Unset, a canceled drag calls nothing. */
+  onKeyInput?: (keyIndex: number, toMs: number) => void;
   /** A dope-sheet drag was canceled: hand back the tracks it began from. */
   onKeyRevert?: () => void;
   /** Once, at the end of a dope-sheet gesture. */
   onKeyChange: (keyIndex: number, toMs: number) => void;
-  /** Live during a graph-mode key drag: the row's whole key list. */
+  /** Live during a graph-mode key drag: the row's whole key list. Unset, a canceled drag calls nothing. */
   onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
   /** Once per graph-mode edit: the row's whole key list. */
   onKeysChange?: (keys: readonly Keyframe<number>[]) => void;

@@ -326,6 +326,16 @@ describe('Lane in graph mode', () => {
     expect(onSelectionChange).toHaveBeenCalledWith(1);
   });
 
+  it('calls no onCancel for a key drag whose input nobody takes', () => {
+    const onCancel = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysChange={() => {}} onCancel={onCancel} />);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 1.6, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 10 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 1.6 });
+    fireEvent.pointerUp(document, { clientX: 250, clientY: 1.6 });
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
   it('drags a key in value as well as time, reporting live keys and one commit', () => {
     const onKeysInput = vi.fn();
     const onKeysChange = vi.fn();

@@ -203,13 +203,14 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
   /** A key drag's preview, or `null` once it is put back. */
   preview: (r: KeyEdit | null) => void;
 }, seed?: KeySeed): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
+  const { onInput } = report;
   return {
-    onKeyInput: (keyIndex, toMs) => {
-      if (!report.onInput) return;
+    // Unset when nothing takes input, so a drag records no preview to cancel.
+    onKeyInput: onInput && ((keyIndex, toMs) => {
       const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
       report.preview(r);
-      report.onInput(r.tracks);
-    },
+      onInput(r.tracks);
+    }),
     onKeyRevert: () => {
       report.preview(null);
       report.onInput?.(tracks.slice());
@@ -220,7 +221,7 @@ function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], r
       if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
       report.commit(moveKey(tracks, sel, toMs));
     },
-    onKeysInput: (keys) => report.onInput?.(setKeys(tracks, trackPath, keys)),
+    onKeysInput: onInput && ((keys) => onInput(setKeys(tracks, trackPath, keys))),
     onKeysChange: (keys) => report.onChange(setKeys(tracks, trackPath, keys)),
     onInsert: (atMs) => {
       const r = insertKey(tracks, trackPath, atMs, seed);

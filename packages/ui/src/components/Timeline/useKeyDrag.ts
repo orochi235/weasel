@@ -20,7 +20,8 @@ export interface KeyDragArgs {
   /** The row's key times, in its own time. */
   times: readonly number[];
   onSelect: (keyIndex: number) => void;
-  onKeyInput: (keyIndex: number, toMs: number) => void;
+  /** Unset: the drag previews only its ghost, and a cancel or a release on its own time calls nothing. */
+  onKeyInput?: (keyIndex: number, toMs: number) => void;
   onKeyChange: (keyIndex: number, toMs: number) => void;
   /** A drag was canceled: put its preview back. */
   onRevert?: () => void;
@@ -84,6 +85,7 @@ export function useKeyDrag(a: KeyDragArgs) {
         if (!traveled(ev)) return;
         const t = at.current(ev, stops);
         setDrag({ keyIndex: i, t, times });
+        if (!onKeyInput) return;
         previewed = true;
         onKeyInput(i, t);
       },
@@ -97,7 +99,7 @@ export function useKeyDrag(a: KeyDragArgs) {
       // The consumer previewed the move through `onKeyInput`; a drag that ends without a release puts it back.
       onCancel: () => {
         end();
-        if (!dragging) return;
+        if (!previewed) return;
         onRevert?.();
         onCancel?.();
       },

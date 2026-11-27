@@ -100,9 +100,9 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     // would grow the consumer's easing cache by one entry per pixel.
     if (next.drag.kind !== 'key') return;
     const applied = applyKeyframeDrag(next).keys;
-    if (applied === next.keys) return;
+    if (applied === next.keys || !onKeysInput) return;
     previewed.current ??= prev.keys;
-    onKeysInput?.(applied);
+    onKeysInput(applied);
   };
 
   const onLayerCancel = (): void => {

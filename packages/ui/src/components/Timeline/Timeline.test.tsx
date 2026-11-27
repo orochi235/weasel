@@ -655,6 +655,19 @@ describe('Timeline', () => {
     expect((onInput.mock.calls.at(-1)![0][0] as SampledTrack<number>).keys.map((k) => k.value)).toEqual([1, 2]);
   });
 
+  it.each(['release', 'Escape'])('calls no onCancel for a key drag it sent no onInput for, ended by %s', (how) => {
+    const onChange = vi.fn();
+    const onCancel = vi.fn();
+    renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} onCancel={onCancel} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10 });
+    if (how === 'release') fireEvent.pointerUp(document, { clientX: 250, clientY: 10 });
+    else fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
   it('keeps refusing keyboard edits while a key drag is held, though another finger lifts', () => {
     const onChange = vi.fn();
     renderWithIcons(<Timeline {...base} tracks={tracks()} onChange={onChange} />);
