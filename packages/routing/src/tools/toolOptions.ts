@@ -83,12 +83,18 @@ export function shareToolOptions(options: ToolOptionsSpec, share: ToolOptionShar
   return { ...options, share: { ...options.share, ...share } };
 }
 
-/** `options` with `option`'s default made `value`: a tool hook's way to take a starting value from its caller.
- *  `undefined`, or an option it does not declare, leaves `options` as they are. */
+/** `options` with `option`'s default made `value`, repaired as a held value is (a number held to the leaf's bounds):
+ *  a tool hook's way to take a starting value from its caller. `undefined`, or an option it does not declare, leaves
+ *  `options` as they are; so does a value the leaf cannot read, with a warning. */
 export function withToolOptionDefault(options: ToolOptionsSpec, option: string, value: unknown): ToolOptionsSpec {
   const leaf = value === undefined ? undefined : toolOptionLeaf(options, option);
   if (!leaf) return options;
-  return { ...options, prefs: { ...options.prefs, children: { ...options.prefs.children, [option]: { ...leaf, default: value } as PrefLeaf } } };
+  const repaired = readHeld(leaf, value);
+  if (repaired === undefined) {
+    console.warn(`weasel: tool option "${option}" cannot start at ${String(value)}; it keeps its default`);
+    return options;
+  }
+  return { ...options, prefs: { ...options.prefs, children: { ...options.prefs.children, [option]: { ...leaf, default: repaired } as PrefLeaf } } };
 }
 
 /** The actions `options` are params of. */

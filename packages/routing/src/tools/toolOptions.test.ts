@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { PrefNumber } from '@weasel-js/prefs-schema';
 import type { ImmediateInvoker } from '../interactions/actions/invoker';
 import { defineTool } from './defineTool';
-import { createToolOptionValues, steppedOption, toolOptionParams, type ToolOptionsSpec } from './toolOptions';
+import { createToolOptionValues, steppedOption, toolOptionParams, withToolOptionDefault, type ToolOptionsSpec } from './toolOptions';
 import { toolOptionSteps, WHEEL_SIZE_BURST_MS, WHEEL_SIZE_STEP_PX } from './toolOptionSteps';
 
 const OPTIONS: ToolOptionsSpec = {
@@ -74,6 +74,25 @@ describe('steppedOption', () => {
     expect(steppedOption(reach, Infinity, step, 1)).toBe(Infinity);
     expect(steppedOption(reach, Infinity, step, -1)).toBe(100);
     expect(steppedOption(reach, 1, step, -1)).toBe(1);
+  });
+});
+
+describe('withToolOptionDefault', () => {
+  it('holds a starting value to the leaf\'s bounds, as it holds a held value', () => {
+    expect(toolOptionParams('b', withToolOptionDefault(OPTIONS, 'radiusPx', 500), undefined).radiusPx).toBe(100);
+    expect(toolOptionParams('b', withToolOptionDefault(OPTIONS, 'radiusPx', 0), undefined).radiusPx).toBe(2);
+    expect(toolOptionParams('b', withToolOptionDefault(OPTIONS, 'radiusPx', 12), undefined).radiusPx).toBe(12);
+  });
+
+  it('keeps the declared default, and warns, for a starting value the leaf cannot read', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      expect(withToolOptionDefault(OPTIONS, 'radiusPx', 'big')).toBe(OPTIONS);
+      expect(withToolOptionDefault(OPTIONS, 'radiusPx', Number.NaN)).toBe(OPTIONS);
+      expect(warn).toHaveBeenCalledTimes(2);
+    } finally {
+      warn.mockRestore();
+    }
   });
 });
 
