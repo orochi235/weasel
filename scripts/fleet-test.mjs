@@ -28,10 +28,12 @@ import { killOnSignal, runSuite } from './lib/fleet-parts.mjs';
 import { armTree, changedFiles, lockScope, runsEverything } from './lib/fleet-tree.mjs';
 import { failedFileOf, firstFor, recordFailed } from './lib/fleet-first.mjs';
 import { SCOPED, TRIGGERS } from './lib/fleet-triggers.mjs';
+import { answerHelp } from './lib/help.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 const args = process.argv.slice(2);
+answerHelp(import.meta.url, args);
 const sinceAt = args.findIndex((arg) => arg === '--since' || arg.startsWith('--since='));
 const since = sinceAt < 0 ? undefined : args[sinceAt].includes('=') ? args.splice(sinceAt, 1)[0].slice('--since='.length) : args.splice(sinceAt, 2)[1];
 if (sinceAt >= 0 && (!since || since.startsWith('-'))) {

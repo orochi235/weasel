@@ -13,6 +13,9 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { answerHelp } from './lib/help.mjs';
+
+answerHelp(import.meta.url, process.argv.slice(2));
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const say = (line) => console.log(`test-batch: ${line}`);
