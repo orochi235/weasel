@@ -1,7 +1,7 @@
 import { relative } from 'node:path';
 import type { Logger } from 'vite';
 import type { IndexEntry } from '../story/types';
-import { warnOnce } from './warnOnce.ts';
+import { warnNew } from './warnNew.ts';
 
 /** A story id two or more entries share: the files declaring it, each once, and the exports that do. */
 interface SharedId {
@@ -26,14 +26,15 @@ function sharedText({ files, exports }: SharedId): { by: string; fix: string } {
   return { by: `${files[0]} as ${exports.join(', ')}`, fix: 'Rename one of the exports.' };
 }
 
-/** `entries` with only the first of each story id two of them share, after warning once through `logger` of each. */
+/** `entries` with only the first of each story id two of them share, after warning through `logger` of each that was not shared the last time. */
 export function warnShared(entries: IndexEntry[], root: string, logger: Logger | undefined): IndexEntry[] {
   const shared = sharedIds(entries, (file) => relative(root, file));
-  if (shared.length === 0) return entries;
-  for (const one of shared) {
+  const messages = shared.map((one) => {
     const { by, fix } = sharedText(one);
-    warnOnce(logger, `[forge] story id ${one.id} is declared by ${by}; the workshop shows only the first. ${fix}`);
-  }
+    return `[forge] story id ${one.id} is declared by ${by}; the workshop shows only the first. ${fix}`;
+  });
+  warnNew(logger, 'shared story ids', messages);
+  if (shared.length === 0) return entries;
   const seen = new Set<string>();
   return entries.filter((entry) => !seen.has(entry.id) && seen.add(entry.id));
 }
