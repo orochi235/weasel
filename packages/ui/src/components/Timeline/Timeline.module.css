@@ -190,8 +190,8 @@
 .segment[aria-current='true'] { background: var(--wzl-accent-soft); }
 .segment:focus-visible { outline: 2px solid var(--wzl-focus-ring); outline-offset: -2px; }
 
-/* Held: a key pressed selects at most, so nothing invites a drag. */
-.root[data-held] :is(.key, .eventMark) { cursor: default; }
+/* Held: a key pressed selects at most and the ruler does not scrub, so nothing invites a drag. */
+.root[data-held] :is(.key, .eventMark, .ruler) { cursor: default; }
 .root[data-held='disabled'] .lanes {
   filter: var(--wzl-disabled-filter);
 }

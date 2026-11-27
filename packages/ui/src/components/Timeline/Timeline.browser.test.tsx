@@ -49,3 +49,10 @@ test('lanes that scroll keep their tracks as wide as the ruler', () => {
     if (hide) hide.disabled = false;
   }
 });
+
+test.each([{ readOnly: true }, { disabled: true }])('held %o, the ruler does not show a scrub cursor', (held) => {
+  const { getByTestId } = render(
+    <Timeline tracks={tracks} duration={2000} playhead={0} onChange={() => {}} onSeek={() => {}} {...held} />,
+  );
+  expect(getComputedStyle(getByTestId('timeline-ruler')).cursor).toBe('default');
+});
