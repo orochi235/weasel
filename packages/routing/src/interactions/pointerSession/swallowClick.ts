@@ -18,10 +18,33 @@ export function swallowClick(target: EventTarget, opts: SwallowClickOptions = {}
   return () => target.removeEventListener('click', swallow, { capture: true });
 }
 
+/** How long a release's click is waited for when no press or key comes first. A touch tap's click is its own
+ *  input event after the `pointerup`, and on a page with no mobile viewport it waits out the double-tap delay. */
+const RELEASE_CLICK_MS = 500;
+
 /**
- * Swallow a click on `target` dispatched in this task: the one the release being handled now raises, if it raises
- * one. A release that raises none lets go before the next task, so it never eats a later, real click.
+ * Swallow the click the release being handled now raises, if it raises one: on `target`, until a click comes, the
+ * next press or key anywhere in its window, or {@link RELEASE_CLICK_MS}. A real click always follows a press or a key,
+ * so a release that raises none never eats one.
  */
 export function swallowNextClick(target: EventTarget, opts?: SwallowClickOptions): void {
-  setTimeout(swallowClick(target, opts), 0);
+  const view = viewOf(target);
+  const disarm = swallowClick(target, opts);
+  const lift = (): void => {
+    disarm();
+    clearTimeout(timer);
+    view.removeEventListener('pointerdown', lift, { capture: true });
+    view.removeEventListener('keydown', lift, { capture: true });
+  };
+  const timer = setTimeout(lift, RELEASE_CLICK_MS);
+  view.addEventListener('pointerdown', lift, { capture: true });
+  view.addEventListener('keydown', lift, { capture: true });
+}
+
+/** The window whose input `target` hears: a node's or a document's, or `target` itself (a window). */
+function viewOf(target: EventTarget): EventTarget {
+  const n = target as Partial<Node>;
+  if (n.nodeType === undefined) return target;
+  const doc = n.nodeType === Node.DOCUMENT_NODE ? (target as Document) : n.ownerDocument;
+  return doc?.defaultView ?? target;
 }

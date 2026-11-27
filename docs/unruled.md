@@ -20,6 +20,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-27 (my call, scour of routing interactions): `swallowNextClick` holds its guard until a click, the next
+  press or key in the target's window, or 500 ms, rather than to the end of the release's task, so a touch tap's later
+  click is still swallowed. A script's `click()` within 500 ms of a drag, with no press or key between, is swallowed too.
 - 2026-11-25 (my call, audit round 89): `trigger`, `preview`, `begin`, menu rows and the last operation hand an action
   only the deps its `requires` names, as its own key binding does, rather than giving an action without `requires`
   the old fixed bag (selection, scene, history, view, activeTool, booleansAdapter) on those paths alone.

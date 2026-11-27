@@ -411,11 +411,11 @@ describe('useReorderDragList row controls', () => {
     expect(onRowClick).not.toHaveBeenCalled();
   });
 
-  it('lets a later click through', async () => {
+  it('lets a later click through, as a key raises', () => {
     const { onRowClick, row } = setup();
     press(row('b'), 48);
     release(48);
-    await new Promise((r) => setTimeout(r, 0));
+    fireEvent.keyDown(row('b'), { key: 'Enter' });
     fireEvent.click(row('b'));
     expect(onRowClick).toHaveBeenCalledWith('b');
   });

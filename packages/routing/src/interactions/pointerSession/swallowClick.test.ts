@@ -58,4 +58,21 @@ describe('swallowNextClick', () => {
     click();
     expect(heard).toHaveBeenCalledTimes(1);
   });
+
+  it('swallows a touch tap\'s click, which comes in a later task, until the next press or key', () => {
+    vi.useFakeTimers();
+    const { box, heard, click } = mount();
+    swallowNextClick(box);
+    vi.advanceTimersByTime(50);
+    click();
+    expect(heard).not.toHaveBeenCalled();
+    swallowNextClick(box);
+    box.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    click();
+    expect(heard).toHaveBeenCalledTimes(1);
+    swallowNextClick(box);
+    box.dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'Enter' }));
+    click();
+    expect(heard).toHaveBeenCalledTimes(2);
+  });
 });

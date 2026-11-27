@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useKitSettings, useLatest } from '@weasel-js/react';
 import { fixedSeat, type FixedSeat, isPrimaryPress } from '@weasel-js/gestures';
-import { openPointerSession, pastDragThreshold, type PointerSession, swallowClick } from '@weasel-js/routing';
+import { openPointerSession, pastDragThreshold, type PointerSession, swallowClick, swallowNextClick } from '@weasel-js/routing';
 
 /** Payload carried by an in-flight pointer drag — `kind` routes to drop zones, `ids` lists the dragged items. */
 export interface DragPayload {
@@ -160,16 +160,17 @@ function beginPointerDrag(
 }
 
 /**
- * Run `fn` once pointer `pointerId` is no longer held: a beat after its
- * release, so a click that release brings is dispatched first, or at once when
- * the pointer is canceled or pressed again.
+ * Lift `guard` once pointer `pointerId` is no longer held: at its release,
+ * handing over to {@link swallowNextClick} for the click that release brings,
+ * or at once when the pointer is canceled or pressed again.
  */
-function afterRelease(doc: Document, pointerId: number, fn: () => void): void {
+function afterRelease(target: Element, pointerId: number, guard: () => void): void {
+  const doc = target.ownerDocument;
   const on = (e: PointerEvent) => {
     if (e.pointerId !== pointerId) return;
     for (const type of ['pointerup', 'pointercancel', 'pointerdown'] as const) doc.removeEventListener(type, on, true);
-    if (e.type === 'pointerup') setTimeout(fn, 0);
-    else fn();
+    guard();
+    if (e.type === 'pointerup') swallowNextClick(target);
   };
   for (const type of ['pointerup', 'pointercancel', 'pointerdown'] as const) doc.addEventListener(type, on, true);
 }
@@ -229,17 +230,17 @@ export function useDragHandle(
       onEnd: (ev) => {
         live.current = null;
         ghost?.drop(ev);
-        // A release away from the source sends it no click, and the guard
-        // would eat the next real one. Any click this release does bring is
-        // dispatched before a timer runs.
-        if (dropClickGuard) setTimeout(dropClickGuard, 0);
+        if (dropClickGuard) {
+          dropClickGuard();
+          swallowNextClick(target);
+        }
       },
       onCancel: (reason) => {
         live.current = null;
         ghost?.cancel();
         if (!dropClickGuard) return;
         // Only an abort or a blur leaves the button down, with a release still to come.
-        if (reason === 'aborted' || reason === 'blur') afterRelease(target.ownerDocument, pointerId, dropClickGuard);
+        if (reason === 'aborted' || reason === 'blur') afterRelease(target, pointerId, dropClickGuard);
         else dropClickGuard();
       },
     }, { capture: false, missedRelease: 'cancel' });
