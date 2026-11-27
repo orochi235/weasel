@@ -125,6 +125,34 @@ interface DrawnRecord {
   box: Bounds | null;
 }
 
+/** How an outline inscribed in its pose box meets the box: a rect's sides lie on it, an ellipse's curve
+ *  touches it, and a `'sharp'` outline (a polygon, a star) has corners sharper than a right angle. */
+export type PoseOutline = 'rect' | 'ellipse' | 'sharp';
+
+/**
+ * The box `stroke` covers along an `outline` inscribed in the pose box, `pathAt(pose)`: the pose box grown by
+ * an even outset where that is exact, and measured from the ribbon where something sticks out of it.
+ */
+export function poseOutlineDrawnBounds(
+  node: { data?: unknown },
+  pose: Bounds,
+  stroke: Stroke | null,
+  ctx: NodeInkCtx | undefined,
+  outline: PoseOutline,
+  pathAt: (pose: Bounds) => Path,
+): Bounds {
+  return stroke !== null && (outline === 'sharp' || protrudes(stroke))
+    ? strokedPoseBox(node, pose, stroke, ctx, pathAt)
+    : outsetPoseBox(pose, stroke, ctx);
+}
+
+/** Whether `stroke` paints past an even outset of a smooth closed outline: a marker head, or a square cap on
+ *  an end a dash or a trim opens, whose corners stand off a curve. */
+function protrudes(stroke: Stroke): boolean {
+  if (stroke.markerStart !== undefined || stroke.markerMid !== undefined || stroke.markerEnd !== undefined) return true;
+  return stroke.cap === 'square' && ((stroke.dash?.length ?? 0) > 0 || stroke.trim !== undefined);
+}
+
 /** The pose box grown by a uniform stroke outset: exact for a rect or an
  *  ellipse, whose stroke reaches the same distance past the box on every side. */
 export function outsetPoseBox(pose: Bounds, stroke: Stroke | null, ctx: NodeInkCtx | undefined): Bounds {
