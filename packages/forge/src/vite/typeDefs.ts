@@ -9,7 +9,6 @@ export interface TypeDefReading {
   skipped: (file: string) => boolean;
 }
 
-const NAME = /[A-Za-z_$][\w$]*/g;
 const IN_PACKAGES = /[\\/]node_modules[\\/]/;
 
 type Defined = ts.InterfaceDeclaration | ts.TypeAliasDeclaration | ts.EnumDeclaration;
@@ -31,12 +30,12 @@ export interface TypeDefs {
 export const createTypeDefs = (): TypeDefs => ({ defs: new Map(), seen: new Map(), files: new Set() });
 
 /**
- * Adds to `into` the definition of each name in `text` that, seen from `from`, is an interface, type alias or enum
- * the project declares: the declaration as written, comments and `export` dropped, and its doc summary.
+ * Adds to `into` the definition of each type `text` refers to that, seen from `from`, is an interface, type alias or
+ * enum the project declares: the declaration as written, comments and `export` dropped, and its doc summary.
  */
 export function addTypeDefs(reading: TypeDefReading, from: ts.Node, text: string, into: TypeDefs): void {
   const { tsm, checker } = reading;
-  const names = [...new Set(text.match(NAME) ?? [])].filter((name) => into.seen.get(name) !== null);
+  const names = [...referencedNames(tsm, text)].filter((name) => into.seen.get(name) !== null);
   if (names.length === 0) return;
   const scope = checker.getSymbolsInScope(from, tsm.SymbolFlags.Type | tsm.SymbolFlags.Alias);
   for (const name of names) {
@@ -44,6 +43,23 @@ export function addTypeDefs(reading: TypeDefReading, from: ts.Node, text: string
     if (symbol && symbol.flags & tsm.SymbolFlags.Alias) symbol = checker.getAliasedSymbol(symbol);
     if (symbol) addTypeDef(reading, symbol, into, name);
   }
+}
+
+/** The names a type's text refers to as types: the head of each reference, never a property key or a string. */
+function referencedNames(tsm: typeof ts, text: string): Set<string> {
+  const file = tsm.createSourceFile('type.ts', `type T = ${text};`, tsm.ScriptTarget.Latest, false, tsm.ScriptKind.TS);
+  const names = new Set<string>();
+  const add = (name: ts.EntityName | ts.Expression) => {
+    while (tsm.isQualifiedName(name) || tsm.isPropertyAccessExpression(name)) name = tsm.isQualifiedName(name) ? name.left : name.expression;
+    if (tsm.isIdentifier(name)) names.add(name.text);
+  };
+  const visit = (node: ts.Node): void => {
+    if (tsm.isTypeReferenceNode(node)) add(node.typeName);
+    else if (tsm.isExpressionWithTypeArguments(node)) add(node.expression);
+    tsm.forEachChild(node, visit);
+  };
+  visit(file);
+  return names;
 }
 
 /**

@@ -159,8 +159,14 @@ export const Input = (_props: InputProps) => null;
     mkdirSync(at('node_modules/dep'), { recursive: true });
     writeFileSync(at('node_modules/dep/index.ts'), `export const Trigger = (_props: { armed?: boolean }) => null;\n`);
     story('dependency', `import { Trigger } from './node_modules/dep/index';\nimport { Chart } from './Chart';\nexport default { component: Trigger };\n`);
+    writeFileSync(at('swatchLook.ts'), `export default interface Look { hue: string }\n`);
+    writeFileSync(
+      at('Swatch.ts'),
+      `import type Look from './swatchLook';\ninterface Theme { a: string }\ninterface Theme { b: number }\ntype Color = string;\ntype Size = number;\nexport const Swatch = (_props: { theme?: Theme; mode?: 'Color'; Size?: boolean; look?: Look }) => null;\n`,
+    );
+    story('swatch', `import { Swatch } from './Swatch';\nexport default { component: Swatch };\n`);
     story('knob', `import Knob from './Knob';\nexport default { component: Knob };\n`);
-    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob', 'dependency', 'helper', 'forged', 'forgedNs', 'reexported', 'computed'].map((n) => at(`${n}.stories.ts`));
+    const stories = ['chart', 'memo', 'box', 'pane', 'wrapped', 'list', 'bare', 'native', 'wrapper', 'annotated', 'annotatedWrapper', 'typedTitle', 'input', 'plain', 'field', 'quoted', 'asserted', 'spread', 'spreadTyped', 'clash', 'none', 'badge', 'twin', 'tag', 'chip', 'outer', 'knob', 'dependency', 'helper', 'forged', 'forgedNs', 'reexported', 'computed', 'swatch'].map((n) => at(`${n}.stories.ts`));
     const made = await createPropReader(root, () => stories, { skip: (file) => file.includes('/pkgs/') });
     if (!made) throw new Error('typescript did not load');
     reader = made;
@@ -203,6 +209,20 @@ export const Input = (_props: InputProps) => null;
     expect(Object.keys(types ?? {}).sort()).toEqual(['Props', 'TagLook']);
     expect(types?.TagLook?.text).toContain('hue?: string');
     expect(types?.Props?.text).toContain('size?: number');
+  });
+
+  it('defines only the types a prop references, not words in string literals or property names', () => {
+    expect(Object.keys(api('swatch')?.types ?? {}).sort()).toEqual(['Look', 'Theme']);
+  });
+
+  it('defines a merged interface by every one of its declarations', () => {
+    const text = api('swatch')?.types?.Theme?.text;
+    expect(text).toContain('a: string');
+    expect(text).toContain('b: number');
+  });
+
+  it('drops `default` from a type exported as a default', () => {
+    expect(api('swatch')?.types?.Look?.text).toMatch(/^interface Look \{/);
   });
 
   it('defines no type from a skipped package', () => {
