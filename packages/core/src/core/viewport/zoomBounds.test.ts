@@ -42,6 +42,10 @@ describe('normalizeView', () => {
     expect(normalizeView({ x: 0, y: 0, scale: { x: 1, y: -ZOOM_FLOOR / 10 } }).scale.y).toBe(-ZOOM_FLOOR);
   });
 
+  it('keeps a -Infinity axis flipped, at the floor', () => {
+    expect(normalizeView({ x: 0, y: 0, scale: { x: 1, y: -Infinity } }).scale.y).toBe(-ZOOM_FLOOR);
+  });
+
   it('zeroes a non-finite translation', () => {
     expect(normalizeView({ x: Number.NaN, y: -Infinity, scale: { x: 1, y: 1 } }))
       .toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
