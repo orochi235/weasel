@@ -145,10 +145,12 @@ export type {
   SceneSlotLayers,
   SelectionOverlaySlotConfig,
   PathEditingOverlaySlotConfig,
+  DispatcherOverlaySlotConfig,
   LayerSlotValue,
   StandardSlotConfig,
 } from '../canvas/layerSlots';
 export type { SceneSlotConfig } from '../canvas/buildSceneLayer';
+export type { DispatcherOverlayStyle } from '../canvas/SceneCanvas/useDispatcherOverlayLayer';
 export type { BuiltinToolId } from '../canvas/SceneCanvas';
 export type { FeatureBindingOptions, FeaturePreset, PresetBuild, PresetComponentProps, PresetNodeShape } from '../canvas/SceneCanvas/features';
 export type { CanvasPickers, PresetBuildContext } from '../canvas/SceneCanvas/presetBuild';

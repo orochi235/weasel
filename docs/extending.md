@@ -227,7 +227,7 @@ its input routing and an `attach` that binds its registered layer.
 ## Custom layers
 
 The `layers` prop on `<SceneCanvas>` is a map of named slots. Standard slot
-keys (`grid`, `scene`, `selectionOverlay`, `cellHighlight`, `pathEditingOverlay`) take a slot config;
+keys (`grid`, `scene`, `selectionOverlay`, `cellHighlight`, `pathEditingOverlay`, `dispatcherOverlay`) take a slot config;
 **any other key** is a custom layer, and its value carries a `.layer` field:
 
 ```tsx

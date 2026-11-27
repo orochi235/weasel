@@ -3,6 +3,7 @@ import type { RenderLayer } from '../core/layers/render';
 import type { SelectionOverlayLayerOptions } from './selectionChrome';
 import type { SceneSlotConfig } from './buildSceneLayer';
 import type { PathEditingOverlayStyle } from 'domains/paths/pathEditingOverlayLayer';
+import type { DispatcherOverlayStyle } from './SceneCanvas/useDispatcherOverlayLayer';
 
 /** Standard slot names — render in this canonical order.
  *  `cellHighlight` is not an anchor for custom layers: it sits between the
@@ -50,11 +51,19 @@ export interface PathEditingOverlaySlotConfig {
   style?: PathEditingOverlayStyle;
 }
 
+/** Gesture-overlay slot config: how `<SceneCanvas>` paints a marquee, a lasso
+ *  or a polyline while its gesture runs. */
+export interface DispatcherOverlaySlotConfig {
+  /** Fill, stroke and per-role strokes over the kit's. */
+  style?: DispatcherOverlayStyle;
+}
+
 /** Per-slot config union. The key narrows it in practice. */
 export type StandardSlotConfig<TNode extends { id: string }, TPose> =
   | SceneSlotConfig<TNode, TPose>
   | SelectionOverlaySlotConfig<TPose>
-  | PathEditingOverlaySlotConfig;
+  | PathEditingOverlaySlotConfig
+  | DispatcherOverlaySlotConfig;
 
 /** What may fill one of the canvas's named layer slots: a config the canvas
  *  builds the layer from, a pre-built layer, or `null` to leave the slot
@@ -93,6 +102,9 @@ export type LayersMap<
   /** `<SceneCanvas>`'s anchor-editing overlay, above the selection overlay:
    *  the config it builds the layer from, a pre-built layer, or `null`. */
   pathEditingOverlay?: PathEditingOverlaySlotConfig | CustomLayerEntry | null;
+  /** `<SceneCanvas>`'s gesture overlay, the marquee, lasso and polyline in
+   *  flight: the config it builds the layer from, a pre-built layer, or `null`. */
+  dispatcherOverlay?: DispatcherOverlaySlotConfig | CustomLayerEntry | null;
 } & {
   [customKey: string]: LayerSlotValue<TNode, TPose> | TSceneSlot | undefined;
 };

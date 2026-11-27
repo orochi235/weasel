@@ -256,7 +256,7 @@ screen space. A layer registered with `registerLayer`, or carried in a `SurfaceC
 
 A named position in the `LayersMap` that `<SceneCanvas layers>` takes. Standard slots render in
 canonical z-order: `grid`, `cellHighlight`, `scene`, `selectionOverlay`, with
-`<SceneCanvas>`'s `pathEditingOverlay` above them. Custom
+`<SceneCanvas>`'s `pathEditingOverlay` and `dispatcherOverlay` above them. Custom
 slots declare an `after` or `before` anchor naming a standard slot or another
 custom key; unanchored custom slots land at the top of the stack. A standard
 slot takes a config the canvas builds its layer from, a pre-built `{ layer }`,
