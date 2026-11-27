@@ -144,6 +144,25 @@ describe('Lane', () => {
     expect(onKeyChange).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['the lane switches to graph mode', { mode: 'graph' as const }],
+    ['the lane stops taking edits', { hold: { edits: false, looks: true, tabIndex: 0 as const, focus: {} } }],
+  ])('cancels a key drag when %s', (_, change) => {
+    const onKeyRevert = vi.fn();
+    const onKeyChange = vi.fn();
+    const onKeyInput = vi.fn();
+    const props = { ...base, row: laneOf(sampled), onKeyRevert, onKeyChange, onKeyInput };
+    const { rerender } = render(<Lane {...props} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 10 });
+    rerender(<Lane {...props} {...change} />);
+    expect(onKeyRevert).toHaveBeenCalledTimes(1);
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 10 });
+    expect(onKeyInput).toHaveBeenCalledTimes(1);
+    expect(onKeyChange).not.toHaveBeenCalled();
+  });
+
   it('reports live times through the drag and one commit at its end', () => {
     const onKeyInput = vi.fn();
     const onKeyChange = vi.fn();

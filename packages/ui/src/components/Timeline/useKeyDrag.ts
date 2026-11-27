@@ -26,7 +26,7 @@ export interface KeyDragArgs {
   onRevert?: () => void;
   /** A drag was canceled, after its preview was put back. */
   onCancel?: () => void;
-  /** False: a press selects the key and moves nothing. Default true. */
+  /** False: a press selects the key and moves nothing, and a drag in flight is canceled. Default true. */
   drags?: boolean;
 }
 
@@ -40,6 +40,7 @@ export function useKeyDrag(a: KeyDragArgs) {
   const { trackRef, window: win, offset, limit = Infinity, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert, onCancel, drags = true } = a;
   const sessionRef = useRef<PointerSession | null>(null);
   useEffect(() => () => { sessionRef.current?.cancel(); }, []);
+  useEffect(() => { if (!drags) sessionRef.current?.cancel(); }, [drags]);
   const [drag, setDrag] = useState<{ keyIndex: number; t: number; times: readonly number[] } | null>(null);
   const snapRadiusPx = useSnapRadiusPx();
   const dragPx = useKitSetting('gestures.dragPx');

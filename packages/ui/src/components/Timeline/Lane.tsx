@@ -71,13 +71,12 @@ export function Lane(props: LaneProps): ReactElement {
   const { onSelect, onSelectSegment, onPressEmpty, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = rowTimes(row);
-  const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
-  });
-  const pct = (ms: number): string => toPercent(win, ms + row.offset);
-
   // Only a numeric sampled row has an honest value axis to graph.
   const graph = mode === 'graph' && row.numeric;
+  const { drag, msAt, onKeyPointerDown } = useKeyDrag({
+    trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits && !graph,
+  });
+  const pct = (ms: number): string => toPercent(win, ms + row.offset);
   const sampledKeys = row.kind === 'sampled' ? (row.track as SampledTrack<number>).keys : [];
 
   const refocusRef = useFocusFollowsKey(trackRef, selection);
