@@ -9,7 +9,10 @@ import { LONGEST_TIMER_MS, WATCH_RECOVERY } from './watchRecovery.ts';
 export type WatchDir = (dir: string, onEvent: () => void) => () => void;
 
 export interface FileEventsOptions {
-  /** How long to wait for the report, in milliseconds; past `2 ** 31 - 1`, and at `Infinity`, it waits until the report. Default 5000. */
+  /**
+   * How long to wait for the report, in milliseconds; past `2 ** 31 - 1`, and at `Infinity`, it waits until the report.
+   * Default 5000. A value below 0, or NaN, rejects with a `RangeError`.
+   */
   waitMs?: number;
   /** Default: `fs.watch`. */
   watch?: WatchDir;
@@ -31,6 +34,10 @@ const watchDir: WatchDir = (dir, onEvent) => {
  */
 export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEventsOptions = {}): Promise<boolean> {
   return new Promise((resolve, reject) => {
+    if (!(waitMs >= 0)) {
+      reject(new RangeError(`fileEventsArrive: waitMs must be 0 or more, got ${waitMs}`));
+      return;
+    }
     let dir: string;
     try {
       dir = mkdtempSync(join(tmpdir(), 'forge-watch-'));
@@ -65,6 +72,8 @@ export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEve
     };
     try {
       stop = watch(dir, () => settle(() => resolve(true)));
+      // A watch that reported before returning had no stopper yet for settle to call.
+      if (settled) stop();
     } catch {
       settle(() => resolve(false));
       return;

@@ -70,6 +70,26 @@ describe('fileEventsArrive', () => {
     await arrived;
   });
 
+  it('closes a watch that reports before it has returned its stopper', async () => {
+    let closed = 0;
+    const watch: WatchDir = (_dir, onEvent) => {
+      onEvent();
+      return () => {
+        closed++;
+      };
+    };
+    await expect(fileEventsArrive({ watch })).resolves.toBe(true);
+    expect(closed).toBe(1);
+  });
+
+  it('rejects a wait that is not a number of milliseconds, leaving no watch or directory behind', async () => {
+    for (const waitMs of [Number.NaN, -1]) {
+      const { state, watch } = fakeWatch();
+      await expect(fileEventsArrive({ watch, waitMs })).rejects.toThrow(RangeError);
+      expect(state.dir).toBe('');
+    }
+  });
+
   it('answers false when the watch cannot start', async () => {
     const watch: WatchDir = () => {
       throw new Error('EMFILE');
