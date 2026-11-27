@@ -7,7 +7,7 @@ import type { DrawCommand } from '@weasel-js/renderer';
 import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/derivedParts';
 import { derivesPath } from './memo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
-import { strokedBounds } from './strokedBounds';
+import { strokedPathBounds } from './strokedBounds';
 import { inkCovers, trimmedOutline, type PickReach, type TrimmedOutline } from './pickOutline';
 import { inkReach, inkStroke, pathCommand, withAnimatedStrokeTrim, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import {
@@ -50,7 +50,7 @@ export function derivedDrawnBounds(node: { data?: unknown }, ctx: NodeInkCtx | u
   const d = node.data as PaintData | null;
   const painted = (p: Path, fill: Fill | null, stroke: Stroke | null): Bounds[] => {
     if (fill === null && stroke === null) return [];
-    const stroked = stroke === null ? null : strokedBounds(p, stroke, ctx?.scale ?? 1, ctx?.screen);
+    const stroked = stroke === null ? null : strokedPathBounds(p, stroke, ctx?.scale ?? 1, ctx?.screen);
     return stroked === null ? [boundsOfPath(p)] : [boundsOfPath(p), stroked];
   };
   const parts = derivedPartsOf(path);

@@ -113,6 +113,26 @@ class Box {
   }
 }
 
+interface PathRecord {
+  stroke: Stroke;
+  scale: number;
+  screen: ScreenMap | undefined;
+  box: Bounds | null;
+}
+
+// Keyed on the path, which an edit replaces rather than changes.
+const STROKED = new WeakMap<Path, PathRecord>();
+
+/** {@link strokedBounds}, memoized on the path, the stroke, the view scale and the screen map: a node
+ *  measured again with none of them changed, as a snap does on every pointer move, is not stroked again. */
+export function strokedPathBounds(path: Path, stroke: Stroke, scale: number, screen?: ScreenMap): Bounds | null {
+  const held = STROKED.get(path);
+  if (held && held.stroke === stroke && held.scale === scale && sameMap(held.screen, screen)) return held.box;
+  const box = strokedBounds(path, stroke, scale, screen);
+  STROKED.set(path, { stroke, scale, screen, box });
+  return box;
+}
+
 const DRAWN_SLOT = 'shape:drawn';
 
 interface DrawnRecord {
