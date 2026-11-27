@@ -26,5 +26,9 @@ export function useToolShortcuts(
     recent.current = [next, ...recent.current].slice(0, 4);
     return next;
   }, [registry, tools]);
-  return useSyncExternalStore(registry ? registry.subscribe : noSubscribe, read, read);
+  const subscribe = useCallback(
+    (listener: () => void) => (registry ? registry.subscribe(listener) : noSubscribe()),
+    [registry],
+  );
+  return useSyncExternalStore(subscribe, read, read);
 }

@@ -31,7 +31,8 @@ export function useToolOptionParams(
     if (next === null || last.current === null || !deepEqual(next, last.current)) last.current = next;
     return last.current;
   }, [tool, values]);
-  return useSyncExternalStore(values.subscribe, read, read);
+  const subscribe = useCallback((listener: () => void) => values.subscribe(listener), [values]);
+  return useSyncExternalStore(subscribe, read, read);
 }
 
 /** The canvas's `toolOptionValues` dep: `values` (`<SceneCanvas toolOptionValues>`), else a store published beneath
