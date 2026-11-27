@@ -141,15 +141,16 @@ export function poseOutlineDrawnBounds(
   outline: PoseOutline,
   pathAt: (pose: Bounds) => Path,
 ): Bounds {
-  return stroke !== null && (outline === 'sharp' || protrudes(stroke))
+  return stroke !== null && (outline === 'sharp' || reachesUnevenly(stroke))
     ? strokedPoseBox(node, pose, stroke, ctx, pathAt)
     : outsetPoseBox(pose, stroke, ctx);
 }
 
-/** Whether `stroke` paints past an even outset of a smooth closed outline: a marker head, or a square cap on
- *  an end a dash or a trim opens, whose corners stand off a curve. */
-function protrudes(stroke: Stroke): boolean {
+/** Whether `stroke`'s reach past a smooth closed outline is uneven: a marker head, a width that varies along it,
+ *  or a square cap on an end a dash or a trim opens, whose corners stand off a curve. */
+function reachesUnevenly(stroke: Stroke): boolean {
   if (stroke.markerStart !== undefined || stroke.markerMid !== undefined || stroke.markerEnd !== undefined) return true;
+  if ((stroke.vertexWidths?.length ?? 0) > 0) return true;
   return stroke.cap === 'square' && ((stroke.dash?.length ?? 0) > 0 || stroke.trim !== undefined);
 }
 

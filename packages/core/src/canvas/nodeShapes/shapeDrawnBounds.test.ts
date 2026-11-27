@@ -20,3 +20,13 @@ describe('a group box border', () => {
     expect(group).toEqual(rect);
   });
 });
+
+describe('a rect with per-vertex stroke widths', () => {
+  it('stands off each side by the width there, not the widest', () => {
+    const b = shapeBox('rect', { paint: PAINT, width: 1, vertexWidths: [1, 1, 40, 1] });
+    // Only the bottom-right corner is wide: the top-left one stays near the box.
+    expect(b.x).toBeGreaterThan(-2);
+    expect(b.y).toBeGreaterThan(-2);
+    expect(b.x + b.width).toBeGreaterThan(110);
+  });
+});
