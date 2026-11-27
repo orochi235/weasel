@@ -174,7 +174,7 @@ function entryDocs(entry: TdReflection, comment: TdReflection['comment'], linker
 function memberDocs(member: TdReflection, linker: Linker): MemberDocs {
   const signatures = member.kind === Kind.Method ? (member.signatures ?? []) : [];
   return {
-    ...entryDocs(member, member.comment ?? signatures[0]?.comment, linker),
+    ...entryDocs(member, member.comment ?? signatures[0]?.comment ?? (member.getSignature ?? member.setSignature)?.comment, linker),
     signatures: signatures.map(signatureText),
   };
 }

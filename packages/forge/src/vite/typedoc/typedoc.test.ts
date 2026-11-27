@@ -126,6 +126,59 @@ describe('readTypedoc in a project whose paths are relative to each package', ()
   });
 });
 
+describe('readTypedoc on the shapes a component and its props are declared in', () => {
+  const FILE = '/repo/src/Thing.tsx';
+  const sources = [{ fileName: 'src/Thing.tsx' }];
+  const said = (text: string) => ({ summary: [{ kind: 'text', text }] });
+  const prop = (id: number, name: string, text: string): TdReflection => ({ id, name, variant: 'declaration', kind: 1024, comment: said(text) });
+  const react = (name: string, ...typeArguments: TdType[]): TdType => ({ type: 'reference', name, target: { packageName: '@types/react' }, typeArguments });
+  const to = (target: number, name: string): TdType => ({ type: 'reference', target, name });
+  const object = (id: number, children: TdReflection[]): TdType => ({
+    type: 'reflection',
+    declaration: { id, name: '__type', variant: 'declaration', kind: 65536, children },
+  });
+  const buttonProps: TdReflection = {
+    id: 100,
+    name: 'ButtonProps',
+    variant: 'declaration',
+    kind: 256,
+    sources,
+    children: [prop(101, 'onClick', 'Fires on a click.'), prop(102, 'label', 'The text.')],
+  };
+  const project = (...exports: TdReflection[]): unknown => ({ id: 0, name: 'docs', kind: 1, children: [buttonProps, ...exports] });
+  const fn = (id: number, props: TdType): TdReflection => ({
+    id,
+    name: 'Thing',
+    variant: 'declaration',
+    kind: 64,
+    sources,
+    signatures: [{ id: id + 1, name: 'Thing', variant: 'signature', kind: 4096, parameters: [{ id: id + 2, name: 'props', variant: 'param', kind: 32768, type: props }] }],
+  });
+
+  const handle: TdReflection = {
+    id: 400,
+    name: 'ThingHandle',
+    variant: 'declaration',
+    kind: 128,
+    sources,
+    children: [
+      {
+        id: 401,
+        name: 'value',
+        variant: 'declaration',
+        kind: 262144,
+        getSignature: { id: 402, name: 'value', variant: 'signature', kind: 524288, comment: said('The current value.') },
+      },
+    ],
+  };
+
+  it("reads a ref handle's accessor's comment from its get or set signature", () => {
+    const props = object(501, [{ id: 502, name: 'ref', variant: 'declaration', kind: 1024, type: react('Ref', to(400, 'ThingHandle')) }]);
+    const thing = readTypedoc(project(handle, fn(500, props)), 0).component('Thing', FILE)!;
+    expect(thing.members.get('value')).toEqual({ description: 'The current value.', signatures: [] });
+  });
+});
+
 describe('withTypedoc', () => {
   const live = (): ReadApi => ({
     props: [
