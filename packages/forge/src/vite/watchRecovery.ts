@@ -80,6 +80,11 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
     for (const id of modules.keys()) modules.set(id, now);
   };
 
+  const forget = (file: string) => {
+    stamps.delete(file);
+    for (const [url, served] of fileOfUrl) if (served === file) fileOfUrl.delete(url);
+  };
+
   const missed = (file: string) => {
     const modules = stamps.get(file);
     const now = mtimeOf(file);
@@ -124,7 +129,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
           if (replaying) return;
           lastEvent = Date.now();
           const file = normalizePath(path);
-          if (event === 'unlink') stamps.delete(file);
+          if (event === 'unlink') forget(file);
           else restamp(file);
         });
       }
