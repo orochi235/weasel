@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { act } from '@testing-library/react';
 import { linear } from '@weasel-js/geom';
 import { element, setup } from './testing/fakeAnimate';
@@ -21,5 +21,24 @@ describe('a run handed to the compositor', () => {
     expect(() => two.animator.hold({ target: e.target, value: { x: 0 } })).toThrow(/another animator/);
     expect(e.last().canceled).toBe(false);
     expect(one.animator.live()[0]).toMatchObject({ compositor: true });
+  });
+});
+
+describe('a run whose target setter throws as it is canceled', () => {
+  it('still cancels its browser animation and lets go of the target', () => {
+    const { animator, step, timeline } = setup();
+    let bad = false;
+    const e = element(timeline, 0, {}, () => { if (bad) throw new Error('set'); });
+    let h: ReturnType<typeof tween>;
+    act(() => { h = tween(animator, e.target, 100); });
+    step(0);
+    step(500);
+    bad = true;
+    expect(() => act(() => { h.cancel(); })).toThrow('set');
+    expect(e.last().canceled).toBe(true);
+    expect(animator.isActive()).toBe(false);
+    bad = false;
+    act(() => { tween(animator, e.target, 0); });
+    expect(e.made).toHaveLength(2);
   });
 });

@@ -91,10 +91,18 @@ export function launch(
     const a = entry();
     if (a) a.compositor = false;
   };
+  /** Commits `value`, then lets go showing `shown()`: a setter that throws there still stops the
+   *  browser animation. */
+  const commitAndLetGo = (value: readonly number[] | null, shown: () => readonly number[]): void => {
+    try {
+      if (value && !s.discard) s.set(s.axes.from(value));
+    } finally {
+      letGo(shown());
+    }
+  };
   const end = (atStart: boolean): true => {
     const at = atStart ? motion.at(0) : ends.endCommit(motion);
-    if (at && !s.discard) s.set(s.axes.from(at));
-    letGo(at ?? s.axes.to(s.get()));
+    commitAndLetGo(at, () => at ?? s.axes.to(s.get()));
     ctx.reportEnd(id);
     ends.onDone?.();
     return true;
@@ -141,8 +149,7 @@ export function launch(
     if (child) { child.cancel(); return; }
     if (gone) return;
     const value = motion.at(local());
-    if (!s.discard) s.set(s.axes.from(value));
-    letGo(s.discard ? s.axes.to(s.get()) : value);
+    commitAndLetGo(value, () => (s.discard ? s.axes.to(s.get()) : value));
   };
   seed.onRate = (paused, timeScale) => {
     if (child) {

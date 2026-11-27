@@ -95,8 +95,12 @@ export function setup() {
   return { animator: result.current, unmount, step, timeline, pending: () => callbacks.size };
 }
 
-/** An element target over `{ x }`, shown as a `translateX`, whose `animate` makes fakes. */
-export function element(timeline: { now: number; animations?: FakeAnimation[] }, x = 0, extra: Frame = {}) {
+/** An element target over `{ x }`, shown as a `translateX`, whose `animate` makes fakes.
+ *  `onSet` sees each committed value first, and may throw. */
+export function element(
+  timeline: { now: number; animations?: FakeAnimation[] }, x = 0, extra: Frame = {},
+  onSet?: (value: { x: number }) => void,
+) {
   const el = document.createElement('div');
   const made: FakeAnimation[] = [];
   let styled = 0;
@@ -106,9 +110,11 @@ export function element(timeline: { now: number; animations?: FakeAnimation[] },
     timeline.animations?.push(a);
     return a;
   };
+  let held = { x };
   const target = createElementTarget({
     element: el,
-    value: { x },
+    get: () => held,
+    set: (v) => { onSet?.(v); held = v; },
     style: (v) => { styled += 1; return { transform: `translateX(${v.x}px)`, ...extra }; },
   });
   return {
