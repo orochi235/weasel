@@ -1,0 +1,32 @@
+.chart {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+:where(.chart) {
+  --tile-faded: color-mix(in srgb, var(--wzl-fg) 18%, var(--wzl-surface));
+  --tile-edge: 0.4;
+  --tile-lit: 1.35;
+}
+
+.base { stroke: var(--wzl-border); stroke-width: 1; }
+
+.tick {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: 10px;
+  fill: var(--wzl-fg-muted);
+  text-anchor: middle;
+}
+
+/* A column with nothing in it: a patch on the ground where its stack would stand. */
+.empty { fill: color-mix(in srgb, var(--wzl-fg) 25%, var(--wzl-surface)); }
+
+.trailing {
+  font-size: 11px;
+  fill: var(--wzl-fg-muted);
+}
+
+/* Tracing a key: its tiles keep their tones and the rest fade, through `--tile-shown` so no tone outranks the fade. */
+.tracing > g:not([data-traced]) { --tile-shown: var(--tile-faded); }

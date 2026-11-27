@@ -1,0 +1,33 @@
+.shelf {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+:where(.shelf) { --tile-faded: color-mix(in srgb, var(--wzl-fg) 14%, var(--wzl-surface)); }
+
+.board { stroke: var(--wzl-border); stroke-width: 1.5; }
+
+.label {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  font-size: 10px;
+  fill: var(--wzl-fg-muted);
+  text-anchor: middle;
+}
+
+.dot { fill: var(--wzl-fg-muted); }
+
+/* Tracing a key: its group keeps its tones and the other groups fade, through `--tile-shown` so no tone outranks the
+   fade. */
+.tracing > .group:not([data-traced]) { --tile-shown: var(--tile-faded); }
+
+.tracing > .group:not([data-traced]) .dot { fill: color-mix(in srgb, var(--wzl-fg) 25%, var(--wzl-surface)); }
+
+.outline {
+  fill: none;
+  stroke: var(--wzl-fg);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  pointer-events: none;
+}

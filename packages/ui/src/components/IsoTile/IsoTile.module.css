@@ -1,0 +1,13 @@
+/* Every face takes the tile's color, the top lit and the side shaded over it. A tone mixes its color solid rather
+   than with alpha, or a tile shows through its neighbor. */
+.face {
+  fill: var(--tile-shown, var(--tile, color-mix(in srgb, var(--wzl-fg) 50%, var(--wzl-surface))));
+  stroke: var(--wzl-surface);
+  stroke-width: var(--tile-edge, 0.5);
+}
+
+.top { filter: brightness(var(--tile-lit, 1.3)); }
+
+.side { filter: brightness(0.7); }
+
+.pickable { cursor: pointer; }

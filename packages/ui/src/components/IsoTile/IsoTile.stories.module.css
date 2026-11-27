@@ -1,0 +1,13 @@
+/* Tones as a consumer writes them: each sets `--tile`, mixed solid with the surface rather than with alpha. */
+.gray { --tile: color-mix(in srgb, var(--wzl-fg) 70%, var(--wzl-surface)); }
+
+.accent { --tile: var(--wzl-accent); }
+
+.warning { --tile: var(--wzl-warning); }
+
+.success { --tile: var(--wzl-success); }
+
+.danger { --tile: var(--wzl-danger); }
+
+/* A tone restyling its traced tile: a repeat takes the accent while traced. */
+.gray[data-traced] { --tile: var(--wzl-accent); }

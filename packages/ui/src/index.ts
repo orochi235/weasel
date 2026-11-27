@@ -45,6 +45,7 @@ export * from './components/InlineMarkdown';
 export * from './components/InlineRange';
 export * from './components/Input';
 export * from './components/PanelCells';
+export * from './components/IsoTile';
 export * from './components/ItemList';
 export * from './components/Jog';
 export * from './components/Keycaps';
