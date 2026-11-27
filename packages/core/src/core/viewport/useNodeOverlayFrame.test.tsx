@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { useRef } from 'react';
-import { renderHook } from '@testing-library/react';
+import { act, renderHook } from '@testing-library/react';
 import { createScene } from '../scene';
 import { asNodeId, type NodeId, type RectPose } from '../scene/types';
 import type { View } from './view';
@@ -216,6 +216,36 @@ describe('useNodeOverlayFrame', () => {
     expect(frameFor(scene, null)).toBeNull();
     expect(frameFor(scene, 'nope')).toBeNull();
     expect(frameFor(scene, 'a', IDENTITY, container(0, 0))).toBeNull();
+  });
+
+  it('follows a scene edit and a pose override without a render from its host', () => {
+    const scene = sceneWith([{ id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } }]);
+    const el = container();
+    const { result } = renderHook(() => {
+      const ref = useRef<HTMLDivElement>(el);
+      return useNodeOverlayFrame(scene, ref, 'a' as NodeId, { view: IDENTITY });
+    });
+    act(() => scene.setPose(asNodeId('a'), { x: 5, y: 6, width: 20, height: 30 }));
+    expect(result.current!.box).toEqual({ x: 5, y: 6, width: 20, height: 30 });
+    act(() => scene.overrides.set(asNodeId('a'), { pose: { x: 1, y: 2, width: 3, height: 4 } }));
+    expect(result.current!.box).toEqual({ x: 1, y: 2, width: 3, height: 4 });
+    act(() => scene.remove(asNodeId('a')));
+    expect(result.current).toBeNull();
+  });
+
+  it('has no frame under a view scaled to infinity, and keeps the last mapping for a live one', () => {
+    const scene = sceneWith([{ id: 'a', pose: { x: 10, y: 20, width: 100, height: 50 } }]);
+    expect(frameFor(scene, 'a', { x: 0, y: 0, scale: { x: Infinity, y: 1 } })).toBeNull();
+    let view: View = { x: 5, y: 5, scale: { x: 2, y: 3 } };
+    const el = container();
+    const { result } = renderHook(() => {
+      const ref = useRef<HTMLDivElement>(el);
+      return useNodeOverlayFrame(scene, ref, 'a' as NodeId, { view: () => view });
+    });
+    const frame = result.current!;
+    view = { x: 5, y: 5, scale: { x: Infinity, y: 3 } };
+    near(frame.toScreen({ x: 10, y: 20 }), 10, 45);
+    near(frame.toLocal({ x: 10, y: 45 }), 10, 20);
   });
 });
 

@@ -52,4 +52,18 @@ describe('useVelocityTracker', () => {
     // 10 px moved between the samples, then the pointer held still until 95 ms.
     expect(result.current.getVelocity(95).vx).toBeCloseTo(10 / 95);
   });
+
+  it('measures a lone sample in the window from the sample before it', () => {
+    const { result } = renderHook(() => useVelocityTracker());
+    result.current.record(10, 0, 0);
+    result.current.record(10, 0, 50);
+    result.current.record(30, 0, 140);
+    // Only the move at 140 falls in the window before 160; it covered 30 px since 50.
+    expect(result.current.getVelocity(160).vx).toBeCloseTo(30 / 110);
+    // Moves slower than one per 100ms still read as moving.
+    result.current.reset();
+    result.current.record(10, 0, 0);
+    result.current.record(20, 0, 150);
+    expect(result.current.getVelocity().vx).toBeCloseTo(20 / 150);
+  });
 });

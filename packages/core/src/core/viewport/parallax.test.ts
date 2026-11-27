@@ -59,15 +59,15 @@ describe('deriveParallaxView', () => {
     expect(inner.y).toBe(50);
   });
 
-  it('linearly interpolates zoom from identity', () => {
-    const inner = deriveParallaxView(outer, { pan: 1, zoom: 0.5 });
-    expect(inner.scale).toEqual({ x: 1.5, y: 1.5 });
+  it('tracks zoom as an exponent on the camera zoom', () => {
+    const inner = deriveParallaxView({ x: 0, y: 0, scale: { x: 4, y: 0.25 } }, { pan: 1, zoom: 0.5 });
+    expect(inner.scale).toEqual({ x: 2, y: 0.5 });
   });
 
   it('keeps a flipped camera axis flipped, tracking zoom by its magnitude', () => {
     const yUp: View = { x: 0, y: 0, scale: { x: 2, y: -2 } };
     expect(deriveParallaxView(yUp, { pan: 1, zoom: 0 }).scale).toEqual({ x: 1, y: -1 });
-    expect(deriveParallaxView(yUp, { pan: 1, zoom: 0.5 }).scale).toEqual({ x: 1.5, y: -1.5 });
+    expect(deriveParallaxView(yUp, { pan: 1, zoom: 2 }).scale).toEqual({ x: 4, y: -4 });
     // Half-way from 1 toward -1 used to land on a scale of 0.
     const flipped: View = { x: 0, y: 0, scale: { x: 1, y: -1 } };
     expect(deriveParallaxView(flipped, { pan: 1, zoom: 0.5 }).scale).toEqual({ x: 1, y: -1 });
@@ -78,6 +78,15 @@ describe('deriveParallaxView', () => {
     const { scale } = deriveParallaxView(out, { pan: 1, zoom: 2 });
     expect(scale.x).toBeGreaterThan(0);
     expect(scale.y).toBeGreaterThan(0);
+  });
+
+  it('keeps a leading plane zooming out with the camera, past where a linear track hits zero', () => {
+    const at = (s: number) => deriveParallaxView({ x: 0, y: 0, scale: { x: s, y: s } }, { pan: 1, zoom: 2 }).scale.x;
+    expect(at(0.5)).toBe(0.25);
+    expect(at(0.25)).toBe(0.0625);
+    expect(at(0.25)).toBeLessThan(at(0.5));
+    const m = planeMap({ x: 0, y: 0, scale: { x: 0.25, y: 0.25 } }, { pan: 1, zoom: 2 });
+    expect(m.scale).toEqual({ x: 4, y: 4 });
   });
 });
 

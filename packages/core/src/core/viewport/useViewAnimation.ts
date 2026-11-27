@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef } from 'react';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import { useKitSetting, useLatest, usePrefersReducedMotion } from '@weasel-js/react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { easeOutCubic } from '@weasel-js/geom';
@@ -47,7 +47,7 @@ export interface ViewAnimationApi {
   animate(to: View | ((base: View) => View), opts?: ViewAnimationOptions): void;
   /** `fitViewToBounds` composed with `animate`. `false`, and nothing moves, when there is nothing
    *  to fit; the caller that owns the viewport resolves that to the view Cmd-0 gives. Into a viewport
-   *  with no area it moves nothing, and calls `onDone` at once. */
+   *  with no area it moves nothing, stopping a move in flight, and calls `onDone` at once. */
   animateToBounds(bounds: Bounds, dims: ViewportDims, opts?: AnimateToBoundsOptions): boolean;
   /** Cancel. The view stays where it is — no jump to the target. */
   stop(): void;
@@ -110,10 +110,13 @@ export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewA
   const setting = useKitSetting('view.animationMs') ?? DEFAULT_VIEW_ANIMATION_MS;
   const msRef = useLatest(usePrefersReducedMotion() ? 0 : setting);
 
-  return useMemo(
+  const api = useMemo(
     () => createViewAnimation(key, viewRef, animatorRef, targetRef, writingRef, msRef),
     [key, viewRef, animatorRef, msRef],
   );
+  // A shared animator outlives this component; the camera move it started does not.
+  useEffect(() => api.stop, [api]);
+  return api;
 }
 
 /** The runner behind {@link useViewAnimationOn}. */
@@ -157,11 +160,14 @@ function createViewAnimation(
     },
   });
 
-  const isAnimating = () => animatorRef.current.isActive(key);
+  /** The animator this runner's own animation was started on, which a later render may have replaced. */
+  let runningOn: Animator | null = null;
+  const isAnimating = () => runningOn?.isActive(key) ?? false;
   const target = () => (isAnimating() ? targetRef.current : null);
   /** Cancels this runner's animation; whatever else moves the view goes on from where it was. */
   const cancel = (): void => {
-    animatorRef.current.cancelKey(key);
+    runningOn?.cancelKey(key);
+    runningOn = null;
     targetRef.current = null;
   };
   const stop = () => {
@@ -171,8 +177,10 @@ function createViewAnimation(
 
   const animate: ViewAnimationApi['animate'] = (to, opts = {}) => {
     const resolved = normalizeView(typeof to === 'function' ? to(target() ?? base()) : to);
+    if (runningOn !== animatorRef.current) cancel();
+    runningOn = animatorRef.current;
     targetRef.current = resolved;
-    animatorRef.current.tween<View>({
+    runningOn.tween<View>({
       target: viewTarget,
       to: resolved,
       ms: opts.ms ?? msRef.current,
@@ -196,8 +204,12 @@ function createViewAnimation(
       const fitted = fitViewToBounds(bounds, dims, current, opts);
       if (fitted === null) return false;
       // `current` back: a viewport with no area, which the view is already fit to as well as it can be.
-      if (fitted === current) opts.onDone?.();
-      else animate(fitted, opts);
+      if (fitted === current) {
+        stop();
+        opts.onDone?.();
+      } else {
+        animate(fitted, opts);
+      }
       return true;
     },
     stop,

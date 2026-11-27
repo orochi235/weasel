@@ -40,11 +40,12 @@ export function slopForStrokeHit(
 }
 
 /** `slop` widened by `px` screen pixels — kept on screen when it is measured
- *  there, and read at `scale` when it is a world distance. */
+ *  there, and read at `scale`'s magnitude when it is a world distance. */
 export function widenSlop(slop: PickSlop | undefined, px: number, scale = 1): PickSlop | undefined {
   if (!(px > 0)) return slop;
   if (typeof slop === 'object') return { ...slop, px: slop.px + px };
-  return (slop ?? 0) + px / (scale > 0 ? scale : 1);
+  const magnitude = Math.abs(scale);
+  return (slop ?? 0) + px / (magnitude > 0 ? magnitude : 1);
 }
 
 /** Is any slop set at all? A zero reach plus a zero slop hits nothing. */
