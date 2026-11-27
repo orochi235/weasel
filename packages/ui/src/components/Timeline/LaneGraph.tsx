@@ -37,7 +37,7 @@ export interface LaneGraphProps {
   onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
   /** Once per edit: a drag's end, a handle's release, a key press. */
   onKeysChange: (keys: readonly Keyframe<number>[]) => void;
-  /** A key drag was canceled, after its preview was put back. */
+  /** A key or handle drag that moved was canceled, after any preview was put back. */
   onCancel?: () => void;
   /** False: keys and segments still select, and nothing drags or steps. Default true. */
   edits?: boolean;
@@ -87,6 +87,8 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const [live, setLive] = useState<KeyframeLayerState | null>(null);
   // The keys a previewed drag began from, to put back if it is canceled.
   const previewed = useRef<readonly Keyframe<number>[] | null>(null);
+  // Whether the gesture in flight has moved a key or handle, so its cancel is reported.
+  const edited = useRef(false);
   const state = live ?? committed;
   const stateRef = useLatest(state);
 
@@ -98,11 +100,12 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     if (next.selectedSegment !== null && next.selectedSegment !== prev.selectedSegment) onSelectSegment?.(next.selectedSegment);
     if (!next.drag || !edits) { setLive(null); return; }
     setLive(next);
+    const applied = applyKeyframeDrag(next).keys;
+    if (applied === next.keys) return;
+    edited.current = true;
     // A handle drag writes a fresh easing spec per move; publishing those
     // would grow the consumer's easing cache by one entry per pixel.
     if (next.drag.kind !== 'key') return;
-    const applied = applyKeyframeDrag(next).keys;
-    if (applied === next.keys) return;
     previewed.current ??= prev.keys;
     onKeysInput?.(applied);
   };
@@ -110,10 +113,11 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const onLayerCancel = (): void => {
     setLive(null);
     const from = previewed.current;
+    const was = edited.current;
     previewed.current = null;
-    if (!from) return;
-    onKeysInput?.(from);
-    onCancel?.();
+    edited.current = false;
+    if (from) onKeysInput?.(from);
+    if (was) onCancel?.();
   };
 
   // A gesture that changed only the selection leaves its keys as they were, so a preview it sent is put back.
@@ -121,6 +125,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     if (edits && !deepEqual(next.keys, prev.keys)) {
       setLive(null);
       previewed.current = null;
+      edited.current = false;
       onKeysChange(next.keys);
     } else onLayerCancel();
   };
