@@ -103,6 +103,9 @@ export function useCanvasPaint(
     } = inputsRef.current;
     if (w === 0 || h === 0) return false;
 
+    const { layerVisibility: vis, layerOrder: order } = gateRef.current;
+    const debugFrame = beginDebugFrame(sink, timed, paintLayers, vis ?? NO_LAYER_VISIBILITY, order);
+
     const renderer = lease.bind(c, { width: w, height: h, dpr: dprIn }, {
       tile: rect,
       flattenTolerance: paintFlattenTolerance,
@@ -112,9 +115,6 @@ export function useCanvasPaint(
     });
     // No WebGL2 (jsdom), or a context that is lost for now: nothing to paint.
     if (!renderer) return false;
-
-    const { layerVisibility: vis, layerOrder: order } = gateRef.current;
-    const debugFrame = beginDebugFrame(sink, timed, paintLayers, vis ?? NO_LAYER_VISIBILITY, order);
 
     const dpr = resolveDpr(dprIn);
     // The renderer's own device pixels to the CSS pixel, from its rounded buffer width.
