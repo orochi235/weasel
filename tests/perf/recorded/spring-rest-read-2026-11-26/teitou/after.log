@@ -1,0 +1,86 @@
+  waiting for room
+  base   a8c14e01
+  commits sent directly, 3.0 KiB (not on origin)
+  updated weasel-wt1 on teitou at a8c14e01
+  loaded 6.5s: sync weasel commits 1.9s, other 1.6s, sync weasel check 1.0s, sync weasel apply 0.8s, sync weasel diff 0.7s, start 0.4s, sync weasel upload 0.0s, gate 0.0s
+  job    b964107e on teitou
+
+onto: animator-on-blits is already set up
+onto: playwright-browsers-19f3f4e4575a is already set up
+
+> weasel@0.4.0 perf:bench
+> node tests/perf/bench.mjs --out .playwright-mcp/aob-bench/after.json --raw .playwright-mcp/aob-bench/after-raw.json tests/perf/bench/animator-on-blits.bench.ts -t spring
+
+
+[1m[30m[46m RUN [49m[39m[22m [36mv5.1.1 [39m[90m/Users/mike/.config/onto/work/weasel-wt1[39m
+
+ [32m✓[39m [30m[45m bench (bench) [49m[39m tests/perf/bench/animator-on-blits.bench.ts [2m([22m[2m14 tests[22m[2m | [22m[33m8 skipped[39m[2m)[22m[33m 36831[2mms[22m[39m
+   [33m[2m✓[22m[39m spring frame — 1000 nodes[33m 15212[2mms[22m[39m
+     [1mname                                              [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     blits, one voice, pull, no sink                     [34m26,936.45[39m  [36m0.0343[39m  [36m0.2660[39m  [36m0.0376[39m  [36m0.0379[39m  [36m0.0568[39m  [36m0.0744[39m  [36m0.1245[39m  [2m±0.21%[22m  [2m  26600[22m[1m[32m   fastest[39m[22m
+     blits, one voice, pull                              [34m23,506.36[39m  [36m0.0382[39m  [36m0.4387[39m  [36m0.0434[39m  [36m0.0436[39m  [36m0.0706[39m  [36m0.0959[39m  [36m0.1977[39m  [2m±0.32%[22m  [2m  23023[22m
+     blits, a spring voice per animation, pull, no sink  [34m22,314.95[39m  [36m0.0418[39m  [36m0.2523[39m  [36m0.0452[39m  [36m0.0458[39m  [36m0.0623[39m  [36m0.0756[39m  [36m0.1366[39m  [2m±0.20%[22m  [2m  22103[22m
+     blits, a spring voice per animation, pull           [34m20,294.45[39m  [36m0.0457[39m  [36m0.2842[39m  [36m0.0500[39m  [36m0.0504[39m  [36m0.0758[39m  [36m0.1060[39m  [36m0.2068[39m  [2m±0.28%[22m  [2m  19991[22m
+     today                                               [34m14,363.40[39m  [36m0.0640[39m  [36m0.3651[39m  [36m0.0706[39m  [36m0.0718[39m  [36m0.1086[39m  [36m0.1635[39m  [36m0.2485[39m  [2m±0.30%[22m  [2m  14162[22m
+     blits, one voice                                    [34m14,272.66[39m  [36m0.0651[39m  [36m0.3180[39m  [36m0.0707[39m  [36m0.0717[39m  [36m0.0978[39m  [36m0.1215[39m  [36m0.2383[39m  [2m±0.24%[22m  [2m  14142[22m
+     blits, voice per animation (subjects)               [34m12,943.68[39m  [36m0.0721[39m  [36m0.3323[39m  [36m0.0781[39m  [36m0.0791[39m  [36m0.1156[39m  [36m0.1593[39m  [36m0.2394[39m  [2m±0.27%[22m  [2m  12804[22m
+     blits, a spring voice per animation                 [34m12,772.68[39m  [36m0.0725[39m  [36m0.3250[39m  [36m0.0794[39m  [36m0.0797[39m  [36m0.1396[39m  [36m0.1908[39m  [36m0.2553[39m  [2m±0.32%[22m  [2m  12591[22m
+     blits, voice per animation (target)                 [34m10,068.79[39m  [36m0.0915[39m  [36m0.3723[39m  [36m0.1004[39m  [36m0.1024[39m  [36m0.1529[39m  [36m0.2008[39m  [36m0.2667[39m  [2m±0.28%[22m  [2m   9964[22m
+     blits, one voice, lanes off                         [34m 7,843.71[39m  [36m0.1114[39m  [36m0.4051[39m  [36m0.1285[39m  [36m0.1312[39m  [36m0.1733[39m  [36m0.2049[39m  [36m0.3059[39m  [2m±0.25%[22m  [2m   7781[22m
+     blits, voice per animation (subjects), lanes off    [34m 7,648.59[39m  [36m0.1234[39m  [36m0.3923[39m  [36m0.1314[39m  [36m0.1344[39m  [36m0.1654[39m  [36m0.1942[39m  [36m0.2978[39m  [2m±0.20%[22m  [2m   7611[22m
+     blits, a spring voice per animation, lanes off      [34m 7,136.51[39m  [36m0.1303[39m  [36m0.4192[39m  [36m0.1412[39m  [36m0.1443[39m  [36m0.1948[39m  [36m0.2413[39m  [36m0.3217[39m  [2m±0.25%[22m  [2m   7085[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring frame — 10000 nodes[33m 14386[2mms[22m[39m
+     [1mname                                              [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m   rme[22m  [1msamples[22m
+     blits, a spring voice per animation, pull, no sink  [34m2,667.46[39m  [36m0.3494[39m  [36m0.5847[39m  [36m0.3760[39m  [36m0.3835[39m  [36m0.4619[39m  [36m0.5021[39m  [36m0.5425[39m  [2m±0.22%[22m  [2m   2660[22m[1m[32m   fastest[39m[22m
+     blits, one voice, pull, no sink                     [34m2,654.96[39m  [36m0.3391[39m  [36m1.8680[39m  [36m0.3812[39m  [36m0.3834[39m  [36m0.6095[39m  [36m0.6627[39m  [36m0.8891[39m  [2m±0.57%[22m  [2m   2624[22m
+     blits, a spring voice per animation, pull           [34m2,403.93[39m  [36m0.3899[39m  [36m0.8861[39m  [36m0.4199[39m  [36m0.4227[39m  [36m0.7457[39m  [36m0.7682[39m  [36m0.8404[39m  [2m±0.50%[22m  [2m   2382[22m
+     blits, one voice, pull                              [34m2,406.57[39m  [36m0.3771[39m  [36m1.6328[39m  [36m0.4223[39m  [36m0.4197[39m  [36m0.7611[39m  [36m0.7939[39m  [36m0.9760[39m  [2m±0.67%[22m  [2m   2368[22m
+     blits, one voice                                    [34m1,244.11[39m  [36m0.7198[39m  [36m1.5457[39m  [36m0.8123[39m  [36m0.8369[39m  [36m1.1923[39m  [36m1.2506[39m  [36m1.3590[39m  [2m±0.64%[22m  [2m   1232[22m
+     blits, voice per animation (subjects)               [34m1,206.78[39m  [36m0.7345[39m  [36m1.4894[39m  [36m0.8362[39m  [36m0.8662[39m  [36m1.2195[39m  [36m1.2668[39m  [36m1.3151[39m  [2m±0.60%[22m  [2m   1196[22m
+     blits, a spring voice per animation                 [34m1,167.22[39m  [36m0.7320[39m  [36m2.1175[39m  [36m0.8691[39m  [36m0.9173[39m  [36m1.2716[39m  [36m1.3617[39m  [36m1.6418[39m  [2m±0.78%[22m  [2m   1151[22m
+     today                                               [34m  862.39[39m  [36m0.9468[39m  [36m3.5331[39m  [36m1.2131[39m  [36m1.3035[39m  [36m2.2749[39m  [36m2.4126[39m  [36m3.4854[39m  [2m±1.70%[22m  [2m    825[22m
+     blits, one voice, lanes off                         [34m  761.11[39m  [36m1.2014[39m  [36m1.9297[39m  [36m1.3194[39m  [36m1.3475[39m  [36m1.6837[39m  [36m1.7965[39m  [36m1.8814[39m  [2m±0.50%[22m  [2m    758[22m
+     blits, voice per animation (subjects), lanes off    [34m  631.02[39m  [36m1.3102[39m  [36m3.8376[39m  [36m1.6045[39m  [36m1.6919[39m  [36m2.1485[39m  [36m2.2587[39m  [36m2.9311[39m  [2m±0.97%[22m  [2m    624[22m
+     blits, a spring voice per animation, lanes off      [34m  548.44[39m  [36m1.4360[39m  [36m2.9808[39m  [36m1.8558[39m  [36m2.0053[39m  [36m2.5947[39m  [36m2.7373[39m  [36m2.9555[39m  [2m±1.16%[22m  [2m    539[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 100 nodes[33m 1273[2mms[22m[39m
+     [1mname                                 [22m  [1m       hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m     rme[22m  [1msamples[22m
+     blits, one voice                       [34m13,041.22[39m  [36m0.0665[39m  [36m0.1159[39m  [36m0.0791[39m  [36m0.0840[39m  [36m0.1138[39m  [36m0.1149[39m  [36m0.1157[39m  [2m ±17.46%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, a spring voice per animation    [34m 7,161.95[39m  [36m0.1240[39m  [36m0.1645[39m  [36m0.1409[39m  [36m0.1524[39m  [36m0.1639[39m  [36m0.1642[39m  [36m0.1644[39m  [2m  ±8.73%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m 5,704.72[39m  [36m0.1370[39m  [36m3.2843[39m  [36m0.5468[39m  [36m0.1706[39m  [36m3.0672[39m  [36m3.1758[39m  [36m3.2626[39m  [2m±169.12%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m 1,752.34[39m  [36m0.5463[39m  [36m0.6365[39m  [36m0.5718[39m  [36m0.5791[39m  [36m0.6328[39m  [36m0.6346[39m  [36m0.6362[39m  [2m  ±4.20%[22m  [2m      8[22m
+     today                                  [34m 1,693.36[39m  [36m0.4954[39m  [36m0.9050[39m  [36m0.6091[39m  [36m0.6144[39m  [36m0.8861[39m  [36m0.8956[39m  [36m0.9031[39m  [2m ±17.68%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 300 nodes[33m 1340[2mms[22m[39m
+     [1mname                                 [22m  [1m      hz[22m  [1m   min[22m  [1m   max[22m  [1m  mean[22m  [1m   p75[22m  [1m   p99[22m  [1m  p995[22m  [1m  p999[22m  [1m     rme[22m  [1msamples[22m
+     blits, one voice                       [34m4,871.08[39m  [36m0.1901[39m  [36m0.2529[39m  [36m0.2071[39m  [36m0.2147[39m  [36m0.2506[39m  [36m0.2517[39m  [36m0.2526[39m  [2m  ±8.75%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, voice per animation (subjects)  [34m1,736.61[39m  [36m0.4826[39m  [36m0.7518[39m  [36m0.5845[39m  [36m0.6104[39m  [36m0.7427[39m  [36m0.7472[39m  [36m0.7509[39m  [2m ±11.44%[22m  [2m      8[22m
+     blits, a spring voice per animation    [34m1,627.73[39m  [36m0.4748[39m  [36m4.2249[39m  [36m1.0122[39m  [36m0.5987[39m  [36m3.9750[39m  [36m4.0999[39m  [36m4.1999[39m  [2m±107.32%[22m  [2m      8[22m
+     today                                  [34m  522.35[39m  [36m1.5147[39m  [36m5.7232[39m  [36m2.2804[39m  [36m2.2109[39m  [36m5.4799[39m  [36m5.6016[39m  [36m5.6989[39m  [2m ±52.05%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m  241.78[39m  [36m3.7073[39m  [36m7.3660[39m  [36m4.3343[39m  [36m4.1217[39m  [36m7.1507[39m  [36m7.2583[39m  [36m7.3445[39m  [2m ±23.92%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 1000 nodes[33m 1779[2mms[22m[39m
+     [1mname                                 [22m  [1m      hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m    rme[22m  [1msamples[22m
+     blits, one voice                       [34m1,686.32[39m  [36m 0.5647[39m  [36m 0.7040[39m  [36m 0.5957[39m  [36m 0.5940[39m  [36m 0.6965[39m  [36m 0.7002[39m  [36m 0.7032[39m  [2m ±6.42%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, a spring voice per animation    [34m  665.70[39m  [36m 1.1818[39m  [36m 3.5436[39m  [36m 1.7963[39m  [36m 1.8854[39m  [36m 3.5179[39m  [36m 3.5308[39m  [36m 3.5411[39m  [2m±45.32%[22m  [2m      8[22m
+     blits, voice per animation (subjects)  [34m  540.33[39m  [36m 1.3860[39m  [36m 3.7047[39m  [36m 2.1089[39m  [36m 2.1677[39m  [36m 3.6961[39m  [36m 3.7004[39m  [36m 3.7039[39m  [2m±37.76%[22m  [2m      8[22m
+     today                                  [34m  177.68[39m  [36m 4.7052[39m  [36m 7.9432[39m  [36m 5.9255[39m  [36m 7.5524[39m  [36m 7.9319[39m  [36m 7.9375[39m  [36m 7.9420[39m  [2m±21.23%[22m  [2m      8[22m
+     blits, voice per animation (target)    [34m 23.7053[39m  [36m40.0538[39m  [36m45.0371[39m  [36m42.2555[39m  [36m43.2152[39m  [36m45.0110[39m  [36m45.0240[39m  [36m45.0345[39m  [2m ±3.69%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+   [33m[2m✓[22m[39m spring start + first frame — 10000 nodes[33m 2839[2mms[22m[39m
+     [1mname                                 [22m  [1m     hz[22m  [1m    min[22m  [1m    max[22m  [1m   mean[22m  [1m    p75[22m  [1m    p99[22m  [1m   p995[22m  [1m   p999[22m  [1m    rme[22m  [1msamples[22m
+     blits, one voice                       [34m67.7090[39m  [36m 7.8058[39m  [36m24.9493[39m  [36m16.7635[39m  [36m20.2762[39m  [36m24.7428[39m  [36m24.8461[39m  [36m24.9287[39m  [2m±28.27%[22m  [2m      8[22m[1m[32m   fastest[39m[22m
+     blits, voice per animation (subjects)  [34m30.2248[39m  [36m27.4935[39m  [36m42.1990[39m  [36m33.8596[39m  [36m37.9122[39m  [36m41.8990[39m  [36m42.0490[39m  [36m42.1690[39m  [2m±13.49%[22m  [2m      8[22m
+     blits, a spring voice per animation    [34m21.4843[39m  [36m35.4402[39m  [36m70.7549[39m  [36m49.6208[39m  [36m58.9224[39m  [36m70.5351[39m  [36m70.6450[39m  [36m70.7329[39m  [2m±23.41%[22m  [2m      8[22m
+     today                                  [34m12.0106[39m  [36m71.1714[39m  [36m 215.34[39m  [36m94.2546[39m  [36m83.7794[39m  [36m 206.45[39m  [36m 210.89[39m  [36m 214.45[39m  [2m±43.70%[22m  [2m      8[22m[1m[90m   slowest[39m[22m
+
+[2m Test Files [22m [1m[32m1 passed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[32m6 passed[39m[22m[2m | [22m[33m8 skipped[39m[90m (14)[39m
+[2m   Start at [22m 18:55:16
+[2m   Duration [22m 37.85s[2m (tests 98%, environment 2%, import 1%)[22m
+
+JSON report written to /Users/mike/.config/onto/work/weasel-wt1/tests/perf/results/.vitest-bench-x5T4dx/vitest-bench.json
+perf result: .playwright-mcp/aob-bench/after.json
+  2 files  83.1 KiB  → 0 already local (0 bytes)
+  fetching 2 files (83.1 KiB)
+  [1/2] after-raw.json  45.4 KiB
+  [2/2] after.json  37.6 KiB
+  ✓ 2 files, 83.1 KiB in 0s
+  3 local file(s) are not on the node; nothing was deleted
+  cleared 2 files (83.1 KiB) from teitou; ~/src/weasel/.worktrees/animator-on-blits/.playwright-mcp/aob-bench holds the only copy
