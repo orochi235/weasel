@@ -218,6 +218,21 @@ describe('useNodeOverlayFrame', () => {
     expect(frameFor(scene, 'a', IDENTITY, container(0, 0))).toBeNull();
   });
 
+  it('follows a scene edit and a pose override without a render from its host', () => {
+    const scene = sceneWith([{ id: 'a', pose: { x: 0, y: 0, width: 10, height: 10 } }]);
+    const el = container();
+    const { result } = renderHook(() => {
+      const ref = useRef<HTMLDivElement>(el);
+      return useNodeOverlayFrame(scene, ref, 'a' as NodeId, { view: IDENTITY });
+    });
+    act(() => scene.setPose(asNodeId('a'), { x: 5, y: 6, width: 20, height: 30 }));
+    expect(result.current!.box).toEqual({ x: 5, y: 6, width: 20, height: 30 });
+    act(() => scene.overrides.set(asNodeId('a'), { pose: { x: 1, y: 2, width: 3, height: 4 } }));
+    expect(result.current!.box).toEqual({ x: 1, y: 2, width: 3, height: 4 });
+    act(() => scene.remove(asNodeId('a')));
+    expect(result.current).toBeNull();
+  });
+
   it('has no frame under a view scaled to infinity, and keeps the last mapping for a live one', () => {
     const scene = sceneWith([{ id: 'a', pose: { x: 10, y: 20, width: 100, height: 50 } }]);
     expect(frameFor(scene, 'a', { x: 0, y: 0, scale: { x: Infinity, y: 1 } })).toBeNull();

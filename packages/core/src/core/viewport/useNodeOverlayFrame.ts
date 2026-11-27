@@ -9,7 +9,7 @@
  * `transform` live in this hook, not in those: a node's stored geometry is
  * in its box by definition.
  */
-import { useCallback, useInsertionEffect, useRef, type RefObject } from 'react';
+import { useCallback, useInsertionEffect, useRef, useSyncExternalStore, type RefObject } from 'react';
 import {
   transformPoint, invert, poseFrameOf, viewScreenToWorld, viewWorldToScreen, type Affine, type Rect,
 } from '@weasel-js/geom';
@@ -74,6 +74,14 @@ export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends 
 ): NodeOverlayFrame | null {
   const { width, height } = useCanvasSize(containerRef);
   const { view, compose } = options;
+  useSyncExternalStore(
+    useCallback((fn: () => void) => {
+      const offScene = scene.subscribe(fn);
+      const offOverrides = scene.overrides.subscribe(fn);
+      return () => { offScene(); offOverrides(); };
+    }, [scene]),
+    () => `${scene.getVersion()}:${scene.overrides.getGeneration()}`,
+  );
 
   const project = useCallback((): Projection | null => {
     const box = worldBoxOf(scene, nodeId, compose);
