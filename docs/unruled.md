@@ -4312,3 +4312,16 @@ Calls the lanes made without a ruling:
   (`uploadR8`, `uploadRGBA`) and an image (`upload`, `uploadRegistered`), and warns once; an image is never written
   over a page, and a sweep never deletes one. Rewriting the texture with the later upload, as the font-atlas and
   registered-texture collision does, was the alternative.
+
+## The viewport coast on blits' glide (2026-11-26)
+
+- 2026-11-26 (the fixer's call): `useDecayLoop`'s coast is a blits `glide`, so a `'bounce'` or `'spring'` edge
+  met mid-frame turns the view back for the rest of that frame, landing where the exact path is, rather than
+  pinning it to the wall for the frame; the path no longer depends on the frame rate. A coast no longer caps a
+  frame at 64 ms: a long frame moves it as far as that much time does (a hidden tab still pauses it).
+- 2026-11-26 (the fixer's call): the frame whose speed falls below `minSpeed` still moves the view as far as the
+  coast went before the coast ends, where the old loop ended it without that last step. Landing exactly on the
+  glide's rest, a jump of up to `minSpeed × τ` on the last frame, was the alternative.
+- 2026-11-26 (the fixer's call): a coast let go past an edge springs back to it (blits' critically damped spring,
+  stiffness 170) unless it is heading in fast enough to coast in, where the old loop jumped it to the edge on its
+  first frame.

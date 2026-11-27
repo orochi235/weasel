@@ -378,10 +378,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
      straight path. Closes when a rotation target's lane uses blits' `angle()` or `quat()`.
 
   Closes when every arc above has.
-- **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
-  its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` `bounds` only springs
-  back from past an edge; stopping at one or reflecting with a restitution is filed in blits' TODO
-  (2026-11-26). Closes when `useDecayLoop` keeps no integrator.
 - **(P2) [maintainer] Who owns the frame loop.** `useVisibleRaf` (pauses when hidden, `onResume` rebases)
   and blits' `ticker`/`loop()` (fades to rest on blur) are two answers to when frames happen. Settle it
   together with the clock and scheduling seams. Closes when the seam table below records the call.

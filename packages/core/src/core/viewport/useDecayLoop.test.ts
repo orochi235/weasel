@@ -61,9 +61,10 @@ describe('useDecayLoop', () => {
     act(() => {
       result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.5, minSpeed: 0.3, onTick, onEnd });
     });
-    // Speed roughly halves per frame: 1 → 0.51 (ticks) → 0.26 (below 0.3, ends).
+    // Speed roughly halves per frame: 1 → 0.51 → 0.26. The frame it falls below 0.3 still moves
+    // the view as far as the coast went, then ends.
     for (let i = 0; i < 6; i++) act(() => { stepRAF(16); });
-    expect(onTick).toHaveBeenCalledTimes(1);
+    expect(onTick).toHaveBeenCalledTimes(2);
     expect(onEnd).toHaveBeenCalledOnce();
   });
 
@@ -139,19 +140,41 @@ describe('useDecayLoop', () => {
         velocity: { vx: -10, vy: 0 },  // moving left
         friction: 0.999999,                     // next to no friction
         minSpeed: 0.001,
-        viewBounds: { minX: -5 },        // wall at x = -5, starting at x = 0
+        viewBounds: { minX: -8 },        // wall at x = -8, starting at x = 0
         boundary: 'bounce',
         initialPosition: { x: 0, y: 0 },
         onTick: (dx) => { ticks.push(dx); },
       });
     });
     act(() => { stepRAF(1); });  // first frame: skip
-    act(() => { stepRAF(1); });  // second frame: hits minX, bounces
+    act(() => { stepRAF(1); });  // second frame: meets minX at 0.8 ms, bounces
     act(() => { stepRAF(1); });  // third frame: moving right (reflected)
-    // First tick clamped to -5 (from 0 to minX)
-    expect(ticks[0]).toBeCloseTo(-5);
-    // After bounce, velocity is positive — next tick moves right
-    expect(ticks[1]).toBeGreaterThan(0);
+    // 8 to the wall, then 2 back off it in the rest of the frame, at full speed.
+    expect(ticks[0]).toBeCloseTo(-6);
+    expect(ticks[1]).toBeCloseTo(10);
+  });
+
+  it('bounces to the same place whatever the frame rate', () => {
+    const run = (frames: number, dt: number) => {
+      let x = 0;
+      const { result } = renderHook(() => useDecayLoop());
+      act(() => {
+        result.current.start({
+          velocity: { vx: -10, vy: 3 },
+          friction: 0.92,
+          minSpeed: 0.001,
+          viewBounds: { minX: -50, maxX: 50, minY: -20, maxY: 20 },
+          boundary: 'spring',
+          initialPosition: { x: 0, y: 0 },
+          onTick: (dx) => { x += dx; },
+        });
+      });
+      act(() => { stepRAF(dt); });  // first frame: skip
+      for (let i = 0; i < frames; i++) act(() => { stepRAF(dt); });
+      result.current.cancel();
+      return x;
+    };
+    expect(run(120, 2)).toBeCloseTo(run(15, 16), 6);
   });
 
   it('boundary:spring reflects with damping (smaller magnitude on rebound)', () => {
@@ -168,15 +191,13 @@ describe('useDecayLoop', () => {
         onTick: (dx) => { ticks.push(dx); },
       });
     });
-    act(() => { stepRAF(1); });  // first frame: skip (records lastTime)
-    act(() => { stepRAF(1); });  // hits minX, velocity reflects with damping
+    act(() => { stepRAF(1); });  // first frame: skip (records the start)
+    act(() => { stepRAF(1); });  // meets minX at 0.8 ms, velocity reflects with damping
     act(() => { stepRAF(1); });  // rebound tick — should be smaller magnitude
-    // First tick clamped at -8 (the wall, since raw 10*1ms would overshoot)
-    expect(ticks[0]).toBeCloseTo(-8);
-    // Rebound is positive (reflected) but magnitude is less than the
-    // clamped incoming step — damped vx (|vx|*0.5 = 5) over dt=1ms.
-    expect(ticks[1]).toBeGreaterThan(0);
-    expect(Math.abs(ticks[1])).toBeLessThan(Math.abs(ticks[0]));
+    // 8 to the wall, then 0.2 ms back off it at half speed.
+    expect(ticks[0]).toBeCloseTo(-7);
+    // The rebound keeps half the speed: |vx| * 0.5 = 5 over dt = 1 ms.
+    expect(ticks[1]).toBeCloseTo(5);
   });
 
   it('boundary:spring eventually settles below minSpeed', () => {
@@ -218,9 +239,28 @@ describe('useDecayLoop', () => {
     act(() => { stepRAF(1); });  // first frame: skip
     act(() => { stepRAF(1); });  // hits maxX, reflects left with damping
     act(() => { stepRAF(1); });  // moving left now
-    expect(ticks[0]).toBeCloseTo(8);   // clamped at maxX
-    expect(ticks[1]).toBeLessThan(0);  // reflected leftward
-    expect(Math.abs(ticks[1])).toBeLessThan(Math.abs(ticks[0]));
+    expect(ticks[0]).toBeCloseTo(7);   // 8 to maxX, 1 back off it
+    expect(ticks[1]).toBeCloseTo(-5);  // reflected leftward at half speed
+  });
+
+  it('springs a coast let go past an edge back to it', () => {
+    let x = -20;
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: 0.01, vy: 0 },   // heading in, but not fast enough to coast 10 back
+        minSpeed: 0.0001,
+        viewBounds: { minX: -10 },
+        boundary: 'stop',
+        initialPosition: { x, y: 0 },
+        onTick: (dx) => { x += dx; },
+        onEnd,
+      });
+    });
+    for (let i = 0; i < 200; i++) act(() => { stepRAF(16); });
+    expect(onEnd).toHaveBeenCalledOnce();
+    expect(x).toBeCloseTo(-10, 1);
   });
 
   it('refuses a friction outside (0, 1) or a minSpeed that is not positive, which never come to rest', () => {

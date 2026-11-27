@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
+import { glide, kit, mix, sum, vec, type Glide, type GlideEdge, type Mix } from '@msb235/blits';
 import { useVisibleRaf, type VisibleRaf } from '@weasel-js/react';
 import { checkInertia } from './checkInertia';
 
@@ -33,11 +34,12 @@ export interface DecayLoopOptions {
   /** Bounds for boundary clamping. Requires `boundary` to take effect. */
   viewBounds?: PanBounds;
   /**
-   * What to do when the accumulated position hits `viewBounds`. Default: no clamping.
-   * - `'stop'`: clamp at boundary, kill velocity component.
-   * - `'bounce'`: linear reflection — flip velocity sign, magnitude preserved.
-   * - `'spring'`: damped reflection — flip velocity sign and shrink magnitude
-   *   by `SPRING_DAMPING` per bounce so the motion settles naturally.
+   * What to do when the coast reaches `viewBounds`. Default: no clamping.
+   * - `'stop'`: stop on the edge, dropping that axis's velocity.
+   * - `'bounce'`: turn back off the edge with all of the speed it met it at.
+   * - `'spring'`: turn back with half that speed, so the motion settles after a few bounces.
+   *
+   * A coast let go past an edge springs back to it unless it is heading back inside.
    */
   boundary?: 'stop' | 'bounce' | 'spring';
   /** Starting position for internal boundary tracking. Required when `viewBounds` is set. */
@@ -46,110 +48,125 @@ export interface DecayLoopOptions {
   onEnd?: () => void;
 }
 
-/**
- * Fraction of velocity preserved per `'spring'` bounce. 0.5 means each bounce
- * loses half its energy, giving a quick visible settle (typically 2–4 bounces
- * before `minSpeed` cuts the loop). Fixed for v1; a future `bounceDamping`
- * config option could expose this if a consumer needs control.
- */
-const SPRING_DAMPING = 0.5;
+/** What each `boundary` is as a blits glide edge: `'spring'` keeps half the speed per bounce. */
+const EDGES: Record<NonNullable<DecayLoopOptions['boundary']>, GlideEdge> = {
+  stop: 'stop',
+  bounce: { reflect: 1 },
+  spring: { reflect: 0.5 },
+};
 
-/** A rAF loop that coasts a value to a stop under friction, reporting the
- *  per-frame delta. What turns a released pan drag into momentum scrolling. */
+/** The 60 Hz frame `friction` is the share of speed kept over. */
+const FRAME_MS = 16.67;
+
+interface Pan { p: number[] }
+const PAN = kit<Pan>({ p: vec(2, sum()) });
+/** The one subject a coast moves. */
+const VIEW = {};
+
+interface Coast {
+  mix: Mix<object, Pan>;
+  glide: Glide<object, Pan, number[]>;
+  /** The position at the last frame, from which the next tick's delta is taken. */
+  at: number[];
+  minSpeed: number;
+  /** Whether the glide is cued yet: that happens on the first frame, at its time. */
+  cued: boolean;
+  onTick: (dx: number, dy: number) => void;
+  onEnd?: () => void;
+}
+
+/** A blits glide for `config`: per-axis bounds only where `boundary` and `viewBounds` are both set. */
+function glideFor(config: DecayLoopOptions, friction: number): { from: number[]; patch: Coast['glide'] } {
+  const { velocity, viewBounds: b, boundary, initialPosition } = config;
+  const from = [initialPosition?.x ?? 0, initialPosition?.y ?? 0];
+  const bounded = b !== undefined && boundary !== undefined;
+  const patch = glide<object, Pan, number[]>('p', {
+    from,
+    // blits counts velocity per second and the friction as a time constant in ms.
+    velocity: [velocity.vx * 1000, velocity.vy * 1000],
+    ms: -FRAME_MS / Math.log(friction),
+    settle: 0,
+    ...(bounded && {
+      bounds: [
+        [b.minX ?? -Infinity, b.minY ?? -Infinity],
+        [b.maxX ?? Infinity, b.maxY ?? Infinity],
+      ] as const,
+      edge: EDGES[boundary],
+    }),
+  });
+  return { from, patch };
+}
+
+/** A frame loop that coasts a value to a stop under friction on a blits glide,
+ *  reporting the per-frame delta. What turns a released pan drag into momentum
+ *  scrolling. */
 export function useDecayLoop() {
-  const stateRef = useRef<{
-    vx: number; vy: number;
-    friction: number; minSpeed: number;
-    lastTime: number | null;
-    posX: number; posY: number;
-    viewBounds: PanBounds | undefined;
-    boundary: 'stop' | 'bounce' | 'spring' | undefined;
-    onTick: (dx: number, dy: number) => void;
-    onEnd?: () => void;
-  } | null>(null);
+  const coastRef = useRef<Coast | null>(null);
+
+  const end = useCallback((frameLoop: VisibleRaf) => {
+    const c = coastRef.current;
+    coastRef.current = null;
+    frameLoop.cancel();
+    c?.mix.close();
+    return c;
+  }, []);
 
   const tick = useCallback((now: number, frameLoop: VisibleRaf) => {
-    const s = stateRef.current;
-    if (!s) return;
-    if (s.lastTime === null) {
-      s.lastTime = now;
+    const c = coastRef.current;
+    if (!c) return;
+    c.mix.sync(now);
+    if (!c.cued) {
+      // Cued at the first frame's time, so the coast starts at the frame that first shows it.
+      c.mix.cue({ patch: c.glide });
+      c.cued = true;
       frameLoop.request();
       return;
     }
-    const dt = Math.min(now - s.lastTime, 64);  // cap at 64ms to avoid huge jumps
-    s.lastTime = now;
-    // Time-normalize friction to 60fps baseline
-    const f = Math.pow(s.friction, dt / 16.67);
-    s.vx *= f;
-    s.vy *= f;
-    const speed = Math.hypot(s.vx, s.vy);
-    if (speed < s.minSpeed) {
-      stateRef.current = null;
-      frameLoop.cancel();
-      s.onEnd?.();
+    const p = c.mix.probe(VIEW).p;
+    const [x, y] = [p[0] as number, p[1] as number];
+    const dx = x - (c.at[0] as number);
+    const dy = y - (c.at[1] as number);
+    c.at = [x, y];
+    if (dx !== 0 || dy !== 0) c.onTick(dx, dy);
+    // The callback may have canceled or replaced this coast.
+    if (coastRef.current !== c) return;
+    const v = c.glide.read(VIEW)?.velocity ?? [0, 0];
+    if (Math.hypot(v[0] as number, v[1] as number) / 1000 < c.minSpeed) {
+      end(frameLoop);
+      c.onEnd?.();
       return;
     }
-    let dx = s.vx * dt;
-    let dy = s.vy * dt;
-    if (s.viewBounds && s.boundary) {
-      const { minX, maxX, minY, maxY } = s.viewBounds;
-      const newX = s.posX + dx;
-      const newY = s.posY + dy;
-      if (s.boundary === 'stop') {
-        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = 0; }
-        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = 0; }
-        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = 0; }
-        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = 0; }
-      } else if (s.boundary === 'spring') {
-        // Damped reflection: flip sign AND scale magnitude by SPRING_DAMPING so
-        // each bounce loses energy. Once |v| < minSpeed the outer loop ends.
-        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = Math.abs(s.vx) * SPRING_DAMPING; }
-        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = -Math.abs(s.vx) * SPRING_DAMPING; }
-        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = Math.abs(s.vy) * SPRING_DAMPING; }
-        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = -Math.abs(s.vy) * SPRING_DAMPING; }
-      } else {
-        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = Math.abs(s.vx); }
-        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = -Math.abs(s.vx); }
-        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = Math.abs(s.vy); }
-        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = -Math.abs(s.vy); }
-      }
-      s.posX += dx;
-      s.posY += dy;
-    }
-    s.onTick(dx, dy);
     frameLoop.request();
-  }, []);
+  }, [end]);
 
   const frameLoop = useVisibleRaf(
     tick,
     {
       phase: 'update',
-      // Coasting does not continue while suspended: dropping `lastTime` makes
-      // the resuming frame seed a fresh interval instead of applying an hour of
-      // friction at once, which would end the decay before it was seen.
-      onResume: useCallback(() => {
-        if (stateRef.current) stateRef.current.lastTime = null;
-      }, []),
+      // Coasting does not continue while suspended: the resuming frame picks
+      // up where the coast was rather than an hour further on.
+      onResume: useCallback(() => { coastRef.current?.mix.rebase(); }, []),
     },
   );
 
-  const cancel = useCallback(() => {
-    frameLoop.cancel();
-    stateRef.current = null;
-  }, [frameLoop]);
+  const cancel = useCallback(() => { end(frameLoop); }, [end, frameLoop]);
 
   const start = useCallback((config: DecayLoopOptions) => {
     checkInertia('useDecayLoop', config);
     cancel();
-    const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, onTick, onEnd } = config;
+    const { velocity, friction = 0.92, minSpeed = 0.01, onTick, onEnd } = config;
     const speed = Math.hypot(velocity.vx, velocity.vy);
     // A non-finite velocity is a bad measurement, not a fling: friction never brings it down.
     if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.(); return; }
-    stateRef.current = {
-      vx: velocity.vx, vy: velocity.vy, friction, minSpeed, lastTime: null,
-      posX: initialPosition?.x ?? 0, posY: initialPosition?.y ?? 0,
-      viewBounds, boundary,
-      onTick, onEnd,
+    const { from, patch } = glideFor(config, friction);
+    coastRef.current = {
+      mix: mix<object, Pan>(PAN, { name: 'viewport coast' }),
+      glide: patch,
+      at: from,
+      minSpeed,
+      cued: false,
+      onTick,
+      onEnd,
     };
     frameLoop.request();
   }, [cancel, frameLoop]);
