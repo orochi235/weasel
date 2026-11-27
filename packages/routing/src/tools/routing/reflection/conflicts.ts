@@ -74,10 +74,18 @@ export function findConflicts(entries: readonly Contribution<unknown>[]): Confli
  */
 function findConflictsKeyed(
   entries: readonly Contribution<unknown>[],
-  rules?: ReadonlyMap<string, Rule>,
+  rules?: ReadonlyMap<Contribution<unknown>, Rule>,
   modes: readonly ActiveMode[] = KIT_MODES,
 ): { key: string; conflict: Conflict }[] {
-  const rows = buildRouteRegistry(entries);
+  // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
+  const rows: RegistryEntry[] = [];
+  const rowRules = new Map<RegistryEntry, Rule>();
+  for (const owner of entries) {
+    for (const row of buildRouteRegistry([owner])) {
+      rows.push(row);
+      rowRules.set(row, rules?.get(owner) ?? ALWAYS);
+    }
+  }
   const groups = new Map<string, { platform: Platform; members: RegistryEntry[] }>();
   for (const entry of rows) {
     if (entry.gesture === 'hover') continue;
@@ -100,8 +108,7 @@ function findConflictsKeyed(
       }
     }
   }
-  // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
-  const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
+  const ruleOf = (entry: RegistryEntry): Rule => rowRules.get(entry)!;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
     viewsTie(e.views, f.views) && phasesTie(e, f) && typesMeet(e, f) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
   const conflicts: Conflicts = new Map();
@@ -262,19 +269,18 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     : Object.values(scopes.registry as Readonly<Record<string, Contribution<unknown>>>)).map(asBound);
   const declaredAmbient = (scopes.ambient ?? []).map(asBound);
   const actions = scopes.actions ?? [];
-  const rules = new Map<string, Rule>();
-  for (const a of actions) {
-    const rule = eligibleRule(a);
-    if (rule) rules.set(a.id, rule);
-  }
+  const rules = new Map<Contribution<unknown>, Rule>();
   const gatedActions: Contribution<unknown>[] = [];
   const ungated: Contribution<unknown>[] = [];
   const gatedHotkey: Contribution<unknown>[] = [];
   const hotkeyActions: Contribution<unknown>[] = [];
   for (const a of actions) {
+    const entry = actionAsEntry(a);
+    const rule = eligibleRule(a);
+    if (rule) rules.set(entry, rule);
     const hotkey = a.scope === 'hotkey';
     const gated = a.eligible !== undefined;
-    (hotkey ? (gated ? gatedHotkey : hotkeyActions) : (gated ? gatedActions : ungated)).push(actionAsEntry(a));
+    (hotkey ? (gated ? gatedHotkey : hotkeyActions) : (gated ? gatedActions : ungated)).push(entry);
   }
   const modes = scopes.modes ?? KIT_MODES;
   // A keymap is live only while it is the one open, so it can collide with nothing but itself.

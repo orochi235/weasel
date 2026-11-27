@@ -37,3 +37,16 @@ describe('findConflicts — drops whose MIME globs overlap', () => {
     expect(findConflicts([tool('a', [bind({ kind: 'drop', types: ['*'] })]), tool('b', [bind({ kind: 'drop' })])])).toHaveLength(1);
   });
 });
+
+describe('findScopedConflicts — rules belong to actions, not ids', () => {
+  it('reads a tool sharing an action\'s id as always eligible', () => {
+    const escape = { kind: 'key', key: 'Escape' };
+    const c = findScopedConflicts({
+      registry: [],
+      ambient: [tool('text', [bind(escape, 'text.exit')]), tool('b', [bind(escape, 'b.exit')])],
+      actions: [action('text', { kind: 'key', key: 'T' }, { mode: 'review' })],
+      modes: [activeModeOf(mode('focus'))],
+    });
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['text,b']);
+  });
+});
