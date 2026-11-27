@@ -1,11 +1,10 @@
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactElement } from 'react';
-import type { FocusHoldAttrs } from '../Disabled/controlHold';
+import type { MarkHold } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { msLabel, spanPercent, type TimeWindow } from './timeScale';
 import type { LaneRow } from './lanes';
 
-/** What every mark on a lane carries of the timeline's hold. */
-export type MarkHold = { tabIndex: 0 | -1 } & FocusHoldAttrs;
+export type { MarkHold };
 
 /** One focusable segment per pair of neighboring keys, named by the key it runs into. */
 export function SegmentMarks({ times, label, offset, win, pct, mark, selectedSegment, onSelectSegment }: {

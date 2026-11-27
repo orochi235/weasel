@@ -123,6 +123,7 @@ export function Lane(props: LaneProps): ReactElement {
             onKeysInput={hold.edits ? props.onKeysInput : undefined}
             onKeysChange={(keys) => { if (hold.edits) props.onKeysChange?.(keys); }} onCancel={props.onCancel}
             edits={hold.edits}
+            mark={mark}
           />
         ) : (
           <>

@@ -4,4 +4,4 @@ export {
   type DisableableProps, type ReadOnlyProps, type HoldProps, type DisabledScopeProps, type ReadOnlyScopeProps,
 } from './Disabled';
 export type { ControlAccess } from '@weasel-js/ui-logic';
-export type { FocusHoldAttrs } from './controlHold';
+export type { FocusHoldAttrs, MarkHold } from './controlHold';
