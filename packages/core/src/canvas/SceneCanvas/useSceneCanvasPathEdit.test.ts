@@ -8,7 +8,7 @@ import { useSceneCanvasPathEdit } from './useSceneCanvasPathEdit';
 describe('useSceneCanvasPathEdit', () => {
   it('keeps the path-edit shift-click lock under a selectTool whose extendClickLocked is undefined', () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
-    const id = scene.add({ kind: 'path', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: null });
+    const id = scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: null });
     scene.setSelection([id]);
     const { result } = renderHook(() => useSceneCanvasPathEdit({
       host: undefined, opening: undefined, getActiveMode: undefined, scene,

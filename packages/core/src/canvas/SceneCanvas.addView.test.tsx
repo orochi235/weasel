@@ -29,7 +29,7 @@ const flat = (cmds: readonly DrawCommand[]): DrawCommand[] =>
 describe('SceneCanvasApi.addView', () => {
   it('stops a handle drawing once a re-add with its id has replaced it', () => {
     const api = createRef<SceneCanvasApi>();
-    const scene = createScene<null, 'main', View>({ systemLayers: [{ id: 'main' }] });
+    const scene = createScene<{ kind: 'rect' }, 'main', { x: number; y: number; width: number; height: number }>({ systemLayers: [{ id: 'main' }] });
     render(<SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} ref={api} />);
     let first: CanvasViewHandle | undefined;
     let second: CanvasViewHandle | undefined;

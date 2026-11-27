@@ -60,7 +60,7 @@ export function useCanvasCamera(opts: SceneCameraProps & {
         if (lastControlledRef.current) rerender();
       },
     }),
-    [viewRef, setViewFromInput, lastControlledRef],
+    [viewRef, setViewFromInput, rerender],
   );
   const viewAnimation = useViewAnimationOn(channel, animator);
   useInsertionEffect(() => { animationRef.current = viewAnimation; });
