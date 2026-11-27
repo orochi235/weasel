@@ -86,6 +86,17 @@ describe('createSweepAction', () => {
     host.remove();
   });
 
+  it('reaches the items between the last move and the release point', () => {
+    const entered: string[] = [];
+    const { at } = setup({ sweep: { begin: () => ({ enter: (i) => entered.push(i.key) }) } });
+    act(() => {
+      pointer(at(5), 'pointerdown', 5);
+      pointer(at(5), 'pointermove', 12);
+      pointer(at(5), 'pointerup', 47);
+    });
+    expect(entered).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
   it('enters the pressed item, then every item the drag crosses, in order', () => {
     const entered: string[] = [];
     const end = vi.fn();

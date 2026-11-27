@@ -144,7 +144,10 @@ export function createSweepAction<K>(opts: SweepOptions<K>): Action {
         return {
           kind: 'sweep',
           onMove: (move) => { travel(move.world); },
-          onEnd: (_end, how) => { run.end?.(how); },
+          onEnd: (end, how) => {
+            if (how === 'commit') travel(end.world);
+            run.end?.(how);
+          },
         };
       },
     },
