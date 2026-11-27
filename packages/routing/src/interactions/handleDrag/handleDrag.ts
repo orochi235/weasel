@@ -14,8 +14,8 @@ export interface HandleDragPoint {
 export interface HandleDragEnd {
   /** Where the pointer was let go, in the rect element's local space. */
   point: HandleDragPoint;
-  /** False when the pointer never left the press point — a press, not a drag. Commit-on-end
-   *  consumers use this to tell an edit from a stray click. */
+  /** False when the point never left the press point in the rect's space — a press, not a drag. A scroll
+   *  under a still pointer moves it. Commit-on-end consumers use this to tell an edit from a stray click. */
   moved: boolean;
   event: PointerEvent;
 }
@@ -188,16 +188,19 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       };
 
       let moved = false;
-      const { clientX: pressX, clientY: pressY } = e;
-      const away = (ev: PointerEvent) => ev.clientX !== pressX || ev.clientY !== pressY;
+      const start = localOf(e.clientX, e.clientY);
+      // Judged in the rect's space, where a scroll under a still pointer moves the point too.
+      const away = (p: HandleDragPoint) => p.x !== start.x || p.y !== start.y;
       live.current = openPointerSession(target, e, {
         onMove: (ev) => {
-          if (away(ev)) moved = true;
-          optsRef.current.onMove(localOf(ev.clientX, ev.clientY), ev);
+          const point = localOf(ev.clientX, ev.clientY);
+          if (away(point)) moved = true;
+          optsRef.current.onMove(point, ev);
         },
         onEnd: (ev) => {
           live.current = null;
-          optsRef.current.onEnd?.({ point: localOf(ev.clientX, ev.clientY), moved: moved || away(ev), event: ev });
+          const point = localOf(ev.clientX, ev.clientY);
+          optsRef.current.onEnd?.({ point, moved: moved || away(point), event: ev });
         },
         onCancel: (reason) => {
           live.current = null;
@@ -205,7 +208,7 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
         },
       }, { escape: optsRef.current.escape === true });
 
-      onStart?.(localOf(e.clientX, e.clientY), e);
+      onStart?.(start, e);
     },
     [optsRef],
   );

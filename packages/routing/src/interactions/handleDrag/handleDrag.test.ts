@@ -255,6 +255,20 @@ describe('useHandleDrag', () => {
     document.body.removeChild(target);
   });
 
+  it('ends with moved true when a scroll under a still pointer moved its point', () => {
+    const onEnd = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove: () => {}, onEnd }));
+    const scroller = document.createElement('div');
+    document.body.appendChild(scroller);
+    const target = mount();
+    scroller.appendChild(target);
+    result.current.onPointerDown(press(target, 5, 5));
+    scroller.scrollTop = 30;
+    target.dispatchEvent(makePointerEvent('pointerup', { clientX: 5, clientY: 5 }));
+    expect(onEnd.mock.calls[0][0]).toMatchObject({ point: { x: 5, y: 35 }, moved: true });
+    scroller.remove();
+  });
+
   it('a pointermove that stays where it pressed is not a move', () => {
     // Chrome sends one when the layout shifts under a still pointer.
     const onEnd = vi.fn();
