@@ -2,6 +2,6 @@
 "@weasel-js/core": patch
 ---
 
-A departure ghost removed from under an envelope group, or the children of a departing envelope, draw where the scene drew them rather than offset by the envelope's own pose.
+Departure ghosts under an envelope group, and a departing envelope's children, draw where the scene drew them.
 
 <!-- entry: fix visual -->

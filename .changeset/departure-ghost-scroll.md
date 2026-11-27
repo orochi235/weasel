@@ -1,7 +1,7 @@
 ---
-"@weasel-js/core": patch
+"@weasel-js/core": minor
 ---
 
-The departure ghosts of a scrolled container's children draw at the scroll the container had when it was removed, and a pose-write removal reports that scroll as `scroll`.
+The departure ghosts of a scrolled container's children draw at the scroll it had when removed; a removal reports it as `scroll`.
 
 <!-- entry: fix visual api -->
