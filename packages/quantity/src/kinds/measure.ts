@@ -1,5 +1,6 @@
 import { intlParts, numberPart, plural, spokenSign, textOf, type DisplayKind, type Part } from '../kind';
 import { catalogUnit, unitSymbol } from '../catalog';
+import { secondsPer } from './time';
 import { decimalOf, escapeClass, finiteOrNaN, latinDigits, numberWithin, parseNumberIn, type UnitTable } from '../number';
 
 /**
@@ -106,7 +107,7 @@ export const currencyKind: DisplayKind<CurrencyDisplay> = {
 };
 
 /**
- * A span of time, the value in seconds. `clock` shows `1:02:03` or `4:05.5`;
+ * A span of time, the value in seconds, or in the time unit it is tagged with (`ms`, `min`, `h`). `clock` shows `1:02:03` or `4:05.5`;
  * `units` shows `2h 5m 3s`. Spoken `2 hours, 5 minutes, 3 seconds`. Typed text
  * reads in either form.
  */
@@ -143,7 +144,8 @@ const DURATION_UNITS: UnitTable = { h: 3600, m: 60, min: 60, s: 1, ms: 0.001 };
 /** The built-in `duration` kind, to spread into a `registerDisplayKind` replacement. */
 export const durationKind: DisplayKind<DurationDisplay> = {
   kind: 'duration',
-  format: (value, d) => {
+  format: (tagged, d, ctx) => {
+    const value = tagged * secondsPer(ctx.unit);
     if (!Number.isFinite(value)) return [{ type: 'number', value: String(value) }];
     const places = d.places ?? 0;
     const { negative, h, m, s } = hms(value, places);
@@ -170,7 +172,8 @@ export const durationKind: DisplayKind<DurationDisplay> = {
     parts.push({ type: 'literal', value: ':' }, { type: 'seconds', value: pad(sec) });
     return parts;
   },
-  speak: (value, d, ctx) => {
+  speak: (tagged, d, ctx) => {
+    const value = tagged * secondsPer(ctx.unit);
     if (!Number.isFinite(value)) return String(value);
     const { negative, h, m, s } = hms(value, d.places ?? 0);
     const terms: string[] = [];
@@ -180,19 +183,22 @@ export const durationKind: DisplayKind<DurationDisplay> = {
     if (s > 0 || terms.length === 0) terms.push(term(s, 's'));
     return `${negative ? 'minus ' : ''}${terms.join(', ')}`;
   },
-  parse: (text, _d, ctx) => {
-    const d = escapeClass(decimalOf(ctx.locale));
-    // Matched on trimmed text: a `\s*` either side of an optional sign backtracks in time quadratic in a run of spaces.
-    const clock = new RegExp(String.raw`^([-−+]?)\s*(?:(\d+):)?(\d+):(\d+)(?:[.${d}](\d+))?$`);
-    const latin = latinDigits(text, ctx.locale).trim();
-    const m = clock.exec(latin);
-    if (m) return signedSeconds(m[1]!, m[2], m[3], `${m[4]}.${m[5] ?? 0}`);
-    // The units form's seconds carry a decimal in either mark, as the clock's do: `0.010s` is never ten seconds.
-    const units = new RegExp(String.raw`^([-−+]?)\s*(?:(\d+)\s*h\s*)?(?:(\d+)\s*m\s*)?(\d+)[.${d}](\d+)\s*s$`).exec(latin);
-    if (units) return signedSeconds(units[1]!, units[2], units[3], `${units[4]}.${units[5]}`);
-    return parseNumberIn(text, DURATION_UNITS, ctx.locale);
-  },
+  parse: (text, _d, ctx) => secondsTyped(text, ctx.locale) / secondsPer(ctx.unit),
 };
+
+/** Typed text as seconds, in either of a duration's forms or as a number with a time unit. */
+function secondsTyped(text: string, locale: string): number {
+  const d = escapeClass(decimalOf(locale));
+  // Matched on trimmed text: a `\s*` either side of an optional sign backtracks in time quadratic in a run of spaces.
+  const clock = new RegExp(String.raw`^([-−+]?)\s*(?:(\d+):)?(\d+):(\d+)(?:[.${d}](\d+))?$`);
+  const latin = latinDigits(text, locale).trim();
+  const m = clock.exec(latin);
+  if (m) return signedSeconds(m[1]!, m[2], m[3], `${m[4]}.${m[5] ?? 0}`);
+  // The units form's seconds carry a decimal in either mark, as the clock's do: `0.010s` is never ten seconds.
+  const units = new RegExp(String.raw`^([-−+]?)\s*(?:(\d+)\s*h\s*)?(?:(\d+)\s*m\s*)?(\d+)[.${d}](\d+)\s*s$`).exec(latin);
+  if (units) return signedSeconds(units[1]!, units[2], units[3], `${units[4]}.${units[5]}`);
+  return parseNumberIn(text, DURATION_UNITS, locale);
+}
 
 const DECIMAL_BYTES = ['B', 'kB', 'MB', 'GB', 'TB', 'PB'] as const;
 const BINARY_BYTES = ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB'] as const;

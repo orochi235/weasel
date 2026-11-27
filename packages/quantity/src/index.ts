@@ -83,6 +83,17 @@ export {
   type UnitDisplay,
 } from './kinds/measure';
 export {
+  instant,
+  instantKind,
+  relative,
+  relativeKind,
+  secondsPer,
+  type InstantDisplay,
+  type RelativeDisplay,
+  type RelativeUnit,
+} from './kinds/time';
+export { nextChangeFor, searchedChange } from './nextChange';
+export {
   fromRoman,
   ordinal,
   ordinalKind,
