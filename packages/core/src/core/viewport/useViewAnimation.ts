@@ -1,4 +1,4 @@
-import { useId, useMemo, useRef } from 'react';
+import { useEffect, useId, useMemo, useRef } from 'react';
 import { useKitSetting, useLatest, usePrefersReducedMotion } from '@weasel-js/react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { easeOutCubic } from '@weasel-js/geom';
@@ -110,10 +110,13 @@ export function useViewAnimationOn(view: ViewChannel, animator: Animator): ViewA
   const setting = useKitSetting('view.animationMs') ?? DEFAULT_VIEW_ANIMATION_MS;
   const msRef = useLatest(usePrefersReducedMotion() ? 0 : setting);
 
-  return useMemo(
+  const api = useMemo(
     () => createViewAnimation(key, viewRef, animatorRef, targetRef, writingRef, msRef),
     [key, viewRef, animatorRef, msRef],
   );
+  // A shared animator outlives this component; the camera move it started does not.
+  useEffect(() => api.stop, [api]);
+  return api;
 }
 
 /** The runner behind {@link useViewAnimationOn}. */

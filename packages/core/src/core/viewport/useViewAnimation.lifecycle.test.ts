@@ -47,6 +47,20 @@ describe('useViewAnimation lifecycle', () => {
     expect(current().x).toBe(at);
   });
 
+  it('stops its camera animation on a shared animator when it unmounts', () => {
+    const clock = makeClock();
+    const { channel, current } = makeChannel(HOME);
+    const shared = renderHook(() => useAnimator(clock));
+    const runner = renderHook(() => useViewAnimationOn(channel, shared.result.current));
+    act(() => { runner.result.current.animate(RIGHT, { ms: 200, easing: linear }); });
+    act(() => { clock.advance(100); });
+    runner.unmount();
+    const at = current().x;
+    act(() => { clock.advance(100); });
+    expect(current().x).toBe(at);
+    expect(shared.result.current.isActive()).toBe(false);
+  });
+
   it('stops and reports a move started on an animator it has since been handed a replacement for', () => {
     const clock = makeClock();
     const { channel, current } = makeChannel(HOME);

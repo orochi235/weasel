@@ -4316,3 +4316,10 @@ Calls the lanes made without a ruling:
   (`uploadR8`, `uploadRGBA`) and an image (`upload`, `uploadRegistered`), and warns once; an image is never written
   over a page, and a sweep never deletes one. Rewriting the texture with the later upload, as the font-atlas and
   registered-texture collision does, was the alternative.
+
+## Audit scour fix seven (2026-11-27): core's viewport
+
+- 2026-11-27 (the fixer's call): a camera runner (`useViewAnimation`, `useViewAnimationOn`) stops its own move when its
+  component unmounts, though the animator it runs on is shared and lives on. An animation another caller started on
+  `viewTarget` goes on. Letting the move finish on the shared animator, writing a channel its starter no longer owns,
+  was the alternative.
