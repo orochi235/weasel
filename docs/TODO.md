@@ -381,9 +381,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 - **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
   its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` takes bounds, but
   whether it can bounce or spring at them hasn't been checked. Closes when `useDecayLoop` keeps no integrator.
-- **(P3) [agent] Two elapsed-time trackers.** `packages/react/src/useElapsed.ts`, and the `{elapsed, rate}`
-  that `packages/core/src/canvas/renderWorker/workerAnimations.ts:42` tracks itself, each keep their own
-  time. Closes when both read a clock.
 - **(P2) [maintainer] Who owns the frame loop.** `useVisibleRaf` (pauses when hidden, `onResume` rebases)
   and blits' `ticker`/`loop()` (fades to rest on blur) are two answers to when frames happen. Settle it
   together with the clock and scheduling seams. Closes when the seam table below records the call.
