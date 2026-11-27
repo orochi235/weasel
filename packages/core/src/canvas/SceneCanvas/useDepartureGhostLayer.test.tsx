@@ -89,6 +89,25 @@ describe('useDepartureGhostLayer', () => {
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([104, 150, 106]);
   });
 
+  it('draws a ghost in each copy a container still in the scene draws, and a departing container\'s copies of its children', () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(0), data: null, copiesFromPose: () => [[1, 0, 0, 1, 200, 0]] } as never);
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: p, children: [], copiesFromPose: () => [[1, 0, 0, 1, 0, 50]] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = removal(g, at(0), [{ node: k, pose: at(4), children: [] }]);
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(0), alpha: 1 }]),
+    }));
+    const out = result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[];
+    const placed = (cmds: readonly DrawCommand[], dx = 0, dy = 0): string[] => cmds.flatMap((c) => {
+      if (c.kind === 'path' && c.path.kind === 'rect') return [`${c.path.x + dx},${c.path.y + dy}`];
+      if (c.kind !== 'group') return [];
+      const t = (c as GroupDrawCommand).transform as unknown as number[] | undefined;
+      return placed((c as GroupDrawCommand).children, dx + (t ? t[6]! : 0), dy + (t ? t[7]! : 0));
+    });
+    expect(placed(out).sort()).toEqual(['0,0', '200,0', '204,0', '204,50', '4,0', '4,50'].sort());
+  });
+
   it('draws a ghost on a parallax layer where its plane draws it', () => {
     const scene = createScene<null, 'main' | 'far', RectPose>({
       systemLayers: [{ id: 'main' }, { id: 'far', parallax: { pan: 0.5 } }],

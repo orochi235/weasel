@@ -5,6 +5,7 @@
  */
 import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
+import { mat3, type Affine } from '@weasel-js/geom';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { composeChildFrame, composesFrames, frameAtOrAbove, type PoseAdapter } from 'core/scene/composePose';
@@ -25,6 +26,13 @@ import { planeTransform } from '../planeClips';
 import { pixelScaleCtx } from '../pixelScale';
 import { ownClipOf } from '../ownClip';
 import { nodeShapesOf } from '../nodeShapeRegistry';
+import { copiesWithin } from '../copiesAbove';
+import { scenePaintedPoseOf } from '../derivedPath';
+
+/** `content` once under each of `copies`. */
+function copied(copies: readonly Affine[], content: DrawCommand[]): DrawCommand[] {
+  return copies.map((m) => ({ kind: 'group', transform: mat3.fromAffine(m), children: content }));
+}
 
 export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args: {
   scene: Scene<TData, TLayer, TPose>;
@@ -91,23 +99,27 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
           draw(c, frame !== null ? compose(frame, c.pose) : c.pose, frame, plane, kids, () => [r.node, ...above()]);
         }
         if (kids.length > 0) {
-          // The node's clip is its children's, not its own paint's.
+          // The node's clip is its children's, not its own paint's, and a copy it draws encloses that clip.
           const clip = ownClipOf(r.node, pose, () => slot.derivedPathOf?.(r.node, pose), nodeShapesOf(sc), scaled.scale);
-          children.push(...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids));
+          const content = clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids;
+          children.push(...content, ...copied(r.node.copiesFromPose?.(pose, r.node) ?? [], content));
         }
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
       };
       const shownUnder = (parent: NodeId | null): boolean => parent === null
         || ![parent, ...sc.ancestorsOf(parent)].some((id) => { const n = sc.get(id); return n !== undefined && hidesSubtree(n); });
+      const paintedPose = scenePaintedPoseOf(sc);
       return leaving.flatMap(({ removal, pose, alpha }): DrawCommand[] => {
         const parent = removal.parent !== null && sc.get(removal.parent) ? removal.parent : null;
         if (!shownUnder(parent)) return [];
         const frameId = composes ? frameAtOrAbove(frames, parent) : null;
         const parentFrame = frameId !== null ? composeChildFrame(frames, frameId, compose) : null;
         const world = parentFrame !== null ? compose(parentFrame, pose) : pose;
-        const children: DrawCommand[] = [];
-        draw(removal, world, parentFrame, null, children, () => sceneAncestors((id: never) => sc.get(id), removal.node));
+        const own: DrawCommand[] = [];
+        draw(removal, world, parentFrame, null, own, () => sceneAncestors((id: never) => sc.get(id), removal.node));
+        // A container still in the scene that draws copies drew the node in each of them too.
+        const children = [...own, ...copied(copiesWithin(sc, parent, paintedPose), own)];
         return [{ kind: 'group', alpha: Math.max(0, Math.min(1, alpha)), children }];
       });
     },
