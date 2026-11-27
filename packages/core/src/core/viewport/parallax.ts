@@ -25,8 +25,10 @@ function asXY(v: ScalarOrXY): { x: number; y: number } {
  *
  * `pan` controls how much the plane translates with the camera (1 = normal,
  * 0 = locked to `anchor`, >1 = leads). `zoom` controls how much it scales
- * with camera zoom (1 = normal, 0 = fixed at identity scale); a flipped camera
- * axis stays flipped in the plane. `anchor`
+ * with camera zoom, as an exponent on the camera's zoom (1 = normal, 0 = fixed
+ * at identity scale, 2 = twice the camera's zoom steps, so a camera at 2 gives
+ * the plane 4 and a camera at 0.5 gives it 0.25); a flipped camera axis stays
+ * flipped in the plane. `anchor`
  * (default origin) is the camera position at which all planes agree.
  *
  * Identity holds: `pan=1, zoom=1` returns a view equal to `outer`.
@@ -47,10 +49,13 @@ function track(from: number, to: number, factor: number): number {
   return from * (1 - factor) + to * factor;
 }
 
-/** A plane's scale on one axis: its magnitude moves from 1 toward the camera's
- *  by `factor`, and it keeps the camera's sign, so a y-up camera's planes are y-up. */
+/** A plane's scale on one axis: the camera's magnitude raised to `factor`, so a leading plane
+ *  zooms out by ratios and never reaches zero, and it keeps the camera's sign (a y-up camera's
+ *  planes are y-up). */
 function trackZoom(outer: number, factor: number): number {
-  const magnitude = normalizeZoom(track(1, Math.abs(outer), factor));
+  const raw = Math.abs(outer) ** factor;
+  // Past the double range is held at its limit, not read as the floor `normalizeZoom` gives Infinity.
+  const magnitude = raw === Infinity ? Number.MAX_VALUE : normalizeZoom(raw);
   return outer < 0 ? -magnitude : magnitude;
 }
 

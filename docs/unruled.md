@@ -549,6 +549,10 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
 - 2026-11-16 (my call, audit round 31): `createParallaxPlane`'s `set` reads `pan: undefined` as "leave the pan", not
   as an error, since an animator writing `set({ pan: maybe })` means no change there and `pan` has no default to clear
   to. It had been stored, and every later draw of the plane threw. An undefined `zoom` or `anchor` still clears it.
+- 2026-11-27 (my call, scour fix 7): a parallax plane's `zoom` is an exponent on the camera's zoom (`|scale| ** zoom`),
+  not a linear step from 1 toward it, so a plane with `zoom` above 1 zooms out by ratios rather than reaching the floor
+  at a camera of `1 - 1/zoom`. Fractional factors move too: `zoom: 0.5` under a camera at 4 draws at 2, not 2.5. A
+  plane whose zoom overflows is held at the largest double, so it draws as infinitely far rather than at the floor.
 - 2026-11-16 (my call, audit round 31): a bare-number `bleed` on `createTiledLayer` covers both axes, though a bare
   `period` wraps x alone: a bleed is how far content overhangs its cell, which is not one axis's question. On a
   lattice tiled in x only it draws as before.
