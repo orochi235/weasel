@@ -98,7 +98,7 @@ function strokeOf(stroke: SvgStroke, ctm: Affine, label: string, warn: Warn): Lo
   }
   const color = colorOf(stroke.paint, stroke.opacity ?? 1, `${label} has a stroke`, warn);
   if (!color) return null;
-  const width = (typeof stroke.width === 'number' ? stroke.width : stroke.width.px) * widthScaleOf(ctm, label, warn);
+  const width = typeof stroke.width === 'number' ? stroke.width * widthScaleOf(ctm, label, warn) : stroke.width.px;
   return {
     ty: 'st', ...color, w: held(width), lc: CAPS[stroke.cap ?? 'butt'], lj: JOINS[stroke.join ?? 'miter'], ml: stroke.miterLimit ?? 4,
   };

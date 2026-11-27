@@ -314,8 +314,6 @@ Left open when the CSS, SMIL and Lottie writers landed (2026-11-26).
 
 - **(P3) [agent] `decorate.attrsOf` can rename a node's `id`, and can duplicate `display` on a hidden node.** Keep
   `id` reserved (keep the node's own, warn), and apply the decoration after `display="none"` is added.
-- **(P3) [agent] Lottie scales a non-scaling stroke.** A `{ px }` width is SVG's `non-scaling-stroke`, but the
-  writer multiplies it by the baked transform's scale and warns about uneven scale for it too. Scale only plain widths.
 - **(P3) [agent] An animated `d` is written onto a path drawn as an outline or as several elements.** Trims already
   refuse those (`writesOnePath`); `d` should too.
 - **(P3) [agent] Lottie measures trim on local geometry but applies it to transform-baked geometry.** Under uneven

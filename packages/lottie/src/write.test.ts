@@ -198,6 +198,15 @@ describe('writeLottie', () => {
     expect(warnings).toEqual(['#a is scaled unevenly, which a Lottie stroke width cannot follow; its stroke takes the mean scale']);
   });
 
+  it('keeps a non-scaling stroke\'s width under a transform, scaled evenly or not, with no warning', () => {
+    const warnings: string[] = [];
+    const node = path('a', 'M0 0 L50 0', { stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: { px: 3 } } } as Partial<SvgNode>);
+    const group = { kind: 'group', transform: [2, 0, 0, 8, 0, 0], children: [node] } as SvgNode;
+    const [layer] = writeLottie([group], clipOf({}), { onWarn: (m) => warnings.push(m) }).layers;
+    expect(itemsOf(layer.shapes[0], 'st')[0]).toMatchObject({ w: { a: 0, k: 3 } });
+    expect(warnings).toEqual([]);
+  });
+
   it("warns that a group's opacity reaches each of its paths alone", () => {
     const warnings: string[] = [];
     const group = { kind: 'group', opacity: 0.5, children: [path('a'), path('b')] } as SvgNode;
