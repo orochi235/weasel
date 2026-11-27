@@ -106,7 +106,8 @@ export function useCanvasTools(args: {
   );
 
   const internal = useTools({
-    active: defaultActiveTool ?? ('select' in registry ? 'select' : null),
+    // A takeover owns the active tool, so defaultActiveTool is ignored there rather than checked against this registry.
+    active: (takeover ? undefined : defaultActiveTool) ?? ('select' in registry ? 'select' : null),
     registry,
     ...(mergedAmbient.length ? { ambient: mergedAmbient } : {}),
     ...(modes ? { modes } : {}),
