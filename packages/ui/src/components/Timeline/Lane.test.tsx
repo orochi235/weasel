@@ -219,6 +219,30 @@ describe('Lane', () => {
     expect(onKeyChange).toHaveBeenCalledWith(1, 490);
   });
 
+  it('changes nothing for a key on an offset row dragged back onto its own time', () => {
+    const onKeyChange = vi.fn();
+    const onKeyRevert = vi.fn();
+    const row = { kind: 'sampled', label: 'o', keys: [{ t: 0.2, value: 0 }, { t: 500, value: 1 }], onTick: () => {} } as Track;
+    const lane = buildLanes([{ kind: 'timeline', label: 'n', at: 0.1, timeline: { tracks: [row] } } as Track], new Set(['n']))[1]!;
+    render(<Lane {...base} row={lane} snapTimes={[0.2 + 0.1]} onKeyChange={onKeyChange} onKeyRevert={onKeyRevert} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[0], { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 100, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 1, clientY: 10 });
+    expect(onKeyChange).not.toHaveBeenCalled();
+    expect(onKeyRevert).toHaveBeenCalledTimes(1);
+  });
+
+  it('lands a key snapped onto a sibling on an offset row at the sibling\'s own time', () => {
+    const onKeyChange = vi.fn();
+    const row = { kind: 'sampled', label: 'o', keys: [{ t: 0.2, value: 0 }, { t: 500, value: 1 }], onTick: () => {} } as Track;
+    const lane = buildLanes([{ kind: 'timeline', label: 'n', at: 0.1, timeline: { tracks: [row] } } as Track], new Set(['n']))[1]!;
+    render(<Lane {...base} row={lane} snapTimes={[0.2 + 0.1]} onKeyChange={onKeyChange} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 100, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 1, clientY: 10 });
+    expect(onKeyChange).toHaveBeenCalledWith(1, 0.2);
+  });
+
   it('lets alt defeat snapping for the drag', () => {
     const onKeyChange = vi.fn();
     render(<Lane {...base} row={laneOf(sampled)} snapTimes={[600]} onKeyChange={onKeyChange} />);
@@ -226,6 +250,23 @@ describe('Lane', () => {
     fireEvent.pointerMove(document, { clientX: 301, clientY: 10, altKey: true });
     fireEvent.pointerUp(document, { clientX: 301, clientY: 10, altKey: true });
     expect(onKeyChange).toHaveBeenCalledWith(1, 602);
+  });
+
+  it('refuses a key drag whose lane stops taking edits before it is released, and puts back its preview', () => {
+    const onKeyChange = vi.fn();
+    const onKeyRevert = vi.fn();
+    const onCancel = vi.fn();
+    const props = { ...base, row: laneOf(sampled), onKeyChange, onKeyRevert, onCancel };
+    const { rerender } = render(<Lane {...props} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    rerender(<Lane {...props} hold={{ edits: false, looks: true, tabIndex: 0, focus: {} }} />);
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
+    expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+    fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
+    expect(onKeyChange).not.toHaveBeenCalled();
+    expect(onKeyRevert).toHaveBeenCalledTimes(1);
+    expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
   it('inserts a key on double-click', () => {
@@ -366,6 +407,28 @@ describe('Lane in graph mode', () => {
     ));
     fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 2, button: 0 });
     expect(onSelectionChange).toHaveBeenCalledWith(1);
+  });
+
+  it('calls no onCancel for a key drag whose input nobody takes', () => {
+    const onCancel = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysChange={() => {}} onCancel={onCancel} />);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: 250, clientY: 1.6, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 200, clientY: 10 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 1.6 });
+    fireEvent.pointerUp(document, { clientX: 250, clientY: 1.6 });
+    expect(onCancel).not.toHaveBeenCalled();
+  });
+
+  it('lands a graphed key snapped onto a sibling on an offset row at the sibling\'s own time', () => {
+    const onKeysChange = vi.fn();
+    const row = { kind: 'sampled', label: 'o', keys: [{ t: 0.2, value: 0 }, { t: 500, value: 1 }], onTick: () => {} } as Track;
+    const lane = buildLanes([{ kind: 'timeline', label: 'n', at: 0.1, timeline: { tracks: [row] } } as Track], new Set(['n']))[1]!;
+    render(<Lane {...base} mode="graph" row={lane} snapTimes={[0.2 + 0.1]} onKeysInput={() => {}} onKeysChange={onKeysChange} />);
+    const { x, y } = centerOf(graphKeys()[1]);
+    fireEvent.pointerDown(graphKeys()[1], { clientX: x, clientY: y, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 1, clientY: y });
+    fireEvent.pointerUp(document, { clientX: 1, clientY: y });
+    expect(onKeysChange.mock.calls.at(-1)![0].map((k: { t: number }) => k.t)).toEqual([0.2, 0.2]);
   });
 
   it('drags a key in value as well as time, reporting live keys and one commit', () => {
@@ -545,10 +608,11 @@ describe('Lane segment selection', () => {
       expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
     });
 
-    it('puts the ghost on the grabbed key before the pointer has moved', () => {
+    it('shows no ghost and dims no key while a press has not traveled', () => {
       render(<Lane {...base} row={laneOf(sampled)} />);
       grab(1);
-      expect(screen.getByTestId('timeline-key-ghost')).toHaveStyle({ left: '50%' });
+      expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+      expect(screen.getAllByTestId('timeline-key')[1]).not.toHaveAttribute('data-dragging');
     });
 
     it('moves the ghost with the pointer without committing', () => {
@@ -563,6 +627,7 @@ describe('Lane segment selection', () => {
     it('marks the grabbed key as the drag origin, so it can be dimmed', () => {
       render(<Lane {...base} row={laneOf(sampled)} />);
       grab(1);
+      fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
       expect(screen.getAllByTestId('timeline-key')[1]).toHaveAttribute('data-dragging', 'true');
       expect(screen.getAllByTestId('timeline-key')[0]).not.toHaveAttribute('data-dragging');
     });
@@ -595,6 +660,7 @@ describe('Lane segment selection', () => {
     it('ghosts an event crossing too', () => {
       render(<Lane {...base} row={laneOf(eventTrack)} />);
       fireEvent.pointerDown(screen.getAllByTestId('timeline-event')[0], { clientX: 0, clientY: 10, button: 0 });
+      fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
       expect(screen.getByTestId('timeline-key-ghost')).toBeInTheDocument();
     });
   });

@@ -4,7 +4,7 @@ export interface LaneRow {
   /** The dotted index path, unique among the rows. */
   key: string;
   /** What the row folds by: each timeline's label down to it, or its kind for one with none, with how many siblings
-   *  before it share that, so a track inserted or removed beside it from outside leaves it open or shut. */
+   *  of its kind before it share that, so a track inserted or removed beside it from outside leaves it open or shut. */
   fold: string;
   /** Index path into the track tree, outermost first. */
   path: number[];
@@ -42,9 +42,9 @@ export function buildLanes(
     list.forEach((track, i) => {
       const nextPath = [...path, i];
       const name = foldName(track);
-      const n = seen.get(name) ?? 0;
-      seen.set(name, n + 1);
-      const fold = `${parent}${parent ? '/' : ''}${name}${n > 0 ? `#${n}` : ''}`;
+      const n = seen.get(`${track.kind}:${name}`) ?? 0;
+      seen.set(`${track.kind}:${name}`, n + 1);
+      const fold = `${depth > 0 ? `${parent}/` : ''}${name}${n > 0 ? `#${n}` : ''}`;
       out.push({
         key: nextPath.join('.'),
         fold,

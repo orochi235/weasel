@@ -68,6 +68,21 @@ describe('buildLanes', () => {
     expect(rows[2].fold).toBe('(timeline)');
   });
 
+  it('keeps a nested row open when a same-labeled track of another kind beside it comes or goes', () => {
+    const open = new Set(['blink']);
+    const alone = buildLanes([nested('blink', 0, [sampled('o', [0])])], open);
+    const beside = buildLanes([sampled('blink', [0]), nested('blink', 0, [sampled('o', [0])])], open);
+    expect(alone.map((r) => r.label)).toEqual(['blink', 'o']);
+    expect(beside.map((r) => r.label)).toEqual(['blink', 'blink', 'o']);
+  });
+
+  it('folds the rows under an empty-labeled timeline apart from top-level rows of the same name', () => {
+    const inner = nested('a', 0, []);
+    const rows = buildLanes([nested('', 0, [inner]), nested('a', 0, [])], new Set(['']));
+    expect(rows.map((r) => r.label)).toEqual(['', 'a', 'a']);
+    expect(rows[1].fold).not.toBe(rows[2].fold);
+  });
+
   it('gives each row a path-derived key', () => {
     const rows = buildLanes([sampled('x', [0]), sampled('y', [0])], new Set());
     expect(rows.map((r) => r.key)).toEqual(['0', '1']);
