@@ -10,7 +10,7 @@ const action = (id: string, label: string): Action => ({ id, label, invoker: { k
 /** Resolves `actions`, then registers `late` in a later effect of the same commit, as a tool's actions are. */
 function Canvas({ actions, late, onReg }: { actions: ActionsProp; late: Action; onReg: (r: ActionsRegistry) => void }): ReactNode {
   const reg = useActionsRegistry()!;
-  useActionsPropResolver(actions);
+  useActionsPropResolver(actions, []);
   useEffect(() => reg.register(late), [reg, late]);
   onReg(reg);
   return null;
@@ -56,10 +56,10 @@ describe('useActionsPropResolver', () => {
     const run = () => {};
     const forA = { 'tool.sides': { invoker: { kind: 'immediate', run } } } as never;
     const forB = { 'tool.sides': { label: 'B' } };
-    const A = () => { useActionsPropResolver(forA); return null; };
+    const A = () => { useActionsPropResolver(forA, []); return null; };
     const B = ({ onReg }: { onReg: (r: ActionsRegistry) => void }) => {
       onReg(useActionsRegistry()!);
-      useActionsPropResolver(forB);
+      useActionsPropResolver(forB, []);
       return null;
     };
     const Default = () => {
@@ -78,5 +78,60 @@ describe('useActionsPropResolver', () => {
     out.rerender(tree(false));
     expect(live().label).toBe('B');
     expect(live().invoker.run).not.toBe(run);
+  });
+  it('warns once of a partial entry no action takes, though an inline prop re-applies every render', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const Inline = () => { useActionsPropResolver({ 'nobody.home': { label: 'Nobody' }, 'tool.sides': { id: 'elsewhere', label: 'S' } }, []); return null; };
+    const Default = () => {
+      const reg = useActionsRegistry()!;
+      useEffect(() => reg.register(action('tool.sides', 'Adjust sides')), [reg]);
+      return null;
+    };
+    const out = render(<ActionsProvider><Default /><Inline /></ActionsProvider>);
+    out.rerender(<ActionsProvider><Default /><Inline /></ActionsProvider>);
+    out.rerender(<ActionsProvider><Default /><Inline /></ActionsProvider>);
+    await Promise.resolve();
+    expect(warn).toHaveBeenCalledTimes(2);
+    warn.mockRestore();
+  });
+
+  it('registers a full entry whose id differs from its slot under the slot, and leaves it be', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const full = action('elsewhere', 'Mine');
+    const { reg } = mount({ 'my.action': full }, action('tool.sides', 'Adjust sides'));
+    const register = vi.spyOn(reg(), 'register');
+    const ids = reg().list().map((a) => a.id);
+    expect(ids).toContain('my.action');
+    expect(ids).not.toContain('elsewhere');
+    const off = reg().register(action('unrelated', 'U'));
+    expect(register).toHaveBeenCalledTimes(1);
+    off();
+    expect(warn).toHaveBeenCalledTimes(1);
+    warn.mockRestore();
+  });
+
+  it('mutes exactly the defaults under actions={null}, whenever they register', () => {
+    const Early = () => {
+      const reg = useActionsRegistry()!;
+      useEffect(() => {
+        const offs = [reg.register(action('kit.default', 'Default')), reg.register(action('tool.own', 'Own'))];
+        return () => { for (const off of offs) off(); };
+      }, [reg]);
+      return null;
+    };
+    let reg: ActionsRegistry | null = null;
+    const Canvas = ({ late }: { late: Action }) => {
+      reg = useActionsRegistry()!;
+      useActionsPropResolver(null, ['kit.default', 'kit.late']);
+      useEffect(() => reg!.register(late), [late]);
+      return null;
+    };
+    const out = render(<ActionsProvider><Early /><Canvas late={action('kit.late', 'Late')} /></ActionsProvider>);
+    const ids = () => reg!.list().map((a) => a.id);
+    expect(ids()).toContain('tool.own');
+    expect(ids()).not.toContain('kit.default');
+    expect(ids()).not.toContain('kit.late');
+    out.rerender(<ActionsProvider><Early /><Canvas late={action('kit.late', 'Late again')} /></ActionsProvider>);
+    expect(ids()).not.toContain('kit.late');
   });
 });

@@ -38,7 +38,7 @@ import type { EnteredGroupApi } from '../deps/enteredGroup';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings, useBindingOverrides } from './useActionTunings';
-import { useViewportActions, viewportZoomOption } from './useViewportActions';
+import { useViewportActions, viewportZoomOption, VIEWPORT_ACTION_IDS } from './useViewportActions';
 
 /** The `<SceneCanvas>` props the standard actions and their deps read. */
 export type StandardActionsProps = Pick<
@@ -206,7 +206,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useDepSource('boundsIncludeStroke', () => boundsIncludeStroke);
   useDepSource('drawnBoxes', () => inkBoxes);
 
-  useActionsPropResolver(props.actions);
+  useActionsPropResolver(props.actions, [...standardActions.map((a) => a.id), ...VIEWPORT_ACTION_IDS]);
   useActionTunings(tune);
   useBindingOverrides(props.bindingOverrides);
 }

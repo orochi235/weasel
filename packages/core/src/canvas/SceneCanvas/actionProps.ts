@@ -19,8 +19,10 @@ export interface SceneCanvasActionProps {
   bindingOverrides?: BindingOverrides;
 
   /**
-   * Replace, add or mute whole action descriptors. Pass `null` to disable
-   * all defaults. To change a built-in's params or add a key, use `tune`.
+   * Replace, add or mute whole action descriptors. Pass `null` to mute the
+   * kit's defaults, its standard actions and the viewport's, whenever they
+   * register; a tool's or an entry's own actions stay live. To
+   * change a built-in's params or add a key, use `tune`.
    */
   actions?: ActionsProp;
 }

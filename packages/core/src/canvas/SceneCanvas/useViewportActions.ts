@@ -28,6 +28,11 @@ import {
   type TouchZoomOptions,
 } from 'interactions/actions/defaults/touchZoom';
 
+/** The ids {@link useViewportActions} registers or mutes. */
+export const VIEWPORT_ACTION_IDS: readonly string[] = [
+  containerScrollAction.id, 'viewport.wheelPan', 'viewport.zoom', 'viewport.touchZoom',
+];
+
 export function useViewportActions(args: {
   /** `true`/`false` toggles wheel pan; an object locks its axis (see
    *  {@link ViewportWheelPanOptions}). */
