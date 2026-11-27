@@ -1,7 +1,8 @@
 import type { View } from './view';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
-import { type FramedRect as Bounds, normalizeZoom } from '@weasel-js/geom';
+import { type FramedRect as Bounds, normalizeZoom, poseFrameOf } from '@weasel-js/geom';
+import { axisAlignedBounds } from 'core/geometry/unionBounds';
 export type { Bounds };
 
 /** Pixel dimensions of the canvas viewport. */
@@ -36,7 +37,8 @@ export interface FitViewToBoundsOptions {
 
 /**
  * Compute the target {@link View} that fits `bounds` (world space) inside
- * `viewportDims` (CSS px). The bounds are centered in the viewport with
+ * `viewportDims` (CSS px). Bounds carrying a `rotation` or `transform` are
+ * fitted by the box they are drawn in. The bounds are centered in the viewport with
  * uniform padding on all sides; the resulting scale is clamped to the
  * configured min/max. Bounds with no width or no height, a lone line, are
  * fitted along the axis they have, at that axis's scale.
@@ -54,7 +56,9 @@ export function fitViewToBounds(
 ): View | null {
   const { padding = 16, maxScale = DEFAULT_MAX_ZOOM, minScale = DEFAULT_MIN_ZOOM } = opts;
 
-  if (!hasExtent(bounds)) return null;
+  const framed = poseFrameOf(bounds) ? axisAlignedBounds(bounds) : bounds;
+  if (!hasExtent(framed)) return null;
+  bounds = framed;
   if (viewportDims.width <= 0 || viewportDims.height <= 0) {
     console.warn('[weasel] fitViewToBounds: viewport has zero or negative area; returning currentView unchanged.', viewportDims);
     return currentView;

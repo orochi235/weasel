@@ -230,3 +230,29 @@ describe('fitViewToBounds on a y-up camera', () => {
     expect((1000 - v.y) * v.scale.y).toBeCloseTo(10);
   });
 });
+
+describe('fitViewToBounds — framed bounds and degenerate viewports', () => {
+  it('fits a rotated box by the extent it is drawn at', () => {
+    // A 100×20 box turned a quarter turn about its center, (50, 10), draws 20 wide and 100 tall.
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 100, height: 20, rotation: Math.PI / 2 },
+      { width: 400, height: 200 },
+      CURRENT,
+      { padding: 0 },
+    );
+    expect(v.scale.y).toBeCloseTo(2);
+    expect(v.x).toBeCloseTo(-50);
+    expect(v.y).toBeCloseTo(-40);
+  });
+
+  it('fits a transformed box by the extent it is drawn at', () => {
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 100, height: 100, transform: [2, 0, 0, 1] },
+      { width: 200, height: 200 },
+      CURRENT,
+      { padding: 0 },
+    );
+    expect(v.scale.x).toBeCloseTo(1);
+    expect(v.x).toBeCloseTo(-50);
+  });
+});
