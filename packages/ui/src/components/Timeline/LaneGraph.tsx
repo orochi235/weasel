@@ -39,7 +39,7 @@ export interface LaneGraphProps {
   onKeysInput?: (keys: readonly Keyframe<number>[], keyIndex?: number) => void;
   /** Once per edit: a drag's end, a handle's release, a key press. `keyIndex` is the selected key's index in `keys`. */
   onKeysChange: (keys: readonly Keyframe<number>[], keyIndex: number | null) => void;
-  /** A handle drag that moved, or a key drag whose preview went out through `onKeysInput`, was canceled, after that preview was put back. */
+  /** A moved handle drag, or a key drag that sent a preview, was canceled, after that preview was put back. */
   onCancel?: () => void;
   /** False: keys and segments still select, and nothing drags or steps. Default true. */
   edits?: boolean;
