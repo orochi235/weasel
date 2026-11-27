@@ -2,6 +2,8 @@
 '@weasel-js/routing': patch
 ---
 
-A shared number option in `toolOptionsPrefs` keeps a `step`, `scale` or holder bound only where every tool naming it agrees, takes every tool's `stops`, and is clearable when any tool's is, where it used to take them all from the first tool.
+A shared number option in `toolOptionsPrefs` is clearable when any tool's is, and keeps a `step`, `scale` or held bound only where all agree.
+
+It takes every tool's `stops`.
 
 <!-- entry: fix -->
