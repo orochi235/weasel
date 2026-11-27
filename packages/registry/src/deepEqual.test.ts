@@ -65,4 +65,12 @@ describe('deepEqual', () => {
     expect(deepEqual(deep(1e5), deep(1e5 - 1))).toBe(false);
     expect(deepEqual(object(1e5), object(1e5), { undefinedAsAbsent: true })).toBe(true);
   });
+
+  it('compares an array with no prototype only to itself, never to an object with its indices as keys', () => {
+    const bare = Object.setPrototypeOf([1, 2], null) as unknown[];
+    expect(deepEqual(bare, { 0: 1, 1: 2 })).toBe(false);
+    expect(deepEqual({ 0: 1, 1: 2 }, bare)).toBe(false);
+    expect(deepEqual(bare, [1, 2])).toBe(false);
+    expect(deepEqual(bare, bare)).toBe(true);
+  });
 });

@@ -28,7 +28,7 @@ function step(
   a: unknown, b: unknown, opts: DeepEqualOptions, pairs: Map<object, Set<object>>, todo: [unknown, unknown][],
 ): boolean {
   if (Object.is(a, b)) return true;
-  if (isPlainArray(a) || isPlainArray(b)) {
+  if (Array.isArray(a) || Array.isArray(b)) {
     if (!isPlainArray(a) || !isPlainArray(b) || a.length !== b.length) return false;
     if (!enter(pairs, a, b)) return true;
     if (!sameKeys(a, b, extraKeysOf, opts, todo)) return false;
