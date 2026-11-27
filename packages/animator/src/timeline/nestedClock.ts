@@ -3,10 +3,10 @@ import { lengthOf, nestedLength } from './length';
 import type { NestedTimeline, TimelineTrack, Track } from './types';
 
 /** Reads a stated duration as a time: {@link lengthOf} unless a caller reads it otherwise. */
-type Length = (duration: number) => number;
+export type LengthReader = (duration: number) => number;
 
 /** End time of a track: its last key/event, or where a nested timeline stops playing in its parent. */
-export function trackEnd(track: Track, length: Length = lengthOf): number {
+export function trackEnd(track: Track, length: LengthReader = lengthOf): number {
   switch (track.kind) {
     case 'sampled': return track.keys.length ? track.keys[track.keys.length - 1].t : 0;
     case 'event': return track.events.length ? track.events[track.events.length - 1].t : 0;
@@ -20,7 +20,7 @@ export function trackEnd(track: Track, length: Length = lengthOf): number {
 }
 
 /** How long tracks play: `explicit` read through `length` where given, else the latest of their ends. */
-export function tracksEnd(tracks: Track[], explicit?: number, length: Length = lengthOf): number {
+export function tracksEnd(tracks: Track[], explicit?: number, length: LengthReader = lengthOf): number {
   if (explicit != null) return length(explicit);
   let max = 0;
   for (const t of tracks) max = Math.max(max, trackEnd(t, length));
@@ -29,7 +29,7 @@ export function tracksEnd(tracks: Track[], explicit?: number, length: Length = l
 
 /** Where a timeline ends: its `duration` read through `length` (default {@link lengthOf}), or with none, its last
  *  track's end, a nested timeline's taken from its own. */
-export const timelineEnd = (timeline: NestedTimeline, length: Length = lengthOf): number =>
+export const timelineEnd = (timeline: NestedTimeline, length: LengthReader = lengthOf): number =>
   tracksEnd(timeline.tracks, timeline.duration, length);
 
 /** Whether a nested timeline's clock is retimed against its parent's: a rate, a loop or a remap. */
@@ -37,17 +37,17 @@ export const retimed = (track: TimelineTrack): boolean =>
   (track.rate !== undefined && track.rate !== 1) || (track.loop !== undefined && track.loop !== false) || track.remap !== undefined;
 
 /** One pass of a nested timeline, ms of its own clock before a remap: its duration, or its tracks' end. */
-const ownLength = (track: TimelineTrack, length: Length = lengthOf): number =>
+const ownLength = (track: TimelineTrack, length: LengthReader = lengthOf): number =>
   tracksEnd(track.timeline.tracks, track.timeline.duration, length);
 
 /** How long one pass of a retimed nested timeline runs on its clock: its remap's length, or its own. */
-function passLength(track: TimelineTrack, length: Length = lengthOf): number {
+function passLength(track: TimelineTrack, length: LengthReader = lengthOf): number {
   const own = ownLength(track, length);
   return track.remap ? remapLength(track.remap, own) : own;
 }
 
 /** How long a retimed nested timeline's clock runs over all its passes: endless for a loop for good. */
-function runLength(track: TimelineTrack, length: Length = lengthOf): number {
+function runLength(track: TimelineTrack, length: LengthReader = lengthOf): number {
   const pass = passLength(track, length);
   const passes = passesOf(track.loop ?? false);
   return pass > 0 && Number.isFinite(passes) ? pass * passes : pass > 0 ? Infinity : 0;
@@ -58,7 +58,7 @@ function runLength(track: TimelineTrack, length: Length = lengthOf): number {
  * retimed, its passes at its rate, of which a loop for good counts one, since it does not
  * lengthen its parent. A rate of 0 holds its first frame for as long as its own length.
  */
-export function extentOf(track: TimelineTrack, length: Length = lengthOf): number {
+export function extentOf(track: TimelineTrack, length: LengthReader = lengthOf): number {
   if (!retimed(track)) return ownLength(track, length);
   const rate = Math.abs(track.rate ?? 1);
   const run = runLength(track, length);

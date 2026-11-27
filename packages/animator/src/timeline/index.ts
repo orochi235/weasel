@@ -1,6 +1,6 @@
 export { createTimeline, type TimelineRegister } from './createTimeline';
 export { sampleTrack } from './sampleTrack';
-export { timelineEnd } from './nestedClock';
+export { type LengthReader, timelineEnd } from './nestedClock';
 export { bindClip, toClip } from './clip';
 export { rangeTimeline } from './ranges';
 export { isBlitsEasing, resolveKeyEasing, type BlitsEasing, type KeyEasing } from './keyEasing';
