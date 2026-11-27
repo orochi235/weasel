@@ -35,4 +35,10 @@ describe('moduleInfo exports and imports', () => {
     expect([...info.exports.keys()]).toEqual([]);
     expect([...info.refs.keys()]).toEqual([]);
   });
+
+  it('records a numeric key destructured off a namespace import as a string name', () => {
+    const info = moduleInfo("import * as ns from './x';\nconst { 0: zero, 1.5: half } = ns;\n", '/r/a.ts');
+    expect(info.imports.get('zero')).toEqual({ spec: './x', imported: '0' });
+    expect(info.imports.get('half')).toEqual({ spec: './x', imported: '1.5' });
+  });
 });

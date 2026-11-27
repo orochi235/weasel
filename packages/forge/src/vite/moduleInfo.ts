@@ -49,9 +49,11 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
           for (const name of names) declare(name, d);
           if (d.id.type === 'ObjectPattern' && d.init?.type === 'Identifier') {
             for (const p of d.id.properties) {
-              if (p.type === 'ObjectProperty' && !p.computed && p.value.type === 'Identifier') {
-                picked.push({ local: p.value.name, from: d.init.name, imported: p.key.type === 'Identifier' ? p.key.name : nameOf(p.key as t.StringLiteral) });
-              }
+              if (p.type !== 'ObjectProperty' || p.computed || p.value.type !== 'Identifier') continue;
+              const key = p.key;
+              const imported =
+                key.type === 'Identifier' ? key.name : key.type === 'StringLiteral' || key.type === 'NumericLiteral' ? String(key.value) : null;
+              if (imported !== null) picked.push({ local: p.value.name, from: d.init.name, imported });
             }
           }
           return names;
