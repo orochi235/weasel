@@ -2,6 +2,6 @@
 '@weasel-js/animator': patch
 ---
 
-A compositor run taken back to the main thread leaves the animator whenever what carries it on there is canceled or retired for a throw, rather than staying active and refusing later handoffs on its target.
+A compositor run taken back to the main thread ends when its continuation there is canceled or throws, rather than staying active.
 
 <!-- entry: fix -->

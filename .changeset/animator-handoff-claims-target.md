@@ -2,6 +2,6 @@
 '@weasel-js/animator': patch
 ---
 
-Starting a tween, spring, or hold on a target whose animation another animator handed to the compositor is refused without disturbing that animation.
+A target whose animation another animator handed to the compositor refuses a new tween, spring, or hold without disturbing it.
 
 <!-- entry: fix -->
