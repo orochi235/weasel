@@ -61,9 +61,10 @@ Then:
 
 ### Elsewhere
 
-- Mike ruled that **scour fixer branches stack per area from now on**. skulkr-3d took it as kouhai t-631: in
-  `src/scourFix.mjs`, batch k builds on batch k-1's tip, and `--on` defaults to the area's newest unmerged scour
-  branch. A fresh skulkr session builds it from skulkr-3d's handoff and will message when it lands.
+- Scour fixer branches stack per area (skulkr `77290ea`, on Mike's ruling): an area's newest
+  `scour<N>-<area>-b<k>` carries all its fixes, so a batch merges only that one per area. Runs 1-12, including
+  the ones in this batch and the in-flight run 11 on nodeShapes and run 12 on `core.canvas.part4`, predate it and
+  are not stacked.
 - A background agent from this session is fixing `pass-the-baton` no longer prefixing `[STALE]` to wound-down
   iTerm tabs, in the chezmoi shared skills. Its result went to the session that started it. If that session is
   gone, check `git -C ~/.local/share/chezmoi log -3`.
