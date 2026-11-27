@@ -71,7 +71,7 @@ describe('findConflicts', () => {
     const key = () => ({ spec: { kind: 'key', key: 'a', mods: { shift: 'optional' } }, actionId: 'x' });
     const ambient = [tool('a', [key(), key()]), tool('b', [key()])];
     const owners = findScopedConflicts({ registry: [], ambient }).map((c) => c.ownerIds.join(','));
-    expect(owners).toEqual(['a,a', 'a,a,b']);
+    expect(owners).toEqual(['a,a,b']);
   });
 
   it('flags two multiTouch bindings on the same finger count', () => {

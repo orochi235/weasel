@@ -68,14 +68,14 @@ export function findConflicts(entries: readonly Contribution<unknown>[]): Confli
 }
 
 /**
- * The same detector, keeping each conflict's key: the bindings in it. Two conflicts can render
- * alike (every predicate target prints as one token), so `findScopedConflicts` dedupes on the key.
+ * The same detector, keeping the bindings in each conflict. Two conflicts can render alike (every
+ * predicate target prints as one token), so `findScopedConflicts` dedupes on the bindings.
  */
 function findConflictsKeyed(
   entries: readonly Contribution<unknown>[],
   rules?: ReadonlyMap<Contribution<unknown>, Rule>,
   modes: readonly ActiveMode[] = KIT_MODES,
-): { key: string; conflict: Conflict }[] {
+): Keyed[] {
   // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
   const rows: RegistryEntry[] = [];
   const rowRules = new Map<RegistryEntry, Rule>();
@@ -125,10 +125,13 @@ function findConflictsKeyed(
     // Bindings that fire one thing and tie on one platform only are how an
     // action binds a key that `mod` covers there and not on the other.
     .filter(([, c]) => c.platforms.size === PLATFORMS.length || !sameOutcome(c.bucket))
-    .map(([key, { conflict }]) => ({ key, conflict }));
+    .map(([, { ids, conflict }]) => ({ ids, conflict }));
 }
 
-type Conflicts = Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>;
+/** A conflict and the ids of the bindings in it, the same in every pass `findScopedConflicts` makes. */
+type Keyed = { ids: readonly string[]; conflict: Conflict };
+
+type Conflicts = Map<string, { conflict: Conflict; ids: string[]; bucket: RegistryEntry[]; platforms: Set<Platform> }>;
 
 /** Record `bucket`, bindings that tie on `platform`, in `conflicts`. */
 function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Platform, idOf: (e: RegistryEntry) => string): void {
@@ -137,7 +140,8 @@ function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Pl
   // Two bindings that tie in one modifier state usually tie in several, and on
   // both platforms: one conflict per set of bindings. A pair meeting on
   // several args (a key and a code, two keys of a list) is one conflict too.
-  const key = compositeKey(bucket.map(idOf));
+  const ids = bucket.map(idOf);
+  const key = compositeKey(ids);
   const found = conflicts.get(key);
   if (found) { found.platforms.add(platform); return; }
   conflicts.set(key, {
@@ -149,6 +153,7 @@ function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Pl
       modifiers: first.modifiers,
       ownerIds: bucket.map((e) => e.ownerId),
     },
+    ids,
     bucket,
     platforms: new Set([platform]),
   });
@@ -289,14 +294,16 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const keymaps = declaredAmbient.filter(isKeymap);
   const ambient = [...declaredAmbient.filter((e) => !isKeymap(e)), ...ungated];
 
-  const out: Conflict[] = [];
-  const seen = new Set<string>();
-  const add = (keyed: readonly { key: string; conflict: Conflict }[]): void => {
-    for (const { key, conflict } of keyed) {
-      const dedupeKey = compositeKey([key, ...conflict.ownerIds]);
-      if (seen.has(dedupeKey)) continue;
-      seen.add(dedupeKey);
-      out.push(conflict);
+  // A pass that finds bindings another pass reported, with more beside them, reports them once with the rest.
+  let reported: { ids: ReadonlySet<string>; conflict: Conflict }[] = [];
+  const within = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => [...a].every((id) => b.has(id));
+  const add = (keyed: readonly Keyed[]): void => {
+    for (const { ids: list, conflict } of keyed) {
+      const ids = new Set(list);
+      if (reported.some((r) => within(ids, r.ids))) continue;
+      const at = reported.findIndex((r) => within(r.ids, ids));
+      if (at === -1) { reported.push({ ids, conflict }); continue; }
+      reported = reported.flatMap((r, i) => (i === at ? [{ ids, conflict }] : within(r.ids, ids) ? [] : [r]));
     }
   };
 
@@ -320,7 +327,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules, modes));
   // A hotkey-tier action outranks whichever tool holds the active slot. A pair
   // already reported as a tie, a held tool's, is not reported again.
-  const tied = (a: string, b: string): boolean => out.some((c) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
+  const tied = (a: string, b: string): boolean => reported.some(({ conflict: c }) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
   for (const action of [...hotkeyActions, ...gatedHotkey]) {
     for (const tool of registry) {
       if (tied(action.id, tool.id)) continue;
@@ -328,7 +335,7 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     }
   }
 
-  return out;
+  return reported.map((r) => r.conflict);
 }
 
 /**

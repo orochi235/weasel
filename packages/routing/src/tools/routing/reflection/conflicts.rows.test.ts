@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { activeModeOf, type ModeDefinition } from '@weasel-js/modes';
-import { findConflicts, findScopedConflicts, formatConflict } from './conflicts';
+import { findConflicts, findScopedConflicts } from './conflicts';
 import type { Tool } from '../../types';
 
 const tool = (id: string, bindings: unknown[]): Tool => ({ id, bindings } as unknown as Tool);
