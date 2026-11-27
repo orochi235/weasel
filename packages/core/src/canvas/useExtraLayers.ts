@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { isLayerPainted, type RenderLayer } from 'core/layers/render';
+import { paintedLayers, type RenderLayer } from 'core/layers/render';
+import { isVisibleFrom } from './drawEnvelope';
 import type { CanvasProps } from './canvasProps';
 import type { SurfaceHandle } from './viewRegistry';
 
@@ -18,6 +19,8 @@ export interface ExtraLayers {
   /** Bumped on every registration and removal, so a memo reading `extrasRef` re-runs. */
   extrasVersion: number;
   registerLayer(layer: RenderLayer<unknown>): () => void;
+  /** Registered layers the surface paints, in the order it paints them. */
+  paintedExtras(): RenderLayer<unknown>[];
   hitTestExtrasIn: HitTestExtrasIn;
 }
 
@@ -53,25 +56,30 @@ export function useExtraLayers(
     };
   }, []);
 
-  // Registration order is draw order, so the last-registered layer gets first
-  // refusal, and registered layers paint above every slot. `<SceneCanvas>`
-  // folds this into its `affordanceAt` thunk; Canvas has the layers but not
-  // the dispatcher.
-  const hitTestExtrasIn = useCallback<HitTestExtrasIn>((worldX, worldY, view, dims, data, only) => {
-    const layers = [...extrasRef.current].reverse().concat([...slotLayersRef.current].reverse());
+  const paintedExtras = useCallback((): RenderLayer<unknown>[] => {
     const gate = gateRef.current;
-    const isVisible = gate.getIsVisible?.() ?? alwaysVisible;
-    const visibility = gate.layerVisibility ?? NO_LAYER_VISIBILITY;
-    const order = gate.layerOrder;
-    for (const layer of layers) {
+    return paintedLayers([...extrasRef.current], gate.layerVisibility ?? NO_LAYER_VISIBILITY, gate.layerOrder);
+  }, [gateRef]);
+
+  // Registered layers paint above every slot unless `layerOrder` says otherwise;
+  // the topmost painted gets first refusal. `<SceneCanvas>` folds this into its
+  // `affordanceAt` thunk; Canvas has the layers but not the dispatcher.
+  const hitTestExtrasIn = useCallback<HitTestExtrasIn>((worldX, worldY, view, dims, data, only) => {
+    const own = [...slotLayersRef.current, ...extrasRef.current];
+    const gate = gateRef.current;
+    // `only` is the asker's own stack, already gated and ordered by its settings.
+    const painted = only
+      ? only.filter((layer) => own.includes(layer))
+      : paintedLayers(own, gate.layerVisibility ?? NO_LAYER_VISIBILITY, gate.layerOrder);
+    const isVisible = isVisibleFrom(data) ?? gate.getIsVisible?.() ?? alwaysVisible;
+    for (let i = painted.length - 1; i >= 0; i--) {
+      const layer = painted[i]!;
       if (!layer.hitTest) continue;
-      if (only && !only.includes(layer)) continue;
-      if (!isLayerPainted(layer, visibility, order)) continue;
       const hit = layer.hitTest(worldX, worldY, data, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
   }, [gateRef, slotLayersRef]);
 
-  return { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn };
+  return { extrasRef, extrasVersion, registerLayer, paintedExtras, hitTestExtrasIn };
 }
