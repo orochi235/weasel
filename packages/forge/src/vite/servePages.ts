@@ -14,7 +14,7 @@ const PAGES: Record<string, string> = {
 };
 
 /**
- * Answers a GET for the workshop page, the frame document or a capture page, under `base`, with the page built
+ * Answers a GET or HEAD for the workshop page, the frame document or a capture page, under `base`, with the page built
  * around its entry; and serves the capture endpoint beside them. `shell` is read again for each page and capture.
  */
 export function servePages(server: ViteDevServer, base: string, shell: () => ShellFields): CaptureEndpoint {
@@ -23,13 +23,15 @@ export function servePages(server: ViteDevServer, base: string, shell: () => She
     const path = url.split('?')[0] ?? '/';
     const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
     const page = path === prefix ? '/' : path.startsWith(`${prefix}/`) ? path.slice(prefix.length) : null;
-    const entry = req.method === 'GET' && page !== null ? getOwn(PAGES, page) : undefined;
+    const entry = (req.method === 'GET' || req.method === 'HEAD') && page !== null ? getOwn(PAGES, page) : undefined;
     if (!entry) return next();
     server.transformIndexHtml(url, html(entry, 'serve', shell().title)).then(
       (doc) => {
         res.statusCode = 200;
         res.setHeader('Content-Type', 'text/html');
-        res.end(doc);
+        res.setHeader('Content-Length', String(Buffer.byteLength(doc)));
+        if (req.method === 'HEAD') res.end();
+        else res.end(doc);
       },
       (err: unknown) => next(err),
     );
