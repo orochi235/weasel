@@ -108,7 +108,8 @@ export function Timeline(props: TimelineProps): ReactElement {
     }
     if ((e.key !== 'Delete' && e.key !== 'Backspace') || hold.refuses || !onTimeline(e)) return;
     const marked = markedKey(e.target as Element, rows);
-    const target = marked === undefined ? selection : marked;
+    // Delete away from a key mark deletes the selection only from the root: a focused segment or disclosure is on some other row.
+    const target = marked === undefined ? (e.target === e.currentTarget ? selection : null) : marked;
     if (target && deletable(target, rows)) {
       e.preventDefault();
       commit(deleteKey(tracks, target));
