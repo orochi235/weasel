@@ -56,10 +56,11 @@ export function useViewNesting(
     return { ...r, x: r.x + frame.origin.x, y: r.y + frame.origin.y };
   }, [live, frameIn]);
 
-  /** A derived camera or aim, for a surface frame: asked of the frame it is measured in. */
+  /** A derived camera or aim, for a surface frame: asked of the frame it is measured in,
+   *  which is as empty as the view's rect while its parent is missing. */
   const derivedAt = useCallback(<T>(derive: (outer: View, dims: Dims) => T, outer: View, dims: Dims): T => {
     const frame = frameIn(outer, dims);
-    return frame ? derive(frame.view, frame.dims) : derive(outer, dims);
+    return frame ? derive(frame.view, frame.dims) : derive(outer, NO_RECT);
   }, [frameIn]);
 
   // Set while this view asks the view it is nested in, so a parent chain that

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { RenderLayer } from 'core/layers/render';
+import type { View } from 'core/viewport/view';
 import type { SelectionApi } from '@weasel-js/routing';
 import { useViewNesting, type ViewNestingInputs } from './useViewNesting';
 import type { ViewRegistration, ViewRegistry } from './viewRegistry';
@@ -45,5 +46,13 @@ describe('useViewNesting', () => {
     expect(v.current.drawnLayers().map((l) => l.id)).toEqual(['scene:a']);
     expect(v.current.layerIsPainted('a')).toBe(true);
     expect(v.current.layerIsPainted('b')).toBe(false);
+  });
+
+  it('derives a camera against the same empty frame its rect collapses to while its parent is missing', () => {
+    const { mount } = harness();
+    const v = mount('v', { parent: 'ghost' });
+    expect(v.current.rectAt(VIEW, { width: 100, height: 80 })).toMatchObject({ width: 0, height: 0 });
+    const seen = v.current.derivedAt((_o, dims) => dims, VIEW, { width: 100, height: 80 });
+    expect(seen).toMatchObject({ width: 0, height: 0 });
   });
 });
