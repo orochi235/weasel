@@ -146,6 +146,44 @@ describe('writeLottie', () => {
     expect(warnings).toEqual([]);
   });
 
+  it('writes a trim that never moves and whose start passes its end as s = e, which Lottie draws as nothing', () => {
+    const trimmed = (id: string, trim: { start: number; end: number }) =>
+      path(id, 'M0 0 L40 0', { stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: 2, trim } } as Partial<SvgNode>);
+    const warnings: string[] = [];
+    const [b, a] = writeLottie([trimmed('a', { start: 0.75, end: 0.25 }), trimmed('b', { start: 0, end: 0.5 })], clipOf({
+      'b.trim.start': [{ t: 0, value: 0.9 }],
+    }), { onWarn: (m) => warnings.push(m) }).layers;
+    expect(itemsOf(a.shapes[0], 'tm')[0]).toMatchObject({ s: { a: 0, k: 25 }, e: { a: 0, k: 25 } });
+    expect(itemsOf(b.shapes[0], 'tm')[0]).toMatchObject({ s: { a: 0, k: 50 }, e: { a: 0, k: 50 } });
+    expect(warnings).toEqual([]);
+  });
+
+  it('warns where moving trim edges cross at a frame Lottie draws, even between keys', () => {
+    const own = path('a', 'M0 0 L40 0', { stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: 2, trim: { start: 0.75, end: 1 } } } as Partial<SvgNode>);
+    const cases: Record<string, [SvgNode, Record<string, ClipKey[]>]> = {
+      'an own start above a tracked end': [own, { 'a.trim.end': [{ t: 0, value: 0 }, { t: 1000, value: 1 }] }],
+      'an end that dips below a held start mid-span': [path('a'), {
+        'a.trim.start': [{ t: 0, value: 0.45 }],
+        'a.trim.end': [{ t: 0, value: 0.5 }, { t: 1000, value: 0.6, easing: { bezier: [0.5, -3, 0.5, 1] } }],
+      }],
+      'edges that never cross': [path('a'), {
+        'a.trim.start': [{ t: 0, value: 0.2 }],
+        'a.trim.end': [{ t: 0, value: 0.2 }, { t: 1000, value: 0.6 }],
+      }],
+    };
+    const warned = Object.entries(cases).map(([name, [node, tracks]]) => {
+      const warnings: string[] = [];
+      writeLottie([node], clipOf(tracks), { onWarn: (m) => warnings.push(m) });
+      return [name, warnings];
+    });
+    const crossing = ["#a's trim start passes its end while it plays; Lottie draws the span between them there, where SVG draws nothing"];
+    expect(warned).toEqual([
+      ['an own start above a tracked end', crossing],
+      ['an end that dips below a held start mid-span', crossing],
+      ['edges that never cross', []],
+    ]);
+  });
+
   it('scales a stroke\'s width by a group transform baked into the path', () => {
     const group = { kind: 'group', transform: [2, 0, 0, 2, 0, 0], children: [path('a')] } as SvgNode;
     const [layer] = writeLottie([group], clipOf({})).layers;
@@ -158,6 +196,15 @@ describe('writeLottie', () => {
     const [layer] = writeLottie([group], clipOf({}), { onWarn: (m) => warnings.push(m) }).layers;
     expect(itemsOf(layer.shapes[0], 'st')[0]).toMatchObject({ w: { a: 0, k: 8 } });
     expect(warnings).toEqual(['#a is scaled unevenly, which a Lottie stroke width cannot follow; its stroke takes the mean scale']);
+  });
+
+  it('keeps a non-scaling stroke\'s width under a transform, scaled evenly or not, with no warning', () => {
+    const warnings: string[] = [];
+    const node = path('a', 'M0 0 L50 0', { stroke: { paint: { kind: 'solid', color: '#ff0000' }, width: { px: 3 } } } as Partial<SvgNode>);
+    const group = { kind: 'group', transform: [2, 0, 0, 8, 0, 0], children: [node] } as SvgNode;
+    const [layer] = writeLottie([group], clipOf({}), { onWarn: (m) => warnings.push(m) }).layers;
+    expect(itemsOf(layer.shapes[0], 'st')[0]).toMatchObject({ w: { a: 0, k: 3 } });
+    expect(warnings).toEqual([]);
   });
 
   it("warns that a group's opacity reaches each of its paths alone", () => {

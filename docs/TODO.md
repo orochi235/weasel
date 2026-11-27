@@ -312,14 +312,8 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
 
 Left open when the CSS, SMIL and Lottie writers landed (2026-11-26).
 
-- **(P2) [agent] Lottie draws a span where the SVG writers draw nothing, when a trim's start passes its end.**
-  lottie-web swaps `tm` `s` and `e` when `s > e`; weasel's own trim and the CSS/SMIL dash draw nothing. Reachable
-  through a stroke's own empty trim (`{ start: 0.75, end: 0.25 }` writes `s 75 e 25`) or an own start above a tracked
-  end. Write an empty static trim as `s = e` and clamp or warn where the edges can cross (`packages/lottie/src/write.ts`).
 - **(P3) [agent] `decorate.attrsOf` can rename a node's `id`, and can duplicate `display` on a hidden node.** Keep
   `id` reserved (keep the node's own, warn), and apply the decoration after `display="none"` is added.
-- **(P3) [agent] Lottie scales a non-scaling stroke.** A `{ px }` width is SVG's `non-scaling-stroke`, but the
-  writer multiplies it by the baked transform's scale and warns about uneven scale for it too. Scale only plain widths.
 - **(P3) [agent] An animated `d` is written onto a path drawn as an outline or as several elements.** Trims already
   refuse those (`writesOnePath`); `d` should too.
 - **(P3) [agent] Lottie measures trim on local geometry but applies it to transform-baked geometry.** Under uneven
