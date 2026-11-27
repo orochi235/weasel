@@ -4,6 +4,70 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
+## In flight: batch/2026-11-27-scour
+
+This section rides on the batch branch; delete it in the commit that merges the batch.
+
+**Where:** branch `batch/2026-11-27-scour`, worktree `.worktrees/batch-2026-11-27-scour`. The session that
+merges works from the main checkout and reaches this tree by path; it never runs `EnterWorktree`. It's registered as
+`inflight` kind `batch`.
+
+**What's in it:** `main` plus every finished scour fixer branch except nodeShapes (`scour11-*`) and
+`forge.vite.part2` (`scour9-*`), which Mike held back because those fix areas aren't done. That means Timeline runs
+1, 2, 5 and 6 (run 3 is contained in run 6), viewport runs 7-b1…b4, interactions runs 8-b1…b5, tools runs 10-b1…b4,
+registry run 4-b1, and `tooltip-anchor-rect` (the amended `41906fd420`, `entry: api`). `git log main..HEAD --merges`
+lists them.
+
+### Decisions made while merging (the merge commits carry them; nothing else does)
+
+- **viewport-b1 was ported onto main's blits `useDecayLoop`.** It adds the branch's `position` reader, which re-cues
+  the glide from the live position when something else moved the view; `speedScale`, so `minSpeed` is in screen
+  px; a `TypeError` for bounds with no position; and `onEnd('end' | 'cancel')`, including on cancel, a new start or an
+  unmount. Two things were dropped as superseded by main's `coast-springs-back-past-edge`: the branch's
+  `decay-starts-past-bounds` changeset, and its test "boundary:stop holds a coast that starts past a bound".
+- **Two branches each added a timeline end function** (`length.ts timelineEnd` and main's `nestedClock tracksEnd`).
+  They're now one: `timelineEnd` lives in `nestedClock.ts`, takes the branch's `length` reader threaded through
+  `trackEnd`/`tracksEnd`/`extentOf`, and is exported from animator. Its test is `timeline/timelineEnd.test.ts`.
+- **Sweep:** kept main's `deepElementAt`/`containsComposed` and added b2's non-finite-point check. Dropped b2's
+  `deepestAt` and its allowlist entry, and the duplicate `flatParentOf` in `elementAt.ts`.
+- **handleDrag:** kept main's quirks-mode page scroll and adopted b4's duck-typed `clientScaleOf(el)`, which drops
+  the `instanceof HTMLElement` check.
+- **Timeline:** b3's key-index arguments (`onKeysInput(keys, keyIndex?)`, `onKeysChange(keys, keyIndex)`) combined
+  with b5's rule that no input handler means no preview and no `onCancel`. A graph lane reports a cancel for a
+  handle drag that moved, or a key drag whose preview was sent. Key and segment names use b6's locale ruler format
+  (`500ms`, `1.10s`), not main's `500 ms`; tests from the other branches were updated to match.
+
+### State and next step
+
+The last fleet run (`--since main` on `25869ce981`) failed 10 of 47,177. Commits since then fix 8 of them:
+typecheck, `typecheck:packages` and lint (an unused `normalizeZoom` import), the kitActionParams allowlist entry,
+and the four Timeline tests. **Still open, not yet investigated:**
+
+- `packages/labkit/src/job/useJob.test.tsx` › "discards results from a run its key superseded" (`'running'`, expected `'done'`)
+- `packages/labkit/src/state/SingletonExperiment.test.tsx` › "persists config changes to storage" (storage `undefined`)
+
+No branch touches labkit. Suspect the registry branch (`createPart` now throws on a self-read; child registry
+hold and version changes), or flakiness. Run each file alone, locally with `--maxWorkers=1` while the machine is
+quiet, or as one fleet job. Compare against `main`.
+
+Then:
+1. Before any fleet run: `node /private/tmp/claude-501/-Users-mike-src-weasel/7eac4d15-6c0c-47f3-8a50-86007bc3955a/scratchpad/oxcparse.mjs <list>`,
+   where `<list>` is `git diff main --name-only --diff-filter=AM | grep -E '\.tsx?$'` written to a file. It's an
+   oxc transform of every changed file, and catches the duplicate declarations that cost two runs. The script is in
+   scratch and may be gone; it is about 15 lines over `rolldown/experimental`'s `transformSync`.
+2. `npm --prefix /Users/mike/src/weasel run test:fleet -- <tip> --since main`, logged to a file named for the branch.
+3. Once green: `npm run test:batch -- <tip>`, fast-forward `main`, push, then delete the merged scour branches,
+   `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree.
+
+### Elsewhere
+
+- Mike ruled that **scour fixer branches stack per area from now on**. skulkr-3d took it as kouhai t-631: in
+  `src/scourFix.mjs`, batch k builds on batch k-1's tip, and `--on` defaults to the area's newest unmerged scour
+  branch. A fresh skulkr session builds it from skulkr-3d's handoff and will message when it lands.
+- A background agent from this session is fixing `pass-the-baton` no longer prefixing `[STALE]` to wound-down
+  iTerm tabs, in the chezmoi shared skills. Its result went to the session that started it. If that session is
+  gone, check `git -C ~/.local/share/chezmoi log -3`.
+
 ## Decisions taken in conversation and not visible in the code
 
 - weaselchart's grid and snapping (2026-10-19): pipeline mode's route editing takes the same snap change with
