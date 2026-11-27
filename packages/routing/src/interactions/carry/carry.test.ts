@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addCarrySurface, startCarry, type CarryStage } from './carry';
+import { addCarrySurface, startCarry, type Carry, type CarryCallbacks, type CarryStage } from './carry';
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -105,4 +105,41 @@ describe('startCarry', () => {
     document.dispatchEvent(move(1));
     expect(heard).toEqual(['inner enter']);
   });
+
+  it('carries over a surface in a shadow root while the pointer is over light content slotted into it', () => {
+    const host = document.body.appendChild(document.createElement('div'));
+    const shadow = host.attachShadow({ mode: 'open' });
+    const list = shadow.appendChild(document.createElement('div'));
+    list.getBoundingClientRect = rect(0, 1000);
+    list.append(document.createElement('slot'));
+    const item = host.appendChild(document.createElement('div'));
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => item;
+    const heard = listen(list);
+    cleanups.push(() => host.remove());
+    carryFrom(40);
+    document.dispatchEvent(move(1));
+    expect(heard).toEqual(['enter']);
+  });
+
 });
+
+/** A rect from `left` to `right`, and 0 to 1000 down. */
+function rect(left: number, right: number): () => DOMRect {
+  return () => ({ left, top: 0, right, bottom: 1000, x: left, y: 0, width: right - left, height: 1000, toJSON: () => ({}) });
+}
+
+/** Register `el` as a surface, logging what it hears. */
+function listen(el: Element): CarryStage[] {
+  const heard: CarryStage[] = [];
+  const off = addCarrySurface({ element: el, receive: (stage) => { heard.push(stage); return 'handled'; } });
+  cleanups.push(off);
+  return heard;
+}
+
+/** A carry pressed at (`x`, 40) on a button in the document, canceled after the test. */
+function carryFrom(x: number, cb?: CarryCallbacks): Carry {
+  const origin = document.body.appendChild(document.createElement('button'));
+  const carry = startCarry(origin, new PointerEvent('pointerdown', { pointerId: 3, buttons: 1, clientX: x, clientY: 40 }), { type: 't', value: 1 }, cb);
+  cleanups.push(() => { carry.cancel(); origin.remove(); });
+  return carry;
+}

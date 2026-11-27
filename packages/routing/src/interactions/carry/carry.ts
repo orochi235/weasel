@@ -85,7 +85,7 @@ function surfaceAt(x: number, y: number): CarrySurface | null {
     const root = s.element.getRootNode();
     if (!hits.has(root)) hits.set(root, elementAt(s.element, x, y));
     const hit = hits.get(root);
-    if (hit ? !s.element.contains(hit) : canHitTest(s.element)) continue;
+    if (hit ? !containsComposed(s.element, hit) : canHitTest(s.element)) continue;
     if (best && containsComposed(s.element, best.element)) continue;
     best = s;
   }
