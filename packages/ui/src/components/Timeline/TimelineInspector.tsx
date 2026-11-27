@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 import { isBlitsEasing, resolveKeyEasing, type SampledTrack, type Track } from '@weasel-js/animator';
+import { deepEqual } from '@weasel-js/registry';
 import s from './Timeline.module.css';
 import { EasingPicker } from '../EasingPicker/EasingPicker';
 import { trackAtPath } from './lanes';
@@ -30,11 +31,12 @@ export function TimelineInspector({ tracks, selection, segmentSelection, renderK
     const segment = sampledKeyAt(tracks, segmentSelection);
     if (!segment) return null;
     const { easing } = segment.key;
+    const shown = isBlitsEasing(easing) ? resolveKeyEasing(easing) : easing;
     return (
       <div className={s.inspector}>
         <EasingPicker
-          value={isBlitsEasing(easing) ? resolveKeyEasing(easing) : easing}
-          onChange={(next) => { if (edits) onChange(setKeyEasing(tracks, segmentSelection, next)); }}
+          value={shown}
+          onChange={(next) => { if (edits && !deepEqual(next, shown)) onChange(setKeyEasing(tracks, segmentSelection, next)); }}
         />
       </div>
     );
@@ -47,8 +49,8 @@ export function TimelineInspector({ tracks, selection, segmentSelection, renderK
         key: selected.key,
         track: selected.track,
         selection,
-        commit: (next) => { if (edits) onChange(setKeyValue(tracks, selection, next.value)); },
-        setEasing: (easing) => { if (edits) onChange(setKeyEasing(tracks, selection, easing)); },
+        commit: (next) => { if (edits && !deepEqual(next.value, selected.key.value)) onChange(setKeyValue(tracks, selection, next.value)); },
+        setEasing: (easing) => { if (edits && !deepEqual(easing, selected.key.easing)) onChange(setKeyEasing(tracks, selection, easing)); },
       })}
     </div>
   );
