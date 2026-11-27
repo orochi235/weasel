@@ -66,7 +66,6 @@ export function useKeyDrag(a: KeyDragArgs) {
     onSelect(i);
     if (!drags) return;
 
-    setDrag({ keyIndex: i, t: times[i], times });
     const stops = snapTimes;
 
     // A press that never travels is a click: it selects and moves nothing.

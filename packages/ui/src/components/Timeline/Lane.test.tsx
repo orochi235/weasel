@@ -494,10 +494,11 @@ describe('Lane segment selection', () => {
       expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
     });
 
-    it('puts the ghost on the grabbed key before the pointer has moved', () => {
+    it('shows no ghost and dims no key while a press has not traveled', () => {
       render(<Lane {...base} row={laneOf(sampled)} />);
       grab(1);
-      expect(screen.getByTestId('timeline-key-ghost')).toHaveStyle({ left: '50%' });
+      expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+      expect(screen.getAllByTestId('timeline-key')[1]).not.toHaveAttribute('data-dragging');
     });
 
     it('moves the ghost with the pointer without committing', () => {
@@ -512,6 +513,7 @@ describe('Lane segment selection', () => {
     it('marks the grabbed key as the drag origin, so it can be dimmed', () => {
       render(<Lane {...base} row={laneOf(sampled)} />);
       grab(1);
+      fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
       expect(screen.getAllByTestId('timeline-key')[1]).toHaveAttribute('data-dragging', 'true');
       expect(screen.getAllByTestId('timeline-key')[0]).not.toHaveAttribute('data-dragging');
     });
@@ -544,6 +546,7 @@ describe('Lane segment selection', () => {
     it('ghosts an event crossing too', () => {
       render(<Lane {...base} row={laneOf(eventTrack)} />);
       fireEvent.pointerDown(screen.getAllByTestId('timeline-event')[0], { clientX: 0, clientY: 10, button: 0 });
+      fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
       expect(screen.getByTestId('timeline-key-ghost')).toBeInTheDocument();
     });
   });
