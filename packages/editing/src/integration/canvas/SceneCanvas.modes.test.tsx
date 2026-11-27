@@ -45,7 +45,7 @@ function conflictsWith(modes: readonly ModeDefinition[]): string[] {
   render(
     <SceneCanvas features={[drawPreset]} scene={scene} layers={{}} width={64} height={64}
       modes={registry}
-      actions={{ stamp: dragAction('app.stamp', 'stamps'), sweep: dragAction('app.sweep', 'sweeps') }} />,
+      actions={{ 'app.stamp': dragAction('app.stamp', 'stamps'), 'app.sweep': dragAction('app.sweep', 'sweeps') }} />,
   );
   return warn.mock.calls.map((a) => String(a[0])).filter((m) => m.includes('route conflict'));
 }
