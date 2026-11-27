@@ -4,12 +4,10 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## Next batch
+## Held scour branches
 
-`fleet-test-help` (tip `4c23e4de88`) is ready: every script parses its args through `scripts/lib/help.mjs`'s `cli()`
-(strict `util.parseArgs`). It needs a full run. It changes how `npm run release` passes flags on, and
-`check:published --wait` now takes `--wait=<n>` only. The scour fixer branches for nodeShapes (`scour11-*`) and
-`forge.vite.part2` (`scour9-*`) are held until those areas finish.
+The scour fixer branches for nodeShapes (`scour11-*`) and `forge.vite.part2` (`scour9-*`) are held out of batches
+until those areas finish. Runs 12 (`core.canvas.part4`) and 13 (`SceneCanvas.part2`) have unmerged branches too.
 
 ## Decisions taken in conversation and not visible in the code
 
