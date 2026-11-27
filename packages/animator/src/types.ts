@@ -175,7 +175,7 @@ export interface Animator {
   /** Holds rows of a target table at values and weights the caller writes into flat arrays: a
    *  hold on each row, as `hold` would put there, with no function asked for any of them. */
   holdRows(opts: HoldRowsOptions): RowsHoldHandle;
-  /** Cancel a specific animation by handle. Pose stays at current value (no jump). */
+  /** Cancel a specific animation by handle, as `handle.cancel()` does. Pose stays at current value (no jump). */
   cancel(handle: AnimationHandle): void;
   /** Cancel every animation currently active under `key`. */
   cancelKey(key: string): void;

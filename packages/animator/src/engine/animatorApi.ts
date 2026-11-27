@@ -138,7 +138,8 @@ export function createAnimatorApi(host: ApiHost): Animator {
     physics,
     hold: (o) => startHold(ctx, o),
     holdRows: (o) => startHoldRows(ctx, o),
-    cancel: (handle) => table.retire(handle.id),
+    // The handle's own cancel: an id alone may name another animator's animation.
+    cancel: (handle) => handle.cancel(),
     cancelKey: (key) => table.cancelByKey(key),
     cancelAll: () => {
       // Halted before the reports and the last show, which may start what needs the next frame.

@@ -4383,3 +4383,8 @@ Calls the lanes made without a ruling:
 - 2026-11-27 (the fixer's call): `fitSize` throws a `RangeError` for a `fill` outside (0, 1], with no override; a
   `fill` past 1, which would fit content larger than the viewport, is refused with the rest. Letting a `fill` past 1
   overfill was the alternative.
+## Scour fix fourteen (2026-11-27): the animator's engine
+
+- 2026-11-27 (the fixer's call): `animator.cancel(handle)` cancels through `handle.cancel()`, so another animator's
+  handle cancels its animation in that animator. Ignoring a handle this animator did not make was the alternative;
+  nothing on a handle says which animator made it once a loop, stagger, or timeline rewraps it.

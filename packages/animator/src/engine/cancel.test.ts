@@ -62,3 +62,15 @@ describe('animator.cancelAll', () => {
     expect(a.pending()).toBe(false);
   });
 });
+describe('animator.cancel', () => {
+  it("cancels another animator's handle in that animator, never one of its own with the same id", () => {
+    const a = hosted();
+    const b = hosted();
+    const ha = a.animator.tween({ from: 0, to: 1, ms: 100, onTick: () => {} });
+    const hb = b.animator.tween({ from: 0, to: 1, ms: 100, onTick: () => {} });
+    expect(ha.id).toBe(hb.id);
+    b.animator.cancel(ha);
+    expect(b.animator.isActive()).toBe(true);
+    expect(a.animator.isActive()).toBe(false);
+  });
+});
