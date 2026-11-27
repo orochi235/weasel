@@ -18,12 +18,12 @@ npm install @weasel-js/registry
 import { createReflectable } from '@weasel-js/registry';
 
 const cursors = createReflectable<string>();
-cursors.push('pen', 'crosshair', { source: 'kit' });
+cursors.push('pen', 'crosshair', { source: 'kit', fallback: true });
 cursors.push('pen', 'cell', { source: 'plugin' });
 
 const [pen] = cursors.reflection.entries();
 pen.value; // 'cell'
-pen.shadowed; // [{ value: 'crosshair', source: 'kit' }]
+pen.shadowed; // [{ value: 'crosshair', source: 'kit', fallback: true }]
 
 cursors.release('pen', pen.live);
 cursors.get('pen'); // 'crosshair'
