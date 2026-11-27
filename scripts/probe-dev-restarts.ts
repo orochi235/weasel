@@ -21,22 +21,27 @@ import { mkdirSync, appendFileSync, readdirSync, readFileSync, rmSync, writeFile
 import { cpus, hostname, loadavg, totalmem } from 'node:os';
 import { createRequire, syncBuiltinESMExports } from 'node:module';
 import { join, resolve } from 'node:path';
-import { parseArgs } from 'node:util';
 import { writeHeapSnapshot } from 'node:v8';
+import { cli } from './lib/help.mjs';
 
-const { values } = parseArgs({
+const { values: parsed } = cli(import.meta.url, {
+  summary: 'Restarts a dev server the way a saved package file does and records the heap, threads, workers, descriptors and (on macOS) vmmap regions after each restart, to find what a restart leaks. Run with node --expose-gc.',
   options: {
-    config: { type: 'string', default: 'apps/forge/vite.config.ts' },
-    restarts: { type: 'string', default: '8' },
-    out: { type: 'string', default: 'node_modules/.probe-dev-restarts' },
-    snapshots: { type: 'boolean', default: false },
-    settle: { type: 'string', default: '4000' },
-    diff: { type: 'string', multiple: true },
-    bare: { type: 'boolean', default: false },
-    'keep-deps': { type: 'boolean', default: false },
-    'config-loader': { type: 'string' },
+    config: { type: 'string', placeholder: '<vite config>', default: 'apps/forge/vite.config.ts', description: 'the dev server to restart' },
+    restarts: { type: 'string', placeholder: '<n>', default: '8', description: 'restarts' },
+    out: { type: 'string', placeholder: '<dir>', default: 'node_modules/.probe-dev-restarts', description: 'cleared, then one JSON line per restart goes to <out>/restarts.jsonl' },
+    snapshots: { type: 'boolean', default: false, description: 'write a heap snapshot after the first and the last restart' },
+    settle: { type: 'string', placeholder: '<ms>', default: '4000', description: 'wait after each restart before measuring' },
+    diff: { type: 'string', placeholder: '<snapshot>', multiple: true, description: 'instead, summarize two snapshots by constructor: --diff a --diff b' },
+    bare: { type: 'boolean', default: false, description: 'call server.restart alone, not restartLeavingNothing' },
+    'keep-deps': { type: 'boolean', default: false, description: 'restart without forcing the dep optimizer to re-bundle' },
+    'config-loader': { type: 'string', placeholder: 'bundle|runner|native', description: "the loader the server starts with, which a restart keeps (default: vite's module runner)" },
   },
 });
+const values = parsed as {
+  config: string; restarts: string; out: string; snapshots: boolean; settle: string; diff?: string[];
+  bare: boolean; 'keep-deps': boolean; 'config-loader'?: string;
+};
 
 /** Live object counts and self sizes by constructor, from a `.heapsnapshot` file. */
 function byConstructor(file: string): Map<string, { count: number; size: number }> {

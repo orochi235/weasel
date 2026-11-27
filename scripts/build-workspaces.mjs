@@ -6,6 +6,7 @@
 import { spawn } from 'node:child_process';
 import { availableParallelism } from 'node:os';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { cli } from './lib/help.mjs';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 
@@ -99,6 +100,11 @@ const npmBuild = (name, total, built) => {
 };
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(import.meta.url, {
+    summary:
+      'Builds every published workspace, several at once, each once the siblings it depends on have built. Stops starting builds at the first failure and exits with its code.',
+    notes: 'WEASEL_BUILD_JOBS=<n> sets how many build at once (default: the smaller of 6 and the core count).',
+  });
   exitUnlessOwnInstall(fileURLToPath(new URL('..', import.meta.url)));
   const graph = buildGraph(publishableWorkspaces().map(({ manifest }) => manifest));
   const jobs = Number(process.env.WEASEL_BUILD_JOBS) || Math.min(6, availableParallelism());

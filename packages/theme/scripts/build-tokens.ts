@@ -8,6 +8,12 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ThemeDefinition } from '../src/definition';
 import { generateTokens } from '../src/engine';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: 'Generates every token artifact under src/generated/ from the theme definitions in themes/.',
+  notes: 'Run it as `npm run gen:tokens -w @weasel-js/theme`.',
+});
 
 const here = dirname(fileURLToPath(import.meta.url));
 const THEMES_DIR = resolve(here, '../themes');

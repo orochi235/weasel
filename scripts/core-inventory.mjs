@@ -11,6 +11,7 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { cli } from './lib/help.mjs';
 import { entries } from '../packages/core/entries.ts';
 
 const ROOT = join(import.meta.dirname, '..');
@@ -108,10 +109,17 @@ export function diffInventory(recorded, actual) {
 export const formatInventory = (inventory) => `${JSON.stringify(inventory, null, 2)}\n`;
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  const { values } = cli(import.meta.url, {
+    summary:
+      "Compares every public export of @weasel-js/core, entry point by entry point, with the inventory checked in at packages/core/exports.inventory.json, and fails on a difference.",
+    options: {
+      update: { type: 'boolean', description: 'rewrite the inventory to match the source instead of failing' },
+    },
+  });
   const actual = collectInventory();
   const recorded = existsSync(INVENTORY) ? JSON.parse(readFileSync(INVENTORY, 'utf8')) : {};
   const diff = diffInventory(recorded, actual);
-  if (process.argv.includes('--update')) {
+  if (values.update) {
     writeFileSync(INVENTORY, formatInventory(actual));
     const total = Object.values(actual).reduce((n, names) => n + Object.keys(names).length, 0);
     console.log(`inventory:core — written, ${total} exports across ${Object.keys(actual).length} entry points.`);

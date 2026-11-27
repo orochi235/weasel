@@ -16,12 +16,21 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import type { JSONOutput } from 'typedoc';
+import { cli } from './lib/help.mjs';
 import { readProject } from './lib/reference/project.ts';
 
+const { values, positionals } = cli(import.meta.url, {
+  summary:
+    'Lists the exports whose row on their package page has no description, per package, converting the workspace with TypeDoc as `npm run build:api` does. Reports and never fails.',
+  positionals: '[<package>…]',
+  options: {
+    counts: { type: 'boolean', description: "print each package's count without the names" },
+  },
+});
+
 const ROOT = resolve(import.meta.dirname, '..');
-const args = process.argv.slice(2);
-const countsOnly = args.includes('--counts');
-const only = new Set(args.filter((arg) => !arg.startsWith('--')));
+const countsOnly = values.counts === true;
+const only = new Set(positionals);
 
 const dir = mkdtempSync(join(tmpdir(), 'undescribed-'));
 try {

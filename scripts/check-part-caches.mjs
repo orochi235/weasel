@@ -13,6 +13,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { judgeUses, sourceFiles } from './lib/allowlisted-uses.mjs';
+import { cli } from './lib/help.mjs';
 import { PART_CACHE_ALLOWED as ALLOWED } from './check-part-caches.allow.mjs';
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', 'dist-examples', 'public', 'coverage']);
@@ -51,6 +52,10 @@ function sourceRoots(root) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(import.meta.url, {
+    summary:
+      "Fails on a module-level WeakMap its file both reads and writes: a per-owner part goes through createPart from @weasel-js/registry. Exceptions are listed, with why, in scripts/check-part-caches.allow.mjs.",
+  });
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
   const found = new Map();

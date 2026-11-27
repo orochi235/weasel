@@ -2,10 +2,18 @@
 // times each piece of a read alone. Run through `node tests/perf/target-reads/run.mjs`.
 import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget, stateOf } from '../../../packages/animator/src/target';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  name: 'target-reads/read.ts',
+  summary: 'Reads N moving { x, y } targets, one at a time; parts times each piece of a read alone.',
+  positionals: '[read|readInto|parts]',
+  notes: 'Run through `node tests/perf/target-reads/run.mjs`, which bundles it and sets N.',
+});
 
 type Pt = { x: number; y: number };
 const N = Number(process.env.N ?? 10000);
-const mode = process.argv[2] ?? 'read';
+const mode = positionals[0] ?? 'read';
 
 let now = 0;
 const core = createAnimatorCore({

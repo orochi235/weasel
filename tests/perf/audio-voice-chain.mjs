@@ -29,22 +29,35 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { metric, startRun } from './lib/result.ts';
+import { cli } from '../../scripts/lib/help.mjs';
+
+const { values } = cli(import.meta.url, {
+  summary: "Times what one Web Audio voice's play() costs in real Chromium, per node-level variant, realtime and offline. Writes one result file.",
+  options: {
+    rounds: { type: 'string', placeholder: '<n>', default: '5', description: 'rounds per mode' },
+    frames: { type: 'string', placeholder: '<n>', default: '60', description: 'frames per realtime round' },
+    modes: {
+      type: 'string',
+      placeholder: '<mode,…>',
+      description: 'of fresh, pooled, detached, source, engine, and engine@base with --base (default: all of them)',
+    },
+    base: { type: 'string', placeholder: '<git-ref>', description: 'also time the engine built from this ref, as engine@base' },
+    out: { type: 'string', placeholder: '<path>', description: 'where the result goes (default: under tests/perf/results/)' },
+  },
+  notes: 'Env: WEASEL_PERF_OUT.',
+});
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const require = createRequire(join(ROOT, 'package.json'));
 const { chromium } = require('playwright-core');
 const esbuild = require('esbuild');
 
-const arg = (name, dflt) => {
-  const i = process.argv.indexOf(`--${name}`);
-  return i >= 0 ? process.argv[i + 1] : dflt;
-};
-const ROUNDS = Number(arg('rounds', 5));
-const FRAMES = Number(arg('frames', 60));
-const OUT = arg('out', null);
-const BASE = arg('base', null);
+const ROUNDS = Number(values.rounds);
+const FRAMES = Number(values.frames);
+const OUT = values.out ?? null;
+const BASE = values.base ?? null;
 const ALL_MODES = ['fresh', 'pooled', 'detached', 'source', 'engine', ...(BASE ? ['engine@base'] : [])];
-const MODES = arg('modes', ALL_MODES.join(',')).split(',');
+const MODES = (values.modes ?? ALL_MODES.join(',')).split(',');
 
 const baseSha = BASE ? execFileSync('git', ['-C', ROOT, 'rev-parse', BASE], { encoding: 'utf8' }).trim() : null;
 const run = startRun('audio-voice-chain', {

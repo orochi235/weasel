@@ -23,19 +23,27 @@ import { rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { metric, rounds, startRun } from './lib/result.ts';
+import { cli } from '../../scripts/lib/help.mjs';
+
+const { values } = cli(import.meta.url, {
+  summary: 'Times cold dev-server startup for apps/draw: per round, wipe vite\'s dep cache, start a fresh server, and load the app once in fresh headless Chromium. Writes one result file.',
+  options: {
+    rounds: { type: 'string', placeholder: '<n>', description: 'rounds per document (default: WEASEL_PERF_ROUNDS, else 3)' },
+    port: { type: 'string', placeholder: '<port>', default: '4791', description: 'the dev server port' },
+    docs: { type: 'string', placeholder: '<doc,…>', default: 'starter,empty', description: 'the documents to load' },
+    out: { type: 'string', placeholder: '<path>', description: 'where the result goes (default: under tests/perf/results/)' },
+  },
+  notes: 'Env: WEASEL_PERF_ROUNDS, WEASEL_PERF_OUT.',
+});
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const require = createRequire(join(ROOT, 'package.json'));
 const { chromium } = require('playwright-core');
 
-const arg = (name, dflt) => {
-  const i = process.argv.indexOf(`--${name}`);
-  return i >= 0 ? process.argv[i + 1] : dflt;
-};
-const ROUNDS = Number(arg('rounds', rounds(3)));
-const PORT = Number(arg('port', 4791));
-const DOCS = arg('docs', 'starter,empty').split(',');
-const OUT = arg('out', null);
+const ROUNDS = Number(values.rounds ?? rounds(3));
+const PORT = Number(values.port);
+const DOCS = values.docs.split(',');
+const OUT = values.out ?? null;
 // The draw config pins its dep cache here rather than vite's default.
 const CACHE_DIR = join(ROOT, 'node_modules/.vite-draw');
 const SCENE_KEY = 'weaseldraw:scene-v1';

@@ -12,12 +12,19 @@ import { readConfig } from '@changesets/config';
 import { readChangesets } from '@changesets/read';
 import { readPreState } from '@changesets/pre';
 import { assembleReleasePlan } from '@changesets/assemble-release-plan';
+import { cli } from '../lib/help.mjs';
 import { readPending } from './pick.ts';
 import { releasedAt, LEVELS } from './bumps.mjs';
 
-const args = process.argv.slice(2);
-const at = args.indexOf('--bump');
-const level = at === -1 ? 'patch' : args[at + 1];
+const { values } = cli(import.meta.url, {
+  summary:
+    'Versions every package at the next --bump level from the pending changesets, as `changeset version` does, and writes their changelogs. Refused while no pending changeset is picked as a highlight.',
+  options: {
+    bump: { type: 'string', placeholder: `<${LEVELS.join('|')}>`, default: 'patch', description: 'the level every package moves by' },
+    'no-picks': { type: 'boolean', description: 'version even though no pending changeset is picked (npm run release:pick)' },
+  },
+});
+const level = values.bump as string;
 if (!LEVELS.includes(level as (typeof LEVELS)[number])) {
   console.error(`[version] --bump takes ${LEVELS.join(', ')}; got ${JSON.stringify(level)}.`);
   process.exit(1);
@@ -32,7 +39,7 @@ if (!pending.length) {
   console.error('[version] no pending changesets.');
   process.exit(1);
 }
-if (!pending.some((p) => p.meta.pick) && !args.includes('--no-picks')) {
+if (!pending.some((p) => p.meta.pick) && !values['no-picks']) {
   console.error('[version] no pending changeset is picked as a highlight. Run npm run release:pick first,');
   console.error('          or npm run version-packages -- --no-picks to release without highlights.');
   process.exit(1);

@@ -22,22 +22,28 @@ import { writeFileSync, mkdirSync, readFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from '../../../../scripts/lib/help.mjs';
 
-const DIR = process.argv[2];
-const arg = (name) => process.argv.includes(name);
-const opt = (name, dflt) => {
-  const i = process.argv.indexOf(name);
-  return i < 0 ? dflt : process.argv[i + 1];
-};
-const ENGINE = opt('--browser', 'chromium');
+const { values, positionals } = cli(import.meta.url, {
+  summary: 'Drives a browser over the cursor probe page that build-probe-page.mjs wrote into <dir>, recording what it does with each cursor declaration.',
+  positionals: '<dir>',
+  options: {
+    browser: { type: 'string', placeholder: 'chromium|webkit|firefox|safari', default: 'chromium', description: 'the browser to drive' },
+    headless: { type: 'boolean', description: 'record what the engine parses and fetches, at DPR 1 and 2, instead of screen captures' },
+    page: { type: 'string', placeholder: 'data|http', default: 'data', description: 'headful only: data: cursors, or url() cursors over HTTP' },
+  },
+  notes: 'Headful (the default) takes over the screen and the pointer while it runs. See README.md beside it.',
+});
+const DIR = positionals[0];
+const ENGINE = values.browser;
 const TYPES = { chromium, webkit, firefox };
 if (!TYPES[ENGINE] && ENGINE !== 'safari') throw new Error('--browser must be one of chromium, webkit, firefox, safari');
-if (ENGINE === 'safari' && arg('--headless')) throw new Error('Safari has no headless mode');
+if (ENGINE === 'safari' && values.headless) throw new Error('Safari has no headless mode');
 // Built beside this script (README), not in the scratch <dir>.
 const WARP = fileURLToPath(new URL('./warp', import.meta.url));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-if (arg('--headless')) await headless();
+if (values.headless) await headless();
 else await headful();
 
 /** `<dir>` over HTTP on a free port, for a page whose cursors are `url()`s. */
@@ -116,7 +122,7 @@ async function headful() {
   }
   // `--page http` serves the `url()` form of the page instead of opening the
   // `data:` one from disk, to tell a refused data URI from a refused image.
-  const server = opt('--page', 'data') === 'http' ? await serve() : null;
+  const server = values.page === 'http' ? await serve() : null;
   const tag = server ? `${ENGINE}-http` : ENGINE;
   const SHOTS = `${DIR}/shots-${tag}`;
   mkdirSync(SHOTS, { recursive: true });

@@ -10,6 +10,7 @@ import { dirname, join, resolve } from 'node:path';
 import { createInterface } from 'node:readline/promises';
 import { fileURLToPath } from 'node:url';
 import { parseChangesetFile } from '@changesets/parse';
+import { cli } from '../lib/help.mjs';
 import { isChangesetFile } from './bumps.mjs';
 import { type EntryMeta, readMarker, setMarker } from './entry-marker.ts';
 import { splitSummary } from './summary.ts';
@@ -57,7 +58,14 @@ function parseNumbers(input: string, max: number): number[] {
 }
 
 async function main(): Promise<void> {
-  const args = process.argv.slice(2);
+  const { values } = cli(import.meta.url, {
+    summary:
+      'Chooses the pending changesets that lead the next release: lists them, highest rank first (* marks a pick), then asks which to pick.',
+    options: {
+      list: { type: 'boolean', description: 'list them and stop' },
+      set: { type: 'string', placeholder: '<n,n,…>', description: 'pick exactly these, by their listed numbers, without asking' },
+    },
+  });
   const { pending, unmarked } = readPending();
   if (unmarked.length) {
     console.error(`${unmarked.length} changeset(s) have no valid marker and cannot be picked; run npm run check:changesets.`);
@@ -69,11 +77,10 @@ async function main(): Promise<void> {
     const rank = String(p.meta.rank).padStart(4);
     console.log(`${mark}${String(i + 1).padStart(width)} ${rank}  ${p.meta.tags.join(' ').padEnd(tagWidth)} ${p.title}`);
   });
-  if (args.includes('--list')) return;
+  if (values.list) return;
 
-  const setAt = args.indexOf('--set');
   let input: string;
-  if (setAt >= 0) input = args[setAt + 1] ?? '';
+  if (typeof values.set === 'string') input = values.set;
   else {
     const rl = createInterface({ input: process.stdin, output: process.stdout });
     input = await rl.question('\nPick (numbers, blank keeps the current picks): ');

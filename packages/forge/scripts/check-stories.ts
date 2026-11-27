@@ -1,6 +1,11 @@
 // Loads every indexed story file through the forge dev app's vite config, the way a frame would, and reports what fails.
 import { relative, resolve } from 'node:path';
 import { createServer } from 'vite';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: "Loads every indexed story file through the forge dev app's vite config, the way a frame would, and reports what fails.",
+});
 
 interface IndexEntry {
   id: string;

@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { blocks, lineAt, stripComments, walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 export interface Offender {
   readonly file: string;
@@ -40,6 +41,9 @@ export function disabledOffenders(path: string, source: string): Offender[] {
 }
 
 if (process.argv[1]?.endsWith('check-disabled.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on a disabled-state rule that fades with `opacity` below 1 without also setting `filter: var(--wzl-disabled-filter)`.',
+  });
   const root = join(import.meta.dirname, '..');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))]
     .map((p) => relative(root, p))

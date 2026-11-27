@@ -22,6 +22,17 @@ import { mergeProgress } from './lib/merge-progress.mjs';
 import { roomToOverlap, sampleLoad } from './lib/node-load.mjs';
 import { browserShape } from './lib/browser-shape.mjs';
 import { rerunPlan } from './lib/load-reruns.mjs';
+import { cli } from './lib/help.mjs';
+
+const { positionals, rest: passed } = cli(import.meta.url, {
+  summary: "vitest, with the browser project in a process of its own running beside the rest when the node has room. Takes vitest's own arguments.",
+  positionals: '[<vitest command and filters>…]',
+  passthrough: true,
+  notes: [
+    "Every other flag goes to vitest; `-- --help` prints vitest's own help.",
+    "Env: WEASEL_JSDOM_WORKERS=<n> sets the other process's workers; WEASEL_OVERLAP=1 or 0 skips the load check.",
+  ].join('\n'),
+});
 
 const require = createRequire(import.meta.url);
 const pkg = require.resolve('vitest/package.json');
@@ -30,7 +41,7 @@ const VITEST = join(dirname(pkg), require(pkg).bin.vitest);
 // On the fleet, each failure also prints as it happens (`scripts/vitest-fleet-fail.mjs`). A
 // `--reporter` flag replaces the config's reporters, so the default one is named too when none is.
 const FAIL_REPORTER = `--reporter=${fileURLToPath(new URL('./vitest-fleet-fail.mjs', import.meta.url))}`;
-const given = process.argv.slice(2);
+const given = [...positionals, ...passed];
 const fleet = Boolean(process.env.WEASEL_FLEET_COMMIT);
 const args = !fleet ? given : given.some((a) => a.startsWith('--reporter')) ? [...given, FAIL_REPORTER] : [...given, '--reporter=default', FAIL_REPORTER];
 const isProject = (a) => a.startsWith('--project=');

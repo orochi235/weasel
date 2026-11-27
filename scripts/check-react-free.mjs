@@ -15,7 +15,13 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { importSpecifiers } from './lib/imports.mjs';
+import { cli } from './lib/help.mjs';
 import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
+
+cli(import.meta.url, {
+  summary:
+    'Fails when the built module closure of a subpath that promises no React reaches a React specifier. Run after a build: a missing entry file is a failure.',
+});
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 

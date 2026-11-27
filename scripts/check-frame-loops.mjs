@@ -13,6 +13,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { judgeUses, matchLines, sourceFiles } from './lib/allowlisted-uses.mjs';
+import { cli } from './lib/help.mjs';
 
 /** Paths that may name `requestAnimationFrame` or `setInterval`, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
@@ -49,6 +50,9 @@ const isSource = (name) =>
 export const frameLoopLines = (source) => matchLines(source, /\b(?:requestAnimationFrame|setInterval)\b/g);
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(import.meta.url, {
+    summary: 'Fails on a bare `requestAnimationFrame` or `setInterval` in package or app source that its allowlist does not cover; route the loop through `useVisibleRaf`.',
+  });
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
   const PACKAGES = join(ROOT, 'packages');
 

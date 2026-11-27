@@ -3,6 +3,11 @@ import { cpSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { build } from 'vite';
 import { TARGETS, manifestFor } from '../manifest.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: 'Builds the devtools extension into dist/chrome and dist/firefox: the same files, each with its own manifest.',
+});
 
 const app = resolve(import.meta.dirname, '..');
 const dist = resolve(app, 'dist');

@@ -4,11 +4,16 @@
 //
 //   node scripts/gate-times.mjs --config one-file-before --out scripts/gate-times.runs.jsonl fleet.log
 import { appendFileSync, readFileSync } from 'node:fs';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 
-const { values, positionals } = parseArgs({
-  options: { config: { type: 'string', default: '' }, node: { type: 'string' }, out: { type: 'string' } },
-  allowPositionals: true,
+const { values, positionals } = cli(import.meta.url, {
+  summary: "Reads the gate's numbers out of `npm run test:fleet` logs: commit, node, the gate's wall time, each check's time or skip, and the suite's.",
+  positionals: '<log>…',
+  options: {
+    config: { type: 'string', placeholder: '<label>', default: '', description: 'the condition these runs measured, recorded on each row' },
+    node: { type: 'string', placeholder: '<node>', description: 'the node, when the log does not name it' },
+    out: { type: 'string', placeholder: '<file.jsonl>', description: 'append one JSON line per log here' },
+  },
 });
 
 const plain = (text) => text.replace(/\x1b\[[0-9;]*m/g, '');

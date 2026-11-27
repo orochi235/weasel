@@ -28,29 +28,24 @@ import { killOnSignal, runSuite } from './lib/fleet-parts.mjs';
 import { armTree, changedFiles, lockScope, runsEverything } from './lib/fleet-tree.mjs';
 import { failedFileOf, firstFor, recordFailed } from './lib/fleet-first.mjs';
 import { SCOPED, TRIGGERS } from './lib/fleet-triggers.mjs';
+import { cli } from './lib/help.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
-const args = process.argv.slice(2);
-if (args.includes('--help') || args.includes('-h')) {
-  const doc = (await import('node:fs')).readFileSync(fileURLToPath(import.meta.url), 'utf8');
-  console.log(doc.slice(doc.indexOf('/**') + 3, doc.indexOf('*/')).replace(/^ \* ?/gm, '').trim());
-  console.log('\nAny other flag is passed to `onto test`; `onto test --help` lists them.');
-  process.exit(0);
-}
-const sinceAt = args.findIndex((arg) => arg === '--since' || arg.startsWith('--since='));
-const since = sinceAt < 0 ? undefined : args[sinceAt].includes('=') ? args.splice(sinceAt, 1)[0].slice('--since='.length) : args.splice(sinceAt, 2)[1];
-if (sinceAt >= 0 && (!since || since.startsWith('-'))) {
-  console.error('fleet-test: --since needs a ref');
-  process.exit(2);
-}
-const noChecks = args.includes('--no-checks');
-const argv = args.filter((arg) => arg !== '--full' && arg !== '--no-checks');
-const full = argv.length < args.length - Number(noChecks);
-const [first, ...rest] = argv;
-const named = first && !first.startsWith('-');
-const ontoArgs = named ? rest : argv;
-const { commit, branch, tree, drop, git } = openCommitTree(ROOT, named ? first : 'HEAD', 'fleet-');
+const { values, positionals, rest } = cli(import.meta.url, {
+  summary: 'Runs the suite on the fleet against a commit (HEAD by default), checked out into a throwaway worktree, never the working tree.',
+  positionals: '[<commit>]',
+  options: {
+    since: { type: 'string', placeholder: '<ref>', description: 'select from what the branch changes past <ref>, not main' },
+    full: { type: 'boolean', description: 'run every test, on a branch too' },
+    'no-checks': { type: 'boolean', description: "skip ci-checks.gate.ts's checks, which ran on this commit already" },
+  },
+  passthrough: true,
+  notes: 'Any other flag goes to `onto test`, e.g. `--node studio`.',
+});
+const { since, full = false, 'no-checks': noChecks = false } = values;
+const ontoArgs = rest;
+const { commit, branch, tree, drop, git } = openCommitTree(ROOT, positionals[0] ?? 'HEAD', 'fleet-');
 const jobs = [];
 killOnSignal(jobs);
 const isAncestor = (a, b) => {

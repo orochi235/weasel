@@ -3,8 +3,14 @@
 // the page cursor between them one at a time.
 import { writeFileSync, readFileSync, mkdirSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { cli } from '../../../../scripts/lib/help.mjs';
 
-const DIR = process.argv[2];
+const { positionals } = cli(import.meta.url, {
+  summary: 'Builds the cursor probe corpus into <dir>: a pencil glyph as SVG and as resvg-rasterized PNGs at several sizes, and the HTML pages probe.mjs drives.',
+  positionals: '<dir>',
+  notes: 'Needs resvg on PATH.',
+});
+const DIR = positionals[0];
 const BODY = 'M 3 17 L 5.5 14.5 L 14 6 L 17 9 L 8.5 17.5 L 6 17 Z';
 const FERRULE = 'M 12 4 L 17 9';
 const INK = '#141418';

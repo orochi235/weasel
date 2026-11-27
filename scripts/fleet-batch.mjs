@@ -13,6 +13,14 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from './lib/help.mjs';
+
+const { positionals, rest } = cli(import.meta.url, {
+  summary: "A batch's whole fleet run: test:fleet and test:fleet:postbuild on one commit (HEAD by default) at once, each on its own node, with one exit status. Either failing stops the other.",
+  positionals: '[<commit>]',
+  passthrough: true,
+  notes: 'Any other flag goes to test:fleet (`node scripts/fleet-test.mjs --help`).',
+});
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const say = (line) => console.log(`test-batch: ${line}`);
@@ -25,8 +33,7 @@ const stop = (part, why) => {
   part.child.kill('SIGTERM');
 };
 
-const args = process.argv.slice(2);
-const ref = args[0] && !args[0].startsWith('-') ? args.shift() : 'HEAD';
+const ref = positionals[0] ?? 'HEAD';
 
 /** Spawns a node script, relaying its lines with `prefix` and handing each to `onLine`. */
 const start = (script, argv, { prefix = '', onLine = () => {} } = {}) => {
@@ -49,7 +56,7 @@ const start = (script, argv, { prefix = '', onLine = () => {} } = {}) => {
   return { child, exit, whyFile };
 };
 
-const tests = start('scripts/fleet-test.mjs', [ref, ...args]);
+const tests = start('scripts/fleet-test.mjs', [ref, ...rest]);
 
 const outcome = { tests: undefined, postbuild: undefined };
 let postbuild;

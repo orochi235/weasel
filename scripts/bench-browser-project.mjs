@@ -13,20 +13,21 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { cpus, hostname } from 'node:os';
 import { join } from 'node:path';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 import { sampleLoad } from './lib/node-load.mjs';
 
-const { values } = parseArgs({
+const { values } = cli(import.meta.url, {
+  summary: "Times the `browser` vitest project alone, with workspace packages served from source and pre-bundled, alternating. Every run's log, JSON report and one line of numbers go to --out as it finishes.",
   options: {
-    variants: { type: 'string', default: 'source,bundled' },
-    reps: { type: 'string', default: '1' },
-    node: { type: 'string', default: hostname().split('.')[0] },
-    out: { type: 'string', default: '.bench/browser-project' },
-    files: { type: 'string', default: '' },
-    label: { type: 'string', default: '' },
-    processes: { type: 'string', default: '1' },
-    tabs: { type: 'string', default: '6' },
-    split: { type: 'string', default: 'hash' },
+    variants: { type: 'string', placeholder: 'source,bundled', default: 'source,bundled', description: 'how workspace packages are served, alternated' },
+    reps: { type: 'string', placeholder: '<n>', default: '1', description: 'passes over every variant' },
+    node: { type: 'string', placeholder: '<name>', default: hostname().split('.')[0], description: 'the node name recorded on each row' },
+    out: { type: 'string', placeholder: '<dir>', default: '.bench/browser-project', description: 'where logs, reports and runs.jsonl go' },
+    files: { type: 'string', placeholder: '<filter,filter>', default: '', description: "vitest file filters, to time one package's tests" },
+    label: { type: 'string', placeholder: '<name>', default: '', description: 'what the tree held, for comparing two trees' },
+    processes: { type: 'string', placeholder: '<n,n>', default: '1', description: 'run the project split this many ways, at each count' },
+    tabs: { type: 'string', placeholder: '<n>', default: '6', description: 'tabs to each process' },
+    split: { type: 'string', placeholder: 'hash,spread', default: 'hash', description: 'how a split runs: concurrent shards, or one process across that many Chromiums' },
   },
 });
 const variants = values.variants.split(',');

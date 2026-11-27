@@ -36,6 +36,13 @@ import { smokeDeclarations } from './smoke-consumer-types.mjs';
 import { smokeInstalledConsumers } from './smoke-consumer-install.mjs';
 import { packInto } from './lib/pack-tree.mjs';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
+import { cli } from './lib/help.mjs';
+
+const { values } = cli(import.meta.url, {
+  summary:
+    'Packs every published package into a temp tree outside the repo, then bundles, builds, typechecks and installs consumers against it, so a dist or .d.ts a real consumer cannot resolve fails here.',
+  options: { keep: { type: 'boolean', description: 'leave the temp directory for a look instead of deleting it' } },
+});
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 exitUnlessOwnInstall(repoRoot);
@@ -51,7 +58,7 @@ const PACKAGES = (await readdir(join(repoRoot, 'packages'), { withFileTypes: tru
   .sort();
 
 let workDir = null;
-const keep = process.argv.includes('--keep');
+const keep = values.keep;
 const cleanUp = () => {
   if (!workDir) return;
   if (keep) console.log(`[smoke] consumer tree left at ${workDir}`);

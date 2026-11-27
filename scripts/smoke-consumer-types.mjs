@@ -17,6 +17,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { cli } from './lib/help.mjs';
 import { packInto } from './lib/pack-tree.mjs';
 
 /**
@@ -206,6 +207,12 @@ export async function closure(repoRoot, dirs) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  const { positionals } = cli(import.meta.url, {
+    summary:
+      'Typechecks every public declaration of the packed packages as a consumer would, on NodeNext and Bundler resolution with library checking on.',
+    positionals: '[<package>…]',
+    notes: 'Name packages by directory (ui hud) to check those and their @weasel-js dependencies; none checks every package.',
+  });
   const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
   const workDir = await mkdtemp(join(tmpdir(), 'weasel-declarations-'));
   const nodeModules = join(workDir, 'node_modules');
@@ -215,7 +222,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     console.error(`[smoke] consumer left at ${workDir}`);
     process.exit(1);
   };
-  const dirs = await closure(repoRoot, process.argv.slice(2));
+  const dirs = await closure(repoRoot, positionals);
   const manifests = await packInto(repoRoot, dirs, nodeModules, join(workDir, 'tarballs'));
   console.log(`[smoke] packed ${dirs.length} packages into ${workDir}.`);
   await smokeDeclarations({ repoRoot, workDir, nodeModules, manifests, fail });

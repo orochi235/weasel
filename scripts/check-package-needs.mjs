@@ -15,11 +15,19 @@ import { packageTraits, repoRoot } from './package-traits.mjs';
 import { REACT_FREE_ENTRIES } from './react-free-entries.mjs';
 import { renderReadme } from './readme-packages.mjs';
 import { exitUnlessOwnInstall } from './lib/own-install.mjs';
+import { cli } from './lib/help.mjs';
+
+const { values } = cli(import.meta.url, {
+  summary: "Holds the README's package table to what the code measures, each package's `weasel.needs` to the WebGL2 and WebAudio it uses, and each React-free entry to typechecking without React (and without lib.dom unless marked).",
+  options: {
+    write: { type: 'boolean', description: 'redraw the README table instead of checking it' },
+  },
+});
 
 // The probes cache their answers under node_modules, and resolve React's types through it.
 exitUnlessOwnInstall(repoRoot);
 
-const write = process.argv.includes('--write');
+const write = values.write;
 const problems = [];
 
 // One pool for both lists: two, one after the other, left most cores idle while the first drained.

@@ -12,7 +12,15 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, relative } from 'node:path';
 import { changelogSection, releaseBody } from './notes.mjs';
+import { cli } from '../lib/help.mjs';
 import { publishableWorkspaces, repoRoot } from '../lib/workspaces.mjs';
+
+cli(import.meta.url, {
+  summary:
+    "Writes a GitHub release for each package a release run published, with that package's changelog section as the body, cut to fit GitHub's limit.",
+  notes:
+    'Reads PUBLISHED (JSON: [{"name":"@weasel-js/core","version":"1.10.0"}]) and GITHUB_REPOSITORY, and needs `gh` authenticated (GH_TOKEN).',
+});
 
 const published = JSON.parse(process.env.PUBLISHED ?? '[]');
 const repository = process.env.GITHUB_REPOSITORY;

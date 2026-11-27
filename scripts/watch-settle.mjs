@@ -19,21 +19,27 @@ import { spawn, spawnSync } from 'node:child_process';
 import { appendFileSync, existsSync, mkdtempSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { cli } from './lib/help.mjs';
 
-const argv = process.argv.slice(2);
-const flag = (name) => argv.includes(`--${name}`);
-const opt = (name, fallback) => {
-  const i = argv.indexOf(`--${name}`);
-  return i >= 0 ? argv[i + 1] : fallback;
-};
-const trials = Number(opt('trials', 8));
-const gap = Number(opt('gap', 25));
-const idle = Number(opt('idle', 1500));
-const settle = flag('settle');
-const out = opt('out');
+const { values } = cli(import.meta.url, {
+  summary: 'Saves a module twice in quick succession on a live vite dev server and reports which text it serves once idle, and the save-to-served latency of one save.',
+  options: {
+    trials: { type: 'string', placeholder: '<n>', default: '8', description: 'fresh modules to save' },
+    gap: { type: 'string', placeholder: '<ms>', default: '25', description: 'wait after the first fetch returns before the second save' },
+    idle: { type: 'string', placeholder: '<ms>', default: '1500', description: 'wait after the second save before the last fetch' },
+    settle: { type: 'boolean', description: "start the server with the repo's dev-server watch settings, less missed-event recovery" },
+    out: { type: 'string', placeholder: '<file.jsonl>', description: 'append one record per trial here' },
+    linux: { type: 'boolean', description: "rerun this script in node:26-alpine under Docker, with the lockfile's vite" },
+  },
+});
+const trials = Number(values.trials);
+const gap = Number(values.gap);
+const idle = Number(values.idle);
+const settle = values.settle;
+const out = values.out;
 const root = resolve(import.meta.dirname, '..');
 
-if (flag('linux')) {
+if (values.linux) {
   process.exit(await inDocker());
 }
 
@@ -150,14 +156,14 @@ async function inDocker() {
   }
   const lock = JSON.parse(readFileSync(resolve(root, 'package-lock.json'), 'utf8'));
   const vite = lock.packages['node_modules/vite']?.version;
-  const rest = argv.filter((a) => a !== '--linux' && a !== '--out' && a !== out).map((a) => `'${a}'`).join(' ');
+  const rest = [`--trials '${values.trials}'`, `--gap '${values.gap}'`, `--idle '${values.idle}'`, ...(settle ? ['--settle'] : [])].join(' ');
   const inside = [
     'set -e',
     'mkdir -p /w && cd /w && tar -x && echo \'{"type":"module"}\' > package.json',
     `npm i --silent --no-audit --no-fund vite@${vite} >/dev/null`,
     `node scripts/watch-settle.mjs ${rest}`,
   ].join('\n');
-  const tar = spawn('tar', ['-c', '-C', root, 'scripts/watch-settle.mjs', 'scripts/vite-watch.ts'], { stdio: ['ignore', 'pipe', 'inherit'] });
+  const tar = spawn('tar', ['-c', '-C', root, 'scripts/watch-settle.mjs', 'scripts/vite-watch.ts', 'scripts/lib/help.mjs'], { stdio: ['ignore', 'pipe', 'inherit'] });
   const run = spawn('docker', ['run', '--rm', '-i', 'node:26-alpine', 'sh', '-c', inside], { env, stdio: ['pipe', 'pipe', 'inherit'] });
   tar.stdout.pipe(run.stdin);
   let pending = '';

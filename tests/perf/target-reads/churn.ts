@@ -6,12 +6,20 @@
 // `target.stop()`. Both go by what is on the key or the target, not by a handle.
 import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget } from '../../../packages/animator/src/target';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  name: 'target-reads/churn.ts',
+  summary: 'Times stopping and starting 100 tweens a frame with N running, cancelling by handle, by key or through target.stop().',
+  positionals: '[handle|keyed|stop]',
+  notes: 'Run through `node tests/perf/target-reads/run.mjs`, which bundles it and sets N.',
+});
 
 const N = Number(process.env.N ?? 10000);
 const CHURN = 100;
 const WARM = 50;
 const FRAMES = 300;
-const MODE = process.argv[2] ?? 'handle';
+const MODE = positionals[0] ?? 'handle';
 
 let now = 0;
 const core = createAnimatorCore({

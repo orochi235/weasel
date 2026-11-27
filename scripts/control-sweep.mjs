@@ -19,31 +19,40 @@ import { sweepDemo } from './control-sweep/demo.mjs';
 import { deadTable, demosIn, pruneRuns, readAllow, staleWaivers, waiverFor, writeAllow } from './control-sweep/judge.mjs';
 import { installSweepKit } from './control-sweep/page-kit.mjs';
 import { buildSite, serveDir } from './control-sweep/serve.mjs';
+import { cli } from './lib/help.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const ALLOW = join(ROOT, 'scripts/control-sweep.allow.json');
 const KEEP_RUNS = 7;
 const VIEWPORT = { width: 1280, height: 1400 };
 
-export const parseArgs = (argv) => {
-  const value = (flag, fallback) => {
-    const i = argv.indexOf(flag);
-    return i < 0 ? fallback : argv[i + 1];
-  };
-  return {
-    only: value('--only')?.split(',').filter(Boolean),
-    out: resolve(value('--out', join(ROOT, '.control-sweep'))),
-    run: value('--run', new Date().toISOString().replace(/[:.]/g, '-')),
-    url: value('--url'),
-    build: !argv.includes('--no-build'),
-    packages: !argv.includes('--skip-packages'),
-    concurrency: Math.max(1, Number(value('--concurrency', 5)) || 5),
-    settleMs: Math.max(0, Number(value('--settle', 150)) || 0),
-    demoMs: Math.max(1, Number(value('--demo-minutes', 12)) || 12) * 60_000,
-    updateAllow: argv.includes('--update-allow'),
-    verbose: argv.includes('--verbose'),
-  };
+/** The sweep's own flags, which `control-sweep-fleet.mjs` also takes and hands on. */
+export const SWEEP_OPTIONS = {
+  only: { type: 'string', placeholder: '<id,id>', description: 'sweep only these demos' },
+  url: { type: 'string', placeholder: '<site>/weasel/', description: 'sweep a site already served there instead of building one' },
+  'skip-packages': { type: 'boolean', description: 'build the site without building the packages first' },
+  'no-build': { type: 'boolean', description: 'serve the site built last time' },
+  concurrency: { type: 'string', placeholder: '<n>', default: '5', description: 'demos swept at once' },
+  settle: { type: 'string', placeholder: '<ms>', default: '150', description: 'wait after operating a control before comparing' },
+  'demo-minutes': { type: 'string', placeholder: '<n>', default: '12', description: 'give up on a demo after this long' },
+  'update-allow': { type: 'boolean', description: 'remove allowlist entries that waive nothing now' },
+  verbose: { type: 'boolean', description: 'print a line per control' },
 };
+
+/** The sweep's settings from its parsed flags. */
+const settingsOf = (values) => ({
+  only: values.only?.split(',').filter(Boolean),
+  out: resolve(values.out ?? join(ROOT, '.control-sweep')),
+  run: values.run ?? new Date().toISOString().replace(/[:.]/g, '-'),
+  url: values.url,
+  build: !values['no-build'],
+  packages: !values['skip-packages'],
+  concurrency: Math.max(1, Number(values.concurrency) || 5),
+  settleMs: Math.max(0, Number(values.settle) || 0),
+  demoMs: Math.max(1, Number(values['demo-minutes']) || 12) * 60_000,
+  updateAllow: Boolean(values['update-allow']),
+  verbose: Boolean(values.verbose),
+});
 
 /** What a page did that a sweep must not: a native dialog, a download, a file picker, a new window. */
 const watchEvents = (context, page) => {
@@ -66,8 +75,7 @@ const watchEvents = (context, page) => {
 
 const count = (records, verdict) => records.filter((r) => r.verdict === verdict).length;
 
-const main = async () => {
-  const args = parseArgs(process.argv.slice(2));
+const main = async (args) => {
   const started = Date.now();
   const runDir = join(args.out, args.run);
   const shotsDir = join(runDir, 'shots');
@@ -165,7 +173,16 @@ const main = async () => {
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  main().then(
+  const { values } = cli(import.meta.url, {
+    summary: 'Operates every control in every demo of the demo site in headless Chromium and reports each one that changes nothing. Runs on a fleet node with a browser (`npm run sweep:controls` sends it there); never here.',
+    options: {
+      ...SWEEP_OPTIONS,
+      out: { type: 'string', placeholder: '<dir>', description: 'where runs go; keeps the newest 7 (default: .control-sweep)' },
+      run: { type: 'string', placeholder: '<name>', description: "this run's directory under --out (default: the time)" },
+    },
+    notes: 'Exits 1 when a control is dead and not waived in scripts/control-sweep.allow.json.',
+  });
+  main(settingsOf(values)).then(
     (code) => process.exit(code),
     (error) => {
       console.error(`control-sweep: ${error.stack ?? error}`);

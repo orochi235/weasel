@@ -15,10 +15,28 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from '../../../scripts/lib/help.mjs';
 
+const CASES = ['table', 'read', 'churn', 'colors'];
+const { positionals } = cli(import.meta.url, {
+  summary: 'Times reads of moving animation targets in plain Node, outside vitest: bundles one case and runs it once per row count.',
+  positionals: `[${CASES.join('|')}] [<rows>…] [<mode>]`,
+  notes: `Rows default to 1000 and 10000; a word after the case is that case's mode:
+  table   idle | targets | table | held | heldfn | heldrows | behind (default table)
+  read    read | readInto | parts (default read)
+  churn   handle | keyed | stop (default handle)
+  colors  (none)
+Examples:
+  node tests/perf/target-reads/run.mjs table 100000
+  node tests/perf/target-reads/run.mjs read 10000 parts`,
+});
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..', '..');
-const [which = 'table', ...rest] = process.argv.slice(2);
+const [which = 'table', ...rest] = positionals;
+if (!CASES.includes(which)) {
+  console.error(`target-reads: no case '${which}'; one of ${CASES.join(', ')}`);
+  process.exit(2);
+}
 const sizes = rest.filter((a) => /^\d+$/.test(a));
 const args = rest.filter((a) => !/^\d+$/.test(a));
 

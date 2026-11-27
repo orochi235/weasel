@@ -10,12 +10,10 @@ import { execFile } from 'node:child_process';
 import { appendFileSync, copyFileSync, mkdirSync, readFileSync, rmSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { cpus, hostname } from 'node:os';
 import { join } from 'node:path';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 import { sampleLoad } from './lib/node-load.mjs';
 import { tscArgv } from './lib/tsc.mjs';
 
-const { values } = parseArgs({ options: { out: { type: 'string', default: '.bench/typecheck' }, states: { type: 'string' } } });
-mkdirSync(values.out, { recursive: true });
 const node = hostname().split('.')[0];
 const PROGRAMS = { root: [], browser: ['-p', 'packages'] };
 const INFO_FILES = { root: 'main.tsbuildinfo', browser: 'browser-tests.tsbuildinfo' };
@@ -78,7 +76,21 @@ const ALL_STATES = [
   ['break', () => retype(TYPED)],
   ['mended', () => {}],
 ];
-const STATES = values.states ? values.states.split(',').map((name) => ALL_STATES.find(([n]) => n === name)) : ALL_STATES;
+const { values } = cli(import.meta.url, {
+  summary: "What `npm run typecheck` costs under each state its build info can be in, both programs with --extendedDiagnostics. Every run's log and one JSON line go to --out as it finishes.",
+  options: {
+    out: { type: 'string', placeholder: '<dir>', default: '.bench/typecheck', description: 'where logs and runs.jsonl go' },
+    states: { type: 'string', placeholder: '<state,state>', description: 'run only these states, in this order (default: all)' },
+  },
+  notes: `States: ${ALL_STATES.map(([name]) => name).join(', ')}.`,
+});
+const STATES = values.states ? values.states.split(',').map((name) => ALL_STATES.find(([n]) => n === name) ?? name) : ALL_STATES;
+const unknownStates = STATES.filter((state) => typeof state === 'string');
+if (unknownStates.length) {
+  console.error(`bench-typecheck: no state ${unknownStates.join(', ')}; one of ${ALL_STATES.map(([name]) => name).join(', ')}`);
+  process.exit(2);
+}
+mkdirSync(values.out, { recursive: true });
 
 const total = STATES.length * Object.keys(PROGRAMS).length;
 let n = 0;

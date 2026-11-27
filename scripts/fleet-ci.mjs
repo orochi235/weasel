@@ -18,6 +18,7 @@ import { fileURLToPath } from 'node:url';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
 import { killOnSignal } from './lib/fleet-parts.mjs';
 import { armTree, changedFiles } from './lib/fleet-tree.mjs';
+import { cli } from './lib/help.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const say = (line) => console.log(`fleet-ci: ${line}`);
@@ -31,15 +32,18 @@ const MODES = {
   }],
 };
 
-const [mode, ...args] = process.argv.slice(2);
-if (!MODES[mode]) {
-  say(`usage: fleet-ci.mjs ${Object.keys(MODES).join('|')} [commit] [onto do flags]`);
-  process.exit(2);
-}
-const [first, ...rest] = args;
-const named = first && !first.startsWith('-');
-const ontoArgs = named ? rest : args;
-const { commit, branch, tree, drop, git } = openCommitTree(ROOT, named ? first : 'HEAD', `${mode}-`);
+const { command: mode, positionals, rest: ontoArgs } = cli(import.meta.url, {
+  summary: "Runs ci.yml's steps on the fleet against a commit (HEAD by default), through scripts/ci-run.mjs on the node.",
+  commands: {
+    postbuild: {
+      summary: "The first build and every step after it, on .nvmrc's Node: the manifest, tree-shake and React-free checks and both consumer smokes.",
+      positionals: '[<commit>]',
+      passthrough: true,
+      notes: 'Any other flag goes to `onto do` (e.g. --node studio).',
+    },
+  },
+});
+const { commit, branch, tree, drop, git } = openCommitTree(ROOT, positionals[0] ?? 'HEAD', `${mode}-`);
 const jobs = [];
 killOnSignal(jobs);
 

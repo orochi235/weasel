@@ -13,6 +13,14 @@ import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from './lib/help.mjs';
+
+const { positionals, rest } = cli(import.meta.url, {
+  summary: "`npm test` inside a package: its test files (or the ones named, as paths in the package), run from the repo root under the vitest projects that own them. One worker unless --maxWorkers asks for more.",
+  positionals: '[<file or filter>…]',
+  passthrough: true,
+  notes: "Every other flag goes to `vitest run`; `-- --help` prints vitest's own help.",
+});
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const pkg = process.cwd();
@@ -22,7 +30,7 @@ if (here.startsWith('..') || !existsSync(join(pkg, 'package.json'))) {
   process.exit(2);
 }
 
-const args = process.argv.slice(2).map((arg) => (!arg.startsWith('-') && existsSync(join(pkg, arg)) ? join(here, arg) : arg));
+const args = [...positionals, ...rest].map((arg) => (!arg.startsWith('-') && existsSync(join(pkg, arg)) ? join(here, arg) : arg));
 const filters = args.filter((arg) => !arg.startsWith('-'));
 const workers = args.some((arg) => arg.startsWith('--maxWorkers')) ? [] : ['--maxWorkers=1'];
 const { status } = spawnSync('npx', ['vitest', 'run', ...(filters.length ? [] : [`${here}/`]), ...workers, ...args], {

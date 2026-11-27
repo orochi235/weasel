@@ -18,6 +18,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { stripComments } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 /** The surfaces whose labels inherit. Add a directory to bring one under the rule. */
 export const SURFACES = [
@@ -112,6 +113,9 @@ function walk(dir: string, into: string[] = []): string[] {
 }
 
 if (process.argv[1]?.endsWith('check-labels.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on a params-surface label rule that writes its case, tracking or row-label size as a literal instead of reading `--wzl-params-label-*` / `--wzl-params-text-size`.',
+  });
   const root = join(import.meta.dirname, '..');
   const files = SURFACES.flatMap((s) => walk(join(root, s))).map((path) => ({
     path: relative(root, path),

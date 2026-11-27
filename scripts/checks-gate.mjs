@@ -10,6 +10,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CI_YML, longestFirst, readCi, sourceChecks } from './lib/ci-steps.mjs';
 import { stepEnv } from './lib/fleet-tree.mjs';
+import { cli } from './lib/help.mjs';
 
 /** Runs `npm run <args>` and resolves `{ ok, output }`. */
 const npmRun = (args, cwd) =>
@@ -46,8 +47,14 @@ export const runChecks = async (checks, { jobs, runOne, report = () => {} }) => 
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
-  const jobsAt = process.argv.indexOf('--jobs');
-  const jobs = jobsAt < 0 ? 3 : Number(process.argv[jobsAt + 1]);
+  const { values } = cli(import.meta.url, {
+    summary:
+      "Runs every check the gate runs (the typecheck, lint, check:* and audit:* steps above ci.yml's first build), longest first, a few at once. Exits 1 when any fails, after printing each failure's output.",
+    options: {
+      jobs: { type: 'string', placeholder: '<n>', default: '3', description: 'checks to run at once' },
+    },
+  });
+  const jobs = Number(values.jobs);
   if (!Number.isInteger(jobs) || jobs < 1) throw new Error('checks:gate: --jobs takes a whole number of at least 1');
   const checks = longestFirst(sourceChecks(readCi(readFileSync(CI_YML, 'utf8')).steps));
   const failures = await runChecks(checks, {

@@ -21,6 +21,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { blocks, lineAt, stripComments, walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 export interface Offender {
   readonly file: string;
@@ -113,6 +114,9 @@ export const isChecked = (p: string) =>
   /\.(css|less)$/.test(p) && !/\.(stories|story)\./.test(p) && !p.includes('/Foundations/');
 
 if (process.argv[1]?.endsWith('check-fonts.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on a stylesheet that sets a font family outside a theme root: inherit it, or read a role token (`--wzl-font-mono`, `--wzl-font-display`).',
+  });
   const root = join(import.meta.dirname, '..');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))].map((p) => relative(root, p)).filter(isChecked);
   const bad = files.flatMap((p) => offenders(p, readFileSync(join(root, p), 'utf8')));

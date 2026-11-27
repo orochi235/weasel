@@ -9,15 +9,16 @@ import { spawn } from 'node:child_process';
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { cpus, hostname } from 'node:os';
 import { join } from 'node:path';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 import { sampleLoad } from './lib/node-load.mjs';
 
-const { values } = parseArgs({
+const { values } = cli(import.meta.url, {
+  summary: "How many cores the browser project needs left to it beside the rest: runs the suite with the overlap forced on and jsdom given `cores - R` workers, for each R. Every run's log and one JSON line go to --out as it finishes.",
   options: {
-    reserves: { type: 'string', default: '4' },
-    reps: { type: 'string', default: '1' },
-    node: { type: 'string', default: hostname().split('.')[0] },
-    out: { type: 'string', default: '.bench/overlap-reserve' },
+    reserves: { type: 'string', placeholder: '<R,R|off>', default: '4', description: 'cores to reserve, each a trial; `off` runs without the overlap as the baseline' },
+    reps: { type: 'string', placeholder: '<n>', default: '1', description: 'passes over every reserve' },
+    node: { type: 'string', placeholder: '<name>', default: hostname().split('.')[0], description: 'the node name recorded on each row' },
+    out: { type: 'string', placeholder: '<dir>', default: '.bench/overlap-reserve', description: 'where logs and runs.jsonl go' },
   },
 });
 const reserves = values.reserves.split(',').map((r) => (r === 'off' ? 'off' : Number(r)));

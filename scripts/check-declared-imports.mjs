@@ -20,6 +20,7 @@ import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { builtinModules } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { cli } from './lib/help.mjs';
 import { SOURCE, importSpecifiers, isBare, namedSpecifiers, packageOf } from './lib/imports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -164,6 +165,10 @@ function ownAliases(dir) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  cli(import.meta.url, {
+    summary: "Fails when a published package imports a module its manifest does not declare, a relative import leaves its package, or an import reaches past a sibling's public, non-test entries.",
+  });
+
   for (const { to } of CROSS_PACKAGE) {
     if (!['.ts', '.tsx', '.js'].some((ext) => existsSync(join(ROOT, to + ext)))) {
       console.error(`[declared-imports] ${to} is allowlisted as a cross-package import and does not exist. Update or remove its CROSS_PACKAGE entry in scripts/check-declared-imports.mjs.`);

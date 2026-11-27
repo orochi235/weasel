@@ -19,6 +19,7 @@ import { pathToFileURL } from 'node:url';
 import { TOKEN_HOOKS, type TokenHook } from '../packages/theme/src/hooks';
 import { stanceSlotNames } from '../packages/theme/src/panel';
 import { stripComments } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 /** Override hooks: read with a fallback, declared by no theme on purpose. */
 export const HOOKS = new Set(TOKEN_HOOKS.map((h) => `--wzl-${h.name}`));
@@ -204,6 +205,11 @@ async function themeTokens(root: string, files: readonly SourceFile[]): Promise<
 
 const invokedDirectly = process.argv[1]?.endsWith('check-token-reads.ts');
 if (invokedDirectly) {
+  cli(import.meta.url, {
+    summary:
+      'Fails on a var(--wzl-*) in live source that nothing declares, a theme token read with a fallback, an override hook whose fallback drifts from its listed value, or a text color read from an accent fill token.',
+    notes: 'Reads from the current directory: run it from the repo root.',
+  });
   const root = process.cwd();
   const dirs = ['packages', 'apps'].map((d) => join(root, d));
   const files = dirs.flatMap((d) => [...walk(d)]).map((f) => ({ path: relative(root, f), source: readFileSync(f, 'utf8') }));

@@ -6,8 +6,14 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { cpus, hostname, loadavg, release, tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
+import { cli } from '../../scripts/lib/help.mjs';
 
-const [label = 'run', runsArg = '5', out = 'tests/perf/results/forge-mount.jsonl'] = process.argv.slice(2);
+const { positionals } = cli(import.meta.url, {
+  summary: "Times forge's timeline test file, which mounts the workshop two or three times a test, under jsdom: one JSONL record per run.",
+  positionals: '[<label>] [<runs>] [<out.jsonl>]',
+  notes: 'Defaults: label run, 5 runs, tests/perf/results/forge-mount.jsonl.',
+});
+const [label = 'run', runsArg = '5', out = 'tests/perf/results/forge-mount.jsonl'] = positionals;
 const runs = Number(runsArg);
 const FILE = 'packages/forge/src/timeline/timeline.test.tsx';
 const git = (...args) => execFileSync('git', args, { encoding: 'utf8' }).trim();

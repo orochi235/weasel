@@ -20,6 +20,23 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { gposPairKerning } from '../src/outline/gposKerning.ts';
 import { faceMetricsFromTables, type FaceMetricTables } from '../src/faceMetrics.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { values, positionals } = cli(import.meta.url, {
+  summary: 'Bakes an MSDF font atlas for `registerFont`: <out>/<name>.json (BMFont metrics, advances and kerning from the font itself) and <out>/<name>.png.',
+  positionals: '<font.ttf|otf>',
+  options: {
+    name: { type: 'string', placeholder: '<Family-Weight>', description: 'the atlas name, for both files (required)' },
+    out: { type: 'string', placeholder: '<dir>', description: 'the directory to write into (required)' },
+    size: { type: 'string', placeholder: '<px>', default: '42', description: 'the bake size' },
+    charset: { type: 'string', placeholder: 'ascii|latin1', default: 'latin1', description: 'ascii is 0x20–0x7E; latin1 adds 0xA0–0xFF' },
+  },
+});
+if (values.name === undefined || values.out === undefined) {
+  console.error('gen-font: needs --name and --out');
+  console.error('usage: npm run gen:font -- <font.ttf|otf> --name <Family-Weight> --out <dir> [--size 42] [--charset latin1]');
+  process.exit(2);
+}
 
 function charset(kind: string): string {
   const range = (a: number, b: number) =>
@@ -30,18 +47,10 @@ function charset(kind: string): string {
   throw new Error(`unknown charset: ${kind}`);
 }
 
-function arg(name: string, fallback?: string): string {
-  const i = process.argv.indexOf(`--${name}`);
-  if (i !== -1 && process.argv[i + 1]) return process.argv[i + 1];
-  if (fallback !== undefined) return fallback;
-  throw new Error(`missing --${name}`);
-}
-
-const fontPath = process.argv[2];
-if (!fontPath || fontPath.startsWith('--')) throw new Error('usage: gen-font <font.ttf> --name <n> --out <dir>');
-const name = arg('name');
-const outDir = arg('out');
-const fontSize = Number(arg('size', '42'));
+const fontPath = positionals[0];
+const name = values.name as string;
+const outDir = values.out as string;
+const fontSize = Number(values.size);
 
 interface BakedChar { id: number; xadvance: number }
 interface Baked {
@@ -86,7 +95,7 @@ generateBMFont(
     fieldType: 'msdf',
     fontSize,
     distanceRange: 4,
-    charset: charset(arg('charset', 'latin1')),
+    charset: charset(values.charset as string),
     smartSize: true,
     pot: true,
   },

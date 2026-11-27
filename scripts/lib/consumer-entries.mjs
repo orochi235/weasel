@@ -6,8 +6,15 @@
 //   node consumer-entries.mjs [./dom.mjs]
 import { readFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
+// smoke-consumer-install.mjs copies help.mjs in beside this file.
+import { cli } from './help.mjs';
 
-if (process.argv[2]) await import(pathToFileURL(process.argv[2]).href);
+const { positionals } = cli(import.meta.url, {
+  summary:
+    'Imports each entry listed in ./smoke-entries.json, after the module named (a consumer\'s browser globals), and fails naming every one that threw as it loaded. An entry missing only an optional peer is skipped.',
+  positionals: '[<globals-module>]',
+});
+if (positionals[0]) await import(pathToFileURL(positionals[0]).href);
 const entries = JSON.parse(readFileSync('smoke-entries.json', 'utf8'));
 const failed = [];
 const skipped = [];

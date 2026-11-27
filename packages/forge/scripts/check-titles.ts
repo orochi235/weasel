@@ -3,6 +3,11 @@
 import { resolve } from 'node:path';
 import { folderExports } from './exportNames.ts';
 import { repoEntries, repoRoot } from './repoIndex.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: "Fails when a story title's last segment is not a component name, or a ui story is not titled for the component folder it sits in.",
+});
 
 const { titleReport } = await import('../src/vite/titleReport.ts');
 const { folderTitleReport } = await import('../src/vite/folderTitles.ts');

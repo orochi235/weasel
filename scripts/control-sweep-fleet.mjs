@@ -14,23 +14,30 @@ import { fileURLToPath } from 'node:url';
 import { openCommitTree, ontoWhenFree } from './lib/commit-tree.mjs';
 import { pruneRuns } from './control-sweep/judge.mjs';
 import { ontoArgs, readRun } from './control-sweep/fleet.mjs';
+import { SWEEP_OPTIONS } from './control-sweep.mjs';
+import { cli } from './lib/help.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const say = (line) => console.log(`sweep:controls: ${line}`);
 
-const argv = process.argv.slice(2);
-const take = (flag) => {
-  const i = argv.indexOf(flag);
-  if (i < 0) return undefined;
-  const [, v] = argv.splice(i, 2);
-  return v;
-};
-const out = resolve(take('--out') ?? join(ROOT, '.control-sweep'));
-const ref = take('--ref') ?? 'HEAD';
-const node = take('--node');
-const nodeTree = take('--tree');
-const only = take('--only');
-const sweepArgs = [...(only ? ['--only', only] : []), ...argv];
+const { values } = cli(import.meta.url, {
+  summary: "Runs the control sweep (scripts/control-sweep.mjs) on a fleet node with a browser, against a commit checked out into a throwaway worktree. Exits with the sweep's code: 1 when a control is dead.",
+  options: {
+    ref: { type: 'string', placeholder: '<commit>', default: 'HEAD', description: 'the commit to sweep' },
+    out: { type: 'string', placeholder: '<dir>', description: 'where the run comes back to; keeps the newest 7 (default: .control-sweep)' },
+    node: { type: 'string', placeholder: '<name>', description: 'run on this node' },
+    tree: { type: 'string', placeholder: '<name>', description: 'run in this node tree rather than a pooled one onto picks' },
+    ...SWEEP_OPTIONS,
+  },
+});
+const out = resolve(values.out ?? join(ROOT, '.control-sweep'));
+const { ref, node, tree: nodeTree, only } = values;
+// The sweep's own flags, handed on as given.
+const sweepArgs = Object.keys(SWEEP_OPTIONS).flatMap((name) => {
+  const value = values[name];
+  if (value === undefined || value === false) return [];
+  return value === true ? [`--${name}`] : [`--${name}`, value];
+});
 
 // onto caps --about at 400 characters, which a long --only list runs past.
 const ids = only?.split(',') ?? [];

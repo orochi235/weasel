@@ -9,12 +9,20 @@
 import { execFileSync, spawn } from 'node:child_process';
 import { closeSync, existsSync, openSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
+import { cli } from './lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  summary:
+    "Moves the `view` worktree (.claude/worktrees/view, the detached checkout that serves draw) to a commit, running `npm ci` there and restarting draw when package-lock.json changed.",
+  positionals: '[<rev>]',
+  notes: 'rev defaults to main. The pre-push hook runs this for every push to main.',
+});
 
 const repo = resolve(import.meta.dirname, '..');
 const common = resolve(repo, execFileSync('git', ['rev-parse', '--git-common-dir'], { cwd: repo, encoding: 'utf8' }).trim());
 const main = dirname(common);
 const view = join(main, '.claude/worktrees/view');
-const rev = process.argv[2] ?? 'main';
+const rev = positionals[0] ?? 'main';
 
 const git = (...args) => execFileSync('git', ['-C', view, ...args], { encoding: 'utf8' }).trim();
 const log = (msg) => console.log(`advance-view: ${msg}`);

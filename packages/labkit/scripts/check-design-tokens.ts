@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
+import { cli } from '../../../scripts/lib/help.mjs';
 
 export interface Offender {
   file: string;
@@ -134,6 +135,9 @@ function walk(dir: string, out: string[] = []): string[] {
 
 const invokedDirectly = process.argv[1]?.endsWith('check-design-tokens.ts');
 if (invokedDirectly) {
+  cli(import.meta.url, {
+    summary: 'Fails on a raw font-size, font-weight or border-radius, a stray danger color, or a var() fallback that disagrees with its token, in labkit and ui stylesheets.',
+  });
   const roots = [join(ROOT, 'packages/labkit/src'), join(ROOT, 'packages/ui/src')];
   const offenders = roots.flatMap((root) =>
     walk(root).flatMap((f) => findOffenders(relative(root, f), readFileSync(f, 'utf8'))),

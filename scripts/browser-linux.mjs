@@ -13,10 +13,18 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { cli } from './lib/help.mjs';
 
+const { values, positionals, rest } = cli(import.meta.url, {
+  summary: "Runs vitest in Playwright's Linux image (--project=browser unless given vitest arguments), for the browser tests CI's ubuntu runner fails and a Mac passes. Needs Docker; send it to a node that has it.",
+  positionals: '[<vitest filters>…]',
+  passthrough: true,
+  options: { drop: { type: 'boolean', description: 'remove the npm cache volume (weasel-linux-npm) and exit' } },
+  notes: 'Every other flag goes to `vitest run`.',
+});
 const root = resolve(import.meta.dirname, '..');
 const VOLUME = 'weasel-linux-npm';
-const args = process.argv.slice(2);
+const args = [...positionals, ...rest];
 // Docker Desktop's socket, where nothing has linked /var/run/docker.sock to it.
 const desktop = join(homedir(), '.docker/run/docker.sock');
 const env = !process.env.DOCKER_HOST && !existsSync('/var/run/docker.sock') && existsSync(desktop)
@@ -27,7 +35,7 @@ if (spawnSync('docker', ['info'], { env, stdio: 'ignore' }).status !== 0) {
   process.exit(2);
 }
 
-if (args[0] === '--drop') {
+if (values.drop) {
   const r = spawnSync('docker', ['volume', 'rm', VOLUME], { env, stdio: 'inherit' });
   process.exit(r.status ?? 1);
 }

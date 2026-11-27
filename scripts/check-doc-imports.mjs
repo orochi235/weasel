@@ -16,6 +16,7 @@ import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from '
 import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { cli } from './lib/help.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -84,6 +85,12 @@ function markdownFiles() {
 }
 
 function main() {
+  const { values } = cli(import.meta.url, {
+    summary: "Fails on a name a doc's code block imports from an `@weasel-js/*` entry that does not export it, and on a snippet block that differs from its fixture's region.",
+    options: {
+      write: { type: 'boolean', description: "rewrite each snippet block from its fixture's region" },
+    },
+  });
   const ts = createRequire(join(ROOT, 'package.json'))('typescript');
   const coreDir = join(ROOT, 'packages/core');
   const config = ts.parseConfigFileTextToJson('tsconfig.json', readFileSync(join(coreDir, 'tsconfig.json'), 'utf8')).config;
@@ -118,7 +125,7 @@ function main() {
   }));
 
   const problems = [];
-  const write = process.argv.includes('--write');
+  const write = values.write;
   const readFixture = (file) => (existsSync(join(ROOT, file)) ? readFileSync(join(ROOT, file), 'utf8') : null);
   let snippets = 0;
   for (const file of markdownFiles()) {

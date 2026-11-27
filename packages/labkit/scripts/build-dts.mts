@@ -29,6 +29,12 @@ import {
   weaselDtsPaths,
   workspaceDependencyClosure,
 } from '../../../scripts/dts-aliases.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: "Emits labkit's .d.ts bundle from its dependencies' built declarations.",
+  notes: 'Run it as `npm run build:dts -w @weasel-js/labkit`, after the build tiers below labkit.',
+});
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pkgRoot = resolve(here, '..'); // packages/labkit

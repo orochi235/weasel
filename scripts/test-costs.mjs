@@ -10,15 +10,17 @@
 // `--by module` needs a run with `--experimental.importDurations.limit`: it sums each module's own
 // import time over the files that recorded it, which only covers each file's slowest n.
 import { readFileSync } from 'node:fs';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 
-const { values, positionals } = parseArgs({
+const { values, positionals } = cli(import.meta.url, {
+  summary: 'Sums what scripts/test-costs-reporter.mjs recorded: worker-seconds per group, split into import and test time.',
+  positionals: '<costs.jsonl>…',
   options: {
-    by: { type: 'string', default: 'package' },
-    project: { type: 'string' },
-    top: { type: 'string', default: '0' },
+    by: { type: 'string', placeholder: 'package|project|file|module', default: 'package', description: 'what to group by; module needs a run with --experimental.importDurations.limit' },
+    project: { type: 'string', placeholder: '<name>', description: 'only this vitest project' },
+    top: { type: 'string', placeholder: '<n>', default: '0', description: 'show only the n costliest (0: all)' },
   },
-  allowPositionals: true,
+  notes: 'Record with: TEST_COSTS_OUT=costs.jsonl npx vitest run --reporter=default --reporter=./scripts/test-costs-reporter.mjs',
 });
 
 const packageOf = (file) => {

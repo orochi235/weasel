@@ -3,6 +3,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, posix, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { cli } from './lib/help.mjs';
 
 const SPEC = /(?:from\s+|import\s*\(\s*|import\s+|vi\.mock\(\s*|import\.meta\.glob\(\s*)['"]([^'"]+)['"]/g;
 
@@ -49,6 +50,9 @@ function* walk(dir) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(import.meta.url, {
+    summary: "Fails when labkit's source imports forge, or forge reaches labkit other than through an entry in labkit's `exports`.",
+  });
   const root = new URL('..', import.meta.url).pathname;
   const files = ['packages/labkit', 'packages/forge'].flatMap((pkg) =>
     [...walk(join(root, pkg))].map((file) => ({
