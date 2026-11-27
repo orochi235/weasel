@@ -33,8 +33,9 @@ export interface NodeOverlayFrame {
    *  from, and the box to hand `paintToLocalUnits` / `paintToBoundsUnits`. */
   box: Rect;
   /** Node box frame → overlay pixels: the pose's rotation and `transform`,
-   *  then the view. While the node is gone or a live view flattens an axis, it
-   *  and `toLocal` keep the last mapping that had an inverse. */
+   *  then the view. While the node is gone or a live view flattens an axis or
+   *  scales one to infinity, it and `toLocal` keep the last mapping that had an
+   *  inverse. */
   toScreen: (p: OverlayPoint) => OverlayPoint;
   /** Overlay pixels → node box frame. Inverts `toScreen`. */
   toLocal: (p: OverlayPoint) => OverlayPoint;
@@ -63,7 +64,7 @@ export interface UseNodeOverlayFrameOptions<TPose> {
  *
  * Returns `null` when there is no node under `nodeId`, when the container has
  * not been measured, or when the view or the pose's `transform` collapses an
- * axis to zero.
+ * axis to zero or scales one to infinity.
  */
 export function useNodeOverlayFrame<TData, TLayer extends string, TPose extends RectPose>(
   scene: Scene<TData, TLayer, TPose>,
@@ -132,14 +133,14 @@ interface Projection {
   frame: Affine | null;
   view: View | undefined;
   frameInverse: Affine | null;
-  /** Whether `toLocal` can undo it: neither the frame nor the view flattens an axis. */
+  /** Whether `toLocal` can undo it: neither the frame nor the view flattens an axis or holds an infinity. */
   invertible: boolean;
 }
 
 function projectionOf(frame: Affine | null, view: View | undefined): Projection {
   const frameInverse = frame && invert(frame);
-  const viewInvertible = !view || (view.scale.x !== 0 && view.scale.y !== 0
-    && Number.isFinite(1 / view.scale.x) && Number.isFinite(1 / view.scale.y));
+  const viewInvertible = !view || [view.x, view.y, view.scale.x, view.scale.y, 1 / view.scale.x, 1 / view.scale.y]
+    .every(Number.isFinite);
   return { frame, view, frameInverse, invertible: viewInvertible && (!frame || frameInverse !== null) };
 }
 
