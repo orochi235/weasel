@@ -5,6 +5,7 @@ import { screenToWorld } from './viewTransform';
 import { zoomAt } from './zoomAt';
 import { wheelZoom } from './wheelHandler';
 import { fitViewToBounds } from './fitViewToBounds';
+import { fitZoom } from './fitSize';
 
 const finitePositive = (n: number) => Number.isFinite(n) && n > 0;
 
@@ -40,6 +41,10 @@ describe('normalizeView', () => {
     const v: View = { x: 0, y: 0, scale: { x: 1, y: -2 } };
     expect(normalizeView(v)).toBe(v);
     expect(normalizeView({ x: 0, y: 0, scale: { x: 1, y: -ZOOM_FLOOR / 10 } }).scale.y).toBe(-ZOOM_FLOOR);
+  });
+
+  it('keeps a -Infinity axis flipped, at the floor', () => {
+    expect(normalizeView({ x: 0, y: 0, scale: { x: 1, y: -Infinity } }).scale.y).toBe(-ZOOM_FLOOR);
   });
 
   it('zeroes a non-finite translation', () => {
@@ -84,6 +89,25 @@ describe('zoom producers stay inside the invariant', () => {
   });
 });
 
+describe('a zoom past the double range under an unbounded clamp', () => {
+  const free = { min: 0, max: Infinity };
+
+  it('zoomAt holds a flipped axis at the largest double, not the floor', () => {
+    const next = zoomAt({ x: 0, y: 0, scale: { x: 1e300, y: -1e300 } }, { x: 0, y: 0 }, 1e10, free);
+    expect(next.scale).toEqual({ x: Number.MAX_VALUE, y: -Number.MAX_VALUE });
+  });
+
+  it('fitZoom fits content too thin for any finite zoom at the largest double', () => {
+    expect(fitZoom(100, 100, Number.MIN_VALUE, Number.MIN_VALUE, free)).toBe(Number.MAX_VALUE);
+  });
+
+  it('fitViewToBounds does the same', () => {
+    const v = fitViewToBounds({ x: 0, y: 0, width: Number.MIN_VALUE, height: Number.MIN_VALUE }, { width: 100, height: 100 }, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { minScale: 0, maxScale: Infinity })!;
+    expect(v.scale).toEqual({ x: Number.MAX_VALUE, y: Number.MAX_VALUE });
+    expect(Number.isFinite(v.x)).toBe(true);
+  });
+});
+
 describe('invalid-zoom dev warning', () => {
   afterEach(() => { vi.restoreAllMocks(); vi.resetModules(); });
 
@@ -98,5 +122,15 @@ describe('invalid-zoom dev warning', () => {
     at(0);
     at(Number.NaN);
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('describes the zoom rule a flipped view also keeps', async () => {
+    vi.resetModules();
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fresh = await import('./view');
+    fresh.normalizeView({ x: 0, y: 0, scale: { x: 1, y: Number.NaN } });
+    const message = String(warn.mock.calls[0]?.[0]);
+    expect(message).not.toMatch(/positive/);
+    expect(message).toMatch(/negative axis is a flipped one/);
   });
 });

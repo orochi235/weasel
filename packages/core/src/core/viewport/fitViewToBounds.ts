@@ -1,5 +1,5 @@
 import type { View } from './view';
-import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
+import { clampZoom, DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
 import { type FramedRect as Bounds, normalizeZoom, poseFrameOf } from '@weasel-js/geom';
 import { createWarnOnce } from '@weasel-js/registry';
@@ -105,8 +105,8 @@ export function fitViewToBounds(
   // A negative scale is a flipped (y-up) axis, which the fit keeps.
   const signX = currentView.scale.x < 0 ? -1 : 1;
   const signY = currentView.scale.y < 0 ? -1 : 1;
-  const scaleX = signX * normalizeZoom(Math.min(maxScale, Math.max(minScale, rawX)));
-  const scaleY = signY * normalizeZoom(Math.min(maxScale, Math.max(minScale, rawY)));
+  const scaleX = signX * clampZoom(rawX, minScale, maxScale);
+  const scaleY = signY * clampZoom(rawY, minScale, maxScale);
 
   // screenCenter = (worldCenter - view.x) * scale, solved for view.x.
   // On a flipped axis the edge drawn first on screen is the far one.

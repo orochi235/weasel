@@ -1,6 +1,5 @@
-import { normalizeZoom } from '@weasel-js/geom';
 import { hasExtent } from './fitViewToBounds';
-import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from './zoomBounds';
+import { clampZoom, DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from './zoomBounds';
 
 /**
  * Compute the largest uniform zoom (px per content-unit) that fits a content
@@ -27,7 +26,7 @@ export function fitZoom(
   );
   const min = clamp?.min ?? DEFAULT_MIN_ZOOM;
   const max = clamp?.max ?? DEFAULT_MAX_ZOOM;
-  return normalizeZoom(Math.min(max, Math.max(min, raw)));
+  return clampZoom(raw, min, max);
 }
 
 /**

@@ -16,6 +16,15 @@ export const DEFAULT_MAX_ZOOM = 8;
 
 export { normalizeZoom, ZOOM_FLOOR };
 
+/**
+ * `zoom` held to `[min, max]` and then to the zoom invariant. A zoom past the
+ * double range, as an unbounded `max` lets through, is held at the largest
+ * double rather than read as no zoom and dropped to the floor.
+ */
+export function clampZoom(zoom: number, min: number, max: number): number {
+  return normalizeZoom(Math.min(max, Number.MAX_VALUE, Math.max(min, zoom)));
+}
+
 let warned = false;
 
 /** @internal Once per session, in dev builds only. */
@@ -23,7 +32,7 @@ export function warnInvalidView(what: string): void {
   if (warned || !isDev()) return;
   warned = true;
   console.warn(
-    `[weasel] a view was given ${what} and has been clamped. A view's zoom is ` +
-    'always positive and finite, and its position finite; see ZOOM_FLOOR.',
+    `[weasel] a view was given ${what} and has been clamped. Each axis of a view's zoom is ` +
+    'finite and at least ZOOM_FLOOR in magnitude (a negative axis is a flipped one), and its position finite.',
   );
 }

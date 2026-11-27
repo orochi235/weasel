@@ -48,7 +48,7 @@ export function sameView(a: View, b: View): boolean {
 
 /**
  * `view` inside the invariant {@link View} documents: a zero or non-finite
- * scale axis becomes `ZOOM_FLOOR`, a negative one keeps its sign, and a
+ * scale axis becomes `ZOOM_FLOOR`, a negative one (`-Infinity` included) keeps its sign, and a
  * non-finite translation becomes 0. Returns `view` itself when it already
  * holds, so a valid view keeps its identity.
  */
@@ -62,7 +62,7 @@ export function normalizeView(view: View): View {
 }
 
 function normalizeAxis(s: number): number {
-  const held = s < 0 && s > -Infinity ? -normalizeZoom(-s) : normalizeZoom(s);
+  const held = s < 0 ? -normalizeZoom(-s) : normalizeZoom(s);
   // A magnitude that merely undershoots the floor clamps silently; one that was never a zoom warns.
   if (held !== s && (s === 0 || !Number.isFinite(s))) warnInvalidView(`a zoom of ${s}`);
   return held;
