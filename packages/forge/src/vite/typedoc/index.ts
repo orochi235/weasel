@@ -108,7 +108,8 @@ const inProject = (index: TdIndex, type: TdType): TdReflection | undefined =>
 /**
  * Every member `type` declares, into `props`. A reference outside the project is looked through to its type
  * arguments (`ForwardRefExoticComponent<P>`, `PropsWithChildren<P>`, `MemoExoticComponent<C>`), except
- * `RefAttributes<H>`, whose `H` is the ref's handle.
+ * `RefAttributes<H>`, whose `H` is the ref's handle, and `Omit` and `Pick`, which drop or take their keys. Where two
+ * parts declare one name, the first is kept.
  */
 function collect(index: TdIndex, type: TdType | undefined, props: Map<string, TdReflection>, handle: TdType[], seen: Set<number>) {
   if (!type) return;
@@ -126,8 +127,17 @@ function collect(index: TdIndex, type: TdType | undefined, props: Map<string, Td
   } else if (type.type === 'reference') {
     const declared = inProject(index, type);
     if (!declared) {
-      if (type.name === 'RefAttributes' && type.typeArguments?.[0]) handle.push(type.typeArguments[0]);
-      else for (const argument of type.typeArguments ?? []) collect(index, argument, props, handle, seen);
+      const [base, keyType] = type.typeArguments ?? [];
+      if (type.name === 'RefAttributes' && base) handle.push(base);
+      else if ((type.name === 'Omit' || type.name === 'Pick') && base && keyType) {
+        const keys = keysOf(index, keyType);
+        const taken = new Map<string, TdReflection>();
+        collect(index, base, taken, handle, seen);
+        for (const [name, child] of taken) {
+          if (keys && keys.has(name) === (type.name === 'Omit')) continue;
+          if (!props.has(name)) props.set(name, child);
+        }
+      } else for (const argument of type.typeArguments ?? []) collect(index, argument, props, handle, seen);
       return;
     }
     if (seen.has(declared.id)) return;
@@ -135,6 +145,22 @@ function collect(index: TdIndex, type: TdType | undefined, props: Map<string, Td
     if (declared.kind === Kind.TypeAlias) collect(index, declared.type, props, handle, seen);
     else for (const child of declared.children ?? []) if (!props.has(child.name)) props.set(child.name, child);
   }
+}
+
+/** The string literals `type` names, as `Omit` and `Pick` take them; undefined where it names any other type. */
+function keysOf(index: TdIndex, type: TdType): Set<string> | undefined {
+  if (type.type === 'literal') return typeof type.value === 'string' ? new Set([type.value]) : undefined;
+  if (type.type === 'union') {
+    const keys = new Set<string>();
+    for (const part of type.types ?? []) {
+      const found = keysOf(index, part);
+      if (!found) return undefined;
+      for (const key of found) keys.add(key);
+    }
+    return keys;
+  }
+  const declared = inProject(index, type);
+  return declared?.kind === Kind.TypeAlias && declared.type ? keysOf(index, declared.type) : undefined;
 }
 
 /** The project type a ref holds: `Ref<H>`, `RefObject<H | null>` and the like looked through to `H`. */

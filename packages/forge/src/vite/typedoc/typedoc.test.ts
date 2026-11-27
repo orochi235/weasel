@@ -176,6 +176,19 @@ describe('readTypedoc on the shapes a component and its props are declared in', 
     expect(readTypedoc(project(memo), 0).component('Thing', FILE)?.props.get('label')).toEqual({ description: 'The text.' });
   });
 
+  it('reads a prop redeclared beside Omit as its own, and leaves out what Omit drops and Pick does not take', () => {
+    const props: TdType = {
+      type: 'intersection',
+      types: [react('Omit', to(100, 'ButtonProps'), { type: 'literal', value: 'onClick' }), object(301, [prop(302, 'onClick', 'Fires with the row id.')])],
+    };
+    const omitted = readTypedoc(project(fn(300, props)), 0).component('Thing', FILE)!;
+    expect(omitted.props.get('onClick')).toEqual({ description: 'Fires with the row id.' });
+    expect(omitted.props.get('label')).toEqual({ description: 'The text.' });
+    const keys = { type: 'union', types: [{ type: 'literal', value: 'label' }] };
+    const picked = readTypedoc(project(fn(300, react('Pick', to(100, 'ButtonProps'), keys))), 0).component('Thing', FILE)!;
+    expect([...picked.props.keys()]).toEqual(['label']);
+  });
+
   const handle: TdReflection = {
     id: 400,
     name: 'ThingHandle',
