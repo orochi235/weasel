@@ -133,9 +133,12 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
       leans.delete(id);
       stop();
     },
-    clear(): void {
+    /** Answers whether there was a hold to end. */
+    clear(): boolean {
+      const had = leans.size > 0;
       leans.clear();
       stop();
+      return had;
     },
   };
 }
@@ -200,7 +203,16 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
   }) : null;
 
   const get = (id: string): V | undefined => (store.has(id) ? store.get(id) : parent?.get(id));
-  const getVersion = (): number => store.getVersion() + (parent?.getVersion() ?? 0);
+  /** Steps when a hold through the parent begins or ends and moves an id, which neither store's version sees. */
+  let reorders = 0;
+  const getVersion = (): number => store.getVersion() + (parent?.getVersion() ?? 0) + reorders;
+  const keepingOrder = (id: string, change: () => void): void => {
+    const before = orderOf(id);
+    change();
+    if (orderOf(id) === before) return;
+    reorders++;
+    notify();
+  };
 
   function createRelease(id: string, holding: Holding): () => void {
     let done = false;
@@ -210,7 +222,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       const leaning = held.get(id)?.token !== holding.token;
       if (leaning && leans?.get(id)?.holding !== holding) return;
       if (--holding.count > 0) return;
-      if (leaning) return leans!.drop(id);
+      if (leaning) return keepingOrder(id, () => { leans!.drop(id); });
       held.delete(id);
       const live = store.stack(id).at(-1);
       if (live) store.release(id, live);
@@ -263,7 +275,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
         }
         if (foreignParent) seeParent();
         const lean: Lean<V> = { holding: { token: {}, count: 1 }, value, source: opts.source, order: earlier(since.get(id), orderOf(id)) ?? nextOrder++ };
-        leans!.add(id, lean);
+        keepingOrder(id, () => { leans!.add(id, lean); });
         return createRelease(id, lean.holding);
       }
       if (have !== undefined && !same(have, value) && !opts.replace) throw new ExtensionConflictError(kind, id);
@@ -277,9 +289,13 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     },
     clear() {
       held.clear();
-      leans?.clear();
+      const leaned = leans?.clear() ?? false;
       since.clear();
+      const version = store.getVersion();
       store.clear();
+      if (!leaned || store.getVersion() !== version) return;
+      reorders++;
+      notify();
     },
   };
   orderOfRegistry.set(registry, orderOf);

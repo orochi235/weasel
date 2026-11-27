@@ -288,5 +288,23 @@ describe('createExtensionRegistry', () => {
     offParentAgain();
     expect(child.has('x')).toBe(false);
   });
+
+  it('reorders its entries when registering again in one tick turns its own copy into a hold through its parent', () => {
+    const parent = make();
+    const child = make(parent);
+    const offX = child.register('x', 'v');
+    parent.register('y', 'p');
+    parent.register('x', 'v');
+    const versions: number[] = [];
+    child.subscribe(() => { versions.push(child.getVersion()); });
+    offX();
+    expect(child.entries().map((e) => e.key)).toEqual(['y', 'x']);
+    const offLean = child.register('x', 'v');
+    expect(child.entries().map((e) => e.key)).toEqual(['x', 'y']);
+    expect(versions.at(-1)).toBe(child.getVersion());
+    offLean();
+    expect(child.entries().map((e) => e.key)).toEqual(['y', 'x']);
+    expect(versions.at(-1)).toBe(child.getVersion());
+  });
 });
 
