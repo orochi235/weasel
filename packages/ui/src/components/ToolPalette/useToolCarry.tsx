@@ -1,5 +1,5 @@
 import { useState, type PointerEvent, type ReactNode } from 'react';
-import { startCarry, type CarryPayload, type Tool } from '@weasel-js/routing';
+import { startCarry, swallowNextClick, type CarryPayload, type Tool } from '@weasel-js/routing';
 import { useKitSetting } from '@weasel-js/react';
 import { DragGhost } from '../DragGhost';
 import { isPrimaryPress, pastDragThreshold } from '@weasel-js/gestures';
@@ -16,14 +16,6 @@ export interface ToolCarry {
   press(tool: Tool, e: PointerEvent<HTMLButtonElement>): void;
   /** The ghost following the pointer, while a carry with one is past its slop. */
   ghost: ReactNode;
-}
-
-/** Stops the click a carry's release is about to send, whatever button it lands on (a lone tool, or a stack that
- *  would open its menu), so the carry picks nothing. */
-function swallowNextClick(): void {
-  const swallow = (e: MouseEvent): void => { e.stopPropagation(); e.preventDefault(); };
-  window.addEventListener('click', swallow, { capture: true, once: true });
-  setTimeout(() => window.removeEventListener('click', swallow, { capture: true }), 0);
 }
 
 /** The carry behind `ToolPalette`'s `carryTool` and `carryGhost`. */
@@ -49,7 +41,8 @@ export function useToolCarry(
       onEnd: ({ event }) => {
         moved ||= pastDragThreshold(origin, event, dragPx);
         setGhost(null);
-        if (moved) swallowNextClick();
+        // The release's click would pick whatever button it lands on (a lone tool, or a stack that opens its menu).
+        if (moved) swallowNextClick(window);
       },
       onCancel: () => { setGhost(null); },
     });

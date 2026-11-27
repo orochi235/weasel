@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { addCarrySurface, startCarry, type CarryStage } from './carry';
+import { addCarrySurface, startCarry, type Carry, type CarryCallbacks, type CarryStage } from './carry';
 
 const cleanups: (() => void)[] = [];
 afterEach(() => {
@@ -105,4 +105,95 @@ describe('startCarry', () => {
     document.dispatchEvent(move(1));
     expect(heard).toEqual(['inner enter']);
   });
+
+  it('carries over a surface in a shadow root while the pointer is over light content slotted into it', () => {
+    const host = document.body.appendChild(document.createElement('div'));
+    const shadow = host.attachShadow({ mode: 'open' });
+    const list = shadow.appendChild(document.createElement('div'));
+    list.getBoundingClientRect = rect(0, 1000);
+    list.append(document.createElement('slot'));
+    const item = host.appendChild(document.createElement('div'));
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => item;
+    const heard = listen(list);
+    cleanups.push(() => host.remove());
+    carryFrom(40);
+    document.dispatchEvent(move(1));
+    expect(heard).toEqual(['enter']);
+  });
+
+  it('carries over a surface while the pointer is over a child overflowing its box', () => {
+    const el = document.body.appendChild(document.createElement('div'));
+    el.getBoundingClientRect = rect(0, 100);
+    const child = el.appendChild(document.createElement('div'));
+    document.elementFromPoint = () => child;
+    const heard = listen(el);
+    cleanups.push(() => { el.remove(); delete (document as { elementFromPoint?: unknown }).elementFromPoint; });
+    carryFrom(40);
+    document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, bubbles: true, buttons: 1, clientX: 110, clientY: 50 }));
+    expect(heard).toEqual(['enter']);
+  });
+
+  it('never carries over a surface in another document, whose client points are not this one\'s', () => {
+    const frame = document.body.appendChild(document.createElement('iframe'));
+    const doc = frame.contentDocument!;
+    const el = doc.body.appendChild(doc.createElement('div'));
+    el.getBoundingClientRect = rect(0, 1000);
+    (doc as { elementFromPoint?: unknown }).elementFromPoint = () => el;
+    const heard = listen(el);
+    cleanups.push(() => frame.remove());
+    carryFrom(40);
+    document.dispatchEvent(move(1));
+    expect(heard).toEqual([]);
+  });
+
+  it('tells the source of no move after a surface canceled the carry from inside it', () => {
+    const el = document.body.appendChild(document.createElement('div'));
+    el.getBoundingClientRect = rect(0, 1000);
+    let carry: Carry | null = null;
+    const off = addCarrySurface({ element: el, receive: () => { carry?.cancel(); return 'handled'; } });
+    cleanups.push(() => { off(); el.remove(); });
+    const onMove = vi.fn();
+    const onCancel = vi.fn();
+    carry = carryFrom(40, { onMove, onCancel });
+    document.dispatchEvent(move(1));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('enters no surface after the one it left canceled the carry', () => {
+    const left = document.body.appendChild(document.createElement('div'));
+    left.getBoundingClientRect = rect(0, 100);
+    const right = document.body.appendChild(document.createElement('div'));
+    right.getBoundingClientRect = rect(100, 1000);
+    let carry: Carry | null = null;
+    const offLeft = addCarrySurface({ element: left, receive: (stage) => { if (stage === 'leave') carry?.cancel(); return 'handled'; } });
+    const heard = listen(right);
+    cleanups.push(() => { offLeft(); left.remove(); right.remove(); });
+    carry = carryFrom(40);
+    document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, bubbles: true, buttons: 1, clientX: 50, clientY: 50 }));
+    document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, bubbles: true, buttons: 1, clientX: 500, clientY: 50 }));
+    expect(carry.active).toBe(false);
+    expect(heard).toEqual([]);
+  });
 });
+
+/** A rect from `left` to `right`, and 0 to 1000 down. */
+function rect(left: number, right: number): () => DOMRect {
+  return () => ({ left, top: 0, right, bottom: 1000, x: left, y: 0, width: right - left, height: 1000, toJSON: () => ({}) });
+}
+
+/** Register `el` as a surface, logging what it hears. */
+function listen(el: Element): CarryStage[] {
+  const heard: CarryStage[] = [];
+  const off = addCarrySurface({ element: el, receive: (stage) => { heard.push(stage); return 'handled'; } });
+  cleanups.push(off);
+  return heard;
+}
+
+/** A carry pressed at (`x`, 40) on a button in the document, canceled after the test. */
+function carryFrom(x: number, cb?: CarryCallbacks): Carry {
+  const origin = document.body.appendChild(document.createElement('button'));
+  const carry = startCarry(origin, new PointerEvent('pointerdown', { pointerId: 3, buttons: 1, clientX: x, clientY: 40 }), { type: 't', value: 1 }, cb);
+  cleanups.push(() => { carry.cancel(); origin.remove(); });
+  return carry;
+}

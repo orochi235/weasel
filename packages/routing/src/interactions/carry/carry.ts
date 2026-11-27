@@ -76,16 +76,18 @@ function contains(r: DOMRect, x: number, y: number): boolean {
   return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
 }
 
-/** The innermost surface under the point that nothing else on the page covers. */
-function surfaceAt(x: number, y: number): CarrySurface | null {
+/** The innermost surface in `doc` under the point that nothing else on the page covers. A surface in another
+ *  document is skipped: the point is in `doc`'s client space, not its. */
+function surfaceAt(doc: Document, x: number, y: number): CarrySurface | null {
   const hits = new Map<Node, Element | null>();
   let best: CarrySurface | null = null;
   for (const s of surfaces) {
-    if (!contains(s.element.getBoundingClientRect(), x, y)) continue;
+    if (s.element.ownerDocument !== doc) continue;
     const root = s.element.getRootNode();
     if (!hits.has(root)) hits.set(root, elementAt(s.element, x, y));
     const hit = hits.get(root);
-    if (hit ? !s.element.contains(hit) : canHitTest(s.element)) continue;
+    // A hit test finds a child overflowing the surface's box; only without one does the box decide.
+    if (hit ? !containsComposed(s.element, hit) : canHitTest(s.element) || !contains(s.element.getBoundingClientRect(), x, y)) continue;
     if (best && containsComposed(s.element, best.element)) continue;
     best = s;
   }
@@ -107,7 +109,9 @@ export function startCarry(
   cb: CarryCallbacks = {},
 ): Carry {
   const pointerId = down.pointerId;
+  const doc = origin.ownerDocument;
   let over: CarrySurface | null = null;
+  let ended = false;
 
   const leave = (at: CarryPointer): void => {
     const was = over;
@@ -116,12 +120,14 @@ export function startCarry(
   };
 
   const step = (at: CarryPointer): void => {
-    const next = surfaceAt(at.clientX, at.clientY);
+    const next = surfaceAt(doc, at.clientX, at.clientY);
     if (next === over) {
       over?.receive('move', payload, at, pointerId);
       return;
     }
     leave(at);
+    // The leave can cancel the carry, which must enter nothing after it.
+    if (ended) return;
     over = next;
     next?.receive('enter', payload, at, pointerId);
   };
@@ -132,7 +138,7 @@ export function startCarry(
     onMove: (e) => {
       last = e;
       step(e);
-      cb.onMove?.(e);
+      if (!ended) cb.onMove?.(e);
     },
     onEnd: (e) => {
       step(e);
@@ -142,6 +148,7 @@ export function startCarry(
       cb.onEnd?.({ taken, event: e });
     },
     onCancel: (reason) => {
+      ended = true;
       leave(last);
       cb.onCancel?.(reason);
     },

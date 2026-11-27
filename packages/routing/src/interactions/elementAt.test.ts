@@ -19,3 +19,20 @@ describe('containsComposed', () => {
     expect(containsComposed(document.body, inner)).toBe(false);
   });
 });
+
+describe('containsComposed, slotted content', () => {
+  it('counts light content slotted into a shadow root as inside the element holding the slot', () => {
+    const host = document.body.appendChild(document.createElement('div'));
+    const list = document.createElement('div');
+    list.appendChild(document.createElement('slot'));
+    host.attachShadow({ mode: 'open' }).appendChild(list);
+    const item = host.appendChild(document.createElement('div'));
+    const label = item.appendChild(document.createElement('span'));
+    expect(containsComposed(list, item)).toBe(true);
+    expect(containsComposed(list, label)).toBe(true);
+    const aside = document.createElement('div');
+    host.shadowRoot!.appendChild(aside);
+    expect(containsComposed(aside, label)).toBe(false);
+    host.remove();
+  });
+});
