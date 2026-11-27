@@ -1,4 +1,4 @@
-import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Affine, type Path } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
 import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
@@ -14,22 +14,23 @@ import {
   INHERIT, resolveFill, resolveStroke, strokeTrimKey,
 } from '@weasel-js/paint';
 
-/** A derived part's path framed by one pose, and its trimmed outline under one trim. */
+/** A derived part's path framed by one pose frame, and its trimmed outline under one trim. */
 interface FramedPart {
-  pose: unknown;
+  frame: Affine;
   world: Path;
   trimKey?: string;
   trimmed?: TrimmedOutline;
 }
 
 // Kept per part path, which is immutable, so the length tables and corners built on the framed
-// outline are reused across picks; a new pose object or trim replaces the entry.
+// outline are reused across picks; a new frame or trim replaces the entry. Keyed on the frame's values, not
+// the pose object: a per-frame override rewrites one pose buffer in place.
 const FRAMED = new WeakMap<Path, FramedPart>();
 
-function framedPart(path: Path, pose: unknown): FramedPart {
+function framedPart(path: Path, pose: unknown, frame: Affine): FramedPart {
   const hit = FRAMED.get(path);
-  if (hit && hit.pose === pose) return hit;
-  const made: FramedPart = { pose, world: pathThroughPoseFrame(path, pose) };
+  if (hit && hit.frame.every((v, i) => v === frame[i])) return hit;
+  const made: FramedPart = { frame, world: pathThroughPoseFrame(path, pose) };
   FRAMED.set(path, made);
   return made;
 }
@@ -140,10 +141,10 @@ export function partsCover(
   opts: PickReach & { inherited?: InheritedPaint },
 ): boolean {
   const d = node.data as PaintData | null;
-  const framed = poseFrameOf(pose) !== null;
+  const frame = poseFrameOf(pose);
   return parts.some((part) => {
     const { fill, stroke } = resolvePartPaint(part, d, opts.inherited);
-    const framing = framed ? framedPart(part.path, pose) : null;
+    const framing = frame ? framedPart(part.path, pose, frame) : null;
     const world = framing?.world ?? part.path;
     const ink = { filled: fill !== null, ...inkReach(stroke, opts.scale) };
     const trim = stroke?.trim;

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { INHERIT, type Fill, type Stroke, solid, solidStroke } from '@weasel-js/paint';
 import { pathFromParts, type DerivedPart } from 'core/scene/derivedParts';
-import { DERIVED_PAINTER } from './derivedPainter';
+import { DERIVED_PAINTER, partsCover } from './derivedPainter';
 
 const RECT = { kind: 'rect', x: 0, y: 0, width: 10, height: 10 } as const;
 const NODE_FILL: Fill = { paint: solid('#ff0000') };
@@ -63,5 +63,19 @@ describe('kit:derived — the drawn box of a path in parts', () => {
       { derivedPath: RECT },
     );
     expect(b).toEqual({ x: 0, y: 0, width: 10, height: 10 });
+  });
+});
+
+describe('kit:derived — picking a path in parts under a pose', () => {
+  it('picks against the pose as it stands, when an override rewrites one pose buffer in place', () => {
+    const fill = { paint: solid('#00ff00') };
+    const part = { kind: 'rect', x: 0, y: 0, width: 100, height: 10 } as const;
+    const parts: DerivedPart[] = [{ path: part, fill, stroke: null }];
+    const node = { id: 'n', data: {}, dependsOn: ['a'] };
+    const pose = { x: 0, y: 0, width: 100, height: 10, rotation: 0.001 };
+    expect(partsCover(node, parts, pose, 90, 5, {})).toBe(true);
+    pose.rotation = Math.PI / 2;
+    expect(partsCover(node, parts, pose, 90, 5, {})).toBe(false);
+    expect(partsCover(node, parts, pose, 50, 40, {})).toBe(true);
   });
 });
