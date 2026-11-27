@@ -17,13 +17,19 @@ function testerOf(inTree: Node): Pick<DocumentOrShadowRoot, 'elementFromPoint'> 
   return typeof doc.elementFromPoint === 'function' ? (doc as DocumentOrShadowRoot) : null;
 }
 
-/** Whether `inner` is `outer` or inside it, counting what sits in a shadow root as inside its host. */
+/** The parent `n` is laid out in: its slot when it is slotted, the host when its parent is a shadow root. */
+export function flatParentOf(n: Node): Element | null {
+  const slot = (n as Partial<Element>).assignedSlot;
+  if (slot) return slot;
+  if (n.parentElement) return n.parentElement;
+  const p = n.parentNode;
+  // Only a shadow root's `host` is a node: a detached `<a>` topping its subtree has a URL string there.
+  return p?.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? (p as Partial<ShadowRoot>).host ?? null : null;
+}
+
+/** Whether `inner` is `outer` or inside it as laid out: what sits in a shadow root counts as inside its host, and
+ *  what is slotted counts as inside its slot. */
 export function containsComposed(outer: Node, inner: Node): boolean {
-  for (let n: Node | null = inner; n; ) {
-    if (outer.contains(n)) return true;
-    const root = n.getRootNode();
-    // Only a shadow root's `host` is a node: a detached `<a>` topping its subtree has a URL string there.
-    n = root.nodeType === Node.DOCUMENT_FRAGMENT_NODE ? (root as Partial<ShadowRoot>).host ?? null : null;
-  }
+  for (let n: Node | null = inner; n; n = flatParentOf(n)) if (outer.contains(n)) return true;
   return false;
 }
