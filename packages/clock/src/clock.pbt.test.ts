@@ -272,7 +272,9 @@ describe('clock laws', () => {
   // This law is about a seek's history, not float edges: values below 1e-300 are 0 here, since a step within an ulp
   // of the run's start or end can stop one clock there and not the other, for good.
   const tiny = (v: number | undefined): number | undefined => (v !== undefined && Math.abs(v) < 1e-300 ? 0 : v);
-  const lawOps = ops.map((list) => list.map((o) => ({ ...o, dt: tiny(o.dt), to: tiny(o.to) })));
+  const lawOps = ops.map((list) =>
+    list.map((o) => (o.kind === 'sync' ? { ...o, dt: tiny(o.dt) ?? 0 } : { ...o, to: tiny(o.to) ?? 0 })),
+  );
   const lawSpec = finiteSpec.map((s) => ({ ...s, rate: tiny(s.rate) }));
   const lawTo = fc.double({ min: 0, max: 5000, noNaN: true }).map((v) => tiny(v) ?? 0);
 
