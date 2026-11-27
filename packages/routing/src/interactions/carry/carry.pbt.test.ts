@@ -1,7 +1,8 @@
 /**
  * Property test of a carry over random nested and overlapping surfaces: whatever order the surfaces registered in,
- * each step reaches the innermost surface under the pointer that nothing covers, and every surface hears an enter
- * before its moves and a leave or a drop after them, once a visit, and nothing between visits.
+ * each step reaches the innermost surface under the pointer that nothing covers, over its own box or a child's, and
+ * every surface hears an enter before its moves and a leave or a drop after them, once a visit, and nothing between
+ * visits.
  */
 import { afterEach, expect, it } from 'vitest';
 import fc from 'fast-check';
@@ -75,16 +76,17 @@ it('reaches the innermost uncovered surface under the pointer, whatever order th
       const b = carry(bs, shuffled, path);
       expect(b.log).toEqual(a.log);
       path.forEach((p, i) => {
-        // The topmost element under the point, then the nearest of it and its ancestors that is a surface whose
-        // own box holds the point: an element that is no surface covers whatever is under it.
+        // The topmost element under the point, then the nearest of it and its ancestors that is a surface, whether
+        // or not its own box holds the point: an element that is no surface covers whatever is under it.
         let top = -1;
         for (const j of a.docOrder) if (inside(bs[j]!, p.x, p.y)) top = j;
         let want = top;
-        while (want >= 0 && !(registered.includes(want) && inside(bs[want]!, p.x, p.y))) want = bs[want]!.parent;
+        while (want >= 0 && !registered.includes(want)) want = bs[want]!.parent;
         if (top >= 0 && want !== top) t.hit('under an element that is no surface');
         expect(a.reached[i], `step ${i} at ${p.x},${p.y}`).toBe(want >= 0 ? want : null);
         if (want >= 0 && bs[want]!.parent >= 0 && inside(bs[bs[want]!.parent]!, p.x, p.y)) t.hit('inside another');
         if (want >= 0 && bs.some((box, j) => j !== want && inside(box, p.x, p.y))) t.hit('overlap');
+        if (want >= 0 && !inside(bs[want]!, p.x, p.y)) t.hit('over a child past its box');
       });
       // Each surface's own log: enter, moves, then a leave or a drop, visit after visit.
       for (const s of registered) {
@@ -93,5 +95,5 @@ it('reaches the innermost uncovered surface under the pointer, whatever order th
       }
     },
   ), runs(300));
-  t.expectHit('inside another', 'overlap', 'under an element that is no surface');
+  t.expectHit('inside another', 'overlap', 'under an element that is no surface', 'over a child past its box');
 });

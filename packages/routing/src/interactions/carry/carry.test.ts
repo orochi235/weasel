@@ -121,6 +121,18 @@ describe('startCarry', () => {
     expect(heard).toEqual(['enter']);
   });
 
+  it('carries over a surface while the pointer is over a child overflowing its box', () => {
+    const el = document.body.appendChild(document.createElement('div'));
+    el.getBoundingClientRect = rect(0, 100);
+    const child = el.appendChild(document.createElement('div'));
+    document.elementFromPoint = () => child;
+    const heard = listen(el);
+    cleanups.push(() => { el.remove(); delete (document as { elementFromPoint?: unknown }).elementFromPoint; });
+    carryFrom(40);
+    document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, bubbles: true, buttons: 1, clientX: 110, clientY: 50 }));
+    expect(heard).toEqual(['enter']);
+  });
+
 });
 
 /** A rect from `left` to `right`, and 0 to 1000 down. */

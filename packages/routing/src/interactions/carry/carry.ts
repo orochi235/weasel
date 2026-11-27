@@ -81,11 +81,11 @@ function surfaceAt(x: number, y: number): CarrySurface | null {
   const hits = new Map<Node, Element | null>();
   let best: CarrySurface | null = null;
   for (const s of surfaces) {
-    if (!contains(s.element.getBoundingClientRect(), x, y)) continue;
     const root = s.element.getRootNode();
     if (!hits.has(root)) hits.set(root, elementAt(s.element, x, y));
     const hit = hits.get(root);
-    if (hit ? !containsComposed(s.element, hit) : canHitTest(s.element)) continue;
+    // A hit test finds a child overflowing the surface's box; only without one does the box decide.
+    if (hit ? !containsComposed(s.element, hit) : canHitTest(s.element) || !contains(s.element.getBoundingClientRect(), x, y)) continue;
     if (best && containsComposed(s.element, best.element)) continue;
     best = s;
   }
