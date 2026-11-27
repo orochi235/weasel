@@ -45,8 +45,3 @@ export function containsComposed(outer: Node, inner: Node): boolean {
   for (let n: Node | null = inner; n; n = flatParentOf(n)) if (outer.contains(n)) return true;
   return false;
 }
-
-/** `el`'s parent in the flat tree, which is the one its box is laid out in: the slot it is assigned to, else its
- *  parent, else the host of the shadow root it tops. */
-export const flatParentOf = (el: Element): Element | null =>
-  el.assignedSlot ?? el.parentElement ?? (el.parentNode as Partial<ShadowRoot> | null)?.host ?? null;
