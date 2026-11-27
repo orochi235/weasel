@@ -48,4 +48,14 @@ describe('forge serving', () => {
     const { root, serve } = drive(['../../packages/*/src/**/*.stories.tsx', './src/**/*.stories.tsx', '../lab/One.stories.tsx']);
     expect(serve().mock.calls[0]?.[0]).toEqual([join(root, '../../packages'), join(root, '../lab')]);
   });
+
+  it("closes the capture endpoint of the server closing, not the one a restart has just opened", async () => {
+    const { plugin, serve } = drive([]);
+    serve();
+    serve();
+    await hook(plugin.closeServer).call(undefined);
+    expect(endpoints.map((e) => e.close.mock.calls.length)).toEqual([1, 0]);
+    await hook(plugin.closeServer).call(undefined);
+    expect(endpoints.map((e) => e.close.mock.calls.length)).toEqual([1, 1]);
+  });
 });

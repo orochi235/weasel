@@ -139,7 +139,8 @@ export function forge(options: ForgeOptions): Plugin[] {
   const shellUnder = (at: string) => readShellFields(options.shellConfig ? resolve(at, options.shellConfig) : undefined, logger);
 
   const modules = virtualModules(options, { index, files, root: () => root, base: () => base });
-  let capture: CaptureEndpoint | null = null;
+  /** Each open server's capture endpoint, oldest first: a restart opens the new server's before closing the old. */
+  const captures: CaptureEndpoint[] = [];
 
   /** Re-reads a story file after `event` and pushes the index when it changed; true when it did. */
   async function reindex(server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink'): Promise<boolean> {
@@ -195,15 +196,15 @@ export function forge(options: ForgeOptions): Plugin[] {
       },
       hotUpdate({ modules, server }) {
         if (this.environment.name !== 'client') return;
-        capture?.revise();
+        for (const capture of captures) capture.revise();
         for (const file of storiesReaching(modules, files())) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
       },
       configureServer(server) {
         watchSources(server, { files: [...files().keys()], stories: options.stories, componentGraph: deps.componentGraph, reindex, redeps: deps.redeps, logError });
-        capture = servePages(server, base, () => shellUnder(root));
+        captures.push(servePages(server, base, () => shellUnder(root)));
         serveIssues(server, base, () => root);
       },
-      closeServer: () => capture?.close(),
+      closeServer: () => captures.shift()?.close(),
     },
   ];
 }
