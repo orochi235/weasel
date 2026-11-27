@@ -153,7 +153,7 @@ export const viewportDragPanAction = defineAction({
             minSpeed: inertia.minSpeed,
             boundary: inertia.boundary,
             viewBounds: inertia.bounds,
-            initialPosition: { x: v.get().x, y: v.get().y },
+            position: () => v.get(),
             onTick: (dx, dy) => {
               const cur = v.get();
               v.set({ ...cur, x: cur.x + dx, y: cur.y + dy });

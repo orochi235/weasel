@@ -40,8 +40,12 @@ export interface DecayLoopOptions {
    *   by `SPRING_DAMPING` per bounce so the motion settles naturally.
    */
   boundary?: 'stop' | 'bounce' | 'spring';
-  /** Starting position for internal boundary tracking. Required when `viewBounds` is set. */
+  /** Starting position for internal boundary tracking, used when no `position` is given. */
   initialPosition?: { x: number; y: number };
+  /** Reads the live position each frame for boundary checks, so a move made by
+   *  anything else mid-coast is seen. Without it, the loop tracks its own sum of
+   *  deltas from `initialPosition`. */
+  position?: () => { x: number; y: number };
   onTick: (dx: number, dy: number) => void;
   onEnd?: () => void;
 }
@@ -82,6 +86,7 @@ export function useDecayLoop() {
     friction: number; minSpeed: number;
     lastTime: number | null;
     posX: number; posY: number;
+    position: (() => { x: number; y: number }) | undefined;
     viewBounds: PanBounds | undefined;
     boundary: 'stop' | 'bounce' | 'spring' | undefined;
     onTick: (dx: number, dy: number) => void;
@@ -113,6 +118,7 @@ export function useDecayLoop() {
     let dy = s.vy * dt;
     if (s.viewBounds && s.boundary) {
       const { minX, maxX, minY, maxY } = s.viewBounds;
+      if (s.position) { const p = s.position(); s.posX = p.x; s.posY = p.y; }
       const ax = hitWall(s.boundary, s.posX, dx, s.vx, minX, maxX);
       const ay = hitWall(s.boundary, s.posY, dy, s.vy, minY, maxY);
       dx = ax.d; s.vx = ax.v;
@@ -145,14 +151,14 @@ export function useDecayLoop() {
   const start = useCallback((config: DecayLoopOptions) => {
     checkInertia('useDecayLoop', config);
     cancel();
-    const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, onTick, onEnd } = config;
+    const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, position, onTick, onEnd } = config;
     const speed = Math.hypot(velocity.vx, velocity.vy);
     // A non-finite velocity is a bad measurement, not a fling: friction never brings it down.
     if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.(); return; }
     stateRef.current = {
       vx: velocity.vx, vy: velocity.vy, friction, minSpeed, lastTime: null,
       posX: initialPosition?.x ?? 0, posY: initialPosition?.y ?? 0,
-      viewBounds, boundary,
+      position, viewBounds, boundary,
       onTick, onEnd,
     };
     frameLoop.request();

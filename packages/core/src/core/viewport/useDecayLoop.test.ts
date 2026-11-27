@@ -280,4 +280,28 @@ describe('useDecayLoop', () => {
     act(() => { stepRAF(1); });
     expect(ticks).toEqual([0]);
   });
+
+  it('checks bounds against the live position when given a position reader', () => {
+    const ticks: number[] = [];
+    let x = 0;
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: 1, vy: 0 },
+        friction: 0.999999,
+        minSpeed: 0.001,
+        viewBounds: { maxX: 10 },
+        boundary: 'stop',
+        position: () => ({ x, y: 0 }),
+        onTick: (dx) => { x += dx; ticks.push(dx); },
+      });
+    });
+    act(() => { stepRAF(1); });
+    act(() => { stepRAF(1); });  // x: 0 -> 1
+    x = 9.5;                     // something else moves the view mid-coast
+    act(() => { stepRAF(1); });  // a full step would reach 10.5; stops at 10
+    expect(ticks[0]).toBeCloseTo(1);
+    expect(ticks[1]).toBeCloseTo(0.5);
+    expect(x).toBeCloseTo(10);
+  });
 });
