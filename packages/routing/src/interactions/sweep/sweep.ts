@@ -81,6 +81,7 @@ const MAX_STEPS = 4096;
 
 /** The item under client point (`x`, `y`) in `surface`, or `null`. */
 function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number, y: number): SweepItem<K> | null {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
   let el = elementAt(surface, x, y);
   if (!el || !surface.contains(el)) return null;
   for (; el && el !== surface; el = el.parentElement) {

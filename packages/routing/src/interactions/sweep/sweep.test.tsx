@@ -8,6 +8,7 @@ import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
 import { openPointerSession } from '../pointerSession';
+import { ActionDisabledReason } from '../actions/action';
 import { createSweepAction, type SweepOptions } from './sweep';
 
 const KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];
@@ -95,6 +96,18 @@ describe('createSweepAction', () => {
       pointer(at(5), 'pointerup', 47);
     });
     expect(entered).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('declines a press whose point is no finite number, without hit-testing it', () => {
+    const surface = document.createElement('div');
+    document.body.append(surface);
+    document.elementFromPoint = (x: number, y: number) => {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) throw new TypeError('non-finite');
+      return surface;
+    };
+    const sweep = createSweepAction({ surface: () => surface, keyOf: () => 'a', begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: NaN, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
+    surface.remove();
   });
 
   it('enters the pressed item, then every item the drag crosses, in order', () => {
