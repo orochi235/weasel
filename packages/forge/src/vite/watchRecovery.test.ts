@@ -104,6 +104,18 @@ describe('watchRecovery', () => {
     expect(await get('/part.ts')).toContain('part = 1');
   });
 
+  it('leaves an edit to the watcher when its event arrives late', async () => {
+    const { root, server, get, warnings } = await start([watchRecovery({ quietMs: QUIET_MS })], {
+      'part.ts': 'export const part = 0;\n',
+    });
+    expect(await get('/part.ts')).toContain('part = 0');
+    edit(join(root, 'part.ts'), 'export const part = 1;\n');
+    await new Promise((done) => setTimeout(done, QUIET_MS * 3));
+    server.watcher.emit('change', join(root, 'part.ts'));
+    await new Promise((done) => setTimeout(done, 1000));
+    expect(warnings).toEqual([]);
+  });
+
   it('drops a served file deleted with no event from the page once the watcher has been quiet', async () => {
     const { root, get, warnings } = await start([watchRecovery({ quietMs: QUIET_MS })], { 'part.ts': 'export const part = 0;\n' });
     expect(await get('/part.ts')).toContain('part = 0');

@@ -10,7 +10,8 @@ export interface WatchRecoveryOptions {
   /**
    * How long the watcher must have reported nothing before the served files are checked for changes it missed,
    * and how often they are checked while it stays quiet, in milliseconds. Default 2000. Past what one timer holds,
-   * `Infinity` among them, the files are checked only as they are served. Throws a `RangeError` for a value that
+   * `Infinity` among them, the files are checked only as they are served. A change a check finds is pushed once it
+   * has gone unreported for half a second, so the watcher's own event is not replayed twice. Throws a `RangeError` for a value that
    * is not above 0.
    */
   quietMs?: number;
@@ -20,6 +21,8 @@ const QUIET_MS = 2000;
 // `@weasel-js/registry`'s LONGEST_TIMER_MS: vitest's config loads this file before any package is built.
 export const LONGEST_TIMER_MS = 2 ** 31 - 1;
 const STALE_READ_MS = 60_000;
+// Longer than a healthy watcher takes to report a write: fsevents runs ~100 ms late, `settledWatch` holds one 50 ms.
+const WATCH_LATENCY_MS = 500;
 
 const mtimeOf = (file: string): number | undefined => {
   try {
@@ -72,6 +75,8 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
   let lastEvent = 0;
   let replaying = false;
   let timer: ReturnType<typeof setInterval> | undefined;
+  /** Each file a quiet check found changed, and when it first did; it is replayed once the watcher is past due. */
+  const suspects = new Map<string, number>();
 
   const restamp = (file: string) => {
     const modules = stamps.get(file);
@@ -97,6 +102,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
 
   const recover = (file: string, event: 'change' | 'unlink', outcome: string) => {
     if (!server) return;
+    suspects.delete(file);
     const name = relative(server.config.root, file);
     if (event === 'unlink') {
       forget(file);
@@ -115,10 +121,15 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
   };
 
   const sweep = () => {
-    if (Date.now() - lastEvent < quietMs) return;
+    const now = Date.now();
+    if (now - lastEvent < quietMs) return;
+    for (const file of suspects.keys()) if (!stamps.has(file)) suspects.delete(file);
     for (const file of [...stamps.keys()]) {
       const event = missed(file);
-      if (event) recover(file, event, 'pushing it to the page');
+      const since = suspects.get(file);
+      if (!event) suspects.delete(file);
+      else if (since === undefined) suspects.set(file, now);
+      else if (now - since >= WATCH_LATENCY_MS) recover(file, event, 'pushing it to the page');
     }
   };
 
