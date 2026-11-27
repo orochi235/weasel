@@ -417,6 +417,12 @@ describe('viewportDragPanAction inertia', () => {
     expect(two.calls[0].velocity.vx).toBeCloseTo(one.calls[0].velocity.vx / 2);
   });
 
+  it('measures the coast stop speed on screen, whatever the zoom', () => {
+    const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 3, y: 2 } });
+    fling(view, { inertia: {} });
+    expect(calls[0].speedScale).toEqual({ x: 3, y: 2 });
+  });
+
   it('locks coast velocity to the axis the drag was locked to', () => {
     const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     fling(view, { axis: 'x', inertia: {} });

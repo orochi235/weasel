@@ -151,6 +151,7 @@ export const viewportDragPanAction = defineAction({
             velocity: { vx: -vx / scale.x, vy: -vy / scale.y },
             friction: inertia.friction,
             minSpeed: inertia.minSpeed,
+            speedScale: scale,
             boundary: inertia.boundary,
             viewBounds: inertia.bounds,
             position: () => v.get(),

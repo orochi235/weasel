@@ -16,7 +16,7 @@ export interface PanBounds {
 export interface InertiaOptions {
   /** Share of speed kept each 60 Hz frame, in (0, 1). Default 0.92. */
   friction?: number;
-  /** Speed, in units per ms, below which the coast ends; positive. Default 0.01. */
+  /** Speed, in screen pixels per ms, below which the coast ends; positive. Default 0.01. */
   minSpeed?: number;
   /** What to do when inertial pan reaches `bounds`. Default: no clamping. */
   boundary?: 'stop' | 'bounce' | 'spring';
@@ -30,6 +30,9 @@ export interface DecayLoopOptions {
   velocity: { vx: number; vy: number };
   friction?: number;
   minSpeed?: number;
+  /** Per-axis factor turning `velocity` into the units `minSpeed` is in: a view's
+   *  scale, when the velocity is in world units and `minSpeed` in screen pixels. Default 1. */
+  speedScale?: { x: number; y: number };
   /** Bounds for boundary clamping. Requires `boundary` to take effect. */
   viewBounds?: PanBounds;
   /**
@@ -87,6 +90,7 @@ export function useDecayLoop() {
   const stateRef = useRef<{
     vx: number; vy: number;
     friction: number; minSpeed: number;
+    kx: number; ky: number;
     lastTime: number | null;
     posX: number; posY: number;
     position: (() => { x: number; y: number }) | undefined;
@@ -110,8 +114,7 @@ export function useDecayLoop() {
     const f = Math.pow(s.friction, dt / 16.67);
     s.vx *= f;
     s.vy *= f;
-    const speed = Math.hypot(s.vx, s.vy);
-    if (speed < s.minSpeed) {
+    if (Math.hypot(s.vx * s.kx, s.vy * s.ky) < s.minSpeed) {
       stateRef.current = null;
       frameLoop.cancel();
       s.onEnd?.('end');
@@ -160,11 +163,13 @@ export function useDecayLoop() {
     }
     cancel();
     const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, position, onTick, onEnd } = config;
-    const speed = Math.hypot(velocity.vx, velocity.vy);
+    const kx = Math.abs(config.speedScale?.x ?? 1);
+    const ky = Math.abs(config.speedScale?.y ?? 1);
+    const speed = Math.hypot(velocity.vx * kx, velocity.vy * ky);
     // A non-finite velocity is a bad measurement, not a fling: friction never brings it down.
     if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.('end'); return; }
     stateRef.current = {
-      vx: velocity.vx, vy: velocity.vy, friction, minSpeed, lastTime: null,
+      vx: velocity.vx, vy: velocity.vy, friction, minSpeed, kx, ky, lastTime: null,
       posX: initialPosition?.x ?? 0, posY: initialPosition?.y ?? 0,
       position, viewBounds, boundary,
       onTick, onEnd,

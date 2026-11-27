@@ -333,4 +333,20 @@ describe('useDecayLoop', () => {
     unmount();
     expect(unmounted).toHaveBeenCalledExactlyOnceWith('cancel');
   });
+
+  it('compares minSpeed to the velocity times speedScale, so a coast lasts as long on screen at any zoom', () => {
+    const ticksAt = (zoom: number) => {
+      const onTick = vi.fn();
+      const { result } = renderHook(() => useDecayLoop());
+      act(() => {
+        result.current.start({
+          velocity: { vx: 1 / zoom, vy: 0 }, friction: 0.5, minSpeed: 0.1, speedScale: { x: zoom, y: zoom }, onTick,
+        });
+      });
+      for (let i = 0; i < 12; i++) act(() => { stepRAF(16); });
+      return onTick.mock.calls.length;
+    };
+    expect(ticksAt(4)).toBe(ticksAt(1));
+    expect(ticksAt(0.25)).toBe(ticksAt(1));
+  });
 });
