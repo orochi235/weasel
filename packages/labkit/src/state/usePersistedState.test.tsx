@@ -3,6 +3,7 @@ import { createMemoryAdapter } from '@weasel-js/storage';
 import { describe, expect, it } from 'vitest';
 import { labPrefix } from './labRecords';
 import { Persistence } from './Persistence';
+import { catchRecords } from './records.fixture';
 import { SingletonExperimentProvider } from './SingletonExperiment';
 import { type PersistedStateOptions, usePersistedState } from './usePersistedState';
 
@@ -79,6 +80,7 @@ describe('usePersistedState', () => {
 
   it('scopes to the trial it is in, unless asked for the lab', async () => {
     const backing = new Map<string, unknown>();
+    const records = catchRecords();
     render(
       <SingletonExperimentProvider
         id="t:1"
@@ -89,13 +91,15 @@ describe('usePersistedState', () => {
       >
         <Tab label="own" />
         <Tab label="shared" name="shared" options={{ scope: 'lab' }} />
+        <records.Catch />
       </SingletonExperimentProvider>,
     );
     await screen.findByLabelText('own');
     act(() => screen.getByText('set own').click());
     act(() => screen.getByText('set shared').click());
-    await waitFor(() => expect(backing.get(`${P}value:trial:t%3A1:tab`)).toBe('color'));
-    await waitFor(() => expect(backing.get(`${P}value:lab:shared`)).toBe('color'));
+    await records.flush();
+    expect(backing.get(`${P}value:trial:t%3A1:tab`)).toBe('color');
+    expect(backing.get(`${P}value:lab:shared`)).toBe('color');
   });
 
   it('keeps two components with one name in step', async () => {

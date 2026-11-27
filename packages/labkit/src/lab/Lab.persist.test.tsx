@@ -8,6 +8,7 @@ import type { Instrument } from '../instrument/types';
 import { CURRENT_DOCUMENT_VERSION } from '../state/document';
 import { labPrefix } from '../state/labRecords';
 import { labIndexedDbAdapter, resetDefaultStorage } from '../state/labStorage';
+import { catchRecords } from '../state/records.fixture';
 import { Lab } from './Lab';
 import { LabContext, type LabContextValue } from './LabContext';
 
@@ -166,8 +167,11 @@ describe('<Lab> with a storageKey', () => {
         return data as object;
       },
     };
+    const records = catchRecords();
     renderWithIcons(
-      <Lab instruments={[picky]} storageKey="bad" storage={createMemoryAdapter(backing)} />,
+      <Lab instruments={[picky]} storageKey="bad" storage={createMemoryAdapter(backing)}>
+        <records.Catch />
+      </Lab>,
     );
     await screen.findByTestId('stub-content');
     const list = screen.getByRole('list', { name: 'Stored records that failed to load' });
@@ -180,7 +184,8 @@ describe('<Lab> with a storageKey', () => {
       screen.getByRole('button', { name: 'Discard Trial "Mine" (Stub)' }).click(),
     );
     expect(screen.queryByRole('list', { name: 'Stored records that failed to load' })).toBeNull();
-    await waitFor(() => expect(backing.has(`${P}trial:broken`)).toBe(false));
+    await records.flush();
+    expect(backing.has(`${P}trial:broken`)).toBe(false);
     expect(backing.has(`${P}trial:ok`)).toBe(true);
   });
 
