@@ -26,8 +26,8 @@ import { useControlHold } from '../Disabled/controlHold';
 import { useLayerHistory, type LayerSnapshot } from './useLayerHistory';
 import { useLayerGesture } from './useLayerGesture';
 
-/** Props for {@link LayeredCurveEditor}. Disabled or read-only, no press, key, or context menu reaches a layer, and
- *  undo and redo do nothing; disabled with no reason, the plot and every mark in it leave the tab order. */
+/** Props for {@link LayeredCurveEditor}. Disabled or read-only, no press, key, or context menu reaches a layer
+ *  (read-only, see `readOnlyPresses`), and undo and redo do nothing; disabled with no reason, the plot and every mark in it leave the tab order. */
 export interface LayeredCurveEditorProps extends HoldProps {
   /** The layers — `FunctionLayer`, `KeyframeLayer`, `CustomLayer` — and any plain SVG, drawn in order: a later
    *  child paints over an earlier one, and the topmost layer claiming a press takes it. */
@@ -53,6 +53,10 @@ export interface LayeredCurveEditorProps extends HoldProps {
    *  keeps its own undo or builds ops from `onChange`, or each step is
    *  recorded twice. */
   history?: boolean;
+
+  /** Read-only, presses and keys still reach the layers, so a key or segment can be selected; the consumer refuses
+   *  whatever edit a layer reports. Undo, redo, and the context menu stay refused. Default false. */
+  readOnlyPresses?: boolean;
 
   /** Accessible name for the plot, which is exposed as a group so the
    *  focusable marks layers render inside it stay reachable. */
@@ -81,6 +85,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
 
   const historyEnabled = props.history !== false;
   const hold = useControlHold(props);
+  const presses = props.readOnlyPresses && !hold.disabled;
 
   const { ctxFor: makeCtx, base: renderCtxBase } = usePlotLayerCtx(xRange, yRange, width, height);
   const { register, layers } = useLayerRegistry();
@@ -129,6 +134,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
     // A drag in flight owns the edit until it ends; Escape reaches its session, which cancels it.
     if (busy()) return;
     const step = historyEnabled ? historyKey(e) : null;
+    if (step && hold.refuses) return;
     if (step) {
       if (step === 'redo') redo();
       else undo();
@@ -142,7 +148,7 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       for (const edit of made) snap.set(edit.entry, edit.next);
       return snap;
     }, settleEdit);
-  }, [busy, historyEnabled, undo, redo, makeCtx, snapshot, settleEdit, layers]);
+  }, [busy, historyEnabled, hold.refuses, undo, redo, makeCtx, snapshot, settleEdit, layers]);
 
   const onSvgContextMenu = useCallback((
     e: ReactMouseEvent<SVGSVGElement>,
@@ -180,9 +186,9 @@ export function LayeredCurveEditor(props: LayeredCurveEditorProps) {
       aria-describedby={hold.focus['aria-describedby']}
       data-held={hold.held}
       inert={hold.unreachable || undefined}
-      onPointerDown={hold.gate(onSvgPointerDown)}
+      onPointerDown={presses ? onSvgPointerDown : hold.gate(onSvgPointerDown)}
       onContextMenu={hold.gate(onSvgContextMenu)}
-      onKeyDown={hold.gate(onSvgKeyDown)}
+      onKeyDown={presses ? onSvgKeyDown : hold.gate(onSvgKeyDown)}
     >
       <LayerHostContext.Provider value={host}>{children}</LayerHostContext.Provider>
     </Plot2D>

@@ -143,6 +143,8 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
           // Clears a key at the track's start edge, which hangs into the gutter.
           yTicks={{ labels: 'outside', gap: 10 }}
           history={false}
+          // Read-only still selects; `edits` refuses what a press would change.
+          readOnlyPresses
         >
           <KeyframeLayer
             id="keys"
