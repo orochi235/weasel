@@ -4,82 +4,12 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## In flight: batch/2026-11-27-scour
+## Next batch
 
-This section rides on the batch branch; delete it in the commit that merges the batch.
-
-**Where:** branch `batch/2026-11-27-scour`, worktree `.worktrees/batch-2026-11-27-scour`. The session that
-merges works from the main checkout and reaches this tree by path; it never runs `EnterWorktree`. It's registered as
-`inflight` kind `batch`, owned by weasel-fe: take it over first with `inflight add batch/2026-11-27-scour --kind batch --repo ~/src/weasel`, then keep a Monitor on `inflight watch --owner <your session name>`.
-
-**What's in it:** `main` plus every finished scour fixer branch except nodeShapes (`scour11-*`) and
-`forge.vite.part2` (`scour9-*`), which Mike held back because those fix areas aren't done. That means Timeline runs
-1, 2, 5 and 6 (run 3 is contained in run 6), viewport runs 7-b1…b4, interactions runs 8-b1…b5, tools runs 10-b1…b4,
-registry run 4-b1, and `tooltip-anchor-rect` (the amended `41906fd420`, `entry: api`). `git log main..HEAD --merges`
-lists them.
-
-### Decisions made while merging (the merge commits carry them; nothing else does)
-
-- **viewport-b1 was ported onto main's blits `useDecayLoop`.** It adds the branch's `position` reader, which re-cues
-  the glide from the live position when something else moved the view; `speedScale`, so `minSpeed` is in screen
-  px; a `TypeError` for bounds with no position; and `onEnd('end' | 'cancel')`, including on cancel, a new start or an
-  unmount. Two things were dropped as superseded by main's `coast-springs-back-past-edge`: the branch's
-  `decay-starts-past-bounds` changeset, and its test "boundary:stop holds a coast that starts past a bound".
-- **Two branches each added a timeline end function** (`length.ts timelineEnd` and main's `nestedClock tracksEnd`).
-  They're now one: `timelineEnd` lives in `nestedClock.ts`, takes the branch's `length` reader threaded through
-  `trackEnd`/`tracksEnd`/`extentOf`, and is exported from animator. Its test is `timeline/timelineEnd.test.ts`.
-- **Sweep:** kept main's `deepElementAt`/`containsComposed` and added b2's non-finite-point check. Dropped b2's
-  `deepestAt` and its allowlist entry, and the duplicate `flatParentOf` in `elementAt.ts`.
-- **handleDrag:** kept main's quirks-mode page scroll and adopted b4's duck-typed `clientScaleOf(el)`, which drops
-  the `instanceof HTMLElement` check.
-- **Timeline:** b3's key-index arguments (`onKeysInput(keys, keyIndex?)`, `onKeysChange(keys, keyIndex)`) combined
-  with b5's rule that no input handler means no preview and no `onCancel`. A graph lane reports a cancel for a
-  handle drag that moved, or a key drag whose preview was sent. Key and segment names use b6's locale ruler format
-  (`500ms`, `1.10s`), not main's `500 ms`; tests from the other branches were updated to match.
-
-### State and next step
-
-**The two labkit failures are understood and fixed** (`9d559de079`, `2c9e1f57d3`). Both raced real time against
-`waitFor`'s 1 s deadline: useJob's runs paused on 2 ms timers, and the SingletonExperiment test waited out the
-record cache's 300 ms write debounce. The repro, labkit's whole project 3 times each on `main` and on this batch at
-once on teitou (load 22–34), passed every time on both commits. The two tests took ~55 ms and ~315 ms, so only
-full-suite load breaks them and the batch didn't cause them. useJob's tests now hold runs on gates the test opens;
-four debounce waits (SingletonExperiment, usePersistedState, PersistedFloatingPanel, Lab.persist's discard) flush
-through `state/records.fixture.tsx`'s `catchRecords` instead. Waits that follow an unmount or `pagehide` were left
-alone, since they ride the close-time flush.
-
-Plan steps 1–3 are done. Both `--since` runs are green, the second on `e0568439df` after labkit's lint fix.
-`test:batch` on `a6ae65814c` then failed the postbuild's `check:unnameable`: `timelineEnd` named a private animator
-type, `Length`. `d68ad8d343` exports it as `LengthReader`, and `check:unnameable --build packages/animator` passed
-on the fleet. The postbuild stopped at check 11 of 17, so checks 12–17 have not been seen.
-
-Now running, in `/private/tmp/claude-501/-Users-mike-src-weasel/5aa89cc6-c55b-42a8-b9b4-bd955561ab8f/scratchpad/`:
-- `batch-scour.log`: the rest of that `test:batch` (jsdom and gate parts on `a6ae65814c`)
-- `postbuild-d68ad8d.log`: `test:fleet:postbuild` on `d68ad8d343`
-
-**Next:** if both are green, run `test:batch` once on the tip to confirm, then do step 4. Fix any failure locally
-first. The oxc script for any re-check is
-`/private/tmp/claude-501/-Users-mike-src-weasel/7eac4d15-6c0c-47f3-8a50-86007bc3955a/scratchpad/oxcparse.mjs`.
-skulkr-22 is waiting for 41906fd420 (Tooltip anchorRect) on `main`: message it when `main` moves, or if this stalls.
-
-**Next batch:** `fleet-test-help` (tip `4c23e4de88`) is ready. Every script now parses its args through
-`scripts/lib/help.mjs`'s `cli()`, built on `util.parseArgs` in strict mode. It triggers a full run, and it changes how
-`npm run release` passes flags on and how `check:published --wait` reads its value (`--wait=<n>`; `--wait 20` with a
-space is now an error).
-
-**Mike's plan (relayed by weasel-4b, 2026-11-27)**, as it now stands:
-3. A `test:fleet --since` run covering what changed since the last run (running, see above).
-4. Once green, `npm run test:batch -- <tip>` once. Then fast-forward `main`, push, and delete the merged scour
-   branches, `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree. Also
-   remove `.worktrees/repro-main` and `.worktrees/repro-batch`, which were made for the repro (detached, nothing to
-   keep). The commit that merges also deletes this section.
-
-### Elsewhere
-
-- Scour fixer branches stack per area (skulkr `77290ea`, on Mike's ruling): an area's newest
-  `scour<N>-<area>-b<k>` carries all its fixes, so a batch merges only that one per area. Runs 1-12, including
-  the ones in this batch and the in-flight run 11 on nodeShapes and run 12 on `core.canvas.part4`, predate it and
-  are not stacked.
+`fleet-test-help` (tip `4c23e4de88`) is ready: every script parses its args through `scripts/lib/help.mjs`'s `cli()`
+(strict `util.parseArgs`). It needs a full run. It changes how `npm run release` passes flags on, and
+`check:published --wait` now takes `--wait=<n>` only. The scour fixer branches for nodeShapes (`scour11-*`) and
+`forge.vite.part2` (`scour9-*`) are held until those areas finish.
 
 ## Decisions taken in conversation and not visible in the code
 
