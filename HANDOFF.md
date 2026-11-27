@@ -41,23 +41,31 @@ lists them.
 
 The last fleet run (`--since main` on `25869ce981`) failed 10 of 47,177. Commits since then fix 8 of them:
 typecheck, `typecheck:packages` and lint (an unused `normalizeZoom` import), the kitActionParams allowlist entry,
-and the four Timeline tests. **Still open, not yet investigated:**
+and the four Timeline tests. **Still open: two labkit failures, both seen only inside the suite-sized run.**
 
 - `packages/labkit/src/job/useJob.test.tsx` › "discards results from a run its key superseded" (`'running'`, expected `'done'`)
 - `packages/labkit/src/state/SingletonExperiment.test.tsx` › "persists config changes to storage" (storage `undefined`)
 
-No branch touches labkit. Suspect the registry branch (`createPart` now throws on a self-read; child registry
-hold and version changes), or flakiness. Run each file alone, locally with `--maxWorkers=1` while the machine is
-quiet, or as one fleet job. Compare against `main`.
+Alone, both files pass: once on teitou (16 of 16), and five times on msb-uai with verbose output and one worker
+(job `9dfc4ff8`, every iteration exit 0). No branch in the batch touches labkit. Both tests end in a `waitFor` with
+the default 1 s timeout. weasel-4b's read: "persists config changes" takes about 320 ms alone, which looks like a
+debounced write waited out on real time, and "discards results" depends on the order its runs finish in. Check
+whether each waits on real timers, and move it to fake timers or to waiting on the condition itself.
 
-Then:
-1. Before any fleet run: `node /private/tmp/claude-501/-Users-mike-src-weasel/7eac4d15-6c0c-47f3-8a50-86007bc3955a/scratchpad/oxcparse.mjs <list>`,
-   where `<list>` is `git diff main --name-only --diff-filter=AM | grep -E '\.tsx?$'` written to a file. It's an
-   oxc transform of every changed file, and catches the duplicate declarations that cost two runs. The script is in
-   scratch and may be gone; it is about 15 lines over `rolldown/experimental`'s `transformSync`.
-2. `npm --prefix /Users/mike/src/weasel run test:fleet -- <tip> --since main`, logged to a file named for the branch.
-3. Once green: `npm run test:batch -- <tip>`, fast-forward `main`, push, then delete the merged scour branches,
-   `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree.
+**Mike's plan (relayed by weasel-4b, 2026-11-27).** No suite-sized run goes out until both failures are understood,
+and there should not be two more of them.
+1. Reproduce the failures the way the batch run hits them: labkit's whole project with the batch run's project and
+   pool settings, not just the two files, and `main` run beside it for comparison. Then read both tests and fix the
+   real cause, rather than rerunning until green.
+2. Before any fleet run, run the oxc transform check: `node <scratch>/oxcparse.mjs <list>`, where `<list>` is a file
+   holding `git diff main --name-only --diff-filter=AM | grep -E '\.tsx?$'`. It catches the duplicate declarations
+   that cost two runs. The script is in this session's scratchpad and may be gone; it is about 15 lines over
+   `rolldown/experimental`'s `transformSync`.
+3. `npm --prefix /Users/mike/src/weasel run test:fleet -- <tip> --since 25869ce981`, never `--since main`. Only the
+   tests reached by the fixes since the failed run need running; the run's other tests were seen passing.
+4. Once green, `npm run test:batch -- <tip>` once. Then fast-forward `main`, push, and delete the merged scour
+   branches, `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree. The
+   commit that merges also deletes this section.
 
 ### Elsewhere
 
