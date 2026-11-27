@@ -4328,3 +4328,9 @@ Calls the lanes made without a ruling:
 - 2026-11-26 (the fixer's call): registry's `createPart` throws when `make` reads the part it is making for the same
   owner, since no part exists yet to return. Returning a second part, or one stored by the inner read, was the
   alternative; either leaves two callers holding different parts for one owner.
+## Audit round scour fix 7 (2026-11-27): core's viewport
+
+- 2026-11-27 (the fixer's call): `fitViewToBounds` returns `currentView`, with a development warning, when the fitted
+  camera position falls past the double range (finite bounds in a huge finite viewport at the zoom floor), as it does
+  for a viewport with no area or a `NaN` or infinite size. Clamping the position to the largest double was the
+  alternative; it shows nothing of the bounds either.

@@ -131,3 +131,27 @@ describe('interpolateView', () => {
     for (const t of [0.1, 0.25, 0.5, 0.9]) expect(Math.abs(f(t).x - 1e6 * t)).toBeLessThan(1e-3);
   });
 });
+
+describe('interpolateView — endpoints and extreme ratios', () => {
+  it('lands exactly on the target view at t = 1', () => {
+    const to = V(37.3, -12.9, 0.3);
+    expect(interpolateView(V(5, 7, 1.7), to)(1)).toEqual(to);
+  });
+
+  it('stays finite across a large, finite zoom-out', () => {
+    const f = interpolateView(V(0, 0, 1e9), V(100, 100, 1e-9));
+    for (const t of [0, 0.25, 0.5, 0.75, 1]) {
+      const v = f(t);
+      expect([v.x, v.y, v.scale.x, v.scale.y].every(Number.isFinite)).toBe(true);
+    }
+    expect(f(1)).toEqual(V(100, 100, 1e-9));
+  });
+
+  it('stays finite across a ratio whose reciprocal overflows', () => {
+    const f = interpolateView(V(0, 0, 1e200), V(100, 100, 1e-200));
+    for (const t of [0, 0.5, 1]) {
+      const v = f(t);
+      expect([v.x, v.y, v.scale.x, v.scale.y].every(Number.isFinite)).toBe(true);
+    }
+  });
+});

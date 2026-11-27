@@ -230,3 +230,55 @@ describe('fitViewToBounds on a y-up camera', () => {
     expect((1000 - v.y) * v.scale.y).toBeCloseTo(10);
   });
 });
+
+describe('fitViewToBounds — framed bounds and degenerate viewports', () => {
+  it('fits a rotated box by the extent it is drawn at', () => {
+    // A 100×20 box turned a quarter turn about its center, (50, 10), draws 20 wide and 100 tall.
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 100, height: 20, rotation: Math.PI / 2 },
+      { width: 400, height: 200 },
+      CURRENT,
+      { padding: 0 },
+    );
+    expect(v.scale.y).toBeCloseTo(2);
+    expect(v.x).toBeCloseTo(-50);
+    expect(v.y).toBeCloseTo(-40);
+  });
+
+  it('fits a transformed box by the extent it is drawn at', () => {
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 100, height: 100, transform: [2, 0, 0, 1] },
+      { width: 200, height: 200 },
+      CURRENT,
+      { padding: 0 },
+    );
+    expect(v.scale.x).toBeCloseTo(1);
+    expect(v.x).toBeCloseTo(-50);
+  });
+
+  it('takes a NaN or infinite viewport as one it cannot fit into', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const b = { x: 0, y: 0, width: 100, height: 100 };
+    expect(fitViewToBounds(b, { width: NaN, height: 200 }, CURRENT)).toBe(CURRENT);
+    expect(fitViewToBounds(b, { width: 200, height: Infinity }, CURRENT)).toBe(CURRENT);
+  });
+
+  it('keeps currentView rather than answer a position past the double range', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const v = fitViewToBounds(
+      { x: 0, y: 0, width: 1e300, height: 1e300 },
+      { width: 1e300, height: 1e300 },
+      CURRENT,
+      { minScale: 1e-9, maxScale: 1e-9 },
+    );
+    expect(v).toBe(CURRENT);
+  });
+
+  it('warns about a zero-area viewport once, not on every call', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const b = { x: 0, y: 0, width: 100, height: 100 };
+    fitViewToBounds(b, { width: 0, height: 0 }, CURRENT);
+    fitViewToBounds(b, { width: 0, height: 0 }, CURRENT);
+    expect(warn.mock.calls.filter(([m]) => String(m).includes('fitViewToBounds'))).toHaveLength(1);
+  });
+});
