@@ -147,13 +147,18 @@ describe('watchRecovery stamps', () => {
       config: { base: '/', root, logger: { warn: (msg: string) => void warnings.push(msg) } },
       environments: { client: { moduleGraph: { onFileChange() {} } } },
     });
-    const env = (id: string) => ({
-      environment: { name: 'client', mode: 'dev', moduleGraph: { getModuleById: () => ({ file, url: `/${id.slice(root.length + 1)}` }) } },
+    const env = (id: string, name = 'client') => ({
+      environment: {
+        name,
+        mode: 'dev',
+        // Only the client's graph holds the module, as when another environment runs its plugins on an id directly.
+        moduleGraph: { getModuleById: () => (name === 'client' ? { file, url: `/${id.slice(root.length + 1)}` } : undefined) },
+      },
     });
     return {
       file,
       load: (id: string) => hook(plugin.load).call(env(id), id),
-      transform: (id: string) => hook(plugin.transform).call(env(id), '', id),
+      transform: (id: string, name?: string) => hook(plugin.transform).call(env(id, name), '', id),
       request: () => middleware({ url: '/part.ts' }, {}, () => {}),
       warnings,
     };
@@ -170,5 +175,15 @@ describe('watchRecovery stamps', () => {
     edit(file, 'export const part = 1;\n');
     request();
     expect(warnings).toEqual([]);
+  });
+
+  it("keeps the client's read for the client's transform when another environment transforms the module first", () => {
+    const { file, load, transform, request, warnings } = drive();
+    load(file);
+    transform(file, 'ssr');
+    transform(file);
+    edit(file, 'export const part = 1;\n');
+    request();
+    expect(warnings).toEqual([expect.stringContaining('part.ts changed with no file event')]);
   });
 });

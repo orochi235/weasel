@@ -158,6 +158,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
     transform: {
       order: 'pre',
       handler(_code, id) {
+        if (this.environment.name !== 'client') return;
         const mtime = read.take(id);
         if (mtime === undefined) return;
         if (this.environment.mode !== 'dev') return;
