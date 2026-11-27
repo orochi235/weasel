@@ -186,6 +186,23 @@ describe('Lane', () => {
     expect(onKeyChange).toHaveBeenCalledWith(1, 602);
   });
 
+  it('refuses a key drag whose lane stops taking edits before it is released, and puts back its preview', () => {
+    const onKeyChange = vi.fn();
+    const onKeyRevert = vi.fn();
+    const onCancel = vi.fn();
+    const props = { ...base, row: laneOf(sampled), onKeyChange, onKeyRevert, onCancel };
+    const { rerender } = render(<Lane {...props} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    rerender(<Lane {...props} hold={{ edits: false, looks: true, tabIndex: 0, focus: {} }} />);
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
+    expect(screen.queryByTestId('timeline-key-ghost')).not.toBeInTheDocument();
+    fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
+    expect(onKeyChange).not.toHaveBeenCalled();
+    expect(onKeyRevert).toHaveBeenCalledTimes(1);
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
   it('inserts a key on double-click', () => {
     const onInsert = vi.fn();
     render(<Lane {...base} row={laneOf(sampled)} onInsert={onInsert} />);

@@ -44,6 +44,8 @@ export function useKeyDrag(a: KeyDragArgs) {
   const [drag, setDrag] = useState<{ keyIndex: number; t: number; times: readonly number[] } | null>(null);
   const snapRadiusPx = useSnapRadiusPx();
   const dragPx = useKitSetting('gestures.dragPx');
+  // Read as the drag runs: a lane that stops taking edits mid-drag refuses it, as graph mode does.
+  const editable = useLatest(drags);
 
   const place = (clientX: number): { f: number; width: number } => alongTrack(trackRef.current, clientX) ?? { f: 0, width: 0 };
   // The track reads ruler times, which `snapTimes` are; the row's keys are measured from its own start.
@@ -82,6 +84,7 @@ export function useKeyDrag(a: KeyDragArgs) {
     // No pointer capture — see `Ruler`, same idiom across the timeline.
     sessionRef.current = openPointerSession(e.currentTarget, e, {
       onMove: (ev) => {
+        if (!editable.current) { setDrag(null); return; }
         if (!traveled(ev)) return;
         const t = at.current(ev, stops);
         setDrag({ keyIndex: i, t, times });
@@ -91,7 +94,7 @@ export function useKeyDrag(a: KeyDragArgs) {
       },
       // A drag released back on its own time changes nothing, so a preview it sent is put back as for a cancel.
       onEnd: (ev) => {
-        const t = traveled(ev) ? at.current(ev, stops) : times[i];
+        const t = traveled(ev) && editable.current ? at.current(ev, stops) : times[i];
         if (t !== times[i]) onKeyChange(i, t);
         else if (previewed) { onRevert?.(); onCancel?.(); }
         end();
