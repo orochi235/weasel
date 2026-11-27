@@ -131,13 +131,13 @@ export interface PathPaint {
   stroke?: Stroke;
 }
 
-/** Whether `stroke` covers anything to outline: it has a paint and a width above zero, an omitted width
+/** Whether `stroke` covers anything to outline: it has a paint and a finite width above zero, an omitted width
  *  being the 1 every painter draws it at. */
 export function hasStroke(stroke: Stroke | null | undefined): boolean {
   const painted = resolveStroke(stroke);
   if (painted?.paint == null) return false;
   const width = painted.width ?? 1;
-  return (typeof width === 'object' ? width.px : width) > 0;
+  return widthHasInk(typeof width === 'object' ? width.px : width);
 }
 
 /** {@link PathPaint} of a node that keeps its paint in `data.fill` and
