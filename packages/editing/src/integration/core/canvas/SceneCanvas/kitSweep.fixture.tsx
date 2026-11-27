@@ -164,7 +164,7 @@ function coreFactories(s: Sweep): void {
       { id: 'object' },
       {
         id: 'edit',
-        entry: { trigger: 'double-click-target', targets: ['path'], shortcut: 'E' },
+        entry: { trigger: 'double-click-target', targets: ['path'], shortcut: 'O' },
         exit: { shortcut: 'Escape' }, discard: { shortcut: 'Mod+Backspace' },
         commit: { shortcut: 'Enter' }, cancel: { shortcut: 'Mod+.' },
       },

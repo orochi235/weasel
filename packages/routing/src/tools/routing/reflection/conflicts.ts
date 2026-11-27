@@ -3,12 +3,13 @@ import type { Action } from '../../../interactions/actions/action';
 import { actionBindings } from '../../../interactions/actions/binding';
 import { overriddenBindings, type ResolvedBindingOverrides } from '../../../interactions/actions/bindingOverrides';
 import type { ParsedModifiers } from '../routeGrammar';
-import { canonicalModifiers, formatRoute } from '../routeGrammar';
+import { formatRoute } from '../routeGrammar';
 import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { specificity } from '@weasel-js/gestures';
-import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
+import { ALWAYS, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
-import { argKeysOf, chordArgsOf, modifierTieKeys, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
+import { argKeysOf, chordArgsOf, modifierTieKeys, phasesTie, PLATFORMS, rulesCanHoldTogether, sameOutcome, targetKey, typesMeet, viewsTie, type Platform } from './conflictKeys';
+import { shadowOf } from './shadows';
 import { compositeKey, identityKeyOf } from '@weasel-js/registry';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
@@ -22,8 +23,9 @@ export interface Conflict {
   /** The ids of every entry that declared the same tuple. At least 2 by
    *  construction, in input order. */
   ownerIds: string[];
-  /** Not a tie: the first owner, a hotkey-tier action, outranks the active
-   *  tool after it, whose binding fires only when the action declines. */
+  /** Not a tie: the first owner, a hotkey-tier action, outranks the entry
+   *  after it, the active tool or an ambient one, whose binding fires only
+   *  when the action declines. */
   shadows?: true;
 }
 
@@ -68,23 +70,33 @@ export function findConflicts(entries: readonly Contribution<unknown>[]): Confli
 }
 
 /**
- * The same detector, keeping each conflict's bucket key. `Conflict.target`
- * renders every predicate as one token, so two distinct predicate collisions
- * look alike once rendered; `findScopedConflicts` dedupes on the key instead.
+ * The same detector, keeping the bindings in each conflict. Two conflicts can render alike (every
+ * predicate target prints as one token), so `findScopedConflicts` dedupes on the bindings.
  */
 function findConflictsKeyed(
   entries: readonly Contribution<unknown>[],
-  rules?: ReadonlyMap<string, Rule>,
+  rules?: ReadonlyMap<Contribution<unknown>, Rule>,
   modes: readonly ActiveMode[] = KIT_MODES,
-): { key: string; conflict: Conflict }[] {
-  const rows = buildRouteRegistry(entries);
+): Keyed[] {
+  // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
+  const rows: RegistryEntry[] = [];
+  const rowRules = new Map<RegistryEntry, Rule>();
+  // A binding's id is the same in every pass `findScopedConflicts` makes over its owner.
+  const rowIds = new Map<RegistryEntry, string>();
+  for (const owner of entries) {
+    buildRouteRegistry([owner]).forEach((row, i) => {
+      rows.push(row);
+      rowRules.set(row, rules?.get(owner) ?? ALWAYS);
+      rowIds.set(row, `${identityKeyOf(owner)}.${i}`);
+    });
+  }
   const groups = new Map<string, { platform: Platform; members: RegistryEntry[] }>();
   for (const entry of rows) {
     if (entry.gesture === 'hover') continue;
     // One bucket per arg the binding answers to, not one per display token:
-    // `key: ['h','H']` and `key: 'H'` really do collide, as do two `drop` specs
-    // whose MIME sets overlap without being equal. Modifiers bucket the same
-    // way, one per state the spec accepts, so an optional Shift meets a forbidden one.
+    // `key: ['h','H']` and `key: 'H'` really do collide. Modifiers bucket the same
+    // way, one per state the spec accepts, so an optional Shift meets a forbidden one. MIME globs share
+    // one arg and are compared pair by pair (`typesMeet`), since `image/*` meets `image/png`.
     // The matcher ranks by specificity before declaration order, so only equal ranks tie. Phases are
     // compared pair by pair (`phasesTie`), since whether two meet depends on whose channel each reads.
     const args = [...argKeysOf(entry).map((arg) => ({ arg, chord: false })), ...chordArgsOf(entry).map((arg) => ({ arg, chord: true }))];
@@ -100,36 +112,38 @@ function findConflictsKeyed(
       }
     }
   }
-  // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
-  const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
+  const ruleOf = (entry: RegistryEntry): Rule => rowRules.get(entry)!;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
-    viewsTie(e.views, f.views) && phasesTie(e, f) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
+    viewsTie(e.views, f.views) && phasesTie(e, f) && typesMeet(e, f) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
   const conflicts: Conflicts = new Map();
   for (const { platform, members } of groups.values()) {
     // Members are in declaration order, and a pair led by a binding that yields is ordered on purpose.
     const ties = (i: number, j: number): boolean => i !== j && !members[Math.min(i, j)]!.yields && tie(members[i]!, members[j]!);
     for (const component of tieCliques(members.length, ties)) {
-      addConflict(conflicts, foldPlatformCopies(component.map((i) => members[i]!)), platform);
+      addConflict(conflicts, foldPlatformCopies(component.map((i) => members[i]!)), platform, (e) => rowIds.get(e)!);
     }
   }
   return [...conflicts]
     // Bindings that fire one thing and tie on one platform only are how an
     // action binds a key that `mod` covers there and not on the other.
     .filter(([, c]) => c.platforms.size === PLATFORMS.length || !sameOutcome(c.bucket))
-    .map(([key, { conflict }]) => ({ key, conflict }));
+    .map(([, { ids, conflict }]) => ({ ids, conflict }));
 }
 
-type Conflicts = Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>;
+/** A conflict and the ids of the bindings in it, the same in every pass `findScopedConflicts` makes. */
+type Keyed = { ids: readonly string[]; conflict: Conflict };
+
+type Conflicts = Map<string, { conflict: Conflict; ids: string[]; bucket: RegistryEntry[]; platforms: Set<Platform> }>;
 
 /** Record `bucket`, bindings that tie on `platform`, in `conflicts`. */
-function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Platform): void {
+function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Platform, idOf: (e: RegistryEntry) => string): void {
   if (bucket.length < 2) return;
   const first = bucket[0]!;
-  // Two specs that tie in one modifier state usually tie in several, and on
-  // both platforms: one conflict per set of specs, each named by identity so
-  // the key is the same in every pass `findScopedConflicts` makes over them. A pair meeting on
+  // Two bindings that tie in one modifier state usually tie in several, and on
+  // both platforms: one conflict per set of bindings. A pair meeting on
   // several args (a key and a code, two keys of a list) is one conflict too.
-  const key = compositeKey([first.gesture, targetKey(first), ...bucket.flatMap((e) => [identityKeyOf(e.spec), canonicalModifiers(e.modifiers)])]);
+  const ids = bucket.map(idOf);
+  const key = compositeKey(ids);
   const found = conflicts.get(key);
   if (found) { found.platforms.add(platform); return; }
   conflicts.set(key, {
@@ -141,6 +155,7 @@ function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Pl
       modifiers: first.modifiers,
       ownerIds: bucket.map((e) => e.ownerId),
     },
+    ids,
     bucket,
     platforms: new Set([platform]),
   });
@@ -189,7 +204,7 @@ function tieCliques(n: number, ties: (i: number, j: number) => boolean): number[
 function foldPlatformCopies(bucket: RegistryEntry[]): RegistryEntry[] {
   const out: RegistryEntry[] = [];
   for (const e of bucket) {
-    const i = out.findIndex((k) => sameOutcome([k, e]) && (platformBound(k) || platformBound(e)));
+    const i = out.findIndex((k) => sameOutcome([k, e]) && platformBound(k) !== platformBound(e));
     if (i === -1) out.push(e);
     else if (platformBound(out[i]!)) out[i] = e;
   }
@@ -212,13 +227,6 @@ export interface ToolScopes {
   /** Binding overrides in force, applied to the entries' bindings. Actions are
    *  read as given: an `ActionsRegistry`'s `list()` has applied them already. */
   overrides?: ResolvedBindingOverrides;
-}
-
-/** Whether two rules can hold at once: never when {@link rulesExclusive}
- *  proves it, and given the modes, only when one of them lets both hold. */
-function rulesCanHoldTogether(a: Rule, b: Rule, modes: readonly ActiveMode[]): boolean {
-  if (rulesExclusive(a, b)) return false;
-  return modes.some((m) => ruleCanHoldIn(a, m) && ruleCanHoldIn(b, m));
 }
 
 const KIT_MODES: readonly ActiveMode[] = DEFAULT_MODES.map(activeModeOf);
@@ -245,7 +253,9 @@ function eligibleRule(action: Action): Rule | undefined {
  *  - a single tool colliding with **itself**;
  *  - two **ambient** tools, which are all live at once and ordered only by
  *    registration;
- *  - two **hotkey-capable** tools, which can stack.
+ *  - two **hotkey-capable** tools, which can stack;
+ *  - a **hotkey-tier action** over a registry tool or an ambient entry, flagged
+ *    `shadows`: the lower binding fires only when the action declines.
  *
  * Registered actions join the ambient and hotkey groups. An action gated by
  * an `eligible` rule outranks every ungated binding of its tier when its rule
@@ -262,19 +272,18 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     : Object.values(scopes.registry as Readonly<Record<string, Contribution<unknown>>>)).map(asBound);
   const declaredAmbient = (scopes.ambient ?? []).map(asBound);
   const actions = scopes.actions ?? [];
-  const rules = new Map<string, Rule>();
-  for (const a of actions) {
-    const rule = eligibleRule(a);
-    if (rule) rules.set(a.id, rule);
-  }
+  const rules = new Map<Contribution<unknown>, Rule>();
   const gatedActions: Contribution<unknown>[] = [];
   const ungated: Contribution<unknown>[] = [];
   const gatedHotkey: Contribution<unknown>[] = [];
   const hotkeyActions: Contribution<unknown>[] = [];
   for (const a of actions) {
+    const entry = actionAsEntry(a);
+    const rule = eligibleRule(a);
+    if (rule) rules.set(entry, rule);
     const hotkey = a.scope === 'hotkey';
     const gated = a.eligible !== undefined;
-    (hotkey ? (gated ? gatedHotkey : hotkeyActions) : (gated ? gatedActions : ungated)).push(actionAsEntry(a));
+    (hotkey ? (gated ? gatedHotkey : hotkeyActions) : (gated ? gatedActions : ungated)).push(entry);
   }
   const modes = scopes.modes ?? KIT_MODES;
   // A keymap is live only while it is the one open, so it can collide with nothing but itself.
@@ -282,14 +291,16 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
   const keymaps = declaredAmbient.filter(isKeymap);
   const ambient = [...declaredAmbient.filter((e) => !isKeymap(e)), ...ungated];
 
-  const out: Conflict[] = [];
-  const seen = new Set<string>();
-  const add = (keyed: readonly { key: string; conflict: Conflict }[]): void => {
-    for (const { key, conflict } of keyed) {
-      const dedupeKey = compositeKey([key, ...conflict.ownerIds]);
-      if (seen.has(dedupeKey)) continue;
-      seen.add(dedupeKey);
-      out.push(conflict);
+  // A pass that finds bindings another pass reported, with more beside them, reports them once with the rest.
+  let reported: { ids: ReadonlySet<string>; conflict: Conflict }[] = [];
+  const within = (a: ReadonlySet<string>, b: ReadonlySet<string>): boolean => [...a].every((id) => b.has(id));
+  const add = (keyed: readonly Keyed[]): void => {
+    for (const { ids: list, conflict } of keyed) {
+      const ids = new Set(list);
+      if (reported.some((r) => within(ids, r.ids))) continue;
+      const at = reported.findIndex((r) => within(r.ids, ids));
+      if (at === -1) { reported.push({ ids, conflict }); continue; }
+      reported = reported.flatMap((r, i) => (i === at ? [{ ids, conflict }] : within(r.ids, ids) ? [] : [r]));
     }
   };
 
@@ -311,17 +322,20 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     ...hotkeyActions,
   ];
   if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules, modes));
-  // A hotkey-tier action outranks whichever tool holds the active slot. A pair
-  // already reported as a tie, a held tool's, is not reported again.
-  const tied = (a: string, b: string): boolean => out.some((c) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
+  // A hotkey-tier action outranks whichever tool holds the active slot and every ambient entry. A
+  // pair already reported as a tie, a held tool's, is not reported again.
+  const tied = (a: string, b: string): boolean => reported.some(({ conflict: c }) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
+  const ruleOf = (e: Contribution<unknown>): Rule => rules.get(e) ?? ALWAYS;
+  const shadows: Conflict[] = [];
   for (const action of [...hotkeyActions, ...gatedHotkey]) {
-    for (const tool of registry) {
-      if (tied(action.id, tool.id)) continue;
-      add(findConflictsKeyed([action, tool], rules, modes).map((k) => ({ ...k, conflict: { ...k.conflict, shadows: true } })));
+    for (const lower of [...registry, ...ambient, ...gatedActions]) {
+      if (tied(action.id, lower.id) || !rulesCanHoldTogether(ruleOf(action), ruleOf(lower), modes)) continue;
+      const shadow = shadowOf(action, lower);
+      if (shadow) shadows.push(shadow);
     }
   }
 
-  return out;
+  return [...reported.map((r) => r.conflict), ...shadows];
 }
 
 /**
@@ -362,8 +376,8 @@ export function reportRouteConflicts(
   for (const c of conflicts) {
     if (c.shadows) {
       warn(
-        `[weasel] route conflict: a hotkey-tier action outranks a tool's binding on the same tuple, so the tool's `
-        + `fires only when the action declines.\n  ${formatConflict(c)}`,
+        `[weasel] route conflict: a hotkey-tier action outranks a lower tier's binding on the same tuple, so that `
+        + `binding fires only when the action declines.\n  ${formatConflict(c)}`,
       );
       continue;
     }
