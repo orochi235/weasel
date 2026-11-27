@@ -32,10 +32,10 @@ export function useSceneCanvasPathEdit<TData, TLayer extends string, TPose>(args
   });
 
   const selectToolWithDefaults = useMemo(() => ({
-    // Shift-click belongs to the anchor selection while a path is being
-    // anchor-edited; see `UseSelectToolOptions.extendClickLocked`.
-    extendClickLocked: () => pathEditState.getEditingId() !== '',
     ...selectTool,
+    // Shift-click belongs to the anchor selection while a path is being
+    // anchor-edited; see `UseSelectToolOptions.extendClickLocked`. The prop declares no such field to override it.
+    extendClickLocked: () => pathEditState.getEditingId() !== '',
   }), [selectTool, pathEditState]);
 
   // Writes only what differs: closing with no path open is no write, so a host's mode machine is left where it is.
