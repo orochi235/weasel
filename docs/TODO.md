@@ -350,31 +350,27 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   `docs/unruled.md`. Closes when all three are on `main`.
 
 - **(P2) [agent] Rebuild animator as a front end over blits.** Every spring and coast moves on blits'
-  closed forms, and a spring with `onTick` reads its value from blits' lane (2026-11-26). What is
-  left is scheduling, split into arcs that each land alone with animator's suite unchanged. In the
-  order they unblock each other:
-  1. **Rest from blits.** `physicsAnimation.ts` and `offsetPhysics.ts` still test rest themselves
-     (`|x − to|` and `|v|` under `restThreshold`, as lengths over the axes), reading the voice once
-     `earliestRest` (`springRest.ts`) says it could have stopped; a spring on a target with `onTick`
-     reads `voices.own()` every frame. Waits on blits: a cheap per-voice landed read (`still()` without
-     the lane eviction `fade({ at: 'rest' })` makes) and a `settle` measured as a length over the axes,
-     both in blits' TODO since 2026-11-26. Closes when `springRest.ts` is gone and no spring tick reads its
-     voice per frame.
-  2. **Voice clocks.** A tween, spring or path ends and paces on its own voice: its `rate` and
+  closed forms and comes to rest when blits says its voices have landed (2026-11-27), and a spring with
+  `onTick` reads its value from blits' lane; one on a target still reads its two voices each frame for
+  the value it hands `onTick`, since they share the target's subject. What is left is scheduling,
+  split into arcs that each land alone with animator's suite unchanged. In the order they unblock
+  each other:
+  1. **Voice clocks.** A tween, spring or path ends and paces on its own voice: its `rate` and
      `elapsed` are the animation's clock, and a tween ends where its voice freezes. Closes when
      `schedule.ts` keeps `base`/`anchor`/`turn` only for animations with no voice (timelines, loops),
      and `codec.rate` no longer mirrors a schedule.
-  3. **Delays and staggers as cue times.** `defer`, `due` and `wakes.ts` become a cue's start time
+  2. **Delays and staggers as cue times.** `defer`, `due` and `wakes.ts` become a cue's start time
      or blits' `stagger`. Closes when `wakes.ts` and `Table.defer` are gone.
-  4. **Replace and interrupt as roles.** A `cancelKey` claim becomes a blits role, and an interrupt
+  3. **Replace and interrupt as roles.** A `cancelKey` claim becomes a blits role, and an interrupt
      keeps velocity by handing the role over rather than `velocityUnder` and a re-cue. Where it could
      lose behavior: `onCancel` timing, and leaving the value where a cancel left it. Closes when
      `velocityUnder` is gone and `cancelByKey` stops no voice itself.
-  5. **Holds on roles and fades.** `holdStore.ts`'s "committed value takes what's left" weighting.
+  4. **Holds on roles and fades.** `holdStore.ts`'s "committed value takes what's left" weighting.
      Closes when `holdStore.ts` folds no values itself.
-  6. **Handoff sampled from blits.** `handoff/motion.ts` solves springs in closed form a second time
-     to sample keyframes for `Element.animate`. Closes when it samples the voice instead.
-  7. **Rotations on curved channels.** The codec's lanes are linear vecs, so a rotation takes the
+  5. **Handoff sampled from blits.** `handoff/motion.ts` solves springs in closed form a second time,
+     and bounds their rest with `earliestRest`, to sample keyframes for `Element.animate`. Closes when
+     it samples the voice instead.
+  6. **Rotations on curved channels.** The codec's lanes are linear vecs, so a rotation takes the
      straight path. Closes when a rotation target's lane uses blits' `angle()` or `quat()`.
 
   Closes when every arc above has.

@@ -90,6 +90,9 @@ export function cueSpring(slot: Slot, sp: SpringStart): Handle<unknown> {
   // With no target the spring force is zero whatever the stiffness: a spring of stiffness 0 coasts.
   const patch: Patch<unknown, Out, void> = springPatch<unknown, Out, number[]>('v', {
     from: sp.from, to: sp.from, stiffness: sp.to == null ? 0 : sp.stiffness, damping: sp.damping, mass: sp.mass,
+    ...(sp.settle !== undefined && {
+      settle: sp.settle, settleBy: 'length' as const, settleOn: sp.to == null ? 'speed' as const : 'reach' as const,
+    }),
   });
   const handle = slot.lane.mix.cue({ patch, subjects: [slot.key] });
   if (sp.to) handle.to(slot.key, sp.to, 0);

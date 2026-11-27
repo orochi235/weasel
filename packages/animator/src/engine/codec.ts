@@ -19,6 +19,10 @@ export interface SpringStart {
   id: number; axes: number;
   from: number[]; to: number[] | null; velocity: number[];
   stiffness: number; damping: number; mass: number;
+  /** Where it lands: within this of `to` and this slow, each as a length over the axes, or with
+   *  no `to`, once this slow, where it stands then: under it, so 0 never lands, though blits
+   *  lands a coast at a standstill there. Default blits' own settle, per axis. */
+  settle?: number;
   /** As {@link TweenStart.on}. */
   on?: unknown;
 }
@@ -55,6 +59,11 @@ export interface Codec {
   stop(id: number): void;
   /** Whether `id` is one of the codec's voices. */
   has(id: number): boolean;
+  /** Whether spring `id` has landed, as of the last `frame`: see {@link SpringStart.settle}. */
+  landed(id: number): boolean;
+  /** The fewest ms of spring `id`'s time after the last `frame` before it can have landed:
+   *  0 where it may have, Infinity where it never will. */
+  landsIn(id: number): number;
   /** Voice `id`'s own value and velocity as of the last `frame`. */
   own(id: number): Own | undefined;
   /** How many voices the codec is running; for tests and diagnostics. */
@@ -164,9 +173,18 @@ export function createCodec(
     rewound: (id) => { const v = voices.get(id); return v !== undefined && rewinds.has(v); },
     stop,
     has: (id) => voices.has(id),
+    landed(id) {
+      const v = voices.get(id);
+      return v !== undefined && !v.queued && v.spring?.settle !== 0 && v.handle.landed;
+    },
     own(id) {
       const v = voices.get(id);
       return v && ownOf(v, rewinds.has(v));
+    },
+    landsIn(id) {
+      const v = voices.get(id);
+      if (v === undefined || v.queued) return 0;
+      return v.spring?.settle === 0 ? Number.POSITIVE_INFINITY : v.handle.landsIn;
     },
     voiceCount: () => voices.size,
     columns: (group) => lanes.columns(group),

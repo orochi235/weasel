@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { earliestRest } from './springRest';
+import { earliestRest } from './motion';
 
 const THRESHOLD = 0.01;
 

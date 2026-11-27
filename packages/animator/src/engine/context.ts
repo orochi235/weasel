@@ -89,6 +89,8 @@ export interface AnimationContext {
   touch(target: TargetState, now?: boolean): void;
   /** Asks for a frame, where one is not running: something it shows has changed. */
   wake(): void;
+  /** Runs `cb` once the ticks of the frame running, or else of the next, are done. */
+  afterFrame(cb: () => void): void;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
   /** Says `id` threw outside its own tick, from a voice or a hold a frame read: the frame

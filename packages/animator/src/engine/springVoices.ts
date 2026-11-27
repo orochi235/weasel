@@ -10,6 +10,8 @@ export interface SpringVoicesOptions {
   stiffness: number;
   damping: number;
   mass: number;
+  /** Where each voice lands: within this of nothing left and this slow, or a coast once this slow. */
+  threshold: number;
   /** Where the move's voice runs, behind the target's holds. */
   behind: Behind;
 }
@@ -34,6 +36,10 @@ export interface SpringVoices {
   /** Sets the animation's velocity, by way of the rest. */
   push(velocity: readonly number[]): void;
   rate(rate: number): void;
+  /** Whether every voice has landed, as of the last frame. */
+  landed(): boolean;
+  /** The fewest ms after the last frame before every voice can have landed. */
+  landsIn(): number;
   /** Whether every voice, played backward, has got back to where it was last cued. */
   rewound(): boolean;
   stop(): void;
@@ -68,7 +74,7 @@ export function createSpringVoices(codec: Codec, s: TargetState, o: SpringVoices
     const on = v === moving ? runsOn(s, o.behind) : s;
     seat(s, on, codec.spring({
       id: v.id, on, axes: n, from: from.slice(), to, velocity: velocity.slice(),
-      stiffness: o.stiffness, damping: o.damping, mass: o.mass,
+      stiffness: o.stiffness, damping: o.damping, mass: o.mass, settle: o.threshold,
     }));
     if (rate !== 1) codec.rate(v.id, rate);
     adjust(v, from, 1);
@@ -107,6 +113,8 @@ export function createSpringVoices(codec: Codec, s: TargetState, o: SpringVoices
       rate = r;
       for (const v of [moving, resting]) if (v.id >= 0 && codec.has(v.id)) codec.rate(v.id, r);
     },
+    landsIn: () => Math.max(moving.id < 0 ? 0 : codec.landsIn(moving.id), resting.id < 0 ? 0 : codec.landsIn(resting.id)),
+    landed: () => (moving.id < 0 || codec.landed(moving.id)) && (resting.id < 0 || codec.landed(resting.id)),
     rewound: () => (moving.id >= 0 || resting.id >= 0)
       && [moving, resting].every((v) => v.id < 0 || codec.rewound(v.id)),
     stop() {
