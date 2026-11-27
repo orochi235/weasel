@@ -118,6 +118,15 @@ export interface TimelineTrack {
   label?: string;
   at: number;
   timeline: NestedTimeline;
+  /**
+   * Where it exists, `[in, out)` in the parent's time, as a Lottie layer's in and out points: outside
+   * it no track of it is sampled, and its targets are let go. Without one it plays throughout.
+   */
+  window?: readonly [number, number];
+  /** Held at 1 inside `window` and 0 outside it: what hides the thing that does not exist then. */
+  shown?: Target<number>;
+  /** `shown`'s name, so `toClip` can write it. */
+  shownName?: string;
 }
 
 /** Any track a timeline can hold. */

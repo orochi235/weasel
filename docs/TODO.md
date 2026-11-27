@@ -295,11 +295,6 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   "roving" keys retimed for constant speed, and auto-orient along the path (blits: "Keys on a vector channel
   travel a curve"). Closes when `Clip` carries spatial tangents, constant speed and orient-along-path.
 
-- **(P3) [agent] No lifetime window on an animated node** (2026-11-25). Lottie layers have in/out points outside
-  which they don't exist; here that is faked with an opacity or visibility track. A blits voice's own start and
-  end may already be this window; check before adding anything there. Closes when a `Clip` can give a target an
-  in/out window that hides it and skips sampling its tracks outside it.
-
 - **(P3) [agent] Timeline markers are points, not ranges** (2026-11-25). `EventTrack` events have no duration, so a
   player can't "play `intro`, then loop `idle`" as Lottie markers allow. Ruled 2026-11-25: names stay out of
   blits; `Clip` carries `ranges` (name to `[start, end]`), and a player helper cues a range as a voice with a
@@ -307,8 +302,9 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   playback plays or loops one by name.
 
 - **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
-  scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing. A package of
-  its own because Lottie is a scene format, not SVG. Closes when a set of reference
+  scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing, and a layer's
+  in and out points to a nested timeline track's `window`, its `shown` bound to a target that hides the layer's node
+  (no binder has one yet). A package of its own because Lottie is a scene format, not SVG. Closes when a set of reference
   Lottie files plays from the import matching lottie-web's frames.
 
 

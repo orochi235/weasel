@@ -56,6 +56,10 @@ export interface ClipTimelineTrack {
   label?: string;
   at: number;
   timeline: ClipTimeline;
+  /** `TimelineTrack.window`: `[in, out)` in the parent's time. */
+  window?: [number, number];
+  /** The binder's name for `TimelineTrack.shown`. */
+  shown?: string;
 }
 
 /** Any track a clip can hold. */
@@ -101,7 +105,12 @@ const defined = <T extends object>(o: T): T => {
 
 function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
   if (track.kind === 'timeline') {
-    return defined<TimelineTrack>({ kind: 'timeline', label: track.label, at: track.at, timeline: bindTimeline(track.timeline, binder) });
+    const shown = track.shown === undefined ? undefined : binder.target?.(track.shown);
+    if (track.shown !== undefined && !shown) throw new Error(`bindClip: the binder has no target named "${track.shown}".`);
+    return defined<TimelineTrack>({
+      kind: 'timeline', label: track.label, at: track.at, timeline: bindTimeline(track.timeline, binder),
+      window: track.window && [track.window[0], track.window[1]], shown, shownName: track.shown,
+    });
   }
   if (track.kind === 'event') {
     return defined<EventTrack>({
@@ -235,8 +244,12 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
 function trackToClip(track: Track, index: number): ClipTrack {
   const where = `track "${track.label ?? index}"`;
   if (track.kind === 'timeline') {
+    if (track.shown && track.shownName === undefined) throw new Error(`toClip: ${where} has a shown target and no shownName.`);
+    const { window } = track;
     return defined<ClipTimelineTrack>({
       kind: 'timeline', label: track.label, at: finiteOr(track.at, `${where} is at #`), timeline: timelineToClip(track.timeline, `${where}'s`),
+      window: window && [finiteOr(window[0], `${where}'s window opens at #`), finiteOr(window[1], `${where}'s window closes at #`)],
+      shown: track.shownName,
     });
   }
   if (track.kind === 'sampled') return sampledToClip(track, where);

@@ -1,7 +1,7 @@
 import type { Target } from '../target';
 import { nestedLength } from './length';
 import { sampleTrack } from './sampleTrack';
-import type { SampledTrack, Track } from './types';
+import type { SampledTrack, TimelineTrack, Track } from './types';
 
 /** A targeted track's voice on its target. */
 export interface TrackHold {
@@ -52,6 +52,20 @@ interface Held {
 const sameAxes = (a: readonly (number | string)[] | undefined, b: readonly (number | string)[] | undefined): boolean =>
   a === b || (a !== undefined && b !== undefined && a.length === b.length && a.every((x, i) => x === b[i]));
 
+/** A window's `shown` as a track keyed throughout, so it is held, let go and swept as a track is;
+ *  the same track for a nested timeline until its `shown` changes. */
+function createShownTracks(): (track: TimelineTrack) => SampledTrack<unknown> {
+  const tracks = new WeakMap<TimelineTrack, SampledTrack<unknown>>();
+  return (track) => {
+    let st = tracks.get(track);
+    if (!st || st.target !== track.shown) {
+      st = { kind: 'sampled', keys: [{ t: -Infinity, value: 0 }, { t: Infinity, value: 0 }], target: track.shown as Target<unknown> };
+      tracks.set(track, st);
+    }
+    return st;
+  };
+}
+
 /** `gone` says the timeline was canceled, by a track's `onTick` among others: the tracks after it are not sampled. */
 export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = () => false): TrackSampler {
   // Per-sampled-track sampling caches, dropped wholesale by `edited`.
@@ -72,6 +86,7 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
   };
   let edit = 0;
   let pass = 0;
+  const shownTrackOf = createShownTracks();
 
   const openOn = (st: SampledTrack<unknown>, h: Held): TrackHold => {
     if (!open) throw new Error('timeline: a track with a `target` needs a timeline made by an animator');
@@ -126,7 +141,11 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
         if (st.target) place(st, path, v, t);
         st.onTick?.(v);
       } else if (track.kind === 'timeline') {
-        visit(track.timeline.tracks, Math.min(t - track.at, nestedLength(track.timeline)), `${path}/${placementId(track)}`);
+        const inside = !track.window || (t >= track.window[0] && t < track.window[1]);
+        const nested = `${path}/${placementId(track)}`;
+        if (track.shown) place(shownTrackOf(track), nested, inside ? 1 : 0, t);
+        // Left unvisited, its tracks' holds are let go below, as an edit's removed tracks are.
+        if (inside) visit(track.timeline.tracks, Math.min(t - track.at, nestedLength(track.timeline)), nested);
       }
     }
   };
