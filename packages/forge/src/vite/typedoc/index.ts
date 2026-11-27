@@ -107,8 +107,8 @@ const inProject = (index: TdIndex, type: TdType): TdReflection | undefined =>
 
 /**
  * Every member `type` declares, into `props`. A reference outside the project is looked through to its type
- * arguments (`ForwardRefExoticComponent<P>`, `PropsWithChildren<P>`), except `RefAttributes<H>`, whose `H` is the
- * ref's handle.
+ * arguments (`ForwardRefExoticComponent<P>`, `PropsWithChildren<P>`, `MemoExoticComponent<C>`), except
+ * `RefAttributes<H>`, whose `H` is the ref's handle.
  */
 function collect(index: TdIndex, type: TdType | undefined, props: Map<string, TdReflection>, handle: TdType[], seen: Set<number>) {
   if (!type) return;
@@ -119,7 +119,10 @@ function collect(index: TdIndex, type: TdType | undefined, props: Map<string, Td
   } else if (type.type === 'mapped') {
     collect(index, type.templateType, props, handle, seen);
   } else if (type.type === 'reflection') {
-    for (const child of type.declaration?.children ?? []) if (!props.has(child.name)) props.set(child.name, child);
+    const { children, signatures } = type.declaration ?? {};
+    for (const child of children ?? []) if (!props.has(child.name)) props.set(child.name, child);
+    // A lone call signature is a function component, as `memo`'s argument is: its props are its first parameter.
+    if (!children?.length && signatures?.length === 1) collect(index, signatures[0]!.parameters?.[0]?.type, props, handle, seen);
   } else if (type.type === 'reference') {
     const declared = inProject(index, type);
     if (!declared) {

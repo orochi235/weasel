@@ -155,6 +155,27 @@ describe('readTypedoc on the shapes a component and its props are declared in', 
     signatures: [{ id: id + 1, name: 'Thing', variant: 'signature', kind: 4096, parameters: [{ id: id + 2, name: 'props', variant: 'param', kind: 32768, type: props }] }],
   });
 
+  it('reads the props of a component wrapped in memo', () => {
+    const memo: TdReflection = {
+      id: 200,
+      name: 'Thing',
+      variant: 'declaration',
+      kind: 32,
+      sources,
+      type: react('MemoExoticComponent', {
+        type: 'reflection',
+        declaration: {
+          id: 201,
+          name: '__type',
+          variant: 'declaration',
+          kind: 65536,
+          signatures: [{ id: 202, name: '__type', variant: 'signature', kind: 4096, parameters: [{ id: 203, name: 'props', variant: 'param', kind: 32768, type: to(100, 'ButtonProps') }] }],
+        },
+      }),
+    };
+    expect(readTypedoc(project(memo), 0).component('Thing', FILE)?.props.get('label')).toEqual({ description: 'The text.' });
+  });
+
   const handle: TdReflection = {
     id: 400,
     name: 'ThingHandle',
