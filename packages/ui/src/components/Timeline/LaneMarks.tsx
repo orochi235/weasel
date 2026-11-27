@@ -1,5 +1,4 @@
 import type { KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent, ReactElement } from 'react';
-import type { Keyframe } from '@weasel-js/animator';
 import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { msLabel, spanPercent, type TimeWindow } from './timeScale';
@@ -9,8 +8,9 @@ import type { LaneRow } from './lanes';
 export type MarkHold = { tabIndex: 0 | -1 } & FocusHoldAttrs;
 
 /** One focusable segment per pair of neighboring keys, named by the key it runs into. */
-export function SegmentMarks({ keys, label, offset, win, pct, mark, selectedSegment, onSelectSegment }: {
-  keys: readonly Keyframe<unknown>[];
+export function SegmentMarks({ times, label, offset, win, pct, mark, selectedSegment, onSelectSegment }: {
+  /** The row's key times, the same list its key marks are drawn from. */
+  times: readonly number[];
   label: string;
   /** Where the row's own time starts on the ruler, which its names read. */
   offset: number;
@@ -22,19 +22,19 @@ export function SegmentMarks({ keys, label, offset, win, pct, mark, selectedSegm
 }): ReactElement {
   return (
     <>
-      {keys.slice(1).map((k, idx) => {
+      {times.slice(1).map((t, idx) => {
         const i = idx + 1;
         return (
           <div
             key={`seg-${i}`}
             role="button"
             {...mark}
-            aria-label={`${label} segment into ${msLabel(k.t + offset)}`}
+            aria-label={`${label} segment into ${msLabel(t + offset)}`}
             aria-current={selectedSegment === i ? 'true' : undefined}
             data-testid="timeline-segment"
             data-segment-index={i}
             className={s.segment}
-            style={{ left: pct(keys[i - 1].t), width: spanPercent(win, k.t - keys[i - 1].t) }}
+            style={{ left: pct(times[i - 1]), width: spanPercent(win, t - times[i - 1]) }}
             onClick={() => onSelectSegment?.(i)}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectSegment?.(i); } }}
           />

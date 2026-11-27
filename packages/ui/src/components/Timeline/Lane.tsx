@@ -77,6 +77,8 @@ export function Lane(props: LaneProps): ReactElement {
     trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits && !graph,
   });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
+  // A drag draws its keys where they were at press, which a consumer echoing the preview back would otherwise re-sort.
+  const shownTimes = drag?.times ?? times;
   const sampledKeys = row.kind === 'sampled' ? (row.track as SampledTrack<number>).keys : [];
 
   const refocusRef = useFocusFollowsKey(trackRef, selection);
@@ -127,12 +129,12 @@ export function Lane(props: LaneProps): ReactElement {
             {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} end={row.end} win={win} /> : null}
             {row.kind === 'sampled' ? (
               <SegmentMarks
-                keys={sampledKeys} label={row.label} offset={row.offset} win={win} pct={pct} mark={mark}
+                times={shownTimes} label={row.label} offset={row.offset} win={win} pct={pct} mark={mark}
                 selectedSegment={selectedSegment} onSelectSegment={onSelectSegment}
               />
             ) : null}
             <KeyMarks
-              row={row} times={drag?.times ?? times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
+              row={row} times={shownTimes} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
               onKeyPointerDown={onKeyPointerDown} onKeyDown={onKeyDown}
             />
 

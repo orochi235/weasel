@@ -163,6 +163,19 @@ describe('Lane', () => {
     expect(onKeyChange).not.toHaveBeenCalled();
   });
 
+  it('draws segments from the same key times as the key marks while a drag\'s preview is echoed back', () => {
+    const three = { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 200, value: 1 }, { t: 400, value: 2 }], onTick: () => {} } as Track;
+    const { rerender } = render(<Lane {...base} row={laneOf(three)} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 100, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10 });
+    const echoed = { ...three, keys: [{ t: 0, value: 0 }, { t: 400, value: 2 }, { t: 500, value: 1 }] } as Track;
+    rerender(<Lane {...base} row={laneOf(echoed)} />);
+    const keyNames = screen.getAllByTestId('timeline-key').map((k) => k.getAttribute('aria-label'));
+    const segNames = screen.getAllByTestId('timeline-segment').map((k) => k.getAttribute('aria-label'));
+    expect(keyNames).toEqual(['x key at 0 ms', 'x key at 200 ms', 'x key at 400 ms']);
+    expect(segNames).toEqual(['x segment into 200 ms', 'x segment into 400 ms']);
+  });
+
   it('reports live times through the drag and one commit at its end', () => {
     const onKeyInput = vi.fn();
     const onKeyChange = vi.fn();
