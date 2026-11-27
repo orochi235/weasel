@@ -54,8 +54,8 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
   return box.bounds();
 }
 
-/** Below this fraction of a path's size, a coordinate stored as float32 has no more to say. */
-const FINEST = 2 ** -16;
+/** Below this fraction of a coordinate's magnitude, float32 has no more to say: half its 24-bit significand's last place. */
+const FINEST = 2 ** -24;
 
 /**
  * The tolerance to flatten `path` to for its box, and how far to grow the box

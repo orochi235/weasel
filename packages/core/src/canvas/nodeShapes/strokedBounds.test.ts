@@ -55,3 +55,13 @@ describe('strokedBounds of a stroke that draws no line', () => {
     expect(b.height).toBeLessThan(painted.height);
   });
 });
+
+describe('strokedBounds of a path far from the origin', () => {
+  it('stays within the view tolerance of the stroke', () => {
+    const x = 1e5;
+    const ring = new PathBuilder().moveTo(x, 0).lineTo(x + 100, 0).lineTo(x + 100, 100).lineTo(x, 100).close().build();
+    const b = strokedBounds(ring, { paint: PAINT, width: 2 }, 10)!;
+    expect(b.x).toBeGreaterThan(x - 1 - 0.1);
+    expect(b.x + b.width).toBeLessThan(x + 101 + 0.1);
+  });
+});
