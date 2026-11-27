@@ -85,4 +85,11 @@ describe('clampView on an axis with negative scale', () => {
     const out = clampView(view, bounds, canvas);
     expect(out.y).toBe(bounds.y + 100);
   });
+
+  it.each([1e-9, -1e-9])('keeps the position on an axis whose visible span overflows a double (scale %s)', (sx) => {
+    const v = { x: 5, y: 100, scale: { x: sx, y: 1 } };
+    const out = clampView(v, BOUNDS, { width: 1e300, height: 300 });
+    expect(out.x).toBe(5);
+    expect(out.y).toBe(100);
+  });
 });
