@@ -43,4 +43,14 @@ describe('setLoop', () => {
     advance(250);
     expect(handle.time()).toBeCloseTo(50, 6);
   });
+
+  it('refuses a count of passes that is not whole', () => {
+    expect(() => makeTimeline({ duration: 100, loop: 2.5 })).toThrow(RangeError);
+    expect(() => makeTimeline({ duration: 100, loop: Number.NaN })).toThrow(RangeError);
+    const { handle } = makeTimeline({ duration: 100 });
+    expect(() => handle.setLoop(1.5)).toThrow(RangeError);
+    expect(handle.loop()).toBe(false);
+  });
+
+
 });

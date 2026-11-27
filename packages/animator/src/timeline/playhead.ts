@@ -5,8 +5,15 @@ const finite = (t: number): number => {
   return t;
 };
 
-/** The laps a loop policy allows past the pass it starts on: a count is passes, as a clock's is. */
-const lapsOf = (loop: boolean | number): number => Math.max(1, passesOf(loop)) - 1;
+/** The laps a loop policy allows past the pass it starts on: a count is passes, as a clock's is.
+ *  A root timeline counts whole laps, so a count that is not whole throws. */
+function lapsOf(loop: boolean | number): number {
+  const passes = passesOf(loop);
+  if (passes !== Infinity && !Number.isInteger(passes)) {
+    throw new RangeError(`a timeline's loop is true, false or a whole number of passes, not ${passes}`);
+  }
+  return Math.max(1, passes) - 1;
+}
 
 /** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
  *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
