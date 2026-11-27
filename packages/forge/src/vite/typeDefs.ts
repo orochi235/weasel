@@ -67,7 +67,7 @@ export function addTypeDef(reading: TypeDefReading, symbol: ts.Symbol, into: Typ
   if (reading.skipped(file.fileName) || IN_PACKAGES.test(file.fileName)) return;
   const printer = tsm.createPrinter({ removeComments: true });
   const def: ApiTypeDef = {
-    text: printer.printNode(tsm.EmitHint.Unspecified, declaration, file).replace(/^(export\s+)?(declare\s+)?/, ''),
+    text: printer.printNode(tsm.EmitHint.Unspecified, declaration, file).replace(/^(export\s+)?(default\s+)?(declare\s+)?/, ''),
   };
   const description = tsm.displayPartsToString(symbol.getDocumentationComment(checker)).replace(/\s+/g, ' ').trim();
   if (description) def.description = description;
