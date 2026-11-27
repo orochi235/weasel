@@ -260,6 +260,12 @@ describe('typeText', () => {
     expect(typeText(mapped({ nameType: renamed }))).toBe('{ [K in keyof T as `on${K}`]: T[K] }');
   });
 
+  it("escapes a backtick, a backslash and a `${` in a template literal type's text", () => {
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    const t: TdType = { type: 'templateLiteral', head: 'a`b', tail: [[str, '\\${c']] };
+    expect(typeText(t)).toBe('`a\\`b${string}\\\\\\${c`');
+  });
+
   it("prints a signature's type parameters with their constraints and defaults", () => {
     const t: TdType = { type: 'reference', name: 'T' };
     const str: TdType = { type: 'intrinsic', name: 'string' };
