@@ -1,5 +1,6 @@
 export { createTimeline, type TimelineRegister } from './createTimeline';
 export { sampleTrack } from './sampleTrack';
+export { timelineEnd } from './length';
 export { bindClip, toClip } from './clip';
 export { isBlitsEasing, resolveKeyEasing, type BlitsEasing, type KeyEasing } from './keyEasing';
 export type {

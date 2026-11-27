@@ -1,10 +1,10 @@
 import { createEmitter } from '@weasel-js/registry';
 import { createCrossings } from './crossings';
 import { createEntry, type TimelineRegister } from './entry';
-import { lengthOf } from './length';
+import { timelineEnd } from './length';
 import { createPlayhead, landing } from './playhead';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
-import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
+import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './types';
 
 export type { TimelineRegister } from './entry';
 
@@ -15,22 +15,6 @@ export interface TimelineReport {
   /** `path` is a scratch stack the timeline goes on mutating; copy it to keep it. */
   fire(track: EventTrack, path: readonly number[], event: TimelineEvent, lateBy: number): void;
   lap(lap: number): void;
-}
-
-/** End time of a track: its last key/event, or a nested timeline's own end. */
-function trackEnd(track: Track): number {
-  switch (track.kind) {
-    case 'sampled': return track.keys.length ? track.keys[track.keys.length - 1].t : 0;
-    case 'event': return track.events.length ? track.events[track.events.length - 1].t : 0;
-    case 'timeline': return track.at + tracksEnd(track.timeline.tracks, track.timeline.duration);
-  }
-}
-
-function tracksEnd(tracks: Track[], explicit?: number): number {
-  if (explicit != null) return lengthOf(explicit);
-  let max = 0;
-  for (const t of tracks) max = Math.max(max, trackEnd(t));
-  return max;
 }
 
 /**
@@ -52,7 +36,7 @@ export function createTimeline(
   /** -1 while the animator plays every animation backward. */
   direction: () => number = () => 1,
 ): TimelineHandle {
-  const pos = createPlayhead(tracksEnd(opts.tracks, opts.duration), opts.loop ?? false);
+  const pos = createPlayhead(timelineEnd(opts), opts.loop ?? false);
   let lastVirtual = 0;
   let done = false;
   let canceled = false;
@@ -153,7 +137,7 @@ export function createTimeline(
     edit(fn) {
       fn();
       sampler.edited();
-      pos.setDuration(tracksEnd(opts.tracks, opts.duration));
+      pos.setDuration(timelineEnd(opts));
       crossings.retract();
       rearm();
       sampleNow();

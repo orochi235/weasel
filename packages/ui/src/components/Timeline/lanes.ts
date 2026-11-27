@@ -1,4 +1,4 @@
-import type { EventTrack, NestedTimeline, SampledTrack, Track } from '@weasel-js/animator';
+import { timelineEnd, type EventTrack, type NestedTimeline, type SampledTrack, type Track } from '@weasel-js/animator';
 
 export interface LaneRow {
   /** The dotted index path, unique among the rows. */
@@ -89,22 +89,16 @@ export function trackAtPath(tracks: readonly Track[], path: readonly number[]): 
   return found;
 }
 
-/** A nested timeline's `duration` as the ruler reads it, none below 0, or `undefined` when it declares none. */
+/** A stated duration as the ruler reads it: none below 0, and `NaN`, which the animator refuses, as 0 so an editor
+ *  can still draw a timeline whose duration is mid-edit. */
+const rulerLength = (duration: number): number => Math.max(0, duration) || 0;
+
+/** A nested timeline's `duration` as the ruler reads it, or `undefined` when it declares none. */
 function declaredSpan(timeline: NestedTimeline): number | undefined {
-  return timeline.duration == null ? undefined : Math.max(0, timeline.duration) || 0;
+  return timeline.duration == null ? undefined : rulerLength(timeline.duration);
 }
 
-/** How long a nested timeline runs on the ruler: its `duration`, none below 0, or with none, to its last track's end. */
+/** How long a nested timeline runs on the ruler: where the animator ends it, with a `NaN` duration read as 0. */
 export function timelineSpan(timeline: NestedTimeline): number {
-  const declared = declaredSpan(timeline);
-  if (declared !== undefined) return declared;
-  let end = 0;
-  for (const track of timeline.tracks) end = Math.max(end, trackEnd(track));
-  return end;
-}
-
-function trackEnd(track: Track): number {
-  if (track.kind === 'sampled') return track.keys.at(-1)?.t ?? 0;
-  if (track.kind === 'event') return track.events.at(-1)?.t ?? 0;
-  return track.at + timelineSpan(track.timeline);
+  return timelineEnd(timeline, rulerLength);
 }
