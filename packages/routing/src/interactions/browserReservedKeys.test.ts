@@ -122,4 +122,14 @@ describe('browserReservedChord', () => {
     expect(browserReservedChord({ kind: 'key', key: 'q', mods: { ctrl: true, shift: true } }, false)?.use).toMatch(/quit/);
     expect(browserReservedChord({ kind: 'key', key: ' ', mods: { alt: true } }, true)).toBeNull();
   });
+
+  it('takes the Windows and Super key chords off a Mac, which the desktop keeps', () => {
+    for (const key of ['l', 'd', 'e', 'r', 'Tab']) {
+      expect(browserReservedChord({ kind: 'key', key, mods: { meta: true } }, false)?.use).toMatch(/Windows/);
+    }
+    expect(browserReservedChord({ kind: 'key', key: 's', mods: { meta: true, shift: true } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'ArrowLeft', mods: { meta: true, ctrl: true } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'l', mods: { meta: 'optional' } }, false)).not.toBeNull();
+    expect(browserReservedChord({ kind: 'key', key: 'l', mods: { meta: true, alt: true } }, false)).toBeNull();
+  });
 });

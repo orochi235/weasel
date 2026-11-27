@@ -33,6 +33,10 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
   an object, a map, a union, a color, and the rest past number, enum and string) that two tools declare differently in
   anything but its wording (name, description, default, icon and the like), rather than keeping the first tool's leaf
   and repairing the second tool's values against it.
+- 2026-11-27: off a Mac, `browserReservedChord` treats the Windows or Super key with any letter, digit, Space,
+  common punctuation, Tab, an arrow, Home, PrintScreen or Pause as reserved, and Shift or Ctrl with it on the
+  keys Windows binds, rather than listing only the chords one desktop is known to take: Windows and most Linux
+  desktops bind nearly all of them. Win+Alt chords stay free.
 - 2026-11-25: `browserReservedChord` lists the chords every major browser binds even where a page can override them:
   Mod+1–9, Alt+Left/Right off a Mac, Cmd+[ and Cmd+] and Cmd+Shift+[ and ] on one, F5, F11, F12, Alt+F4, Ctrl+F4,
   Ctrl+Shift+Esc, Shift+Esc, and Mod+Shift+Delete. editing's reorder keys (Mod+[ and Mod+], as design apps bind them)

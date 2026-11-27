@@ -19,6 +19,8 @@ export interface ReservedChord {
   ctrl?: boolean;
   alt?: boolean;
   shift?: boolean;
+  /** The Windows or Super key, in chords taken off Apple platforms; on one, Meta is `mod`. */
+  meta?: boolean;
   /** Taken only on Apple platforms (`'apple'`) or only off them (`'other'`). Absent, taken everywhere. */
   platform?: 'apple' | 'other';
   /** Who takes it, for a message. */
@@ -67,6 +69,10 @@ export const BROWSER_RESERVED_CHORDS: readonly ReservedChord[] = [
   ...chord([' '], { mod: true, ctrl: true, platform: 'apple' }, 'the emoji and symbols viewer on macOS'),
   { key: 'q', mod: true, shift: true, platform: 'apple', use: 'log out on macOS' },
   { key: 'q', mod: true, shift: true, platform: 'other', use: 'quit Chrome on Windows and Linux' },
+  ...chord('abcdefghijklmnopqrstuvwxyz0123456789 ,.;=+-', { meta: true, platform: 'other' }, 'Windows and Super key commands of the desktop'),
+  ...chord(['tab', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown', 'home', 'printscreen', 'pause'], { meta: true, platform: 'other' }, 'Windows and Super key window commands'),
+  ...chord(['s', 'm', 'arrowleft', 'arrowright', 'arrowup', 'arrowdown'], { meta: true, shift: true, platform: 'other' }, 'Windows and Super key snipping and window moves'),
+  ...chord(['d', 'f4', 'arrowleft', 'arrowright', 'enter', 'o'], { meta: true, ctrl: true, platform: 'other' }, 'Windows and Super key virtual desktops, Narrator and the on-screen keyboard'),
 ];
 
 const lower = (k: string | readonly string[]): string[] => (typeof k === 'string' ? [k] : [...k]).map((x) => x.toLowerCase());
@@ -96,17 +102,16 @@ const stronger = (a: Policy, b: Policy): Policy =>
 
 /** The first reserved chord `spec` can fire on, on an Apple platform or not (default: this one), or
  *  `null` when none. `mod` and the key it stands for there (Meta on Apple, Ctrl elsewhere) are one
- *  key, as in `matchModifiers`. Off Apple, Meta must be free to be released. */
+ *  key, as in `matchModifiers`. Off Apple, Meta is the Windows or Super key the desktop keeps. */
 export function browserReservedChord(spec: KeySpec, apple = isApplePlatform()): ReservedChord | null {
   const keys = keysOf(spec);
   const m = spec.mods ?? {};
   const mod = stronger(m.mod, apple ? m.meta : m.ctrl);
-  if (!apple && !allows(m.meta, false)) return null;
   for (const c of BROWSER_RESERVED_CHORDS) {
     if (!keys.includes(c.key) || c.platform === (apple ? 'other' : 'apple')) continue;
     const mods = apple
       ? allows(mod, c.mod === true) && allows(m.ctrl, c.ctrl === true)
-      : allows(mod, c.mod === true || c.ctrl === true);
+      : allows(mod, c.mod === true || c.ctrl === true) && allows(m.meta, c.meta === true);
     if (mods && allows(m.alt, c.alt === true) && allows(m.shift, c.shift === true)) return c;
   }
   return null;
