@@ -64,3 +64,29 @@ describe('Timeline key drags under a hold that starts mid-drag', () => {
     expect(screen.queryByTestId('timeline-key-ghost')).toBeNull();
   });
 });
+
+describe('Timeline key drags torn down by an unmount', () => {
+  it('sends nothing when the dragged key\'s row goes away mid-drag', () => {
+    const calls = { onInput: vi.fn(), onChange: vi.fn(), onCancel: vi.fn() };
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={plain()} {...calls} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[2]!, { clientX: 50, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 150, clientY: 10 });
+    calls.onInput.mockClear();
+    rerender(<Timeline {...base} tracks={plain().slice(0, 1)} {...calls} />);
+    fireEvent.pointerUp(document, { clientX: 150, clientY: 10 });
+    expect(calls.onInput).not.toHaveBeenCalled();
+    expect(calls.onChange).not.toHaveBeenCalled();
+    expect(calls.onCancel).not.toHaveBeenCalled();
+  });
+
+  it('sends nothing when the timeline unmounts mid-drag', () => {
+    const calls = { onInput: vi.fn(), onChange: vi.fn(), onCancel: vi.fn() };
+    const { unmount } = renderWithIcons(<Timeline {...base} tracks={plain()} {...calls} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1]!, { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    calls.onInput.mockClear();
+    unmount();
+    expect(calls.onInput).not.toHaveBeenCalled();
+    expect(calls.onCancel).not.toHaveBeenCalled();
+  });
+});

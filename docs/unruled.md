@@ -4312,3 +4312,9 @@ Calls the lanes made without a ruling:
   (`uploadR8`, `uploadRGBA`) and an image (`upload`, `uploadRegistered`), and warns once; an image is never written
   over a page, and a sweep never deletes one. Rewriting the texture with the later upload, as the font-atlas and
   registered-texture collision does, was the alternative.
+
+## Audit scour (2026-11-26): ui's Timeline
+
+- 2026-11-26 (the fixer's call): a `Timeline` key drag torn down by an unmount (its row removed, or the timeline
+  itself) sends neither `onInput` nor `onCancel`, since the tracks it began from may no longer be the consumer's.
+  Reverting to them as a canceled drag does, which handed back a removed track, was the alternative.
