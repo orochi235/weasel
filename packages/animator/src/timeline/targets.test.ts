@@ -349,4 +349,22 @@ describe('one clock', () => {
     expect(b.committed).toBe(42);
   });
 
+  it('samples an edit and a seek on a finished timeline, committing to its target', () => {
+    const { animator, frame } = setup();
+    const b = box(7);
+    const seen: number[] = [];
+    const track = ramp(b.target, { onTick: (v) => seen.push(v) });
+    let tl!: TimelineHandle;
+    act(() => { tl = animator.timeline({ tracks: [track] }); });
+    frame(0);
+    frame(130);
+    expect(animator.isActive()).toBe(false);
+    act(() => { tl.edit(() => { track.keys[1].value = 42; }); });
+    expect(seen.at(-1)).toBe(42);
+    expect(b.committed).toBe(42);
+    act(() => { tl.seek(100); });
+    expect(seen.at(-1)).toBe(42);
+    expect(b.target.active).toBe(false);
+    expect(animator.isActive()).toBe(false);
+  });
 });
