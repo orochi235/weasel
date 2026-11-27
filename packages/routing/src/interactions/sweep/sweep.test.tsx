@@ -86,6 +86,39 @@ describe('createSweepAction', () => {
     host.remove();
   });
 
+  it('finds an item in the surface\'s own shadow root, and in a shadow root nested in an item', () => {
+    const surface = document.body.appendChild(document.createElement('div'));
+    const shadow = surface.attachShadow({ mode: 'open' });
+    const a = shadow.appendChild(document.createElement('button'));
+    a.dataset.key = 'a';
+    const b = shadow.appendChild(document.createElement('div'));
+    b.dataset.key = 'b';
+    const inner = b.attachShadow({ mode: 'open' }).appendChild(document.createElement('span'));
+    document.elementFromPoint = () => surface;
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = (x: number) => (x < 10 ? a : b);
+    (b.shadowRoot as { elementFromPoint?: unknown }).elementFromPoint = () => inner;
+    const keyOf = vi.fn((el: Element) => (el as HTMLElement).dataset.key);
+    const sweep = createSweepAction({ surface: () => surface, keyOf, begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: 5, y: 5 })).toBe(true);
+    expect(sweep.enabled?.({} as never, { x: 15, y: 5 })).toBe(true);
+    expect(keyOf).toHaveBeenCalledWith(inner);
+    surface.remove();
+  });
+
+  it('finds light content slotted into a surface\'s shadow root', () => {
+    const surface = document.body.appendChild(document.createElement('div'));
+    const shadow = surface.attachShadow({ mode: 'open' });
+    shadow.appendChild(document.createElement('div')).appendChild(document.createElement('slot'));
+    const item = surface.appendChild(document.createElement('button'));
+    item.dataset.key = 'a';
+    const label = item.appendChild(document.createElement('span'));
+    document.elementFromPoint = () => surface;
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => label;
+    const sweep = createSweepAction({ surface: () => surface, keyOf: (el) => (el as HTMLElement).dataset.key, begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: 5, y: 5 })).toBe(true);
+    surface.remove();
+  });
+
   it('enters the pressed item, then every item the drag crosses, in order', () => {
     const entered: string[] = [];
     const end = vi.fn();

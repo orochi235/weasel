@@ -17,6 +17,18 @@ function testerOf(inTree: Node): Pick<DocumentOrShadowRoot, 'elementFromPoint'> 
   return typeof doc.elementFromPoint === 'function' ? (doc as DocumentOrShadowRoot) : null;
 }
 
+/** The topmost element at client point (`x`, `y`) as laid out: {@link elementAt}, then down through each shadow
+ *  root the hit hosts, so an element inside one is found rather than its host. */
+export function deepElementAt(inTree: Node, x: number, y: number): Element | null {
+  let el = elementAt(inTree, x, y);
+  for (let root = el?.shadowRoot; root && typeof root.elementFromPoint === 'function'; root = el?.shadowRoot) {
+    const inner = root.elementFromPoint(x, y);
+    if (!inner || inner === el) break;
+    el = inner;
+  }
+  return el;
+}
+
 /** The parent `n` is laid out in: its slot when it is slotted, the host when its parent is a shadow root. */
 export function flatParentOf(n: Node): Element | null {
   const slot = (n as Partial<Element>).assignedSlot;
