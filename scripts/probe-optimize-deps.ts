@@ -13,19 +13,21 @@ import { appendFileSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { cpus, hostname, loadavg } from 'node:os';
 import { join, resolve } from 'node:path';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 import { nativeRegions, retagMimalloc } from './lib/vmmap-regions.mjs';
 
-retagMimalloc();
-
-const { values } = parseArgs({
+const { values: parsed } = cli(import.meta.url, {
+  summary: "Runs vite's dep optimizer for a dev config again and again in one process, with no server, and records memory after each run: whether a forced re-bundle, on its own, keeps native memory. Run with node --expose-gc.",
   options: {
-    config: { type: 'string', default: 'apps/forge/vite.config.ts' },
-    runs: { type: 'string', default: '8' },
-    out: { type: 'string', default: 'node_modules/.probe-optimize-deps' },
-    'fresh-config': { type: 'boolean', default: false },
+    config: { type: 'string', placeholder: '<vite config>', default: 'apps/forge/vite.config.ts', description: 'the config to optimize for' },
+    runs: { type: 'string', placeholder: '<n>', default: '8', description: 'optimizer runs' },
+    out: { type: 'string', placeholder: '<dir>', default: 'node_modules/.probe-optimize-deps', description: 'cleared, then one JSON line per run goes to <out>/runs.jsonl' },
+    'fresh-config': { type: 'boolean', default: false, description: 'resolve the config before every run, as a server restart does' },
   },
 });
+const values = parsed as { config: string; runs: string; out: string; 'fresh-config': boolean };
+
+retagMimalloc();
 const gc = (globalThis as { gc?: () => void }).gc;
 if (!gc) throw new Error('run with node --expose-gc');
 const out = resolve(values.out);

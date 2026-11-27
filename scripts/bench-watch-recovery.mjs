@@ -14,15 +14,19 @@ import { appendFileSync, statSync } from 'node:fs';
 import { cpus, hostname, loadavg } from 'node:os';
 import { resolve } from 'node:path';
 import { createServer } from 'vite';
+import { cli } from './lib/help.mjs';
 
-const argv = process.argv.slice(2);
-const opt = (name, fallback) => {
-  const i = argv.indexOf(`--${name}`);
-  return i >= 0 ? argv[i + 1] : fallback;
-};
-const loads = Number(opt('loads', 2));
-const sweeps = Number(opt('sweeps', 50));
-const out = opt('out');
+const { values } = cli(import.meta.url, {
+  summary: "What missed-event recovery costs a forge dev server: times the recovery middleware's work on each request of the workshop and frame pages' loads, then the quiet check's pass over every served file.",
+  options: {
+    loads: { type: 'string', placeholder: '<n>', default: '2', description: 'page loads (the first cold)' },
+    sweeps: { type: 'string', placeholder: '<n>', default: '50', description: 'quiet-check passes to time' },
+    out: { type: 'string', placeholder: '<file.jsonl>', description: 'append one record per load and one for the sweeps here' },
+  },
+});
+const loads = Number(values.loads);
+const sweeps = Number(values.sweeps);
+const out = values.out;
 const root = resolve(import.meta.dirname, '..');
 const machine = { host: hostname(), cpus: cpus().length, cpu: cpus()[0]?.model, load: loadavg() };
 const record = (r) => {

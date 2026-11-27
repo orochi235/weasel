@@ -119,7 +119,7 @@ function withBareValue(arg, options = {}) {
 export function arityOf(positionals = '') {
   let min = 0;
   let max = 0;
-  for (const word of positionals.match(/\[[^\]]*\]\S*|\S+/g) ?? []) {
+  for (const word of positionals.match(/\[[^\]]*\]\S*|<[^>]*>\S*|\S+/g) ?? []) {
     const repeats = /(…|\.\.\.)\]?$/.test(word);
     if (!word.startsWith('[')) min += 1;
     max = repeats ? Infinity : max + 1;

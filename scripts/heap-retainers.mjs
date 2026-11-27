@@ -7,11 +7,15 @@
  *   node --max-old-space-size=8192 scripts/heap-retainers.mjs <file.heapsnapshot> <name>... [--paths 3]
  */
 import { readFileSync } from 'node:fs';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 
-const { values, positionals } = parseArgs({ allowPositionals: true, options: { paths: { type: 'string', default: '3' } } });
+const { values, positionals } = cli(import.meta.url, {
+  summary: 'Prints what keeps objects alive in a V8 heap snapshot: for each constructor or closure name given, how many live nodes carry it, and the shortest strong path from the GC roots to the oldest few.',
+  positionals: '<file.heapsnapshot> <name>…',
+  options: { paths: { type: 'string', placeholder: '<n>', default: '3', description: 'paths to print per name' } },
+  notes: 'A big snapshot wants node --max-old-space-size=8192.',
+});
 const [file, ...names] = positionals;
-if (!file || names.length === 0) throw new Error('usage: heap-retainers.mjs <file.heapsnapshot> <name>...');
 
 const snap = JSON.parse(readFileSync(file, 'utf8'));
 const meta = snap.snapshot.meta;

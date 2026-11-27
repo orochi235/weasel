@@ -50,6 +50,7 @@ describe('parseCli', () => {
     expect(arityOf('[<ref>]')).toEqual({ min: 0, max: 1 });
     expect(arityOf('<from> [<to>]')).toEqual({ min: 1, max: 2 });
     expect(arityOf('<file>…')).toEqual({ min: 1, max: Infinity });
+    expect(arityOf('<config file> [<mode>]')).toEqual({ min: 1, max: 2 });
     expect(arityOf('[<pkg>...]')).toEqual({ min: 0, max: Infinity });
   });
 

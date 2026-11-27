@@ -13,17 +13,21 @@ import { fileURLToPath } from 'node:url';
 import { calibrate, createBar, planWeights, readWeights, writeWeights } from './lib/ci-progress.mjs';
 import { CI_YML, WRITES, builtSteps, installStep, readCi, stepGroups } from './lib/ci-steps.mjs';
 import { COMMIT_ENV, checkTree, stampReport, stepEnv, treeReport, treeStamp } from './lib/fleet-tree.mjs';
+import { cli } from './lib/help.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const TAIL = 80;
 const say = (line) => console.log(`ci-run: ${line}`);
-const mode = process.argv[2] ?? 'built';
-if (mode === '--calibrate') {
-  const log = process.argv[3];
-  if (!log) {
-    say('usage: ci-run.mjs --calibrate <log>');
-    process.exit(2);
-  }
+const { values, positionals } = cli(import.meta.url, {
+  summary: "The node-side half of fleet-ci.mjs: ci.yml's first build and every step after it, from a clean install, one line per step. It deletes ignored build output first and refuses a tree fleet-ci.mjs did not arm.",
+  positionals: '[built]',
+  options: {
+    calibrate: { type: 'string', placeholder: '<log>', description: "instead, refit ci-run.weights.json from a log of ci-run's step lines ('-' reads stdin)" },
+  },
+});
+const mode = positionals[0] ?? 'built';
+if (values.calibrate !== undefined) {
+  const log = values.calibrate;
   const before = readWeights();
   const after = calibrate(before, readFileSync(log === '-' ? 0 : log, 'utf8'));
   for (const [label, secs] of Object.entries(after)) {

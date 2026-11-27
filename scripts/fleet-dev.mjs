@@ -14,20 +14,24 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { lookup } from 'node:dns/promises';
 import { fileURLToPath } from 'node:url';
 import { FLEET_DEV_APPS } from './lib/fleet-dev-apps.mjs';
+import { cli } from './lib/help.mjs';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const APPS = FLEET_DEV_APPS;
 
-const args = process.argv.slice(2);
-const flag = (name) => {
-  const at = args.indexOf(name);
-  return at < 0 ? undefined : args.splice(at, 2)[1];
-};
-const drop = args.includes('--drop') && args.splice(args.indexOf('--drop'), 1);
-const take = args.includes('--take') && args.splice(args.indexOf('--take'), 1);
-const pinned = flag('--node');
-const tree = flag('--tree') ?? 'weasel-dev';
-const names = args.length ? args : ['draw', 'forge'];
+const { values, positionals } = cli(import.meta.url, {
+  summary: "Serves this checkout's dev servers (draw and forge by default) from a fleet node, syncing every edit made here until Ctrl-C, which stops them.",
+  positionals: "[<app>…]",
+  options: {
+    node: { type: 'string', placeholder: '<node>', description: 'serve from this node rather than the one onto picks' },
+    tree: { type: 'string', placeholder: '<name>', default: 'weasel-dev', description: 'the scratch tree on the node; another name runs a second copy' },
+    take: { type: 'boolean', description: 'replace a tree that is already serving' },
+    drop: { type: 'boolean', description: 'stop the service and remove the tree from the node, then exit' },
+  },
+  notes: `Apps: ${Object.keys(APPS).join(', ')}.`,
+});
+const { drop, take, node: pinned, tree } = values;
+const names = positionals.length ? positionals : ['draw', 'forge'];
 for (const name of names) if (!APPS[name]) throw new Error(`fleet-dev: no app "${name}"; one of ${Object.keys(APPS).join(', ')}`);
 
 const git = (...a) => execFileSync('git', a, { cwd: ROOT, encoding: 'utf8' }).trim();

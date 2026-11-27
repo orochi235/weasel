@@ -9,7 +9,7 @@
  * `--out` defaults to node_modules/.probe-rolldown-rebuilds; it and the input generated in `<out>-input` are cleared
  * on each run. One JSON line per iteration goes to `<out>/runs.jsonl` as it finishes. On macOS each line carries
  * vmmap's physical footprint and the dirty size of mimalloc's regions (`lib/vmmap-regions.mjs`), and on Linux the
- * anonymous resident size. `probe-rolldown-rebuilds-linux.sh` runs it under Linux. Runs kept:
+ * anonymous resident size. `probe-rolldown-rebuilds-linux.mjs` runs it under Linux. Runs kept:
  * `probe-rolldown-rebuilds.runs.jsonl`, with mimalloc's exit stats from `MIMALLOC_SHOW_STATS=1`.
  */
 import { execFileSync } from 'node:child_process';
@@ -17,21 +17,23 @@ import { appendFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from '
 import { createRequire } from 'node:module';
 import { arch, cpus, hostname, loadavg, platform, totalmem } from 'node:os';
 import { join, resolve } from 'node:path';
-import { parseArgs } from 'node:util';
+import { cli } from './lib/help.mjs';
 import { nativeRegions, retagMimalloc } from './lib/vmmap-regions.mjs';
 
-retagMimalloc();
-
-const { values } = parseArgs({
+const { values } = cli(import.meta.url, {
+  summary: "Builds one generated input again and again in one process with rolldown's API (or esbuild's, as a control) and records memory after a forced GC: whether repeated builds, outside vite, keep native memory. Run with node --expose-gc.",
   options: {
-    bundler: { type: 'string', default: 'rolldown' },
-    iters: { type: 'string', default: '60' },
-    modules: { type: 'string', default: '1500' },
-    from: { type: 'string', default: resolve(import.meta.dirname, '..') },
-    label: { type: 'string', default: '' },
-    out: { type: 'string', default: 'node_modules/.probe-rolldown-rebuilds' },
+    bundler: { type: 'string', placeholder: 'rolldown|esbuild', default: 'rolldown', description: 'the bundler to build with' },
+    iters: { type: 'string', placeholder: '<n>', default: '60', description: 'builds' },
+    modules: { type: 'string', placeholder: '<n>', default: '1500', description: 'modules in the generated input' },
+    from: { type: 'string', placeholder: '<dir>', default: resolve(import.meta.dirname, '..'), description: 'resolve the bundler from here' },
+    label: { type: 'string', placeholder: '<text>', default: '', description: 'recorded on each row' },
+    out: { type: 'string', placeholder: '<dir>', default: 'node_modules/.probe-rolldown-rebuilds', description: 'cleared, then one JSON line per build goes to <out>/runs.jsonl' },
   },
+  notes: "Env: MIMALLOC_SHOW_STATS=1 prints mimalloc's exit stats.",
 });
+
+retagMimalloc();
 const gc = globalThis.gc;
 if (!gc) throw new Error('run with node --expose-gc');
 const iters = Number(values.iters);
