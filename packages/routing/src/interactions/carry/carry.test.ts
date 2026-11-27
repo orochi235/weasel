@@ -146,6 +146,35 @@ describe('startCarry', () => {
     expect(heard).toEqual([]);
   });
 
+  it('tells the source of no move after a surface canceled the carry from inside it', () => {
+    const el = document.body.appendChild(document.createElement('div'));
+    el.getBoundingClientRect = rect(0, 1000);
+    let carry: Carry | null = null;
+    const off = addCarrySurface({ element: el, receive: () => { carry?.cancel(); return 'handled'; } });
+    cleanups.push(() => { off(); el.remove(); });
+    const onMove = vi.fn();
+    const onCancel = vi.fn();
+    carry = carryFrom(40, { onMove, onCancel });
+    document.dispatchEvent(move(1));
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(onMove).not.toHaveBeenCalled();
+  });
+
+  it('enters no surface after the one it left canceled the carry', () => {
+    const left = document.body.appendChild(document.createElement('div'));
+    left.getBoundingClientRect = rect(0, 100);
+    const right = document.body.appendChild(document.createElement('div'));
+    right.getBoundingClientRect = rect(100, 1000);
+    let carry: Carry | null = null;
+    const offLeft = addCarrySurface({ element: left, receive: (stage) => { if (stage === 'leave') carry?.cancel(); return 'handled'; } });
+    const heard = listen(right);
+    cleanups.push(() => { offLeft(); left.remove(); right.remove(); });
+    carry = carryFrom(40);
+    document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, bubbles: true, buttons: 1, clientX: 50, clientY: 50 }));
+    document.dispatchEvent(new PointerEvent('pointermove', { pointerId: 3, bubbles: true, buttons: 1, clientX: 500, clientY: 50 }));
+    expect(carry.active).toBe(false);
+    expect(heard).toEqual([]);
+  });
 });
 
 /** A rect from `left` to `right`, and 0 to 1000 down. */

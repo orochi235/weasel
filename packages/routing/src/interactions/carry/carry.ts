@@ -111,6 +111,7 @@ export function startCarry(
   const pointerId = down.pointerId;
   const doc = origin.ownerDocument;
   let over: CarrySurface | null = null;
+  let ended = false;
 
   const leave = (at: CarryPointer): void => {
     const was = over;
@@ -125,6 +126,8 @@ export function startCarry(
       return;
     }
     leave(at);
+    // The leave can cancel the carry, which must enter nothing after it.
+    if (ended) return;
     over = next;
     next?.receive('enter', payload, at, pointerId);
   };
@@ -135,7 +138,7 @@ export function startCarry(
     onMove: (e) => {
       last = e;
       step(e);
-      cb.onMove?.(e);
+      if (!ended) cb.onMove?.(e);
     },
     onEnd: (e) => {
       step(e);
@@ -145,6 +148,7 @@ export function startCarry(
       cb.onEnd?.({ taken, event: e });
     },
     onCancel: (reason) => {
+      ended = true;
       leave(last);
       cb.onCancel?.(reason);
     },
