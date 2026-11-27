@@ -45,8 +45,9 @@ export interface FitViewToBoundsOptions {
  *
  * `null` when there is nothing to fit: bounds with no extent on either axis,
  * or not finite. The caller that owns the viewport resolves that to the view
- * Cmd-0 gives (`resetView`). A viewport with no area cannot be fit into, and
- * returns `currentView` unchanged with a `console.warn`.
+ * Cmd-0 gives (`resetView`). A viewport with no area, or whose size is not
+ * finite, cannot be fit into, and returns `currentView` unchanged with a
+ * `console.warn`.
  */
 export function fitViewToBounds(
   bounds: Bounds,
@@ -59,8 +60,9 @@ export function fitViewToBounds(
   const framed = poseFrameOf(bounds) ? axisAlignedBounds(bounds) : bounds;
   if (!hasExtent(framed)) return null;
   bounds = framed;
-  if (viewportDims.width <= 0 || viewportDims.height <= 0) {
-    console.warn('[weasel] fitViewToBounds: viewport has zero or negative area; returning currentView unchanged.', viewportDims);
+  const { width: vw, height: vh } = viewportDims;
+  if (!(vw > 0 && vh > 0 && Number.isFinite(vw) && Number.isFinite(vh))) {
+    console.warn(`[weasel] fitViewToBounds: viewport has zero, negative, or non-finite area (${vw}×${vh}); returning currentView unchanged.`);
     return currentView;
   }
 
@@ -106,8 +108,8 @@ export function fitViewToBounds(
       ? (scale < 0 ? start + size : start) - padding / scale
       : start + size / 2 - viewport / (2 * scale);
   return {
-    x: place(bounds.x, width, availW, viewportDims.width, scaleX),
-    y: place(bounds.y, height, availH, viewportDims.height, scaleY),
+    x: place(bounds.x, width, availW, vw, scaleX),
+    y: place(bounds.y, height, availH, vh, scaleY),
     scale: { x: scaleX, y: scaleY },
   };
 }

@@ -255,4 +255,11 @@ describe('fitViewToBounds — framed bounds and degenerate viewports', () => {
     expect(v.scale.x).toBeCloseTo(1);
     expect(v.x).toBeCloseTo(-50);
   });
+
+  it('takes a NaN or infinite viewport as one it cannot fit into', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const b = { x: 0, y: 0, width: 100, height: 100 };
+    expect(fitViewToBounds(b, { width: NaN, height: 200 }, CURRENT)).toBe(CURRENT);
+    expect(fitViewToBounds(b, { width: 200, height: Infinity }, CURRENT)).toBe(CURRENT);
+  });
 });
