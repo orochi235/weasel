@@ -23,6 +23,24 @@ describe('useContentBounds', () => {
     expect(result.current()?.width).toBe(40);
   });
 
+  it('boxes the content again when the adapter changes the pose copies are drawn from', () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const g = scene.add({
+      kind: 'group', layer: 'main', pose: { x: 0, y: 0, width: 0, height: 0 }, data: null,
+      copiesFromPose: (pose) => [translate((pose as RectPose).x, 0)],
+    });
+    scene.add({ kind: 'mark', layer: 'main', pose: { x: 0, y: 0, width: 10, height: 10 }, data: null, parent: g });
+    const boundsOf = (): Bounds => ({ x: 0, y: 0, width: 10, height: 10 });
+    const adapterAt = (x: number) => ({ getPose: (id: string) => ({ ...scene.get(id as never)!.pose, x }) });
+    const { result, rerender } = renderHook(({ adapter }) => useContentBounds<RectPose>({
+      scene: scene as never, boundsOf, boundsOfPose: () => null, adapter,
+      gestureSource: undefined, previewPoseExtra: undefined,
+    }), { initialProps: { adapter: adapterAt(100) } });
+    expect(result.current()?.width).toBe(110);
+    rerender({ adapter: adapterAt(200) });
+    expect(result.current()?.width).toBe(210);
+  });
+
   it('reaches the copies a group draws', () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
     const g = scene.add({
