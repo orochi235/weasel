@@ -133,6 +133,19 @@ describe('startCarry', () => {
     expect(heard).toEqual(['enter']);
   });
 
+  it('never carries over a surface in another document, whose client points are not this one\'s', () => {
+    const frame = document.body.appendChild(document.createElement('iframe'));
+    const doc = frame.contentDocument!;
+    const el = doc.body.appendChild(doc.createElement('div'));
+    el.getBoundingClientRect = rect(0, 1000);
+    (doc as { elementFromPoint?: unknown }).elementFromPoint = () => el;
+    const heard = listen(el);
+    cleanups.push(() => frame.remove());
+    carryFrom(40);
+    document.dispatchEvent(move(1));
+    expect(heard).toEqual([]);
+  });
+
 });
 
 /** A rect from `left` to `right`, and 0 to 1000 down. */
