@@ -275,4 +275,99 @@ describe('useDecayLoop', () => {
     act(() => { stepRAF(16); });
     expect(onTick).not.toHaveBeenCalled();
   });
+
+  it.each(['stop', 'bounce', 'spring'] as const)(
+    'boundary:%s lets a coast that starts past a bound move freely back in, without jumping to it',
+    (boundary) => {
+      const ticks: number[] = [];
+      const { result } = renderHook(() => useDecayLoop());
+      act(() => {
+        result.current.start({
+          velocity: { vx: 1, vy: 0 },        // moving right, back toward the bounds
+          friction: 0.999999,
+          minSpeed: 0.001,
+          viewBounds: { minX: 0, maxX: 100 },
+          boundary,
+          initialPosition: { x: -50, y: 0 },  // starts outside, left of minX
+          onTick: (dx) => { ticks.push(dx); },
+        });
+      });
+      act(() => { stepRAF(1); });
+      act(() => { stepRAF(1); });
+      act(() => { stepRAF(1); });
+      expect(ticks).toHaveLength(2);
+      expect(ticks[0]).toBeCloseTo(1);
+      expect(ticks[1]).toBeCloseTo(1);
+    },
+  );
+
+  it('checks bounds against the live position when given a position reader', () => {
+    const ticks: number[] = [];
+    let x = 0;
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: 1, vy: 0 },
+        friction: 0.999999,
+        minSpeed: 0.001,
+        viewBounds: { maxX: 10 },
+        boundary: 'stop',
+        position: () => ({ x, y: 0 }),
+        onTick: (dx) => { x += dx; ticks.push(dx); },
+      });
+    });
+    act(() => { stepRAF(1); });
+    act(() => { stepRAF(1); });  // x: 0 -> 1
+    x = 9.5;                     // something else moves the view mid-coast
+    act(() => { stepRAF(1); });  // the coast picks up from 9.5
+    act(() => { stepRAF(1); });  // a full step would reach 10.5; stops at 10
+    expect(ticks[0]).toBeCloseTo(1);
+    expect(ticks[1]).toBeCloseTo(0.5);
+    expect(x).toBeCloseTo(10);
+  });
+
+  it('refuses viewBounds with a boundary but no position to check them from', () => {
+    const onTick = vi.fn();
+    const { result } = renderHook(() => useDecayLoop());
+    expect(() => result.current.start({
+      velocity: { vx: 1, vy: 0 }, viewBounds: { minX: 0 }, boundary: 'stop', onTick,
+    })).toThrow(TypeError);
+    act(() => { stepRAF(16); });
+    expect(onTick).not.toHaveBeenCalled();
+  });
+
+  it('calls the onEnd of a coast that cancel, a new start, or an unmount cuts short', () => {
+    const { result, unmount } = renderHook(() => useDecayLoop());
+    const fling = (onEnd: () => void) => act(() => {
+      result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.9, minSpeed: 0.001, onTick: () => {}, onEnd });
+    });
+    const canceled = vi.fn();
+    fling(canceled);
+    act(() => { result.current.cancel(); });
+    expect(canceled).toHaveBeenCalledExactlyOnceWith('cancel');
+    const replaced = vi.fn();
+    fling(replaced);
+    fling(() => {});
+    expect(replaced).toHaveBeenCalledExactlyOnceWith('cancel');
+    const unmounted = vi.fn();
+    fling(unmounted);
+    unmount();
+    expect(unmounted).toHaveBeenCalledExactlyOnceWith('cancel');
+  });
+
+  it('compares minSpeed to the velocity times speedScale, so a coast lasts as long on screen at any zoom', () => {
+    const ticksAt = (zoom: number) => {
+      const onTick = vi.fn();
+      const { result } = renderHook(() => useDecayLoop());
+      act(() => {
+        result.current.start({
+          velocity: { vx: 1 / zoom, vy: 0 }, friction: 0.5, minSpeed: 0.1, speedScale: { x: zoom, y: zoom }, onTick,
+        });
+      });
+      for (let i = 0; i < 12; i++) act(() => { stepRAF(16); });
+      return onTick.mock.calls.length;
+    };
+    expect(ticksAt(4)).toBe(ticksAt(1));
+    expect(ticksAt(0.25)).toBe(ticksAt(1));
+  });
 });

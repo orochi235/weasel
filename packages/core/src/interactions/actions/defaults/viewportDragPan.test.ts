@@ -394,6 +394,13 @@ describe('viewportDragPanAction inertia', () => {
     expect(calls[0].viewBounds).toBe(bounds);
   });
 
+  it('hands the decay loop the live view position, so a move made mid-coast is seen', () => {
+    const { view, calls } = makeDecayView();
+    fling(view, { inertia: { boundary: 'stop', bounds: { minX: -50, maxX: 50 } } });
+    view.set({ ...view.get(), x: 42 });
+    expect(calls[0].position?.().x).toBe(42);
+  });
+
   it('coast ticks move the view from wherever the drag landed', () => {
     const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 1, y: 1 } });
     fling(view, { inertia: {} });
@@ -408,6 +415,12 @@ describe('viewportDragPanAction inertia', () => {
     const two = makeDecayView({ x: 0, y: 0, scale: { x: 2, y: 2 } });
     fling(two.view, { inertia: {} });
     expect(two.calls[0].velocity.vx).toBeCloseTo(one.calls[0].velocity.vx / 2);
+  });
+
+  it('measures the coast stop speed on screen, whatever the zoom', () => {
+    const { view, calls } = makeDecayView({ x: 0, y: 0, scale: { x: 3, y: 2 } });
+    fling(view, { inertia: {} });
+    expect(calls[0].speedScale).toEqual({ x: 3, y: 2 });
   });
 
   it('locks coast velocity to the axis the drag was locked to', () => {

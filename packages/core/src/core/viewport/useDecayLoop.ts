@@ -31,6 +31,9 @@ export interface DecayLoopOptions {
   velocity: { vx: number; vy: number };
   friction?: number;
   minSpeed?: number;
+  /** Per-axis factor turning `velocity` into the units `minSpeed` is in: a view's
+   *  scale, when the velocity is in world units and `minSpeed` in screen pixels. Default 1. */
+  speedScale?: { x: number; y: number };
   /** Bounds for boundary clamping. Requires `boundary` to take effect. */
   viewBounds?: PanBounds;
   /**
@@ -42,10 +45,17 @@ export interface DecayLoopOptions {
    * A coast let go past an edge springs back to it unless it is heading back inside.
    */
   boundary?: 'stop' | 'bounce' | 'spring';
-  /** Starting position for internal boundary tracking. Required when `viewBounds` is set. */
+  /** Starting position for internal boundary tracking, used when no `position` is given.
+   *  `viewBounds` with a `boundary` needs one of the two. */
   initialPosition?: { x: number; y: number };
+  /** Reads the live position each frame for boundary checks, so a move made by
+   *  anything else mid-coast is seen. Without it, the loop tracks its own sum of
+   *  deltas from `initialPosition`. */
+  position?: () => { x: number; y: number };
   onTick: (dx: number, dy: number) => void;
-  onEnd?: () => void;
+  /** Called once when the coast ends: `'end'` when it comes to rest, `'cancel'`
+   *  when `cancel`, a new `start`, or an unmount cuts it short. */
+  onEnd?: (reason: 'end' | 'cancel') => void;
 }
 
 /** What each `boundary` is as a blits glide edge: `'spring'` keeps half the speed per bounce. */
@@ -69,18 +79,23 @@ interface Coast {
   /** The position at the last frame, from which the next tick's delta is taken. */
   at: number[];
   minSpeed: number;
+  /** `speedScale` per axis, as magnitudes. */
+  k: { x: number; y: number };
   /** Whether the glide is cued yet: that happens on the first frame, at its time. */
   cued: boolean;
+  /** What a glide re-cued from a live position is built from. */
+  config: DecayLoopOptions;
+  friction: number;
+  position?: () => { x: number; y: number };
   onTick: (dx: number, dy: number) => void;
-  onEnd?: () => void;
+  onEnd?: (reason: 'end' | 'cancel') => void;
 }
 
-/** A blits glide for `config`: per-axis bounds only where `boundary` and `viewBounds` are both set. */
-function glideFor(config: DecayLoopOptions, friction: number): { from: number[]; patch: Coast['glide'] } {
-  const { velocity, viewBounds: b, boundary, initialPosition } = config;
-  const from = [initialPosition?.x ?? 0, initialPosition?.y ?? 0];
+/** A blits glide for `config` from `from`: per-axis bounds only where `boundary` and `viewBounds` are both set. */
+function glideFor(config: DecayLoopOptions, friction: number, from: number[]): Coast['glide'] {
+  const { velocity, viewBounds: b, boundary } = config;
   const bounded = b !== undefined && boundary !== undefined;
-  const patch = glide<object, Pan, number[]>('p', {
+  return glide<object, Pan, number[]>('p', {
     from,
     // blits counts velocity per second and the friction as a time constant in ms.
     velocity: [velocity.vx * 1000, velocity.vy * 1000],
@@ -94,7 +109,20 @@ function glideFor(config: DecayLoopOptions, friction: number): { from: number[];
       edge: EDGES[boundary],
     }),
   });
-  return { from, patch };
+}
+
+const PAN_MIX = { name: 'viewport coast' };
+
+/** Restarts `c`'s glide at `now` from `live`, keeping its velocity: something else moved the view mid-coast. */
+function recue(c: Coast, live: { x: number; y: number }, now: number): void {
+  const v = c.glide.read(VIEW)?.velocity ?? [0, 0];
+  c.mix.close();
+  c.mix = mix<object, Pan>(PAN, PAN_MIX);
+  c.mix.sync(now);
+  c.at = [live.x, live.y];
+  const velocity = { vx: (v[0] as number) / 1000, vy: (v[1] as number) / 1000 };
+  c.glide = glideFor({ ...c.config, velocity }, c.friction, c.at);
+  c.mix.cue({ patch: c.glide });
 }
 
 /** A frame loop that coasts a value to a stop under friction on a blits glide,
@@ -122,6 +150,8 @@ export function useDecayLoop() {
       frameLoop.request();
       return;
     }
+    const live = c.position?.();
+    if (live && (live.x !== c.at[0] || live.y !== c.at[1])) recue(c, live, now);
     const p = c.mix.probe(VIEW).p;
     const [x, y] = [p[0] as number, p[1] as number];
     const dx = x - (c.at[0] as number);
@@ -131,9 +161,9 @@ export function useDecayLoop() {
     // The callback may have canceled or replaced this coast.
     if (coastRef.current !== c) return;
     const v = c.glide.read(VIEW)?.velocity ?? [0, 0];
-    if (Math.hypot(v[0] as number, v[1] as number) / 1000 < c.minSpeed) {
+    if (Math.hypot((v[0] as number) * c.k.x, (v[1] as number) * c.k.y) / 1000 < c.minSpeed) {
       end(frameLoop);
-      c.onEnd?.();
+      c.onEnd?.('end');
       return;
     }
     frameLoop.request();
@@ -149,22 +179,31 @@ export function useDecayLoop() {
     },
   );
 
-  const cancel = useCallback(() => { end(frameLoop); }, [end, frameLoop]);
+  const cancel = useCallback(() => { end(frameLoop)?.onEnd?.('cancel'); }, [end, frameLoop]);
 
   const start = useCallback((config: DecayLoopOptions) => {
     checkInertia('useDecayLoop', config);
+    if (config.viewBounds && config.boundary && !config.position && !config.initialPosition) {
+      throw new TypeError('useDecayLoop: viewBounds with a boundary needs a position or an initialPosition to check them from');
+    }
     cancel();
-    const { velocity, friction = 0.92, minSpeed = 0.01, onTick, onEnd } = config;
-    const speed = Math.hypot(velocity.vx, velocity.vy);
+    const { velocity, friction = 0.92, minSpeed = 0.01, position, initialPosition, onTick, onEnd } = config;
+    const k = { x: Math.abs(config.speedScale?.x ?? 1), y: Math.abs(config.speedScale?.y ?? 1) };
+    const speed = Math.hypot(velocity.vx * k.x, velocity.vy * k.y);
     // A non-finite velocity is a bad measurement, not a fling: friction never brings it down.
-    if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.(); return; }
-    const { from, patch } = glideFor(config, friction);
+    if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.('end'); return; }
+    const at = position?.() ?? initialPosition ?? { x: 0, y: 0 };
+    const from = [at.x, at.y];
     coastRef.current = {
-      mix: mix<object, Pan>(PAN, { name: 'viewport coast' }),
-      glide: patch,
+      mix: mix<object, Pan>(PAN, PAN_MIX),
+      glide: glideFor(config, friction, from),
       at: from,
       minSpeed,
+      k,
       cued: false,
+      config,
+      friction,
+      position,
       onTick,
       onEnd,
     };

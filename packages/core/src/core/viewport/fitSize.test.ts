@@ -83,4 +83,16 @@ describe('fitSize', () => {
     expect(r.panX).toBe(475);
     expect(r.panY).toBe(475);
   });
+
+  it.each([[0, 100], [100, 0], [-10, 100], [NaN, 100], [Infinity, 100]])(
+    'refuses a %s x %s viewport, which has no area to fit into',
+    (w, h) => {
+      expect(() => fitSize(w, h, 10, 10)).toThrow(RangeError);
+      expect(() => fitZoom(w, h, 10, 10)).toThrow(RangeError);
+    },
+  );
+
+  it.each([0, -0.5, 1.5, NaN])('refuses a fill of %s, outside (0, 1]', (fill) => {
+    expect(() => fitSize(200, 200, 10, 10, 0, free, fill)).toThrow(RangeError);
+  });
 });

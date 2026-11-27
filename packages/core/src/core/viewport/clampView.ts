@@ -22,31 +22,27 @@ export interface CanvasSize {
  * sits in the middle of the canvas.
  */
 export function clampView(view: View, bounds: ClampBounds, canvas: CanvasSize): View {
-  // A negative scale is a flipped axis, so the visible rect runs the other way
-  // from `view.x`/`view.y`: its extent is the magnitude, and the anchor is the
-  // rect's far edge rather than its near one.
-  const visW = Math.abs(canvas.width / view.scale.x);
-  const visH = Math.abs(canvas.height / view.scale.y);
-  const flipX = view.scale.x < 0;
-  const flipY = view.scale.y < 0;
-
-  let x: number;
-  if (visW >= bounds.width) {
-    x = bounds.x + (bounds.width - visW) / 2 + (flipX ? visW : 0);
-  } else {
-    const minX = flipX ? bounds.x + visW : bounds.x;
-    const maxX = flipX ? bounds.x + bounds.width : bounds.x + bounds.width - visW;
-    x = view.x < minX ? minX : view.x > maxX ? maxX : view.x;
-  }
-
-  let y: number;
-  if (visH >= bounds.height) {
-    y = bounds.y + (bounds.height - visH) / 2 + (flipY ? visH : 0);
-  } else {
-    const minY = flipY ? bounds.y + visH : bounds.y;
-    const maxY = flipY ? bounds.y + bounds.height : bounds.y + bounds.height - visH;
-    y = view.y < minY ? minY : view.y > maxY ? maxY : view.y;
-  }
-
+  const x = clampAxis(view.x, canvas.width / view.scale.x, bounds.x, bounds.width);
+  const y = clampAxis(view.y, canvas.height / view.scale.y, bounds.y, bounds.height);
   return x === view.x && y === view.y ? view : { x, y, scale: view.scale };
+}
+
+/**
+ * One axis of {@link clampView}. A negative `span` is a flipped axis: the
+ * visible range runs the other way from `pos`, so the anchor is its far edge.
+ * A span too wide for a double has no finite position, so `pos` stays.
+ */
+function clampAxis(pos: number, span: number, start: number, size: number): number {
+  const vis = Math.abs(span);
+  const flip = span < 0;
+  let next: number;
+  if (vis >= size) {
+    const center = start + size / 2;
+    next = flip ? center + vis / 2 : center - vis / 2;
+  } else {
+    const min = flip ? start + vis : start;
+    const max = flip ? start + size : start + size - vis;
+    next = pos < min ? min : pos > max ? max : pos;
+  }
+  return Number.isFinite(next) ? next : pos;
 }
