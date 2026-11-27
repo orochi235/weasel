@@ -34,7 +34,7 @@ export function useTimeWindow(given: TimeWindow | undefined, duration: number, o
  * A timeline's selected key, held unless `given`, and its selected segment, always held here. A key and a segment are
  * one selection: taking either gives up the other, and a key selection arriving through `given` drops the segment.
  * Either is dropped once its track changes by an edit the timeline did not send through `send`, which may have moved
- * its index onto another key; a key selection so dropped is reported as `null`. `inspected` is the selection as it reads
+ * its index onto another key, and is kept while the tracks it sent over are still given, the consumer yet to apply it; a key selection so dropped is reported as `null`. `inspected` is the selection as it reads
  * in a key drag's preview, once the tracks show it: the preview can re-sort the dragged key to another index.
  */
 export function useKeyAndSegment(
@@ -43,8 +43,9 @@ export function useKeyAndSegment(
   const [held, setHeld] = useHeld<KeySelection | null>(given, null, onSelectionChange);
   const [keyPin, setKeyPin] = useState<{ id: string; reads: string } | null>(null);
   const [segment, setSegment] = useState<{ sel: KeySelection; reads: string } | null>(null);
-  // The tracks this timeline last sent out: a track reading as it does there changed by the timeline's own edit.
-  const [sent, setSent] = useState<readonly Track[] | null>(null);
+  // The tracks this timeline last sent out, and those it sent them over: a track reading as it does in `next` changed
+  // by the timeline's own edit, and `from` still given means the consumer has not answered it yet.
+  const [sent, setSent] = useState<{ next: readonly Track[]; from: readonly Track[] } | null>(null);
   const [previewed, setPreviewed] = useState<KeyEdit | null>(null);
   const [givenKey, setGivenKey] = useState(selectionKey(given));
   const nextGivenKey = selectionKey(given);
@@ -55,7 +56,7 @@ export function useKeyAndSegment(
   /** How the track at `path` reads now, or `null` when something other than the timeline changed it from `reads`. */
   const readsOwn = (path: readonly number[], reads: string): string | null => {
     const now = trackReading(tracks, path);
-    return now === reads || (sent !== null && trackReading(sent, path) === now) ? now : null;
+    return now === reads || (sent !== null && (sent.from === tracks || trackReading(sent.next, path) === now)) ? now : null;
   };
 
   let stale: string | null = null;
@@ -89,7 +90,7 @@ export function useKeyAndSegment(
     if (selection) setHeld(null);
   };
   const dropSegment = (): void => setSegment(null);
-  const send = (next: readonly Track[]): void => setSent(next);
+  const send = (next: readonly Track[]): void => setSent({ next, from: tracks });
   return { selection, inspected, segmentSelection: segment?.sel ?? null, selectKey, selectSegment, dropSegment, send, preview: setPreviewed };
 }
 
