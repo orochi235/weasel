@@ -43,6 +43,8 @@ interface EdgePanInputs {
   options: EdgePanOptions | false;
   dispatcher: Dispatcher;
   element: () => HTMLElement | null;
+  /** The canvas's size in CSS px before any ancestor's transform: what a view spans. `null` before it is measured. */
+  layoutSize: () => { width: number; height: number } | null;
   getView: () => View;
   setView: (next: View) => void;
   /** The content's world rect, which `limit: { past }` measures from. */
@@ -89,13 +91,14 @@ function edgePan(read: () => EdgePanInputs) {
 
   /** The scroll the pointer asks for now, in screen pixels a second; `null` for none. */
   const velocity = (): { x: number; y: number; dims: { width: number; height: number } } | null => {
-    const { options, dispatcher, element } = read();
+    const { options, dispatcher, element, layoutSize } = read();
     if (options === false) return null;
     const at = feed?.at();
     const el = element();
     if (!at || !el || !autoPanning(dispatcher)) return null;
     const r = el.getBoundingClientRect();
-    if (!(r.width > 0 && r.height > 0)) return null;
+    const dims = layoutSize();
+    if (!(r.width > 0 && r.height > 0) || !dims || !(dims.width > 0 && dims.height > 0)) return null;
     const zone = options.zone ?? DEFAULT_ZONE;
     const speed = options.speed ?? DEFAULT_SPEED;
     const pull = (inside: number) => (zone > 0
@@ -105,7 +108,7 @@ function edgePan(read: () => EdgePanInputs) {
     const x = pull(r.right - at.clientX) - pull(at.clientX - r.left);
     // eslint-disable-next-line no-restricted-syntax -- as above.
     const y = pull(r.bottom - at.clientY) - pull(at.clientY - r.top);
-    return x === 0 && y === 0 ? null : { x, y, dims: { width: r.width, height: r.height } };
+    return x === 0 && y === 0 ? null : { x, y, dims: { width: dims.width, height: dims.height } };
   };
 
   return {
