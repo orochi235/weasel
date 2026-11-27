@@ -64,6 +64,8 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
         warnedUnbuildable.add(tool);
         console.warn(`[SceneCanvas] tool "${id}" is left out: no insert factory on this canvas builds the kind it inserts`);
       }
+      // `defaultTools` naming it mounted it among the built-ins above.
+      if (Object.hasOwn(registry, id)) delete registry[id];
       continue;
     }
     setOwn(registry, id, tool);

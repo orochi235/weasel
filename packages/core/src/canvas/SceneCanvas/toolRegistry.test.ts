@@ -134,6 +134,14 @@ describe('resolveToolRegistry', () => {
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('tools.toString=true'));
   });
 
+  it("leaves out a preset's own tool that inserts nothing, though defaultTools names it", () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const own = { ...tool('own'), bindings: [{ spec: { kind: 'drag' }, actionId: 'insert', opts: { params: { kind: 'widget' } } }] } as Tool;
+    const enabled = resolveFeatures([{ id: 'mine', tools: [own] }]);
+    const registry = resolveToolRegistry({ ...args, offered: { ...offered, own }, enabled, defaultTools: ['own'], insertBuilds: () => false });
+    expect(Object.keys(registry)).toEqual([]);
+  });
+
   it('stays quiet outside dev', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     resolveToolRegistry({ ...args, defaultTools: OFFERED_IDS, patch: { nope: true, star: tool('star') }, dev: false });
