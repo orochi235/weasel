@@ -4,7 +4,6 @@ import { clientScaleOf, clientToCanvasRect, layoutBoxOf } from '../../viewport/c
 import { openPointerSession, type PointerSession, type PointerSessionCancelReason } from '../pointerSession';
 import { flatParentOf } from '../elementAt';
 import { isPrimaryPress } from '@weasel-js/gestures';
-import { flatParentOf } from '../elementAt';
 
 /** A 2D point in the rect element's local coordinate space. */
 export interface HandleDragPoint {
