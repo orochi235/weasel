@@ -33,6 +33,12 @@ export interface DisplayKind<D extends Display = Display> {
   speak?(value: number, display: D, ctx: FormatContext): string;
   parse?(text: string, display: D, ctx: FormatContext): number;
   mathml?(value: number, display: D, ctx: FormatContext): string | undefined;
+  /**
+   * How long until `format`'s text changes for a value moving at `rate` (value units per unit of time), in that
+   * unit of time; Infinity when it never will. A kind without one is searched by `format` alone
+   * ({@link nextChangeFor}). Answer a time at or just past the change, never before it.
+   */
+  nextChange?(value: number, rate: number, display: D, ctx: FormatContext): number;
 }
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' } as const;

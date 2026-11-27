@@ -1,0 +1,7 @@
+/* A box that only widens, its figures at the end: a digit gained grows it leftward and moves nothing after it. */
+.live {
+  display: inline-block;
+  min-inline-size: var(--live-quantity-widest, 0);
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}

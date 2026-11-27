@@ -5,6 +5,7 @@ import { fractionKind, multiplierKind, percentKind, ratioKind, zoomKind } from '
 import { bytesKind, currencyKind, durationKind, unitKind } from './kinds/measure';
 import { ordinalKind, romanKind } from './kinds/numeral';
 import { scientificKind } from './kinds/scientific';
+import { instantKind, relativeKind } from './kinds/time';
 import { infinityParts, infinityWord, readInfinity } from './infinity';
 import { parseNumberIn, type UnitTable } from './number';
 import { defaultLocale } from './localized';
@@ -17,7 +18,7 @@ const KINDS = createReflectable<DisplayKind<never>>({ name: 'display kinds' });
 for (const k of [
   decimalKind, integerKind, compactKind, scientificKind,
   percentKind, fractionKind, ratioKind, multiplierKind, zoomKind,
-  unitKind, currencyKind, durationKind, bytesKind,
+  unitKind, currencyKind, durationKind, bytesKind, instantKind, relativeKind,
   romanKind, ordinalKind,
 ]) KINDS.push(k.kind, k as DisplayKind<never>, { source: 'kit', fallback: true });
 
@@ -64,7 +65,8 @@ export interface Presentation {
 
 const DEFAULT_DISPLAY: Display = { kind: 'decimal' };
 
-function contextOf(q: Quantity, options: PresentOptions | undefined): FormatContext {
+/** The context a kind formats `q` in: the locale, and the unit `q` is tagged with. */
+export function contextFor(q: Quantity, options: PresentOptions | undefined): FormatContext {
   const unit = unitOf(q);
   const locale = options?.locale ?? defaultLocale();
   return unit === undefined ? { locale } : { locale, unit };
@@ -87,7 +89,7 @@ export function partsOf(q: Quantity, fallback?: Display, options?: PresentOption
   const display = displayOf(q, fallback) ?? DEFAULT_DISPLAY;
   const value = amount(q);
   if (isInfinite(value)) return infinityParts(value, display);
-  return displayKindOf(display).format(value, display, contextOf(q, options));
+  return displayKindOf(display).format(value, display, contextFor(q, options));
 }
 
 /** `q` as text, spoken text, HTML and MathML. See {@link qty} for one at a time. */
@@ -99,7 +101,7 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
     const word = infinityWord(display, value > 0 ? 1 : -1);
     return { text: word.text, spoken: word.spoken, html: partsToHtml(value, infinityParts(value, display)) };
   }
-  const ctx = contextOf(q, options);
+  const ctx = contextFor(q, options);
   const parts = kind.format(value, display, ctx);
   const text = textOf(parts);
   const out: Presentation = {

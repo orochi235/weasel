@@ -94,6 +94,7 @@ export * from './components/Pressable';
 export * from './components/PrefsBar';
 export * from './components/Properties';
 export * from './components/QuantityText';
+export * from './components/LiveQuantity';
 export * from './components/RadioGroup';
 export * from './components/RailList';
 export * from './components/RecentColors';

@@ -7,6 +7,7 @@
 export { clockPosition, createClock, declaredSpeed } from './clock';
 export { type HeldPosition, holdAt, holdPosition, type PlayheadHold, shownInPass } from './hold';
 export { CLOCK_SPEEDS } from './speeds';
+export { holdEndOf, nextReading, readingAt, type Reading, type ReadingOptions } from './reading';
 export { type ClockEntry, type ClockRegistry, type ClockTarget, createClockRegistry } from './registry';
 export type {
   Clock,
