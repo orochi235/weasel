@@ -17,6 +17,20 @@ function Host({ paint, options, onSurface }: {
 }
 
 describe('useCanvasSurface', () => {
+  it("paints the first commit of onCommit: 'paint' through the frame loop, so frame subscribers hear it", () => {
+    const heard: string[] = [];
+    let subscribed = false;
+    const onSurface = (surface: CanvasSurface): void => {
+      if (subscribed) return;
+      subscribed = true;
+      surface.subscribeBeforePaint(() => { heard.push('before'); });
+      surface.subscribeFrame(() => { heard.push('after'); });
+    };
+    const paint = vi.fn(() => { heard.push('paint'); return true; });
+    render(<Host paint={paint} options={{ onCommit: 'paint' }} onSurface={onSurface} />);
+    expect(heard).toEqual(['before', 'paint', 'after']);
+  });
+
   it('retries on a frame when the paint a resize makes in place does not land', async () => {
     let lands = true;
     const paint = vi.fn(() => lands);
