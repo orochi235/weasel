@@ -2,8 +2,11 @@ import type { View } from './view';
 import { DEFAULT_MIN_ZOOM, DEFAULT_MAX_ZOOM } from './zoomBounds';
 
 import { type FramedRect as Bounds, normalizeZoom, poseFrameOf } from '@weasel-js/geom';
+import { createWarnOnce } from '@weasel-js/registry';
 import { axisAlignedBounds } from 'core/geometry/unionBounds';
 export type { Bounds };
+
+const warnOnce = createWarnOnce();
 
 /** Pixel dimensions of the canvas viewport. */
 export interface ViewportDims {
@@ -45,10 +48,10 @@ export interface FitViewToBoundsOptions {
  *
  * `null` when there is nothing to fit: bounds with no extent on either axis,
  * or not finite. The caller that owns the viewport resolves that to the view
- * Cmd-0 gives (`resetView`). A viewport with no area, or whose size is not
+ * Cmd-0 gives (`resetView`). A viewport with no area, or one whose size is not
  * finite, cannot be fit into, and neither can bounds whose fitted position
- * would fall past the double range: both return `currentView` unchanged, with
- * a `console.warn`.
+ * would fall past the double range: both return `currentView` unchanged, with a
+ * development-only `console.warn` said once per viewport size.
  */
 export function fitViewToBounds(
   bounds: Bounds,
@@ -63,7 +66,10 @@ export function fitViewToBounds(
   bounds = framed;
   const { width: vw, height: vh } = viewportDims;
   if (!(vw > 0 && vh > 0 && Number.isFinite(vw) && Number.isFinite(vh))) {
-    console.warn(`[weasel] fitViewToBounds: viewport has zero, negative, or non-finite area (${vw}×${vh}); returning currentView unchanged.`);
+    warnOnce(
+      `[weasel] fitViewToBounds: viewport has zero, negative, or non-finite area (${vw}×${vh}); returning currentView unchanged.`,
+      `area:${vw}x${vh}`,
+    );
     return currentView;
   }
 
@@ -111,7 +117,10 @@ export function fitViewToBounds(
   const x = place(bounds.x, width, availW, vw, scaleX);
   const y = place(bounds.y, height, availH, vh, scaleY);
   if (!Number.isFinite(x) || !Number.isFinite(y)) {
-    console.warn(`[weasel] fitViewToBounds: the fitted position is past the double range (${vw}×${vh}); returning currentView unchanged.`);
+    warnOnce(
+      `[weasel] fitViewToBounds: the fitted position is past the double range (${vw}×${vh}); returning currentView unchanged.`,
+      `range:${vw}x${vh}`,
+    );
     return currentView;
   }
   return { x, y, scale: { x: scaleX, y: scaleY } };

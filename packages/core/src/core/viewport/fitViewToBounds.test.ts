@@ -273,4 +273,12 @@ describe('fitViewToBounds — framed bounds and degenerate viewports', () => {
     );
     expect(v).toBe(CURRENT);
   });
+
+  it('warns about a zero-area viewport once, not on every call', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const b = { x: 0, y: 0, width: 100, height: 100 };
+    fitViewToBounds(b, { width: 0, height: 0 }, CURRENT);
+    fitViewToBounds(b, { width: 0, height: 0 }, CURRENT);
+    expect(warn.mock.calls.filter(([m]) => String(m).includes('fitViewToBounds'))).toHaveLength(1);
+  });
 });
