@@ -4325,3 +4325,6 @@ Calls the lanes made without a ruling:
 - 2026-11-26 (the fixer's call): a coast let go past an edge springs back to it (blits' critically damped spring,
   stiffness 170) unless it is heading in fast enough to coast in, where the old loop jumped it to the edge on its
   first frame.
+- 2026-11-26 (the fixer's call): registry's `createPart` throws when `make` reads the part it is making for the same
+  owner, since no part exists yet to return. Returning a second part, or one stored by the inner read, was the
+  alternative; either leaves two callers holding different parts for one owner.

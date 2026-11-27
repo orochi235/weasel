@@ -18,12 +18,12 @@ npm install @weasel-js/registry
 import { createReflectable } from '@weasel-js/registry';
 
 const cursors = createReflectable<string>();
-cursors.push('pen', 'crosshair', { source: 'kit' });
+cursors.push('pen', 'crosshair', { source: 'kit', fallback: true });
 cursors.push('pen', 'cell', { source: 'plugin' });
 
 const [pen] = cursors.reflection.entries();
 pen.value; // 'cell'
-pen.shadowed; // [{ value: 'crosshair', source: 'kit' }]
+pen.shadowed; // [{ value: 'crosshair', source: 'kit', fallback: true }]
 
 cursors.release('pen', pen.live);
 cursors.get('pen'); // 'crosshair'
@@ -41,7 +41,7 @@ cursors.get('pen'); // 'crosshair'
   released and pushed again in one tick where it was.
 - `ReflectedEntry` — one key as `entries()` reports it: `key`, `value`,
   `source`, `live` (the registrant holding the key), and `shadowed` (the
-  registrants it displaced, oldest first).
+  registrants beneath it, lowest rank first and oldest first within a rank).
 - `Registrant` — one `{ value, source }` claim on a key. Each is a frozen
   object that keeps its identity, which is what `release(key, registrant)`
   takes.

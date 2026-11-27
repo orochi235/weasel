@@ -269,4 +269,42 @@ describe('createExtensionRegistry', () => {
     parent.register('b', 'p');
     expect(child.entries().map((e) => e.key)).toEqual(['a', 'x', 'b']);
   });
+
+  it('ends a hold through its parent released by a listener while the parent hands the id back', async () => {
+    const parent = make();
+    const child = make(parent);
+    const offParent = parent.register('x', 'v');
+    const offChild = child.register('x', 'v');
+    offParent();
+    const offParentAgain = parent.register('x', 'v');
+    let released = false;
+    child.subscribe(() => {
+      if (released) return;
+      released = true;
+      offChild();
+    });
+    await Promise.resolve();
+    expect(released).toBe(true);
+    offParentAgain();
+    expect(child.has('x')).toBe(false);
+  });
+
+  it('reorders its entries when registering again in one tick turns its own copy into a hold through its parent', () => {
+    const parent = make();
+    const child = make(parent);
+    const offX = child.register('x', 'v');
+    parent.register('y', 'p');
+    parent.register('x', 'v');
+    const versions: number[] = [];
+    child.subscribe(() => { versions.push(child.getVersion()); });
+    offX();
+    expect(child.entries().map((e) => e.key)).toEqual(['y', 'x']);
+    const offLean = child.register('x', 'v');
+    expect(child.entries().map((e) => e.key)).toEqual(['x', 'y']);
+    expect(versions.at(-1)).toBe(child.getVersion());
+    offLean();
+    expect(child.entries().map((e) => e.key)).toEqual(['y', 'x']);
+    expect(versions.at(-1)).toBe(child.getVersion());
+  });
 });
+

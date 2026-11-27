@@ -79,17 +79,18 @@ interface Lean<V> {
   order: number;
 }
 
-/** What a child does with a hold whose id its parent drops: `take` copies it into the child's own store, and
- *  `untake` removes that copy again, answering whether it was still there to remove. */
+/** What a child does with a hold whose id its parent drops: `take` copies it into the child's own store,
+ *  `holds` answers whether that copy is still there, and `untake` removes it again. */
 interface Takeover<V> {
   take(id: string, lean: Lean<V>): void;
-  untake(id: string, lean: Lean<V>): boolean;
+  holds(id: string, lean: Lean<V>): boolean;
+  untake(id: string, lean: Lean<V>): void;
 }
 
 /** A child's holds through its parent. It hears the parent while it holds any: one the parent replaces with a
  *  different value is dropped, and one whose id the parent drops is taken over. The child also calls `settle`
  *  before notifying its own listeners of the parent, so none of them reads a held id as gone. */
-function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => boolean, { take, untake }: Takeover<V>) {
+function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => boolean, { take, holds, untake }: Takeover<V>) {
   const leans = new Map<string, Lean<V>>();
   let off: (() => void) | null = null;
   const stop = (): void => {
@@ -113,9 +114,13 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
    *  goes on through the parent, or ends as a replacement's would when the parent took a different value. */
   const relean = (id: string, lean: Lean<V>): void => {
     const theirs = parent.get(id);
-    if (theirs === undefined || !untake(id, lean) || !same(theirs, lean.value)) return;
-    leans.set(id, lean);
-    off ??= parent.subscribe(settle);
+    if (theirs === undefined || !holds(id, lean)) return;
+    // Restored before `untake` notifies, so a listener releasing the hold then finds it.
+    if (same(theirs, lean.value)) {
+      leans.set(id, lean);
+      off ??= parent.subscribe(settle);
+    }
+    untake(id, lean);
   };
   return {
     get: (id: string): Lean<V> | undefined => leans.get(id),
@@ -128,9 +133,12 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
       leans.delete(id);
       stop();
     },
-    clear(): void {
+    /** Answers whether there was a hold to end. */
+    clear(): boolean {
+      const had = leans.size > 0;
       leans.clear();
       stop();
+      return had;
     },
   };
 }
@@ -138,13 +146,12 @@ function createLeans<V>(parent: ExtensionRegistry<V>, same: (a: V, b: V) => bool
 /** Remove the own copy a takeover made of the registration `holding`, if it is still the one `id` holds. */
 function untake<V>(
   store: Reflectable<V>, held: Map<string, Holding>, since: Map<string, number>, id: string, holding: Holding,
-): boolean {
-  if (held.get(id) !== holding) return false;
+): void {
+  if (held.get(id) !== holding) return;
   held.delete(id);
   since.delete(id);
   const live = store.stack(id).at(-1);
   if (live) store.release(id, live);
-  return true;
 }
 
 /** Bring `seen` up to the ids `parent` resolves: drop the gone, and order the new after everything so far. */
@@ -156,6 +163,30 @@ function see(parent: Reflection<unknown>, seen: Map<string, number>): void {
 
 function earlier(a: number | undefined, b: number | undefined): number | undefined {
   return a === undefined ? b : b === undefined ? a : Math.min(a, b);
+}
+
+/** A registry's own listeners, so subscribing to it never shares a subscription a listener holds on its store or
+ *  its parent; it hears the store and the parent only while it has listeners, and calls `beforeParent` before
+ *  passing on a change of the parent. */
+function createChanges(store: Reflection<unknown>, parent: Reflection<unknown> | null, beforeParent: () => void) {
+  const changes = createEmitter();
+  const notify = (): void => { changes.emit(); };
+  let offUpstream: (() => void) | null = null;
+  const subscribe = (listener: () => void): (() => void) => {
+    if (changes.size === 0) {
+      const offStore = store.subscribe(notify);
+      const offParent = parent?.subscribe(() => { beforeParent(); notify(); });
+      offUpstream = () => { offStore(); offParent?.(); };
+    }
+    const off = changes.subscribe(listener);
+    return () => {
+      off();
+      if (changes.size > 0 || !offUpstream) return;
+      offUpstream();
+      offUpstream = null;
+    };
+  };
+  return { notify, subscribe };
 }
 
 /** Make an {@link ExtensionRegistry}: one per host that should keep its extensions to itself, or one
@@ -180,22 +211,28 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     return earlier(mine, parentOrder?.(id));
   };
   let cached: { version: number; entries: readonly ReflectedEntry<V>[] } | null = null;
-  /** This registry's own listeners, so subscribing here never shares a subscription a listener holds on `own` or
-   *  the parent; it hears the store and the parent only while it has listeners. */
-  const changes = createEmitter();
-  const notify = (): void => { changes.emit(); };
-  let offUpstream: (() => void) | null = null;
+  const { notify, subscribe } = createChanges(store, parent, () => { leans?.settle(); });
   const leans = parent ? createLeans(parent, same, {
     take(id, lean) {
       held.set(id, lean.holding);
       since.set(id, lean.order);
       store.set(id, lean.value, lean.source !== undefined ? { source: lean.source } : undefined);
     },
-    untake: (id, lean) => untake(store, held, since, id, lean.holding),
+    holds: (id, lean) => held.get(id) === lean.holding,
+    untake: (id, lean) => { untake(store, held, since, id, lean.holding); },
   }) : null;
 
   const get = (id: string): V | undefined => (store.has(id) ? store.get(id) : parent?.get(id));
-  const getVersion = (): number => store.getVersion() + (parent?.getVersion() ?? 0);
+  /** Steps when a hold through the parent begins or ends and moves an id, which neither store's version sees. */
+  let reorders = 0;
+  const getVersion = (): number => store.getVersion() + (parent?.getVersion() ?? 0) + reorders;
+  const keepingOrder = (id: string, change: () => void): void => {
+    const before = orderOf(id);
+    change();
+    if (orderOf(id) === before) return;
+    reorders++;
+    notify();
+  };
 
   function createRelease(id: string, holding: Holding): () => void {
     let done = false;
@@ -205,7 +242,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       const leaning = held.get(id)?.token !== holding.token;
       if (leaning && leans?.get(id)?.holding !== holding) return;
       if (--holding.count > 0) return;
-      if (leaning) return leans!.drop(id);
+      if (leaning) return keepingOrder(id, () => { leans!.drop(id); });
       held.delete(id);
       const live = store.stack(id).at(-1);
       if (live) store.release(id, live);
@@ -232,20 +269,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       cached = { version, entries: Object.freeze(all) };
       return cached.entries;
     },
-    subscribe(listener) {
-      if (changes.size === 0) {
-        const offStore = store.subscribe(notify);
-        const offParent = parent?.subscribe(() => { leans?.settle(); notify(); });
-        offUpstream = () => { offStore(); offParent?.(); };
-      }
-      const off = changes.subscribe(listener);
-      return () => {
-        off();
-        if (changes.size > 0 || !offUpstream) return;
-        offUpstream();
-        offUpstream = null;
-      };
-    },
+    subscribe,
     getVersion,
     register(id, value, opts = {}) {
       if (value === undefined) throw new TypeError(`${kind} "${id}" cannot be registered as undefined, which reads as no registration`);
@@ -258,7 +282,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
         }
         if (foreignParent) seeParent();
         const lean: Lean<V> = { holding: { token: {}, count: 1 }, value, source: opts.source, order: earlier(since.get(id), orderOf(id)) ?? nextOrder++ };
-        leans!.add(id, lean);
+        keepingOrder(id, () => { leans!.add(id, lean); });
         return createRelease(id, lean.holding);
       }
       if (have !== undefined && !same(have, value) && !opts.replace) throw new ExtensionConflictError(kind, id);
@@ -272,9 +296,13 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     },
     clear() {
       held.clear();
-      leans?.clear();
+      const leaned = leans?.clear() ?? false;
       since.clear();
+      const version = store.getVersion();
       store.clear();
+      if (!leaned || store.getVersion() !== version) return;
+      reorders++;
+      notify();
     },
   };
   orderOfRegistry.set(registry, orderOf);
