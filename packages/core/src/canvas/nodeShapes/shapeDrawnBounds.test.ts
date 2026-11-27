@@ -30,3 +30,23 @@ describe('a rect with per-vertex stroke widths', () => {
     expect(b.x + b.width).toBeGreaterThan(110);
   });
 });
+
+describe('a square-capped stroke a trim can open', () => {
+  // Any trim, an animated one included, which drawn bounds never see: a cap's corner stands off the curve.
+  const R = 30, h = 5;
+  const corner = Math.hypot(R + h, h) - R;
+
+  it('reaches past a circle by a square cap corner', () => {
+    const b = shapeBox('ellipse', { paint: PAINT, width: 2 * h, cap: 'square' }, { scale: 1 }, { x: 0, y: 0, width: 2 * R, height: 2 * R });
+    expect(b.x).toBeLessThanOrEqual(-corner + 1e-9);
+    expect(b.y).toBeLessThanOrEqual(-corner + 1e-9);
+  });
+
+  it('reaches past a polygon by a square cap corner', () => {
+    const box = { x: 0, y: 0, width: 2 * R, height: 2 * R };
+    const stroke: Stroke = { paint: PAINT, width: 2 * h, cap: 'square', join: 'round' };
+    const b = SHAPE_PAINTER.drawnBounds!({ data: { shape: 'polygon', sides: 32, stroke } } as never, box, { scale: 1 })!;
+    // A cap ending at the top vertex is tipped off level by the edge's slope.
+    expect(b.y).toBeLessThan(-h - 0.05);
+  });
+});

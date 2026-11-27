@@ -141,9 +141,29 @@ export function poseOutlineDrawnBounds(
   outline: PoseOutline,
   pathAt: (pose: Bounds) => Path,
 ): Bounds {
-  return stroke !== null && (outline === 'sharp' || reachesUnevenly(stroke))
+  if (stroke === null) return normalized(pose);
+  const box = outline === 'sharp' || reachesUnevenly(stroke)
     ? strokedPoseBox(node, pose, stroke, ctx, pathAt)
     : outsetPoseBox(pose, stroke, ctx);
+  return outline === 'rect' || stroke.cap !== 'square' ? box : union(box, squareCapReach(pathAt(pose), stroke, ctx));
+}
+
+/**
+ * The box every square cap a trim could open on `path` stays inside: an animated trim is never seen here, and a
+ * cap's corner stands half the width along the tangent past the ribbon's edge, so √2 times the ribbon's reach.
+ * A rect's caps lie along its sides, inside its even outset.
+ */
+function squareCapReach(path: Path, stroke: Stroke, ctx: NodeInkCtx | undefined): Bounds {
+  const { markerStart: _s, markerMid: _m, markerEnd: _e, ...line } = stroke;
+  const r = strokeOutsetPerAxis(line, ctx);
+  const b = boundsOfPath(path);
+  const x = r.x * Math.SQRT2, y = r.y * Math.SQRT2;
+  return { x: b.x - x, y: b.y - y, width: b.width + 2 * x, height: b.height + 2 * y };
+}
+
+function union(a: Bounds, b: Bounds): Bounds {
+  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+  return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
 }
 
 /** Whether `stroke`'s reach past a smooth closed outline is uneven: a marker head, a width that varies along it,
