@@ -225,6 +225,32 @@ describe('event booking across transport changes', () => {
     expect(whens).toEqual([START + 80]);
   });
 
+  it('does not book again an event a seek short of it left standing with no stop', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 1000, tracks: [track] });
+    const whens: number[] = [];
+    track.events = [{ t: 150, book: (when) => { whens.push(when); } }];
+    r.frame(0);
+    r.frame(90);
+    r.handle.seek(100);
+    r.frame(100);
+    r.frame(160);
+    expect(whens).toEqual([START + 150]);
+  });
+
+  it('books again an event a seek back past it will play again', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 1000, tracks: [track] });
+    const whens: number[] = [];
+    track.events = [{ t: 150, book: (when) => { whens.push(when); } }];
+    r.frame(0);
+    r.frame(90);
+    r.frame(200);
+    r.handle.seek(100);
+    r.frame(210);
+    expect(whens).toEqual([START + 150, START + 250]);
+  });
+
   it('retimes a pending booking when the time scale changes', () => {
     const r = withEvents({ duration: 1000 }, [80]);
     r.frame(0);

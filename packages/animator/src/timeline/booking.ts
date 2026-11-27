@@ -195,10 +195,11 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       if (isAfter(reached, start)) start = reached;
     },
     retract() {
+      // What stands still ahead of the playhead is a crossing not yet played, which a seek must not book twice.
+      bookings = bookings.filter(ahead);
       stopWhere(opts.clock.now(), () => true);
     },
     seek() {
-      bookings = [];
       cursors.clear();
       start = { ...playheadCursor(), open: true };
     },
