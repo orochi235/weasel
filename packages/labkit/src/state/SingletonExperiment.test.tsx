@@ -1,7 +1,9 @@
 import { act, render, renderHook, screen, waitFor } from '@testing-library/react';
-import { createMemoryAdapter } from '@weasel-js/storage';
+import { createMemoryAdapter, type RecordCache } from '@weasel-js/storage';
+import { useContext } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { labPrefix } from './labRecords';
+import { PersistenceContext } from './Persistence';
 import { SingletonExperimentProvider } from './SingletonExperiment';
 import { useTrialState } from './useTrialState';
 
@@ -50,8 +52,10 @@ describe('SingletonExperimentProvider', () => {
 
   it('persists config changes to storage', async () => {
     const backing = new Map<string, unknown>();
+    let records: RecordCache | null = null;
     const Probe = () => {
       const h = useTrialState<State, Config>();
+      records = useContext(PersistenceContext);
       return (
         <button type="button" onClick={() => h.setConfig('width', 200)}>
           go
@@ -65,11 +69,13 @@ describe('SingletonExperimentProvider', () => {
     );
     const go = await screen.findByText('go');
     act(() => go.click());
-    await waitFor(() =>
-      expect(backing.get(`${labPrefix('test')}trial:test`)).toMatchObject({
-        config: { width: 200 },
-      }),
-    );
+    // Send the write now: waiting out the cache's debounce on the clock outran `waitFor` under load.
+    await act(async () => {
+      expect(await records?.flush()).toBe(true);
+    });
+    expect(backing.get(`${labPrefix('test')}trial:test`)).toMatchObject({
+      config: { width: 200 },
+    });
   });
 
   it('rehydrates from storage on mount', async () => {

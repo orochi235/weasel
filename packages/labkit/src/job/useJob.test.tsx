@@ -11,15 +11,28 @@ interface Config {
   n: number;
 }
 
-/** Yields 0..n-1, pausing between each so a test can cancel mid-run. */
+/** A promise the test resolves with `open`. */
+function gate(): { shut: Promise<void>; open: () => void } {
+  let open!: () => void;
+  const shut = new Promise<void>((r) => {
+    open = r;
+  });
+  return { shut, open };
+}
+
+/** Lets every queued promise continuation run, however many hops a run's chain takes. */
+const drain = (): Promise<void> => act(() => new Promise<void>((r) => setTimeout(r, 0)));
+
+/** Yields 0..n-1, awaiting `pause(i)` before each. A run held mid-way waits on a gate rather
+ *  than a clock: under a loaded full run, timer delays outlast `waitFor`'s deadline. */
 async function* counter(
   n: number,
   signal: AbortSignal,
-  failAt?: number,
+  { failAt, pause = () => Promise.resolve() }: { failAt?: number; pause?: (i: number) => Promise<void> } = {},
 ): AsyncGenerator<JobEvent<number>> {
   yield { kind: 'total', total: n };
   for (let i = 0; i < n; i++) {
-    await new Promise((r) => setTimeout(r, 2));
+    await pause(i);
     if (signal.aborted) return;
     if (i === failAt) {
       yield { kind: 'failed', index: i, error: 'frame died' };
@@ -29,8 +42,11 @@ async function* counter(
   }
 }
 
-const capability = (failAt?: number): JobCapability<State, Config, number> => ({
-  run: ({ config, signal }) => counter(config.n, signal, failAt),
+const capability = (
+  failAt?: number,
+  pause?: (i: number) => Promise<void>,
+): JobCapability<State, Config, number> => ({
+  run: ({ config, signal }) => counter(config.n, signal, { failAt, pause }),
   onItem: (item, state) => ({ items: [...state.items, item] }),
 });
 
@@ -86,11 +102,12 @@ describe('useJob', () => {
     expect(seen.handle?.done).toBe(2);
   });
 
-  it('stops folding results once cancelled', async () => {
+  it('stops folding results once canceled', async () => {
+    const held = gate();
     const seen: { handle: JobHandle | null; state: State } = { handle: null, state: { items: [] } };
     render(
       <Harness
-        capability={capability()}
+        capability={capability(undefined, (i) => (i === 0 ? Promise.resolve() : held.shut))}
         config={{ n: 50 }}
         onHandle={(h, s) => {
           seen.handle = h;
@@ -99,17 +116,24 @@ describe('useJob', () => {
       />,
     );
     act(() => seen.handle?.start());
-    await waitFor(() => expect(seen.handle?.status).toBe('running'));
+    await waitFor(() => expect(seen.state.items).toEqual([0]));
     act(() => seen.handle?.cancel());
-    const atCancel = seen.state.items.length;
-    await new Promise((r) => setTimeout(r, 30));
-    expect(seen.state.items.length).toBe(atCancel);
+    held.open();
+    await drain();
+    expect(seen.state.items).toEqual([0]);
     expect(seen.handle?.status).toBe('idle');
   });
 
   it('discards results from a run its key superseded', async () => {
+    // The superseded run ignores its signal and outlives its successor, so only useJob can drop it.
+    const held = gate();
     const withKey: JobCapability<State, Config, number> = {
-      ...capability(),
+      run: async function* ({ config }) {
+        yield { kind: 'total', total: config.n };
+        if (config.n === 40) await held.shut;
+        for (let i = 0; i < config.n; i++) yield { kind: 'item', item: i };
+      },
+      onItem: (item, state) => ({ items: [...state.items, item] }),
       key: (config) => [config.n],
       auto: true,
     };
@@ -137,9 +161,12 @@ describe('useJob', () => {
       />,
     );
     await waitFor(() => expect(seen.handle?.status).toBe('done'));
+    held.open();
+    await drain();
 
     // The superseded 40-item run cannot have contributed: the winner yields two.
     expect(seen.state.items).toEqual([0, 1]);
+    expect(seen.handle?.status).toBe('done');
   });
 
   it('starts each run from what `begin` makes of the state', async () => {
@@ -233,7 +260,7 @@ describe('useJob', () => {
     const watching: JobCapability<State, Config, number> = {
       run: ({ signal }) => {
         signal.addEventListener('abort', aborted);
-        return counter(50, signal);
+        return counter(50, signal, { pause: () => gate().shut });
       },
       onItem: (item, state) => ({ items: [...state.items, item] }),
     };
@@ -257,7 +284,7 @@ describe('useJob', () => {
     const throwing: JobCapability<State, Config, number> = {
       run: async function* () {
         yield { kind: 'item', item: 7 };
-        await new Promise((r) => setTimeout(r, 1));
+        await Promise.resolve();
         throw new Error('the baker died');
       },
       onItem: (item, state) => ({ items: [...state.items, item] }),
