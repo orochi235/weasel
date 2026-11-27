@@ -14,7 +14,8 @@ import { layerAffordance } from './affordanceAt';
 
 /** @internal Composed into `ViewRegistry`. */
 export interface ViewMarkerRegistry {
-  /** Returns an unregister. `props` is read at every draw. An id already live
+  /** Returns an unregister. `props` is read at every draw, but its `target` only here: a retargeted
+   *  marker registers again. An id already live
    *  on the surface logs an error and is skipped, and its unregister does nothing. */
   registerMarker(props: () => ViewMarkerProps): () => void;
   /** The layers of the markers drawn in `target`'s frame, in mount order. */
@@ -25,6 +26,13 @@ export interface ViewMarkerRegistry {
   /** Lets `markerAt` answer while `open()` says the surface binds a marker drag;
    *  until then it answers `null`, so a press falls through. Returns an undo. */
   gateMarkers(open: () => boolean): () => void;
+}
+
+/** @internal A live marker: its layer, and the frame it was registered to draw in. A stack lists it by that
+ *  target, not a live read, so every stack agrees until the marker registers again under a new one. */
+export interface RegisteredMarker {
+  layer: RenderLayer<unknown>;
+  target: string | null;
 }
 
 /** What the marker half reads off the rest of the registry. */
@@ -39,7 +47,7 @@ export interface ViewMarkerRegistryDeps {
 
 /** @internal */
 export function createViewMarkerRegistry(
-  markers: Map<() => ViewMarkerProps, RenderLayer<unknown>>,
+  markers: Map<() => ViewMarkerProps, RegisteredMarker>,
   deps: ViewMarkerRegistryDeps,
 ): ViewMarkerRegistry {
   let gate: (() => boolean) | null = null;
@@ -59,13 +67,13 @@ export function createViewMarkerRegistry(
           return () => {};
         }
       }
-      markers.set(props, createViewMarkerLayer(props, deps.host));
+      markers.set(props, { layer: createViewMarkerLayer(props, deps.host), target: props().target });
       deps.changed();
       return () => { markers.delete(props); deps.changed(); };
     },
     markerLayers: (target) => {
       const out: RenderLayer<unknown>[] = [];
-      for (const [props, layer] of markers) if (props().target === target) out.push(layer);
+      for (const marker of markers.values()) if (marker.target === target) out.push(marker.layer);
       return out;
     },
     markerAt: (target, world) => {
@@ -73,10 +81,11 @@ export function createViewMarkerRegistry(
       const space = targetSpace(target);
       const at = space?.project(world);
       if (!space || !at) return null;
-      const live = [...markers.keys()];
+      const live = [...markers];
       for (let i = live.length - 1; i >= 0; i--) {
-        const props = live[i]!();
-        if (props.target !== target) continue;
+        const [read, marker] = live[i]!;
+        if (marker.target !== target) continue;
+        const props = read();
         const grab = grabViewMarker(props, deps.host, space, at);
         if (grab) return layerAffordance(`view-marker:${props.id}`, { initialScratch: grab });
       }

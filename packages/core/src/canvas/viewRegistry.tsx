@@ -20,7 +20,7 @@ import { viewWorldToScreen } from '@weasel-js/geom';
 import type { ViewAt } from './canvasExtension';
 import { aimRectOf, isRectAim, rectAim, viewForAim, type ViewAim } from 'domains/viewports/aim';
 import type { ViewMarkerProps } from 'domains/viewports/viewMarker';
-import { createViewMarkerRegistry, type ViewMarkerRegistry } from './viewMarkers';
+import { createViewMarkerRegistry, type RegisteredMarker, type ViewMarkerRegistry } from './viewMarkers';
 
 /**
  * What a view needs from the surface hosting it.
@@ -164,7 +164,7 @@ export function ViewRegistryProvider({ children }: { children: ReactNode }) {
   const seqRef = useRef(0);
   const versionRef = useRef(0);
   const surfaceRef = useRef<SurfaceHandle | null>(null);
-  const markersRef = useRef(new Map<() => ViewMarkerProps, RenderLayer<unknown>>());
+  const markersRef = useRef(new Map<() => ViewMarkerProps, RegisteredMarker>());
 
   const registry = useMemo<ViewRegistry>(() => {
     const listeners = createEmitter();
