@@ -184,6 +184,12 @@ describe('tool options of a dotted tool id in a prefs store', () => {
     const schema = toolOptionsPrefs([sized('path.brush'), sized('path', 'pen')]);
     expect([...prefLeaves(schema).keys()]).toEqual(['path.brush.size', 'path.pen']);
   });
+
+  it('names the group of a dotted id’s parent for its segment when no tool of that id has options', () => {
+    const schema = toolOptionsPrefs([sized('path.brush')]);
+    expect((schema.children.path as { name: string }).name).toBe('path');
+    expect((toolOptionsPrefs([sized('path.brush'), sized('path', 'pen')]).children.path as { name: string }).name).toBe('Brush');
+  });
 });
 
 describe('a tool id that names the shared group', () => {

@@ -95,7 +95,7 @@ function placeToolGroup(children: Record<string, PrefLeaf | PrefGroup>, toolId: 
   for (const part of parts.slice(0, -1)) {
     const node = getOwn(at, part);
     if (node && !isGroup(node)) throw new Error(`toolOptionsPrefs: tool "${toolId}" would keep its options inside an option at "${part}"`);
-    const next = node ?? { name: '', children: {} };
+    const next = node ?? { name: part, children: {} };
     if (!node) setOwn(at, part, next);
     at = (next as PrefGroup).children as Record<string, PrefLeaf | PrefGroup>;
   }
