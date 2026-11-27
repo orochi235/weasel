@@ -402,6 +402,16 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 
 ## Selection, actions & UI panels
 
+- **(P1) [agent] A view toggle forgets its setting unless someone hand-writes a pref for it** (2026-11-26). A
+  `Checkbox` or a segmented switch that changes how a view looks (collapse these rows, order by that) starts life
+  as `useState` and resets on every reload. Making it stick means declaring a `pref.boolean` or `pref.enum` in the
+  app's schema and swapping in `usePref` by hand, so most never get it: skulkr's dashboard had two such toggles,
+  "Collapse resolved passes" and the fix shelf's batch/status switch, until skulkr `2618d62` did that by hand.
+  Wanted: remembering is the default. One shape is a hook such as `usePrefState(path, default, meta)` that declares
+  the pref in the app's store as it's first read, so it also shows up in the prefs editor. Another is a `pref`
+  prop on the toggle controls. Closes when a weasel toggle control can be bound to a pref in one line and keeps its
+  setting across a reload, with a test, and the docs for those controls say to use that form for view state.
+
 - **(P1.5) [agent] Two lens implementations each aim their own way** (2026-11-22). labkit's lab lens
   (`packages/labkit/src/loupe/lens/`) is a scene of nodes, a body, a reticle and a leader, with `LensAim` `pinned |
   follow | glass`; hud's `createLoupe` is a HUD window whose aim, follow or pinned, lives in `@weasel-js/loupe`'s
