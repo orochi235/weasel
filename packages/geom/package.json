@@ -43,7 +43,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "@msb235/blits": "1.6.0"
+    "@msb235/blits": "1.7.0"
   },
   "peerDependencies": {
     "earcut": "^3.2.4",

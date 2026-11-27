@@ -23,7 +23,7 @@
     "./package.json": "./package.json"
   },
   "peerDependencies": {
-    "@msb235/blits": "^1.5.3",
+    "@msb235/blits": "^1.7.0",
     "react": ">=18"
   },
   "peerDependenciesMeta": {
@@ -33,7 +33,7 @@
     "@weasel-js/registry": "2.0.0"
   },
   "devDependencies": {
-    "@msb235/blits": "1.6.0"
+    "@msb235/blits": "1.7.0"
   },
   "author": "orochi235",
   "homepage": "https://orochi235.github.io/weasel/",

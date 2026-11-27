@@ -329,21 +329,6 @@ Left open when the CSS, SMIL and Lottie writers landed (2026-11-26).
 What weasel still times for itself, read against blits on 2026-11-25. The direction is in CLAUDE.md
 ("animator becomes a front end over blits").
 
-- **(P1) [maintainer] Three branches are built and wait on a blits release** (2026-11-27). Each weasel branch calls
-  blits API that 1.6.0 lacks, so it can't merge while `main` pins 1.6.0. The order: merge each blits branch to blits
-  `main`, publish blits from a terminal (passkey), move weasel's blits pins and peer floors to that release, then
-  send the three weasel branches through one batch.
-
-  | weasel branch | blits branch | closes here |
-  |---|---|---|
-  | `coast-on-glide` | already on blits `main` (96a4a1ce) | "Viewport coast on blits' glide" |
-  | `animator-rest-from-blits` | `animator-rest` | step 1 of "Rebuild animator as a front end over blits" |
-  | `clock-remap` | `clock-remap` | "A nested timeline can't be retimed…" and "Timeline markers are points…" |
-
-  The worktrees of the last two were still being written on 2026-11-27, under the old session's scratch, which a
-  reboot clears; their commits are safe on the branches. `coast-on-glide`'s behavior changes are in
-  `docs/unruled.md`. Closes when all three are on `main`.
-
 - **(P2) [agent] Rebuild animator as a front end over blits.** Every spring and coast moves on blits'
   closed forms and comes to rest when blits says its voices have landed (2026-11-27), and a spring with
   `onTick` reads its value from blits' lane; one on a target still reads its two voices each frame for
