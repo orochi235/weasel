@@ -136,6 +136,13 @@ describe('warnWhenWatchIsSilent', () => {
     expect(warn.mock.calls[0]?.[0]).not.toContain('will not reach the page');
   });
 
+  it('promises no sweep when the recovery plugin checks files only as they are served', async () => {
+    const { server, warn } = serverWith(undefined, [watchRecovery({ quietMs: Infinity })]);
+    await warnWhenWatchIsSilent(server, async () => false);
+    expect(warn.mock.calls[0]?.[0]).toContain('modification times');
+    expect(warn.mock.calls[0]?.[0]).not.toContain('within seconds');
+  });
+
   it('warns that it could not check, rather than rejecting, when the probe fails', async () => {
     const { server, warn } = serverWith(undefined);
     await warnWhenWatchIsSilent(server, async () => {
