@@ -50,3 +50,17 @@ describe('findScopedConflicts — rules belong to actions, not ids', () => {
     expect(c.map((x) => x.ownerIds.join(','))).toEqual(['text,b']);
   });
 });
+
+describe('findScopedConflicts — one report per set of bindings', () => {
+  const escape = { kind: 'key', key: 'Escape' };
+  const modes = [activeModeOf(mode('m1')), activeModeOf(mode('m2'))];
+
+  it('reports two ties that share one spec object but no binding', () => {
+    const c = findScopedConflicts({
+      registry: [],
+      actions: [action('a', escape, { mode: 'm1' }), action('b', escape, { mode: 'm1' }), action('c', escape, { mode: 'm2' }), action('d', escape, { mode: 'm2' })],
+      modes,
+    });
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b', 'c,d']);
+  });
+});

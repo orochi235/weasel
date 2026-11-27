@@ -3,7 +3,7 @@ import type { Action } from '../../../interactions/actions/action';
 import { actionBindings } from '../../../interactions/actions/binding';
 import { overriddenBindings, type ResolvedBindingOverrides } from '../../../interactions/actions/bindingOverrides';
 import type { ParsedModifiers } from '../routeGrammar';
-import { canonicalModifiers, formatRoute } from '../routeGrammar';
+import { formatRoute } from '../routeGrammar';
 import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
@@ -68,9 +68,8 @@ export function findConflicts(entries: readonly Contribution<unknown>[]): Confli
 }
 
 /**
- * The same detector, keeping each conflict's bucket key. `Conflict.target`
- * renders every predicate as one token, so two distinct predicate collisions
- * look alike once rendered; `findScopedConflicts` dedupes on the key instead.
+ * The same detector, keeping each conflict's key: the bindings in it. Two conflicts can render
+ * alike (every predicate target prints as one token), so `findScopedConflicts` dedupes on the key.
  */
 function findConflictsKeyed(
   entries: readonly Contribution<unknown>[],
@@ -80,11 +79,14 @@ function findConflictsKeyed(
   // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
   const rows: RegistryEntry[] = [];
   const rowRules = new Map<RegistryEntry, Rule>();
+  // A binding's id is the same in every pass `findScopedConflicts` makes over its owner.
+  const rowIds = new Map<RegistryEntry, string>();
   for (const owner of entries) {
-    for (const row of buildRouteRegistry([owner])) {
+    buildRouteRegistry([owner]).forEach((row, i) => {
       rows.push(row);
       rowRules.set(row, rules?.get(owner) ?? ALWAYS);
-    }
+      rowIds.set(row, `${identityKeyOf(owner)}.${i}`);
+    });
   }
   const groups = new Map<string, { platform: Platform; members: RegistryEntry[] }>();
   for (const entry of rows) {
@@ -116,7 +118,7 @@ function findConflictsKeyed(
     // Members are in declaration order, and a pair led by a binding that yields is ordered on purpose.
     const ties = (i: number, j: number): boolean => i !== j && !members[Math.min(i, j)]!.yields && tie(members[i]!, members[j]!);
     for (const component of tieCliques(members.length, ties)) {
-      addConflict(conflicts, foldPlatformCopies(component.map((i) => members[i]!)), platform);
+      addConflict(conflicts, foldPlatformCopies(component.map((i) => members[i]!)), platform, (e) => rowIds.get(e)!);
     }
   }
   return [...conflicts]
@@ -129,14 +131,13 @@ function findConflictsKeyed(
 type Conflicts = Map<string, { conflict: Conflict; bucket: RegistryEntry[]; platforms: Set<Platform> }>;
 
 /** Record `bucket`, bindings that tie on `platform`, in `conflicts`. */
-function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Platform): void {
+function addConflict(conflicts: Conflicts, bucket: RegistryEntry[], platform: Platform, idOf: (e: RegistryEntry) => string): void {
   if (bucket.length < 2) return;
   const first = bucket[0]!;
-  // Two specs that tie in one modifier state usually tie in several, and on
-  // both platforms: one conflict per set of specs, each named by identity so
-  // the key is the same in every pass `findScopedConflicts` makes over them. A pair meeting on
+  // Two bindings that tie in one modifier state usually tie in several, and on
+  // both platforms: one conflict per set of bindings. A pair meeting on
   // several args (a key and a code, two keys of a list) is one conflict too.
-  const key = compositeKey([first.gesture, targetKey(first), ...bucket.flatMap((e) => [identityKeyOf(e.spec), canonicalModifiers(e.modifiers)])]);
+  const key = compositeKey(bucket.map(idOf));
   const found = conflicts.get(key);
   if (found) { found.platforms.add(platform); return; }
   conflicts.set(key, {
