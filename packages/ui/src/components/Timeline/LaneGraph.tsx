@@ -72,8 +72,9 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const size = useElementSize(hostRef);
 
-  // The layer works in track time; the snap candidates are ruler times.
-  const snapX = useMemo(() => snapTimes.map((t) => t - offset), [snapTimes, offset]);
+  // The layer works in track time; the snap candidates are ruler times. One on a key here is that key's own time,
+  // which `t - offset` can miss by a rounding error.
+  const snapX = useMemo(() => snapTimes.map((t) => keys.find((k) => k.t + offset === t)?.t ?? t - offset), [snapTimes, offset, keys]);
   // Marks are named by the ruler time they sit at.
   const xClamp = useMemo(() => [0, Math.max(0, limit - offset)] as const, [limit, offset]);
   const formatX = useMemo(() => (x: number) => msLabel(x + offset), [offset]);

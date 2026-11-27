@@ -53,12 +53,14 @@ export function useKeyDrag(a: KeyDragArgs) {
   const msAt = (clientX: number): number => sliderAt(place(clientX).f, track) - offset;
   // Read as the pointer moves, so a window changed mid-drag places the key where its ghost is drawn. The stops are the
   // ones at press: a consumer echoing the preview back would otherwise add the dragged key's own last time to them.
-  const at = useLatest((ev: { clientX: number; altKey: boolean }, stops: readonly number[]): number => {
+  // A stop on one of the row's keys lands on that key's own time: `stop - offset` can miss it by a rounding error.
+  const at = useLatest((ev: { clientX: number; altKey: boolean }, stops: readonly number[], keyTimes: readonly number[]): number => {
     const { f, width } = place(ev.clientX);
     // An empty window puts every time at one place, where every stop would be in reach.
     const free = ev.altKey || !(win.to > win.from);
     const pull = width === 0 ? 0 : snapRadiusPx / width;
-    return sliderAt(f, { ...track, stops, pull, free }) - offset;
+    const ruler = sliderAt(f, { ...track, stops, pull, free });
+    return keyTimes.find((k) => k + offset === ruler) ?? ruler - offset;
   });
 
   const onKeyPointerDown = (i: number) => (e: ReactPointerEvent<HTMLDivElement>): void => {
@@ -86,7 +88,7 @@ export function useKeyDrag(a: KeyDragArgs) {
       onMove: (ev) => {
         if (!editable.current) { setDrag(null); return; }
         if (!traveled(ev)) return;
-        const t = at.current(ev, stops);
+        const t = at.current(ev, stops, times);
         setDrag({ keyIndex: i, t, times });
         if (!onKeyInput) return;
         previewed = true;
@@ -94,7 +96,7 @@ export function useKeyDrag(a: KeyDragArgs) {
       },
       // A drag released back on its own time changes nothing, so a preview it sent is put back as for a cancel.
       onEnd: (ev) => {
-        const t = traveled(ev) && editable.current ? at.current(ev, stops) : times[i];
+        const t = traveled(ev) && editable.current ? at.current(ev, stops, times) : times[i];
         if (t !== times[i]) onKeyChange(i, t);
         else if (previewed) { onRevert?.(); onCancel?.(); }
         end();
