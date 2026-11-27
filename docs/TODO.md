@@ -312,8 +312,9 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   playback plays or loops one by name.
 
 - **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
-  scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing. A package of
-  its own because Lottie is a scene format, not SVG. Closes when a set of reference
+  scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing, and a layer's
+  in and out points to a nested timeline track's `window`, its `shown` bound to a target that hides the layer's node
+  (no binder has one yet). A package of its own because Lottie is a scene format, not SVG. Closes when a set of reference
   Lottie files plays from the import matching lottie-web's frames.
 
 
