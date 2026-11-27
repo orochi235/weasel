@@ -6,6 +6,7 @@ import { describeShortcuts } from './describeShortcuts';
 import { TOOL_ACTIVATE_ID } from './toolShortcuts';
 import { toolSet } from './toolSet';
 import { defineTool } from './defineTool';
+import { bindingId, resolveBindingOverrides } from '../interactions/actions/bindingOverrides';
 
 const run = { timing: 'immediate' as const, run: () => {} };
 const tool = (label: string) => ({ presentation: { label } });
@@ -71,5 +72,23 @@ describe('describeShortcuts', () => {
     const d = describeShortcuts([...actions, ...brush.actions!], { tools: { ...tools, brush } });
     const tool = d.commands.find((g) => g.id === 'tool');
     expect(tool?.rows.map((r) => [r.label, r.shortcuts.map((k) => k.key)])).toEqual([['Grow Brush', [']']], ['Shrink Brush', ['[']]]);
+  });
+
+  it("lists a tool's keys under the binding overrides in force, rebound or unbound", () => {
+    const brush = defineTool({
+      id: 'brush', presentation: { label: 'Brush' },
+      options: {
+        actionId: 'paint',
+        prefs: { name: 'Brush', children: { size: { kind: 'number', name: 'Size', description: '', default: 10 } } },
+        size: { option: 'size', plus: 1 },
+      },
+    });
+    const ids = brush.bindings!.map((b, i) => [b.spec.kind === 'key' ? b.spec.key : '', bindingId(b, 'brush', i)] as const);
+    const grow = ids.find(([k]) => k === ']')![1];
+    const shrink = ids.find(([k]) => k === '[')![1];
+    const overrides = resolveBindingOverrides([{ [grow]: key('='), [shrink]: null }]);
+    const d = describeShortcuts([...actions, ...brush.actions!], { tools: { ...tools, brush }, overrides });
+    const tool = d.commands.find((g) => g.id === 'tool');
+    expect(tool?.rows.map((r) => [r.label, r.shortcuts.map((k) => k.key)])).toEqual([['Grow Brush', ['=']]]);
   });
 });

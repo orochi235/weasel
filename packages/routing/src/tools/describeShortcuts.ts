@@ -9,6 +9,7 @@ import type { ShortcutInput } from '@weasel-js/gestures';
 import { getOwn } from '@weasel-js/registry';
 import type { Action } from '../interactions/actions/action';
 import { actionBindings } from '../interactions/actions/binding';
+import { NO_OVERRIDES, overriddenBindings, type ResolvedBindingOverrides } from '../interactions/actions/bindingOverrides';
 import { actionItems, actionItemTitle, type ActionItem } from '../interactions/actions/actionItems';
 import { actionShortcuts, bindingShortcuts } from '../interactions/actions/actionShortcuts';
 import { resolveParams } from '../interactions/actions/invoker';
@@ -57,6 +58,9 @@ export interface DescribeShortcutsOptions {
    *  one group, headed by the first label given. Tools in none follow under "Other tools", with the id `other`, which
    *  no set may take. */
   toolSets?: readonly ToolSet[];
+  /** The binding overrides in force (an actions registry's `bindingOverrides()`), applied to the keys `tools` bind as
+   *  they are when routed. The actions' own come from `list()` already overridden. */
+  overrides?: ResolvedBindingOverrides;
 }
 
 const NONE: readonly ShortcutInput[] = Object.freeze([]);
@@ -124,11 +128,13 @@ function heldTools(offhand: Action, tools: Readonly<Record<string, ShortcutTool>
   return rows;
 }
 
-/** The bindings `tools` declare, by the id of the action each names. */
-function toolBindingsByAction(tools: Readonly<Record<string, ShortcutTool>>): Map<string, NonNullable<ShortcutTool['bindings']>> {
+/** The bindings `tools` declare, each under its override, by the id of the action each names. */
+function toolBindingsByAction(
+  tools: Readonly<Record<string, ShortcutTool>>, overrides: ResolvedBindingOverrides,
+): Map<string, NonNullable<ShortcutTool['bindings']>> {
   const out = new Map<string, NonNullable<ShortcutTool['bindings']>>();
-  for (const tool of Object.values(tools)) {
-    for (const b of tool.bindings ?? []) out.set(b.actionId, [...(out.get(b.actionId) ?? []), b]);
+  for (const [id, tool] of Object.entries(tools)) {
+    for (const b of overriddenBindings(tool.bindings ?? [], id, overrides)) out.set(b.actionId, [...(out.get(b.actionId) ?? []), b]);
   }
   return out;
 }
@@ -140,7 +146,7 @@ function toolBindingsByAction(tools: Readonly<Record<string, ShortcutTool>>): Ma
  */
 export function describeShortcuts(actions: readonly Action[], opts: DescribeShortcutsOptions = {}): ShortcutsDescription {
   const tools = opts.tools ?? {};
-  const toolBound = toolBindingsByAction(tools);
+  const toolBound = toolBindingsByAction(tools, opts.overrides ?? NO_OVERRIDES);
   const commands = new Map<string, ShortcutRow[]>();
   const held: ShortcutRow[] = [];
   for (const action of actions) {

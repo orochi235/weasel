@@ -86,8 +86,10 @@ export function ShortcutSheet({
   const platform = sheetPlatform(apple);
   const registered = tools?.registry;
   const description = useMemo(
-    () => describeShortcuts(actions, { ...(registered ? { tools: registered } : {}), toolSets }),
-    [actions, registered, toolSets],
+    () => describeShortcuts(actions, {
+      ...(registered ? { tools: registered } : {}), toolSets, ...(registry ? { overrides: registry.bindingOverrides() } : {}),
+    }),
+    [actions, registered, toolSets, registry],
   );
   const parts = sheetParts(description, query, platform);
 
