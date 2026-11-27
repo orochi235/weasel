@@ -1,17 +1,19 @@
 import type { Bounds } from './fitViewToBounds';
 import type { View } from './view';
 import { canvasToClient } from '@weasel-js/routing';
-import { viewWorldToScreen, type Rect } from '@weasel-js/geom';
+import { poseFrameOf, viewWorldToScreen, type Rect } from '@weasel-js/geom';
+import { axisAlignedBounds } from 'core/geometry/unionBounds';
 
 /** Options for {@link sceneNodeClientRect}. */
 export interface SceneNodeClientRectOptions {
   /** Node (or container) id to locate. */
   id: string;
   /**
-   * Resolve an id to its world-space AABB, or null when unknown.
+   * Resolve an id to its world-space bounds, or null when unknown.
    * Typically adapts a pose resolver (e.g. from `composeSelectionPose`):
    * `(id) => { const p = resolvePose(id); return p ? boundsOfPath(p) : null; }`
-   * — for rect poses the pose is its own AABB and can be returned directly.
+   * — a rect pose can be returned directly: one carrying a `rotation` or
+   * `transform` is projected by the AABB of the box it is drawn in.
    */
   getWorldBounds: (id: string) => Bounds | null;
   /** Current viewport. */
@@ -24,14 +26,15 @@ export interface SceneNodeClientRectOptions {
 export type NodeClientRect = Rect;
 
 /**
- * Project a scene node's world AABB to client (viewport) coordinates,
+ * Project a scene node's world bounds to client (viewport) coordinates,
  * e.g. to anchor a `Callout` at a canvas-drawn object. Snapshot
  * semantics: the rect is where the node is *now* — it does not track
  * subsequent pan/zoom or scene mutations.
  */
 export function sceneNodeClientRect(opts: SceneNodeClientRectOptions): NodeClientRect | null {
-  const bounds = opts.getWorldBounds(opts.id);
-  if (bounds === null) return null;
+  const found = opts.getWorldBounds(opts.id);
+  if (found === null) return null;
+  const bounds = poseFrameOf(found) ? axisAlignedBounds(found) : found;
   const { x: x0, y: y0 } = viewWorldToScreen(opts.view, bounds);
   const { x: x1, y: y1 } = viewWorldToScreen(opts.view, { x: bounds.x + bounds.width, y: bounds.y + bounds.height });
   // Through the canvas's own scale, which an ancestor transform sets.

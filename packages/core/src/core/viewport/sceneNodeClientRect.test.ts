@@ -65,3 +65,21 @@ describe('sceneNodeClientRect', () => {
     expect(rect!.y).toBeCloseTo(30.375, 6);
   });
 });
+
+describe('sceneNodeClientRect — framed bounds and far-out boxes', () => {
+  const canvas = fakeCanvas(0, 0);
+  const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
+
+  it('projects a rotated rect pose by the box it is drawn in', () => {
+    const rect = sceneNodeClientRect({
+      id: 'r',
+      getWorldBounds: () => ({ x: 0, y: 45, width: 100, height: 10, rotation: Math.PI / 2 }),
+      view,
+      canvas,
+    })!;
+    expect(rect.x).toBeCloseTo(45);
+    expect(rect.y).toBeCloseTo(0);
+    expect(rect.width).toBeCloseTo(10);
+    expect(rect.height).toBeCloseTo(100);
+  });
+});
