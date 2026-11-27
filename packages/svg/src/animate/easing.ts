@@ -58,7 +58,7 @@ function staircase({ steps: n, jump = 'end' }: Steps): Point[] {
 }
 
 /** The breakpoints of blits `linear` points, placed as CSS `linear()` places them. */
-function breakpointsOf(points: readonly (number | readonly number[])[]): Point[] {
+export function breakpointsOf(points: readonly (number | readonly number[])[]): Point[] {
   const out: { v: number; t?: number }[] = [];
   for (const p of points) {
     if (typeof p === 'number') out.push({ v: p });

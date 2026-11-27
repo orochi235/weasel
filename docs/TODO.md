@@ -292,10 +292,9 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   plays from the import the way a browser plays it, checked against browser frames.
 
 - **(P2) [agent] Some imported CSS animation plays differently from a browser** (2026-11-25). `parseSvg` reads
-  `@keyframes` and `animation` into the clip (`packages/svg/src/cssAnimation.ts`, `cssTiming.ts`). Each of these is
-  warned and not carried: `linear()` easing (plays once a blits release carries `{ linear }`, blits branch
-  `linear-easing`); `steps()` jumping at both ends or neither (blits `main` has `jump: none|both`, unreleased); a
-  percentage `transform-origin` or `transform-box`; a transform of more than one function. Also: when an element
+  `@keyframes` and `animation` into the clip (`packages/svg/src/cssAnimation.ts`, `cssTiming.ts`), `linear()` and
+  every `steps()` jump included. Each of these is warned and not carried: a percentage `transform-origin` or
+  `transform-box`; a transform of more than one function. Also: when an element
   sets both the `animation` shorthand and a longhand, the longhand wins whatever their order, and
   `animation-composition` is ignored. Closes when an SVG animated by CSS alone plays from the import as a browser
   plays it, checked against browser frames.
