@@ -3,10 +3,11 @@
  * rule selecting the node by its id. The inverse of `readCssAnimations`, naming tracks as it does.
  */
 import type { Clip } from '@weasel-js/animator';
+import { lerp } from '@weasel-js/geom';
 import type { SerializeOptions } from '../serializeOptions';
 import type { SvgNode } from '../types';
-import { cssTimingOf, numText } from './easing';
-import { serializeAnimated, type ClipPlan, type Frame } from './plan';
+import { cssTimingOf, exactPointsOf, numText } from './easing';
+import { frameAt, lerpFor, serializeAnimated, type ClipPlan, type Frame } from './plan';
 
 interface Rule { statics: string[]; animations: string[]; ends: string[] }
 
@@ -36,8 +37,26 @@ function cssIdent(s: string): string {
   return s.replace(/[^\w-]/gu, escape).replace(/^(-?)(\d)/, (_m, dash: string, d: string) => dash + escape(d));
 }
 
+/** `frames` with each span eased by a curve made of bezier segments split into those segments, as keys. */
+function exactFramesOf(prop: string, frames: readonly Frame[]): Frame[] {
+  const out = [frames[0]];
+  for (let i = 1; i < frames.length; i++) {
+    const [from, to] = [frames[i - 1], frames[i]];
+    const pts = exactPointsOf(to.easing);
+    const inner = pts && from.t < to.t && from.text !== to.text ? pts.slice(1, -1).map((p) => ({ p, value: lerpFor(from.value, to.value, p.v) })) : [];
+    if (!pts || inner.length === 0 || inner.some((x) => x.value === null)) {
+      out.push(to);
+      continue;
+    }
+    for (const { p, value } of inner) out.push({ ...frameAt(prop, lerp(from.t, to.t, p.t), value!), easing: { bezier: p.ease! } });
+    out.push({ ...to, easing: { bezier: pts[pts.length - 1].ease! } });
+  }
+  return out;
+}
+
 /** The keyframes of one track, each eased by the key after it. */
-function framesOf(prop: string, frames: readonly Frame[], duration: number): string {
+function framesOf(prop: string, given: readonly Frame[], duration: number): string {
+  const frames = exactFramesOf(prop, given);
   const offsets = offsetsOf(frames.map((f) => (f.t / duration) * 100));
   return frames.map((f, i) => {
     const next = frames[i + 1];

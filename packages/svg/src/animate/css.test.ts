@@ -23,6 +23,16 @@ describe('serializeCssAnimatedSvg', () => {
     expect(keyframes(out, 'a-opacity')).toBe(' 0% { opacity: 0; animation-timing-function: linear } 100% { opacity: 1 }');
   });
 
+  it('writes a bounce as a keyframe at each contact and peak, each eased by a quad bezier', () => {
+    const out = serializeCssAnimatedSvg([path('a')], clipOf({ 'a.opacity': [{ t: 0, value: 1 }, { t: 1000, value: 0, easing: 'easeInBounce' }] }));
+    const frames = keyframes(out, 'a-opacity');
+    expect([...frames.matchAll(/([\d.]+)% \{ opacity: ([\d.]+)/g)].map((m) => [m[1], m[2]])).toEqual([
+      ['0', '1'], ['4.5455', '0.9844'], ['9.0909', '1'], ['18.1818', '0.9375'], ['27.2727', '1'], ['45.4545', '0.75'], ['63.6364', '1'], ['100', '0'],
+    ]);
+    expect(frames).not.toContain('linear(');
+    expect(frames).toContain('0% { opacity: 1; animation-timing-function: cubic-bezier(0.3333, 0.6667, 0.6667, 1) }');
+  });
+
   it('eases each keyframe by the easing of the key after it, and repeats as the clip loops', () => {
     const out = serializeCssAnimatedSvg([path('a')], clipOf({
       'a.opacity': [{ t: 0, value: 0 }, { t: 400, value: 1, easing: { bezier: [0.4, 0, 0.2, 1] } }, { t: 800, value: 0 }],

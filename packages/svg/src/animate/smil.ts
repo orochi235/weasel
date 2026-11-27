@@ -2,13 +2,12 @@
  * A clip written as an SVG animated by SMIL: one `<animate>` per node and attribute, inside the
  * node's element. The inverse of the SMIL import, naming tracks as it does.
  */
-import type { Clip, ClipKey } from '@weasel-js/animator';
-import { lerp } from '@weasel-js/geom';
+import type { Clip } from '@weasel-js/animator';
 import { escapeAttr } from '@weasel-js/registry';
 import type { SerializeOptions } from '../serializeOptions';
 import type { SvgNode } from '../types';
 import { numText, smilTimingOf } from './easing';
-import { serializeAnimated, valueText, type ClipPlan, type Frame, type PlannedTrack, type Warn } from './plan';
+import { frameAt, lerpFor, serializeAnimated, type ClipPlan, type Frame, type PlannedTrack, type Warn } from './plan';
 
 /** How the span into a frame moves: `hold` where nothing moves, so any calcMode carries it. */
 type Mode = 'linear' | 'spline' | 'discrete' | 'hold';
@@ -17,23 +16,13 @@ interface Point { frame: Frame; into: Span }
 
 const LINEAR_SPLINE = '0 0 1 1';
 
-/** `a` to `b` at `k`, or null where the values do not lerp. */
-function lerpFor(a: ClipKey['value'], b: ClipKey['value'], k: number): ClipKey['value'] | null {
-  if (typeof a === 'number' && typeof b === 'number') return lerp(a, b, k);
-  if (Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v) => typeof v === 'number')) {
-    return (a as number[]).map((v, i) => lerp(v, b[i] as number, k));
-  }
-  return null;
-}
-
-/** A frame inserted at `t`, holding a lerp of two values already written, which always has text. */
-function frameAt(prop: string, t: number, value: ClipKey['value']): Frame {
-  return { t, value, text: valueText(prop, value)!, easing: undefined };
-}
+/** How SMIL moves along a span eased by `ease`: a spline for a bezier, else linear. */
+const spanOf = (ease: readonly number[] | undefined): Span => (ease ? { mode: 'spline', keySpline: ease.map(numText).join(' ') } : { mode: 'linear' });
 
 /**
  * The points one span from `from` to `to` lowers to, `to` last: the inserted points of an easing
- * SMIL has no form for, linear between them, held from 0 and to 1 where they start or end inside.
+ * SMIL has no form for, each eased as its point says, held from 0 and to 1 where they start or end
+ * inside.
  */
 function spanPoints(prop: string, from: Frame, to: Frame): Point[] {
   if (from.text === to.text || from.t === to.t) return [{ frame: to, into: { mode: 'hold' } }];
@@ -42,13 +31,15 @@ function spanPoints(prop: string, from: Frame, to: Frame): Point[] {
   const span = to.t - from.t;
   const inserted: Point[] = [];
   const pts = timing.expand;
-  const held = [...(pts[0].t > 0 ? [{ t: 0, v: pts[0].v }] : []), ...pts, ...(pts[pts.length - 1].t < 1 ? [{ t: 1, v: pts[pts.length - 1].v }] : [])];
+  const last = pts[pts.length - 1];
+  const ends = last.t === 1 && last.v === 1;
+  const held = [...(pts[0].t > 0 ? [{ t: 0, v: pts[0].v }] : []), ...(ends ? pts.slice(0, -1) : pts), ...(last.t < 1 ? [{ t: 1, v: last.v }] : [])];
   for (const p of held) {
     const value = lerpFor(from.value, to.value, p.v);
     if (value === null) return [{ frame: to, into: { mode: 'linear' } }];
-    inserted.push({ frame: frameAt(prop, from.t + p.t * span, value), into: { mode: 'linear' } });
+    inserted.push({ frame: frameAt(prop, from.t + p.t * span, value), into: spanOf('ease' in p ? p.ease : undefined) });
   }
-  return [...inserted, { frame: to, into: { mode: 'linear' } }];
+  return [...inserted, { frame: to, into: spanOf(ends ? last.ease : undefined) }];
 }
 
 /** A track's points, a discrete span among others written as a hold and a jump, and its calcMode. */

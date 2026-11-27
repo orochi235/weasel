@@ -7,6 +7,7 @@ type Tangents = { o: { x: number; y: number }; i: { x: number; y: number } };
 interface Point { t: number; v: number; into: Tangents | 'hold' }
 
 const LINEAR: Tangents = { o: { x: 0, y: 0 }, i: { x: 1, y: 1 } };
+const tangentsFor = (ease: readonly number[] | undefined): Tangents => (ease ? { o: { x: ease[0], y: ease[1] }, i: { x: ease[2], y: ease[3] } } : LINEAR);
 
 /**
  * The points `frames` lower to: one per key, plus those an easing Lottie has no tangents for is
@@ -21,12 +22,12 @@ function pointsOf(frames: readonly Frame[], valueOf: (frame: Frame) => number): 
     const tangents = lottieTangentsOf(to.easing);
     if ('expand' in tangents) {
       const pts = tangents.expand;
-      const first = pts[0];
       const last = pts[pts.length - 1];
-      const held = [...(first.t > 0 ? [{ t: 0, v: first.v }] : []), ...pts, ...(last.t < 1 ? [{ t: 1, v: last.v }] : [])];
-      for (const p of held) out.push({ t: lerp(from.t, to.t, p.t), v: lerp(a, b, p.v), into: LINEAR });
-    }
-    out.push({ t: to.t, v: b, into: 'expand' in tangents ? LINEAR : 'hold' in tangents ? 'hold' : tangents });
+      const ends = last.t === 1 && last.v === 1;
+      const held = [...(pts[0].t > 0 ? [{ t: 0, v: pts[0].v }] : []), ...(ends ? pts.slice(0, -1) : pts), ...(last.t < 1 ? [{ t: 1, v: last.v }] : [])];
+      for (const p of held) out.push({ t: lerp(from.t, to.t, p.t), v: lerp(a, b, p.v), into: tangentsFor('ease' in p ? p.ease : undefined) });
+      out.push({ t: to.t, v: b, into: tangentsFor(ends ? last.ease : undefined) });
+    } else out.push({ t: to.t, v: b, into: 'hold' in tangents ? 'hold' : tangents });
   }
   return out.filter((p, k) => k === 0 || p.t !== out[k - 1].t || p.v !== out[k - 1].v);
 }

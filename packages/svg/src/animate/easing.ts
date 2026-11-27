@@ -2,7 +2,9 @@ import { isBlitsEasing, resolveKeyEasing, type KeyEasing } from '@weasel-js/anim
 import { easingBezier, easingDataOf } from '@weasel-js/geom';
 
 type Jump = 'start' | 'end' | 'none' | 'both';
-type Point = { t: number; v: number };
+type Bezier = [number, number, number, number];
+/** A point of an expanded easing, and the bezier easing the segment into it; linear without one. */
+export type Point = { t: number; v: number; ease?: Bezier };
 type Steps = { steps: number; jump?: Jump };
 
 const SAMPLES = 24;
@@ -86,8 +88,48 @@ function dataOf(easing: KeyEasing | undefined): KeyEasing | undefined {
   return typeof easing === 'string' && easing !== 'linear' ? easingDataOf(easing) : easing;
 }
 
+const QUAD_IN: Bezier = [1 / 3, 0, 2 / 3, 1 / 3];
+const QUAD_OUT: Bezier = [1 / 3, 2 / 3, 2 / 3, 1];
+const B = 2.75;
+/** easeOutBounce exactly: its parabolas from each contact to the next peak and back, quad out then in. */
+const BOUNCE_OUT: readonly Point[] = [
+  { t: 0, v: 0 },
+  { t: 1 / B, v: 1, ease: QUAD_IN },
+  { t: 1.5 / B, v: 0.75, ease: QUAD_OUT },
+  { t: 2 / B, v: 1, ease: QUAD_IN },
+  { t: 2.25 / B, v: 0.9375, ease: QUAD_OUT },
+  { t: 2.5 / B, v: 1, ease: QUAD_IN },
+  { t: 2.625 / B, v: 0.984375, ease: QUAD_OUT },
+  { t: 1, v: 1, ease: QUAD_IN },
+];
+
+const reversedBezier = ([x1, y1, x2, y2]: Bezier): Bezier => [1 - x2, 1 - y2, 1 - x1, 1 - y1];
+
+/** `pts` run backward, 1 − f(1 − t): each segment keeps its curve, turned end for end. */
+function reflected(pts: readonly Point[]): Point[] {
+  const n = pts.length;
+  return pts.map((_, i) => {
+    const p = pts[n - 1 - i];
+    const into = i === 0 ? undefined : pts[n - i].ease;
+    return into ? { t: 1 - p.t, v: 1 - p.v, ease: reversedBezier(into) } : { t: 1 - p.t, v: 1 - p.v };
+  });
+}
+
+const BOUNCE_IN = reflected(BOUNCE_OUT);
+const half = (pts: readonly Point[], at: number): Point[] => pts.map((p) => ({ ...p, t: at + p.t / 2, v: at + p.v / 2 }));
+const EXACT: Readonly<Record<string, readonly Point[]>> = {
+  easeOutBounce: BOUNCE_OUT,
+  easeInBounce: BOUNCE_IN,
+  easeInOutBounce: [...half(BOUNCE_IN, 0), ...half(BOUNCE_OUT, 0.5).slice(1)],
+};
+
+/** The keys a named curve made of bezier segments is exactly, each eased into by its segment; none for any other. */
+export function exactPointsOf(easing: KeyEasing | undefined): readonly Point[] | undefined {
+  return typeof easing === 'string' && Object.hasOwn(EXACT, easing) ? EXACT[easing] : undefined;
+}
+
 /** Points a writer inserts where its format has no form for the easing. */
-function expandedOf(easing: KeyEasing | undefined): Point[] {
+function expandedOf(easing: KeyEasing | undefined): readonly Point[] {
   const steps = stepsOf(easing);
   if (steps) return staircase(steps);
   if (isBlitsEasing(easing) && 'linear' in easing) return breakpointsOf(easing.linear);
@@ -118,8 +160,10 @@ export function cssTimingOf(named: KeyEasing | undefined): string {
 export function smilTimingOf(named: KeyEasing | undefined): {
   calcMode: 'linear' | 'spline' | 'discrete';
   keySpline?: string;
-  expand?: Point[];
+  expand?: readonly Point[];
 } {
+  const exact = exactPointsOf(named);
+  if (exact) return { calcMode: 'spline', expand: exact };
   const easing = dataOf(named);
   if (isLinear(easing)) return { calcMode: 'linear' };
   const bezier = bezierOf(easing);
@@ -132,7 +176,9 @@ export function smilTimingOf(named: KeyEasing | undefined): {
 export function lottieTangentsOf(named: KeyEasing | undefined):
   | { o: { x: number; y: number }; i: { x: number; y: number } }
   | { hold: true }
-  | { expand: Point[] } {
+  | { expand: readonly Point[] } {
+  const exact = exactPointsOf(named);
+  if (exact) return { expand: exact };
   const easing = dataOf(named);
   if (isLinear(easing)) return { o: { x: 0, y: 0 }, i: { x: 1, y: 1 } };
   const bezier = bezierOf(easing);

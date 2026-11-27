@@ -78,6 +78,13 @@ describe('writeLottie', () => {
     expect((b.ks.o.k as { t: number; s: number[] }[]).map((k) => [k.t, k.s[0]])).toEqual([[0, 0], [30, 80], [60, 100]]);
   });
 
+  it('writes a bounce as a key at each contact and peak, each with quad tangents', () => {
+    const anim = writeLottie([path('a')], clipOf({ 'a.opacity': [{ t: 0, value: 0 }, { t: 1100, value: 1, easing: 'easeOutBounce' }] }));
+    const k = anim.layers[0].ks.o.k as { t: number; s: number[]; o?: { y: number[] }; i?: { y: number[] } }[];
+    expect(k.map((f) => [f.t, f.s[0]])).toEqual([[0, 0], [24, 100], [36, 75], [48, 100], [54, 93.75], [60, 100], [63, 98.4375], [66, 100]]);
+    expect(k.slice(0, -1).map((f) => [f.o!.y[0], f.i!.y[0]])).toEqual(Array.from({ length: 7 }, (_, i) => (i % 2 === 0 ? [0, 0.3333] : [0.6667, 1])));
+  });
+
   it('converts key times to frames at the given fps', () => {
     const anim = writeLottie([path('a')], clipOf({ 'a.opacity': [{ t: 0, value: 0 }, { t: 500, value: 1 }] }), { fps: 30 });
     expect(anim).toMatchObject({ fr: 30, op: 15 });
