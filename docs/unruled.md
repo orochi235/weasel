@@ -4318,3 +4318,7 @@ Calls the lanes made without a ruling:
 - 2026-11-27 (the fixer's call): `useDecayLoop`'s `start` throws a `TypeError` for `viewBounds` with a `boundary` but
   neither a `position` nor an `initialPosition`, with no override. Checking the bounds from the origin, as before, was
   the alternative.
+- 2026-11-27 (the fixer's call): `fitSize` and `fitZoom` throw a `RangeError` for a viewport with no area (zero,
+  negative, or non-finite on either side), with no override. `fitViewToBounds` keeps its current view there because it
+  has one to keep; these have none, and `null` already means there is no content. Returning `null`, which the
+  viewport's owner resolves to the reset view, was the alternative.

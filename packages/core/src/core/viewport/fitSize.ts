@@ -11,7 +11,8 @@ import { DEFAULT_MAX_ZOOM, DEFAULT_MIN_ZOOM } from './zoomBounds';
  * `clamp` bounds the resulting zoom to [min, max], each defaulting to the
  * kit-wide clamp (`DEFAULT_MIN_ZOOM`, `DEFAULT_MAX_ZOOM`). `null` when there
  * is nothing to fit (`hasExtent`): the caller that owns the viewport resolves
- * that to the view Cmd-0 gives.
+ * that to the view Cmd-0 gives. Throws a `RangeError` for a viewport with no
+ * area, which has no fit; wait for layout before fitting.
  */
 export function fitZoom(
   availW: number,
@@ -20,6 +21,7 @@ export function fitZoom(
   contentH: number,
   clamp?: { min?: number; max?: number },
 ): number | null {
+  checkViewportArea('fitZoom', availW, availH);
   if (!hasExtent({ width: contentW, height: contentH })) return null;
   const raw = Math.min(
     contentW > 0 ? availW / contentW : Infinity,
@@ -35,7 +37,7 @@ export function fitZoom(
  * a `viewportW x viewportH` (pixel) rect. `paddingPx` is uniform pixel padding
  * on every side, and `fill` the fraction of each padded axis the content may
  * take (`0.85` leaves a 15% margin). `null` when there is nothing to fit, as
- * {@link fitZoom}.
+ * {@link fitZoom}, and a `RangeError` for a viewport with no area, as there.
  */
 export function fitSize(
   viewportW: number,
@@ -46,6 +48,7 @@ export function fitSize(
   clamp?: { min?: number; max?: number },
   fill = 1,
 ): { zoom: number; panX: number; panY: number } | null {
+  checkViewportArea('fitSize', viewportW, viewportH);
   const availW = Math.max(1, viewportW - paddingPx * 2) * fill;
   const availH = Math.max(1, viewportH - paddingPx * 2) * fill;
   const zoom = fitZoom(availW, availH, contentW, contentH, clamp);
@@ -57,4 +60,10 @@ export function fitSize(
     panX: (viewportW - contentPxW) / 2,
     panY: (viewportH - contentPxH) / 2,
   };
+}
+
+function checkViewportArea(who: string, width: number, height: number): void {
+  if (!(width > 0 && height > 0 && width < Infinity && height < Infinity)) {
+    throw new RangeError(`${who}: a ${width} x ${height} viewport has no area to fit content into`);
+  }
 }
