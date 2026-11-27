@@ -62,10 +62,20 @@ export function useViewNesting(
     return frame ? derive(frame.view, frame.dims) : derive(outer, dims);
   }, [frameIn]);
 
-  /** The view this one is nested in, while it is registered. */
-  const parentReg = useCallback((): ViewRegistration | undefined => {
+  // Set while this view asks the view it is nested in, so a parent chain that
+  // loops back finds no parent rather than recursing.
+  const nesting = useRef(false);
+  /** `read` asked of the view this one is nested in, while it is registered. */
+  const ofParent = useCallback(<T>(read: (reg: ViewRegistration) => T): { value: T } | null => {
     const p = live.current.parent;
-    return p === undefined ? undefined : registry?.get(p);
+    const reg = p === undefined || nesting.current ? undefined : registry?.get(p);
+    if (!reg) return null;
+    nesting.current = true;
+    try {
+      return { value: read(reg) };
+    } finally {
+      nesting.current = false;
+    }
   }, [live, registry]);
 
   // Set while this view asks the view it follows, so two views following each
@@ -89,9 +99,9 @@ export function useViewNesting(
   const drawnLayers = useCallback((): readonly RenderLayer<unknown>[] => {
     const followed = ofFollowed((reg) => reg.drawnLayers());
     if (followed) return viewPaintedLayers(followed.value, live.current);
-    if (live.current.parent !== undefined) return viewPaintedLayers(parentReg()?.drawnLayers() ?? [], live.current);
+    if (live.current.parent !== undefined) return viewPaintedLayers(ofParent((reg) => reg.drawnLayers())?.value ?? [], live.current);
     return viewPaintedLayers(registry?.surface()?.layers() ?? [], live.current);
-  }, [registry, live, parentReg, ofFollowed]);
+  }, [registry, live, ofParent, ofFollowed]);
 
   const [sceneLayerGate] = useState(createSceneLayerGate);
   /** What this view's picks, marquees and select-alls ask of a scene layer:
@@ -101,8 +111,8 @@ export function useViewNesting(
     const followed = ofFollowed((reg) => reg.layerIsPainted(layerId));
     if (followed) return followed.value;
     if (live.current.parent === undefined) return true;
-    return parentReg()?.layerIsPainted(layerId) ?? false;
-  }, [registry, sceneLayerGate, live, parentReg, ofFollowed]);
+    return ofParent((reg) => reg.layerIsPainted(layerId))?.value ?? false;
+  }, [registry, sceneLayerGate, live, ofParent, ofFollowed]);
 
   /** The selection this view acts on: its surface's. */
   const selectionNow = useCallback(() => live.current.shared, [live]);
