@@ -16,12 +16,22 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { bakeCursor } from '../src/bake.ts';
-import { cursorGlyph, cursorVariants } from '../src/registry.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  summary: 'Rasterizes each cursor at the device pixels a 16px and 24px cursor gets at 1x and 2x, magnified nearest-neighbor, to a PNG.',
+  positionals: '[<cursor,…>] [<ground>]',
+  notes: `Cursors default to every variant, the ground to #ffffff.
+Run it as \`npm run proof:pixels\` (it needs ts-resolve.mjs). Needs resvg and ImageMagick on PATH.
+Env: ANGLES=<deg,…> (default 0), OUT=<file> (default cursor-pixels.png).`,
+});
+// Loaded after the parse, so --help needs no built dependency.
+const { bakeCursor } = await import('../src/bake.ts');
+const { cursorGlyph, cursorVariants } = await import('../src/registry.ts');
 
 const SIZES = [[16, 1], [16, 2], [24, 1], [24, 2]];
 const MAG = 10;
-const GROUND = process.argv[3] ?? '#ffffff';
+const GROUND = positionals[1] ?? '#ffffff';
 const dir = mkdtempSync(join(tmpdir(), 'cursor-px-'));
 
 /** The shipped asset, rasterized at `css * dpr` device pixels. */
@@ -47,7 +57,7 @@ const raster = (name, css, dpr, angle) => {
   return png;
 };
 
-const names = process.argv[2] ? process.argv[2].split(',') : [...VARIANTS.keys()];
+const names = positionals[0] ? positionals[0].split(',') : [...VARIANTS.keys()];
 // Every fourth step, so a rotated bake is checked on the grid it ships on
 // rather than only in the vector sheet.
 const ANGLES = process.env.ANGLES

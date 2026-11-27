@@ -20,18 +20,27 @@ import { relative, resolve } from 'node:path';
 import os from 'node:os';
 import { readBenchReport } from './lib/vitest-bench.ts';
 import { mergeReports, ms, renderSections, spliceSections } from './lib/benchReport.ts';
+import { cli } from '../../scripts/lib/help.mjs';
 
-const args = process.argv.slice(2);
-const argOf = (flag, fallback) => {
-  const i = args.indexOf(flag);
-  return i >= 0 && args[i + 1] ? args[i + 1] : fallback;
-};
+const { values } = cli(import.meta.url, {
+  summary: 'Turns a vitest benchmark JSON report into the committed Markdown baseline, printing one line per benchmark.',
+  options: {
+    in: { type: 'string', placeholder: '<json>', default: 'tests/perf/bench/baseline.json', description: 'the report to render' },
+    out: { type: 'string', placeholder: '<md>', default: 'tests/perf/bench/BASELINE.md', description: 'the Markdown to write' },
+    merge: {
+      type: 'string',
+      placeholder: '<json>',
+      description: "a report of some bench files (`npm run perf:bench -- --raw`): replace only those files' entries in --in and sections in --out",
+    },
+  },
+  notes: 'Paths are relative to the repo root.',
+});
 
 const repoRoot = resolve(import.meta.dirname, '../..');
-const inPath = resolve(repoRoot, argOf('--in', 'tests/perf/bench/baseline.json'));
-const outPath = resolve(repoRoot, argOf('--out', 'tests/perf/bench/BASELINE.md'));
+const inPath = resolve(repoRoot, values.in);
+const outPath = resolve(repoRoot, values.out);
 
-const mergeArg = argOf('--merge', null);
+const mergeArg = values.merge ?? null;
 let report = JSON.parse(readFileSync(inPath, 'utf8'));
 let mergedSuites = null;
 if (mergeArg) {

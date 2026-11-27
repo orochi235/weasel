@@ -14,12 +14,13 @@ import { statSync } from 'node:fs';
 import { compareResults, formatReport } from './lib/compare.ts';
 import { loadResult, loadResultDir } from './lib/loadResults.ts';
 import { pairByBenchmark } from './lib/pairResults.ts';
+import { cli } from '../../scripts/lib/help.mjs';
 
-const paths = process.argv.slice(2).filter((a) => a !== '--');
-if (paths.length !== 2) {
-  console.error('usage: npm run perf:compare -- <a.json|a-dir> <b.json|b-dir>');
-  process.exit(2);
-}
+const { positionals: paths } = cli(import.meta.url, {
+  summary: "Compares two perf result files, or two directories of them, item by item, with b - a and b / a, and warns when the runs' machines differ.",
+  positionals: '<a.json|a-dir> <b.json|b-dir>',
+  notes: 'Exits 0 whatever the numbers say; 2 on bad input. Run it as `npm run perf:compare -- <a> <b>`.',
+});
 
 const fail = (message) => {
   console.error(message);

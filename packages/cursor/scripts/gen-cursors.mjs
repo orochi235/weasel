@@ -15,6 +15,9 @@ import { MARKS } from './glyphs/marks.mjs';
 import { MOVE } from './glyphs/move.mjs';
 import { SHAPES } from './glyphs/shapes.mjs';
 import { TRANSFORM } from './glyphs/transform.mjs';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, { summary: 'Emits src/glyphs.ts from the glyph definitions in scripts/glyphs/.' });
 
 const ALL = { ...DRAW, ...SHAPES, ...TRANSFORM, ...MOVE };
 

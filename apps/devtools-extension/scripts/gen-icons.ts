@@ -5,6 +5,11 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { Resvg } from '@resvg/resvg-js';
 import { ICON_SIZES } from '../manifest.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: "Renders the devtools extension's icons into public/icons/ from the wordmark's \"w\" and gradient.",
+});
 
 const app = resolve(import.meta.dirname, '..');
 

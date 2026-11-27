@@ -11,6 +11,7 @@ import { join, relative } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { camel, checkMark, element, fillElement } from './lib/emit.mjs';
 import { emitConsumerGen, emitGen, emitTableModule } from './lib/modules.mjs';
+import { cli } from '../../../scripts/lib/help.mjs';
 
 const REPO = join(import.meta.dirname, '../../..');
 
@@ -82,6 +83,10 @@ export async function generate({ roots = discover(), write = true } = {}) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(import.meta.url, {
+    summary: "Emits each package's and app's icon table and bound icon() from its icons/ definitions.",
+    notes: 'Proof a change before committing it: docs/icons.md ("Drawing rules").',
+  });
   const { tables, consumers } = await generate();
   for (const t of tables) console.log(`${t.namespace}: ${Object.keys(t.icons).length} glyphs`);
   for (const ns of consumers) console.log(`${ns}: icon() only`);

@@ -1,6 +1,11 @@
 #!/usr/bin/env tsx
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: 'Fails when a className literal (.tsx) or class selector (.less) in labkit/src does not use the lk- prefix.',
+});
 
 const ROOT = new URL('..', import.meta.url).pathname;
 const SRC = join(ROOT, 'src');

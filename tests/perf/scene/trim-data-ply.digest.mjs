@@ -1,9 +1,16 @@
 // Digest of trim-data-ply.runs.jsonl: per case and arm, the median over rounds of each round's
 // median frame, for the head given (default: the latest in the file).
 import { readFileSync } from 'node:fs';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  summary: "Digests trim-data-ply.runs.jsonl: per case and arm, the median over rounds of each round's median frame.",
+  positionals: '[<head>]',
+  notes: 'The head defaults to the latest in the file.',
+});
 
 const rows = readFileSync(new URL('./trim-data-ply.runs.jsonl', import.meta.url), 'utf8').trim().split('\n').map((l) => JSON.parse(l));
-const head = process.argv[2] ?? rows.at(-1).head;
+const head = positionals[0] ?? rows.at(-1).head;
 const median = (xs) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
 const cases = new Map();
 for (const r of rows.filter((x) => x.head === head)) {

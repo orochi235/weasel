@@ -4,6 +4,12 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { withStanceCss } from './stanceCss';
 import { STANCE_SURFACES } from './stanceSurfaces';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: "Writes every stanced surface's fallback chains into its stylesheet.",
+  notes: 'Run it as `npm run gen:stances`.',
+});
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
 for (const surface of STANCE_SURFACES) {

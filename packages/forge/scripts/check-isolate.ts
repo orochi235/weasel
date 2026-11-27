@@ -1,6 +1,11 @@
 // Counts the stories the workshop renders in their own frame document and fails when there are more
 // than it allows. Reads story sources statically and never starts vite, so it is fast.
 import { repoEntries } from './repoIndex.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: 'Counts the stories the workshop renders in their own frame document and fails when there are more than it allows. Reads story sources statically; never starts vite.',
+});
 
 // This number only goes down. Raising it is a reviewed edit to this file, and the story that
 // needs it carries the reason in its `isolate`.

@@ -16,13 +16,23 @@ import { execFileSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import {
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  summary: 'Renders painted-tier cursor glyphs at several world radii, 1x and 2x, through the same calls the canvas layer makes, to a PNG.',
+  positionals: '[<glyph,…>] [<radius,…>]',
+  notes: `Glyphs default to brush, radii to 6,20,60,180.
+Run it as \`npm run proof:painted -- brush 8,40,200\` (it needs ts-resolve.mjs). Needs resvg and ImageMagick on PATH.
+Env: GROUND=<color> (default #ffffff), OUT=<file> (default cursor-painted.png).`,
+});
+// Loaded after the parse, so --help needs no built dependency.
+const {
   chromeLineWidthScale,
   cursorPaintMatrix,
   cursorPaintOps,
   worldCursorPx,
-} from '../src/paint.ts';
-import { GLYPHS } from '../src/glyphs.ts';
+} = await import('../src/paint.ts');
+const { GLYPHS } = await import('../src/glyphs.ts');
 
 const DPRS = [1, 2];
 const GROUND = process.env.GROUND ?? '#ffffff';
@@ -61,8 +71,8 @@ const raster = (name, worldRadius, dpr) => {
   return png;
 };
 
-const names = (process.argv[2] ?? 'brush').split(',');
-const radii = (process.argv[3] ?? '6,20,60,180').split(',').map(Number);
+const names = (positionals[0] ?? 'brush').split(',');
+const radii = (positionals[1] ?? '6,20,60,180').split(',').map(Number);
 const rows = names.flatMap((name) =>
   DPRS.map((dpr) => radii.map((r) => raster(name, r, dpr))),
 );

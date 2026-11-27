@@ -12,8 +12,16 @@
 
 import { execFileSync } from 'node:child_process';
 import { writeFileSync } from 'node:fs';
-import { bakeCursor } from '../src/bake.ts';
-import { cursorGlyph, cursorVariants } from '../src/registry.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  summary: 'Renders a proof sheet of every cursor glyph over three grounds, magnified and at true size, to a PNG.',
+  positionals: '[<outfile.png>]',
+  notes: 'Run it as `npm run proof:cursors` (it needs ts-resolve.mjs). Needs resvg on PATH. Writes cursor-proof.png by default.',
+});
+// Loaded after the parse, so --help needs no built dependency.
+const { bakeCursor } = await import('../src/bake.ts');
+const { cursorGlyph, cursorVariants } = await import('../src/registry.ts');
 
 const GROUNDS = [
   ['white page', '#ffffff'],
@@ -71,7 +79,7 @@ names.forEach((name, ni) => {
 });
 svg += '</svg>';
 
-const out = process.argv[2] ?? 'cursor-proof.png';
+const out = positionals[0] ?? 'cursor-proof.png';
 writeFileSync('/tmp/cursor-proof.svg', svg);
 execFileSync('resvg', ['--zoom', '2', '/tmp/cursor-proof.svg', out]);
 console.log('wrote', out);

@@ -8,6 +8,11 @@
 
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: "Emits src/joiningTypes.gen.ts from the Unicode Character Database's ArabicShaping.txt, downloaded from unicode.org.",
+});
 
 const UNICODE_VERSION = '16.0.0';
 const url = `https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/ArabicShaping.txt`;

@@ -10,6 +10,14 @@ import { createAnimatorCore } from '../../../packages/animator/src/engine/core';
 import { createTarget, stateOf, type Target } from '../../../packages/animator/src/target';
 import { createTargetTable } from '../../../packages/animator/src/targetTable';
 import type { AnimationHandle } from '../../../packages/animator/src/types';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  name: 'target-reads/table.ts',
+  summary: 'Times a frame of N moving [x, y] values read as targets or as rows of a target table, steady and churned.',
+  positionals: '[idle|targets|table|held|heldfn|heldrows|behind]',
+  notes: 'Run through `node tests/perf/target-reads/run.mjs`, which bundles it and sets N.',
+});
 
 const N = Number(process.env.N ?? 10000);
 const AXES = 2;
@@ -183,7 +191,7 @@ function behindCase(): void {
 
 // One case a process (argv[2]: idle | targets | table | held | heldfn | heldrows | behind): three sets of targets alive together
 // push each other out of cache, and a frame at 100k rows is bound by memory.
-const which = process.argv[2] ?? 'table';
+const which = positionals[0] ?? 'table';
 if (which === 'behind') {
   behindCase();
   process.exit(0);

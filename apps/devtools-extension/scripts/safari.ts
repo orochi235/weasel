@@ -3,6 +3,12 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: 'Wraps the Chrome build of the devtools extension in a macOS Xcode project for Safari, under the gitignored safari/.',
+  notes: 'Needs `npm run build:devtools-extension` first, and Xcode.',
+});
 
 const app = resolve(import.meta.dirname, '..');
 const built = resolve(app, 'dist/chrome');

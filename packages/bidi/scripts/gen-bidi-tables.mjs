@@ -11,6 +11,11 @@
 
 import { writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { cli } from '../../../scripts/lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: 'Emits src/tables.ts (bidi classes, paired brackets, mirroring) from the Unicode Character Database, downloaded from unicode.org.',
+});
 
 const UNICODE_VERSION = '16.0.0';
 const UCD = `https://www.unicode.org/Public/${UNICODE_VERSION}/ucd`;

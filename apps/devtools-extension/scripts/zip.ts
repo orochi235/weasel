@@ -3,11 +3,17 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { TARGETS, type Target } from '../manifest.ts';
+import { cli } from '../../../scripts/lib/help.mjs';
 
-const target = process.argv[2] as Target;
+const { positionals } = cli(import.meta.url, {
+  summary: 'Packs a built devtools extension target into dist/weasel-devtools-<target>.zip, for a store upload or a signed Firefox build.',
+  positionals: `<${TARGETS.join('|')}>`,
+  notes: 'Needs `npm run build:devtools-extension` first.',
+});
+const target = positionals[0] as Target;
 if (!TARGETS.includes(target)) {
-  console.error(`usage: zip.ts <${TARGETS.join('|')}>`);
-  process.exit(1);
+  console.error(`zip: no target '${target}'; one of ${TARGETS.join(', ')}`);
+  process.exit(2);
 }
 const dist = resolve(import.meta.dirname, '../dist');
 const dir = resolve(dist, target);

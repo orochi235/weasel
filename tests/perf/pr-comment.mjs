@@ -13,18 +13,23 @@ import { compareResults } from './lib/compare.ts';
 import { loadResultDir } from './lib/loadResults.ts';
 import { pairByBenchmark } from './lib/pairResults.ts';
 import { COMMENT_MARKER, commentBody } from './lib/prComment.ts';
+import { cli } from '../../scripts/lib/help.mjs';
 
-const args = process.argv.slice(2);
-const flag = (name) => {
-  const i = args.indexOf(name);
-  return i === -1 ? undefined : args[i + 1];
-};
-const [baseDir, headDir] = args;
-const pr = flag('--pr');
-const base = flag('--base');
-const head = flag('--head');
-if (!baseDir || !headDir || [baseDir, headDir].some((d) => d.startsWith('--')) || !pr || !base || !head) {
-  console.error('usage: node tests/perf/pr-comment.mjs <base-dir> <head-dir> --pr <number> --base <sha> --head <sha> [--dry-run]');
+const { values, positionals } = cli(import.meta.url, {
+  summary: 'Posts the comparison of two directories of perf results on a pull request, rewriting the comment a previous run left instead of adding another.',
+  positionals: '<base-dir> <head-dir>',
+  options: {
+    pr: { type: 'string', placeholder: '<number>', description: 'the pull request (required)' },
+    base: { type: 'string', placeholder: '<sha>', description: 'the base commit (required)' },
+    head: { type: 'string', placeholder: '<sha>', description: 'the head commit (required)' },
+    'dry-run': { type: 'boolean', description: 'print the body and call nothing' },
+  },
+  notes: 'Reads GITHUB_TOKEN and GITHUB_REPOSITORY.',
+});
+const [baseDir, headDir] = positionals;
+const { pr, base, head } = values;
+if (!pr || !base || !head) {
+  console.error('pr-comment: --pr, --base and --head are required');
   process.exit(2);
 }
 
@@ -33,7 +38,7 @@ const read = (dir) => (existsSync(dir) ? loadResultDir(dir) : []);
 const { pairs, onlyA, onlyB } = pairByBenchmark(read(baseDir), read(headDir));
 const compared = pairs.map((p) => ({ benchmark: p.benchmark, cmp: compareResults(p.a.result, p.b.result) }));
 const body = commentBody({ compared, onlyBase: onlyA, onlyHead: onlyB }, { base, head });
-if (args.includes('--dry-run')) {
+if (values['dry-run']) {
   console.log(body);
   process.exit(0);
 }

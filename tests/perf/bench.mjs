@@ -11,16 +11,21 @@ import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node
 import { dirname, join, resolve } from 'node:path';
 import { DEFAULT_RESULTS_DIR, REPO_ROOT, startRun } from './lib/result.ts';
 import { addVitestBench } from './lib/vitest-bench.ts';
+import { cli } from '../../scripts/lib/help.mjs';
 
-const args = process.argv.slice(2);
-let out;
-let rawOut;
-const filters = [];
-for (let i = 0; i < args.length; i++) {
-  if (args[i] === '--out') out = args[++i];
-  else if (args[i] === '--raw') rawOut = resolve(args[++i]);
-  else filters.push(args[i]);
-}
+const { values, positionals, rest } = cli(import.meta.url, {
+  summary: 'Runs the vitest microbenchmarks in tests/perf/bench/ and writes one perf result file.',
+  positionals: '[<vitest filter>…]',
+  passthrough: true,
+  options: {
+    out: { type: 'string', placeholder: '<path>', description: 'where the result goes (default: under tests/perf/results/)' },
+    raw: { type: 'string', placeholder: '<path>', description: "also keep vitest's own JSON report, which `bench-report.mjs --merge` reads" },
+  },
+  notes: 'Positionals and any other flag go to `vitest bench`. Run it as `npm run perf:bench -- …`.',
+});
+const out = values.out;
+const rawOut = values.raw === undefined ? undefined : resolve(values.raw);
+const filters = [...positionals, ...rest];
 
 const run = startRun('vitest-bench', { filters });
 mkdirSync(DEFAULT_RESULTS_DIR, { recursive: true });
