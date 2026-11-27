@@ -41,7 +41,7 @@ cursors.get('pen'); // 'crosshair'
   released and pushed again in one tick where it was.
 - `ReflectedEntry` — one key as `entries()` reports it: `key`, `value`,
   `source`, `live` (the registrant holding the key), and `shadowed` (the
-  registrants it displaced, oldest first).
+  registrants beneath it, lowest rank first and oldest first within a rank).
 - `Registrant` — one `{ value, source }` claim on a key. Each is a frozen
   object that keeps its identity, which is what `release(key, registrant)`
   takes.
