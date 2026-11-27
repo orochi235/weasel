@@ -1,6 +1,7 @@
 import { linearScale, type LinearScale } from '@weasel-js/scale';
 import type { Span } from '@weasel-js/ui-input';
 import { spanFraction, spanShare } from '@weasel-js/ui-input';
+import { millisecondsText, secondsText } from '../Transport/timeText';
 
 /** A visible span of timeline time, in ms. */
 export type TimeWindow = Span;
@@ -22,8 +23,17 @@ export function toPercent(window: TimeWindow, ms: number): string {
   return `${spanFraction(window, ms) * 100}%`;
 }
 
-/** A time on the timeline as its keys and segments are named: `500 ms`. */
-export const msLabel = (ms: number): string => `${Math.round(ms)} ms`;
+/** A time on the timeline in `locale`, as the ruler writes it: seconds from 1s up at `secondsPlaces` decimals (`1.50s`),
+ *  milliseconds below at `msPlaces` (`500ms`). */
+export function timeText(ms: number, secondsPlaces: number, msPlaces: number, locale: string): string {
+  return ms >= 1000 ? secondsText(ms, secondsPlaces, locale).text : millisecondsText(ms, msPlaces, locale);
+}
+
+/** A key's or segment's time as its name reads it: to the whole ms, with a ruler label's decimals (`1.25s`, `2s`). */
+export function markTimeText(ms: number, locale: string): string {
+  const r = Math.round(ms);
+  return timeText(r, r % 1000 === 0 ? 0 : r % 10 === 0 ? 2 : 3, 0, locale);
+}
 
 /** A duration as a CSS percentage, for a width. */
 export function spanPercent(window: TimeWindow, ms: number): string {

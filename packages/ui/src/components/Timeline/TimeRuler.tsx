@@ -5,11 +5,10 @@ import s from './Timeline.module.css';
 import { decimalsOf, linearScale, type TickSet } from '@weasel-js/scale';
 import { sliderAt, spanMap, spanPan, spanZoom, wheelPixels } from '@weasel-js/ui-input';
 import { Ruler, RulerMark, type RulerSpacing } from '../Ruler';
-import { MIN_SPAN_MS, TICK_SPACING_PX, type TimeWindow } from './timeScale';
+import { MIN_SPAN_MS, TICK_SPACING_PX, timeText, type TimeWindow } from './timeScale';
 import { isPrimaryPress } from '@weasel-js/gestures';
 import { alongTrack } from '../../alongTrack';
 import { useFieldLocale } from '../../useFieldLocale';
-import { millisecondsText, secondsText } from '../Transport/timeText';
 
 /** Zoom per pixel of wheel travel, as an exponent: the window scales by `exp(px * ZOOM_STEP)`. */
 const ZOOM_STEP = 0.0015;
@@ -31,11 +30,8 @@ export interface TimeRulerProps {
 
 /** A tick's label in `locale`, with the decimals ticks `step` ms apart need to differ. */
 function formatMs(ms: number, { step, decimals }: TickSet, locale: string): string {
-  if (ms >= 1000) {
-    const whole = Math.abs(ms / 1000 - Math.round(ms / 1000)) < 1e-9;
-    return secondsText(ms, whole ? 0 : Math.max(2, decimalsOf(step / 1000)), locale).text;
-  }
-  return millisecondsText(ms, decimals, locale);
+  const whole = Math.abs(ms / 1000 - Math.round(ms / 1000)) < 1e-9;
+  return timeText(ms, whole ? 0 : Math.max(2, decimalsOf(step / 1000)), decimals, locale);
 }
 
 /** A {@link Ruler} over time: a playhead line, scrubbing by pointer, and wheel pan and zoom. */

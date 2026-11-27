@@ -4,6 +4,7 @@ import type { Track } from '@weasel-js/animator';
 import { renderThenAbandon } from '@weasel-js/react/testing/abandonRender';
 import { KitSettingsProvider } from '@weasel-js/react';
 import { Lane } from './Lane';
+import { I18nProvider } from '../../useFieldLocale';
 import { buildLanes } from './lanes';
 
 const TRACK_WIDTH = 500;
@@ -292,7 +293,13 @@ describe('Lane in graph mode', () => {
 
   it('names each key for a screen reader', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} />);
-    expect(screen.getByRole('button', { name: 'x key at 500 ms' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'x key at 500ms' })).toBeInTheDocument();
+  });
+
+  it('names a key in the locale the ruler writes its times in', () => {
+    const late = { ...sampled, keys: [{ t: 0, value: 0 }, { t: 1500, value: 10 }] } as Track;
+    render(<I18nProvider locale="de-DE"><Lane {...base} row={laneOf(late)} /></I18nProvider>);
+    expect(screen.getByRole('button', { name: 'x key at 1,50s' })).toBeInTheDocument();
   });
 
   it('positions a key by value as well as time, inside the lane', () => {
@@ -598,15 +605,15 @@ describe('Lane names on a row offset along the ruler', () => {
   it('names its keys and segments by the ruler time they are drawn at', () => {
     render(<Lane {...base} row={offsetRow} />);
     expect(screen.getAllByTestId('timeline-key').map((k) => k.getAttribute('aria-label')))
-      .toEqual(['x key at 600 ms', 'x key at 1100 ms']);
-    expect(screen.getByTestId('timeline-segment').getAttribute('aria-label')).toBe('x segment into 1100 ms');
+      .toEqual(['x key at 600ms', 'x key at 1.10s']);
+    expect(screen.getByTestId('timeline-segment').getAttribute('aria-label')).toBe('x segment into 1.10s');
   });
 
   it('names its graphed keys and segments by ruler time too', () => {
     render(<Lane {...base} mode="graph" row={offsetRow} />);
     expect([...document.querySelectorAll('[data-keyframe-index]')].map((k) => k.getAttribute('aria-label')))
-      .toEqual(['x key at 600 ms', 'x key at 1100 ms']);
-    expect(document.querySelector('[data-segment-index]')!.getAttribute('aria-label')).toBe('x segment into 1100 ms');
+      .toEqual(['x key at 600ms', 'x key at 1.10s']);
+    expect(document.querySelector('[data-segment-index]')!.getAttribute('aria-label')).toBe('x segment into 1.10s');
   });
 });
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { spanShare, spanPercent, spanFraction, toPercent, windowScale } from './timeScale';
+import { markTimeText, spanShare, spanPercent, spanFraction, toPercent, windowScale } from './timeScale';
 
 describe('windowScale', () => {
   it('maps the window ends to the track ends', () => {
@@ -98,5 +98,15 @@ describe('width-free positioning', () => {
     for (const ms of [200, 450, 700, 1200]) {
       expect(spanFraction(win, ms) * 400).toBeCloseTo(scale.position(ms), 9);
     }
+  });
+});
+
+describe('markTimeText', () => {
+  it('writes a time as the ruler does, in the locale', () => {
+    expect(markTimeText(500, 'en-US')).toBe('500ms');
+    expect(markTimeText(1500, 'en-US')).toBe('1.50s');
+    expect(markTimeText(1500, 'de-DE')).toBe('1,50s');
+    expect(markTimeText(2000, 'de-DE')).toBe('2s');
+    expect(markTimeText(1234.4, 'en-US')).toBe('1.234s');
   });
 });
