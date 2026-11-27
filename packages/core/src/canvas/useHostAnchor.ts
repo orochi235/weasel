@@ -89,15 +89,16 @@ export function useHostAnchor(
   useEffect(() => {
     const schedule = () => raf.request();
     const unwatchResize = watchResize([panel, host], schedule);
-    if (host) {
-      const unwatchMove = watchElementMove(host, schedule);
-      return () => { unwatchResize(); unwatchMove(); };
-    }
-    // Nothing else says when an unresolved host mounts.
-    const mounts = typeof MutationObserver === 'undefined' ? null : new MutationObserver(schedule);
+    const unwatchMove = host ? watchElementMove(host, schedule) : null;
+    // Nothing else says when the element `resolveHost` names changes; only a change of answer costs a frame.
+    const renamed = () => { if (resolve.current() !== host) schedule(); };
+    const mounts = typeof MutationObserver === 'undefined' ? null : new MutationObserver(renamed);
     mounts?.observe(document, { childList: true, subtree: true, attributes: true });
-    return () => { unwatchResize(); mounts?.disconnect(); };
-  }, [panel, host, raf]);
+    return () => { unwatchResize(); unwatchMove?.(); mounts?.disconnect(); };
+  }, [panel, host, raf, resolve]);
+
+  // A new `resolveHost` can name another element with nothing in the document changing.
+  useEffect(() => { if (resolve.current() !== host) raf.request(); });
 
   return { ref, style };
 }
