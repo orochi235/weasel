@@ -1,3 +1,4 @@
+import type { Remap } from '@msb235/blits';
 import { getOwn, isFiniteNumber } from '@weasel-js/registry';
 import {
   EASINGS, reviveTypedArrays, tagTypedArray, tagTypedArrays, type BezierEasing, type EasingName,
@@ -60,6 +61,19 @@ export interface ClipTimelineTrack {
   window?: [number, number];
   /** The binder's name for `TimelineTrack.shown`. */
   shown?: string;
+  /** `TimelineTrack.rate`. */
+  rate?: number;
+  /** `TimelineTrack.loop`. */
+  loop?: boolean | number;
+  /** `TimelineTrack.remap`, its curve a name or points rather than a function. */
+  remap?: ClipRemap;
+}
+
+/** A blits `Remap` as data: its curve is an easing's name or shape, never a function. */
+export interface ClipRemap {
+  window?: [number, number];
+  curve?: Exclude<NonNullable<Remap['curve']>, (u: number) => number>;
+  length?: number;
 }
 
 /** Any track a clip can hold. */
@@ -77,11 +91,18 @@ export interface Clip extends ClipTimeline {
   version: 1;
   /** Passes, as `TimelineOptions.loop` counts them: `true` endless, `false` one, `n` that many. */
   loop?: boolean | number;
+  /**
+   * Named stretches of the clip, `[start, end]` in its time, as Lottie's markers with a duration:
+   * `rangeTimeline` plays or loops one by name.
+   */
+  ranges?: Record<string, [number, number]>;
 }
 
-/** What `bindClip` gives `animator.timeline`: the clip's tracks and duration, and its loop. */
+/** What `bindClip` gives `animator.timeline`: the clip's tracks and duration, its loop, and its ranges. */
 export interface BoundClip extends NestedTimeline {
   loop?: TimelineOptions['loop'];
+  /** `Clip.ranges`, which `animator.timeline` does not read and `rangeTimeline` does. */
+  ranges?: Clip['ranges'];
 }
 
 /** What turns the names in a clip into the live things a timeline plays. */
@@ -103,6 +124,17 @@ const defined = <T extends object>(o: T): T => {
   return o;
 };
 
+/** A remap's own copy, its window and curve points not shared with the one it was read from. */
+const remapCopy = (r: Remap): ClipRemap => defined<ClipRemap>({
+  window: r.window && [r.window[0], r.window[1]],
+  curve: r.curve === undefined ? undefined : (JSON.parse(JSON.stringify(r.curve)) as ClipRemap['curve']),
+  length: r.length,
+});
+
+/** Named ranges' own copy. */
+const rangesCopy = (ranges: Clip['ranges']): Clip['ranges'] =>
+  ranges && Object.fromEntries(Object.entries(ranges).map(([name, [a, b]]) => [name, [a, b]]));
+
 function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
   if (track.kind === 'timeline') {
     const shown = track.shown === undefined ? undefined : binder.target?.(track.shown);
@@ -110,6 +142,7 @@ function bindTrack(track: ClipTrack, binder: ClipBinder): Track {
     return defined<TimelineTrack>({
       kind: 'timeline', label: track.label, at: track.at, timeline: bindTimeline(track.timeline, binder),
       window: track.window && [track.window[0], track.window[1]], shown, shownName: track.shown,
+      rate: track.rate, loop: track.loop, remap: track.remap && remapCopy(track.remap),
     });
   }
   if (track.kind === 'event') {
@@ -173,7 +206,7 @@ function bindTimeline(timeline: ClipTimeline, binder: ClipBinder): NestedTimelin
  */
 export function bindClip(clip: Clip, binder: ClipBinder): BoundClip {
   checkClip(clip);
-  return defined<BoundClip>({ ...bindTimeline(clip, binder), loop: clip.loop });
+  return defined<BoundClip>({ ...bindTimeline(clip, binder), loop: clip.loop, ranges: rangesCopy(clip.ranges) });
 }
 
 const EASING_NAMES = new Map<unknown, EasingName>(
@@ -241,6 +274,21 @@ function sampledToClip(track: SampledTrack<any>, where: string): ClipSampledTrac
   });
 }
 
+/** A nested track's rate, loop and remap as data, refused where JSON cannot hold them. */
+function retimingToClip(track: TimelineTrack, where: string): Pick<ClipTimelineTrack, 'rate' | 'loop' | 'remap'> {
+  const { rate, loop, remap } = track;
+  if (typeof remap?.curve === 'function') throw new Error(`toClip: ${where} remaps its clock by a function; name an easing or give its points.`);
+  return {
+    rate: rate === undefined ? undefined : finiteOr(rate, `${where} plays at a rate of #`),
+    loop: typeof loop === 'number' ? finiteOr(loop, `${where} loops # times`) : loop,
+    remap: remap && defined<ClipRemap>({
+      ...remapCopy(remap),
+      window: remap.window && [finiteOr(remap.window[0], `${where}'s remap window opens at #`), finiteOr(remap.window[1], `${where}'s remap window closes at #`)],
+      length: remap.length === undefined ? undefined : finiteOr(remap.length, `${where}'s remap lasts #`),
+    }),
+  };
+}
+
 function trackToClip(track: Track, index: number): ClipTrack {
   const where = `track "${track.label ?? index}"`;
   if (track.kind === 'timeline') {
@@ -250,6 +298,7 @@ function trackToClip(track: Track, index: number): ClipTrack {
       kind: 'timeline', label: track.label, at: finiteOr(track.at, `${where} is at #`), timeline: timelineToClip(track.timeline, `${where}'s`),
       window: window && [finiteOr(window[0], `${where}'s window opens at #`), finiteOr(window[1], `${where}'s window closes at #`)],
       shown: track.shownName,
+      ...retimingToClip(track, where),
     });
   }
   if (track.kind === 'sampled') return sampledToClip(track, where);
@@ -281,7 +330,11 @@ function timelineToClip(timeline: NestedTimeline, whose: string): ClipTimeline {
  * `onTick`, or a value JSON would not read back, a time, duration or weight that is not finite among them.
  */
 export function toClip(timeline: BoundClip): Clip {
-  const { loop } = timeline;
+  const { loop, ranges } = timeline;
   if (typeof loop === 'number') finiteOr(loop, 'the timeline loops # times');
-  return defined<Clip>({ version: 1, ...timelineToClip(timeline, "the timeline's"), loop });
+  for (const [name, [a, b]] of Object.entries(ranges ?? {})) {
+    finiteOr(a, `the range "${name}" starts at #`);
+    finiteOr(b, `the range "${name}" ends at #`);
+  }
+  return defined<Clip>({ version: 1, ...timelineToClip(timeline, "the timeline's"), loop, ranges: rangesCopy(ranges) });
 }

@@ -1,9 +1,10 @@
 export { createTimeline, type TimelineRegister } from './createTimeline';
 export { sampleTrack } from './sampleTrack';
 export { bindClip, toClip } from './clip';
+export { rangeTimeline } from './ranges';
 export { isBlitsEasing, resolveKeyEasing, type BlitsEasing, type KeyEasing } from './keyEasing';
 export type {
-  BoundClip, Clip, ClipBinder, ClipEventTrack, ClipKey, ClipSampledTrack, ClipTimeline, ClipTimelineTrack, ClipTrack, ClipValue,
+  BoundClip, Clip, ClipBinder, ClipEventTrack, ClipKey, ClipRemap, ClipSampledTrack, ClipTimeline, ClipTimelineTrack, ClipTrack, ClipValue,
 } from './clip';
 export type {
   EventBooking,

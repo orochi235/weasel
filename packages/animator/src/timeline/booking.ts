@@ -1,5 +1,6 @@
 import { createClockEstimate } from './clockEstimate';
 import { nestedLength } from './length';
+import { retimed } from './nestedClock';
 import type { EventBooking, EventBookingHandle, EventTrack, NestedTimeline, TimelineEvent, Track } from './types';
 
 /** A pending booking a rate change or resync moves by more than this is
@@ -163,7 +164,8 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   ): void => {
     for (const track of tracks) {
       if (track.kind === 'event') scanTrack(track, at, end, horizon, lastLap, now, scale);
-      else if (track.kind === 'timeline') {
+      // A retimed nested timeline's events fire as they are crossed and are not booked ahead.
+      else if (track.kind === 'timeline' && !retimed(track)) {
         visit(track.timeline.tracks, at + track.at, endWithin(end, at + track.at, track.timeline), horizon, lastLap, now, scale);
       }
     }

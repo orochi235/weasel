@@ -1,6 +1,7 @@
 import { firstAfter, firstAtOrAfter } from './booking';
 import type { TimelineReport } from './createTimeline';
 import { nestedLength } from './length';
+import { forwardRuns, retimed } from './nestedClock';
 import type { Track } from './types';
 
 
@@ -78,6 +79,15 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
           }
           if (moved()) return true;
         }
+      } else if (track.kind === 'timeline' && retimed(track)) {
+        path.push(k);
+        let stopped = false;
+        for (const [a, b, opens] of forwardRuns(track, from - track.at, to - track.at)) {
+          stopped = fire(track.timeline.tracks, a, b, opens || fromOpen, moved);
+          if (stopped) break;
+        }
+        path.pop();
+        if (stopped) return true;
       } else if (track.kind === 'timeline') {
         const end = nestedLength(track.timeline);
         if (from - track.at > end) continue;

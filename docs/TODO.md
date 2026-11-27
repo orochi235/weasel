@@ -270,16 +270,16 @@ registry per property. Trim keeps its paint-context registry: measured 2026-11-2
 builds a frame's commands 2.2× slower at 100 and 1,000 nodes (`tests/perf/scene/trim-data-ply.bench.ts`). An animated `transform` moves each shape's pose by the change from the transform the
 import baked, and animated geometry attributes are re-lowered each sample (`svgClipBinder`, built 2026-11-25).
 
-- **(P2) [agent] A nested timeline can't be retimed inside its parent** (2026-11-25). `NestedTimeline` has only
-  `at` and `duration` (`packages/animator/src/timeline/types.ts`). blits owners already take a `rate` that
-  multiplies into their children, run backward and loop; a remap of a voice's clock is missing (blits: "A voice's
-  clock run through a remap"). Closes when a nested timeline maps onto a blits owner with rate, loop and remap, scrubs
-  order-independently, and `Clip` carries them.
+- **(P3) [agent] A retimed nested timeline's events are not booked ahead** (2026-11-27). A nested track with a
+  `rate`, `loop` or `remap` fires its events as the playhead crosses them, but a timeline's `booking` skips it
+  (`packages/animator/src/timeline/booking.ts`), since booking reads an event's parent time as `at + t`. Closes
+  when booking places a retimed track's events through `nestedClock.ts` and books them.
 
 - **(P2) [agent] Some imported SMIL plays differently from a browser** (2026-11-25). `svgClipBinder`
   (`packages/svg/src/smilBinder.ts`) plays opacity, paint, geometry and `<animateTransform>` tracks. Left:
   `animateMotion` (blits: "Keys on a vector channel travel a curve"), `additive`/`accumulate="sum"`, event-timed
-  begins, and an indefinite repeat on its own period (the nested-timeline entry). Closes when an animated SVG's SMIL
+  begins, and an indefinite repeat on its own period (a nested timeline track's `loop: true` plays one; the
+  importer does not write one yet). Closes when an animated SVG's SMIL
   plays from the import the way a browser plays it, checked against browser frames.
 
 - **(P2) [agent] Some imported CSS animation plays differently from a browser** (2026-11-25). `parseSvg` reads
@@ -295,15 +295,10 @@ import baked, and animated geometry attributes are re-lowered each sample (`svgC
   "roving" keys retimed for constant speed, and auto-orient along the path (blits: "Keys on a vector channel
   travel a curve"). Closes when `Clip` carries spatial tangents, constant speed and orient-along-path.
 
-- **(P3) [agent] Timeline markers are points, not ranges** (2026-11-25). `EventTrack` events have no duration, so a
-  player can't "play `intro`, then loop `idle`" as Lottie markers allow. Ruled 2026-11-25: names stay out of
-  blits; `Clip` carries `ranges` (name to `[start, end]`), and a player helper cues a range as a voice with a
-  linear remap window (blits: "A voice's clock run through a remap"). Closes when `Clip` carries ranges and
-  playback plays or loops one by name.
-
 - **(P3) [agent] Lottie import, `@weasel-js/lottie`** (2026-11-25). Lottie JSON's layers, shapes and precomps into
   scene nodes and its keyframes into a `Clip`; per-key bezier tangents map to blits' bezier easing, and a layer's
-  in and out points to a nested timeline track's `window`, its `shown` bound to a target that hides the layer's node
+  in and out points to a nested timeline track's `window` and its time remap (`tm`) to the track's `remap`, its
+  `shown` bound to a target that hides the layer's node
   (no binder has one yet). A package of its own because Lottie is a scene format, not SVG. Closes when a set of reference
   Lottie files plays from the import matching lottie-web's frames.
 
