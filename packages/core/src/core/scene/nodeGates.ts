@@ -147,6 +147,11 @@ export function nodeGates(scene: GateSource): NodeGates {
   };
 }
 
+/** Whether the node at `id` or any ancestor carries `hidden`, so nothing under it is drawn; `null`, the root, is not. */
+export function hiddenAtOrAbove(scene: GateSource, id: NodeId | null): boolean {
+  return id !== null && climbs(scene, id, hidesSubtree);
+}
+
 /** Whether `test` holds on the node at `id` or any ancestor, without the
  *  allocation {@link nodeGates} spends on a walk: the scene's lock guard asks
  *  this on every mutation. A parent cycle answers false, as the walk's does. */

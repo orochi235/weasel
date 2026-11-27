@@ -11,7 +11,7 @@ import type { RenderLayer } from 'core/layers/render';
 import { composeChildFrame, composesFrames, frameAtOrAbove, type PoseAdapter } from 'core/scene/composePose';
 import { scrolledFrames, viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
-import { hidesSubtree } from 'core/scene/nodeGates';
+import { hiddenAtOrAbove, hidesSubtree } from 'core/scene/nodeGates';
 import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
 import type { RemovedNode } from 'core/scene/poseWrites';
 import type { Node, NodeId, Scene } from 'core/scene/types';
@@ -107,12 +107,10 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
       };
-      const shownUnder = (parent: NodeId | null): boolean => parent === null
-        || ![parent, ...sc.ancestorsOf(parent)].some((id) => { const n = sc.get(id); return n !== undefined && hidesSubtree(n); });
       const paintedPose = scenePaintedPoseOf(sc);
       return leaving.flatMap(({ removal, pose, alpha }): DrawCommand[] => {
         const parent = removal.parent !== null && sc.get(removal.parent) ? removal.parent : null;
-        if (!shownUnder(parent)) return [];
+        if (hiddenAtOrAbove(sc, parent)) return [];
         const frameId = composes ? frameAtOrAbove(frames, parent) : null;
         const parentFrame = frameId !== null ? composeChildFrame(frames, frameId, compose) : null;
         const world = parentFrame !== null ? compose(parentFrame, pose) : pose;

@@ -61,4 +61,14 @@ describe('usePreviewGhostLayer', () => {
     const data = { ...previewing([g]), getChromeState: () => ({ layerIsPainted: (layer: string) => layer !== 'off' }) };
     expect(rectsIn(result.current.draw(data, VIEW, DIMS) as DrawCommand[]).sort()).toEqual([100, 101]);
   });
+
+  it('ghosts no node under a hidden container still in the scene', () => {
+    const scene = createScene<null, 'main' | 'off', RectPose>({
+      systemLayers: [{ id: 'main' }, { id: 'off' }], composition: RECT_POSE_COMPOSITION,
+    });
+    const g = scene.add({ kind: 'group', layer: 'main', pose: at(100), data: null, hidden: true } as never);
+    const child = scene.add({ kind: 'mark', layer: 'main', pose: at(1), data: null, parent: g });
+    const { result } = renderHook(() => usePreviewGhostLayer({ scene, sceneSlot: { drawOne } }));
+    expect(rectsIn(result.current.draw(previewing([child]), VIEW, DIMS) as DrawCommand[])).toEqual([]);
+  });
 });

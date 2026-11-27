@@ -30,7 +30,7 @@ import { copiesAbove } from '../copiesAbove';
 import { scenePaintedPoseOf } from '../derivedPath';
 import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
 import { withShownData } from 'core/scene/nodeAsShown';
-import { hidesSubtree } from 'core/scene/nodeGates';
+import { hiddenAtOrAbove, hidesSubtree } from 'core/scene/nodeGates';
 import { pixelScaleCtx } from '../pixelScale';
 
 const GHOST_ALPHA = 0.85;
@@ -130,6 +130,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       const previewed = new Map(flattenPreviews(roots).map((e) => [e.id as string, e.data]));
       const asPreviewed = (n: Node<TData, TLayer, TPose>) => (previewed.has(n.id) ? { kind: n.kind, data: previewed.get(n.id) } : n);
       for (const root of roots) {
+        // As the scene paints it: nothing under a hidden container still in the scene.
+        if (hiddenAtOrAbove(sc, root.node.parent ?? null)) continue;
         const sink = root.opaque ? settled : ghosted;
         const cmds = drawEntry(root, null, () => [...sceneAncestors((id: never) => sc.get(id), root.node)].map(asPreviewed));
         for (const cmd of cmds) sink.push(cmd);
