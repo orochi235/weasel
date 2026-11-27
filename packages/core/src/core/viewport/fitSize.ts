@@ -36,7 +36,7 @@ export function fitZoom(
  * Compute zoom + pan that centers `contentW x contentH` (content units) inside
  * a `viewportW x viewportH` (pixel) rect. `paddingPx` is uniform pixel padding
  * on every side, and `fill` the fraction of each padded axis the content may
- * take (`0.85` leaves a 15% margin). `null` when there is nothing to fit, as
+ * take (`0.85` leaves a 15% margin), in (0, 1]; a `RangeError` otherwise. `null` when there is nothing to fit, as
  * {@link fitZoom}, and a `RangeError` for a viewport with no area, as there.
  */
 export function fitSize(
@@ -49,6 +49,9 @@ export function fitSize(
   fill = 1,
 ): { zoom: number; panX: number; panY: number } | null {
   checkViewportArea('fitSize', viewportW, viewportH);
+  if (!(fill > 0 && fill <= 1)) {
+    throw new RangeError(`fitSize: fill is the share of the viewport the content may take, in (0, 1], not ${fill}`);
+  }
   const availW = Math.max(1, viewportW - paddingPx * 2) * fill;
   const availH = Math.max(1, viewportH - paddingPx * 2) * fill;
   const zoom = fitZoom(availW, availH, contentW, contentH, clamp);

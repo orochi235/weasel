@@ -4322,3 +4322,6 @@ Calls the lanes made without a ruling:
   negative, or non-finite on either side), with no override. `fitViewToBounds` keeps its current view there because it
   has one to keep; these have none, and `null` already means there is no content. Returning `null`, which the
   viewport's owner resolves to the reset view, was the alternative.
+- 2026-11-27 (the fixer's call): `fitSize` throws a `RangeError` for a `fill` outside (0, 1], with no override; a
+  `fill` past 1, which would fit content larger than the viewport, is refused with the rest. Letting a `fill` past 1
+  overfill was the alternative.

@@ -91,4 +91,8 @@ describe('fitSize', () => {
       expect(() => fitZoom(w, h, 10, 10)).toThrow(RangeError);
     },
   );
+
+  it.each([0, -0.5, 1.5, NaN])('refuses a fill of %s, outside (0, 1]', (fill) => {
+    expect(() => fitSize(200, 200, 10, 10, 0, free, fill)).toThrow(RangeError);
+  });
 });
