@@ -2,6 +2,6 @@
 "@weasel-js/ui": minor
 ---
 
-A `Timeline`'s `renderKeyEditor` is told whether the timeline is disabled or read-only, through the new `held` field of its `KeyEditorCtx`, so a consumer's key editor can show that its changes are refused.
+A `Timeline`'s `renderKeyEditor` is told through `KeyEditorCtx.held` whether the timeline is disabled or read-only.
 
 <!-- entry: api fix -->
