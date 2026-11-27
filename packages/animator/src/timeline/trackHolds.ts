@@ -1,5 +1,5 @@
 import type { Target } from '../target';
-import { nestedLength } from './length';
+import { nestedTime } from './nestedClock';
 import { sampleTrack } from './sampleTrack';
 import type { SampledTrack, TimelineTrack, Track } from './types';
 
@@ -145,7 +145,7 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
         const nested = `${path}/${placementId(track)}`;
         if (track.shown) place(shownTrackOf(track), nested, inside ? 1 : 0, t);
         // Left unvisited, its tracks' holds are let go below, as an edit's removed tracks are.
-        if (inside) visit(track.timeline.tracks, Math.min(t - track.at, nestedLength(track.timeline)), nested);
+        if (inside) visit(track.timeline.tracks, nestedTime(track, t - track.at), nested);
       }
     }
   };

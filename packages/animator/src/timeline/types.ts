@@ -1,3 +1,4 @@
+import type { Remap } from '@msb235/blits';
 import type { AxisRef } from '../axisNames';
 import type { Target } from '../target';
 import type { AnimationHandle, Interpolate, InterpolatorFactory } from '../types';
@@ -127,6 +128,20 @@ export interface TimelineTrack {
   shown?: Target<number>;
   /** `shown`'s name, so `toClip` can write it. */
   shownName?: string;
+  /**
+   * Its clock's rate against its parent's, as a blits voice's `rate`: 2 plays it twice as fast, and
+   * below 0 plays it backward from its end. Default 1.
+   */
+  rate?: number;
+  /** Passes of it the parent plays, as a blits voice's `loop`: `true` for good, `n` that many. Default one. */
+  loop?: boolean | number;
+  /**
+   * Its clock run through a blits remap: each pass plays `window` of its own time (default all of
+   * it) along `curve` over `length` ms, so it can play a slice, freeze, reverse or scrub as a
+   * Lottie precomp's time remap does. Its events fire where its clock runs forward and are not
+   * booked ahead, as are those of one with a `rate` or `loop`.
+   */
+  remap?: Remap;
 }
 
 /** Any track a timeline can hold. */

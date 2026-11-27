@@ -2,6 +2,7 @@
  * The shape `bindClip` needs of a clip before it reads one: a clip is JSON from a file, so each field it reads is
  * checked first, and one of the wrong type is refused naming where it is.
  */
+import { curve } from '@msb235/blits';
 import { EASINGS } from '@weasel-js/geom';
 import type { Clip } from './clip';
 import { resolveKeyEasing, type BlitsEasing } from './keyEasing';
@@ -35,6 +36,27 @@ function easing(v: unknown, where: string): void {
     resolveKeyEasing(v as BlitsEasing);
   } catch (err) {
     refuse(where, `is no easing blits takes: ${(err as Error).message}`);
+  }
+}
+
+const isPair = (v: unknown): boolean => Array.isArray(v) && v.length === 2 && v.every((n) => typeof n === 'number');
+
+/** A nested track's rate, loop and remap, which blits plays its clock by. */
+function retiming(track: Raw, where: string): void {
+  need(track.rate === undefined || typeof track.rate === 'number', `${where}'s rate`, 'is not a number');
+  need(track.loop === undefined || typeof track.loop === 'boolean' || typeof track.loop === 'number', `${where}'s loop`, 'is neither true, false nor a count');
+  const { remap } = track;
+  if (remap === undefined) return;
+  need(isRaw(remap), `${where}'s remap`, 'is not an object');
+  const { window, length, curve: c } = remap as Raw;
+  need(window === undefined || isPair(window), `${where}'s remap window`, 'is not two times');
+  need(length === undefined || typeof length === 'number', `${where}'s remap length`, 'is not a number');
+  if (c === undefined) return;
+  need(typeof c === 'string' || isRaw(c), `${where}'s remap curve`, 'is neither an easing name nor an easing object');
+  try {
+    curve(c as Parameters<typeof curve>[0]);
+  } catch (err) {
+    refuse(`${where}'s remap curve`, `is no easing blits takes: ${(err as Error).message}`);
   }
 }
 
@@ -79,6 +101,7 @@ function timeline(v: unknown, where: string, depth: number): void {
     else if (t.kind === 'event') events(t, at);
     else if (t.kind === 'timeline') {
       need(typeof t.at === 'number', `${at}'s at`, 'is not a number');
+      retiming(t, at);
       timeline(t.timeline, `${at}'s timeline`, depth + 1);
     } else refuse(at, 'is not a sampled, event, or timeline track');
   });
@@ -87,8 +110,10 @@ function timeline(v: unknown, where: string, depth: number): void {
 /** Throws, naming where, on a clip any field of which `bindClip` reads is of the wrong type. */
 export function checkClip(clip: unknown): asserts clip is Clip {
   need(isRaw(clip), 'the clip', 'is not an object');
-  const { version, loop } = clip as Raw;
+  const { version, loop, ranges } = clip as Raw;
   if (version !== 1) throw new Error(`bindClip: this clip is version ${String(version)}, and version 1 is the one understood.`);
   need(loop === undefined || typeof loop === 'boolean' || typeof loop === 'number', "the clip's loop", 'is neither true, false nor a count');
+  need(ranges === undefined || isRaw(ranges), "the clip's ranges", 'is not an object');
+  for (const [name, range] of Object.entries((ranges ?? {}) as Raw)) need(isPair(range), `the range "${name}"`, 'is not a start and an end');
   timeline(clip, 'the clip', 0);
 }
