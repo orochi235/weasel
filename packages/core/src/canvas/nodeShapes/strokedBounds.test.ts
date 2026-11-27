@@ -48,4 +48,10 @@ describe('strokedBounds of a stroke that draws no line', () => {
     }
   });
 
+  it('holds only the heads of a stroke with no paint', () => {
+    const b = strokedBounds(LINE, { width: 20, markerEnd: { key: 'arrow', size: 4 } }, 1)!;
+    const painted = strokedBounds(LINE, { paint: PAINT, width: 20, markerEnd: { key: 'arrow', size: 4 } }, 1)!;
+    expect(b.x).toBeGreaterThan(50);
+    expect(b.height).toBeLessThan(painted.height);
+  });
 });

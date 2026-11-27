@@ -14,7 +14,8 @@ import { strokeOutsetPerAxis } from './nodePaint';
  * The box `stroke` covers along `path`, from the ribbon the renderer draws:
  * joins, caps, dashes, and per-vertex widths as tessellated, and marker heads.
  * An inner stroke stays inside the path, and an outer one reaches as far out as
- * a centered stroke twice as wide. `null` when the stroke paints nothing.
+ * a centered stroke twice as wide, and one with no paint covers only its
+ * heads. `null` when the stroke paints nothing.
  *
  * With `screen` (see `NodeInkCtx.screen`), each screen-sized part is built the
  * way the renderer builds it under that map, so a `{ px }` stroke is exact in
@@ -27,7 +28,7 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
   const box = new Box();
   const align = stroke.align ?? 'center';
   const tolerance = flattenFor(path, scale);
-  if (align !== 'inner') {
+  if (align !== 'inner' && stroke.paint != null) {
     const k = align === 'outer' ? 2 : 1;
     const insets = strokeInsets(sized, width);
     const mesh = tessellateStroke(
