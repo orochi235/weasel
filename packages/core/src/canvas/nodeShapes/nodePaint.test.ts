@@ -41,6 +41,11 @@ describe('hasStroke', () => {
   it('counts no stroke whose dash is non-finite, which draws no line', () => {
     expect(hasStroke({ paint, width: 2, dash: [Infinity, 1] })).toBe(false);
   });
+
+  it('counts no stroke of infinite width, which draws no line', () => {
+    expect(hasStroke({ paint, width: Infinity })).toBe(false);
+    expect(hasStroke({ paint, width: { px: Infinity } })).toBe(false);
+  });
 });
 
 describe('a stroke that paints no line but carries a marker', () => {
