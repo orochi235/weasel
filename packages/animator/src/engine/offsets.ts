@@ -195,7 +195,8 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   /** The moving targets with a `show`: the ones a frame has to call. */
   const showing = new Set<TargetState>();
   const rested = new Set<TargetState>();
-  const publishes = new Set<() => void>();
+  /** Each `publish` due, and the targets shown since that use it. */
+  const publishes = new Map<() => void, TargetState[]>();
   /** Each table with a row moving, and how many of its rows are. */
   const tables = new Map<RowTable, number>();
   /** Each store holds are folded in, and how many. */
@@ -214,14 +215,17 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
       stop(s, 'show', error);
       return;
     }
-    if (s.publish) publishes.add(s.publish);
+    if (!s.publish) return;
+    const by = publishes.get(s.publish);
+    if (by) by.push(s);
+    else publishes.set(s.publish, [s]);
   };
   const publish = (): void => {
     const due = [...publishes];
     publishes.clear();
-    for (const p of due) {
+    for (const [p, by] of due) {
       try { p(); } catch (error) {
-        for (const s of [...showing, ...rested]) if (s.publish === p) stop(s, 'publish', error);
+        for (const s of by) stop(s, 'publish', error);
       }
     }
   };
