@@ -284,6 +284,26 @@ describe('Timeline', () => {
     expect(screen.getByTestId('timeline-root')).toBe(document.activeElement);
   });
 
+  it('lets a slow graph-mode key drag follow the pointer while its preview is echoed back', () => {
+    const onInput = vi.fn();
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 500, value: 10 }], onTick: () => {} },
+      ] as Track[]);
+      const echo = (next: Track[]) => { onInput(next); setValue(next); };
+      return <Timeline {...base} mode="graph" tracks={value} onChange={setValue} onInput={echo} />;
+    }
+    renderWithIcons(<Host />);
+    const key = document.querySelectorAll('[data-keyframe-index]')[1]!;
+    fireEvent.pointerDown(key, { clientX: 250, clientY: 0, button: 0 });
+    // 540 ms is past the pull of the key's own 500; 548 ms is within it of 540, the time the first move echoed.
+    fireEvent.pointerMove(document, { clientX: 270, clientY: 0 });
+    fireEvent.pointerMove(document, { clientX: 274, clientY: 0 });
+    const lastKeys = (onInput.mock.calls.at(-1)![0] as Track[])[0] as SampledTrack<number>;
+    expect(lastKeys.keys[1].t).toBe(548);
+    expect(onInput.mock.calls.map(([t]) => ((t as Track[])[0] as SampledTrack<number>).keys[1].t)).toEqual([540, 548]);
+  });
+
   it('deletes the key Delete is pressed on, not another one selected', () => {
     const onChange = vi.fn();
     const three = [
