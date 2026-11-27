@@ -16,8 +16,8 @@ export interface HandleDragPoint {
 export interface HandleDragEnd {
   /** Where the pointer was let go, in the rect element's local space. */
   point: HandleDragPoint;
-  /** False when the pointer never left the press point — a press, not a drag. Commit-on-end
-   *  consumers use this to tell an edit from a stray click. */
+  /** False when the point never left the press point in the rect's space — a press, not a drag. A scroll
+   *  under a still pointer moves it. Commit-on-end consumers use this to tell an edit from a stray click. */
   moved: boolean;
   event: PointerEvent;
 }
@@ -118,26 +118,43 @@ function scrollerOf(el: Element): Scroller {
   const page = doc.scrollingElement ?? doc.documentElement;
   if (el === page && el !== doc.documentElement) return { moved: () => ({ x: 0, y: 0 }) };
   const from = el === doc.documentElement ? page : el;
-  const scale = el instanceof HTMLElement ? clientScaleOf(el) : { x: 1, y: 1 };
+  const scale = clientScaleOf(el);
   return { moved: () => ({ x: from.scrollLeft * scale.x, y: from.scrollTop * scale.y }) };
 }
 
 /** The scroller `box`, positioned sticky, sticks in. On an axis with an inset the box rides the scroll only until it
- *  sticks, so there what it moved is read off where it sits in the scroller; on the others it rides the scroll. */
+ *  sticks, so there what it moved is the scroll less how far sticking pushed it back; on the others it rides it. */
 function stickyScrollerOf(box: Element, scroller: Element, style: CSSStyleDeclaration | undefined): Scroller {
   const inset = (a: string, b: string) => !!style && [a, b].some((side) => !['', 'auto'].includes(style.getPropertyValue(side)));
   const stuckX = inset('left', 'right');
   const stuckY = inset('top', 'bottom');
   const scroll = scrollerOf(scroller);
+  const stuck = stuckOffsetOf(box, scroller);
   return {
     moved: () => {
       const s = scroll.moved();
       if (!stuckX && !stuckY) return s;
-      const b = box.getBoundingClientRect();
-      // The root's own box scrolls with the page; a box stuck to the viewport sticks to the viewport's edge.
-      const p = scroller === scroller.ownerDocument.documentElement ? { left: 0, top: 0 } : scroller.getBoundingClientRect();
-      return { x: stuckX ? p.left - b.left : s.x, y: stuckY ? p.top - b.top : s.y };
+      const o = stuck(s);
+      return { x: stuckX ? s.x - o.x : s.x, y: stuckY ? s.y - o.y : s.y };
     },
+  };
+}
+
+/** How far sticking has pushed `box` along, in client px and up to a constant, given the scroll `s` it sticks in. An
+ *  HTML box reads it off its offset, which its own transform leaves alone, since the box is often the handle the drag
+ *  moves; another reads its rect against the scroller's. */
+function stuckOffsetOf(box: Element, scroller: Element): (s: { x: number; y: number }) => { x: number; y: number } {
+  const el = box as Partial<HTMLElement>;
+  if (typeof el.offsetTop === 'number' && typeof el.offsetLeft === 'number') {
+    const scale = clientScaleOf(box);
+    return () => ({ x: el.offsetLeft! * scale.x, y: el.offsetTop! * scale.y });
+  }
+  // The root's own box scrolls with the page; a box stuck to the viewport sticks to the viewport's edge.
+  const viewport = scroller === scroller.ownerDocument.documentElement;
+  return (s) => {
+    const b = box.getBoundingClientRect();
+    const p = viewport ? { left: 0, top: 0 } : scroller.getBoundingClientRect();
+    return { x: s.x + b.left - p.left, y: s.y + b.top - p.top };
   };
 }
 
@@ -154,10 +171,7 @@ function scrollOf(scrollers: readonly Scroller[]): { x: number; y: number } {
 }
 
 function defaultRectEl(target: HTMLElement | SVGElement): Element {
-  if (target instanceof SVGElement && target.ownerSVGElement) {
-    return target.ownerSVGElement;
-  }
-  return target;
+  return ('ownerSVGElement' in target ? target.ownerSVGElement : null) ?? target;
 }
 
 /**
@@ -201,16 +215,19 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
       };
 
       let moved = false;
-      const { clientX: pressX, clientY: pressY } = e;
-      const away = (ev: PointerEvent) => ev.clientX !== pressX || ev.clientY !== pressY;
+      const start = localOf(e.clientX, e.clientY);
+      // Judged in the rect's space, where a scroll under a still pointer moves the point too.
+      const away = (p: HandleDragPoint) => p.x !== start.x || p.y !== start.y;
       live.current = openPointerSession(target, e, {
         onMove: (ev) => {
-          if (away(ev)) moved = true;
-          optsRef.current.onMove(localOf(ev.clientX, ev.clientY), ev);
+          const point = localOf(ev.clientX, ev.clientY);
+          if (away(point)) moved = true;
+          optsRef.current.onMove(point, ev);
         },
         onEnd: (ev) => {
           live.current = null;
-          optsRef.current.onEnd?.({ point: localOf(ev.clientX, ev.clientY), moved: moved || away(ev), event: ev });
+          const point = localOf(ev.clientX, ev.clientY);
+          optsRef.current.onEnd?.({ point, moved: moved || away(point), event: ev });
         },
         onCancel: (reason) => {
           live.current = null;
@@ -218,7 +235,7 @@ export function useHandleDrag<T extends HTMLElement | SVGElement>(
         },
       }, { escape: optsRef.current.escape === true });
 
-      onStart?.(localOf(e.clientX, e.clientY), e);
+      onStart?.(start, e);
     },
     [optsRef],
   );

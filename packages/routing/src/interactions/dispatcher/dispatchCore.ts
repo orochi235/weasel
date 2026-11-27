@@ -4,6 +4,7 @@
  * `dispatch` every channel sends through.
  */
 import type { DepName, DepSchema } from '../../index';
+import { isElement } from '@weasel-js/gestures';
 import { clientToCanvas } from '../../viewport/clientToCanvas';
 import type { DepRegistry } from '../actions/depRegistry';
 import type { ActionsRegistry } from '../actions/registry';
@@ -117,7 +118,7 @@ export function holdSurface(el: Element, pointer: boolean): () => void {
 
 /** Whether a press on `target` went down in a surface nested inside `surface` that runs pointer gestures of its own. */
 export function pressedNestedIn(surface: Element, target: EventTarget | null): boolean {
-  for (let el = target instanceof Element ? target : null; el !== null && el !== surface; el = el.parentElement) {
+  for (let el = isElement(target) ? target : null; el !== null && el !== surface; el = el.parentElement) {
     if (POINTER_SURFACES.has(el)) return true;
   }
   return false;
@@ -140,7 +141,7 @@ export function landedNestedIn(surface: Element | null, event: Event): boolean {
 
 /** The innermost dispatcher surface holding `target`, or null. */
 function innermostSurface(target: EventTarget | null): Element | null {
-  for (let el = target instanceof Element ? target : null; el !== null; el = el.parentElement) {
+  for (let el = isElement(target) ? target : null; el !== null; el = el.parentElement) {
     if (SURFACES.has(el)) return el;
   }
   return null;
