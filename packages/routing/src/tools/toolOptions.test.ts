@@ -61,6 +61,12 @@ describe('steppedOption', () => {
     expect(steppedOption(free, 4, step, 1)).toBe(5);
   });
 
+  it('keeps a step on a value past 12 significant digits, rather than rounding it to 12', () => {
+    const big: PrefNumber = { kind: 'number', name: 'Big', description: '', default: 0 };
+    expect(steppedOption(big, 1000000000009, { option: 'big', plus: 0.2 }, 1)).toBeCloseTo(1000000000009.2, 3);
+    expect(steppedOption(leaf('strength'), 0.6, OPTIONS.strength!, 1)).toBe(0.7);
+  });
+
   it('steps an unbounded infinity back to the largest double', () => {
     const free: PrefNumber = { kind: 'number', name: 'S', description: '', default: 0 };
     expect(steppedOption(free, Infinity, { option: 's', times: 2 }, -1)).toBe(Number.MAX_VALUE);

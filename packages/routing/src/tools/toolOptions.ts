@@ -234,7 +234,9 @@ export function steppedOption(leaf: PrefNumber, value: number, step: ToolOptionS
   // Past the double range a finite option has nowhere further to go than the largest double.
   const next = Number.isFinite(stepped) ? stepped : dir * Number.MAX_VALUE;
   const clamped = prefClampNumber(leaf, next);
-  // Sheds a sum's float noise (`0.6 + 0.1`), at any magnitude, unless shedding it would undo the step.
+  // Sheds a sum's float noise (`0.6 + 0.1`), at any magnitude, unless shedding it would undo the step or move it by
+  // more than noise: past 12 digits, rounding to them can be a larger move than the step itself.
   const tidy = Number(clamped.toPrecision(12));
-  return clamped !== value && (tidy - value) * dir > 0 && prefClampNumber(leaf, tidy) === tidy ? tidy : clamped;
+  const noise = Math.abs(tidy - clamped) <= Math.abs(clamped - value) * 1e-6;
+  return clamped !== value && noise && (tidy - value) * dir > 0 && prefClampNumber(leaf, tidy) === tidy ? tidy : clamped;
 }
