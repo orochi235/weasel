@@ -1,8 +1,8 @@
 import { useState, type ReactNode } from 'react';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen } from '@testing-library/react';
+import { act, fireEvent, screen } from '@testing-library/react';
 import { renderWithIcons } from '../../testing/withIcons';
-import type { SampledTrack, Track } from '@weasel-js/animator';
+import type { EventTrack, SampledTrack, Track } from '@weasel-js/animator';
 import { Timeline, type KeyEditorCtx, type TimelineProps } from './Timeline';
 
 const TRACK_WIDTH = 500;
@@ -27,6 +27,7 @@ const keysOf = (out: readonly Track[]): { t: number; value: number }[] =>
   (out[0] as SampledTrack<number>).keys.map(({ t, value }) => ({ t, value }));
 
 describe('Timeline key drags echoed through onInput', () => {
+  let setOutside: (next: Track[]) => void = () => {};
   function Echo({ onChange, onCancel, mode, renderKeyEditor }: {
     onChange?: (next: Track[]) => void;
     onCancel?: () => void;
@@ -34,6 +35,7 @@ describe('Timeline key drags echoed through onInput', () => {
     renderKeyEditor?: (ctx: KeyEditorCtx) => ReactNode;
   }) {
     const [value, setValue] = useState(tracks);
+    setOutside = setValue;
     return (
       <Timeline
         {...base} tracks={value} mode={mode} onInput={setValue} onCancel={onCancel} renderKeyEditor={renderKeyEditor}
@@ -75,6 +77,18 @@ describe('Timeline key drags echoed through onInput', () => {
     );
   });
 
+
+  it('keeps an edit made to another track while the drag was held', () => {
+    const onChange = vi.fn();
+    renderWithIcons(<Echo onChange={onChange} />);
+    drag(1, 250, 300);
+    act(() => setOutside([tracks()[0], { kind: 'event', label: 'step', events: [{ t: 400, fire: () => {} }] } as Track]));
+    fireEvent.pointerMove(document, { clientX: 320, clientY: 10, altKey: true });
+    fireEvent.pointerUp(document, { clientX: 320, clientY: 10, altKey: true });
+    const out = onChange.mock.calls[0][0] as Track[];
+    expect(keysOf(out)).toEqual([{ t: 0, value: 0 }, { t: 640, value: 10 }]);
+    expect((out[1] as EventTrack).events.map((e) => e.t)).toEqual([400]);
+  });
 });
 
 describe('Timeline Delete on a lane away from its keys', () => {

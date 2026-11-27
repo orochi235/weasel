@@ -130,8 +130,8 @@ function trackReading(tracks: readonly Track[], path: readonly number[]): string
 }
 
 /**
- * Refuses key edits from the keyboard while a press on the lanes is held: the drag's release commits against the tracks
- * it began from, and would undo them. `onPointerDownCapture` goes on the lanes, `onKeyDownCapture` on the root.
+ * Refuses key edits from the keyboard while a press on the lanes is held: the drag's release commits its track as it
+ * began from, and would undo them. `onPointerDownCapture` goes on the lanes, `onKeyDownCapture` on the root.
  */
 export function useKeyEditsHeldByPress() {
   // Each pointer pressed on the lanes and not yet let go, so a second finger lifting leaves the first one's drag held.

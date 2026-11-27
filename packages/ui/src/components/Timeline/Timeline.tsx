@@ -1,6 +1,7 @@
 import { useMemo, type KeyboardEvent as ReactKeyboardEvent, type ReactElement, type ReactNode } from 'react';
 import type { EasingSpec } from '@weasel-js/geom';
 import { isEditableTarget } from '@weasel-js/gestures';
+import { useLatest } from '@weasel-js/react';
 import type { Keyframe, SampledTrack, Track } from '@weasel-js/animator';
 import type { HoldProps } from '../Disabled';
 import { useControlHold, type ControlHold } from '../Disabled/controlHold';
@@ -9,7 +10,7 @@ import { Lane, type LaneHold, type LaneProps } from './Lane';
 import { TimeRuler } from './TimeRuler';
 import { PlayheadReadout, Transport, type TransportProps } from '../Transport/Transport';
 import { buildLanes, rowTimes, type LaneRow } from './lanes';
-import { deleteKey, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySeed, type KeySelection } from './keys';
+import { deleteKey, graftTrack, insertKey, keyTime, moveKey, samePath, setKeys, type KeyEdit, type KeySeed, type KeySelection } from './keys';
 import type { TimeWindow } from './timeScale';
 import { useFolds, useHeld, useKeyAndSegment, useKeyEditsHeldByPress, useTimeWindow } from './timelineState';
 import { TimelineInspector } from './TimelineInspector';
@@ -80,6 +81,7 @@ export function Timeline(props: TimelineProps): ReactElement {
   const { expanded, toggle } = useFolds({ selection, segmentSelection, selectKey, dropSegment });
   const [mode, setMode] = useHeld<'dope' | 'graph'>(props.mode, 'dope', props.onModeChange);
   const pressHold = useKeyEditsHeldByPress();
+  const latest = useLatest(tracks);
 
   const rows = useMemo(() => buildLanes(tracks, expanded), [tracks, expanded]);
 
@@ -165,7 +167,7 @@ export function Timeline(props: TimelineProps): ReactElement {
               hold={laneHold}
               onExpandedChange={() => toggle(row)}
               onSelectionChange={(keyIndex) => selectKey({ trackPath, keyIndex })}
-              {...bindLaneEdits(tracks, trackPath, { onInput, onChange, commit, preview }, props.seedKey)}
+              {...bindLaneEdits(tracks, () => latest.current, trackPath, { onInput, onChange, commit, preview }, props.seedKey)}
               onCancel={props.onCancel}
               selectedSegment={segmentSelection && samePath(segmentSelection.trackPath, trackPath) ? segmentSelection.keyIndex : null}
               onSelectSegment={(keyIndex) => selectSegment({ trackPath, keyIndex })}
@@ -195,31 +197,35 @@ const onTimeline = (e: ReactKeyboardEvent): boolean =>
 
 /**
  * A lane's edits as edits to the whole track list: live ones through `onInput`, and finished ones through `onChange`,
- * or `commit` where the edit also moves the selection.
+ * or `commit` where the edit also moves the selection. A key drag reads its track as it was at press, from `tracks`,
+ * and lands on the list as it is `now`, so an edit to another track during the drag survives it.
  */
-function bindLaneEdits(tracks: readonly Track[], trackPath: readonly number[], report: {
+function bindLaneEdits(tracks: readonly Track[], now: () => readonly Track[], trackPath: readonly number[], report: {
   onInput?: (next: Track[]) => void;
   onChange: (next: Track[]) => void;
   commit: (r: KeyEdit) => void;
   /** A key drag's preview, or `null` once it is put back. */
   preview: (r: KeyEdit | null) => void;
 }, seed?: KeySeed): Pick<LaneProps, 'onKeyInput' | 'onKeyRevert' | 'onKeyChange' | 'onKeysInput' | 'onKeysChange' | 'onInsert'> {
+  const moved = (keyIndex: number, toMs: number): KeyEdit => {
+    const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
+    return { ...r, tracks: graftTrack(now(), r.tracks, trackPath) };
+  };
   return {
     onKeyInput: (keyIndex, toMs) => {
       if (!report.onInput) return;
-      const r = moveKey(tracks, { trackPath, keyIndex }, toMs);
+      const r = moved(keyIndex, toMs);
       report.preview(r);
       report.onInput(r.tracks);
     },
     onKeyRevert: () => {
       report.preview(null);
-      report.onInput?.(tracks.slice());
+      report.onInput?.(graftTrack(now(), tracks, trackPath));
     },
     onKeyChange: (keyIndex, toMs) => {
       report.preview(null);
-      const sel = { trackPath, keyIndex };
-      if (keyTime(tracks, sel) === Math.max(0, toMs)) return;
-      report.commit(moveKey(tracks, sel, toMs));
+      if (keyTime(tracks, { trackPath, keyIndex }) === Math.max(0, toMs)) return;
+      report.commit(moved(keyIndex, toMs));
     },
     onKeysInput: (keys) => report.onInput?.(setKeys(tracks, trackPath, keys)),
     onKeysChange: (keys) => report.onChange(setKeys(tracks, trackPath, keys)),
