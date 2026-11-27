@@ -8,6 +8,7 @@ import { deepEqual } from '@weasel-js/registry';
 import { LayeredCurveEditor } from '../CurveEditor/LayeredCurveEditor';
 import { applyKeyframeDrag, type KeyframeLayerState } from '../CurveEditor/createKeyframeLayer';
 import { KeyframeLayer } from '../CurveEditor/KeyframeLayer';
+import type { MarkHold } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { msLabel, TICK_SPACING_PX, windowScale, type TimeWindow } from './timeScale';
 
@@ -41,6 +42,8 @@ export interface LaneGraphProps {
   onCancel?: () => void;
   /** False: keys and segments still select, and nothing drags or steps. Default true. */
   edits?: boolean;
+  /** Carried by every key, segment, and handle. Default: in the tab order, nothing held. */
+  mark?: MarkHold;
 }
 
 /** The value range a lane plots: its keys' extent, padded so no key sits on
@@ -66,7 +69,7 @@ function refuseSteps(e: ReactKeyboardEvent<HTMLDivElement>): void {
 export function LaneGraph(props: LaneGraphProps): ReactElement {
   const {
     keys, label, window: win, offset, limit = Infinity, snapTimes, selection, selectedSegment,
-    onSelect, onSelectSegment, onKeysInput, onKeysChange, onCancel, edits = true,
+    onSelect, onSelectSegment, onKeysInput, onKeysChange, onCancel, edits = true, mark,
   } = props;
 
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -77,6 +80,12 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
   // Marks are named by the ruler time they sit at.
   const xClamp = useMemo(() => [0, Math.max(0, limit - offset)] as const, [limit, offset]);
   const formatX = useMemo(() => (x: number) => msLabel(x + offset), [offset]);
+  // By value: a lane builds its hold afresh each render, and a new one rebuilds the layer.
+  const { tabIndex = 0, 'aria-disabled': disabled, 'aria-readonly': readOnly, 'aria-describedby': describedBy } = mark ?? {};
+  const markHold = useMemo<MarkHold>(
+    () => ({ tabIndex, 'aria-disabled': disabled, 'aria-readonly': readOnly, 'aria-describedby': describedBy }),
+    [tabIndex, disabled, readOnly, describedBy],
+  );
 
   const committed = useMemo<KeyframeLayerState>(
     () => ({ keys, selectedKey: selection, selectedSegment, drag: null }),
@@ -151,6 +160,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
             snapX={snapX}
             xClamp={xClamp}
             step={KEY_STEP}
+            markHold={markHold}
             state={state}
             onInput={onLayerChange}
             onChange={onLayerCommit}

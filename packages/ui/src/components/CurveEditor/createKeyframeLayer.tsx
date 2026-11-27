@@ -12,6 +12,7 @@ import { isPrimaryPress } from '@weasel-js/gestures';
 import { arrowMove } from '@weasel-js/quantity';
 import { attract } from '@weasel-js/ui-input';
 import { snapRadiusPx as kitSnapRadiusPx } from '../../snap';
+import type { MarkHold } from '../Disabled/controlHold';
 import type { CurveLayer, EmptyDownArgs, KeyDownArgs, LayerCtx, LayerGesture, LayerHit, LayerRenderCtx } from './layerTypes';
 import {
   activeBezier, applyKeyframeDrag, clampTo, keyframeLayerState, nudgedBezier, nudgedKey, withHandleAt,
@@ -42,7 +43,12 @@ export interface KeyframeLayerOptions {
   /** One arrow-key step in model units; shift takes ten. Default: 1% of the
    *  plot's range on that axis. */
   step?: { x?: number; y?: number };
+  /** Carried by every key, segment, and handle: a hold's tab index and focus attributes. Default: in the tab order,
+   *  nothing held. */
+  markHold?: MarkHold;
 }
+
+const FREE_MARK: MarkHold = { tabIndex: 0 };
 
 export { CURVE_HIT_PX, HANDLE_HIT_PX, KEY_HIT_PX } from './keyframeCurve';
 
@@ -70,10 +76,11 @@ export function createKeyframeLayer(cfg: KeyframeLayerOptions = {}): CurveLayer<
     label: cfg.label ?? 'Curve',
     formatX: cfg.formatX ?? formatCoord,
   };
+  const mark = cfg.markHold ?? FREE_MARK;
   const snapRadiusPx = (ctx: LayerCtx): number => cfg.snapRadiusPx ?? kitSnapRadiusPx(ctx.kitSettings);
 
   function render(state: KeyframeLayerState, ctx: LayerRenderCtx): ReactNode {
-    return keyframeMarks(state, ctx, names);
+    return keyframeMarks(state, ctx, names, mark);
   }
 
   function keyGesture(index: number): LayerGesture<KeyframeLayerState> {

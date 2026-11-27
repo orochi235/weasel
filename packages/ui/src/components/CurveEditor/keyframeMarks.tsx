@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import type { Keyframe } from '@weasel-js/animator';
 import { ARROW_KEYSHORTCUTS } from '../../handles';
+import type { MarkHold } from '../Disabled/controlHold';
 import { Diamond } from './Diamond';
 import s from './CurveEditor.module.css';
 import { pathThrough } from './layerMarks';
@@ -31,7 +32,7 @@ function segmentBand(keys: readonly Keyframe<number>[], seg: number, ctx: LayerR
 
 /** One focusable target over each segment, named by the key it runs into. */
 function segmentTargets(
-  segments: readonly PlotPoint[][], keys: readonly Keyframe<number>[], seg: number | null, names: KeyframeNames,
+  segments: readonly PlotPoint[][], keys: readonly Keyframe<number>[], seg: number | null, names: KeyframeNames, mark: MarkHold,
 ): ReactNode[] {
   return segments.map((pts, i) => (
     <path
@@ -39,7 +40,7 @@ function segmentTargets(
       className={s.segmentTarget}
       d={pathThrough(pts)}
       role="button"
-      tabIndex={0}
+      {...mark}
       aria-label={`${names.label} segment into ${names.formatX(keys[i + 1].t)}`}
       aria-current={seg === i + 1 ? 'true' : undefined}
       data-segment-index={i + 1}
@@ -48,7 +49,7 @@ function segmentTargets(
 }
 
 /** The selected segment's two bezier handles, each on a stem from the key it leaves. */
-function bezierHandles(state: KeyframeLayerState, bezier: Bezier, ctx: LayerRenderCtx, names: KeyframeNames): ReactNode {
+function bezierHandles(state: KeyframeLayerState, bezier: Bezier, ctx: LayerRenderCtx, names: KeyframeNames, mark: MarkHold): ReactNode {
   const [h1, h2] = handlePoints(state, bezier, ctx);
   const from = state.keys[state.selectedSegment! - 1];
   const into = state.keys[state.selectedSegment!];
@@ -66,7 +67,7 @@ function bezierHandles(state: KeyframeLayerState, bezier: Bezier, ctx: LayerRend
           cy={h.y}
           r={ctx.handleHalf('--wzl-handle-dot-size-sm')}
           role="button"
-          tabIndex={0}
+          {...mark}
           aria-label={`${names.label} bezier handle ${i + 1}`}
           aria-keyshortcuts={ARROW_KEYSHORTCUTS}
           data-handle-index={i}
@@ -77,7 +78,7 @@ function bezierHandles(state: KeyframeLayerState, bezier: Bezier, ctx: LayerRend
 }
 
 /** One focusable diamond per committed key, the one being dragged marked so. */
-function keyMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, names: KeyframeNames): ReactNode[] {
+function keyMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, names: KeyframeNames, mark: MarkHold): ReactNode[] {
   const dragIndex = state.drag?.kind === 'key' ? state.drag.index : null;
   return state.keys.map((k, i) => (
     <Diamond
@@ -86,7 +87,7 @@ function keyMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, names: Keyfram
       at={ctx.toPlot({ x: k.t, y: k.value })}
       half={ctx.handleHalf('--wzl-handle-size')}
       role="button"
-      tabIndex={0}
+      {...mark}
       aria-label={`${names.label} key at ${names.formatX(k.t)}`}
       aria-keyshortcuts={ARROW_KEYSHORTCUTS}
       aria-current={state.selectedKey === i ? 'true' : undefined}
@@ -113,7 +114,7 @@ function keyGhost(drag: { t: number; value: number }, ctx: LayerRenderCtx): Reac
  * Everything a keyframe layer draws: the curve through the keys as a key drag would leave them, the selected
  * segment's band and handles, a target per segment, a diamond per key, and the ghost of a key in flight.
  */
-export function keyframeMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, names: KeyframeNames): ReactNode {
+export function keyframeMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, names: KeyframeNames, mark: MarkHold): ReactNode {
   const preview = state.drag?.kind === 'key' ? { ...state, ...applyKeyframeDrag(state) } : state;
   const shown = preview.keys;
   const segments = keyframeSegments(state.drag, shown, ctx);
@@ -124,9 +125,9 @@ export function keyframeMarks(state: KeyframeLayerState, ctx: LayerRenderCtx, na
     <>
       {seg !== null && seg >= 1 && seg < shown.length ? segmentBand(shown, seg, ctx) : null}
       {curve.length > 1 ? <path data-curve-element="curve" className={s.curve} d={pathThrough(curve)} /> : null}
-      {segmentTargets(segments, shown, seg, names)}
-      {bezier ? bezierHandles(preview, bezier, ctx, names) : null}
-      {keyMarks(state, ctx, names)}
+      {segmentTargets(segments, shown, seg, names, mark)}
+      {bezier ? bezierHandles(preview, bezier, ctx, names, mark) : null}
+      {keyMarks(state, ctx, names, mark)}
       {state.drag?.kind === 'key' ? keyGhost(state.drag, ctx) : null}
     </>
   );

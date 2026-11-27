@@ -5,6 +5,7 @@ import type { FocusHoldAttrs } from '../Disabled/controlHold';
 import s from './Timeline.module.css';
 import { spanPercent, toPercent, type TimeWindow } from './timeScale';
 import { arrowMove } from '@weasel-js/quantity';
+import { steppedWithin } from '../CurveEditor/keyframeEdits';
 import { LaneGraph } from './LaneGraph';
 import { rowTimes, timelineSpan, type LaneRow } from './lanes';
 import { useKeyDrag } from './useKeyDrag';
@@ -70,13 +71,14 @@ export function Lane(props: LaneProps): ReactElement {
   const { onSelect, onSelectSegment, onPressEmpty, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = rowTimes(row);
-  const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
-  });
-  const pct = (ms: number): string => toPercent(win, ms + row.offset);
-
   // Only a numeric sampled row has an honest value axis to graph.
   const graph = mode === 'graph' && row.numeric;
+  const { drag, msAt, onKeyPointerDown } = useKeyDrag({
+    trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits && !graph,
+  });
+  const pct = (ms: number): string => toPercent(win, ms + row.offset);
+  // A drag draws its keys where they were at press, which a consumer echoing the preview back would otherwise re-sort.
+  const shownTimes = drag?.times ?? times;
   const sampledKeys = row.kind === 'sampled' ? (row.track as SampledTrack<number>).keys : [];
 
   const refocusRef = useFocusFollowsKey(trackRef, selection);
@@ -96,7 +98,7 @@ export function Lane(props: LaneProps): ReactElement {
           onPressEmpty?.();
         }}
         onKeyDown={(e) => {
-          // The timeline deletes the key as this bubbles up; focus goes to the key selected after it.
+          // The timeline deletes the key as this bubbles up; focus goes to the key it selects in its place.
           if (deletes && (e.key === 'Delete' || e.key === 'Backspace') && (e.target as Element).closest('[data-keyframe-index]')) refocusRef.current = true;
         }}
         onDoubleClick={(e) => {
@@ -121,18 +123,19 @@ export function Lane(props: LaneProps): ReactElement {
             onKeysInput={hold.edits ? props.onKeysInput : undefined}
             onKeysChange={(keys) => { if (hold.edits) props.onKeysChange?.(keys); }} onCancel={props.onCancel}
             edits={hold.edits}
+            mark={mark}
           />
         ) : (
           <>
             {row.kind === 'timeline' ? <NestedBar track={row.track as TimelineTrack} offset={row.offset} end={row.end} win={win} /> : null}
             {row.kind === 'sampled' ? (
               <SegmentMarks
-                keys={sampledKeys} label={row.label} offset={row.offset} win={win} pct={pct} mark={mark}
+                times={shownTimes} label={row.label} offset={row.offset} win={win} pct={pct} mark={mark}
                 selectedSegment={selectedSegment} onSelectSegment={onSelectSegment}
               />
             ) : null}
             <KeyMarks
-              row={row} times={drag?.times ?? times} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
+              row={row} times={shownTimes} pct={pct} mark={mark} selection={selection} draggedIndex={drag?.keyIndex}
               onKeyPointerDown={onKeyPointerDown} onKeyDown={onKeyDown}
             />
 
@@ -171,7 +174,7 @@ function markKeys({ edits, last, onKeyChange, onSelect, refocus }: {
     const dx = arrowMove(e.key, e.shiftKey)?.dx ?? 0;
     if (dx !== 0 && edits) {
       e.preventDefault();
-      const to = Math.max(0, Math.min(last, t + dx * KEY_STEP_MS));
+      const to = steppedWithin(t, t + dx * KEY_STEP_MS, [0, last]);
       if (to !== t) {
         refocus.current = true;
         onKeyChange(i, to);
@@ -225,7 +228,7 @@ function AfterEnd({ end, win }: { end: number; win: TimeWindow }) {
 }
 
 /** A keyboard move can re-sort the key to another index, and a delete selects another: set `refocus` and focus follows
- *  the selected key there once the lane renders. */
+ *  the selected key there once the lane renders, or with none, the nearest focusable element around the lane. */
 function useFocusFollowsKey(trackRef: RefObject<HTMLDivElement | null>, selection: number | null) {
   const refocus = useRef(false);
   useEffect(() => {
@@ -235,7 +238,9 @@ function useFocusFollowsKey(trackRef: RefObject<HTMLDivElement | null>, selectio
     // Not from wherever focus went since: a key that asked for this may have changed nothing.
     const at = document.activeElement;
     if (at !== null && at !== document.body && ![...(marks ?? [])].includes(at as HTMLElement)) return;
-    if (selection !== null) [...(marks ?? [])].find((m) => m.getAttribute('data-keyframe-index') === String(selection))?.focus();
+    const next = selection === null ? undefined : [...(marks ?? [])].find((m) => m.getAttribute('data-keyframe-index') === String(selection));
+    // With no key left to take it, focus stays inside the timeline rather than falling to the page.
+    (next ?? trackRef.current?.closest<HTMLElement>('[tabindex]'))?.focus();
   });
   return refocus;
 }

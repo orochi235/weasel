@@ -144,6 +144,38 @@ describe('Lane', () => {
     expect(onKeyChange).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['the lane switches to graph mode', { mode: 'graph' as const }],
+    ['the lane stops taking edits', { hold: { edits: false, looks: true, tabIndex: 0 as const, focus: {} } }],
+  ])('cancels a key drag when %s', (_, change) => {
+    const onKeyRevert = vi.fn();
+    const onKeyChange = vi.fn();
+    const onKeyInput = vi.fn();
+    const props = { ...base, row: laneOf(sampled), onKeyRevert, onKeyChange, onKeyInput };
+    const { rerender } = render(<Lane {...props} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 10 });
+    rerender(<Lane {...props} {...change} />);
+    expect(onKeyRevert).toHaveBeenCalledTimes(1);
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 10 });
+    expect(onKeyInput).toHaveBeenCalledTimes(1);
+    expect(onKeyChange).not.toHaveBeenCalled();
+  });
+
+  it('draws segments from the same key times as the key marks while a drag\'s preview is echoed back', () => {
+    const three = { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 200, value: 1 }, { t: 400, value: 2 }], onTick: () => {} } as Track;
+    const { rerender } = render(<Lane {...base} row={laneOf(three)} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1], { clientX: 100, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 250, clientY: 10 });
+    const echoed = { ...three, keys: [{ t: 0, value: 0 }, { t: 400, value: 2 }, { t: 500, value: 1 }] } as Track;
+    rerender(<Lane {...base} row={laneOf(echoed)} />);
+    const keyNames = screen.getAllByTestId('timeline-key').map((k) => k.getAttribute('aria-label'));
+    const segNames = screen.getAllByTestId('timeline-segment').map((k) => k.getAttribute('aria-label'));
+    expect(keyNames).toEqual(['x key at 0 ms', 'x key at 200 ms', 'x key at 400 ms']);
+    expect(segNames).toEqual(['x segment into 200 ms', 'x segment into 400 ms']);
+  });
+
   it('reports live times through the drag and one commit at its end', () => {
     const onKeyInput = vi.fn();
     const onKeyChange = vi.fn();
@@ -175,6 +207,16 @@ describe('Lane', () => {
     fireEvent.pointerMove(document, { clientX: 301, clientY: 10 });
     fireEvent.pointerUp(document, { clientX: 301, clientY: 10 });
     expect(onKeyChange).toHaveBeenCalledWith(1, 600);
+  });
+
+  it('steps a key past the limit by one step left, and not at all right', () => {
+    const onKeyChange = vi.fn();
+    render(<Lane {...base} row={laneOf(sampled)} limit={300} onKeyChange={onKeyChange} />);
+    const key = screen.getAllByTestId('timeline-key')[1];
+    fireEvent.keyDown(key, { key: 'ArrowRight' });
+    expect(onKeyChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(key, { key: 'ArrowLeft' });
+    expect(onKeyChange).toHaveBeenCalledWith(1, 490);
   });
 
   it('lets alt defeat snapping for the drag', () => {
@@ -370,6 +412,15 @@ describe('Lane in graph mode', () => {
     render(<Lane {...base} mode="graph" row={laneOf(sampled)} onKeysChange={onKeysChange} />);
     fireEvent.keyDown(graphKeys()[1], { key: 'ArrowRight', shiftKey: true });
     expect(onKeysChange.mock.calls[0][0][1].t).toBe(600);
+  });
+
+  it('steps a graphed key past the limit by one step left, and not at all right', () => {
+    const onKeysChange = vi.fn();
+    render(<Lane {...base} mode="graph" row={laneOf(sampled)} limit={300} onKeysChange={onKeysChange} />);
+    fireEvent.keyDown(graphKeys()[1], { key: 'ArrowRight' });
+    expect(onKeysChange).not.toHaveBeenCalled();
+    fireEvent.keyDown(graphKeys()[1], { key: 'ArrowLeft' });
+    expect(onKeysChange.mock.calls[0][0][1].t).toBe(490);
   });
 
   it('leaves the selection and focus on a key whose arrow step a read-only lane refuses', () => {

@@ -143,7 +143,7 @@ export function insertKey(
   };
 }
 
-/** Remove a key, selecting the one before it. */
+/** Remove a key, selecting the one before it, or the one after it when it was the first. */
 export function deleteKey(tracks: readonly Track[], sel: KeySelection): KeyEdit {
   const track = trackAtPath(tracks, sel.trackPath);
   if (track?.kind !== 'sampled') return { tracks: tracks.slice(), selection: sel };

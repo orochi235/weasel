@@ -146,6 +146,23 @@ describe('Timeline held, in graph mode', () => {
     expect(calls.onChange).not.toHaveBeenCalled();
   });
 
+  it('disabled with no reason, its graphed keys and segments leave the tab order', () => {
+    renderTimeline((n) => n, { mode: 'graph', disabled: true });
+    const marks = [...document.querySelectorAll('[data-keyframe-index], [data-segment-index]')];
+    expect(marks.length).toBeGreaterThan(0);
+    for (const m of marks) expect(m.getAttribute('tabindex')).toBe('-1');
+  });
+
+  it('disabled for a reason, its graphed keys carry the reason as the dope sheet\'s do', () => {
+    renderTimeline((n) => n, { mode: 'graph', disabled: true, disabledReason: 'Rendering' });
+    const k = graphKey();
+    expect(k.getAttribute('tabindex')).toBe('0');
+    expect(k.getAttribute('aria-disabled')).toBe('true');
+    const described = k.getAttribute('aria-describedby');
+    expect(described).toBeTruthy();
+    expect(document.getElementById(described!)?.textContent).toContain('Rendering');
+  });
+
   it('disabled, leaves the wheel over its ruler to the page', () => {
     renderTimeline((n) => n, { disabled: true, window: { from: 0, to: 500 } });
     const ruler = screen.getByTestId('timeline-ruler');

@@ -10,6 +10,9 @@ export interface FocusHoldAttrs {
   'aria-describedby'?: string;
 }
 
+/** What every focus target a held control draws carries of the hold: its tab index and focus attributes. */
+export type MarkHold = { tabIndex: 0 | -1 } & FocusHoldAttrs;
+
 /** What a held control's own button takes: disabled with no reason, else marked and left reachable. */
 export interface ButtonHoldAttrs {
   disabled?: true;

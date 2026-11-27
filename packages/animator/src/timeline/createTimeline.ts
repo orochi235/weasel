@@ -1,7 +1,7 @@
 import { createEmitter } from '@weasel-js/registry';
 import { createCrossings } from './crossings';
 import { createEntry, type TimelineRegister } from './entry';
-import { tracksEnd } from './nestedClock';
+import { timelineEnd } from './nestedClock';
 import { createPlayhead, landing } from './playhead';
 import { createTrackSampler, type OpenTrackHold } from './trackHolds';
 import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './types';
@@ -16,7 +16,6 @@ export interface TimelineReport {
   fire(track: EventTrack, path: readonly number[], event: TimelineEvent, lateBy: number): void;
   lap(lap: number): void;
 }
-
 
 /**
  * Create a timeline as a registered animator animation.
@@ -37,7 +36,7 @@ export function createTimeline(
   /** -1 while the animator plays every animation backward. */
   direction: () => number = () => 1,
 ): TimelineHandle {
-  const pos = createPlayhead(tracksEnd(opts.tracks, opts.duration), opts.loop ?? false);
+  const pos = createPlayhead(timelineEnd(opts), opts.loop ?? false);
   let lastVirtual = 0;
   let done = false;
   let canceled = false;
@@ -138,7 +137,7 @@ export function createTimeline(
     edit(fn) {
       fn();
       sampler.edited();
-      pos.setDuration(tracksEnd(opts.tracks, opts.duration));
+      pos.setDuration(timelineEnd(opts));
       crossings.retract();
       rearm();
       sampleNow();

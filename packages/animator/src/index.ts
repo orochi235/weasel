@@ -21,7 +21,7 @@ export {
 export { cycleVertexColors, type CycleVertexColorsOptions, type CycleHandle } from './colorCycle';
 export { rainbowVertexColors, solidVertexColors } from './colorArrays';
 export type { ColorInterpolate } from './colorInterpolate';
-export { bindClip, isBlitsEasing, rangeTimeline, resolveKeyEasing, sampleTrack, toClip } from './timeline';
+export { bindClip, isBlitsEasing, rangeTimeline, resolveKeyEasing, sampleTrack, timelineEnd, toClip } from './timeline';
 export type {
   BlitsEasing, BoundClip, Clip, ClipBinder, ClipEventTrack, ClipKey, ClipRemap, ClipSampledTrack, ClipTimeline, ClipTimelineTrack, ClipTrack,
   ClipValue,
