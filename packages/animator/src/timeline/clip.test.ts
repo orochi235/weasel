@@ -272,3 +272,20 @@ describe('a clip value typed by an interface', () => {
     expect(toClip(bindClip(clip, {}))).toEqual(clip);
   });
 });
+
+describe('toClip on a value that holds itself', () => {
+  it('refuses a cyclic key value or event data, naming the track', () => {
+    const v: Record<string, unknown> = { a: 1 };
+    v.self = v;
+    const sampled: SampledTrack<unknown> = { kind: 'sampled', label: 'loopy', keys: [{ t: 0, value: v }] };
+    expect(() => toClip({ tracks: [sampled] })).toThrow(/loopy.*cannot round-trip/);
+    const events: EventTrack = { kind: 'event', label: 'cues', events: [{ t: 0, name: 'go', data: [v] }] };
+    expect(() => toClip({ tracks: [events] })).toThrow(/cues.*cannot round-trip/);
+  });
+
+  it('takes a value shared at two places that is not a cycle', () => {
+    const shared = { a: 1 };
+    const sampled: SampledTrack<unknown> = { kind: 'sampled', keys: [{ t: 0, value: { x: shared, y: shared } }] };
+    expect(() => toClip({ tracks: [sampled] })).not.toThrow();
+  });
+});
