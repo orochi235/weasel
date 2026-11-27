@@ -103,7 +103,7 @@ export function useScenePicking<TData, TLayer extends string, TPose>(args: {
   });
 
   const doubleClickNames = useMemo(
-    () => kindOfNode && doubleClickNamer(scene, kindOfNode, enteredGroup),
+    () => doubleClickNamer(scene, kindOfNode ?? (() => undefined), enteredGroup),
     [scene, kindOfNode, enteredGroup],
   );
 
