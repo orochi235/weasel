@@ -56,6 +56,66 @@ function pendingReads() {
   };
 }
 
+type MissedEvent = 'change' | 'unlink';
+
+/** The files vite has served, each module stamped with its file's modification time when vite read it. */
+function servedFiles() {
+  const stamps = new Map<string, Map<string, number>>();
+  const fileOfUrl = new Map<string, string>();
+  /** Each file a quiet check found changed, and when it first did; it is replayed once the watcher is past due. */
+  const suspects = new Map<string, number>();
+
+  /** The event the watcher owes for a served file: `change` when it was modified since read, `unlink` when gone. */
+  const missed = (file: string): MissedEvent | undefined => {
+    const modules = stamps.get(file);
+    if (!modules) return undefined;
+    const now = mtimeOf(file);
+    if (now === undefined) return 'unlink';
+    for (const stamp of modules.values()) if (stamp !== now) return 'change';
+    return undefined;
+  };
+
+  return {
+    missed,
+    fileAt: (url: string) => fileOfUrl.get(url),
+    stamp(file: string, id: string, mtime: number, url: string) {
+      let modules = stamps.get(file);
+      if (!modules) stamps.set(file, (modules = new Map()));
+      modules.set(id, mtime);
+      fileOfUrl.set(url, file);
+    },
+    restamp(file: string) {
+      suspects.delete(file);
+      const modules = stamps.get(file);
+      const now = mtimeOf(file);
+      if (!modules || now === undefined) return;
+      for (const id of modules.keys()) modules.set(id, now);
+    },
+    forget(file: string) {
+      suspects.delete(file);
+      stamps.delete(file);
+      for (const [url, served] of fileOfUrl) if (served === file) fileOfUrl.delete(url);
+    },
+    /** Notes each file whose event is missing, and returns those still missing `WATCH_LATENCY_MS` after a check first found them. */
+    sweep(now: number): [string, MissedEvent][] {
+      const due: [string, MissedEvent][] = [];
+      for (const file of stamps.keys()) {
+        const event = missed(file);
+        const since = suspects.get(file);
+        if (!event) suspects.delete(file);
+        else if (since === undefined) suspects.set(file, now);
+        else if (now - since >= WATCH_LATENCY_MS) due.push([file, event]);
+      }
+      return due;
+    },
+    clear() {
+      stamps.clear();
+      fileOfUrl.clear();
+      suspects.clear();
+    },
+  };
+}
+
 /**
  * A plugin that serves an edit the OS never reported. Each module vite serves from a file is stamped with the file's
  * modification time when vite reads it. A request for a module whose file has changed since, and a check of every
@@ -65,50 +125,23 @@ function pendingReads() {
  */
 export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {}): Plugin {
   if (!(quietMs > 0)) throw new RangeError(`watchRecovery: quietMs must be above 0, got ${quietMs}`);
-  /** Each served file's modules, with the file's modification time when vite read it for that module. */
-  const stamps = new Map<string, Map<string, number>>();
   const read = pendingReads();
-  const fileOfUrl = new Map<string, string>();
+  const served = servedFiles();
   let server: ViteDevServer | undefined;
   let active = false;
   let skipped: (file: string) => boolean = () => true;
   let lastEvent = 0;
   let replaying = false;
   let timer: ReturnType<typeof setInterval> | undefined;
-  /** Each file a quiet check found changed, and when it first did; it is replayed once the watcher is past due. */
-  const suspects = new Map<string, number>();
 
-  const restamp = (file: string) => {
-    const modules = stamps.get(file);
-    const now = mtimeOf(file);
-    if (!modules || now === undefined) return;
-    for (const id of modules.keys()) modules.set(id, now);
-  };
-
-  const forget = (file: string) => {
-    stamps.delete(file);
-    for (const [url, served] of fileOfUrl) if (served === file) fileOfUrl.delete(url);
-  };
-
-  /** The event the watcher owes for a served file: `change` when it was modified since read, `unlink` when gone. */
-  const missed = (file: string): 'change' | 'unlink' | undefined => {
-    const modules = stamps.get(file);
-    if (!modules) return undefined;
-    const now = mtimeOf(file);
-    if (now === undefined) return 'unlink';
-    for (const stamp of modules.values()) if (stamp !== now) return 'change';
-    return undefined;
-  };
-
-  const recover = (file: string, event: 'change' | 'unlink', outcome: string) => {
+  const recover = (file: string, event: MissedEvent, outcome: string) => {
     if (!server) return;
-    suspects.delete(file);
     const name = relative(server.config.root, file);
     if (event === 'unlink') {
-      forget(file);
+      served.forget(file);
       server.config.logger.warn(`[watch] ${name} was deleted with no file event; dropping it from the page`, { timestamp: true });
     } else {
-      restamp(file);
+      served.restamp(file);
       for (const environment of Object.values(server.environments)) environment.moduleGraph.onFileChange(file);
       server.config.logger.warn(`[watch] ${name} changed with no file event; ${outcome}`, { timestamp: true });
     }
@@ -123,14 +156,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
   const sweep = () => {
     const now = Date.now();
     if (now - lastEvent < quietMs) return;
-    for (const file of suspects.keys()) if (!stamps.has(file)) suspects.delete(file);
-    for (const file of [...stamps.keys()]) {
-      const event = missed(file);
-      const since = suspects.get(file);
-      if (!event) suspects.delete(file);
-      else if (since === undefined) suspects.set(file, now);
-      else if (now - since >= WATCH_LATENCY_MS) recover(file, event, 'pushing it to the page');
-    }
+    for (const [file, event] of served.sweep(now)) recover(file, event, 'pushing it to the page');
   };
 
   const self: Plugin = {
@@ -146,9 +172,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
       // A restart builds the new server from these same plugin objects before it closes the old one.
       clearInterval(timer);
       timer = undefined;
-      stamps.clear();
-      fileOfUrl.clear();
-      suspects.clear();
+      served.clear();
       lastEvent = 0;
       server = s;
       for (const event of ['add', 'change', 'unlink'] as const) {
@@ -156,8 +180,8 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
           if (replaying) return;
           lastEvent = Date.now();
           const file = normalizePath(path);
-          if (event === 'unlink') forget(file);
-          else restamp(file);
+          if (event === 'unlink') served.forget(file);
+          else served.restamp(file);
         });
       }
       const base = s.config.base;
@@ -166,12 +190,12 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
         if (base !== '/' && url.startsWith(base)) url = url.slice(base.length - 1);
         let file: string | undefined;
         try {
-          file = fileOfUrl.get(decodeURI(url));
+          file = served.fileAt(decodeURI(url));
         } catch {
           // A malformed URL is vite's to answer.
         }
-        const event = file && missed(file);
-        if (event) recover(file, event, 'serving the new text');
+        const event = file === undefined ? undefined : served.missed(file);
+        if (file && event) recover(file, event, 'serving the new text');
         next();
       });
       if (quietMs <= LONGEST_TIMER_MS) {
@@ -197,10 +221,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
         if (this.environment.mode !== 'dev') return;
         const mod = this.environment.moduleGraph.getModuleById(id);
         if (!mod?.file) return;
-        let modules = stamps.get(mod.file);
-        if (!modules) stamps.set(mod.file, (modules = new Map()));
-        modules.set(id, mtime);
-        fileOfUrl.set(withoutQuery(mod.url), mod.file);
+        served.stamp(mod.file, id, mtime, withoutQuery(mod.url));
       },
     },
     buildEnd() {
