@@ -1,4 +1,4 @@
-import { boundsOfPath, type PolygonPath } from '@weasel-js/geom';
+import { boundsOfPath, worldCoords, type PolygonPath } from '@weasel-js/geom';
 import { describe, expect, it } from 'vitest';
 import { pathForShape } from './shapePainter';
 
@@ -30,5 +30,13 @@ describe('pathForShape', () => {
     expect(vertexCount({ shape: 'star', points: 1 })).toBe(6);
     expect(vertexCount({ shape: 'star', points: Infinity })).toBe(64);
     expect(vertexCount({ shape: 'star', points: NaN })).toBe(10);
+  });
+
+  it.each(['polygon', 'star'])('mirrors a %s with its pose, as a rect is', (shape) => {
+    const d = { shape, sides: 3, points: 5 };
+    const upright = [...worldCoords(pathForShape(d, BOX) as PolygonPath)];
+    const flipped = [...worldCoords(pathForShape(d, { x: 100, y: 100, width: -100, height: -100 }) as PolygonPath)];
+    expect(flipped.length).toBe(upright.length);
+    upright.forEach((v, i) => expect(flipped[i]).toBeCloseTo(100 - v, 4));
   });
 });

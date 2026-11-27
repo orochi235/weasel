@@ -2,6 +2,7 @@ import {
   ellipsePath,
   regularPolygonPath,
   starPath,
+  transformPath,
   type Path
 } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
@@ -103,20 +104,22 @@ export function pathForShape(
   switch (d.shape) {
     case 'ellipse':
       return ellipsePath(p);
-    case 'polygon': {
-      const cx = p.x + p.width / 2;
-      const cy = p.y + p.height / 2;
-      const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
-      return regularPolygonPath({ x: cx, y: cy }, r, shapeCountFor(d.sides, SHAPE_DEFAULTS.sides));
-    }
-    case 'star': {
-      const cx = p.x + p.width / 2;
-      const cy = p.y + p.height / 2;
-      const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
-      return starPath({ x: cx, y: cy }, r, shapeCountFor(d.points, SHAPE_DEFAULTS.points));
-    }
+    case 'polygon':
+      return inscribed(p, (c, r) => regularPolygonPath(c, r, shapeCountFor(d.sides, SHAPE_DEFAULTS.sides)));
+    case 'star':
+      return inscribed(p, (c, r) => starPath(c, r, shapeCountFor(d.points, SHAPE_DEFAULTS.points)));
     case 'rect':
     default:
       return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   }
+}
+
+/** The shape `at` builds on the largest circle inside `p`, mirrored on each axis `p` is. */
+function inscribed(p: RectPose, at: (center: { x: number; y: number }, radius: number) => Path): Path {
+  const cx = p.x + p.width / 2;
+  const cy = p.y + p.height / 2;
+  const path = at({ x: cx, y: cy }, Math.min(Math.abs(p.width), Math.abs(p.height)) / 2);
+  const sx = Math.sign(p.width) || 1;
+  const sy = Math.sign(p.height) || 1;
+  return sx > 0 && sy > 0 ? path : transformPath(path, [sx, 0, 0, sy, cx - sx * cx, cy - sy * cy]);
 }
