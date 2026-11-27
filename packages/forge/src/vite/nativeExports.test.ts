@@ -31,4 +31,14 @@ export const settings = Object.freeze({ dense: true });
     const code = `const a0 = story({ render: () => null });\n${chain}\nexport const Deep = a20;\n`;
     expect(names(code)).toEqual(['Deep']);
   });
+
+  it('reads a bare return as no story', () => {
+    const code = `
+function make(x: number) { if (!x) return; return { title: 'x' }; }
+export const A = make(1);
+export const B = story({ render: () => null });
+`;
+    expect(names(code)).toEqual(['B']);
+  });
+
 });

@@ -62,10 +62,12 @@ function innerStatements(stmt: t.Statement): t.Statement[] {
   }
 }
 
-/** Whether any `return` of `statements`, through every statement that nests others, may hand back a story. */
+/** Whether any `return` of `statements`, through every statement that nests others, may hand back a story; a bare `return` cannot. */
 function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: number): boolean {
   return statements.some((stmt) =>
-    stmt.type === 'ReturnStatement' ? mayBeStory(stmt.argument ?? undefined, scope, depth) : returnsStory(innerStatements(stmt), scope, depth),
+    stmt.type === 'ReturnStatement'
+      ? stmt.argument != null && mayBeStory(stmt.argument, scope, depth)
+      : returnsStory(innerStatements(stmt), scope, depth),
   );
 }
 
