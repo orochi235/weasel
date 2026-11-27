@@ -58,6 +58,23 @@ describe('useDepartureGhostLayer', () => {
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([130, 134]);
   });
 
+  it("composes a ghost under an envelope, and an envelope ghost's children, in the envelope's parent's frame", () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RECT_POSE_COMPOSITION });
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(100), data: null });
+    const envelope = { dependsOn: 'children', derivePose: () => at(50) } as const;
+    const e = scene.add({ kind: 'group', layer: 'main', pose: at(50), data: null, parent: p, ...envelope } as never);
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: e } as unknown as N;
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(50), data: null, parent: p, children: [], ...envelope } as unknown as N;
+    const j = { id: asNodeId('j'), kind: 'mark', layer: 'main', pose: at(6), data: null, parent: g.id } as unknown as N;
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([
+        { removal: removal(k, at(4)), pose: at(4), alpha: 1 },
+        { removal: removal(g, at(50), [{ node: j, pose: at(6), children: [] }]), pose: at(50), alpha: 1 },
+      ]),
+    }));
+    expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([104, 150, 106]);
+  });
+
   it('draws a ghost on a parallax layer where its plane draws it', () => {
     const scene = createScene<null, 'main' | 'far', RectPose>({
       systemLayers: [{ id: 'main' }, { id: 'far', parallax: { pan: 0.5 } }],

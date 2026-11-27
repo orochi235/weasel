@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import { useLatest } from '@weasel-js/react';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
-import { composeChildFrame, composesFrames, type PoseAdapter } from 'core/scene/composePose';
+import { composeChildFrame, composesFrames, frameAtOrAbove, type PoseAdapter } from 'core/scene/composePose';
 import { viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { hidesSubtree } from 'core/scene/nodeGates';
@@ -62,8 +62,15 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;
         return parallax ? deriveParallaxView(view, parallax) : view;
       };
+      // As buildSceneTree folds: an envelope's children share its parent's frame.
+      const childFrameOf = (r: RemovedNode<TPose, Node<TData, TLayer, TPose>>, pose: TPose, parentFrame: TPose | null): TPose | null => {
+        if (!composes) return null;
+        if (!definesFrame(r.node)) return parentFrame;
+        return pose;
+      };
       const draw = (
-        r: RemovedNode<TPose, Node<TData, TLayer, TPose>>, pose: TPose, parentPlane: PlaneMap | null, out: DrawCommand[],
+        r: RemovedNode<TPose, Node<TData, TLayer, TPose>>, pose: TPose, parentFrame: TPose | null,
+        parentPlane: PlaneMap | null, out: DrawCommand[],
         above: () => Iterable<{ kind?: string; data?: unknown }>,
       ): void => {
         if (hidesSubtree(r.node)) return;
@@ -76,14 +83,16 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const ctx = inheritsPaint(r.node) ? { ...scaled, inherited: inheritedPaintOf(r.node, above()) } : scaled;
         const children: DrawCommand[] = paints(layer)
           ? wrapWithPoseRotation(drawOne(r.node, drawn, v, ctx), drawn) : [];
+        const frame = childFrameOf(r, pose, parentFrame);
         const kids: DrawCommand[] = [];
         for (const c of r.children) {
-          draw(c, composes ? compose(pose, c.pose) : c.pose, plane, kids, () => [r.node, ...above()]);
+          draw(c, frame !== null ? compose(frame, c.pose) : c.pose, frame, plane, kids, () => [r.node, ...above()]);
         }
-        // The node's clip is its children's, not its own paint's.
-        const clip = kids.length > 0
-          ? ownClipOf(r.node, pose, () => slot.derivedPathOf?.(r.node, pose), nodeShapesOf(sc), scaled.scale) : null;
-        children.push(...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids));
+        if (kids.length > 0) {
+          // The node's clip is its children's, not its own paint's.
+          const clip = ownClipOf(r.node, pose, () => slot.derivedPathOf?.(r.node, pose), nodeShapesOf(sc), scaled.scale);
+          children.push(...(clip ? [{ kind: 'group', clip, children: kids } as GroupDrawCommand] : kids));
+        }
         const transform = planeTransform(plane, parentPlane);
         out.push(transform ? { kind: 'group', transform, children } : { kind: 'group', children });
       };
@@ -92,9 +101,11 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
       return leaving.flatMap(({ removal, pose, alpha }): DrawCommand[] => {
         const parent = removal.parent !== null && sc.get(removal.parent) ? removal.parent : null;
         if (!shownUnder(parent)) return [];
-        const world = composes && parent !== null ? compose(composeChildFrame(frames, parent, compose), pose) : pose;
+        const frameId = composes ? frameAtOrAbove(frames, parent) : null;
+        const parentFrame = frameId !== null ? composeChildFrame(frames, frameId, compose) : null;
+        const world = parentFrame !== null ? compose(parentFrame, pose) : pose;
         const children: DrawCommand[] = [];
-        draw(removal, world, null, children, () => sceneAncestors((id: never) => sc.get(id), removal.node));
+        draw(removal, world, parentFrame, null, children, () => sceneAncestors((id: never) => sc.get(id), removal.node));
         return [{ kind: 'group', alpha: Math.max(0, Math.min(1, alpha)), children }];
       });
     },
