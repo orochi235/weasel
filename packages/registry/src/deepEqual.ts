@@ -32,7 +32,7 @@ function step(
     if (!isPlainArray(a) || !isPlainArray(b) || a.length !== b.length) return false;
     if (!enter(pairs, a, b)) return true;
     if (!sameKeys(a, b, extraKeysOf, opts, todo)) return false;
-    for (let i = a.length - 1; i >= 0; i--) todo.push([a[i], b[i]]);
+    for (let i = a.length - 1; i >= 0; i--) todo.push([own(a, String(i)), own(b, String(i))]);
     return true;
   }
   if (!isPlainObject(a) || !isPlainObject(b)) return false;

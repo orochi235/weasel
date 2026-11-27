@@ -73,4 +73,9 @@ describe('deepEqual', () => {
     expect(deepEqual(bare, [1, 2])).toBe(false);
     expect(deepEqual(bare, bare)).toBe(true);
   });
+
+  it('reads a hole as undefined even where the prototype chain holds a value at that index', () => {
+    const [holed, filled] = runInNewContext('Array.prototype[0] = "inherited"; [[, 1], [undefined, 1]]') as unknown[][];
+    expect(deepEqual(holed, filled)).toBe(true);
+  });
 });
