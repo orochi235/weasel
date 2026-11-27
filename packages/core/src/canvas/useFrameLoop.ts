@@ -72,11 +72,12 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     try {
       beforeRef.current.emit(time);
       landed = paintRef.current();
+      // Any paint that returns ends the recovery, so a later throw gets its own retry.
+      retriedRef.current = false;
       if (!landed) {
         dirtyRef.current = true;
         return;
       }
-      retriedRef.current = false;
       // Notified inside the guard: a subscriber calling `requestRedraw` under
       // `syncPaint` would otherwise re-enter this synchronously, without bound.
       subsRef.current.emit(time);

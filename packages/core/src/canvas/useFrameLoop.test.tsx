@@ -246,3 +246,25 @@ describe('useFrameLoop — frame time', () => {
     expect(times[1]).toBeGreaterThanOrEqual(times[0]);
   });
 });
+
+describe('useFrameLoop — recovery', () => {
+  it('retries a later throw once a paint since the last one has returned', async () => {
+    const loopRef = { current: null as FrameLoop | null };
+    const results: ('throw' | boolean)[] = ['throw', false, 'throw', true];
+    const paint = vi.fn(() => {
+      const next = results.shift() ?? true;
+      if (next === 'throw') throw new Error('bad node');
+      return next;
+    });
+    render(<Host loopRef={loopRef} paint={paint} />);
+    const loop = loopRef.current!;
+    const onError = vi.fn();
+    window.addEventListener('error', onError);
+    await act(async () => { loop.requestRedraw(); await frame(); await frame(); await frame(); });
+    expect(paint).toHaveBeenCalledTimes(2);
+
+    await act(async () => { loop.requestRedraw(); await frame(); await frame(); await frame(); });
+    expect(paint).toHaveBeenCalledTimes(4);
+    window.removeEventListener('error', onError);
+  });
+});
