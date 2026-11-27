@@ -54,6 +54,26 @@ export interface DecayLoopOptions {
  */
 const SPRING_DAMPING = 0.5;
 
+/**
+ * One axis of a coast meeting its limits: the step `d` it may take from `pos`
+ * and the velocity `v` it leaves with. A view already past a limit meets its
+ * wall where it is, so it coasts back in freely rather than jumping to the limit.
+ */
+function hitWall(
+  boundary: 'stop' | 'bounce' | 'spring', pos: number, d: number, v: number, min?: number, max?: number,
+): { d: number; v: number } {
+  const lo = min === undefined ? undefined : Math.min(min, pos);
+  const hi = max === undefined ? undefined : Math.max(max, pos);
+  const next = pos + d;
+  let side: 1 | -1;
+  let wall: number;
+  if (lo !== undefined && next < lo) { side = 1; wall = lo; }
+  else if (hi !== undefined && next > hi) { side = -1; wall = hi; }
+  else return { d, v };
+  const keep = boundary === 'stop' ? 0 : boundary === 'spring' ? SPRING_DAMPING : 1;
+  return { d: wall - pos, v: side * Math.abs(v) * keep };
+}
+
 /** A rAF loop that coasts a value to a stop under friction, reporting the
  *  per-frame delta. What turns a released pan drag into momentum scrolling. */
 export function useDecayLoop() {
@@ -93,26 +113,10 @@ export function useDecayLoop() {
     let dy = s.vy * dt;
     if (s.viewBounds && s.boundary) {
       const { minX, maxX, minY, maxY } = s.viewBounds;
-      const newX = s.posX + dx;
-      const newY = s.posY + dy;
-      if (s.boundary === 'stop') {
-        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = 0; }
-        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = 0; }
-        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = 0; }
-        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = 0; }
-      } else if (s.boundary === 'spring') {
-        // Damped reflection: flip sign AND scale magnitude by SPRING_DAMPING so
-        // each bounce loses energy. Once |v| < minSpeed the outer loop ends.
-        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = Math.abs(s.vx) * SPRING_DAMPING; }
-        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = -Math.abs(s.vx) * SPRING_DAMPING; }
-        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = Math.abs(s.vy) * SPRING_DAMPING; }
-        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = -Math.abs(s.vy) * SPRING_DAMPING; }
-      } else {
-        if (minX !== undefined && newX < minX) { dx = minX - s.posX; s.vx = Math.abs(s.vx); }
-        else if (maxX !== undefined && newX > maxX) { dx = maxX - s.posX; s.vx = -Math.abs(s.vx); }
-        if (minY !== undefined && newY < minY) { dy = minY - s.posY; s.vy = Math.abs(s.vy); }
-        else if (maxY !== undefined && newY > maxY) { dy = maxY - s.posY; s.vy = -Math.abs(s.vy); }
-      }
+      const ax = hitWall(s.boundary, s.posX, dx, s.vx, minX, maxX);
+      const ay = hitWall(s.boundary, s.posY, dy, s.vy, minY, maxY);
+      dx = ax.d; s.vx = ax.v;
+      dy = ay.d; s.vy = ay.v;
       s.posX += dx;
       s.posY += dy;
     }

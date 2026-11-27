@@ -235,4 +235,49 @@ describe('useDecayLoop', () => {
     act(() => { stepRAF(16); });
     expect(onTick).not.toHaveBeenCalled();
   });
+
+  it.each(['stop', 'bounce', 'spring'] as const)(
+    'boundary:%s lets a coast that starts past a bound move freely back in, without jumping to it',
+    (boundary) => {
+      const ticks: number[] = [];
+      const { result } = renderHook(() => useDecayLoop());
+      act(() => {
+        result.current.start({
+          velocity: { vx: 1, vy: 0 },        // moving right, back toward the bounds
+          friction: 0.999999,
+          minSpeed: 0.001,
+          viewBounds: { minX: 0, maxX: 100 },
+          boundary,
+          initialPosition: { x: -50, y: 0 },  // starts outside, left of minX
+          onTick: (dx) => { ticks.push(dx); },
+        });
+      });
+      act(() => { stepRAF(1); });
+      act(() => { stepRAF(1); });
+      act(() => { stepRAF(1); });
+      expect(ticks).toHaveLength(2);
+      expect(ticks[0]).toBeCloseTo(1);
+      expect(ticks[1]).toBeCloseTo(1);
+    },
+  );
+
+  it('boundary:stop holds a coast that starts past a bound and heads further out where it is', () => {
+    const ticks: number[] = [];
+    const { result } = renderHook(() => useDecayLoop());
+    act(() => {
+      result.current.start({
+        velocity: { vx: -1, vy: 0 },
+        friction: 0.999999,
+        minSpeed: 0.001,
+        viewBounds: { minX: 0 },
+        boundary: 'stop',
+        initialPosition: { x: -50, y: 0 },
+        onTick: (dx) => { ticks.push(dx); },
+      });
+    });
+    act(() => { stepRAF(1); });
+    act(() => { stepRAF(1); });
+    act(() => { stepRAF(1); });
+    expect(ticks).toEqual([0]);
+  });
 });
