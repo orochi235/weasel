@@ -16,7 +16,10 @@ afterEach(() => {
 const seconds = 1 / 1000;
 /** The drawn figures, without the copy a screen reader gets. */
 const text = (c: HTMLElement) => c.querySelector('data')?.textContent;
-const advance = (ms: number) => act(() => { vi.advanceTimersByTime(ms); });
+/** Moves time on in steps, each committed, as frames would: one long jump would fire only the first wake. */
+const advance = (ms: number) => {
+  for (let left = ms; left > 0; left -= 100) act(() => { vi.advanceTimersByTime(Math.min(100, left)); });
+};
 
 it('counts on between readings, redrawing only when its text changes', () => {
   const at = performance.now();

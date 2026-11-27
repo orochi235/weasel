@@ -2,7 +2,7 @@ import { holdEndOf, nextReading, readingAt, type Reading, type ReadingOptions } 
 import { nextChangeFor, tag, type Display, type Unit } from '@weasel-js/quantity';
 import { useVisibleRaf } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
-import { useEffect, useLayoutEffect, useReducer, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useFieldLocale } from '../../useFieldLocale';
 import { QuantityText } from '../QuantityText';
 import s from './LiveQuantity.module.css';
@@ -20,6 +20,13 @@ export interface LiveQuantityProps extends ReadingOptions {
   /** Draw no copy for a screen reader, as {@link QuantityText}'s `mute`. */
   mute?: boolean;
   className?: string;
+}
+
+/** The reading followed, the one it was made from, and the host time the readout is drawn at. */
+interface Followed {
+  from: Reading;
+  shown: Reading;
+  now: number;
 }
 
 /** Host ms until `r`'s text under `display` next changes, counted from `now`. */
@@ -41,16 +48,23 @@ function wakeFor(r: Reading, now: number, display: Display | undefined, unit: Un
 export function LiveQuantity({ reading, display, unit, locale: localeProp, mute, className, maxHold }: LiveQuantityProps) {
   const locale = useFieldLocale(localeProp);
   const box = useRef<HTMLSpanElement>(null);
-  const followed = useRef<{ from: Reading; shown: Reading } | null>(null);
-  // Following is idempotent, so a render run twice lands on the same reading.
-  if (followed.current?.from !== reading) {
-    followed.current = { from: reading, shown: nextReading(followed.current?.shown, reading, { maxHold }) };
+  const [state, setState] = useState<Followed>(() => ({ from: reading, shown: nextReading(undefined, reading, { maxHold }), now: reading.at }));
+  let current = state;
+  if (state.from !== reading) {
+    current = { from: reading, shown: nextReading(state.shown, reading, { maxHold }), now: Math.max(state.now, reading.at) };
+    setState(current);
   }
-  const shown = followed.current.shown;
-  const [tick, redraw] = useReducer((n: number) => n + 1, 0);
-  const loop = useVisibleRaf(redraw, { target: box });
+  const { shown, now } = current;
+  const loop = useVisibleRaf(() => {
+    const t = performance.now();
+    setState((s) => (t > s.now ? { ...s, now: t } : s));
+  }, { target: box });
 
-  useEffect(() => after(wakeFor(shown, performance.now(), display, unit, locale), loop.request), [shown, display, unit, locale, loop, tick]);
+  useEffect(() => {
+    // Drawn as of `now`; time has gone by since, and the wait counts from what was drawn.
+    const since = performance.now() - now;
+    return after(Math.max(0, wakeFor(shown, now, display, unit, locale) - since), loop.request);
+  }, [shown, now, display, unit, locale, loop]);
 
   const widest = useRef(0);
   useLayoutEffect(() => {
@@ -65,7 +79,7 @@ export function LiveQuantity({ reading, display, unit, locale: localeProp, mute,
 
   return (
     <span ref={box} className={[s.live, className].filter(Boolean).join(' ')}>
-      <QuantityText value={tag(readingAt(shown, performance.now()), undefined, unit)} display={display} locale={locale} mute={mute} />
+      <QuantityText value={tag(readingAt(shown, now), undefined, unit)} display={display} locale={locale} mute={mute} />
     </span>
   );
 }
