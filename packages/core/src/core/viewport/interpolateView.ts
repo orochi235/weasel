@@ -32,7 +32,7 @@ function axisCurve(x0: number, s0: number, x1: number, s1: number): (t: number) 
     : (t: number) => Math.exp((1 - t) * lnRatio) * (Math.expm1(t * lnRatio) / Math.expm1(lnRatio));
   return (t) => ({
     x: lerp(x0, x1, fraction(t)),
-    s: t === 0 ? s0 : sign * Math.exp(lnS0 + t * lnRatio),
+    s: t === 0 ? s0 : t === 1 ? s1 : sign * Math.exp(lnS0 + t * lnRatio),
   });
 }
 
