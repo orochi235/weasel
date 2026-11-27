@@ -18,7 +18,7 @@ import { storybookShims } from './storybookShims.ts';
 import { invalidateVirtual, MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { titleStandIn } from './componentOf.ts';
 import { WATCH_PROBE, warnWhenWatchIsSilent } from './watchProbe.ts';
-import { watchRecovery } from './watchRecovery.ts';
+import { createFallbackWatchRecovery } from './watchRecovery.ts';
 import { settledWatch } from './watchSettle.ts';
 import { messageOf } from '../messageOf.ts';
 
@@ -95,7 +95,7 @@ function companions(options: ForgeOptions, files: () => Map<string, IndexEntry[]
   const readings = { controls: controls !== false, api: api !== false };
   const narrowed = typeof controls === 'object' ? controls : undefined;
   return [
-    watchRecovery(),
+    createFallbackWatchRecovery(),
     ...(shims === false ? [] : [storybookShims()]),
     ...(readings.controls || readings.api ? [propControls(storyFiles, fallbackOf, readings, narrowed, typedoc)] : []),
   ];

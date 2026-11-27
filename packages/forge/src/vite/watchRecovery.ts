@@ -2,7 +2,7 @@ import { statSync } from 'node:fs';
 import { isAbsolute, relative } from 'node:path';
 import { normalizePath, type Plugin, type ViteDevServer } from 'vite';
 
-/** The plugin's name; a server with two copies runs only the first. */
+/** The plugin's name; a server with two copies runs only the first, ahead of forge's own a config names one. */
 export const WATCH_RECOVERY = 'weasel-watch-recovery';
 
 /** Options for the `watchRecovery` vite plugin. */
@@ -17,6 +17,8 @@ export interface WatchRecoveryOptions {
 }
 
 const QUIET_MS = 2000;
+/** The copies `forge` adds of its own, which give way to one the config names. */
+const fallbacks = new WeakSet<Plugin>();
 // `@weasel-js/registry`'s LONGEST_TIMER_MS: vitest's config loads this file before any package is built.
 export const LONGEST_TIMER_MS = 2 ** 31 - 1;
 const STALE_READ_MS = 60_000;
@@ -112,7 +114,8 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
     name: WATCH_RECOVERY,
     apply: 'serve',
     configResolved(config) {
-      active = config.server.watch !== null && config.plugins.find((p) => p.name === WATCH_RECOVERY) === self;
+      const copies = config.plugins.filter((p) => p.name === WATCH_RECOVERY);
+      active = config.server.watch !== null && (copies.find((p) => !fallbacks.has(p)) ?? copies[0]) === self;
       const cacheDir = normalizePath(config.cacheDir) + '/';
       skipped = (file) => !isAbsolute(file) || file.includes('/node_modules/') || file.startsWith(cacheDir);
     },
@@ -174,4 +177,11 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
     },
   };
   return self;
+}
+
+/** A `watchRecovery()` with its defaults that runs only when the config names no copy of its own. */
+export function createFallbackWatchRecovery(): Plugin {
+  const plugin = watchRecovery();
+  fallbacks.add(plugin);
+  return plugin;
 }

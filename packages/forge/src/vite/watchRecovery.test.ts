@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createLogger, createServer, type HotPayload, type Plugin, type ViteDevServer } from 'vite';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { watchRecovery } from './watchRecovery';
+import { createFallbackWatchRecovery, watchRecovery } from './watchRecovery';
 
 /** The quiet check waits for silence, then runs every `QUIET_MS`; a loaded machine still gets there well inside this. */
 const PUSHED = { timeout: 10_000, interval: 20 };
@@ -124,6 +124,31 @@ describe('watchRecovery', () => {
     edit(join(root, 'part.ts'), 'export const part = 1;\n');
     expect(await get('/part.ts')).toContain('part = 1');
     expect(warnings).toHaveLength(1);
+  });
+});
+
+describe('watchRecovery copies', () => {
+  type Hook = (this: unknown, ...args: unknown[]) => void;
+  const hook = (h: unknown) => (typeof h === 'function' ? h : (h as { handler: unknown }).handler) as Hook;
+
+  /** Whether `plugin` serves, among `plugins`: only the copy that runs adds its middleware. */
+  const serves = (plugin: Plugin, plugins: Plugin[]) => {
+    const use = vi.fn();
+    hook(plugin.configResolved).call(undefined, { server: { watch: {} }, plugins, cacheDir: '/cache' });
+    hook(plugin.configureServer).call(undefined, { watcher: { on() {} }, middlewares: { use }, config: { base: '/' } });
+    return use.mock.calls.length > 0;
+  };
+
+  it("runs a config's own copy ahead of the one forge adds before it", () => {
+    const fallback = createFallbackWatchRecovery();
+    const own = watchRecovery({ quietMs: Infinity });
+    const plugins = [fallback, own];
+    expect([serves(fallback, plugins), serves(own, plugins)]).toEqual([false, true]);
+  });
+
+  it("runs forge's copy when the config names none", () => {
+    const fallback = createFallbackWatchRecovery();
+    expect(serves(fallback, [fallback])).toBe(true);
   });
 });
 
