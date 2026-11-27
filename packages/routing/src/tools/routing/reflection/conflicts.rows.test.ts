@@ -22,3 +22,18 @@ describe('findConflicts — duplicated `mod` bindings', () => {
     expect(c).toEqual([]);
   });
 });
+
+describe('findConflicts — drops whose MIME globs overlap', () => {
+  it('flags `image/*` against `image/png`', () => {
+    const c = findConflicts([tool('a', [bind({ kind: 'drop', types: ['image/*'] })]), tool('b', [bind({ kind: 'drop', types: ['image/png'] })])]);
+    expect(c.map((x) => x.ownerIds.join(','))).toEqual(['a,b']);
+  });
+
+  it('does not flag `image/*` against `text/plain`', () => {
+    expect(findConflicts([tool('a', [bind({ kind: 'drop', types: ['image/*'] })]), tool('b', [bind({ kind: 'drop', types: ['text/plain'] })])])).toEqual([]);
+  });
+
+  it('flags a `*` glob against an untyped drop', () => {
+    expect(findConflicts([tool('a', [bind({ kind: 'drop', types: ['*'] })]), tool('b', [bind({ kind: 'drop' })])])).toHaveLength(1);
+  });
+});

@@ -1,4 +1,4 @@
-import { CHORD_MODIFIERS, chordCodesFor, codeLetter, matchPhase, type PhaseSpec } from '@weasel-js/gestures';
+import { CHORD_MODIFIERS, chordCodesFor, codeLetter, matchPhase, mimeMatchesGlob, type PhaseSpec } from '@weasel-js/gestures';
 import { getOwn, identityKeyOf } from '@weasel-js/registry';
 import type { ParsedModifiers } from '../routeGrammar';
 import { VALID_MOD_NAMES } from '../routeGrammar';
@@ -70,6 +70,8 @@ export function viewsTie(
  *  `code` a key spec names, which fires it whatever key that press types, with the letter or digit that key bears,
  *  which a press of it types on a Latin layout and so meets a spec naming that key. */
 export function argKeysOf(entry: RegistryEntry): readonly string[] {
+  // MIME globs meet by overlap, not by name (`typesMeet`), so every ingest spec shares one arg.
+  if ('types' in entry.spec) return [''];
   const alts = entry.argAlternatives;
   const args = alts && alts.length > 0 ? [...new Set(alts.map((a) => a.toLowerCase()))] : [(entry.arg ?? '').toLowerCase()];
   const code = 'code' in entry.spec ? entry.spec.code : undefined;
@@ -86,6 +88,21 @@ export function chordArgsOf(entry: RegistryEntry): readonly string[] {
   if (entry.spec.kind !== 'key' && entry.spec.kind !== 'keyHeld') return [];
   const own = argKeysOf(entry);
   return [...new Set([entry.spec.key].flat().flatMap(chordCodesFor).map((c) => `code:${c}`))].filter((a) => !own.includes(a));
+}
+
+const typesOf = (e: RegistryEntry): readonly string[] =>
+  ('types' in e.spec && e.spec.types?.length ? e.spec.types : ['*']);
+
+/** Whether some MIME passes both entries' `types` globs, as `matchIngestTypes` reads them. True for
+ *  any spec without `types`. */
+export function typesMeet(e: RegistryEntry, f: RegistryEntry): boolean {
+  return typesOf(e).some((g) => typesOf(f).some((h) => globsMeet(g.toLowerCase(), h.toLowerCase())));
+}
+
+function globsMeet(g: string, h: string): boolean {
+  if (mimeMatchesGlob('', g) || mimeMatchesGlob('', h)) return true;
+  const major = (x: string): string => x.slice(0, x.indexOf('/') + 1);
+  return g.endsWith('/*') || h.endsWith('/*') ? major(g) === major(h) : g === h;
 }
 
 const phaseOf = (e: RegistryEntry): PhaseSpec | undefined => ('phase' in e.spec ? e.spec.phase : undefined);

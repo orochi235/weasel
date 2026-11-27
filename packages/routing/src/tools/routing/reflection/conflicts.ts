@@ -8,7 +8,7 @@ import { activeModeOf, DEFAULT_MODES, type ActiveMode } from '@weasel-js/modes';
 import { specificity } from '@weasel-js/gestures';
 import { ALWAYS, ruleCanHoldIn, rulesExclusive, type Rule } from '../../../eligibility';
 import { buildRouteRegistry, type RegistryEntry, type GestureName } from './registry';
-import { argKeysOf, chordArgsOf, modifierTieKeys, phasesTie, PLATFORMS, sameOutcome, targetKey, viewsTie, type Platform } from './conflictKeys';
+import { argKeysOf, chordArgsOf, modifierTieKeys, phasesTie, PLATFORMS, sameOutcome, targetKey, typesMeet, viewsTie, type Platform } from './conflictKeys';
 import { compositeKey, identityKeyOf } from '@weasel-js/registry';
 
 /** Two or more bindings declare the same exact (phase, gesture, arg, target,
@@ -82,9 +82,9 @@ function findConflictsKeyed(
   for (const entry of rows) {
     if (entry.gesture === 'hover') continue;
     // One bucket per arg the binding answers to, not one per display token:
-    // `key: ['h','H']` and `key: 'H'` really do collide, as do two `drop` specs
-    // whose MIME sets overlap without being equal. Modifiers bucket the same
-    // way, one per state the spec accepts, so an optional Shift meets a forbidden one.
+    // `key: ['h','H']` and `key: 'H'` really do collide. Modifiers bucket the same
+    // way, one per state the spec accepts, so an optional Shift meets a forbidden one. MIME globs share
+    // one arg and are compared pair by pair (`typesMeet`), since `image/*` meets `image/png`.
     // The matcher ranks by specificity before declaration order, so only equal ranks tie. Phases are
     // compared pair by pair (`phasesTie`), since whether two meet depends on whose channel each reads.
     const args = [...argKeysOf(entry).map((arg) => ({ arg, chord: false })), ...chordArgsOf(entry).map((arg) => ({ arg, chord: true }))];
@@ -103,7 +103,7 @@ function findConflictsKeyed(
   // Only actions carry a rule, so a tool's or contribution's bindings count as eligible always.
   const ruleOf = (entry: RegistryEntry): Rule => rules?.get(entry.ownerId) ?? ALWAYS;
   const tie = (e: RegistryEntry, f: RegistryEntry): boolean =>
-    viewsTie(e.views, f.views) && phasesTie(e, f) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
+    viewsTie(e.views, f.views) && phasesTie(e, f) && typesMeet(e, f) && rulesCanHoldTogether(ruleOf(e), ruleOf(f), modes);
   const conflicts: Conflicts = new Map();
   for (const { platform, members } of groups.values()) {
     // Members are in declaration order, and a pair led by a binding that yields is ordered on purpose.
