@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeTimeline, type MakeTimelineOptions } from './createTimeline.test-harness';
-import type { EventTrack, TimelineEvent, Track } from './types';
+import { createTimeline } from './createTimeline';
+import type { EventTrack, TimelineEvent, TimelineOptions, Track } from './types';
 
 const START = 5000;
 
@@ -267,6 +268,26 @@ describe('event booking across transport changes', () => {
     });
     r.frame(3010);
     expect(r.log.map((b) => b.label)).toEqual(['@3050']);
+  });
+
+  it('books the tracks an edit put in place of the options\' array, as it fires them', () => {
+    let now = START;
+    const log: Booked[] = [];
+    let tick: (v: number, s?: number) => boolean = () => true;
+    const opts: TimelineOptions = {
+      duration: 1000,
+      tracks: [{ kind: 'event', events: [bookingEvent(log, 200, 'old')] }],
+      booking: { clock: { now: () => now } },
+    };
+    const handle = createTimeline((seed) => {
+      tick = seed.tick;
+      return { id: seed.id, cancel() {}, pause() {}, resume() {}, setTimeScale() {}, timeScale: () => 1, isPaused: () => false };
+    }, 1, opts);
+    tick(0, 1);
+    handle.edit(() => { opts.tracks = [{ kind: 'event', events: [bookingEvent(log, 50, 'new')] }]; });
+    now = START + 10;
+    tick(10, 1);
+    expect(log.map((b) => b.label)).toEqual(['new']);
   });
 
   it('books a nested track moved back to where it was from the playhead on, not from where it left', () => {

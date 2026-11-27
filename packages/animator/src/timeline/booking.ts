@@ -28,7 +28,7 @@ export function firstAtOrAfter(events: EventTrack['events'], t: number): number 
 /** The timeline state a booker reads. `lap` counts wraps since creation and is
  *  never reset, so a (lap, root time) pair names one crossing for good. */
 export interface BookerHost {
-  tracks: Track[];
+  tracks(): Track[];
   duration(): number;
   /** Laps still allowed after the current one; `Infinity` when endless. */
   lapsLeft(): number;
@@ -189,7 +189,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const duration = host.duration();
       const lastLap = host.lap() + (duration > 0 ? host.lapsLeft() : 0);
       scanned = new Map();
-      visit(host.tracks, 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
+      visit(host.tracks(), 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
       cursors = scanned;
       const reached = playheadCursor();
       if (isAfter(reached, start)) start = reached;

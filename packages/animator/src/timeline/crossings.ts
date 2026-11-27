@@ -29,7 +29,7 @@ export function createCrossings(
   opts: TimelineOptions, pos: Playhead, report: TimelineReport | undefined, gone: () => boolean,
 ): Crossings {
   const booker = opts.booking ? createBooker(opts.booking, {
-    tracks: opts.tracks, duration: pos.duration, lapsLeft: pos.lapsLeft, lap: pos.lap, playhead: pos.time,
+    tracks: () => opts.tracks, duration: pos.duration, lapsLeft: pos.lapsLeft, lap: pos.lap, playhead: pos.time,
   }) : null;
   const events = createEventCursor(createEventFirer(report, booker !== null), gone);
   let rate = 0;
