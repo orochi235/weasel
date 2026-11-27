@@ -89,6 +89,17 @@ describe('Timeline key drags echoed through onInput', () => {
     expect(keysOf(out)).toEqual([{ t: 0, value: 0 }, { t: 640, value: 10 }]);
     expect((out[1] as EventTrack).events.map((e) => e.t)).toEqual([400]);
   });
+
+  it('keeps the key editor on a graphed key while its preview re-sorts it past a neighbor', () => {
+    const editor = ({ key }: KeyEditorCtx) => <span data-testid="edited">{key.t}</span>;
+    renderWithIcons(<Echo mode="graph" renderKeyEditor={editor} />);
+    const graphKey = (i: number) => document.querySelectorAll('[data-keyframe-index]')[i];
+    fireEvent.pointerDown(graphKey(0), { clientX: 0, clientY: 18.4, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 18.4, altKey: true });
+    expect(screen.getByTestId('edited')).toHaveTextContent('700');
+    fireEvent.pointerUp(document, { clientX: 350, clientY: 18.4, altKey: true });
+    expect(screen.getByTestId('edited')).toHaveTextContent('700');
+  });
 });
 
 describe('Timeline Delete on a lane away from its keys', () => {

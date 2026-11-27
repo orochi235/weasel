@@ -33,10 +33,10 @@ export interface LaneGraphProps {
   selectedSegment: number | null;
   onSelect: (keyIndex: number) => void;
   onSelectSegment?: (keyIndex: number) => void;
-  /** Live during a key drag. */
-  onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
-  /** Once per edit: a drag's end, a handle's release, a key press. */
-  onKeysChange: (keys: readonly Keyframe<number>[]) => void;
+  /** Live during a key drag, with the dragged key's index in `keys`; with none, the drag's preview is put back. */
+  onKeysInput?: (keys: readonly Keyframe<number>[], keyIndex?: number) => void;
+  /** Once per edit: a drag's end, a handle's release, a key press. `keyIndex` is the selected key's index in `keys`. */
+  onKeysChange: (keys: readonly Keyframe<number>[], keyIndex: number | null) => void;
   /** A key drag was canceled, after its preview was put back. */
   onCancel?: () => void;
   /** False: keys and segments still select, and nothing drags or steps. Default true. */
@@ -99,10 +99,10 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     // A handle drag writes a fresh easing spec per move; publishing those
     // would grow the consumer's easing cache by one entry per pixel.
     if (next.drag.kind !== 'key') return;
-    const applied = applyKeyframeDrag(next).keys;
-    if (applied === next.keys) return;
+    const applied = applyKeyframeDrag(next);
+    if (applied.keys === next.keys) return;
     previewed.current ??= prev.keys;
-    onKeysInput?.(applied);
+    onKeysInput?.(applied.keys, applied.selectedKey ?? undefined);
   };
 
   const onLayerCancel = (): void => {
@@ -119,7 +119,7 @@ export function LaneGraph(props: LaneGraphProps): ReactElement {
     if (edits && !deepEqual(next.keys, prev.keys)) {
       setLive(null);
       previewed.current = null;
-      onKeysChange(next.keys);
+      onKeysChange(next.keys, next.selectedKey);
     } else onLayerCancel();
   };
 

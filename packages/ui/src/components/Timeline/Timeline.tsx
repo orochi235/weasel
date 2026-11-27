@@ -227,8 +227,18 @@ function bindLaneEdits(tracks: readonly Track[], now: () => readonly Track[], tr
       if (keyTime(tracks, { trackPath, keyIndex }) === Math.max(0, toMs)) return;
       report.commit(moved(keyIndex, toMs));
     },
-    onKeysInput: (keys) => report.onInput?.(setKeys(tracks, trackPath, keys)),
-    onKeysChange: (keys) => report.onChange(setKeys(tracks, trackPath, keys)),
+    onKeysInput: (keys, keyIndex) => {
+      const next = setKeys(tracks, trackPath, keys);
+      report.preview(keyIndex === undefined ? null : { tracks: next, selection: { trackPath, keyIndex } });
+      report.onInput?.(next);
+    },
+    onKeysChange: (keys, keyIndex) => {
+      const next = setKeys(tracks, trackPath, keys);
+      if (keyIndex === null) {
+        report.preview(null);
+        report.onChange(next);
+      } else report.commit({ tracks: next, selection: { trackPath, keyIndex } });
+    },
     onInsert: (atMs) => {
       const r = insertKey(tracks, trackPath, atMs, seed);
       if (r.selection) report.commit(r);
