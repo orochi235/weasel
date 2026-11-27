@@ -14,7 +14,7 @@ import { actionShortcuts, bindingShortcuts } from '../interactions/actions/actio
 import { resolveParams } from '../interactions/actions/invoker';
 import { TOOL_OFFHAND_ID } from '../interactions/actions/toolOffhand';
 import { TOOL_ACTIVATE_ID, toolShortcutsOf } from './toolShortcuts';
-import { toolIdsOf, type ToolSet } from './toolSet';
+import { groupTitleFor, toolIdsOf, type ToolSet } from './toolSet';
 import type { AnyTool } from './types';
 
 /** One line of a sheet: what it is, and the keys that reach it. */
@@ -62,11 +62,6 @@ export interface DescribeShortcutsOptions {
 const NONE: readonly ShortcutInput[] = Object.freeze([]);
 const OTHER = 'other';
 
-/** A group id as a heading: `path-edit` reads `Path edit`. */
-function groupTitle(id: string): string {
-  const words = id.replace(/[-_.]+/g, ' ').trim();
-  return words.length === 0 ? id : words[0]!.toUpperCase() + words.slice(1);
-}
 
 function toolRow(id: string, tool: ShortcutTool, keys: readonly ShortcutInput[] | undefined): ShortcutRow {
   const icon = tool.presentation?.icon;
@@ -91,7 +86,7 @@ function describeTools(
   };
   for (const set of sets) {
     if (set.id === OTHER) throw new Error(`describeShortcuts: a tool set may not be named "${OTHER}", the group of tools in no set`);
-    take(set.id, set.label ?? groupTitle(set.id), toolIdsOf([set]));
+    take(set.id, set.label ?? groupTitleFor(set.id), toolIdsOf([set]));
   }
   take(OTHER, sets.length === 0 ? 'Tools' : 'Other tools', shown);
   return [...groups].filter(([, g]) => g.rows.length > 0).map(([id, g]) => ({ id, ...g }));
@@ -165,7 +160,7 @@ export function describeShortcuts(actions: readonly Action[], opts: DescribeShor
   if (other) commands.set(OTHER, other);
   return {
     tools: opts.tools ? describeTools(actions, tools, opts.toolSets ?? []) : [],
-    commands: [...commands].map(([id, rows]) => ({ id, label: id === OTHER ? 'Other' : groupTitle(id), rows })),
+    commands: [...commands].map(([id, rows]) => ({ id, label: id === OTHER ? 'Other' : groupTitleFor(id), rows })),
     held,
   };
 }
