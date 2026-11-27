@@ -16,7 +16,13 @@ describe('useViewportWithoutView', () => {
 
   it('warns for wheel navigation without the view preset', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    renderHook(() => useViewportWithoutView({ pan: false }, none));
+    renderHook(() => useViewportWithoutView({ pan: { axis: 'x' } }, none));
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not warn when viewport only switches navigation off', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    renderHook(() => useViewportWithoutView({ pan: false, zoom: false, touchZoom: false, edgePan: false }, none));
+    expect(warn).not.toHaveBeenCalled();
   });
 });
