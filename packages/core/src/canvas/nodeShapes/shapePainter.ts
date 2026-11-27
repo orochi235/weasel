@@ -10,7 +10,7 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { SHAPE_DEFAULTS } from 'domains/paths/shapeGenerator';
+import { SHAPE_DEFAULTS, shapeCountFor } from 'domains/paths/shapeGenerator';
 import { inkReach, inkStroke, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
@@ -107,13 +107,13 @@ export function pathForShape(
       const cx = p.x + p.width / 2;
       const cy = p.y + p.height / 2;
       const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
-      return regularPolygonPath({ x: cx, y: cy }, r, d.sides ?? SHAPE_DEFAULTS.sides);
+      return regularPolygonPath({ x: cx, y: cy }, r, shapeCountFor(d.sides, SHAPE_DEFAULTS.sides));
     }
     case 'star': {
       const cx = p.x + p.width / 2;
       const cy = p.y + p.height / 2;
       const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
-      return starPath({ x: cx, y: cy }, r, d.points ?? SHAPE_DEFAULTS.points);
+      return starPath({ x: cx, y: cy }, r, shapeCountFor(d.points, SHAPE_DEFAULTS.points));
     }
     case 'rect':
     default:

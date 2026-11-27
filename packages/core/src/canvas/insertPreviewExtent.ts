@@ -10,7 +10,7 @@
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { OngoingOverlay } from '@weasel-js/routing';
 import { boundsOfPath, regularPolygonPath, starPath, transformPath, type Affine, type Path, type Point, type Rect } from '@weasel-js/geom';
-import { SHAPE_DEFAULTS } from 'domains/paths/shapeGenerator';
+import { SHAPE_DEFAULTS, shapeCountFor } from 'domains/paths/shapeGenerator';
 
 /** The fields of an `insertPreview` overlay this needs. `canvas/deps/insert`
  *  passes the equivalent from its own `(bounds, extras)` commit arguments. */
@@ -103,7 +103,7 @@ function extentOf(ov: InsertPreviewLike): InsertPreviewExtent {
       }>;
       const center = e.center ?? { x: b.x + b.width / 2, y: b.y + b.height / 2 };
       const radius = e.radius ?? Math.min(b.width, b.height) / 2;
-      const sides = Math.max(3, Math.floor(e.sides ?? SHAPE_DEFAULTS.sides));
+      const sides = shapeCountFor(e.sides, SHAPE_DEFAULTS.sides);
       const rotation = e.rotation ?? 0;
       return {
         shape: ov.shape,
@@ -119,7 +119,7 @@ function extentOf(ov: InsertPreviewLike): InsertPreviewExtent {
       const center = e.center ?? { x: b.x + b.width / 2, y: b.y + b.height / 2 };
       const outerRadius = e.outerRadius ?? Math.min(b.width, b.height) / 2;
       const innerRadius = outerRadius * (e.innerRadiusRatio ?? SHAPE_DEFAULTS.innerRadiusRatio);
-      const points = Math.max(3, Math.floor(e.points ?? SHAPE_DEFAULTS.points));
+      const points = shapeCountFor(e.points, SHAPE_DEFAULTS.points);
       const rotation = e.rotation ?? 0;
       return {
         shape: ov.shape,
