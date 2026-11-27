@@ -142,6 +142,15 @@ describe('resolveToolRegistry', () => {
     expect(Object.keys(registry)).toEqual([]);
   });
 
+  it('says each patch warning once to a caller that keeps what it has said', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warned = new Set<string>();
+    const patch = { nope: true as const, star: tool('star') };
+    resolveToolRegistry({ ...args, defaultTools: OFFERED_IDS, patch, dev: true, warned });
+    resolveToolRegistry({ ...args, defaultTools: OFFERED_IDS, patch: { ...patch }, dev: true, warned });
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
   it('stays quiet outside dev', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     resolveToolRegistry({ ...args, defaultTools: OFFERED_IDS, patch: { nope: true, star: tool('star') }, dev: false });
