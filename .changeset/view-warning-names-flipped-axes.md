@@ -2,6 +2,6 @@
 "@weasel-js/core": patch
 ---
 
-The dev warning for an invalid view states the zoom rule as a magnitude of at least `ZOOM_FLOOR`, with a negative axis allowed as a flipped one.
+The invalid-view dev warning no longer says a zoom must be positive, since a negative axis is a flipped one.
 
 <!-- entry: fix -->
