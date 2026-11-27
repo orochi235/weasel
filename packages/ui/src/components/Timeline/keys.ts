@@ -50,6 +50,12 @@ function replaceAtPath(tracks: readonly Track[], path: readonly number[], next: 
   return out;
 }
 
+/** `onto` with its track at `path` taken from `from`: an edit to one track carried onto a list changed elsewhere since. */
+export function graftTrack(onto: readonly Track[], from: readonly Track[], path: readonly number[]): Track[] {
+  const next = trackAtPath(from, path);
+  return next && trackAtPath(onto, path) ? replaceAtPath(onto, path, next) : onto.slice();
+}
+
 /** The time of the key or event crossing `sel` addresses, in its track's own time. */
 export function keyTime(tracks: readonly Track[], sel: KeySelection): number | undefined {
   const track = trackAtPath(tracks, sel.trackPath);

@@ -41,10 +41,11 @@ export interface LaneProps {
   onKeyRevert?: () => void;
   /** Once, at the end of a dope-sheet gesture. */
   onKeyChange: (keyIndex: number, toMs: number) => void;
-  /** Live during a graph-mode key drag: the row's whole key list. */
-  onKeysInput?: (keys: readonly Keyframe<number>[]) => void;
-  /** Once per graph-mode edit: the row's whole key list. */
-  onKeysChange?: (keys: readonly Keyframe<number>[]) => void;
+  /** Live during a graph-mode key drag: the row's whole key list, and the dragged key's index in it, or none once the
+   *  drag's preview is put back. */
+  onKeysInput?: (keys: readonly Keyframe<number>[], keyIndex?: number) => void;
+  /** Once per graph-mode edit: the row's whole key list, and the selected key's index in it. */
+  onKeysChange?: (keys: readonly Keyframe<number>[], keyIndex: number | null) => void;
   /** A drag in either mode was canceled, after its preview was put back. */
   onCancel?: () => void;
   onInsert: (atMs: number) => void;
@@ -121,7 +122,7 @@ export function Lane(props: LaneProps): ReactElement {
             onSelect={onSelect}
             onSelectSegment={onSelectSegment}
             onKeysInput={hold.edits ? props.onKeysInput : undefined}
-            onKeysChange={(keys) => { if (hold.edits) props.onKeysChange?.(keys); }} onCancel={props.onCancel}
+            onKeysChange={(keys, keyIndex) => { if (hold.edits) props.onKeysChange?.(keys, keyIndex); }} onCancel={props.onCancel}
             edits={hold.edits}
             mark={mark}
           />
