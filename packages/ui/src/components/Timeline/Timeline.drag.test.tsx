@@ -40,3 +40,27 @@ describe('Timeline key drags snap only to stops the key can reach', () => {
   });
 
 });
+
+const plain = (): Track[] => ([
+  { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 500, value: 10 }], onTick: () => {} },
+  { kind: 'sampled', label: 'y', keys: [{ t: 100, value: 0 }], onTick: () => {} },
+] as Track[]);
+
+const keyTimes = (out: Track[], i = 0): number[] => (out[i] as SampledTrack<number>).keys.map((k) => k.t);
+
+describe('Timeline key drags under a hold that starts mid-drag', () => {
+  it.each([{ readOnly: true }, { disabled: true }])('%o cancels the drag, puts its preview back, and commits nothing', (held) => {
+    const calls = { onInput: vi.fn(), onChange: vi.fn(), onCancel: vi.fn() };
+    const tracks = plain();
+    const { rerender } = renderWithIcons(<Timeline {...base} tracks={tracks} {...calls} />);
+    fireEvent.pointerDown(screen.getAllByTestId('timeline-key')[1]!, { clientX: 250, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 350, clientY: 10 });
+    rerender(<Timeline {...base} tracks={tracks} {...calls} {...held} />);
+    fireEvent.pointerMove(document, { clientX: 400, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 400, clientY: 10 });
+    expect(calls.onChange).not.toHaveBeenCalled();
+    expect(calls.onCancel).toHaveBeenCalledTimes(1);
+    expect(keyTimes(calls.onInput.mock.calls.at(-1)![0] as Track[])).toEqual([0, 500]);
+    expect(screen.queryByTestId('timeline-key-ghost')).toBeNull();
+  });
+});
