@@ -1,4 +1,4 @@
-import { useCallback, useState, type ForwardedRef, type MutableRefObject } from 'react';
+import { useCallback, useRef, useState, type ForwardedRef, type MutableRefObject } from 'react';
 import { assignRef } from '@weasel-js/react';
 import type { ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import type { CanvasViewProps } from '../CanvasView';
@@ -15,13 +15,20 @@ export function useAddedViews(): {
 } {
   const surfaceViewRegistry = useOptionalViewRegistry();
   const [views, setViews] = useState<readonly CanvasViewProps[]>([]);
+  /** Each id's props as last added, so a handle a re-add replaced neither draws nor removes its successor. */
+  const owners = useRef(new Map<string, CanvasViewProps>());
   const addView = useCallback((props: CanvasViewProps): CanvasViewHandle => {
+    owners.current.set(props.id, props);
     setViews((list) => [...list.filter((v) => v.id !== props.id), props]);
     return {
       id: props.id,
-      draw: (data, outer, dims) =>
-        surfaceViewRegistry?.list().find((r) => r.id === props.id)?.layer.draw(data, outer, dims) ?? [],
-      remove: () => setViews((list) => list.filter((v) => v !== props)),
+      draw: (data, outer, dims) => (owners.current.get(props.id) === props
+        ? surfaceViewRegistry?.list().find((r) => r.id === props.id)?.layer.draw(data, outer, dims) ?? []
+        : []),
+      remove: () => {
+        if (owners.current.get(props.id) === props) owners.current.delete(props.id);
+        setViews((list) => list.filter((v) => v !== props));
+      },
     };
   }, [surfaceViewRegistry]);
   const viewAt = useCallback<SceneCanvasApi['viewAt']>((at, opts) => (
