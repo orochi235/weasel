@@ -110,7 +110,8 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
       h.hold.leave(h.opened!.target !== st.target);
       h.hold = null;
     }
-    const moved = h.t !== t || h.edit !== edit;
+    const edited = h.edit !== edit;
+    const moved = h.t !== t || edited;
     h.value = value;
     h.t = t;
     h.edit = edit;
@@ -123,7 +124,7 @@ export function createTrackSampler(open?: OpenTrackHold, gone: () => boolean = (
     } else if (where === 'before') {
       h.hold?.leave(false);
       h.hold = null;
-    } else if (h.where !== 'after') {
+    } else if (h.where !== 'after' || edited) {
       // Past its last key the move is made: the target keeps it, and is free for others to move.
       (h.hold ?? openOn(st, h)).leave(true);
       h.hold = null;

@@ -335,4 +335,18 @@ describe('one clock', () => {
     expect(plain).toEqual(sampled);
     expect(plain.slice(0, 2)).toEqual([20, 40]);
   });
+
+  it('shows and commits an edit of the last key the playhead has passed', () => {
+    const { animator, frame } = setup();
+    const b = box(7);
+    const track = ramp(b.target);
+    let tl!: TimelineHandle;
+    act(() => { tl = animator.timeline({ tracks: [track], duration: 200 }); });
+    frame(0);
+    frame(150);
+    expect(b.committed).toBe(100);
+    act(() => { tl.edit(() => { track.keys[1].value = 42; }); });
+    expect(b.committed).toBe(42);
+  });
+
 });
