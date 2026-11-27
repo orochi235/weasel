@@ -70,8 +70,11 @@ export function Lane(props: LaneProps): ReactElement {
   const { onSelect, onSelectSegment, onPressEmpty, toggleExpanded, mark } = gated(props, hold);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const times = rowTimes(row);
+  const refocusRef = useFocusFollowsKey(trackRef, selection);
+  // A drag can re-sort the key to another index, as an arrow step can.
+  const onDragEnd = (i: number, t: number): void => { refocusRef.current = true; onKeyChange(i, t); };
   const { drag, msAt, onKeyPointerDown } = useKeyDrag({
-    trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
+    trackRef, window: win, offset: row.offset, limit, snapTimes, times, onSelect, onKeyInput, onKeyChange: onDragEnd, onRevert: props.onKeyRevert, onCancel: props.onCancel, drags: hold.edits,
   });
   const pct = (ms: number): string => toPercent(win, ms + row.offset);
 
@@ -79,7 +82,6 @@ export function Lane(props: LaneProps): ReactElement {
   const graph = mode === 'graph' && row.numeric;
   const sampledKeys = row.kind === 'sampled' ? (row.track as SampledTrack<number>).keys : [];
 
-  const refocusRef = useFocusFollowsKey(trackRef, selection);
   const deletes = hold.edits && row.kind === 'sampled';
 
   const onKeyDown = markKeys({ edits: hold.edits, last: Math.max(0, limit - row.offset), onKeyChange, onSelect, refocus: refocusRef });
@@ -224,8 +226,8 @@ function AfterEnd({ end, win }: { end: number; win: TimeWindow }) {
   return <div aria-hidden="true" className={s.afterEnd} data-testid="timeline-after-end" style={{ left: toPercent(win, Math.max(end, win.from)), right: 0 }} />;
 }
 
-/** A keyboard move can re-sort the key to another index, and a delete selects another: set `refocus` and focus follows
- *  the selected key there once the lane renders. */
+/** A move can re-sort the key to another index, and a delete selects another: set `refocus` and focus follows the
+ *  selected key there once the lane renders. */
 function useFocusFollowsKey(trackRef: RefObject<HTMLDivElement | null>, selection: number | null) {
   const refocus = useRef(false);
   useEffect(() => {

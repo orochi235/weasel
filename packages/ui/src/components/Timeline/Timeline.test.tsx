@@ -231,6 +231,26 @@ describe('Timeline', () => {
     expect(document.activeElement).toBe(moved);
   });
 
+  it('keeps focus on a key that a pointer drag moves past its neighbor', () => {
+    function Host() {
+      const [value, setValue] = useState<Track[]>(() => [
+        { kind: 'sampled', label: 'x', keys: [{ t: 0, value: 0 }, { t: 400, value: 10 }], onTick: () => {} },
+      ] as Track[]);
+      return <Timeline {...base} tracks={value} onChange={setValue} />;
+    }
+    renderWithIcons(<Host />);
+    const first = screen.getAllByTestId('timeline-key')[0];
+    // A browser focuses the pressed mark; jsdom does not.
+    first.focus();
+    fireEvent.pointerDown(first, { clientX: 0, clientY: 10, button: 0 });
+    fireEvent.pointerMove(document, { clientX: 300, clientY: 10 });
+    fireEvent.pointerUp(document, { clientX: 300, clientY: 10 });
+    const moved = screen.getAllByTestId('timeline-key')[1];
+    expect(moved).toHaveAccessibleName(/600\s*ms/);
+    expect(moved).toHaveAttribute('aria-current', 'true');
+    expect(document.activeElement).toBe(moved);
+  });
+
   it('keeps focus on the key that is selected once Delete removes the focused one', () => {
     function Host() {
       const [value, setValue] = useState<Track[]>(() => [
