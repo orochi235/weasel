@@ -1,7 +1,7 @@
 import { readFileSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
 import type { ApiMember, ApiProp } from '../../story/api.ts';
 import type { ReadApi } from '../apiTable.ts';
+import { packageNameOf } from '../packageName.ts';
 import { indexProject, Kind, type TdIndex, type TdReflection, type TdType, type TypedocHref } from './json.ts';
 import { descriptionOf, type Linker, signatureText, tagOf, unfenced } from './print.ts';
 
@@ -90,25 +90,12 @@ function exportIn(index: TdIndex, name: string, file: string): TdReflection | un
   const best = Math.max(0, ...scored.map(({ suffix }) => suffix));
   const found = scored.filter(({ suffix }) => suffix === best).map(({ e }) => e);
   if (found.length <= 1) return found[0];
-  const pkg = packageNameOf(dirname(file));
+  const pkg = packageNameOf(file);
   const own = found.filter((e) => {
     const [outer] = index.exportOf.get(e.id)?.modules ?? [];
-    return pkg !== undefined && (outer === pkg || outer?.startsWith(`${pkg}/`));
+    return pkg !== null && (outer === pkg || outer?.startsWith(`${pkg}/`));
   });
   return own.length === 1 ? own[0] : undefined;
-}
-
-/** The name in the nearest `package.json` at or above `dir` that has one. */
-function packageNameOf(dir: string): string | undefined {
-  for (let at = dir; ; at = dirname(at)) {
-    try {
-      const { name } = JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')) as { name?: unknown };
-      if (typeof name === 'string') return name;
-    } catch {
-      // No manifest here, or one that does not parse: look further up.
-    }
-    if (dirname(at) === at) return undefined;
-  }
 }
 
 /** A function component's first parameter; a value's type, such as `forwardRef`'s exotic component. */
