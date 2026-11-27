@@ -1,0 +1,58 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: var(--wzl-space-3) var(--wzl-space-7);
+  margin: 0;
+}
+
+.row[data-justify='between'] { justify-content: space-between; }
+
+/* The figure above its word, though the word comes first in the markup for a screen reader. */
+.stat {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: flex-end;
+  min-width: 4ch;
+}
+
+/* Where any figure wears an accent bar, every figure keeps room for one, so the row's values line up. */
+.row[data-accented] > .stat {
+  padding-block-start: var(--wzl-space-1);
+  border-block-start: 4px solid var(--stat-accent, transparent);
+}
+
+.value {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
+  margin: 0;
+  font-size: calc(var(--wzl-font-size-xl) * 1.1);
+  font-weight: var(--wzl-font-weight-bold);
+  line-height: 1;
+}
+
+.estimate .value {
+  font-style: italic;
+  font-weight: var(--wzl-font-weight-normal);
+  color: var(--wzl-fg-muted);
+}
+
+.light .value,
+.clock .value { font-weight: var(--wzl-font-weight-light); }
+
+.clock .value {
+  min-width: 5ch;
+  text-align: end;
+}
+
+.label {
+  margin-block-start: var(--wzl-space-1);
+  font-size: var(--wzl-font-size-sm);
+  color: var(--wzl-fg-muted);
+}
+
+/* A word with a note in a tooltip: dotted underline, as a term with a definition. */
+.tipped {
+  text-decoration: underline dotted var(--wzl-fg-muted);
+  text-underline-offset: 3px;
+  cursor: default;
+}
