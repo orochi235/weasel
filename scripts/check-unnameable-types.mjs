@@ -24,6 +24,7 @@ import { join, relative, resolve as resolvePath, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
 import { buildGraph } from './build-workspaces.mjs';
+import { cli } from './lib/help.mjs';
 import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
 
 const ALLOW = join(repoRoot, 'scripts', 'check-unnameable-types.allow.json');
@@ -147,9 +148,17 @@ const builtFresh = (dir, manifest) => {
 };
 
 function main() {
-  const args = process.argv.slice(2);
-  const update = args.includes('--update');
-  const paths = args.filter((a) => !a.startsWith('--'));
+  const { values, positionals: paths } = cli(import.meta.url, {
+    summary:
+      "Fails when a package's built `.d.ts` entries name a type no entry of that package exports, past what check-unnameable-types.allow.json records, or when a recorded name is now exported or gone. Run after `npm run build`.",
+    positionals: '[<path>…]',
+    options: {
+      update: { type: 'boolean', description: 'drop allowlisted names that are now nameable or gone; never adds one' },
+      build: { type: 'boolean', description: 'build the packages holding <path>s first, and any sibling they need whose dist is stale' },
+    },
+    notes: 'With <path>s, only the published packages holding them are checked.',
+  });
+  const update = values.update === true;
   const seeding = update && !existsSync(ALLOW);
   const allow = existsSync(ALLOW) ? JSON.parse(readFileSync(ALLOW, 'utf8')) : {};
   const added = [];
@@ -163,7 +172,7 @@ function main() {
   // Packages not checked keep their allowlist entries as they are.
   const checked = new Set(packages.map(({ manifest }) => manifest.name));
   const next = Object.fromEntries(Object.entries(allow).filter(([name]) => !checked.has(name)));
-  if (args.includes('--build')) {
+  if (values.build) {
     const byName = new Map(all.map((w) => [w.manifest.name, w]));
     const graph = buildGraph(all.map(({ manifest }) => manifest));
     const fresh = (name) => builtFresh(byName.get(name).dir, byName.get(name).manifest);

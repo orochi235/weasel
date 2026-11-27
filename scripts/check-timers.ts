@@ -14,6 +14,7 @@ import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import ts from 'typescript';
 import { walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 export interface Offender {
   readonly file: string;
@@ -76,6 +77,10 @@ const isSource = (p: string): boolean =>
   !/(^|\/)(node_modules|dist|dist-examples|examples)\//.test(p);
 
 if (process.argv[1]?.endsWith('check-timers.ts')) {
+  cli(import.meta.url, {
+    summary:
+      'Fails on a setTimeout or setInterval in package or app source whose delay is not fixed in the source: wait with `after` from @weasel-js/registry, or allowlist the site in this script saying why its delay cannot reach 2^31 − 1 ms.',
+  });
   const root = join(import.meta.dirname, '..');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))]
     .map((p) => relative(root, p))

@@ -13,6 +13,15 @@ import { createRequire } from 'node:module';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ENTRY, SRC, engineFiles } from './check-engine-boundary.mjs';
+import { cli } from './lib/help.mjs';
+
+const { values } = cli(import.meta.url, {
+  summary:
+    "Writes packages/core/src/import-shims/engine.ts, the @weasel-js/core/engine entry: every export of core's main entry declared in an engine file, plus the host exports in HOST.",
+  options: {
+    check: { type: 'boolean', description: 'write nothing; fail when the entry is out of date' },
+  },
+});
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ts = createRequire(join(ROOT, 'package.json'))('typescript');
@@ -68,7 +77,7 @@ function generate() {
 }
 
 const text = generate();
-if (process.argv.includes('--check')) {
+if (values.check) {
   let current = '';
   try { current = readFileSync(OUT, 'utf8'); } catch {}
   if (current !== text) {

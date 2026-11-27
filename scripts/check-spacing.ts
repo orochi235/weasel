@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { blocks, lineAt, stripComments, varSpans, walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 /** px → rung. The ladder's own values, read from the generated tokens. */
 export function ladder(css: string): Map<number, string> {
@@ -58,6 +59,9 @@ export const isStylesheet = (p: string) =>
   /\.(css|less)$/.test(p) && !p.includes('.stories.') && !p.includes('/Foundations/');
 
 if (process.argv[1]?.endsWith('check-spacing.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on a gap, padding or margin written as a px literal the space ladder has a rung for: use var(--wzl-space-<n>).',
+  });
   const root = join(import.meta.dirname, '..');
   const rungs = ladder(readFileSync(join(root, 'packages/theme/src/generated/tokens.css'), 'utf8'));
   if (rungs.size === 0) throw new Error('no --wzl-space-<n> rungs in packages/theme/src/generated/tokens.css; run `npm run gen:tokens -w @weasel-js/theme`');

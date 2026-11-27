@@ -13,6 +13,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { cli } from './lib/help.mjs';
 
 export const CAPS = { lines: 400, fn: 120 };
 
@@ -69,7 +70,14 @@ export function verdict(size, allowed, caps) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
   const ALLOW = join(ROOT, 'scripts', 'check-size.allow.json');
-  const update = process.argv.includes('--update');
+  const { values } = cli(import.meta.url, {
+    summary:
+      'Fails on a package source file over 400 lines or a function over 120, past the ceiling scripts/check-size.allow.json records for it, and on an entry its file has shrunk below.',
+    options: {
+      update: { type: 'boolean', description: 'rewrite the allowlist, lowering entries to the files\' sizes; never raises one' },
+    },
+  });
+  const update = values.update === true;
   const seeding = update && !existsSync(ALLOW);
   const allow = existsSync(ALLOW) ? JSON.parse(readFileSync(ALLOW, 'utf8')) : {};
 

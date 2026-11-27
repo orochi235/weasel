@@ -13,6 +13,12 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { cli } from './lib/help.mjs';
+
+cli(import.meta.url, {
+  summary:
+    "Fails on a vitest file no project `npm test` runs collects, or on a project of `npm test`'s that CI or the fleet's .onto/tests leaves out. Prints which projects own each directory.",
+});
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 

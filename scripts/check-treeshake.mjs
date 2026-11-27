@@ -18,6 +18,12 @@ import { rolldown } from 'rolldown';
 import { build as esbuild } from 'esbuild';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from './lib/help.mjs';
+
+cli(import.meta.url, {
+  summary:
+    "Fails when importing one small symbol from the built @weasel-js/core ships more than a small budget, bundled with rolldown and with esbuild, or when a canvas pulls in a preset it wasn't given. Run after `npm run build`.",
+});
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 

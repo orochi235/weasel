@@ -12,6 +12,7 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { cli } from './lib/help.mjs';
 
 const ASSET = /\.(?![cm]?[jt]sx?$)\w+$/;
 
@@ -68,7 +69,12 @@ function declarations(dir) {
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  const dist = resolve(process.argv[2] ?? 'dist');
+  const { positionals } = cli(import.meta.url, {
+    summary:
+      'Writes the `.js` extension into every relative specifier of the `.d.ts` files under <dir> (default `dist`), after a package\'s declaration-only tsc, and drops side-effect asset imports.',
+    positionals: '[<dir>]',
+  });
+  const dist = resolve(positionals[0] ?? 'dist');
   const problems = [];
   let changed = 0;
   for (const file of declarations(dist)) {

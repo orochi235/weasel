@@ -14,6 +14,7 @@ import { existsSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import ts from 'typescript';
+import { cli } from './lib/help.mjs';
 import { PROTO_INDEX_MESSAGES, protoIndexAccess } from './lib/proto-index.mjs';
 
 /** Shipped source: each package's and app's `src`, less tests, benches, stories and fixtures. */
@@ -83,10 +84,22 @@ export function scan(root, filter = '') {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
   const LIST = join(ROOT, 'scripts', 'check-proto-index.pending.json');
-  const args = process.argv.slice(2);
+  const { values, positionals } = cli(import.meta.url, {
+    summary:
+      'Fails on a record[key] in shipped source that can reach Object.prototype, other than in the files check-proto-index.pending.json lists. That list only comes down.',
+    positionals: '[<path filter>]',
+    options: {
+      update: { type: 'boolean', description: 'rewrite the pending list without entries whose file is now clean or gone; never adds one' },
+      scan: { type: 'boolean', description: 'list every site, pending or not, in files whose path contains <path filter>' },
+    },
+  });
+  if (positionals.length > 0 && !values.scan) {
+    console.error('check:proto-index — a <path filter> goes with --scan');
+    process.exit(2);
+  }
 
-  if (args[0] === '--scan') {
-    const sites = scan(ROOT, args[1]);
+  if (values.scan) {
+    const sites = scan(ROOT, positionals[0]);
     let total = 0;
     for (const [rel, found] of [...sites].sort(([a], [b]) => a.localeCompare(b))) {
       for (const s of found) console.log(`${rel}:${s.line} ${s.access} ${s.text}`);
@@ -96,7 +109,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) 
     process.exit(0);
   }
 
-  const update = args.includes('--update');
+  const update = values.update;
   const pending = JSON.parse(readFileSync(LIST, 'utf8'));
   const { unlisted, keep, clean, gone } = verdict(pending, (rel) => existsSync(join(ROOT, rel)), scan(ROOT));
   let failed = false;

@@ -8,6 +8,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from './lib/help.mjs';
+
+cli(import.meta.url, {
+  summary:
+    "Writes the glyphs the README's package table marks each package with to docs/badges/, failing first when a color holds less than 3:1 against GitHub's light or dark background.",
+});
 
 const out = resolve(dirname(fileURLToPath(import.meta.url)), '../docs/badges');
 

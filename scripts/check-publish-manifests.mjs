@@ -7,7 +7,13 @@
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { cli } from './lib/help.mjs';
 import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
+
+cli(import.meta.url, {
+  summary:
+    "Fails when a publishable package's `exports`/`main`/`types` names a file `npm pack` would leave out of the tarball, its `files` lists one that isn't there, or its manifest would be rejected at publish. Run after a build.",
+});
 
 /** Every relative path a manifest promises a consumer can resolve, a wildcard subpath's target with its `*`. */
 function advertisedPaths(manifest) {

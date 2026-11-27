@@ -7,6 +7,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { cli } from './lib/help.mjs';
 import { SOURCE, reexportedNames, writtenNames } from './lib/imports.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -85,4 +86,10 @@ function main() {
   console.log('[reexported-deps] OK — no package depends on a sibling only for its re-exports.');
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) main();
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(import.meta.url, {
+    summary:
+      'Fails when a package depends on a sibling for nothing but names that sibling re-exports from another: depend on where the names come from instead.',
+  });
+  main();
+}
