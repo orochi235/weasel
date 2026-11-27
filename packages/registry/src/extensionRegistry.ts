@@ -165,6 +165,30 @@ function earlier(a: number | undefined, b: number | undefined): number | undefin
   return a === undefined ? b : b === undefined ? a : Math.min(a, b);
 }
 
+/** A registry's own listeners, so subscribing to it never shares a subscription a listener holds on its store or
+ *  its parent; it hears the store and the parent only while it has listeners, and calls `beforeParent` before
+ *  passing on a change of the parent. */
+function createChanges(store: Reflection<unknown>, parent: Reflection<unknown> | null, beforeParent: () => void) {
+  const changes = createEmitter();
+  const notify = (): void => { changes.emit(); };
+  let offUpstream: (() => void) | null = null;
+  const subscribe = (listener: () => void): (() => void) => {
+    if (changes.size === 0) {
+      const offStore = store.subscribe(notify);
+      const offParent = parent?.subscribe(() => { beforeParent(); notify(); });
+      offUpstream = () => { offStore(); offParent?.(); };
+    }
+    const off = changes.subscribe(listener);
+    return () => {
+      off();
+      if (changes.size > 0 || !offUpstream) return;
+      offUpstream();
+      offUpstream = null;
+    };
+  };
+  return { notify, subscribe };
+}
+
 /** Make an {@link ExtensionRegistry}: one per host that should keep its extensions to itself, or one
  *  shared by hosts that should not. */
 export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>): ExtensionRegistry<V> {
@@ -187,11 +211,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
     return earlier(mine, parentOrder?.(id));
   };
   let cached: { version: number; entries: readonly ReflectedEntry<V>[] } | null = null;
-  /** This registry's own listeners, so subscribing here never shares a subscription a listener holds on `own` or
-   *  the parent; it hears the store and the parent only while it has listeners. */
-  const changes = createEmitter();
-  const notify = (): void => { changes.emit(); };
-  let offUpstream: (() => void) | null = null;
+  const { notify, subscribe } = createChanges(store, parent, () => { leans?.settle(); });
   const leans = parent ? createLeans(parent, same, {
     take(id, lean) {
       held.set(id, lean.holding);
@@ -249,20 +269,7 @@ export function createExtensionRegistry<V>(options: ExtensionRegistryOptions<V>)
       cached = { version, entries: Object.freeze(all) };
       return cached.entries;
     },
-    subscribe(listener) {
-      if (changes.size === 0) {
-        const offStore = store.subscribe(notify);
-        const offParent = parent?.subscribe(() => { leans?.settle(); notify(); });
-        offUpstream = () => { offStore(); offParent?.(); };
-      }
-      const off = changes.subscribe(listener);
-      return () => {
-        off();
-        if (changes.size > 0 || !offUpstream) return;
-        offUpstream();
-        offUpstream = null;
-      };
-    },
+    subscribe,
     getVersion,
     register(id, value, opts = {}) {
       if (value === undefined) throw new TypeError(`${kind} "${id}" cannot be registered as undefined, which reads as no registration`);
