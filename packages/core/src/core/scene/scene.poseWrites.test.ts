@@ -93,6 +93,20 @@ describe('Scene.onPoseWrite', () => {
     expect(removed[0]!.children.map((c) => [c.node, c.pose])).toEqual([[expect.objectContaining({ id: k }), at(4)]]);
   });
 
+  it('reports how far a removed container and one it carries were scrolled', () => {
+    const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    const g = scene.add({ kind: 'group', layer: 'l', pose: at(0), data: null });
+    const h = scene.add({ kind: 'group', layer: 'l', parent: g, pose: at(4), data: null });
+    scene.scroll.set(g, { x: 0, y: 7 });
+    scene.scroll.set(h, { x: 3, y: 0 });
+    const removed: PoseRemoval<RectPose>[] = [];
+    scene.onPoseWrite((_w, r) => removed.push(...r));
+    scene.remove(g);
+    expect(removed[0]!.scroll).toEqual({ x: 0, y: 7 });
+    expect(removed[0]!.children[0]!.scroll).toEqual({ x: 3, y: 0 });
+    expect(scene.scroll.get(g)).toBeUndefined();
+  });
+
   it('reports an undone add as a removal by the undo, its children beneath it', () => {
     const scene = createScene<null, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
     let g!: NodeId;

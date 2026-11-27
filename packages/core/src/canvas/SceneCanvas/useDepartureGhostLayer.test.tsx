@@ -58,6 +58,20 @@ describe('useDepartureGhostLayer', () => {
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([130, 134]);
   });
 
+  it("draws a removed container's children moved by the scroll it had when it went", () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RECT_POSE_COMPOSITION });
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(100), data: null });
+    scene.scroll.set(p, { x: 20, y: 0 });
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: p, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = { ...removal(g, at(30), [{ node: k, pose: at(4), children: [] }]), scroll: { x: 2, y: 0 } };
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 1 }]),
+    }));
+    // p's own scroll is still in the store; g's rides on the removal.
+    expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([110, 112]);
+  });
+
   it("composes a ghost under an envelope, and an envelope ghost's children, in the envelope's parent's frame", () => {
     const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RECT_POSE_COMPOSITION });
     const p = scene.add({ kind: 'group', layer: 'main', pose: at(100), data: null });

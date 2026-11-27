@@ -4,6 +4,7 @@
  */
 import type { PoseRemoval, PoseWrite, RemovedNode } from './poseWrites';
 import type { NodeId } from './types';
+import type { ScrollOffset } from './composeFrame';
 
 interface Parented { id: NodeId; parent: NodeId | null }
 
@@ -34,6 +35,7 @@ interface Gone<TPose, TNode> {
   parent: NodeId | null;
   node: TNode;
   pose: TPose;
+  scroll: ScrollOffset | undefined;
   /** The pose it stored before this change, override left out. */
   before: TPose;
   children: Gone<TPose, TNode>[];
@@ -42,11 +44,11 @@ interface Gone<TPose, TNode> {
 }
 
 function asRemoved<TPose, TNode>(g: Gone<TPose, TNode>): RemovedNode<TPose, TNode> {
-  return { node: g.node, pose: g.pose, children: g.children.map(asRemoved) };
+  return { node: g.node, pose: g.pose, ...(g.scroll ? { scroll: g.scroll } : {}), children: g.children.map(asRemoved) };
 }
 
 export function createRemovalLog<TPose, TNode>(
-  shown: (id: NodeId) => { node: TNode; pose: TPose } | undefined,
+  shown: (id: NodeId) => { node: TNode; pose: TPose; scroll?: ScrollOffset } | undefined,
 ): RemovalLog<TPose, TNode> {
   /** Each removal's root, and every node removed, root or nested. */
   const roots = new Map<NodeId, Gone<TPose, TNode>>();
@@ -71,7 +73,7 @@ export function createRemovalLog<TPose, TNode>(
         const s = shown(n.id);
         if (!s) return null;
         const before = pending.get(n.id)?.from ?? stored.get(n.id) ?? s.pose;
-        const g: Gone<TPose, TNode> = { id: n.id, parent: n.parent, node: s.node, pose: s.pose, before, children: [], up: undefined, how };
+        const g: Gone<TPose, TNode> = { id: n.id, parent: n.parent, node: s.node, pose: s.pose, scroll: s.scroll, before, children: [], up: undefined, how };
         for (const c of under.get(n.id) ?? []) {
           const child = see(c);
           if (child) g.children.push(child);

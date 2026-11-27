@@ -8,7 +8,7 @@ import { useLatest } from '@weasel-js/react';
 import type { DrawCommand, GroupDrawCommand } from '@weasel-js/renderer';
 import type { RenderLayer } from 'core/layers/render';
 import { composeChildFrame, composesFrames, frameAtOrAbove, type PoseAdapter } from 'core/scene/composePose';
-import { viewPoseAdapter } from 'core/scene/scrollOffsets';
+import { scrolledFrames, viewPoseAdapter } from 'core/scene/scrollOffsets';
 import { definesFrame, effectivePose } from 'core/scene/effectivePose';
 import { hidesSubtree } from 'core/scene/nodeGates';
 import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
@@ -62,11 +62,13 @@ export function useDepartureGhostLayer<TData, TLayer extends string, TPose>(args
         const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;
         return parallax ? deriveParallaxView(view, parallax) : view;
       };
-      // As buildSceneTree folds: an envelope's children share its parent's frame.
+      // As buildSceneTree folds: an envelope's children share its parent's frame, and a frame's children
+      // sit in its pose moved by the scroll it had when it went.
+      const scrollBy = scrolledFrames(sc) === undefined ? undefined : sc.composition.scroll;
       const childFrameOf = (r: RemovedNode<TPose, Node<TData, TLayer, TPose>>, pose: TPose, parentFrame: TPose | null): TPose | null => {
         if (!composes) return null;
         if (!definesFrame(r.node)) return parentFrame;
-        return pose;
+        return r.scroll && scrollBy ? scrollBy(pose, r.scroll) : pose;
       };
       const draw = (
         r: RemovedNode<TPose, Node<TData, TLayer, TPose>>, pose: TPose, parentFrame: TPose | null,
