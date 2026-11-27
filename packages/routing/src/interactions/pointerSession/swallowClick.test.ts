@@ -25,6 +25,16 @@ describe('swallowClick', () => {
     expect(heard).toHaveBeenCalledTimes(1);
   });
 
+  it('stops the click reaching a capture listener added on the target after it', () => {
+    const { box, heard, click } = mount();
+    swallowClick(box);
+    const later = vi.fn();
+    box.addEventListener('click', later, { capture: true });
+    click();
+    expect(later).not.toHaveBeenCalled();
+    expect(heard).not.toHaveBeenCalled();
+  });
+
   it('keeps the default with keepDefault, and lets go when disarmed', () => {
     const { box, heard, click } = mount();
     swallowClick(box, { keepDefault: true });

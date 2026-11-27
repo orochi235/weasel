@@ -11,7 +11,7 @@ export interface SwallowClickOptions {
  */
 export function swallowClick(target: EventTarget, opts: SwallowClickOptions = {}): () => void {
   const swallow = (e: Event): void => {
-    e.stopPropagation();
+    e.stopImmediatePropagation();
     if (!opts.keepDefault) e.preventDefault();
   };
   target.addEventListener('click', swallow, { capture: true, once: true });
