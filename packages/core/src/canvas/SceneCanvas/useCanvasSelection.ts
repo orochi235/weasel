@@ -48,15 +48,15 @@ export function useCanvasSelection<TData, TLayer extends string, TPose>(args: {
   return selection;
 }
 
-/** Seed an empty `scene` with `initial`, once per scene: a scene that already holds a selection keeps it. In a
- *  layout effect, not during render, since the scene has other subscribers. */
+/** Seed an empty `scene` with the `initial` passed beside it, once per scene: a scene that already holds a selection
+ *  keeps it. In a layout effect, not during render, since the scene has other subscribers. */
 function useSeed(scene: Scene<unknown, string, unknown> | Scene<never, never, never>, initial: readonly NodeId[] | undefined): void {
-  const first = useRef(initial);
+  const latest = useLatest(initial);
   const seeded = useRef<unknown>(null);
   useLayoutEffect(() => {
     if (seeded.current === scene) return;
     seeded.current = scene;
-    const ids = first.current;
+    const ids = latest.current;
     if (ids && ids.length > 0 && scene.getSelection().length === 0) scene.setSelection([...ids]);
-  }, [scene]);
+  }, [scene, latest]);
 }
