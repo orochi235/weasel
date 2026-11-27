@@ -126,6 +126,53 @@ describe('readTypedoc in a project whose paths are relative to each package', ()
   });
 });
 
+describe('readTypedoc on a lone component', () => {
+  const text = (value: string) => ({ summary: [{ kind: 'text', text: value }] });
+  const lone = (fileName: string, props: TdReflection[]): TdReflection => ({
+    id: 0,
+    name: 'docs',
+    kind: 1,
+    children: [
+      {
+        id: 1,
+        name: 'Button',
+        variant: 'declaration',
+        kind: 64,
+        sources: [{ fileName }],
+        signatures: [
+          {
+            id: 2,
+            name: 'Button',
+            variant: 'signature',
+            kind: 4096,
+            parameters: [
+              {
+                id: 3,
+                name: 'props',
+                variant: 'param',
+                kind: 32768,
+                type: { type: 'reflection', declaration: { id: 4, name: '__type', variant: 'declaration', kind: 65536, children: props } },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+
+  it('documents a prop declared as a method from its signature\'s comment', () => {
+    const onSelect: TdReflection = {
+      id: 6,
+      name: 'onSelect',
+      variant: 'declaration',
+      kind: 2048,
+      signatures: [{ id: 7, name: 'onSelect', variant: 'signature', kind: 4096, comment: text('Called on a pick.') }],
+    };
+    const docs = readTypedoc(lone('src/Button.tsx', [onSelect]), 0).component('Button', '/repo/src/Button.tsx');
+    expect(docs?.props.get('onSelect')?.description).toBe('Called on a pick.');
+  });
+});
+
 describe('withTypedoc', () => {
   const live = (): ReadApi => ({
     props: [

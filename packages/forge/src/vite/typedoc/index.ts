@@ -60,7 +60,7 @@ export function readTypedoc(project: unknown, mtime: number, href?: TypedocHref)
       const page = target && href?.(target);
       return {
         ...(page ? { href: page } : {}),
-        props: new Map([...props].map(([key, prop]) => [key, entryDocs(prop, prop.comment, linker)])),
+        props: new Map([...props].map(([key, prop]) => [key, entryDocs(prop, commentOf(prop), linker)])),
         members: new Map([...members].map(([key, member]) => [key, memberDocs(member, linker)])),
       };
     },
@@ -171,6 +171,9 @@ function membersOf(index: TdIndex, type: TdType | undefined, members: Map<string
   collect(index, type, members, ignored, seen);
 }
 
+/** A prop's or member's comment: TypeDoc writes a method's on its first signature. */
+const commentOf = (entry: TdReflection): TdReflection['comment'] => entry.comment ?? entry.signatures?.[0]?.comment;
+
 function entryDocs(entry: TdReflection, comment: TdReflection['comment'], linker: Linker): EntryDocs {
   const docs: EntryDocs = {};
   const description = descriptionOf(comment, linker);
@@ -187,7 +190,7 @@ function entryDocs(entry: TdReflection, comment: TdReflection['comment'], linker
 function memberDocs(member: TdReflection, linker: Linker): MemberDocs {
   const signatures = member.kind === Kind.Method ? (member.signatures ?? []) : [];
   return {
-    ...entryDocs(member, member.comment ?? signatures[0]?.comment, linker),
+    ...entryDocs(member, commentOf(member), linker),
     signatures: signatures.map(signatureText),
   };
 }
