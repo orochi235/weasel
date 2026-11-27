@@ -255,6 +255,31 @@ describe('startThresholdDrag', () => {
     expect(onCancel).not.toHaveBeenCalled();
   });
 
+  it('delivers no move after onStart cancels the drag', () => {
+    const calls: string[] = [];
+    const handle = startThresholdDrag(makeStart() as unknown as React.PointerEvent, {
+      onStart: () => { calls.push('start'); handle.cancel(); },
+      onMove: () => { calls.push('move'); },
+      onEnd: () => { calls.push('end'); },
+      onCancel: () => { calls.push('cancel'); },
+    });
+    fireMove(200, 100);
+    fireMove(220, 100);
+    expect(calls).toEqual(['start', 'cancel']);
+  });
+
+  it('reports a cancel, not an end, when onStart cancels the drag its release started', () => {
+    const calls: string[] = [];
+    const handle = startThresholdDrag(makeStart() as unknown as React.PointerEvent, {
+      onStart: () => { calls.push('start'); handle.cancel(); },
+      onMove: () => { calls.push('move'); },
+      onEnd: () => { calls.push('end'); },
+      onCancel: () => { calls.push('cancel'); },
+    });
+    fireUp(200, 100);
+    expect(calls).toEqual(['start', 'cancel']);
+  });
+
   it('removes listeners after commit so a stray pointermove does nothing', () => {
     const start = makeStart(0, 0);
     const onMove = vi.fn();
