@@ -86,6 +86,11 @@ const YIELDS_TO: Readonly<Record<string, string>> = {
 let nextIdentity = 0;
 const identityOf = createPart((_action: Action): number => nextIdentity++);
 
+/** A key for `actions` that changes exactly when {@link useActionSet} re-registers them. */
+export function actionSetKeyOf(actions: readonly Action[]): string {
+  return actions.map(identityOf).join(' ');
+}
+
 /**
  * Register `actions` into the nearest `<ActionsProvider>`, in order, leaving
  * out the ids in `exclude`; a no-op without both an actions and a dep
@@ -100,7 +105,7 @@ export function useActionSet(actions: readonly Action[], exclude?: Iterable<stri
   const excluded = exclude ? [...exclude] : [];
   const excludedRef = useLatest(excluded);
   const excludeKey = compositeKey(excluded);
-  const actionsKey = actions.map(identityOf).join(' ');
+  const actionsKey = actionSetKeyOf(actions);
 
   useEffect(() => {
     if (!reg || !depReg) return;

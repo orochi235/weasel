@@ -8,7 +8,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
+import { actionSetKeyOf, useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
 import { inkBoxes } from 'canvas/inkBoxes';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type React from 'react';
@@ -152,7 +152,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   );
   useStandardDeps({ selection, scene, view, history: scene.history });
   useActionSet(standardActions);
-  const standardActionsKey = standardActions.map((a) => a.id).join('|');
+  const standardActionsKey = actionSetKeyOf(standardActions);
   // A view overlays `view` with its own camera; this name it leaves alone.
   useDepSource('rootView', () => view);
   useSurfaceDepSources(canvasRef, currentViewRef);

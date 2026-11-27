@@ -43,7 +43,7 @@ export function useViewportActions(args: {
   /** `true`/`false` toggles two-finger pinch zoom; an object sets its scale
    *  clamp (see {@link TouchZoomOptions}). */
   touchZoom: boolean | TouchZoomOptions;
-  /** Changes whenever the standard action set re-registers, which puts the
+  /** Changes whenever the standard action set re-registers (`actionSetKeyOf`), which puts the
    *  default pinch zoom back on top of a configured one. */
   rev?: string;
 }): void {
