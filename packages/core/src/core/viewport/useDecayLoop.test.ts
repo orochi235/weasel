@@ -314,4 +314,23 @@ describe('useDecayLoop', () => {
     act(() => { stepRAF(16); });
     expect(onTick).not.toHaveBeenCalled();
   });
+
+  it('calls the onEnd of a coast that cancel, a new start, or an unmount cuts short', () => {
+    const { result, unmount } = renderHook(() => useDecayLoop());
+    const fling = (onEnd: () => void) => act(() => {
+      result.current.start({ velocity: { vx: 1, vy: 0 }, friction: 0.9, minSpeed: 0.001, onTick: () => {}, onEnd });
+    });
+    const canceled = vi.fn();
+    fling(canceled);
+    act(() => { result.current.cancel(); });
+    expect(canceled).toHaveBeenCalledExactlyOnceWith('cancel');
+    const replaced = vi.fn();
+    fling(replaced);
+    fling(() => {});
+    expect(replaced).toHaveBeenCalledExactlyOnceWith('cancel');
+    const unmounted = vi.fn();
+    fling(unmounted);
+    unmount();
+    expect(unmounted).toHaveBeenCalledExactlyOnceWith('cancel');
+  });
 });

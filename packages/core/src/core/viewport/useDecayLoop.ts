@@ -48,7 +48,9 @@ export interface DecayLoopOptions {
    *  deltas from `initialPosition`. */
   position?: () => { x: number; y: number };
   onTick: (dx: number, dy: number) => void;
-  onEnd?: () => void;
+  /** Called once when the coast ends: `'end'` when it comes to rest, `'cancel'`
+   *  when `cancel`, a new `start`, or an unmount cuts it short. */
+  onEnd?: (reason: 'end' | 'cancel') => void;
 }
 
 /**
@@ -91,7 +93,7 @@ export function useDecayLoop() {
     viewBounds: PanBounds | undefined;
     boundary: 'stop' | 'bounce' | 'spring' | undefined;
     onTick: (dx: number, dy: number) => void;
-    onEnd?: () => void;
+    onEnd?: (reason: 'end' | 'cancel') => void;
   } | null>(null);
 
   const tick = useCallback((now: number, frameLoop: VisibleRaf) => {
@@ -112,7 +114,7 @@ export function useDecayLoop() {
     if (speed < s.minSpeed) {
       stateRef.current = null;
       frameLoop.cancel();
-      s.onEnd?.();
+      s.onEnd?.('end');
       return;
     }
     let dx = s.vx * dt;
@@ -145,8 +147,10 @@ export function useDecayLoop() {
   );
 
   const cancel = useCallback(() => {
+    const s = stateRef.current;
     frameLoop.cancel();
     stateRef.current = null;
+    s?.onEnd?.('cancel');
   }, [frameLoop]);
 
   const start = useCallback((config: DecayLoopOptions) => {
@@ -158,7 +162,7 @@ export function useDecayLoop() {
     const { velocity, friction = 0.92, minSpeed = 0.01, viewBounds, boundary, initialPosition, position, onTick, onEnd } = config;
     const speed = Math.hypot(velocity.vx, velocity.vy);
     // A non-finite velocity is a bad measurement, not a fling: friction never brings it down.
-    if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.(); return; }
+    if (!Number.isFinite(speed) || speed < minSpeed) { onEnd?.('end'); return; }
     stateRef.current = {
       vx: velocity.vx, vy: velocity.vy, friction, minSpeed, lastTime: null,
       posX: initialPosition?.x ?? 0, posY: initialPosition?.y ?? 0,
