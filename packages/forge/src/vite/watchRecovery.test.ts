@@ -137,6 +137,18 @@ describe('watchRecovery', () => {
     expect(pushed.map((p) => p.type)).not.toContain('full-reload');
   });
 
+  it('stops checking once a restarted server closes', async () => {
+    const { root, server, get, warnings } = await start([watchRecovery({ quietMs: QUIET_MS })], {
+      'part.ts': 'export const part = 0;\n',
+    });
+    await server.restart();
+    expect(await get('/part.ts')).toContain('part = 0');
+    await server.close();
+    edit(join(root, 'part.ts'), 'export const part = 1;\n');
+    await new Promise((done) => setTimeout(done, 1000));
+    expect(warnings).toEqual([]);
+  });
+
   it('recovers once when a server is given it twice', async () => {
     const { root, get, warnings } = await start([watchRecovery({ quietMs: 60_000 }), watchRecovery({ quietMs: 60_000 })], {
       'part.ts': 'export const part = 0;\n',

@@ -143,6 +143,13 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
     },
     configureServer(s) {
       if (!active) return;
+      // A restart builds the new server from these same plugin objects before it closes the old one.
+      clearInterval(timer);
+      timer = undefined;
+      stamps.clear();
+      fileOfUrl.clear();
+      suspects.clear();
+      lastEvent = 0;
       server = s;
       for (const event of ['add', 'change', 'unlink'] as const) {
         s.watcher.on(event, (path: string) => {
@@ -197,6 +204,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
       },
     },
     buildEnd() {
+      if (server && server.environments[this.environment.name] !== this.environment) return;
       clearInterval(timer);
     },
   };
