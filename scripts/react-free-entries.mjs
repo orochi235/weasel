@@ -27,6 +27,10 @@ export const REACT_FREE_ENTRIES = [
     why: 'atlas and face metrics and CSS family names, which diagram/layout measures with',
   },
   {
+    spec: '@weasel-js/font/sfnt',
+    why: 'unpacks a font collection before any parser runs, for a server or a build step',
+  },
+  {
     spec: '@weasel-js/diagram/layout',
     why: 'measurement, ranking, force and ports, for a server-side layout',
   },
