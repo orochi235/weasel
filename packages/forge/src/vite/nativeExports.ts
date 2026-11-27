@@ -1,6 +1,6 @@
 import type * as t from '@babel/types';
 import { getOwn } from './ownKeys.ts';
-import { type Bindings, calleeName, isLiteralValue, stringLiteral, type Wrappers } from './ast.ts';
+import { type Bindings, calleeName, isLiteralValue, patternNames, stringLiteral, type Wrappers } from './ast.ts';
 
 type Fn = t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration;
 
@@ -36,6 +36,8 @@ export interface Scope {
   wrappers: Wrappers;
   imports: ReadonlySet<string>;
   foreign?: Foreign;
+  /** Names a function being read binds itself, which shadow the file's and read as unknown. */
+  locals?: ReadonlySet<string>;
 }
 
 /** The statements `stmt` runs inside it whose `return`s are its function's. */
@@ -62,6 +64,45 @@ function innerStatements(stmt: t.Statement): t.Statement[] {
   }
 }
 
+/** The names `stmts` declare, through every statement that nests others but not inside a nested function. */
+function declaredIn(stmts: readonly t.Statement[]): string[] {
+  return stmts.flatMap((stmt): string[] => {
+    switch (stmt.type) {
+      case 'VariableDeclaration':
+        return stmt.declarations.flatMap((d) => patternNames(d.id));
+      case 'FunctionDeclaration':
+      case 'ClassDeclaration':
+        return stmt.id ? [stmt.id.name] : [];
+      case 'ForStatement':
+        return [...(stmt.init?.type === 'VariableDeclaration' ? declaredIn([stmt.init]) : []), ...declaredIn([stmt.body])];
+      case 'ForInStatement':
+      case 'ForOfStatement':
+        return [...(stmt.left.type === 'VariableDeclaration' ? declaredIn([stmt.left]) : []), ...declaredIn([stmt.body])];
+      case 'TryStatement':
+        return [...patternNames(stmt.handler?.param), ...declaredIn(innerStatements(stmt))];
+      default:
+        return declaredIn(innerStatements(stmt));
+    }
+  });
+}
+
+/** The names `fn` binds itself: its own name, its parameters, and what its body declares. */
+function namesBoundBy(fn: Fn): string[] {
+  const own = fn.type !== 'ArrowFunctionExpression' && fn.id ? [fn.id.name] : [];
+  const params = fn.params.flatMap((p) => patternNames(p));
+  return [...own, ...params, ...(fn.body.type === 'BlockStatement' ? declaredIn(fn.body.body) : [])];
+}
+
+/** `scope` inside `fn`, where each name `fn` binds hides the file's binding, forge callee, or import of that name. */
+function scopeInside(fn: Fn, scope: Scope): Scope {
+  const names = namesBoundBy(fn);
+  if (names.length === 0) return scope;
+  const locals = new Set([...(scope.locals ?? []), ...names]);
+  const bindings: Bindings = new Map([...scope.bindings].filter(([name]) => !locals.has(name)));
+  const wrappers = new Map([...scope.wrappers].filter(([name]) => !locals.has(name.split('.')[0] ?? name)));
+  return { ...scope, bindings, wrappers, locals };
+}
+
 /** Whether any `return` of `statements`, through every statement that nests others, may hand back a story; a bare `return` cannot. */
 function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: number): boolean {
   return statements.some((stmt) =>
@@ -72,7 +113,7 @@ function returnsStory(statements: readonly t.Statement[], scope: Scope, depth: n
 }
 
 const isGlobal = (node: t.Node, scope: Scope): boolean =>
-  node.type === 'Identifier' && !scope.bindings.has(node.name) && !scope.imports.has(node.name);
+  node.type === 'Identifier' && !scope.bindings.has(node.name) && !scope.imports.has(node.name) && !scope.locals?.has(node.name);
 
 /** `Object`'s methods that hand back the object they are given first. */
 const PASS_THROUGH = new Set(['freeze', 'seal', 'preventExtensions', 'defineProperty', 'defineProperties', 'setPrototypeOf']);
@@ -92,7 +133,8 @@ function objectCallSources(node: t.CallExpression, scope: Scope): readonly t.Nod
 }
 
 /** Whether calling `fn` may hand back a story. */
-export function mayReturnStory(fn: Fn, scope: Scope, depth = 0): boolean {
+export function mayReturnStory(fn: Fn, outer: Scope, depth = 0): boolean {
+  const scope = scopeInside(fn, outer);
   return fn.body.type === 'BlockStatement' ? returnsStory(fn.body.body, scope, depth + 1) : mayBeStory(fn.body, scope, depth + 1);
 }
 
@@ -119,6 +161,7 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
     case 'ParenthesizedExpression':
       return mayBeStory(node.expression, scope, depth + 1);
     case 'Identifier':
+      if (scope.locals?.has(node.name)) return true;
       return scope.bindings.has(node.name)
         ? mayBeStory(scope.bindings.get(node.name), scope, depth + 1)
         : (scope.foreign?.value(node.name) ?? true);
@@ -132,7 +175,7 @@ export function mayBeStory(node: t.Node | undefined, scope: Scope, depth = 0): b
       if (isFn(callee)) return mayReturnStory(callee, scope, depth);
       if (callee.type !== 'Identifier') return !isLiteralValue(callee, scope.bindings);
       if (scope.bindings.has(callee.name)) return mayCallStory(scope.bindings.get(callee.name), scope, depth);
-      return scope.foreign?.call(callee.name) ?? true;
+      return scope.locals?.has(callee.name) || (scope.foreign?.call(callee.name) ?? true);
     }
     case 'ConditionalExpression':
       return mayBeStory(node.consequent, scope, depth + 1) || mayBeStory(node.alternate, scope, depth + 1);

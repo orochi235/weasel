@@ -53,4 +53,17 @@ export const value = Object.defineProperty({ a: 1 }, 'x', { value: 1 });
     expect(names(code)).toEqual(['Defined', 'Described', 'Reparented', 'Computed']);
   });
 
+  it('reads a name a function binds itself as unknown, not as the top-level one it shadows', () => {
+    const code = `
+const s = { a: 1 };
+const keep = (s: unknown) => s;
+const local = (x: unknown) => { const s = x; return s; };
+const call = (meta: () => unknown) => meta();
+export const Param = keep(story({ render: () => null }));
+export const Local = local(story({ render: () => null }));
+export const Called = call(() => story({ render: () => null }));
+`;
+    expect(names(code)).toEqual(['Param', 'Local', 'Called']);
+  });
+
 });
