@@ -114,10 +114,15 @@ function scrollersOf(el: Element): Scroller[] {
   }
 }
 
-/** A scroller that moves what it holds by its own scroll offset. */
+/** A scroller that moves what it holds by its own scroll offset. The root's is the page's, which the document's
+ *  scrolling element reports: in quirks mode that is the body, whose own box then scrolls nothing. */
 function scrollerOf(el: Element): Scroller {
+  const doc = el.ownerDocument;
+  const page = doc.scrollingElement ?? doc.documentElement;
+  if (el === page && el !== doc.documentElement) return { moved: () => ({ x: 0, y: 0 }) };
+  const from = el === doc.documentElement ? page : el;
   const scale = el instanceof HTMLElement ? clientScaleOf(el) : { x: 1, y: 1 };
-  return { moved: () => ({ x: el.scrollLeft * scale.x, y: el.scrollTop * scale.y }) };
+  return { moved: () => ({ x: from.scrollLeft * scale.x, y: from.scrollTop * scale.y }) };
 }
 
 /** The scroller `box`, positioned sticky, sticks in. On an axis with an inset the box rides the scroll only until it
