@@ -82,4 +82,14 @@ describe('sceneNodeClientRect — framed bounds and far-out boxes', () => {
     expect(rect.width).toBeCloseTo(10);
     expect(rect.height).toBeCloseTo(100);
   });
+
+  it('keeps a box\'s width far from the world origin', () => {
+    const rect = sceneNodeClientRect({
+      id: 'far',
+      getWorldBounds: () => ({ x: 1e17, y: 1e17, width: 4, height: 2 }),
+      view: { x: 1e17, y: 1e17, scale: { x: 3, y: 3 } },
+      canvas,
+    });
+    expect(rect).toEqual({ x: 0, y: 0, width: 12, height: 6 });
+  });
 });

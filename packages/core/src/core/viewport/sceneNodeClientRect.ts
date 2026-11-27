@@ -36,7 +36,9 @@ export function sceneNodeClientRect(opts: SceneNodeClientRectOptions): NodeClien
   if (found === null) return null;
   const bounds = poseFrameOf(found) ? axisAlignedBounds(found) : found;
   const { x: x0, y: y0 } = viewWorldToScreen(opts.view, bounds);
-  const { x: x1, y: y1 } = viewWorldToScreen(opts.view, { x: bounds.x + bounds.width, y: bounds.y + bounds.height });
+  // The extent is scaled on its own: far from the origin, x + width can round away the width.
+  const x1 = x0 + bounds.width * opts.view.scale.x;
+  const y1 = y0 + bounds.height * opts.view.scale.y;
   // Through the canvas's own scale, which an ancestor transform sets.
   const [cx0, cy0] = canvasToClient(opts.canvas, x0, y0);
   const [cx1, cy1] = canvasToClient(opts.canvas, x1, y1);
