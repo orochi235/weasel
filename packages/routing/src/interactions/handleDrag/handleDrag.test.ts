@@ -30,6 +30,12 @@ function mockRect(el: Element, rect: { left: number; top: number; width?: number
     }) as DOMRect;
 }
 
+/** Give `el` the layout offset a sticky box reports: where it sits in flow plus how far sticking pushed it. */
+function offsetAt(el: HTMLElement, top: () => number, left: () => number = () => 0) {
+  Object.defineProperty(el, 'offsetTop', { configurable: true, get: top });
+  Object.defineProperty(el, 'offsetLeft', { configurable: true, get: left });
+}
+
 /** A handle mounted in the document with a rect at the origin. */
 function mount(): HTMLDivElement {
   const target = document.createElement('div');
@@ -422,10 +428,33 @@ describe('useHandleDrag — callbacks from a later render', () => {
     target.style.position = 'sticky';
     target.style.top = '0';
     scroller.appendChild(target);
+    offsetAt(target, () => scroller.scrollTop);
     result.current.onPointerDown(press(target, 10, 10));
     scroller.scrollTop = 30;
     target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
     expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 10 });
+    scroller.remove();
+  });
+
+  it('keeps a sticky handle that its own drag moves from shifting the space it reports in', () => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const scroller = document.createElement('div');
+    scroller.style.overflow = 'auto';
+    document.body.appendChild(scroller);
+    const target = mount();
+    target.style.position = 'sticky';
+    target.style.top = '0';
+    scroller.appendChild(target);
+    let dragged = 0;
+    // Stuck at the scroller's top, and translated by the drag.
+    target.getBoundingClientRect = () => ({ left: 0, top: dragged, right: 100, bottom: 100 + dragged, width: 100, height: 100, x: 0, y: dragged, toJSON: () => ({}) });
+    offsetAt(target, () => scroller.scrollTop);
+    result.current.onPointerDown(press(target, 10, 10));
+    scroller.scrollTop = 30;
+    dragged = 20;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 30 }));
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 30 });
     scroller.remove();
   });
 
@@ -442,6 +471,7 @@ describe('useHandleDrag — callbacks from a later render', () => {
     target.style.position = 'sticky';
     target.style.top = '0';
     clipper.appendChild(target);
+    offsetAt(target, () => scroller.scrollTop);
     result.current.onPointerDown(press(target, 10, 10));
     scroller.scrollTop = 30;
     target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
@@ -459,6 +489,7 @@ describe('useHandleDrag — callbacks from a later render', () => {
     target.style.position = 'sticky';
     target.style.top = '0';
     scroller.appendChild(target);
+    offsetAt(target, () => scroller.scrollTop);
     result.current.onPointerDown(press(target, 10, 10));
     scroller.scrollLeft = 20;
     scroller.scrollTop = 30;
@@ -502,6 +533,7 @@ describe('useHandleDrag — callbacks from a later render', () => {
       const top = Math.max(0, 100 - root.scrollTop);
       return { left: 0, top, right: 100, bottom: top + 100, width: 100, height: 100, x: 0, y: top, toJSON: () => ({}) };
     };
+    offsetAt(target, () => Math.max(100, root.scrollTop));
     result.current.onPointerDown(press(target, 10, 110));
     root.scrollTop = 50;
     target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 110 }));

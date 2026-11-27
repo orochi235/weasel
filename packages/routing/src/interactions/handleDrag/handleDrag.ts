@@ -113,21 +113,38 @@ function scrollerOf(el: Element): Scroller {
 }
 
 /** The scroller `box`, positioned sticky, sticks in. On an axis with an inset the box rides the scroll only until it
- *  sticks, so there what it moved is read off where it sits in the scroller; on the others it rides the scroll. */
+ *  sticks, so there what it moved is the scroll less how far sticking pushed it back; on the others it rides it. */
 function stickyScrollerOf(box: Element, scroller: Element, style: CSSStyleDeclaration | undefined): Scroller {
   const inset = (a: string, b: string) => !!style && [a, b].some((side) => !['', 'auto'].includes(style.getPropertyValue(side)));
   const stuckX = inset('left', 'right');
   const stuckY = inset('top', 'bottom');
   const scroll = scrollerOf(scroller);
+  const stuck = stuckOffsetOf(box, scroller);
   return {
     moved: () => {
       const s = scroll.moved();
       if (!stuckX && !stuckY) return s;
-      const b = box.getBoundingClientRect();
-      // The root's own box scrolls with the page; a box stuck to the viewport sticks to the viewport's edge.
-      const p = scroller === scroller.ownerDocument.documentElement ? { left: 0, top: 0 } : scroller.getBoundingClientRect();
-      return { x: stuckX ? p.left - b.left : s.x, y: stuckY ? p.top - b.top : s.y };
+      const o = stuck(s);
+      return { x: stuckX ? s.x - o.x : s.x, y: stuckY ? s.y - o.y : s.y };
     },
+  };
+}
+
+/** How far sticking has pushed `box` along, in client px and up to a constant, given the scroll `s` it sticks in. An
+ *  HTML box reads it off its offset, which its own transform leaves alone, since the box is often the handle the drag
+ *  moves; another reads its rect against the scroller's. */
+function stuckOffsetOf(box: Element, scroller: Element): (s: { x: number; y: number }) => { x: number; y: number } {
+  const el = box as Partial<HTMLElement>;
+  if (typeof el.offsetTop === 'number' && typeof el.offsetLeft === 'number') {
+    const scale = clientScaleOf(box);
+    return () => ({ x: el.offsetLeft! * scale.x, y: el.offsetTop! * scale.y });
+  }
+  // The root's own box scrolls with the page; a box stuck to the viewport sticks to the viewport's edge.
+  const viewport = scroller === scroller.ownerDocument.documentElement;
+  return (s) => {
+    const b = box.getBoundingClientRect();
+    const p = viewport ? { left: 0, top: 0 } : scroller.getBoundingClientRect();
+    return { x: s.x + b.left - p.left, y: s.y + b.top - p.top };
   };
 }
 
