@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useHandleDrag } from './handleDrag';
 
@@ -618,6 +618,57 @@ describe('useHandleDrag — callbacks from a later render', () => {
     target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
     expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 30 });
     holder.remove();
+  });
+
+  it.each([
+    ['filter', 'grayscale(1)'],
+    ['backdrop-filter', 'blur(2px)'],
+    ['will-change', 'filter'],
+  ])('leaves out the page scroll under a root whose %s: %s holds no fixed box', (prop, value) => {
+    const onMove = vi.fn();
+    const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+    const root = document.documentElement;
+    root.style.setProperty(prop, value);
+    const target = mount();
+    target.style.position = 'fixed';
+    result.current.onPointerDown(press(target, 10, 10));
+    root.scrollTop = 20;
+    target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+    root.scrollTop = 0;
+    root.style.removeProperty(prop);
+    expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 10 });
+  });
+
+  describe('in quirks mode, where the body scrolls the page', () => {
+    const body = document.body;
+    beforeEach(() => {
+      Object.defineProperty(document, 'scrollingElement', { configurable: true, get: () => body });
+    });
+    afterEach(() => {
+      Reflect.deleteProperty(document, 'scrollingElement');
+      body.scrollTop = 0;
+    });
+
+    it('counts the page scroll under an absolute rect held by the initial containing block', () => {
+      const onMove = vi.fn();
+      const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+      const target = mount();
+      target.style.position = 'absolute';
+      result.current.onPointerDown(press(target, 10, 10));
+      body.scrollTop = 20;
+      target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+      expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 30 });
+    });
+
+    it('counts the page scroll once under a rect in flow', () => {
+      const onMove = vi.fn();
+      const { result } = renderHook(() => useHandleDrag<HTMLDivElement>({ onMove }));
+      const target = mount();
+      result.current.onPointerDown(press(target, 10, 10));
+      body.scrollTop = 20;
+      target.dispatchEvent(makePointerEvent('pointermove', { clientX: 10, clientY: 10 }));
+      expect(onMove.mock.calls[0]![0]).toEqual({ x: 10, y: 30 });
+    });
   });
 
   it('leaves out a scroll between an absolute rect and its containing block, which does not move it', () => {
