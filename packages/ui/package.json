@@ -57,7 +57,7 @@
     "table": "./dist/icons.table.json"
   },
   "dependencies": {
-    "@msb235/blits": "1.5.3",
+    "@msb235/blits": "1.6.0",
     "@weasel-js/clock": "2.0.0",
     "@weasel-js/font": "2.0.0",
     "@weasel-js/geom": "2.0.0",

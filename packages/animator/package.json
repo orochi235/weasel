@@ -63,6 +63,6 @@
     "provenance": true
   },
   "devDependencies": {
-    "@msb235/blits": "1.5.3"
+    "@msb235/blits": "1.6.0"
   }
 }
