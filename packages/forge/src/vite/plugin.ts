@@ -1,5 +1,5 @@
 import { resolve } from 'node:path';
-import { posixResolve } from './posixPath.ts';
+import { posixRelative, posixResolve } from './posixPath.ts';
 import type { EnvironmentModuleNode, Logger, Plugin, ViteDevServer } from 'vite';
 import { getOwn } from './ownKeys.ts';
 import type { IndexEntry } from '../story/types.ts';
@@ -14,6 +14,7 @@ import { serveIssues } from './issues/endpoint.ts';
 import { servePages } from './servePages.ts';
 import { readShellFields } from './shellTitle.ts';
 import { createStoryIndex } from './storyIndex.ts';
+import { globBase } from './storyGlob.ts';
 import { storybookShims } from './storybookShims.ts';
 import { invalidateVirtual, MODULES, PREFIX, virtualModules } from './virtualModules.ts';
 import { titleStandIn } from './componentOf.ts';
@@ -60,6 +61,7 @@ const READS_INDEX: ReadonlySet<string> = new Set(['index.js', 'importers.js', 'd
 
 interface SourceWatch {
   files: readonly string[];
+  stories: readonly string[];
   componentGraph: () => ComponentGraphBuilder;
   reindex: (server: ViteDevServer, file: string, event: 'add' | 'change' | 'unlink') => Promise<boolean>;
   redeps: (server: ViteDevServer) => void;
@@ -67,8 +69,11 @@ interface SourceWatch {
 }
 
 /** Watches the story files and everything they import, reindexing a changed story and pushing new deps. */
-function watchSources(server: ViteDevServer, { files, componentGraph, reindex, redeps, logError }: SourceWatch): void {
-  server.watcher.add([...files]);
+function watchSources(server: ViteDevServer, { files, stories, componentGraph, reindex, redeps, logError }: SourceWatch): void {
+  // vite watches only its root, and a story added under a glob's directory outside it must still be reported.
+  const { root } = server.config;
+  const outside = stories.map((pattern) => resolve(root, globBase(pattern))).filter((dir) => /^\.\.(\/|$)/.test(posixRelative(root, dir)));
+  server.watcher.add([...files, ...outside]);
   if (!server.config.plugins.some((p) => p.name === WATCH_PROBE)) void warnWhenWatchIsSilent(server);
   for (const event of ['add', 'change', 'unlink'] as const) {
     server.watcher.on(event, (path) => {
@@ -194,7 +199,7 @@ export function forge(options: ForgeOptions): Plugin[] {
         for (const file of storiesReaching(modules, files())) server.ws.send({ type: 'custom', event: 'forge:story', data: { file } });
       },
       configureServer(server) {
-        watchSources(server, { files: [...files().keys()], componentGraph: deps.componentGraph, reindex, redeps: deps.redeps, logError });
+        watchSources(server, { files: [...files().keys()], stories: options.stories, componentGraph: deps.componentGraph, reindex, redeps: deps.redeps, logError });
         capture = servePages(server, base, () => shellUnder(root));
         serveIssues(server, base, () => root);
       },
