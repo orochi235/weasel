@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useViewAnimation, type ViewChannel } from './useViewAnimation';
+import { useViewAnimation, useViewAnimationOn, type ViewChannel } from './useViewAnimation';
 import { useAnimator } from '@weasel-js/animator/react';
 import { linear } from '@weasel-js/geom';
 import type { View } from './view';
@@ -45,5 +45,41 @@ describe('useViewAnimation lifecycle', () => {
     const at = current().x;
     act(() => { clock.advance(100); });
     expect(current().x).toBe(at);
+  });
+
+  it('stops and reports a move started on an animator it has since been handed a replacement for', () => {
+    const clock = makeClock();
+    const { channel, current } = makeChannel(HOME);
+    const { result, rerender } = renderHook(({ second }: { second: boolean }) => {
+      const a = useAnimator(clock);
+      const b = useAnimator(clock);
+      return useViewAnimationOn(channel, second ? b : a);
+    }, { initialProps: { second: false } });
+    act(() => { result.current.animate(RIGHT, { ms: 200, easing: linear }); });
+    act(() => { clock.advance(50); });
+    rerender({ second: true });
+    expect(result.current.isAnimating()).toBe(true);
+    expect(result.current.target()).toEqual(RIGHT);
+    act(() => { result.current.stop(); });
+    expect(result.current.isAnimating()).toBe(false);
+    const at = current().x;
+    act(() => { clock.advance(100); });
+    expect(current().x).toBe(at);
+  });
+
+  it('cancels a move on the replaced animator when the next one starts on the new', () => {
+    const clock = makeClock();
+    const { channel, current } = makeChannel(HOME);
+    const { result, rerender } = renderHook(({ second }: { second: boolean }) => {
+      const a = useAnimator(clock);
+      const b = useAnimator(clock);
+      return useViewAnimationOn(channel, second ? b : a);
+    }, { initialProps: { second: false } });
+    act(() => { result.current.animate(RIGHT, { ms: 200, easing: linear }); });
+    act(() => { clock.advance(50); });
+    rerender({ second: true });
+    act(() => { result.current.animate(HOME, { ms: 200, easing: linear }); });
+    act(() => { clock.advance(400); });
+    expect(current()).toEqual(HOME);
   });
 });

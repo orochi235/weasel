@@ -157,11 +157,14 @@ function createViewAnimation(
     },
   });
 
-  const isAnimating = () => animatorRef.current.isActive(key);
+  /** The animator this runner's own animation was started on, which a later render may have replaced. */
+  let runningOn: Animator | null = null;
+  const isAnimating = () => runningOn?.isActive(key) ?? false;
   const target = () => (isAnimating() ? targetRef.current : null);
   /** Cancels this runner's animation; whatever else moves the view goes on from where it was. */
   const cancel = (): void => {
-    animatorRef.current.cancelKey(key);
+    runningOn?.cancelKey(key);
+    runningOn = null;
     targetRef.current = null;
   };
   const stop = () => {
@@ -171,8 +174,10 @@ function createViewAnimation(
 
   const animate: ViewAnimationApi['animate'] = (to, opts = {}) => {
     const resolved = normalizeView(typeof to === 'function' ? to(target() ?? base()) : to);
+    if (runningOn !== animatorRef.current) cancel();
+    runningOn = animatorRef.current;
     targetRef.current = resolved;
-    animatorRef.current.tween<View>({
+    runningOn.tween<View>({
       target: viewTarget,
       to: resolved,
       ms: opts.ms ?? msRef.current,
