@@ -96,7 +96,8 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
         if (stmt.exportKind !== 'type') stars.push(stmt.source.value);
         break;
       case 'ExportDefaultDeclaration': {
-        const decl = stmt.declaration;
+        const decl = stmt.declaration as t.ExportDefaultDeclaration['declaration'] | t.TSInterfaceDeclaration;
+        if (decl.type === 'TSInterfaceDeclaration' || decl.type === 'TSDeclareFunction') break;
         const named = (decl.type === 'FunctionDeclaration' || decl.type === 'ClassDeclaration') && decl.id ? decl.id.name : null;
         if (named) declare(named, decl);
         else if (decl.type === 'Identifier') {

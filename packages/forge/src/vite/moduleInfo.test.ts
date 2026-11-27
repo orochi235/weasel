@@ -41,4 +41,11 @@ describe('moduleInfo exports and imports', () => {
     expect(info.imports.get('zero')).toEqual({ spec: './x', imported: '0' });
     expect(info.imports.get('half')).toEqual({ spec: './x', imported: '1.5' });
   });
+
+  it('records no default export for an interface or a bodiless overload, and keeps the implementation', () => {
+    expect(moduleInfo('export default interface Props { a: number }\n', '/r/a.ts').exports.has('default')).toBe(false);
+    expect(moduleInfo('export default function f(a: string): void;\n', '/r/a.d.ts').exports.has('default')).toBe(false);
+    const info = moduleInfo('export default function f(a: string): void;\nexport default function f(a: unknown) {}\n', '/r/a.ts');
+    expect(info.exports.get('default')).toEqual({ kind: 'local', local: 'f' });
+  });
 });
