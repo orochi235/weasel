@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-A complete descriptor in `<SceneCanvas actions>` registers under its key, with a warning when its own `id` differs, as a partial entry already did.
+A complete descriptor in `<SceneCanvas actions>` registers under its key, warning when its own `id` differs.
 
 <!-- entry: fix -->
