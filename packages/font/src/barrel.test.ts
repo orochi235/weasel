@@ -3,6 +3,7 @@ import { describe, it, expect } from 'vitest';
 import * as barrel from './index';
 import * as metrics from './metrics.entry';
 import * as seams from './test-seams';
+import * as sfnt from './sfnt.entry';
 
 describe('published surface', () => {
   it('keeps the reset seams off the package barrel', () => {
@@ -16,5 +17,9 @@ describe('published surface', () => {
 
   it('serves the DOM-free metrics entry from the barrel too', () => {
     expect(Object.keys(metrics).filter((k) => !(k in barrel))).toEqual([]);
+  });
+
+  it('serves the container helpers on their own entry', () => {
+    expect(Object.keys(sfnt).sort()).toEqual(['isDataForkFont', 'isFontCollection', 'postScriptNameOf', 'sfntFromCollection']);
   });
 });

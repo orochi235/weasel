@@ -70,6 +70,7 @@
       "@weasel-js/export/testing/*": ["../export/src/testing/*"],
       "@weasel-js/font": ["../font/src/index.ts"],
       "@weasel-js/font/metrics": ["../font/src/metrics.entry.ts"],
+      "@weasel-js/font/sfnt": ["../font/src/sfnt.entry.ts"],
       "@weasel-js/font/test-seams": ["../font/src/test-seams.ts"],
       "@weasel-js/font/testing/*": ["../font/src/testing/*"],
       "@weasel-js/forge": ["../forge/src/index.ts"],
