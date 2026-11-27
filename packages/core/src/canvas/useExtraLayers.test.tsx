@@ -37,6 +37,18 @@ describe('registerLayer', () => {
     const view = { x: 0, y: 0, scale: { x: 1, y: 1 } };
     expect(result.current.hitTestExtrasIn(0, 0, view, { width: 1, height: 1 }, null)?.layerId).toBe('a');
   });
+
+  it('puts a layer back in its place when the owner that moved it to the top releases it', () => {
+    const result = mount();
+    const a = layer('a');
+    const b = layer('b');
+    let again!: () => void;
+    act(() => { result.current.registerLayer(a); result.current.registerLayer(b); });
+    act(() => { again = result.current.registerLayer(a); });
+    expect([...result.current.extrasRef.current]).toEqual([b, a]);
+    act(() => { again(); });
+    expect([...result.current.extrasRef.current]).toEqual([a, b]);
+  });
 });
 
 describe('hitTestExtrasIn', () => {

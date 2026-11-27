@@ -33,11 +33,14 @@ export function useExtraLayers(
 ): ExtraLayers {
   const [extrasVersion, setExtrasVersion] = useState(0);
   const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
-  // One layer object can be registered by several owners; it stays until the last lets go.
-  const holdsRef = useRef(new Map<RenderLayer<unknown>, number>());
+  // One layer object can be registered by several owners; it stays until the
+  // last lets go, at the place of its newest registration still held.
+  const holdsRef = useRef(new Map<RenderLayer<unknown>, number[]>());
+  const seqRef = useRef(0);
   const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
     const holds = holdsRef.current;
-    holds.set(layer, (holds.get(layer) ?? 0) + 1);
+    const seq = seqRef.current++;
+    holds.set(layer, [...(holds.get(layer) ?? []), seq]);
     extrasRef.current.delete(layer);
     extrasRef.current.add(layer);
     setExtrasVersion(n => n + 1);
@@ -45,13 +48,10 @@ export function useExtraLayers(
     return () => {
       if (released) return;
       released = true;
-      const left = (holds.get(layer) ?? 1) - 1;
-      if (left > 0) {
-        holds.set(layer, left);
-        return;
-      }
-      holds.delete(layer);
-      extrasRef.current.delete(layer);
+      const left = (holds.get(layer) ?? []).filter((s) => s !== seq);
+      if (left.length > 0) holds.set(layer, left);
+      else holds.delete(layer);
+      extrasRef.current = new Set([...holds.keys()].sort((a, b) => holds.get(a)!.at(-1)! - holds.get(b)!.at(-1)!));
       setExtrasVersion(n => n + 1);
     };
   }, []);
