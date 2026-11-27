@@ -32,6 +32,12 @@ import { SCOPED, TRIGGERS } from './lib/fleet-triggers.mjs';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 const args = process.argv.slice(2);
+if (args.includes('--help') || args.includes('-h')) {
+  const doc = (await import('node:fs')).readFileSync(fileURLToPath(import.meta.url), 'utf8');
+  console.log(doc.slice(doc.indexOf('/**') + 3, doc.indexOf('*/')).replace(/^ \* ?/gm, '').trim());
+  console.log('\nAny other flag is passed to `onto test`; `onto test --help` lists them.');
+  process.exit(0);
+}
 const sinceAt = args.findIndex((arg) => arg === '--since' || arg.startsWith('--since='));
 const since = sinceAt < 0 ? undefined : args[sinceAt].includes('=') ? args.splice(sinceAt, 1)[0].slice('--since='.length) : args.splice(sinceAt, 2)[1];
 if (sinceAt >= 0 && (!since || since.startsWith('-'))) {
