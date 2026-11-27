@@ -56,19 +56,27 @@ interface Scroller {
 /** The properties any value but `none` of which makes a box the containing block of a fixed descendant. */
 const FIXED_HOLDERS = ['transform', 'translate', 'rotate', 'scale', 'perspective', 'filter', 'backdrop-filter', 'offset-path'];
 
+/** Of those, the ones that make no containing block on the root element (Filter Effects 1 and 2). */
+const ROOT_EXEMPT = ['filter', 'backdrop-filter'];
+
+/** `will-change` values that make a containing block for a fixed descendant, as the properties they name would. */
+const WILL_CHANGE_HOLDERS = [...FIXED_HOLDERS, 'contain', 'transform-style'];
+
 /** Whether `style` makes its box the containing block of a fixed descendant (and so of an absolute one). */
-const holdsFixed = (style: CSSStyleDeclaration): boolean =>
-  FIXED_HOLDERS.some((prop) => !['', 'none'].includes(style.getPropertyValue(prop)))
-  || style.getPropertyValue('transform-style') === 'preserve-3d'
-  || /transform|translate|rotate|scale|perspective|filter|contain|offset-path/.test(style.getPropertyValue('will-change'))
-  || /paint|layout|strict|content/.test(style.getPropertyValue('contain'))
-  || /size/.test(style.getPropertyValue('container-type'))
-  || /auto|hidden/.test(style.getPropertyValue('content-visibility'));
+const holdsFixed = (style: CSSStyleDeclaration, root: boolean): boolean => {
+  const exempt = (prop: string) => root && ROOT_EXEMPT.includes(prop);
+  return FIXED_HOLDERS.some((prop) => !exempt(prop) && !['', 'none'].includes(style.getPropertyValue(prop)))
+    || style.getPropertyValue('transform-style') === 'preserve-3d'
+    || style.getPropertyValue('will-change').split(',').some((v) => !exempt(v.trim()) && WILL_CHANGE_HOLDERS.includes(v.trim()))
+    || /paint|layout|strict|content/.test(style.getPropertyValue('contain'))
+    || /size/.test(style.getPropertyValue('container-type'))
+    || /auto|hidden/.test(style.getPropertyValue('content-visibility'));
+};
 
 /** Whether a box with `style` is the containing block of a descendant positioned as `position`. */
-const holds = (position: string | undefined, style: CSSStyleDeclaration | undefined): boolean =>
-  position === 'fixed' ? !!style && holdsFixed(style)
-  : position === 'absolute' ? !!style && (style.position !== 'static' || holdsFixed(style))
+const holds = (position: string | undefined, style: CSSStyleDeclaration | undefined, root: boolean): boolean =>
+  position === 'fixed' ? !!style && holdsFixed(style, root)
+  : position === 'absolute' ? !!style && (style.position !== 'static' || holdsFixed(style, root))
   : true;
 
 /** Whether a box with `style` is a scroll container, which `visible` and `clip` on both axes are not. */
@@ -92,7 +100,7 @@ function scrollersOf(el: Element): Scroller[] {
     const position = styleOf(n)?.position;
     if (position === 'sticky') sticky ??= n;
     let p = flatParentOf(n);
-    while (p && !holds(position, styleOf(p))) p = flatParentOf(p);
+    while (p && !holds(position, styleOf(p), p === root)) p = flatParentOf(p);
     if (!p) {
       // An absolute box with no positioned ancestor is held by the initial containing block, which the page scrolls.
       if (position === 'absolute' && n !== root) out.push(scrollerOf(root));
