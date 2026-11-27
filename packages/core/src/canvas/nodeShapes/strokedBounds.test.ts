@@ -39,3 +39,13 @@ describe('strokedPoseBox', () => {
     expect(wide.y).toBeLessThan(thin.y);
   });
 });
+
+describe('strokedBounds of a stroke that draws no line', () => {
+  it('is null for an infinite width, heads included', () => {
+    for (const width of [Infinity, { px: Infinity }]) {
+      expect(strokedBounds(LINE, { paint: PAINT, width }, 1)).toBeNull();
+      expect(strokedBounds(LINE, { paint: PAINT, width, markerEnd: { key: 'arrow', size: 4 } }, 1)).toBeNull();
+    }
+  });
+
+});

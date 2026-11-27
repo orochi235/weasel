@@ -1,7 +1,7 @@
 import { boundsOfPath, DEFAULT_FLATTEN_TOLERANCE, type Path } from '@weasel-js/geom';
 import { resolveScreenLength, scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import {
-  markerHeads, strokeAtScale, strokeInsets, tessellateStroke,
+  markerHeads, strokeAtScale, strokeInsets, tessellateStroke, widthHasInk,
   type InsetLength, type ScreenSpace, type StrokeSpaces,
 } from '@weasel-js/stroke';
 import { DEFAULT_FLATTEN_TOLERANCE_PX, resolveStrokeLengths, type GlMat3, type StrokedPathCommand } from '@weasel-js/renderer';
@@ -23,7 +23,7 @@ import { strokeOutsetPerAxis } from './nodePaint';
 export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?: ScreenMap): Bounds | null {
   const { sized, spaces } = screen ? onScreen(path, stroke, screen) : atScale(stroke, scale);
   const width = resolveScreenLength(sized.width ?? 1, 1);
-  if (!(width > 0)) return null;
+  if (!widthHasInk(width)) return null;
   const box = new Box();
   const align = stroke.align ?? 'center';
   const tolerance = flattenFor(path, scale);
