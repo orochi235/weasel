@@ -22,8 +22,9 @@ export interface Conflict {
   /** The ids of every entry that declared the same tuple. At least 2 by
    *  construction, in input order. */
   ownerIds: string[];
-  /** Not a tie: the first owner, a hotkey-tier action, outranks the active
-   *  tool after it, whose binding fires only when the action declines. */
+  /** Not a tie: the first owner, a hotkey-tier action, outranks the entry
+   *  after it, the active tool or an ambient one, whose binding fires only
+   *  when the action declines. */
   shadows?: true;
 }
 
@@ -258,7 +259,9 @@ function eligibleRule(action: Action): Rule | undefined {
  *  - a single tool colliding with **itself**;
  *  - two **ambient** tools, which are all live at once and ordered only by
  *    registration;
- *  - two **hotkey-capable** tools, which can stack.
+ *  - two **hotkey-capable** tools, which can stack;
+ *  - a **hotkey-tier action** over a registry tool or an ambient entry, flagged
+ *    `shadows`: the lower binding fires only when the action declines.
  *
  * Registered actions join the ambient and hotkey groups. An action gated by
  * an `eligible` rule outranks every ungated binding of its tier when its rule
@@ -325,11 +328,11 @@ export function findScopedConflicts(scopes: ToolScopes): Conflict[] {
     ...hotkeyActions,
   ];
   if (hotkey.length > 1) add(findConflictsKeyed(hotkey, rules, modes));
-  // A hotkey-tier action outranks whichever tool holds the active slot. A pair
-  // already reported as a tie, a held tool's, is not reported again.
+  // A hotkey-tier action outranks whichever tool holds the active slot and every ambient entry. A
+  // pair already reported as a tie, a held tool's, is not reported again.
   const tied = (a: string, b: string): boolean => reported.some(({ conflict: c }) => c.ownerIds.includes(a) && c.ownerIds.includes(b));
   for (const action of [...hotkeyActions, ...gatedHotkey]) {
-    for (const tool of registry) {
+    for (const tool of [...registry, ...ambient, ...gatedActions]) {
       if (tied(action.id, tool.id)) continue;
       add(findConflictsKeyed([action, tool], rules, modes).map((k) => ({ ...k, conflict: { ...k.conflict, shadows: true } })));
     }
@@ -376,8 +379,8 @@ export function reportRouteConflicts(
   for (const c of conflicts) {
     if (c.shadows) {
       warn(
-        `[weasel] route conflict: a hotkey-tier action outranks a tool's binding on the same tuple, so the tool's `
-        + `fires only when the action declines.\n  ${formatConflict(c)}`,
+        `[weasel] route conflict: a hotkey-tier action outranks a lower tier's binding on the same tuple, so that `
+        + `binding fires only when the action declines.\n  ${formatConflict(c)}`,
       );
       continue;
     }
