@@ -58,11 +58,15 @@ describe('toolOptionsPrefs', () => {
   });
 
   it('gives a shared key the default the host names', () => {
-    const schema = toolOptionsPrefs([RECT, STAR], { name: 'T', shared: { fill: '#ffffff', nope: 1 } });
+    const schema = toolOptionsPrefs([RECT, STAR], { name: 'T', shared: { fill: '#ffffff' } });
     const shared = (schema.children[SHARED_TOOL_OPTIONS] as { children: Record<string, { default: unknown }> }).children;
     expect(shared.fill.default).toBe('#ffffff');
     expect(Object.keys(shared)).toEqual(['fill']);
     expect(schema.name).toBe('T');
+  });
+
+  it('refuses a host default for a key no tool shares', () => {
+    expect(() => toolOptionsPrefs([RECT, STAR], { shared: { fil: '#f00' } })).toThrow(/"fil".*no tool names/);
   });
 
   it('places a tool listed twice once, and refuses two tools of one id with different options', () => {

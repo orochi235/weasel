@@ -144,7 +144,8 @@ export function toolOptionsPrefs(tools: Iterable<OptionedTool>, spec: ToolOption
   }
   for (const [key, value] of Object.entries(spec.shared ?? {})) {
     const leaf = getOwn(shared, key);
-    if (!leaf || !('kind' in leaf)) continue;
+    if (!leaf) throw new Error(`toolOptionsPrefs: the host gives a default for the shared option "${key}", which no tool names`);
+    if (!('kind' in leaf)) continue;
     const invalid = Symbol('invalid');
     if (!deepEqual(repairPrefValue({ ...leaf, default: invalid } as PrefLeaf, value), value)) {
       throw new Error(`toolOptionsPrefs: the host's default ${JSON.stringify(value)} for the shared option "${key}" is not a value any tool naming it takes`);
