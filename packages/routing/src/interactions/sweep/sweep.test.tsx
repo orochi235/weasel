@@ -8,6 +8,7 @@ import { DepRegistryProvider } from '../actions/depRegistry';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { useGestureDispatcher } from '../dispatcher/useGestureDispatcher';
 import { openPointerSession } from '../pointerSession';
+import { ActionDisabledReason } from '../actions/action';
 import { createSweepAction, type SweepOptions } from './sweep';
 
 const KEYS = ['a', 'b', 'c', 'd', 'e', 'f'];
@@ -86,6 +87,58 @@ describe('createSweepAction', () => {
     host.remove();
   });
 
+  it('reaches the items between the last move and the release point', () => {
+    const entered: string[] = [];
+    const { at } = setup({ sweep: { begin: () => ({ enter: (i) => entered.push(i.key) }) } });
+    act(() => {
+      pointer(at(5), 'pointerdown', 5);
+      pointer(at(5), 'pointermove', 12);
+      pointer(at(5), 'pointerup', 47);
+    });
+    expect(entered).toEqual(['a', 'b', 'c', 'd', 'e']);
+  });
+
+  it('declines a press whose point is no finite number, without hit-testing it', () => {
+    const surface = document.createElement('div');
+    document.body.append(surface);
+    document.elementFromPoint = (x: number, y: number) => {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) throw new TypeError('non-finite');
+      return surface;
+    };
+    const sweep = createSweepAction({ surface: () => surface, keyOf: () => 'a', begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: NaN, y: 5 })).toBe(ActionDisabledReason.NotApplicable);
+    surface.remove();
+  });
+
+  it('enters an item again after the drag leaves it for a gap and comes back', () => {
+    const entered: string[] = [];
+    const { row, at } = setup({ sweep: { begin: () => ({ enter: (i) => entered.push(i.key) }) } });
+    const items = row.querySelectorAll('[data-key]');
+    // x = 10 to 19 is a gap.
+    document.elementFromPoint = (x: number) => (x >= 10 && x < 20 ? row : items[Math.floor(x / 10)] ?? row);
+    act(() => {
+      pointer(at(5), 'pointerdown', 5);
+      pointer(at(5), 'pointermove', 15);
+      pointer(at(5), 'pointermove', 5);
+      pointer(at(5), 'pointerup', 5);
+    });
+    expect(entered).toEqual(['a', 'a']);
+  });
+
+  it('enters the item an element under the pointer is re-keyed to', () => {
+    const entered: string[] = [];
+    const { at } = setup({ sweep: { begin: () => ({ enter: (i) => {
+      entered.push(i.key);
+      if (i.key === 'a') (i.element as HTMLElement).dataset.key = 'z';
+    } }) } });
+    act(() => {
+      pointer(at(1), 'pointerdown', 1);
+      pointer(at(1), 'pointermove', 9);
+      pointer(at(1), 'pointerup', 9);
+    });
+    expect(entered).toEqual(['a', 'z']);
+  });
+
   it('finds an item in the surface\'s own shadow root, and in a shadow root nested in an item', () => {
     const surface = document.body.appendChild(document.createElement('div'));
     const shadow = surface.attachShadow({ mode: 'open' });
@@ -117,6 +170,23 @@ describe('createSweepAction', () => {
     const sweep = createSweepAction({ surface: () => surface, keyOf: (el) => (el as HTMLElement).dataset.key, begin: () => ({ enter: () => {} }) });
     expect(sweep.enabled?.({} as never, { x: 5, y: 5 })).toBe(true);
     surface.remove();
+  });
+
+  it('finds an item slotted into a surface inside a shadow root', () => {
+    const host = document.createElement('div');
+    const item = document.createElement('button');
+    item.dataset.key = 'a';
+    host.append(item);
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const surface = document.createElement('div');
+    surface.append(document.createElement('slot'));
+    shadow.append(surface);
+    document.elementFromPoint = () => host;
+    (shadow as { elementFromPoint?: unknown }).elementFromPoint = () => item;
+    const sweep = createSweepAction({ surface: () => surface, keyOf: (el) => (el as HTMLElement).dataset.key, begin: () => ({ enter: () => {} }) });
+    expect(sweep.enabled?.({} as never, { x: 5, y: 5 })).toBe(true);
+    host.remove();
   });
 
   it('enters the pressed item, then every item the drag crosses, in order', () => {

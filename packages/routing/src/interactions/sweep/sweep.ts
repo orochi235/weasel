@@ -79,8 +79,10 @@ const STEP_PX = 4;
 /** The most points hit-tested along one move: a move longer than this many steps is a jump, tested more sparsely. */
 const MAX_STEPS = 4096;
 
-/** The item under client point (`x`, `y`) in `surface`, or `null`. */
+/** The item under client point (`x`, `y`) in `surface`, read up the flat tree so items in its shadow root or slotted
+ *  into it count, or `null`. */
 function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number, y: number): SweepItem<K> | null {
+  if (!Number.isFinite(x) || !Number.isFinite(y)) return null;
   let el = deepElementAt(surface, x, y);
   if (!el || !containsComposed(surface, el)) return null;
   for (; el && el !== surface; el = flatParentOf(el)) {
@@ -88,6 +90,14 @@ function itemAt<K>(surface: Element, keyOf: SweepOptions<K>['keyOf'], x: number,
     if (key !== undefined) return { key, element: el };
   }
   return null;
+}
+
+/** Whether `b` is another item than `a`. A key that is an object may be built afresh on each call, so for one the
+ *  element decides; otherwise the key does, so an element recycled for another item counts as a change. */
+function isOther<K>(a: SweepItem<K> | null, b: SweepItem<K>): boolean {
+  if (!a) return true;
+  if (Object.is(a.key, b.key)) return false;
+  return (typeof b.key !== 'object' && typeof b.key !== 'function') || b.key === null || a.element !== b.element;
 }
 
 /**
@@ -119,12 +129,14 @@ export function createSweepAction<K>(opts: SweepOptions<K>): Action {
         // An empty handle hands the drag on to the next candidate.
         const run = opts.begin({ ...first, ctx });
         if (!run) return {};
-        let current = first;
+        let current: SweepItem<K> | null = first;
         let last = ctx.drag?.start ?? ctx.world;
         run.enter(first);
         const reach = (x: number, y: number): void => {
           const item = itemAt(surface, opts.keyOf, x, y);
-          if (item && item.element !== current.element && !Object.is(item.key, current.key)) {
+          // A gap ends the item, so the one it left is entered again when the drag comes back.
+          if (!item) current = null;
+          else if (isOther(current, item)) {
             current = item;
             run.enter(item);
           }
@@ -144,7 +156,10 @@ export function createSweepAction<K>(opts: SweepOptions<K>): Action {
         return {
           kind: 'sweep',
           onMove: (move) => { travel(move.world); },
-          onEnd: (_end, how) => { run.end?.(how); },
+          onEnd: (end, how) => {
+            if (how === 'commit') travel(end.world);
+            run.end?.(how);
+          },
         };
       },
     },

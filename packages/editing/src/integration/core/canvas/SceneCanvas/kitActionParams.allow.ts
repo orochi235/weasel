@@ -66,6 +66,7 @@ export const ACTION_LITERALS: Readonly<Record<string, Readonly<Record<string, st
   'packages/routing/src/interactions/sweep/sweep.ts': {
     4: 'sample: the screen px a sweep steps between the controls it passes',
     4096: 'sample: the most steps one sweep move takes',
+    64: 'count: the most nested shadow roots a sweep looks through for the item under a point',
   },
   'packages/routing/src/tools/toolOptionSteps.ts': {
     60: 'gesture: wheel travel per tool-option step', 1000: 'sample: the most steps one wheel burst takes',

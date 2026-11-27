@@ -27,9 +27,10 @@ export interface ThresholdDragOptions {
   /** Ended without a release: pointercancel, lost capture, a window blur, Escape during the drag, `cancel()`, or a
    *  release the document never saw below the threshold, unless `missedRelease` is `'click'`. */
   onCancel?: () => void;
-  /** What a release the document never saw (a move reporting no held button) means below the threshold: `'cancel'`
-   *  (the default), since where it was let go is unknown, or `'click'`, reported at that move, for a caller whose
-   *  click does not depend on where the press was let go. Past the threshold it always ends the drag. */
+  /** What a release the document never saw (a move reporting no held button) means before the press became a drag,
+   *  however far that move lies: `'cancel'` (the default), since where it was let go is unknown, or `'click'`,
+   *  reported at that move, for a caller whose click does not depend on where the press was let go. Once the press
+   *  is a drag it always ends the drag. */
   missedRelease?: 'cancel' | 'click';
 }
 
@@ -48,6 +49,8 @@ export function startThresholdDrag(
 ): ThresholdDragHandle {
   const start = { clientX: e.clientX, clientY: e.clientY };
   let activated = false;
+  // Set by `cancel()`, which `onStart` may call while the release that started it is being handled.
+  let canceled = false;
   const origin = opts.origin ?? (e.currentTarget as Element);
   const late = opts.captureAt === 'threshold';
 
@@ -74,13 +77,14 @@ export function startThresholdDrag(
   const session = openPointerSession(origin, e, {
     onMove: (ev) => {
       maybeActivate(ev, true);
-      if (activated) opts.onMove(ev);
+      if (activated && session.active) opts.onMove(ev);
     },
     onEnd: (ev) => {
       unlisten();
       // A missed release ends at a move made after the button came up, so only a real release is a drag's end.
       if (ev.type === 'pointerup') maybeActivate(ev, false);
-      if (activated) opts.onEnd(ev);
+      if (canceled) opts.onCancel?.();
+      else if (activated) opts.onEnd(ev);
       else opts.onClick?.(ev);
     },
     onCancel: () => {
@@ -91,6 +95,9 @@ export function startThresholdDrag(
 
   return {
     isDragging: () => activated,
-    cancel: () => { session.cancel(); },
+    cancel: () => {
+      canceled = true;
+      session.cancel();
+    },
   };
 }
