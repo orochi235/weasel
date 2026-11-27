@@ -118,4 +118,30 @@ describe('a glide on a controlled canvas', () => {
     act(() => { handles.write.current!({ ...handles.api.current!.getView() }); });
     expect(handles.api.current!.isViewAnimating()).toBe(true);
   });
+
+  it('stops for the consumer\'s own write after they drop a frame they were handed', async () => {
+    const handles = makeHandles();
+    const drop = { current: false };
+    function Dropping() {
+      const [view, setView] = useState<View>(HOME);
+      const [scene] = useState(makeScene);
+      handles.write.current = setView;
+      return (
+        <SceneCanvas<D, L, P>
+          ref={handles.api} scene={scene} width={400} height={200} view={view}
+          onViewChange={(v) => { if (!drop.current) setView(v); }}
+        />
+      );
+    }
+    render(<Dropping />);
+    await frames(1);
+    act(() => { handles.api.current!.animateView(FAR, { ms: 400 }); });
+    await frames(3);
+    drop.current = true;
+    await frames(1);
+    drop.current = false;
+    expect(handles.api.current!.isViewAnimating()).toBe(true);
+    act(() => { handles.write.current!({ x: 7, y: 9, scale: { x: 1, y: 1 } }); });
+    expect(handles.api.current!.isViewAnimating()).toBe(false);
+  });
 });

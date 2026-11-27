@@ -28,6 +28,11 @@ import {
   type TouchZoomOptions,
 } from 'interactions/actions/defaults/touchZoom';
 
+/** The ids {@link useViewportActions} registers or mutes. */
+export const VIEWPORT_ACTION_IDS: readonly string[] = [
+  containerScrollAction.id, 'viewport.wheelPan', 'viewport.zoom', 'viewport.touchZoom',
+];
+
 export function useViewportActions(args: {
   /** `true`/`false` toggles wheel pan; an object locks its axis (see
    *  {@link ViewportWheelPanOptions}). */
@@ -38,7 +43,7 @@ export function useViewportActions(args: {
   /** `true`/`false` toggles two-finger pinch zoom; an object sets its scale
    *  clamp (see {@link TouchZoomOptions}). */
   touchZoom: boolean | TouchZoomOptions;
-  /** Changes whenever the standard action set re-registers, which puts the
+  /** Changes whenever the standard action set re-registers (`actionSetKeyOf`), which puts the
    *  default pinch zoom back on top of a configured one. */
   rev?: string;
 }): void {

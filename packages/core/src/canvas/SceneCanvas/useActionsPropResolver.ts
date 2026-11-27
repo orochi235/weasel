@@ -2,18 +2,19 @@
  * Applies the `actions` prop overrides on top of whatever is registered, now
  * or later.
  *
- *   actions === null           → mute every action registered before it: the
- *                                defaults, not the tools' and presets' own
+ *   actions === null           → mute the canvas's defaults, whenever they
+ *                                register; any other action stays live
  *   actions[id] === null       → mute that id
- *   actions[id] = partial      → merge onto the existing descriptor (slot wins
- *                                over entry.id; warns once on mismatch)
+ *   actions[id] = partial      → merge onto the existing descriptor
  *   actions[id] = full (new)   → register alongside defaults
+ *
+ * The slot key wins over an entry's `id`, which warns once on a mismatch.
  *
  * `null` mutes rather than unregisters: the opt-out belongs to this canvas, so
  * a sibling sharing the registry keeps the action and this canvas's unmount
  * gives it back.
  */
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { ActionsProp } from '@weasel-js/routing';
 import { useActionsRegistry } from '@weasel-js/routing/react';
 import { useLatest } from '@weasel-js/react';
@@ -25,22 +26,26 @@ import type { Action, ActionsRegistry } from '@weasel-js/routing';
  * config change) would otherwise land over a merge or miss a partial entry
  * naming it.
  */
-export function useActionsPropResolver(actions: ActionsProp | undefined): void {
+export function useActionsPropResolver(actions: ActionsProp | undefined, defaults: readonly string[]): void {
   const reg = useActionsRegistry();
   const actionsRef = useLatest(actions);
+  const defaultsRef = useLatest(defaults);
+  const defaultsKey = defaults.join('\n');
+  // Outlives the effect, which an inline `actions` literal re-runs every render.
+  const warnedIds = useRef(new Set<string>()).current;
 
   useEffect(() => {
     if (!reg) return;
     const prop = actionsRef.current;
     if (prop === undefined) return;
+    const muted = defaultsRef.current;
     let applied: Applied = { releases: [], live: new Map(), bases: new Map() };
     let applying = false;
-    const warnedIds = new Set<string>();
     const apply = () => {
       applying = true;
       try {
         release(applied);
-        applied = applyActionsProp(reg, prop, warnedIds);
+        applied = applyActionsProp(reg, prop, muted, warnedIds);
       } finally {
         applying = false;
       }
@@ -50,7 +55,7 @@ export function useActionsPropResolver(actions: ActionsProp | undefined): void {
       if (!applying && isStale(reg, prop, applied)) apply();
     });
     return () => { off(); release(applied); };
-  }, [reg, actions, actionsRef]);
+  }, [reg, actions, actionsRef, defaultsKey, defaultsRef, warnedIds]);
 }
 
 interface Applied {
@@ -76,7 +81,7 @@ function heldAt(reg: ActionsRegistry, id: string, action: Action): boolean {
 /** Whether the registry moved under the applied overrides: an id they
  *  register or merge is not live as they left it. */
 function isStale(reg: ActionsRegistry, prop: ActionsProp, applied: Applied): boolean {
-  // `null` opts out of the defaults registered before it, not the tools' and presets' own.
+  // A mute holds its id whoever registers it.
   if (prop === null) return false;
   const listed = reg.list();
   const byId = new Map(listed.map((a) => [a.id, a]));
@@ -91,13 +96,15 @@ function isStale(reg: ActionsRegistry, prop: ActionsProp, applied: Applied): boo
   return false;
 }
 
-function applyActionsProp(reg: ActionsRegistry, prop: ActionsProp, warnedIds: Set<string>): Applied {
+function applyActionsProp(
+  reg: ActionsRegistry, prop: ActionsProp, defaults: readonly string[], warnedIds: Set<string>,
+): Applied {
   const releases: Array<() => void> = [];
   const live = new Map<string, Action>();
   const bases = new Map<string, Action>();
 
   if (prop === null) {
-    for (const id of reg.list().map((a) => a.id)) releases.push(reg.mute(id));
+    for (const id of new Set(defaults)) releases.push(reg.mute(id));
     return { releases, live, bases };
   }
 
@@ -107,14 +114,22 @@ function applyActionsProp(reg: ActionsRegistry, prop: ActionsProp, warnedIds: Se
       continue;
     }
 
+    if (entry.id !== undefined && entry.id !== slotId && !warnedIds.has(`mismatch:${slotId}`)) {
+      warnedIds.add(`mismatch:${slotId}`);
+      console.warn(
+        `weasel actions resolver: actions["${slotId}"].id="${entry.id as string}" mismatches the slot key. ` +
+        `Ignoring the id field; the action is at id="${slotId}".`,
+      );
+    }
     const isFull = (e: Partial<Action>): e is Action =>
       typeof e.id === 'string' && typeof e.label === 'string' && !!e.invoker;
     const existing = reg.list().find((a) => a.id === slotId);
 
     if (!existing) {
       if (isFull(entry)) {
-        releases.push(reg.register(entry));
-        live.set(slotId, entry);
+        const own = entry.id === slotId ? entry : { ...entry, id: slotId };
+        releases.push(reg.register(own));
+        live.set(slotId, own);
       } else if (!warnedIds.has(slotId)) {
         warnedIds.add(slotId);
         // Asked once this commit's effects have run, which may register it.
@@ -129,13 +144,6 @@ function applyActionsProp(reg: ActionsRegistry, prop: ActionsProp, warnedIds: Se
       continue;
     }
 
-    if (entry.id !== undefined && entry.id !== slotId && !warnedIds.has(`mismatch:${slotId}`)) {
-      warnedIds.add(`mismatch:${slotId}`);
-      console.warn(
-        `weasel actions resolver: actions["${slotId}"].id="${entry.id as string}" mismatches the slot key. ` +
-        `Ignoring the id field; the action remains at id="${slotId}".`,
-      );
-    }
     const { id: _drop, ...rest } = entry;
     void _drop;
     const merged: Action = { ...existing, ...rest };

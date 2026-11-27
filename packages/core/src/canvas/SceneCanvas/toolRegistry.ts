@@ -29,6 +29,8 @@ export interface ResolveToolRegistryArgs {
   insertBuilds?: (kind: string) => boolean;
   /** Whether to warn about a patch entry that is probably a mistake. */
   dev?: boolean;
+  /** The patch warnings already given, by message, so a caller resolving on every render says each once. */
+  warned?: Set<string>;
 }
 
 /**
@@ -44,6 +46,11 @@ export interface ResolveToolRegistryArgs {
  */
 export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<string, Tool> {
   const { builtins, enabled, patch, dev = isDev() } = args;
+  const warn = (message: string): void => {
+    if (args.warned?.has(message)) return;
+    args.warned?.add(message);
+    console.warn(message);
+  };
   const offered: Record<string, Tool> = { ...builtins, ...args.offered };
   const defaultTools = toolIdsOf(args.defaultTools ?? []);
   const registry: Record<string, Tool> = {};
@@ -64,6 +71,8 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
         warnedUnbuildable.add(tool);
         console.warn(`[SceneCanvas] tool "${id}" is left out: no insert factory on this canvas builds the kind it inserts`);
       }
+      // `defaultTools` naming it mounted it among the built-ins above.
+      if (Object.hasOwn(registry, id)) delete registry[id];
       continue;
     }
     setOwn(registry, id, tool);
@@ -72,12 +81,12 @@ export function resolveToolRegistry(args: ResolveToolRegistryArgs): Record<strin
     if (value === false) continue;
     if (value === true) {
       if (dev && !Object.hasOwn(offered, id) && !Object.hasOwn(ownTools, id)) {
-        console.warn(`[SceneCanvas] tools.${id}=true names no tool this canvas offers; ignoring`);
+        warn(`[SceneCanvas] tools.${id}=true names no tool this canvas offers; ignoring`);
       }
       continue;
     }
     if (dev && Object.hasOwn(registry, id) && (defaultTools as string[]).includes(id)) {
-      console.warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
+      warn(`[SceneCanvas] tools prop overrides bundled "${id}" tool`);
     }
     setOwn(registry, id, value);
   }

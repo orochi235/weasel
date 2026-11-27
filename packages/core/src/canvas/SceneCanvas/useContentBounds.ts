@@ -14,7 +14,7 @@ import { adapterWorldPoseOf, type ViewPoseAdapter } from '../useViewHelpers';
  * whatever an in-flight gesture proposes, such as a node being dragged, where
  * it is shown, or a shape drawn before it exists. `null`
  * when nothing is drawn. Read live: the scene's part is kept until its version,
- * its pose overrides, its scroll, its bounds source or the camera moves, none of
+ * its pose overrides, its scroll, its bounds source, its adapter or the camera moves, none of
  * which the version alone covers, and the gesture's part is read fresh.
  */
 export function useContentBounds<TPose>(args: {
@@ -44,7 +44,7 @@ export function useContentBounds<TPose>(args: {
     gestureSource, previewPoseExtra: args.previewPoseExtra, boxOf: args.boundsOfPose, committedPoseOf, worldOfStored,
   });
 
-  const committed = useRef<{ scene: unknown; boundsOf: unknown; version: number; camera: string; bounds: Bounds | null } | null>(null);
+  const committed = useRef<{ scene: unknown; boundsOf: unknown; poseOf: unknown; version: number; camera: string; bounds: Bounds | null } | null>(null);
   useEffect(() => {
     const stale = () => { committed.current = null; };
     const offOverrides = scene.overrides.subscribe(stale);
@@ -55,9 +55,9 @@ export function useContentBounds<TPose>(args: {
     const version = scene.getVersion();
     const camera = cameraKey(scene, getView?.() ?? null);
     let held = committed.current;
-    if (held === null || held.scene !== scene || held.boundsOf !== boundsOf || held.version !== version || held.camera !== camera) {
+    if (held === null || held.scene !== scene || held.boundsOf !== boundsOf || held.poseOf !== committedPoseOf || held.version !== version || held.camera !== camera) {
       const bounds = sceneContentBounds(scene, boundsOf, (node) => committedPoseOf(node.id) ?? node.pose);
-      held = { scene, boundsOf, version, camera, bounds };
+      held = { scene, boundsOf, poseOf: committedPoseOf, version, camera, bounds };
       committed.current = held;
     }
     return unionAabb([held.bounds, gestureBoundsOf(gestureSource, previewBoundsOf)]);

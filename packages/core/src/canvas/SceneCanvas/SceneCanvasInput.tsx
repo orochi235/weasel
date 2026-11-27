@@ -168,6 +168,7 @@ export function SceneCanvasInput(p: SceneCanvasInputProps) {
   const edgePan = useEdgePan({
     options: p.viewOn && edgePanProp !== false ? (edgePanProp === true || edgePanProp === undefined ? {} : edgePanProp) : false,
     dispatcher: p.dispatcher, element: () => canvas.elementRef.current,
+    layoutSize: () => canvas.apiRef.current?.getSurfaceRect() ?? null,
     getView: viewState.getView, setView: viewState.setViewFromInput, content: contentBounds,
   });
   useSceneGestureDispatcher({

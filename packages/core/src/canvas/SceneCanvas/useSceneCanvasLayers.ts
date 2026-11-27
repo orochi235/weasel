@@ -128,7 +128,9 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
   const departures = usePoseTransition(scene, args.poseTransition);
   const departureLayer = useDepartureGhostLayer({ scene, sceneSlot, departures });
   const effectSourcesLayer = useEffectSourcesLayer(scene);
-  const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher });
+  const gestureSlot = merged.dispatcherOverlay;
+  const gestureStyle = gestureSlot && !isCustomEntry(gestureSlot) ? gestureSlot.style : undefined;
+  const dispatcherOverlay = useDispatcherOverlayLayer({ dispatcher, ...(gestureStyle ? { style: gestureStyle } : {}) });
 
   const hitRadiusPx = args.selectTool?.handleHitRadius ?? targetSizesPx(targetScale, baseSizes).handle;
   const edges = args.selectTool?.resize?.edgeHandles ?? true;
@@ -150,7 +152,7 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
   }), [snapStore, color, gapColor, lineWidth]);
   const overlaySlot = merged.pathEditingOverlay;
   const overlayConfig = overlaySlot && !isCustomEntry(overlaySlot) ? overlaySlot : undefined;
-  const overlayAnchor = overlaySlot === null ? 'dispatcherOverlay' : 'pathEditingOverlay';
+  const overlayAnchor = overlaySlot !== null ? 'pathEditingOverlay' : gestureSlot !== null ? 'dispatcherOverlay' : 'effectSources';
   const pathEditingOverlayLayer = usePathEditOverlayLayer(pathEditState, {
     nodeOf: (id) => {
       const node = scene.get(id as NodeId);
@@ -179,13 +181,15 @@ export function useSceneCanvasLayers<TData, TLayer extends string, TPose>(
     departureGhost: { layer: departureLayer, after: 'scene' },
     previewGhost: { layer: previewLayer, after: 'departureGhost' },
     effectSources: { layer: effectSourcesLayer, after: 'previewGhost' },
-    dispatcherOverlay: { layer: dispatcherOverlay, after: 'effectSources' },
+    dispatcherOverlay: gestureSlot === null || isCustomEntry(gestureSlot)
+      ? gestureSlot
+      : { layer: dispatcherOverlay, after: 'effectSources' },
     pathEditingOverlay: overlaySlot === null || isCustomEntry(overlaySlot)
       ? overlaySlot
       : { layer: pathEditingOverlayLayer, after: 'selectionOverlay' },
     ...(args.snapReadout ? { snapReadout: { layer: snapReadoutLayer, after: overlayAnchor } } : {}),
     ...(slops ? { slopsDebug: { layer: slopsLayer, after: args.snapReadout ? 'snapReadout' : overlayAnchor } } : {}),
-  }), [merged, sceneLayers, selectionOverlayLayer, enteredFrameLayer, departureLayer, previewLayer, effectSourcesLayer, dispatcherOverlay, pathEditingOverlayLayer, overlaySlot, overlayAnchor, snapReadoutLayer, args.snapReadout, slops, slopsLayer,
+  }), [merged, sceneLayers, selectionOverlayLayer, enteredFrameLayer, departureLayer, previewLayer, effectSourcesLayer, dispatcherOverlay, gestureSlot, pathEditingOverlayLayer, overlaySlot, overlayAnchor, snapReadoutLayer, args.snapReadout, slops, slopsLayer,
   ]);
 
   return { layers, sceneSlot: merged.scene, rotationBadge, resizeHandles, chromeAffordancesRef, snapStore, departures, selectionChrome: args.selectionChrome };

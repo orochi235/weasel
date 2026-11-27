@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { InertiaOptions } from 'core/viewport/useDecayLoop';
 import { useHandTool } from 'tools/builtin/hand';
 import type { Tool } from 'tools/overlayBinding';
@@ -21,6 +22,7 @@ export interface UseBuiltinToolsArgs {
 export function useBuiltinTools(args: UseBuiltinToolsArgs): Record<string, Tool> {
   const { enabled, defaultTools, patch, inertia, insertBuilds, offered } = args;
   const hand = useHandTool({ inertia });
+  const [warned] = useState(() => new Set<string>());
   return resolveToolRegistry({
     builtins: { hand },
     offered,
@@ -28,5 +30,6 @@ export function useBuiltinTools(args: UseBuiltinToolsArgs): Record<string, Tool>
     enabled,
     patch,
     insertBuilds,
+    warned,
   });
 }

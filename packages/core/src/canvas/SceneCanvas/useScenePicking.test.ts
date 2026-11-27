@@ -20,4 +20,14 @@ describe('doubleClickNamer', () => {
     entered.leave();
     expect(names(mark)).toBe(outer);
   });
+
+  it('names the outermost structural group when routing classifies nothing as a group', () => {
+    const scene = createScene<object, 'l', RectPose>({ systemLayers: [{ id: 'l' }] });
+    const outer = scene.add({ kind: 'group', layer: 'l', pose: POSE, data: {} });
+    const inner = scene.add({ kind: 'group', layer: 'l', pose: POSE, data: {}, parent: outer });
+    const mark = scene.add({ kind: 'mark', layer: 'l', pose: POSE, data: {}, parent: inner });
+    const entered = createEnteredGroup(scene);
+    expect(doubleClickNamer(scene, () => undefined, entered)(mark)).toBe(outer);
+    expect(doubleClickNamer(scene, () => 'unknown', entered)(mark)).toBe(outer);
+  });
 });

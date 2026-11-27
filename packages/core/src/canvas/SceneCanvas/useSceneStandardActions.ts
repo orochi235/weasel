@@ -8,7 +8,7 @@ import type { Bounds } from 'core/viewport/fitViewToBounds';
 import type { ClipboardIngestCtx } from 'interactions/actions/depSchema';
 import type { ContentHandlerEntry } from 'domains/ingestion/contentHandlers';
 import type { PoseDescriptor } from 'core/geometry/poseDescriptor';
-import { useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
+import { actionSetKeyOf, useActionSet, useStandardDeps } from 'interactions/actions/useActionSet';
 import { inkBoxes } from 'canvas/inkBoxes';
 import { drawnBoxes } from 'interactions/actions/drawnBoxes';
 import type React from 'react';
@@ -38,7 +38,7 @@ import type { EnteredGroupApi } from '../deps/enteredGroup';
 import type { BridgeAdapter, SceneCanvasProps } from './props';
 import { useActionsPropResolver } from './useActionsPropResolver';
 import { useActionTunings, useBindingOverrides } from './useActionTunings';
-import { useViewportActions, viewportZoomOption } from './useViewportActions';
+import { useViewportActions, viewportZoomOption, VIEWPORT_ACTION_IDS } from './useViewportActions';
 
 /** The `<SceneCanvas>` props the standard actions and their deps read. */
 export type StandardActionsProps = Pick<
@@ -152,7 +152,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   );
   useStandardDeps({ selection, scene, view, history: scene.history });
   useActionSet(standardActions);
-  const standardActionsKey = standardActions.map((a) => a.id).join('|');
+  const standardActionsKey = actionSetKeyOf(standardActions);
   // A view overlays `view` with its own camera; this name it leaves alone.
   useDepSource('rootView', () => view);
   useSurfaceDepSources(canvasRef, currentViewRef);
@@ -206,7 +206,7 @@ export function useSceneStandardActions(inputs: SceneStandardActionsInputs): voi
   useDepSource('boundsIncludeStroke', () => boundsIncludeStroke);
   useDepSource('drawnBoxes', () => inkBoxes);
 
-  useActionsPropResolver(props.actions);
+  useActionsPropResolver(props.actions, [...standardActions.map((a) => a.id), ...VIEWPORT_ACTION_IDS]);
   useActionTunings(tune);
   useBindingOverrides(props.bindingOverrides);
 }

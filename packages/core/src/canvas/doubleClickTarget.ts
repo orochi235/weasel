@@ -3,7 +3,8 @@ import { pressTarget } from './pressTarget';
 /** How {@link doubleClickTarget} reads the tree. */
 export interface DoubleClickTree {
   parentOf: (id: string) => string | null;
-  /** A node's routing kind; a node routed `'group'` is one a double-click can name. */
+  /** A node's routing kind; a node routed `'group'` is one a double-click can name, as is a
+   *  structural group whatever it routes as. */
   kindOf: (id: string) => string | undefined;
   /** The entered group, or null at the scene root. */
   scope: string | null;
@@ -18,7 +19,13 @@ export interface DoubleClickTree {
  */
 export function doubleClickTarget(hitId: string, tree: DoubleClickTree): string {
   return pressTarget(
-    { getParent: tree.parentOf, getNode: (id) => ({ ...tree.getNode(id), kind: tree.kindOf(id) }) },
+    {
+      getParent: tree.parentOf,
+      getNode: (id) => {
+        const node = tree.getNode(id) as { kind?: unknown } | undefined;
+        return { ...node, kind: tree.kindOf(id) === 'group' ? 'group' : node?.kind };
+      },
+    },
     hitId,
     tree.scope,
   );

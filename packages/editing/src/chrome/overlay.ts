@@ -168,7 +168,8 @@ function buildSelectionLayer<TPose>(
   const poseBounds = getPose
     ? containerAwareBoundsResolver(getPose, d, opts.getChildren, opts.isContainer, opts.scene)
     : null;
-  const shapeOutliner = opts.outline?.follow === 'shape' && opts.scene ? createShapeOutliner() : null;
+  const shapes = opts.outline?.follow === 'shape' ? opts.shapes ?? opts.scene : undefined;
+  const shapeOutliner = shapes ? createShapeOutliner() : null;
   const rotationHandleDistance = passes.handles
     ? rotationBadgeOf(opts)?.distancePx ?? null
     : null;
@@ -218,11 +219,11 @@ function buildSelectionLayer<TPose>(
           ? outlineIdsRaw.filter((id) => !suppressed.has(id as unknown as string))
           : outlineIdsRaw;
         let boxed = outlineIds as readonly string[];
-        if (shapeOutliner && opts.scene) {
+        if (shapeOutliner && shapes) {
           const previews = previewSourcesFrom(data);
           const traced = shapeOutliner.outline(boxed, {
-            scene: opts.scene,
-            poseOf: (id) => effectivePoseFrom(data, id) ?? getPose?.(id as never) ?? opts.scene!.get(id as NodeId)?.pose,
+            scene: shapes,
+            poseOf: (id) => effectivePoseFrom(data, id) ?? getPose?.(id as never) ?? shapes.get(id as NodeId)?.pose,
             inFlight: (id) => previewPoseIn(previews, id) != null,
           }, viewScaleOf(view));
           for (const cmd of shapeOutlineCommands(traced.paths, stroke, view)) out.push(cmd);

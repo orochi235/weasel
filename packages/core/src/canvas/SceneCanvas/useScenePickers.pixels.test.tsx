@@ -5,6 +5,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { renderHook } from '@testing-library/react';
+import type { ReactNode } from 'react';
+import { ViewRegistryProvider } from '../viewRegistry';
 import type { IdBuffer } from '@weasel-js/renderer';
 import { useScene } from 'core/scene/useScene';
 import { asNodeId, type Scene, type UseSceneOptions } from 'core/scene/types';
@@ -63,6 +65,8 @@ function harness(opts: {
   log?: Rect[];
   /** Fields laid over `front`. */
   front?: { locked?: boolean; pickable?: boolean; layer?: 'default' | 'notes' };
+  /** Mount under a view registry, as a `<SceneCanvas>` is. */
+  views?: boolean;
 }) {
   const view = opts.view ?? { x: 0, y: 0, scale: { x: 1, y: 1 } };
   const { result } = renderHook(() => {
@@ -79,11 +83,17 @@ function harness(opts: {
       readIds: () => read,
       ...(opts.interactive ? { isPointerInteractive: opts.interactive } : {}),
     });
-  });
-  return (x: number, y: number, asked?: PickView) => result.current.pickEvery({ x, y }, asked);
+  }, opts.views ? { wrapper: ({ children }: { children: ReactNode }) => <ViewRegistryProvider>{children}</ViewRegistryProvider> } : {});
+  const pick = (x: number, y: number, asked?: PickView) => result.current.pickEvery({ x, y }, asked);
+  return Object.assign(pick, { routedTo: (viewId: string, x: number, y: number) => result.current.pickEveryIn({ x, y }, viewId) });
 }
 
 describe("useScenePickers, geometry.picking: 'pixels'", () => {
+  it('reads the frame for a press routed to a view id no view holds, which picks with the surface camera', () => {
+    const pick = harness({ paint: [['back', { x: 0, y: 0, width: 100, height: 100 }], ['front', { x: 0, y: 0, width: 10, height: 10 }]], views: true });
+    expect(pick.routedTo('gone', 50, 50)).toEqual(['back']);
+  });
+
   it('finds what was painted at the point, not what the poses cover', () => {
     // Both poses cover (50, 50); only `back` painted there.
     const pick = harness({ paint: [['back', { x: 0, y: 0, width: 100, height: 100 }], ['front', { x: 0, y: 0, width: 10, height: 10 }]] });

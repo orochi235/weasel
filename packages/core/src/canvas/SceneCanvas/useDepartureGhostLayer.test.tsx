@@ -58,6 +58,56 @@ describe('useDepartureGhostLayer', () => {
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([130, 134]);
   });
 
+  it("draws a removed container's children moved by the scroll it had when it went", () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RECT_POSE_COMPOSITION });
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(100), data: null });
+    scene.scroll.set(p, { x: 20, y: 0 });
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: p, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = { ...removal(g, at(30), [{ node: k, pose: at(4), children: [] }]), scroll: { x: 2, y: 0 } };
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 1 }]),
+    }));
+    // p's own scroll is still in the store; g's rides on the removal.
+    expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([110, 112]);
+  });
+
+  it("composes a ghost under an envelope, and an envelope ghost's children, in the envelope's parent's frame", () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }], composition: RECT_POSE_COMPOSITION });
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(100), data: null });
+    const envelope = { dependsOn: 'children', derivePose: () => at(50) } as const;
+    const e = scene.add({ kind: 'group', layer: 'main', pose: at(50), data: null, parent: p, ...envelope } as never);
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: e } as unknown as N;
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(50), data: null, parent: p, children: [], ...envelope } as unknown as N;
+    const j = { id: asNodeId('j'), kind: 'mark', layer: 'main', pose: at(6), data: null, parent: g.id } as unknown as N;
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([
+        { removal: removal(k, at(4)), pose: at(4), alpha: 1 },
+        { removal: removal(g, at(50), [{ node: j, pose: at(6), children: [] }]), pose: at(50), alpha: 1 },
+      ]),
+    }));
+    expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([104, 150, 106]);
+  });
+
+  it('draws a ghost in each copy a container still in the scene draws, and a departing container\'s copies of its children', () => {
+    const scene = createScene<null, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const p = scene.add({ kind: 'group', layer: 'main', pose: at(0), data: null, copiesFromPose: () => [[1, 0, 0, 1, 200, 0]] } as never);
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'main', pose: at(0), data: null, parent: p, children: [], copiesFromPose: () => [[1, 0, 0, 1, 0, 50]] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = removal(g, at(0), [{ node: k, pose: at(4), children: [] }]);
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(0), alpha: 1 }]),
+    }));
+    const out = result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[];
+    const placed = (cmds: readonly DrawCommand[], dx = 0, dy = 0): string[] => cmds.flatMap((c) => {
+      if (c.kind === 'path' && c.path.kind === 'rect') return [`${c.path.x + dx},${c.path.y + dy}`];
+      if (c.kind !== 'group') return [];
+      const t = (c as GroupDrawCommand).transform as unknown as number[] | undefined;
+      return placed((c as GroupDrawCommand).children, dx + (t ? t[6]! : 0), dy + (t ? t[7]! : 0));
+    });
+    expect(placed(out).sort()).toEqual(['0,0', '200,0', '204,0', '204,50', '4,0', '4,50'].sort());
+  });
+
   it('draws a ghost on a parallax layer where its plane draws it', () => {
     const scene = createScene<null, 'main' | 'far', RectPose>({
       systemLayers: [{ id: 'main' }, { id: 'far', parallax: { pan: 0.5 } }],
@@ -83,6 +133,18 @@ describe('useDepartureGhostLayer', () => {
       scene: scene as never, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 1 }]),
     }));
     expect(rectsIn(result.current.draw(undefined, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([34]);
+  });
+
+  it("draws no ghost of a node on a layer the drawing view's layerVisibility hides", () => {
+    const scene = createScene<null, 'main' | 'off', RectPose>({ systemLayers: [{ id: 'main' }, { id: 'off' }] });
+    const g = { id: asNodeId('g'), kind: 'group', layer: 'off', pose: at(0), data: null, parent: null, children: [] } as unknown as N;
+    const k = { id: asNodeId('k'), kind: 'mark', layer: 'main', pose: at(4), data: null, parent: g.id } as unknown as N;
+    const ghost = removal(g, at(30), [{ node: k, pose: at(4), children: [] }]);
+    const { result } = renderHook(() => useDepartureGhostLayer({
+      scene: scene as never, sceneSlot: { drawOne }, departures: departing([{ removal: ghost, pose: at(30), alpha: 1 }]),
+    }));
+    const data = { getChromeState: () => ({ layerIsPainted: (layer: string) => layer !== 'off' }) };
+    expect(rectsIn(result.current.draw(data, VIEW, { width: 100, height: 100, dpr: 1 }) as DrawCommand[])).toEqual([34]);
   });
 
   it('draws no ghost of a hidden node, nor of anything under it', () => {

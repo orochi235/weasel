@@ -39,7 +39,8 @@ import {
 /** A node still in `scene`, with the pose it is shown at. */
 function shownNode<TData, TLayer extends string, TPose>(scene: Scene<TData, TLayer, TPose>, id: NodeId) {
   const node = scene.get(id);
-  return node && { node, pose: effectivePose(scene, node) };
+  const scroll = node && scene.scroll.get(id);
+  return node && { node, pose: effectivePose(scene, node), ...(scroll ? { scroll } : {}) };
 }
 
 let defaultIdCounter = 0;

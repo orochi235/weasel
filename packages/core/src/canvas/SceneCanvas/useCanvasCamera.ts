@@ -1,4 +1,4 @@
-import { useCallback, useInsertionEffect, useMemo, useRef } from 'react';
+import { useCallback, useInsertionEffect, useMemo, useReducer, useRef } from 'react';
 import { useAnimator } from '@weasel-js/animator/react';
 import { useViewAnimationOn, type ViewAnimationApi } from 'core/viewport/useViewAnimation';
 import { sameView, type View } from 'core/viewport/view';
@@ -27,8 +27,9 @@ export function useCanvasCamera(opts: SceneCameraProps & {
   const { view, defaultView, onViewChange, dims, requestRedraw } = opts;
   const contentBoundsRef = useRef<() => Bounds | null>(() => null);
   const animationRef = useRef<ViewAnimationApi | null>(null);
-  /** The runner has written a frame since the controlled view last moved. */
+  /** The runner has written a frame since the canvas last rendered. */
   const runnerWroteRef = useRef(false);
+  const [, rerender] = useReducer((n: number) => n + 1, 0);
   const viewState = useCanvasView({
     view,
     defaultView,
@@ -48,15 +49,18 @@ export function useCanvasCamera(opts: SceneCameraProps & {
   // not strand a zoom half-finished or freeze the camera.
   const animator = useAnimator();
   const { viewRef, setViewFromInput, controlled } = viewState;
+  const lastControlledRef = useRef(controlled);
   const channel = useMemo(
     () => ({
       get: () => viewRef.current,
       set: (next: View) => {
         runnerWroteRef.current = true;
         setViewFromInput(next);
+        // Batched with the consumer's answer when there is one, so a frame they drop still renders and is let go.
+        if (lastControlledRef.current) rerender();
       },
     }),
-    [viewRef, setViewFromInput],
+    [viewRef, setViewFromInput, rerender],
   );
   const viewAnimation = useViewAnimationOn(channel, animator);
   useInsertionEffect(() => { animationRef.current = viewAnimation; });
@@ -64,15 +68,15 @@ export function useCanvasCamera(opts: SceneCameraProps & {
   // A controlled consumer writing `view` in their own state never passes
   // through `onViewChange`. Their handling of a frame cannot be told from such
   // a write by value, since they may clamp or round what they are handed, so it
-  // is told by order: a prop that moves with no frame written since it last
-  // moved is theirs. One that lands in the same render as a frame's is missed.
-  const lastControlledRef = useRef(controlled);
+  // is told by order: the render after a frame is written is that frame's answer, whether it moves the prop,
+  // keeps it or rounds it away, and any other move is theirs. One that lands in the same render as a frame's is missed.
   useInsertionEffect(() => {
     const was = lastControlledRef.current;
     lastControlledRef.current = controlled;
+    const answered = runnerWroteRef.current;
+    runnerWroteRef.current = false;
     if (!controlled || !was || sameView(was, controlled)) return;
-    if (runnerWroteRef.current) runnerWroteRef.current = false;
-    else viewAnimation.stopIfExternal();
+    if (!answered) viewAnimation.stopIfExternal();
   });
   const camera = useMemo(() => ({ target: viewAnimation.viewTarget, animator }), [viewAnimation, animator]);
   const publishContent = useCallback((read: () => Bounds | null) => { contentBoundsRef.current = read; }, []);

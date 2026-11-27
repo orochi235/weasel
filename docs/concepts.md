@@ -662,9 +662,11 @@ A `RenderLayer<TData>` is a named draw function. The `layers` prop on
 `<SceneCanvas>` is a map of slot name → value:
 
 - **Standard slots** (canonical order): `grid`, `cellHighlight`, `scene`,
-  `selectionOverlay`, then `pathEditingOverlay`. `scene`, `selectionOverlay`
-  and `pathEditingOverlay` take a config the canvas builds the layer from
-  (`{ drawOne, ... }` for `scene`); `grid` and `cellHighlight` take a pre-built
+  `selectionOverlay`, then `pathEditingOverlay` and `dispatcherOverlay` (the
+  marquee, lasso and polyline in flight). `scene`, `selectionOverlay`,
+  `pathEditingOverlay` and `dispatcherOverlay` take a config the canvas builds
+  the layer from (`{ drawOne, ... }` for `scene`, `{ style }` for the two
+  overlays); `grid` and `cellHighlight` take a pre-built
   `{ layer }` (`createGridLayer`, `createCellHighlightLayer` from
   `@weasel-js/guides`). Any of them takes `{ layer }` in place of its own, or
   `null` to suppress it.

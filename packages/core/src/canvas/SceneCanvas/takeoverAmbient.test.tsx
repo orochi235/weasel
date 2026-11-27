@@ -39,6 +39,7 @@ function Takeover(props: {
   own?: SurfaceContribution[];
   ambient?: SurfaceContribution[];
   features?: FeaturePreset[];
+  defaultActiveTool?: string;
 }) {
   const scene = createScene<unknown, 'main', unknown>({ composition: IDENTITY_POSE_COMPOSITION, systemLayers: [{ id: 'main' }] });
   const tools = useTools({ active: null, registry: {}, ...(props.own ? { ambient: props.own } : {}) });
@@ -47,6 +48,7 @@ function Takeover(props: {
       scene={scene} layers={{}} width={400} height={300} tools={tools}
       {...(props.ambient ? { ambient: props.ambient } : {})}
       {...(props.features ? { features: props.features } : {})}
+      {...(props.defaultActiveTool ? { defaultActiveTool: props.defaultActiveTool } : {})}
     />
   );
 }
@@ -82,5 +84,10 @@ describe('<SceneCanvas> always-on entries under a tools takeover', () => {
     render(<WeaselProvider><Takeover own={[takeoverOwn.entry]} ambient={[canvasOwn.entry]} /></WeaselProvider>);
     expect(takeoverOwn.attach).toHaveBeenCalledTimes(1);
     expect(canvasOwn.attach).not.toHaveBeenCalled();
+  });
+
+  it('ignores a defaultActiveTool only the takeover could hold', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(() => render(<WeaselProvider><Takeover defaultActiveTool="pen" /></WeaselProvider>)).not.toThrow();
   });
 });

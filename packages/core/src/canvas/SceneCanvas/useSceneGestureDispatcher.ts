@@ -1,5 +1,5 @@
 import { useLatest } from '@weasel-js/react';
-import { createLongPressStore, type Dispatcher, type TraceRing, type WorldPoint } from '@weasel-js/routing';
+import { createLongPressStore, type ActionsRegistry, type Dispatcher, type TraceRing, type WorldPoint } from '@weasel-js/routing';
 import {
   useActionsRegistry, useDepRegistry, useGestureDispatcher, type DepRegistry, type HeldPointerFeed,
 } from '@weasel-js/routing/react';
@@ -22,7 +22,7 @@ import { useOptionalViewRegistry, type ViewRegistry } from '../viewRegistry';
 import { useSurfaceRouting } from './useSurfaceRouting';
 import { traceConversion, type CoordTraceEntry } from './coordTrace';
 import type { SceneCanvasLongPress } from './props';
-import { VIEW_MARKER_ENTRY_ID } from '../../domains/viewports/viewMarkerDrag';
+import { VIEW_MARKER_DRAG, VIEW_MARKER_ENTRY_ID } from '../../domains/viewports/viewMarkerDrag';
 
 /** What `<SceneCanvas>` hands {@link useSceneGestureDispatcher}. */
 export interface SceneGestureDispatcherInputs {
@@ -170,10 +170,14 @@ function useAffordanceAt(inputs: AffordanceInputs, depRegistry: DepRegistry, vie
  *  routed tools or beside a takeover: `actions={null}` leaves it out. */
 function useMarkerGate(
   viewRegistry: ViewRegistry | null, ambient: readonly Contribution[], contributions: readonly Contribution[],
+  actions: ActionsRegistry | null,
 ): void {
   const installed = [...ambient, ...contributions].some((entry) => entry.id === VIEW_MARKER_ENTRY_ID);
   const installedRef = useLatest(installed);
-  useEffect(() => viewRegistry?.gateMarkers(() => installedRef.current), [viewRegistry, installedRef]);
+  const actionsRef = useLatest(actions);
+  // A muted drag action lists as absent, and a marker that cannot be dragged must not take the press.
+  useEffect(() => viewRegistry?.gateMarkers(() => installedRef.current
+    && (actionsRef.current?.list().some((a) => a.id === VIEW_MARKER_DRAG) ?? true)), [viewRegistry, installedRef, actionsRef]);
 }
 
 /** Which body a world point lands on, its selection state, and its routing kind. */
@@ -235,7 +239,7 @@ export function useSceneGestureDispatcher(inputs: SceneGestureDispatcherInputs):
   }, [tools.registry, tools.ambient, contributions]);
 
   const kindOfNodeRef = useLatest(kindOfNode);
-  useMarkerGate(viewRegistry, tools.ambient, contributions);
+  useMarkerGate(viewRegistry, tools.ambient, contributions, registry);
 
   const affordanceWithLayers = useAffordanceAt(inputs, depRegistry, viewRegistry);
   const classifyTarget = useClassifyTarget(inputs, kindOfNodeRef);

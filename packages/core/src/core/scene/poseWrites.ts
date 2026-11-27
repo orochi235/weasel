@@ -9,6 +9,7 @@ import { createRemovalLog } from './poseRemovals';
 import type { RegisteredOp } from './types';
 import type { LayoutMove } from './layoutTypes';
 import type { NodeId } from '@weasel-js/routing';
+import type { ScrollOffset } from './composeFrame';
 
 /**
  * Where a reported pose write came from.
@@ -43,6 +44,8 @@ export interface RemovedNode<TPose, TNode = unknown> {
   node: TNode;
   /** Where it was shown, override included, in its stored frame. */
   pose: TPose;
+  /** How far its content was scrolled as it went, when it was: the scroll store forgets it once it is gone. */
+  scroll?: ScrollOffset;
   children: readonly RemovedNode<TPose, TNode>[];
 }
 
@@ -74,8 +77,8 @@ export interface ScenePoseReports<TPose, TNode = unknown> {
 
 /** What the log reads of the scene it reports for. */
 export interface PoseWriteEnv<TPose, TNode> {
-  /** A node still in the scene, with the pose it is shown at. */
-  shown(id: NodeId): { node: TNode; pose: TPose } | undefined;
+  /** A node still in the scene, with the pose it is shown at and how far its content is scrolled. */
+  shown(id: NodeId): { node: TNode; pose: TPose; scroll?: ScrollOffset } | undefined;
   /** Whether the edit running now is inside `scene.untracked`. */
   untracked(): boolean;
   /** The scene's change notice. The log reports on it, subscribed before

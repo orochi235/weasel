@@ -19,7 +19,7 @@ import type { Node, Scene } from 'core/scene/types';
 import { ownClipOf } from '../ownClip';
 import { wrapWithPoseRotation } from '../poseRotation';
 import type { Dispatcher } from '@weasel-js/routing';
-import { previewSourcesFrom } from '../drawEnvelope';
+import { previewSourcesFrom, sceneLayerPaintedFrom } from '../drawEnvelope';
 import { flattenPreviews, resolvePreviews, type PreviewNode } from 'interactions/actions/resolvePreviews';
 import { createLayerPlaneLookup } from '../pickWalk';
 import { planeTransform } from '../planeClips';
@@ -30,7 +30,7 @@ import { copiesAbove } from '../copiesAbove';
 import { scenePaintedPoseOf } from '../derivedPath';
 import { inheritedPaintOf, inheritsPaint, sceneAncestors } from 'core/scene/inheritedPaint';
 import { withShownData } from 'core/scene/nodeAsShown';
-import { hidesSubtree } from 'core/scene/nodeGates';
+import { hiddenAtOrAbove, hidesSubtree } from 'core/scene/nodeGates';
 import { pixelScaleCtx } from '../pixelScale';
 
 const GHOST_ALPHA = 0.85;
@@ -81,7 +81,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       // the plane's view, inside a group carrying it into its parent's world.
       const planeOf = createLayerPlaneLookup(sc.layers, view);
       const mapOf = (layer: string): PlaneMap | null => planeOf?.(layer) ?? null;
-      const shown = new Set(sc.layers.filter((l) => l.visible).map((l) => l.id as string));
+      const paints = sceneLayerPaintedFrom(data, sc.layers);
       const viewOf = (layer: string) => {
         const parallax = planeOf ? sc.layers.find((l) => l.id === layer)?.parallax : undefined;
         return parallax ? deriveParallaxView(view, parallax) : view;
@@ -101,7 +101,7 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
         const v = viewOf(entry.node.layer);
         const scaled = pixelScaleCtx(v, dims.dpr);
         const ctx = sceneShapesCtx(sc, inheritsPaint(effNode) ? { ...scaled, inherited: inheritedPaintOf(effNode, above()) } : scaled);
-        const painted = shown.has(entry.node.layer);
+        const painted = paints(entry.node.layer);
         const drawn = painted && slot.drawnPose ? slot.drawnPose(effNode, entry.pose) : entry.pose;
         const self = painted ? drawOne(effNode, drawn, v, ctx) : [];
         const kids: DrawCommand[] = [];
@@ -130,6 +130,8 @@ export function usePreviewGhostLayer<TData, TLayer extends string, TPose>(args: 
       const previewed = new Map(flattenPreviews(roots).map((e) => [e.id as string, e.data]));
       const asPreviewed = (n: Node<TData, TLayer, TPose>) => (previewed.has(n.id) ? { kind: n.kind, data: previewed.get(n.id) } : n);
       for (const root of roots) {
+        // As the scene paints it: nothing under a hidden container still in the scene.
+        if (hiddenAtOrAbove(sc, root.node.parent ?? null)) continue;
         const sink = root.opaque ? settled : ghosted;
         const cmds = drawEntry(root, null, () => [...sceneAncestors((id: never) => sc.get(id), root.node)].map(asPreviewed));
         for (const cmd of cmds) sink.push(cmd);

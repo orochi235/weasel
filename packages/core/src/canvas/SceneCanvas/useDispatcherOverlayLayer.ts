@@ -82,10 +82,15 @@ export function useDispatcherOverlayLayer(args: {
       label: 'Dispatcher overlay',
       space: 'screen',
       draw: (data, view) => {
-        const cfg = { ...DEFAULT_STYLE, ...(styleRef.current ?? {}) };
-        // Merged rather than replaced: naming one role must not delete the
-        // kit's others.
-        const roles = { ...OVERLAY_ROLE_STROKES, ...(styleRef.current?.roles ?? {}) };
+        const style = styleRef.current;
+        const cfg = {
+          fill: style?.fill ?? DEFAULT_STYLE.fill,
+          stroke: style?.stroke ?? DEFAULT_STYLE.stroke,
+          dash: style?.dash ?? DEFAULT_STYLE.dash,
+          lineWidth: style?.lineWidth ?? DEFAULT_STYLE.lineWidth,
+        };
+        // Merged rather than replaced: naming one role must not delete the kit's others.
+        const roleStroke = (role: string) => getOwn(style?.roles ?? {}, role) ?? getOwn(OVERLAY_ROLE_STROKES, role);
         const t = viewToTransform(view);
         const out: DrawCommand[] = [];
 
@@ -139,7 +144,7 @@ export function useDispatcherOverlayLayer(args: {
 
           if (ov.kind === 'polyline') {
             const stroke =
-              getOwn(roles, ov.role) ??
+              roleStroke(ov.role) ??
               { paint: { color: cfg.stroke }, width: cfg.lineWidth, dash: cfg.dash };
             out.push({ kind: 'path', path: polylineFromPoints(onScreen(ov.points, t)), stroke });
             continue;

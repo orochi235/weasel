@@ -149,4 +149,25 @@ describe('<ViewMarker>', () => {
       error.mockRestore();
     }
   });
+
+  it('lets a press fall through a marker on a canvas that mutes the marker drag', () => {
+    let registry: ViewRegistry | null = null;
+    function Probe() {
+      registry = useOptionalViewRegistry();
+      return null;
+    }
+    const api = createRef<SceneCanvasApi>();
+    const scene = createScene<D, 'main', P>({ systemLayers: [{ id: 'main' }] });
+    const surface = (muted: boolean) => (
+      <SceneCanvas scene={scene} layers={{}} width={400} height={300} view={ROOT} ref={api} actions={muted ? { 'view-marker.drag': null } : {}}>
+        <Probe />
+        <ViewMarker {...MARKER} />
+      </SceneCanvas>
+    );
+    const r = render(surface(false));
+    add(api, PIP);
+    expect(registry!.markerAt('pip', { x: 200, y: 150 })).not.toBeNull();
+    r.rerender(surface(true));
+    expect(registry!.markerAt('pip', { x: 200, y: 150 })).toBeNull();
+  });
 });
