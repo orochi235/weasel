@@ -65,12 +65,22 @@ function keepFor(spec: ClockSpec, span: number, duration: number): number {
   return Number.isFinite(duration) ? 2 * duration : 60_000;
 }
 
-/** The end of the run a sync to `timestamp` would carry the clock to or past, moving toward it; NaN for none. */
-function endCrossed(run: Run, before: number, timestamp: number): number {
+/** The end of the run a sync to `timestamp` would carry the clock past; NaN for none. */
+function endPassed(run: Run, timestamp: number): number {
   const ahead = run.t.time(timestamp);
-  if (ahead >= run.span && (run.rate > 0 || ahead > before)) return run.span;
-  if (ahead <= 0 && (run.rate < 0 || ahead < before)) return 0;
+  if (ahead > run.span) return run.span;
+  if (ahead < 0) return 0;
   return Number.NaN;
+}
+
+/** Stops a clock standing on an end of its run and moving onto it, by its rate after the frame or how it moved. */
+function stopAtEnd(run: Run, hub: Hub, before: number): void {
+  const moved = run.elapsed - before;
+  const end = run.elapsed >= run.span && (run.rate > 0 || moved > 0);
+  if (!end && !(run.elapsed <= 0 && (run.rate < 0 || moved < 0))) return;
+  run.elapsed = end ? run.span : 0;
+  run.rate = 0;
+  hub.subs.emit();
 }
 
 function syncTo(run: Run, hub: Hub, timestamp: number): void {
@@ -81,10 +91,14 @@ function syncTo(run: Run, hub: Hub, timestamp: number): void {
   const counts = !Number.isNaN(run.last) && !run.slept && timestamp >= run.last;
   // The transport counts host time between syncs; a sync after a sleep only records the time.
   if (run.slept) run.t.rebase();
-  const end = counts ? endCrossed(run, before, timestamp) : Number.NaN;
+  const end = counts ? endPassed(run, timestamp) : Number.NaN;
   if (Number.isNaN(end)) {
     run.t.sync(timestamp);
-    if (counts && wasRamping && run.t.ramping === null) hub.subs.emit();
+    if (counts) {
+      const rate = run.rate;
+      stopAtEnd(run, hub, before);
+      if (run.rate === rate && wasRamping && run.t.ramping === null) hub.subs.emit();
+    }
   } else {
     // Stopped where it crosses the end rather than seeking back from past it, which a history kept `keep` ms back
     // may no longer reach.
