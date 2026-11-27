@@ -120,12 +120,14 @@ export function createSweepAction<K>(opts: SweepOptions<K>): Action {
         // An empty handle hands the drag on to the next candidate.
         const run = opts.begin({ ...first, ctx });
         if (!run) return {};
-        let current = first;
+        let current: SweepItem<K> | null = first;
         let last = ctx.drag?.start ?? ctx.world;
         run.enter(first);
         const reach = (x: number, y: number): void => {
           const item = itemAt(surface, opts.keyOf, x, y);
-          if (item && item.element !== current.element && !Object.is(item.key, current.key)) {
+          // A gap ends the item, so the one it left is entered again when the drag comes back.
+          if (!item) current = null;
+          else if (!current || (item.element !== current.element && !Object.is(item.key, current.key))) {
             current = item;
             run.enter(item);
           }

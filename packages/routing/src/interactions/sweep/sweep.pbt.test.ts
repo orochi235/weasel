@@ -27,8 +27,9 @@ const cellAt = (g: Grid, x: number, y: number): string | undefined => {
   return c >= 0 && c < g.cols && r >= 0 && r < g.rows ? `${c},${r}` : undefined;
 };
 
-/** Sweep `path` across `g`: the keys entered, and after each move the key last entered. */
-function sweep(g: Grid, path: readonly { x: number; y: number }[]): { entered: string[]; after: (string | undefined)[] } {
+/** Sweep `path` across `g`: the keys entered, after each move the key last entered, and how many times a cell was
+ *  entered again with no hit test off the grid since it was. */
+function sweep(g: Grid, path: readonly { x: number; y: number }[]): { entered: string[]; after: (string | undefined)[]; repeats: number } {
   host?.remove();
   host = document.createElement('div');
   document.body.append(host);
@@ -40,16 +41,23 @@ function sweep(g: Grid, path: readonly { x: number; y: number }[]): { entered: s
     cells.set(`${c},${r}`, el);
   }
   let hits = 0;
+  let offGrid = false;
+  let repeats = 0;
   document.elementFromPoint = (x: number, y: number) => {
     if (++hits > HIT_TEST_BUDGET) throw new Error(`more than ${HIT_TEST_BUDGET} hit tests in one move`);
     const key = cellAt(g, x, y);
+    if (!key) offGrid = true;
     return key ? cells.get(key)! : document.body;
   };
   const entered: string[] = [];
   const action = createSweepAction<string>({
     surface: () => host,
     keyOf: (el) => (el as HTMLElement).dataset.key,
-    begin: () => ({ enter: (item) => { entered.push(item.key); } }),
+    begin: () => ({ enter: (item) => {
+      if (item.key === entered.at(-1) && !offGrid) repeats++;
+      offGrid = false;
+      entered.push(item.key);
+    } }),
   });
   const invoker = action.invoker as OngoingInvoker;
   const [first, ...rest] = path;
@@ -62,7 +70,7 @@ function sweep(g: Grid, path: readonly { x: number; y: number }[]): { entered: s
     after.push(entered.at(-1));
   }
   handle.onEnd?.(ctx(path.at(-1)!), 'commit');
-  return { entered, after };
+  return { entered, after, repeats };
 }
 
 const grid = fc.record({
@@ -79,10 +87,11 @@ const pressed = (g: Grid) => fc.record({
 });
 const drag = grid.chain((g) => fc.tuple(fc.constant(g), pressed(g), fc.array(pointIn(g), { minLength: 1, maxLength: 12 })));
 
-/** Each move that ends on a cell leaves the sweep standing on it, and no cell is entered twice running. */
-function expectFollows(g: Grid, path: readonly { x: number; y: number }[], { entered, after }: ReturnType<typeof sweep>): void {
+/** Each move that ends on a cell leaves the sweep standing on it, and no cell is entered twice running unless the
+ *  sweep left the grid between. */
+function expectFollows(g: Grid, path: readonly { x: number; y: number }[], { entered, after, repeats }: ReturnType<typeof sweep>): void {
   expect(entered[0]).toBe(cellAt(g, path[0]!.x, path[0]!.y));
-  for (let i = 1; i < entered.length; i++) expect(entered[i]).not.toBe(entered[i - 1]);
+  expect(repeats).toBe(0);
   path.slice(1).forEach((p, i) => {
     const under = Number.isFinite(p.x) && Number.isFinite(p.y) ? cellAt(g, p.x, p.y) : undefined;
     if (under !== undefined) expect(after[i], `after a move to ${p.x},${p.y}`).toBe(under);
@@ -90,7 +99,7 @@ function expectFollows(g: Grid, path: readonly { x: number; y: number }[], { ent
 }
 
 describe('createSweepAction', () => {
-  it('stands on the cell under the pointer after every move, entering none twice running', () => {
+  it('stands on the cell under the pointer after every move, entering none twice running without leaving the grid', () => {
     fc.assert(fc.property(drag, ([g, first, rest]) => {
       const path = [first, ...rest];
       expectFollows(g, path, sweep(g, path));

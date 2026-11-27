@@ -110,6 +110,21 @@ describe('createSweepAction', () => {
     surface.remove();
   });
 
+  it('enters an item again after the drag leaves it for a gap and comes back', () => {
+    const entered: string[] = [];
+    const { row, at } = setup({ sweep: { begin: () => ({ enter: (i) => entered.push(i.key) }) } });
+    const items = row.querySelectorAll('[data-key]');
+    // x = 10 to 19 is a gap.
+    document.elementFromPoint = (x: number) => (x >= 10 && x < 20 ? row : items[Math.floor(x / 10)] ?? row);
+    act(() => {
+      pointer(at(5), 'pointerdown', 5);
+      pointer(at(5), 'pointermove', 15);
+      pointer(at(5), 'pointermove', 5);
+      pointer(at(5), 'pointerup', 5);
+    });
+    expect(entered).toEqual(['a', 'a']);
+  });
+
   it('enters the pressed item, then every item the drag crosses, in order', () => {
     const entered: string[] = [];
     const end = vi.fn();
