@@ -95,10 +95,15 @@ export function useViewNesting(
   }, [live, registry]);
 
   /** The layers this view draws, in the order it draws them: of the surface's,
-   *  or of what the view it is nested in or follows draws. */
+   *  or of what the view it follows draws, and only those the view it is nested in draws. */
   const drawnLayers = useCallback((): readonly RenderLayer<unknown>[] => {
     const followed = ofFollowed((reg) => reg.drawnLayers());
-    if (followed) return viewPaintedLayers(followed.value, live.current);
+    if (followed) {
+      const drawn = viewPaintedLayers(followed.value, live.current);
+      if (live.current.parent === undefined) return drawn;
+      const inParent = new Set(ofParent((reg) => reg.drawnLayers())?.value);
+      return drawn.filter((l) => inParent.has(l));
+    }
     if (live.current.parent !== undefined) return viewPaintedLayers(ofParent((reg) => reg.drawnLayers())?.value ?? [], live.current);
     return viewPaintedLayers(registry?.surface()?.layers() ?? [], live.current);
   }, [registry, live, ofParent, ofFollowed]);
@@ -109,7 +114,7 @@ export function useViewNesting(
   const layerIsPainted = useCallback((layerId: string): boolean => {
     if (!sceneLayerGate(registry?.surface()?.layers() ?? [], live.current)(layerId)) return false;
     const followed = ofFollowed((reg) => reg.layerIsPainted(layerId));
-    if (followed) return followed.value;
+    if (followed && !followed.value) return false;
     if (live.current.parent === undefined) return true;
     return ofParent((reg) => reg.layerIsPainted(layerId))?.value ?? false;
   }, [registry, sceneLayerGate, live, ofParent, ofFollowed]);

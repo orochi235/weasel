@@ -36,4 +36,14 @@ describe('useViewNesting', () => {
     expect(a.current.drawnLayers()).toEqual([]);
     expect(a.current.layerIsPainted('a')).toBe(false);
   });
+
+  it('keeps the parent gate on a nested view that follows another', () => {
+    const { mount } = harness();
+    mount('parent', { layers: (s) => s.filter((l) => l.id === 'scene:a') });
+    mount('leader', {});
+    const v = mount('v', { parent: 'parent', follows: () => 'leader' });
+    expect(v.current.drawnLayers().map((l) => l.id)).toEqual(['scene:a']);
+    expect(v.current.layerIsPainted('a')).toBe(true);
+    expect(v.current.layerIsPainted('b')).toBe(false);
+  });
 });
