@@ -242,11 +242,13 @@ adds is the release bot's version bump or work CI already tested. Resolve its co
 itself; the next batch's run covers the result.
 
 **Everything ready to merge shares one fleet run: the batch's (2026-10-30).** A feature branch, an
-agent's arc and a quick fix finish on the test files their diff touches (locally, `--maxWorkers=1`,
-one at a time), `typecheck:packages` for their packages, eslint on their named files and `check:size`,
-then report ready. Where those tests would take a while locally, a branch may run `npm run test:fleet`
-on itself, which runs only the files whose imports reach what it changed; never with `--full`, and it
-does not stand in for the batch run.
+agent's arc and a quick fix finish on the test files their diff touches, `typecheck:packages` for their
+packages, eslint on their named files and `check:size`, then report ready. Only a short file runs locally, one at a
+time with `--maxWorkers=1` and only while the machine is quiet; several files, or any that take minutes, go to the
+fleet as one `onto do --kind test` job or as `npm run test:fleet` on the branch, which runs only the files whose
+imports reach what it changed (never with `--full`; it does not stand in for the batch run). On 2026-11-26 a stream
+of single-file local runs, with agents briefed to do the same, took the controller to a load average of 500. Every
+brief to an agent says this up front.
 Quick fixes from a `docs/TODO.md` pass go in as one commit each; grouping them is the agent's call,
 not Mike's, and the report says which went in. The controller merges every ready branch and fix into
 one `batch/<date>` branch in a worktree, and runs `npm run test:batch` once on its tip, which runs
