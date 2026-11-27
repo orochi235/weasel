@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { lineAt, stripComments, walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 /** The lowest rung of the ladder, read from the generated tokens. */
 export function floor(css: string): number {
@@ -42,6 +43,9 @@ export function offenders(files: readonly { path: string; source: string }[], lo
 }
 
 if (process.argv[1]?.endsWith('check-layers.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on a `z-index` literal at or above the lowest `--wzl-z-*` rung; use a rung of the layer ladder.',
+  });
   const root = join(import.meta.dirname, '..');
   const lowest = floor(readFileSync(join(root, 'packages/theme/src/generated/tokens.css'), 'utf8'));
   if (!Number.isFinite(lowest)) throw new Error('no --wzl-z-<layer> rungs in packages/theme/src/generated/tokens.css; run `npm run gen:tokens -w @weasel-js/theme`');

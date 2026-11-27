@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { blocks, lineAt, stripComments, walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 export interface Offender {
   readonly file: string;
@@ -38,6 +39,9 @@ export function onAccentOffenders(path: string, source: string): Offender[] {
 }
 
 if (process.argv[1]?.endsWith('check-on-accent.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on a rule setting `color: var(--wzl-fg-on-accent)` that does not redirect `--wzl-fg-muted` and `--wzl-fg-subtle` to their `-on-accent` pair.',
+  });
   const root = join(import.meta.dirname, '..');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))]
     .map((p) => relative(root, p))

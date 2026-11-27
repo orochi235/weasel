@@ -9,7 +9,18 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { cli } from './lib/help.mjs';
 import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  summary: "Fails when a package's build inlines one of its own declared dependencies, read from the built sourcemaps. Run after a build.",
+  positionals: '[<checkout>]',
+  notes: '<checkout> is another tree to read in place of this one, for checking its build.',
+});
+if (positionals.length > 1) {
+  console.error(`check:bundled-deps — one checkout at most, not ${positionals.join(' ')}`);
+  process.exit(2);
+}
 
 const VENDORED = /node_modules\/((?:@[^/]+\/)?[^/]+)\//;
 
@@ -22,7 +33,7 @@ function* maps(dir) {
 }
 
 // A checkout to read in place of this one, for checking another tree's build.
-const root = process.argv[2] ?? repoRoot;
+const root = positionals[0] ?? repoRoot;
 
 const found = [];
 // A package with no sourcemap to read would pass on nothing: unbuilt, or built with its maps turned off.

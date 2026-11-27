@@ -16,6 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { blocks, lineAt, stripComments, varSpans, walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 import { isStylesheet } from './check-spacing.ts';
 
 /** The control ranks and their value in the default density, from the generated tokens. */
@@ -70,6 +71,9 @@ export function offenders(files: readonly { path: string; source: string }[], ra
 
 
 if (process.argv[1]?.endsWith('check-controls.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on a stylesheet `height`, `min-height` or `block-size` written as a px literal equal to a control rank (`--wzl-control-h*`, `--wzl-tb-height`); use the rank token.',
+  });
   const root = join(import.meta.dirname, '..');
   const rankOf = ranks(readFileSync(join(root, 'packages/theme/src/generated/tokens.css'), 'utf8'));
   if (rankOf.size === 0) throw new Error('no control ranks in packages/theme/src/generated/tokens.css; run `npm run gen:tokens -w @weasel-js/theme`');

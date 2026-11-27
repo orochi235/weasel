@@ -17,6 +17,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { judgeUses, matchLines, sourceFiles } from './lib/allowlisted-uses.mjs';
+import { cli } from './lib/help.mjs';
 
 /** Paths that may build a `Set` of functions, and why. `[why, uses]` covers more than one use. */
 const ALLOWED = new Map([
@@ -85,6 +86,9 @@ function sourceRoots(root) {
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  cli(import.meta.url, {
+    summary: 'Fails on a hand-rolled listener set (a `Set` of functions, or a `Map` of function arrays) in package or app source that its allowlist does not cover; notify through `createEmitter`.',
+  });
   const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
   const found = new Map();

@@ -10,6 +10,11 @@
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from './lib/help.mjs';
+
+cli(import.meta.url, {
+  summary: "Fails on a publishable workspace missing from the changesets `fixed` group, a group entry that is no published workspace, or a group whose versions have drifted apart.",
+});
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CONFIG = join(ROOT, '.changeset/config.json');

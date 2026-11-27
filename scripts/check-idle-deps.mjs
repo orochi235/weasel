@@ -11,7 +11,18 @@
  */
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { cli } from './lib/help.mjs';
 import { publishableWorkspaces, repoRoot } from './lib/workspaces.mjs';
+
+const { positionals } = cli(import.meta.url, {
+  summary: 'Fails when a package declares a sibling nothing its build names, or its build imports a sibling it does not depend on. Run after a build.',
+  positionals: '[<checkout>]',
+  notes: '<checkout> is another tree to read in place of this one, for checking its build.',
+});
+if (positionals.length > 1) {
+  console.error(`check:idle-deps — one checkout at most, not ${positionals.join(' ')}`);
+  process.exit(2);
+}
 
 const BUILT = /\.(?:[cm]?js|d\.[cm]?ts|css)$/;
 const SPECIFIER = /["'](@weasel-js\/[a-z0-9-]+)(?:\/[^"'\s]*)?["']/g;
@@ -27,7 +38,7 @@ function* files(dir) {
 }
 
 // A checkout to read in place of this one, for checking another tree's build.
-const root = process.argv[2] ?? repoRoot;
+const root = positionals[0] ?? repoRoot;
 
 const idle = [];
 const undeclared = [];

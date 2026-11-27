@@ -16,9 +16,16 @@
 // `menu`, which existed on npm but had never been given a trusted publisher.
 import { classify, readPending, readStates } from './lib/first-publish.mjs';
 import { registryBase } from './lib/registry.mjs';
+import { cli } from './lib/help.mjs';
 import { publishableWorkspaces } from './lib/workspaces.mjs';
 
-const warnOnly = process.argv.includes('--warn');
+const { values } = cli(import.meta.url, {
+  summary: "Asks the npm registry about every publishable package and fails on one the release job's OIDC credential cannot publish: never published, or with no trusted publisher.",
+  options: {
+    warn: { type: 'boolean', description: 'report the problems as warnings and exit 0' },
+  },
+});
+const warnOnly = values.warn;
 
 const LABEL = {
   ok: 'ok',

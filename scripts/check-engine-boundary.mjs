@@ -13,6 +13,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { cli } from './lib/help.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 export const SRC = join(ROOT, 'packages/core/src');
@@ -88,6 +89,9 @@ function walk(starts, { values }) {
 export const engineFiles = () => walk(SEEDS, { values: false }).files;
 
 function main() {
+  cli(import.meta.url, {
+    summary: "Fails when core's engine files, or the `@weasel-js/core/engine` and `/ops` entries' value imports, reach a 2D package.",
+  });
   const walks = [
     ['the engine files', walk(SEEDS, { values: false })],
     [ENTRY, walk([ENTRY], { values: true })],

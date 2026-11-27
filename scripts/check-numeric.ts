@@ -15,6 +15,7 @@
 import { readFileSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { blocks, lineAt, stripComments, walk } from './lib/cssBlocks.ts';
+import { cli } from './lib/help.mjs';
 
 export interface Offender {
   readonly file: string;
@@ -55,6 +56,9 @@ export function scriptOffenders(path: string, source: string): Offender[] {
 }
 
 if (process.argv[1]?.endsWith('check-numeric.ts')) {
+  cli(import.meta.url, {
+    summary: 'Fails on numeric type (`tabular-nums`, `--wzl-font-numeric`) set anywhere but `@weasel-js/theme/numeric.module.css`, and on a rule that composes it and then overrides its face.',
+  });
   const root = join(import.meta.dirname, '..');
   const files = [...walk(join(root, 'packages')), ...walk(join(root, 'apps'))].map((p) => relative(root, p));
   const bad = files.flatMap((p) => {
