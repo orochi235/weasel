@@ -189,7 +189,7 @@ function tieCliques(n: number, ties: (i: number, j: number) => boolean): number[
 function foldPlatformCopies(bucket: RegistryEntry[]): RegistryEntry[] {
   const out: RegistryEntry[] = [];
   for (const e of bucket) {
-    const i = out.findIndex((k) => sameOutcome([k, e]) && (platformBound(k) || platformBound(e)));
+    const i = out.findIndex((k) => sameOutcome([k, e]) && platformBound(k) !== platformBound(e));
     if (i === -1) out.push(e);
     else if (platformBound(out[i]!)) out[i] = e;
   }
