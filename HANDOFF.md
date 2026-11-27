@@ -48,18 +48,19 @@ four debounce waits (SingletonExperiment, usePersistedState, PersistedFloatingPa
 through `state/records.fixture.tsx`'s `catchRecords` instead. Waits that follow an unmount or `pagehide` were left
 alone, since they ride the close-time flush.
 
-Plan steps 1 and 2 are done; the oxc check was clean. Step 3 is running: `test:fleet -- batch/2026-11-27-scour
---since 25869ce981` on `2c9e1f57d3`, log
-`/private/tmp/claude-501/-Users-mike-src-weasel/5aa89cc6-c55b-42a8-b9b4-bd955561ab8f/scratchpad/fleet-scour-since.log`
-(jobs `6db0cf0c` on studio and `267371fa` on msb-uai; `onto jobs` shows them). Commits after it touch only this file,
-so its result stands for the tip.
+Plan steps 1 and 2 are done; the oxc check was clean. The `--since 25869ce981` run on `2c9e1f57d3` passed
+18,725 tests and failed only the gate's `lint -w @weasel-js/labkit` (biome: useJob's test formatting, and a
+component defined inside the fixture's factory). `e0568439df` fixes both, and labkit's whole lint passed on
+msb-uai. Now running: `test:fleet -- batch/2026-11-27-scour --since 2c9e1f57d3`, log
+`/private/tmp/claude-501/-Users-mike-src-weasel/5aa89cc6-c55b-42a8-b9b4-bd955561ab8f/scratchpad/fleet-scour-since2.log`.
+Commits after `e0568439df` touch only this file.
 
-**Next:** read that run's result. If any test fails, fix it locally first. If it's green, go to step 4 below. The oxc
+**Next:** read that run's result. Fix any failure locally first. If it's green, go to step 4 below. The oxc
 script for any re-check is
 `/private/tmp/claude-501/-Users-mike-src-weasel/7eac4d15-6c0c-47f3-8a50-86007bc3955a/scratchpad/oxcparse.mjs`.
 
 **Mike's plan (relayed by weasel-4b, 2026-11-27)**, as it now stands:
-3. `npm --prefix /Users/mike/src/weasel run test:fleet -- <tip> --since 25869ce981`, never `--since main` (running).
+3. A `test:fleet --since` run covering what changed since the last run (running, see above).
 4. Once green, `npm run test:batch -- <tip>` once. Then fast-forward `main`, push, and delete the merged scour
    branches, `scour3-ui.components.Timeline-b4`, `tooltip-anchor-rect` and its worktree, and this worktree. Also
    remove `.worktrees/repro-main` and `.worktrees/repro-batch`, which were made for the repro (detached, nothing to
