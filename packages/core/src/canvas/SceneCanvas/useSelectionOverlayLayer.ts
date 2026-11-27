@@ -54,10 +54,10 @@ export function useSelectionOverlayLayer<TPose>(
       for (const id of own) merged.add(id);
       return merged;
     };
-    const shapeScene = cfg.outline?.follow === 'shape' ? cfg.scene ?? scenes.shapes : undefined;
+    const shapes = cfg.outline?.follow === 'shape' ? cfg.shapes ?? cfg.scene ?? scenes.shapes : undefined;
     return chrome.overlay<TPose>({
       ...cfg,
-      ...(shapeScene ? { scene: shapeScene } : {}),
+      ...(shapes ? { shapes } : {}),
       ...(resizeHandles ? { resizeHandles } : {}),
       getSuppressedIds,
       // A caller's pose lookup still needs a geometry to project with; without

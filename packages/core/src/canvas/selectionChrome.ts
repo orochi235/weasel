@@ -68,8 +68,11 @@ export interface SelectionOverlayLayerOptions<TPose>
   /** The outline's stroke, its width in screen pixels. `follow: 'shape'`
    *  traces each node's silhouette from its drawn edge outward, where `pad`
    *  does not apply; a group, or a node with no silhouette, keeps its box.
-   *  Needs `scene`. Default `'box'`. */
+   *  Needs `shapes` or `scene`. Default `'box'`. */
   outline?: CommandStroke & { pad?: number; follow?: 'box' | 'shape' };
+  /** The nodes `outline.follow: 'shape'` traces, apart from `scene`, so chrome
+   *  can trace silhouettes while its boxes stay on the pose. Default `scene`. */
+  shapes?: DrawnBoundsScene;
   /** Pass `false` to render outlines only. */
   handles?: SelectionHandleStyle | false;
   /** Where to paint handles, in the bounds' own frame. Replaces the kit's

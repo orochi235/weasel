@@ -45,4 +45,23 @@ describe('useSelectionOverlayLayer', () => {
     const cmds = layer!.draw(data, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400, dpr: 1 });
     expect((cmds[0] as PathDrawCommand).path).toMatchObject({ x: -5, y: -5, width: 110, height: 110 });
   });
+
+  it('keeps handles on the pose box when tracing shapes on a canvas that measures pose boxes alone', () => {
+    const scene = createScene<unknown, 'main', RectPose>({ systemLayers: [{ id: 'main' }] });
+    const pose = { x: 0, y: 0, width: 100, height: 100 };
+    scene.add({
+      id: asNodeId('a'), kind: 'mark', layer: 'main', pose,
+      data: { shape: 'rect', stroke: { paint: { kind: 'solid', color: '#f00' }, width: 10 } },
+    } as never);
+    const slot = {
+      poseById: () => pose,
+      outline: { paint: { kind: 'solid', color: '#f00' } as const, width: 0, pad: 0, follow: 'shape' as const },
+    };
+    const { layer } = renderHook(() =>
+      useSelectionOverlayLayer(slot, () => NONE, AUTO_POSE_DESCRIPTOR as never, { shapes: scene }, undefined, SELECTION_CHROME)).result.current;
+    const data = { getChromeState: () => ({ selection: [asNodeId('a')], multiActive: false }) };
+    const cmds = layer!.draw(data, { x: 0, y: 0, scale: { x: 1, y: 1 } }, { width: 400, height: 400, dpr: 1 });
+    const handle = cmds.map((c) => (c as PathDrawCommand).path).find((path) => path?.kind === 'rect');
+    expect(handle).toMatchObject({ x: -4, y: -4, width: 8, height: 8 });
+  });
 });
