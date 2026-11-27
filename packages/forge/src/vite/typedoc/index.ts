@@ -1,5 +1,6 @@
 import { readFileSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { relative } from 'node:path';
+import { packageRootOf } from '../packageName.ts';
 import type { ApiMember, ApiProp } from '../../story/api.ts';
 import type { ReadApi } from '../apiTable.ts';
 import { indexProject, Kind, type TdIndex, type TdReflection, type TdType, type TypedocHref } from './json.ts';
@@ -79,7 +80,8 @@ const suffixOf = (e: TdReflection, at: string): number =>
 
 /**
  * The component export `name` declared in `file`. TypeDoc may write each package's paths relative to that package,
- * so where two packages' files share the suffix, the one in a module named for `file`'s package is taken, else none.
+ * so a match that reaches no higher than `file`'s package is taken only from a module named for that package: where
+ * TypeDoc names the package it documented, or where two packages' files share the suffix.
  */
 function exportIn(index: TdIndex, name: string, file: string): TdReflection | undefined {
   const at = slashed(file);
@@ -89,26 +91,18 @@ function exportIn(index: TdIndex, name: string, file: string): TdReflection | un
     .filter(({ suffix }) => suffix > 0);
   const best = Math.max(0, ...scored.map(({ suffix }) => suffix));
   const found = scored.filter(({ suffix }) => suffix === best).map(({ e }) => e);
-  if (found.length <= 1) return found[0];
-  const pkg = packageNameOf(dirname(file));
-  const own = found.filter((e) => {
-    const [outer] = index.exportOf.get(e.id)?.modules ?? [];
-    return pkg !== undefined && (outer === pkg || outer?.startsWith(`${pkg}/`));
-  });
-  return own.length === 1 ? own[0] : undefined;
-}
-
-/** The name in the nearest `package.json` at or above `dir` that has one. */
-function packageNameOf(dir: string): string | undefined {
-  for (let at = dir; ; at = dirname(at)) {
-    try {
-      const { name } = JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')) as { name?: unknown };
-      if (typeof name === 'string') return name;
-    } catch {
-      // No manifest here, or one that does not parse: look further up.
-    }
-    if (dirname(at) === at) return undefined;
+  if (found.length === 0) return undefined;
+  const pkg = packageRootOf(file);
+  const named = (module: string | undefined) =>
+    pkg !== null && (module === pkg.name || module?.startsWith(`${pkg.name}/`) === true);
+  if (found.length === 1) {
+    const documented = index.packageOf.get(found[0]!.id);
+    const above = !pkg || best > slashed(relative(pkg.dir, file)).length;
+    return above || documented === undefined || named(documented) ? found[0] : undefined;
   }
+  if (!pkg) return undefined;
+  const own = found.filter((e) => named(index.exportOf.get(e.id)?.modules[0]));
+  return own.length === 1 ? own[0] : undefined;
 }
 
 /** A function component's first parameter; a value's type, such as `forwardRef`'s exotic component. */

@@ -124,6 +124,20 @@ describe('readTypedoc in a project whose paths are relative to each package', ()
     expect(docs.component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
     expect(docs.component('Button', join(root, 'ui', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The ui label.');
   });
+
+  it("gives a package TypeDoc did not read no other package's docs for a same-named component", () => {
+    const one: TdReflection = { id: 0, name: 'docs', kind: 1, children: [{ id: 10, name: '@a/ui', kind: 2, packageVersion: '1.0.0', children: [button(11, 'The ui label.')] }] };
+    expect(readTypedoc(one, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))).toBeNull();
+    expect(readTypedoc(one, 0).component('Button', join(root, 'ui', 'src', 'Button.tsx'))).not.toBeNull();
+    const single: TdReflection = { id: 0, name: 'docs', kind: 1, packageName: '@a/ui', children: [button(11, 'The ui label.')] };
+    expect(readTypedoc(single, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))).toBeNull();
+  });
+
+  it('takes a match whose path reaches above the package, whatever package TypeDoc read', () => {
+    const merged = { ...button(11, 'The kit label.'), sources: [{ fileName: 'kit/src/Button.tsx' }] };
+    const project: TdReflection = { id: 0, name: 'docs', kind: 1, packageName: 'root', children: [merged] };
+    expect(readTypedoc(project, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
+  });
 });
 
 describe('readTypedoc on a lone component', () => {
