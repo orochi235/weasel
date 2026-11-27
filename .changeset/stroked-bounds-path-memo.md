@@ -2,6 +2,6 @@
 '@weasel-js/core': patch
 ---
 
-Snapping and other reads of a path-posed or derived node's drawn box no longer re-tessellate its stroke while the node, its stroke, and the view stay the same.
+Snapping no longer re-tessellates the stroke of a path-posed or derived node that has not changed. The drawn box is kept until its path, stroke, or view changes.
 
 <!-- entry: perf -->
