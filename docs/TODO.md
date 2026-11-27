@@ -367,13 +367,12 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
 - **(P2) [agent] Land branch `clock-ramp-read`: the clock reads blits' ramp and seek floor.** It drops the
   clock's own ramp count for `Transport.ramping`, clamps seeks to `Transport.horizon`, bounds a mix clock's
   history by the new `ClockSpec.keep`, and stops a sync at the end of the run with `when` rather than seeking
-  back from past it. Both reads are on blits `main` (`7943b06b`), unreleased. `clock.pbt`'s model property
-  fails on a blits bug, also latent on 1.5.3: after a seek back across a `seek: 'jump'`, calls taped past the
-  jump replay at the wrong mix time (a `ramp` made at 1e15, sought back to 0, replays at 100). blits-e3 put
-  the fix to Mike on 2026-11-26. Re-asserting the rate after a seek back, and the clock's own `inert` and
-  rebase after a sleep, stay: both are documented host use of a transport, ruled with blits on 2026-11-26.
-  Closes when a blits release carries both reads and the jump fix, and the branch merges with `clock.pbt`
-  passing.
+  back from past it only when the sync would pass the end. It needs blits `main` through `791f7ed0`
+  (2026-11-26, unreleased): the two reads, replay of taped calls at their mix time (a jump misplaced them
+  before, latent on 1.5.3), and drift fixes weasel's `clock.pbt` found, which passes there at
+  `WEASEL_PBT_RUNS=3000`. Re-asserting the rate after a seek back, and the clock's own `inert` and rebase after
+  a sleep, stay: both are documented host use of a transport, ruled with blits on 2026-11-26. Closes when a
+  blits release carries `791f7ed0` and the branch merges on it.
 - **(P2) [agent] Viewport coast on blits' glide.** `packages/core/src/core/viewport/useDecayLoop.ts:82` runs
   its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` `bounds` only springs
   back from past an edge; stopping at one or reflecting with a restitution is filed in blits' TODO
