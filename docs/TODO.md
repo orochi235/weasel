@@ -373,9 +373,6 @@ What weasel still times for itself, read against blits on 2026-11-25. The direct
   its own friction loop, with `stop`/`bounce`/`spring` at the pan limits. blits' `glide` `bounds` only springs
   back from past an edge; stopping at one or reflecting with a restitution is filed in blits' TODO
   (2026-11-26). Closes when `useDecayLoop` keeps no integrator.
-- **(P3) [agent] Two elapsed-time trackers.** `packages/react/src/useElapsed.ts`, and the `{elapsed, rate}`
-  that `packages/core/src/canvas/renderWorker/workerAnimations.ts:42` tracks itself, each keep their own
-  time. Closes when both read a clock.
 - **(P2) [maintainer] Who owns the frame loop.** `useVisibleRaf` (pauses when hidden, `onResume` rebases)
   and blits' `ticker`/`loop()` (fades to rest on blur) are two answers to when frames happen. Settle it
   together with the clock and scheduling seams. Closes when the seam table below records the call.
