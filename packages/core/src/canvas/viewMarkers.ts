@@ -14,8 +14,9 @@ import { layerAffordance } from './affordanceAt';
 
 /** @internal Composed into `ViewRegistry`. */
 export interface ViewMarkerRegistry {
-  /** Returns an unregister. `props` is read at every draw. An id already live
-   *  on the surface logs an error and is skipped, and its unregister does nothing. */
+  /** Returns an unregister. `props` is read at every draw. A marker whose id an
+   *  earlier one holds, at registration or after its `props` change, logs an
+   *  error and is skipped until that marker leaves or changes id. */
   registerMarker(props: () => ViewMarkerProps): () => void;
   /** The layers of the markers drawn in `target`'s frame, in mount order. */
   markerLayers(target: string | null): readonly RenderLayer<unknown>[];
@@ -50,32 +51,43 @@ export function createViewMarkerRegistry(
     const v = deps.resolve(target, surface.view(), surface.dims());
     return v ? aimSpace2d(target, v.view, v.rect) : null;
   };
+  /** Markers already reported for a taken id, so a skipped one logs once. */
+  const reported = new WeakSet<() => ViewMarkerProps>();
+  const report = (props: () => ViewMarkerProps, id: string): void => {
+    if (reported.has(props)) return;
+    reported.add(props);
+    console.error(`[weasel] registerMarker: marker "${id}" is already on this surface, so this one is skipped until that one goes away. Marker ids are unique per surface; rename one.`);
+  };
+  /** The markers drawn and hit, in mount order: the first to hold an id; later ones wait for it. */
+  const live = (): { props: ViewMarkerProps; layer: RenderLayer<unknown> }[] => {
+    const held = new Set<string>();
+    const out: { props: ViewMarkerProps; layer: RenderLayer<unknown> }[] = [];
+    for (const [thunk, layer] of markers) {
+      const props = thunk();
+      if (held.has(props.id)) { report(thunk, props.id); continue; }
+      held.add(props.id);
+      reported.delete(thunk);
+      out.push({ props, layer });
+    }
+    return out;
+  };
   return {
     registerMarker: (props) => {
       const { id } = props();
-      for (const live of markers.keys()) {
-        if (live().id === id) {
-          console.error(`[weasel] registerMarker: marker "${id}" is already on this surface, so this one is skipped. Marker ids are unique per surface; rename one.`);
-          return () => {};
-        }
-      }
+      for (const held of markers.keys()) if (held().id === id) report(props, id);
       markers.set(props, createViewMarkerLayer(props, deps.host));
       deps.changed();
-      return () => { markers.delete(props); deps.changed(); };
+      return () => { if (markers.delete(props)) deps.changed(); };
     },
-    markerLayers: (target) => {
-      const out: RenderLayer<unknown>[] = [];
-      for (const [props, layer] of markers) if (props().target === target) out.push(layer);
-      return out;
-    },
+    markerLayers: (target) => live().filter((m) => m.props.target === target).map((m) => m.layer),
     markerAt: (target, world) => {
       if (!gate?.()) return null;
       const space = targetSpace(target);
       const at = space?.project(world);
       if (!space || !at) return null;
-      const live = [...markers.keys()];
-      for (let i = live.length - 1; i >= 0; i--) {
-        const props = live[i]!();
+      const drawn = live();
+      for (let i = drawn.length - 1; i >= 0; i--) {
+        const { props } = drawn[i]!;
         if (props.target !== target) continue;
         const grab = grabViewMarker(props, deps.host, space, at);
         if (grab) return layerAffordance(`view-marker:${props.id}`, { initialScratch: grab });
