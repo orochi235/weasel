@@ -136,7 +136,8 @@ function walk(dir: string, out: string[] = []): string[] {
 const invokedDirectly = process.argv[1]?.endsWith('check-design-tokens.ts');
 if (invokedDirectly) {
   cli(import.meta.url, {
-    summary: 'Fails on a raw font-size, font-weight or border-radius, a stray danger color, or a var() fallback that disagrees with its token, in labkit and ui stylesheets.',
+    summary:
+      'Fails on a raw font-size, font-weight or border-radius, a stray danger color, or a var() fallback that disagrees with its token, in labkit and ui stylesheets.',
   });
   const roots = [join(ROOT, 'packages/labkit/src'), join(ROOT, 'packages/ui/src')];
   const offenders = roots.flatMap((root) =>

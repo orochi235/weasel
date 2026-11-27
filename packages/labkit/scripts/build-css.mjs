@@ -25,13 +25,17 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { cssInputs, skipIfBuilt } from './build-css-inputs.mjs';
 import { cli } from '../../../scripts/lib/help.mjs';
+import { cssInputs, skipIfBuilt } from './build-css-inputs.mjs';
 
 const { values } = cli(import.meta.url, {
-  summary: "Concatenates labkit's one shipped stylesheet, dist/styles.css: theme faces and tokens, core, ui and ui-canvas CSS, windease, then labkit's own.",
+  summary:
+    "Concatenates labkit's one shipped stylesheet, dist/styles.css: theme faces and tokens, core, ui and ui-canvas CSS, windease, then labkit's own.",
   options: {
-    'if-built': { type: 'boolean', description: 'skip (exit 0) unless the sheet and every input already exist' },
+    'if-built': {
+      type: 'boolean',
+      description: 'skip (exit 0) unless the sheet and every input already exist',
+    },
   },
 });
 

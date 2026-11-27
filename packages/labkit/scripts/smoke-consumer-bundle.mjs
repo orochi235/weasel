@@ -41,7 +41,8 @@ import { build } from 'esbuild';
 import { cli } from '../../../scripts/lib/help.mjs';
 
 cli(import.meta.url, {
-  summary: "Bundles a consumer of labkit's built dist outside the repo and fails on an undeclared or inlined @weasel-js package, or on a ui class name the shipped stylesheet doesn't define.",
+  summary:
+    "Bundles a consumer of labkit's built dist outside the repo and fails on an undeclared or inlined @weasel-js package, or on a ui class name the shipped stylesheet doesn't define.",
   notes: 'Needs a built labkit dist: `npm run build -w @weasel-js/labkit` first.',
 });
 
