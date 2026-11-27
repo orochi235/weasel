@@ -1,7 +1,7 @@
 import type { ElementAnimation, ElementBinding } from '../../elementTarget';
 import type { TargetState } from '../../target';
 import type { AnimationHandle } from '../../types';
-import type { AnimationSeed } from '../context';
+import type { ActiveAnimation, AnimationSeed } from '../context';
 import type { Handoffs, Placed } from './handoffs';
 import { keptSamples, sampleTimes, type Motion } from './motion';
 
@@ -44,6 +44,28 @@ function swap(hs: Handoffs, old: Placed, next: Placed): void {
   hs.remove(old);
   hs.add(next);
   hs.place(next);
+}
+
+/** Starts the main-thread continuation of run `id`, `a` on the table, from `local` ms into
+ *  `motion` at the pace `a` held. The run ends with it, whichever way it leaves, unless
+ *  `canceling()` says the run's own cancel is what ends it. */
+function carryOn(
+  hs: Handoffs, id: number, a: ActiveAnimation | undefined, motion: Motion, local: number, ends: RunEnds,
+  canceling: () => boolean,
+): AnimationHandle {
+  const { ctx, table } = hs.host;
+  // From its time scale, which keeps its sign while it is paused.
+  const backward = a ? a.timeScale * table.direction() < 0 : false;
+  const child = ends.takeBack(motion, local, backward, () => {
+    if (!ctx.has(id)) return;
+    ctx.reportEnd(id);
+    try { ends.onDone?.(); } finally { ctx.finish(id); }
+  });
+  if (a?.paused) child.pause();
+  if (a && a.timeScale !== 1) child.setTimeScale(a.timeScale);
+  ctx.defer(id, Infinity);
+  table.watchCompletion(child.id, () => { if (!canceling()) table.retire(id); });
+  return child;
 }
 
 /**
@@ -93,8 +115,7 @@ export function launch(
     const a = entry();
     if (a) a.compositor = false;
   };
-  /** Commits `value`, then lets go showing `shown()`: a setter that throws there still stops the
-   *  browser animation. */
+  /** Commits `value`, then lets go showing `shown()`, even past a setter that throws. */
   const commitAndLetGo = (value: readonly number[] | null, shown: () => readonly number[]): void => {
     try {
       if (value && !s.discard) s.set(s.axes.from(value));
@@ -111,22 +132,9 @@ export function launch(
   };
   const release = (): void => {
     if (gone) return;
-    const a = entry();
-    // From its time scale, which keeps its sign while it is paused.
-    const backward = a ? a.timeScale * table.direction() < 0 : false;
-    const at = local();
+    const [a, at] = [entry(), local()];
     letGo(null);
-    child = ends.takeBack(motion, at, backward, () => {
-      if (!ctx.has(id)) return;
-      ctx.reportEnd(id);
-      try { ends.onDone?.(); } finally { ctx.finish(id); }
-    });
-    if (a?.paused) child.pause();
-    if (a && a.timeScale !== 1) child.setTimeScale(a.timeScale);
-    ctx.defer(id, Infinity);
-    // Whichever way its continuation leaves, finished or canceled, this run leaves with it.
-    const childId = child.id;
-    table.watchCompletion(childId, () => { if (!canceling) table.retire(id); });
+    child = carryOn(hs, id, a, motion, at, ends, () => canceling);
   };
   const handoff = {
     read: () => motion.at(local()),

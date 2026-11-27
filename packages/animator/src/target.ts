@@ -40,8 +40,7 @@ export interface TargetOptions<T> {
   axes?: TargetAxes<T>;
   /** Called once a frame, after the frame's animations, with the value to show: on every frame
    *  the target is moving, as an animation starts on it or is redirected, and once more as it
-   *  comes to rest. Omit for a target whose reader
-   *  calls `read()` itself. */
+   *  comes to rest. Omit for a target whose reader calls `read()` itself. */
   show?(value: T): void;
   /** Called once a frame, after every target that was shown that frame: for a table that
    *  publishes many targets at once. Targets passing the same function share one call. */
@@ -118,8 +117,7 @@ export interface RowTable {
   holds(): HoldStore;
   /** The rows in use. */
   rows(): number[];
-  /** Fills its rows' values on screen again from the columns the last frame gave it, for holds
-   *  written since. */
+  /** Fills its rows' values on screen again from the columns the last frame gave it, for new holds. */
   refill(): void;
 }
 
