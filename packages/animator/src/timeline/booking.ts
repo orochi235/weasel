@@ -99,6 +99,29 @@ function pullBack(cursors: Cursors, at: Cursor): void {
   }
 }
 
+/** Books `ev` for `when`, answering its stop handle, if any. */
+function bookEvent(ev: TimelineEvent, when: number): EventBookingHandle | undefined {
+  try {
+    return ev.book?.(when) ?? undefined;
+  } catch (err) {
+    console.error('timeline: book threw', err);
+    return undefined;
+  }
+}
+
+/** Calls `scan` for each event track in `tracks` that books ahead, with the root time it is placed at and where it
+ *  stops. A retimed nested timeline's events fire as they are crossed and are not booked ahead. */
+function visitPlacements(
+  tracks: Track[], at: number, end: number, scan: (track: EventTrack, at: number, end: number) => void,
+): void {
+  for (const track of tracks) {
+    if (track.kind === 'event') scan(track, at, end);
+    else if (track.kind === 'timeline' && !retimed(track)) {
+      visitPlacements(track.timeline.tracks, at + track.at, endWithin(end, at + track.at, track.timeline), scan);
+    }
+  }
+}
+
 export function createBooker(opts: EventBooking, host: BookerHost): Booker {
   const lookahead = opts.lookahead ?? 100;
   const maxLate = opts.maxLate ?? Infinity;
@@ -136,9 +159,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     rewind();
   };
 
-  const scanTrack = (
-    track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
-  ): void => {
+  const scanTrack = (track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number): void => {
     const lap = host.lap();
     const duration = host.duration();
     const playhead = host.playhead();
@@ -162,31 +183,13 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       c = { lap: c.lap, r };
       for (let j = i; j < events.length && events[j].t === events[i].t; j += 1) {
         const ev = events[j];
-        if (!ev.book || bookings.some((b) => b.event === ev && b.lap === c.lap && b.r === r && b.track === track && b.place === place)) continue;
-        if ((playhead - u) / scale > maxLate) continue;
+        const same = (b: Booking): boolean => b.event === ev && b.lap === c.lap && b.r === r && b.track === track && b.place === place;
+        if (!ev.book || bookings.some(same) || (playhead - u) / scale > maxLate) continue;
         const when = clock.whenFor(u, playhead, scale, now);
-        let handle: EventBookingHandle | undefined;
-        try {
-          handle = ev.book(when) ?? undefined;
-        } catch (err) {
-          console.error('timeline: book threw', err);
-        }
-        bookings.push({ event: ev, track, place, lap: c.lap, r, when, handle });
+        bookings.push({ event: ev, track, place, lap: c.lap, r, when, handle: bookEvent(ev, when) });
       }
     }
     placesOf(scanned, track).set(place, c);
-  };
-
-  const visit = (
-    tracks: Track[], at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
-  ): void => {
-    for (const track of tracks) {
-      if (track.kind === 'event') scanTrack(track, at, end, horizon, lastLap, now, scale);
-      // A retimed nested timeline's events fire as they are crossed and are not booked ahead.
-      else if (track.kind === 'timeline' && !retimed(track)) {
-        visit(track.timeline.tracks, at + track.at, endWithin(end, at + track.at, track.timeline), horizon, lastLap, now, scale);
-      }
-    }
   };
 
   return {
@@ -211,7 +214,8 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const duration = host.duration();
       const lastLap = host.lap() + (duration > 0 ? host.lapsLeft() : 0);
       scanned = new Map();
-      visit(host.tracks(), 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
+      const horizon = playhead + lookahead * scale;
+      visitPlacements(host.tracks(), 0, Infinity, (track, at, end) => scanTrack(track, at, end, horizon, lastLap, now, scale));
       cursors = scanned;
       const reached = playheadCursor();
       if (isAfter(reached, start)) start = reached;

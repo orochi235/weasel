@@ -1,3 +1,4 @@
+import { lerp } from '@weasel-js/geom';
 import { firstAfter, firstAtOrAfter } from './booking';
 import type { TimelineReport } from './createTimeline';
 import { nestedLength } from './length';
@@ -90,7 +91,7 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
           // Through a remap a run's own clock is taken as moving evenly between its ends.
           const span = run.to - run.from;
           const parentAt = (t: number): number => track.at
-            + (span > 0 ? run.parentFrom + ((t - run.from) / span) * (run.parentTo - run.parentFrom) : run.parentTo);
+            + (span > 0 ? lerp(run.parentFrom, run.parentTo, (t - run.from) / span) : run.parentTo);
           stopped = fire(track.timeline.tracks, run.from, run.to, run.opens || fromOpen, moved, (t) => lateOf(parentAt(t)));
           if (stopped) break;
         }
