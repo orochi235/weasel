@@ -18,6 +18,14 @@ describe('a step with more digits than its magnitude', () => {
   });
 });
 
+describe('niceDomain of a single value', () => {
+  it('widens the far end to a whole step too', () => {
+    expect(niceDomain([7.3, 7.3])).toEqual(niceDomain([0, 7.3]));
+    expect(niceDomain([-7.3, -7.3])).toEqual(niceDomain([-7.3, 0]));
+    expect(linearScale({ domain: [7.3, 7.3], range: [0, 1], nice: 5 }).domain).toEqual([0, 8]);
+  });
+});
+
 describe('ticks finer than 1e-20', () => {
   it('keep their digits', () => {
     const d = tickDecimals([1e-25, 2e-25, 3e-25]);

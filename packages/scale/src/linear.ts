@@ -124,7 +124,7 @@ export function formatNumber(value: number, step: number): string {
 /** `domain` widened to whole steps of a tick grid of about `count` ticks. */
 export function niceDomain(domain: readonly [number, number], count = DEFAULT_TICKS): [number, number] {
   const [lo, hi] = domain;
-  if (lo === hi) return lo === 0 ? [0, 1] : [Math.min(0, lo), Math.max(0, hi)];
+  if (lo === hi) return lo === 0 ? [0, 1] : niceDomain([Math.min(0, lo), Math.max(0, hi)], count);
   const step = tickStep(lo, hi, count);
   const at = gridOf(step);
   const down = (v: number) => at(Math.floor(v / step + 1e-9));
