@@ -66,13 +66,14 @@ export function fillHasInk(fill: Fill | null | undefined): fill is PaintedFill {
 }
 
 /** Whether a stroke puts ink down: it does not when it is absent, holds no
- *  paint, has no width — whatever its per-vertex widths — or has a dash
+ *  paint, has no width or an infinite one — whatever its per-vertex widths — or has a dash
  *  {@link dashPattern} reads as `'non-finite'`. */
 export function strokeHasInk(stroke: Stroke | null | undefined): stroke is PaintedStroke {
   const painted = resolveStroke(stroke);
   if (painted?.paint == null) return false;
   const width = painted.width ?? 1;
-  return (typeof width === 'number' ? width : width.px) > 0 && dashPattern(painted.dash) !== 'non-finite';
+  const w = typeof width === 'number' ? width : width.px;
+  return w > 0 && Number.isFinite(w) && dashPattern(painted.dash) !== 'non-finite';
 }
 
 /**

@@ -1,5 +1,5 @@
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
-import { resolveScreenLength, resolveFill, resolveStroke, strokeTrimKey } from '@weasel-js/paint';
+import { resolveScreenLength, resolveFill, resolveStroke, strokeHasInk, strokeTrimKey } from '@weasel-js/paint';
 import type { NodeInk, NodeInkCtx, NodePaintCtx } from 'canvas/NodeShape';
 import { boundsOfPath, countPathAnchors, type Path } from '@weasel-js/geom';
 import { markerReach } from '@weasel-js/stroke';
@@ -131,13 +131,9 @@ export interface PathPaint {
   stroke?: Stroke;
 }
 
-/** Whether `stroke` covers anything to outline: it has a paint and a width above zero, an omitted width
- *  being the 1 every painter draws it at. */
+/** Whether `stroke` covers anything to outline: whether it draws a line, as `strokeHasInk` answers. */
 export function hasStroke(stroke: Stroke | null | undefined): boolean {
-  const painted = resolveStroke(stroke);
-  if (painted?.paint == null) return false;
-  const width = painted.width ?? 1;
-  return (typeof width === 'object' ? width.px : width) > 0;
+  return strokeHasInk(stroke);
 }
 
 /** {@link PathPaint} of a node that keeps its paint in `data.fill` and

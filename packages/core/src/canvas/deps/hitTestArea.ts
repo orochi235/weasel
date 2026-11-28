@@ -160,7 +160,7 @@ export function regionPickQuery(
       const decided = regionTakesByBounds(r, mode, b);
       if (decided !== undefined) return decided;
       let ink: boolean | undefined;
-      const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited, shapes })?.filled !== false;
+      const filled = (): boolean => ink ??= findShapeInk(node as never, pose, { inherited, shapes, derivedPath: derived })?.filled !== false;
       return regionTakes(r, mode, asInked(filled, pose), b, () =>
         asInked(filled, findShapeSilhouette(node as never, pose, { derivedPath: derived, shapes, ...(query.scale !== undefined ? { scale: query.scale } : {}) }) ?? derived ?? poseOutline(pose, b)), filled);
     },
