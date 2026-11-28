@@ -105,7 +105,7 @@ export function startOffsetPhysics<T>(
   }
   s.handoff?.release();
   const before = ax.to(s.get());
-  const committed = dest ? takeUp(s) : before;
+  const committed = takeUp(s);
   const start = travel(ax, given ?? committed, dest ?? committed);
   /** The move the destination makes in the committed value; the rest of `start` rides on top. */
   const move = dest ? travel(ax, before, dest) : zeros();

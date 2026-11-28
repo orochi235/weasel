@@ -182,13 +182,15 @@ export function openHold<T>(ctx: AnimationContext, o: HoldSource<T>): OpenHold {
   });
   ctx.touch(state, true);
 
-  return {
-    touch: () => { if (!gone) ctx.touch(state); },
-    leave(commit) {
-      if (gone) return;
-      gone = true;
-      leaveHold(ctx, state, layer, covers, commit);
-      ctx.touch(state, true);
-    },
+  const leave = (commit: boolean): void => {
+    if (gone) return;
+    gone = true;
+    state.parts.delete(stop);
+    leaveHold(ctx, state, layer, covers, commit);
+    ctx.touch(state, true);
   };
+  // Whatever stops the target (its `stop`, its row's removal, a `show` that throws) lets go of it.
+  const stop = (): void => leave(true);
+  state.parts.add(stop);
+  return { touch: () => { if (!gone) ctx.touch(state); }, leave };
 }

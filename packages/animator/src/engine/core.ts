@@ -18,6 +18,8 @@ export interface CoreHost {
   now(): number;
   requestFrame(): void;
   cancelFrame(): void;
+  /** Whether `now` reads the clock `follow` is given, rather than the one `tick` is. Default: false. */
+  nowFollows?(): boolean;
   /** True once the host has unmounted; logs the first time. */
   tripwire(): boolean;
   /** Now on the document timeline, which `Element.animate` runs on. Default: its current time,
@@ -44,7 +46,7 @@ export interface AnimatorCore {
 }
 
 export function createAnimatorCore(host: CoreHost): AnimatorCore {
-  const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
+  const clock: AnimatorClock = { frameT: null, readT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
   /** Animations that threw outside their own ticks, retired by the frame reading them. */
   const faults: [number, unknown][] = [];
@@ -61,7 +63,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   let nextId = 1;
   let atEnd = false;
   const pacing = createPacing(clock, host.wall ?? defaultWall, host.now, () => !frame.framing() && !table.awake && handoffs.any());
-  const seedClock = (): void => { if (clock.frameT == null) { clock.frameT = host.now(); pacing.seeded(); } };
+  const { seedClock, frameOnto } = frameOrigin(clock, host, pacing.seeded);
 
   /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
   const touched = new Set<TargetState>();
@@ -146,9 +148,9 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   return {
     api,
     // The animator's own frames only go forward, whichever way an outside clock last moved.
-    tick(t) { checkFrame(t, 1); pacing.outside.on = false; pacing.framed(t); driveTo(table, clock, 1); frame.tick(t); },
+    tick(t) { checkFrame(t, 1); frameOnto('tick', t); pacing.outside.on = false; pacing.framed(t); driveTo(table, clock, 1); frame.tick(t); },
     follow(t, rate, wall) {
-      checkFrame(t, rate); pacing.follow(rate, wall);
+      checkFrame(t, rate); frameOnto('follow', t); pacing.follow(rate, wall);
       const moved = clock.frameT == null ? 0 : t - clock.frameT;
       driveTo(table, clock, moved < 0 || (moved === 0 && rate < 0) ? -1 : 1);
       frame.tick(t);
@@ -158,6 +160,29 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       pacing.resume();
       handoffs.resumed();
       if (handoffs.any()) host.requestFrame();
+    },
+  };
+}
+
+/** Where the frame clock starts: `seedClock` seeds it from idle, and `frameOnto` says which of the
+ *  host's clocks the coming frame's time is on. */
+function frameOrigin(clock: AnimatorClock, host: Pick<CoreHost, 'now' | 'nowFollows'>, seeded: () => void) {
+  let frameOn: 'tick' | 'follow' = 'tick';
+  let followedT = 0;
+  return {
+    seedClock(): void {
+      if (clock.frameT != null) return;
+      // Where `now` is not on the followed clock, the last followed frame is the nearest reading of it.
+      const follows = host.nowFollows?.() ?? false;
+      if (follows) frameOn = 'follow';
+      clock.frameT = frameOn === 'follow' && !follows ? followedT : host.now();
+      seeded();
+    },
+    /** A frame on the other clock than the last one's advances by nothing: the two need not share an origin. */
+    frameOnto(on: 'tick' | 'follow', t: number): void {
+      if (frameOn !== on && clock.frameT != null) clock.frameT = t;
+      frameOn = on;
+      if (on === 'follow') followedT = t;
     },
   };
 }
@@ -206,6 +231,7 @@ function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => nu
       if (t > clock.frameT) {
         clock.elapsed += (t - clock.frameT) * (clock.paused ? 0 : Math.abs(clock.timeScale));
         clock.frameT = t;
+        clock.readT = t;
       }
       return clock.elapsed;
     },

@@ -4,11 +4,11 @@ import type { HoldStore } from './holdStore';
 import type { Reader } from './lanes';
 import { readTarget, type Behind, type RowTable, type TargetAxes, type TargetOwner, type TargetState } from '../target';
 
-/** `value` as the target's axes, refused where it is not the target's shape. */
+/** `value` as the target's axes, refused where it is not the target's shape or not finite. */
 export function axesFor<T>(axes: TargetAxes<T>, value: T, what: string): number[] {
   const a = axes.to(value);
-  if (a.length !== axes.count || !a.every((x) => typeof x === 'number' && !Number.isNaN(x))) {
-    throw new Error(`animator: \`${what}\` is not the target's shape`);
+  if (a.length !== axes.count || !a.every((x) => Number.isFinite(x))) {
+    throw new Error(`animator: \`${what}\` is not the target's shape, in finite numbers`);
   }
   return a;
 }
@@ -168,7 +168,9 @@ export function leaveTarget(ctx: AnimationContext, s: TargetState, commit: (() =
 
 /** The targets one animator is moving. */
 export interface TargetBook {
-  /** Throws where another animator is moving `s`. */
+  /** What this animator puts in `TargetState.owner` on the targets it moves. */
+  readonly token: TargetOwner;
+  /** Throws where another animator is moving `s`, on the main thread or the compositor. */
   check(s: TargetState): void;
   /** Counts one more animation on `s`. Throws where another animator is moving it. */
   attach(s: TargetState): void;
@@ -193,7 +195,8 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
   /** The moving targets with a `show`: the ones a frame has to call. */
   const showing = new Set<TargetState>();
   const rested = new Set<TargetState>();
-  const publishes = new Set<() => void>();
+  /** Each `publish` due, and the targets shown since that use it. */
+  const publishes = new Map<() => void, TargetState[]>();
   /** Each table with a row moving, and how many of its rows are. */
   const tables = new Map<RowTable, number>();
   /** Each store holds are folded in, and how many. */
@@ -212,21 +215,26 @@ export function createTargetBook(owner: Omit<TargetOwner, 'adjusted'>): TargetBo
       stop(s, 'show', error);
       return;
     }
-    if (s.publish) publishes.add(s.publish);
+    if (!s.publish) return;
+    const by = publishes.get(s.publish);
+    if (by) by.push(s);
+    else publishes.set(s.publish, [s]);
   };
   const publish = (): void => {
     const due = [...publishes];
     publishes.clear();
-    for (const p of due) {
+    for (const [p, by] of due) {
       try { p(); } catch (error) {
-        for (const s of [...showing, ...rested]) if (s.publish === p) stop(s, 'publish', error);
+        for (const s of by) stop(s, 'publish', error);
       }
     }
   };
   const check = (s: TargetState): void => {
-    if (s.owner && s.owner !== token) throw new Error('animator: this target is being moved by another animator');
+    const by = s.owner ?? s.handoff?.owner;
+    if (by && by !== token) throw new Error('animator: this target is being moved by another animator');
   };
   return {
+    token,
     check,
     attach(s) {
       check(s);

@@ -1,7 +1,7 @@
 import type { ElementAnimation, ElementBinding } from '../../elementTarget';
 import type { TargetState } from '../../target';
 import type { AnimationHandle } from '../../types';
-import type { AnimationSeed } from '../context';
+import type { ActiveAnimation, AnimationSeed } from '../context';
 import type { Handoffs, Placed } from './handoffs';
 import { keptSamples, sampleTimes, type Motion } from './motion';
 
@@ -46,6 +46,28 @@ function swap(hs: Handoffs, old: Placed, next: Placed): void {
   hs.place(next);
 }
 
+/** Starts the main-thread continuation of run `id`, `a` on the table, from `local` ms into
+ *  `motion` at the pace `a` held. The run ends with it, whichever way it leaves, unless
+ *  `canceling()` says the run's own cancel is what ends it. */
+function carryOn(
+  hs: Handoffs, id: number, a: ActiveAnimation | undefined, motion: Motion, local: number, ends: RunEnds,
+  canceling: () => boolean,
+): AnimationHandle {
+  const { ctx, table } = hs.host;
+  // From its time scale, which keeps its sign while it is paused.
+  const backward = a ? a.timeScale * table.direction() < 0 : false;
+  const child = ends.takeBack(motion, local, backward, () => {
+    if (!ctx.has(id)) return;
+    ctx.reportEnd(id);
+    try { ends.onDone?.(); } finally { ctx.finish(id); }
+  });
+  if (a?.paused) child.pause();
+  if (a && a.timeScale !== 1) child.setTimeScale(a.timeScale);
+  ctx.defer(id, Infinity);
+  table.watchCompletion(child.id, () => { if (!canceling()) table.retire(id); });
+  return child;
+}
+
 /**
  * Hands `motion` on `s` to the compositor as the animation `seed` registers, and fills in the
  * seed's tick, cancel, and rate hooks. The caller registers the seed, then calls `start` with
@@ -60,6 +82,8 @@ export function launch(
   let placed: Placed = { id, animation: animate(binding, s, motion), offset: 0 };
   let child: AnimationHandle | null = null;
   let gone = false;
+  /** Its own cancel is under way, which cancels its continuation in turn. */
+  let canceling = false;
   /** The browser animation reached its end, or its start played backward. */
   let finished = false;
   /** Asks for the frame that ends the run once the browser animation has: the run asks for no
@@ -91,34 +115,32 @@ export function launch(
     const a = entry();
     if (a) a.compositor = false;
   };
+  /** Commits `value`, then lets go showing `shown()`, even past a setter that throws. */
+  const commitAndLetGo = (value: readonly number[] | null, shown: () => readonly number[]): void => {
+    try {
+      if (value && !s.discard) s.set(s.axes.from(value));
+    } finally {
+      letGo(shown());
+    }
+  };
   const end = (atStart: boolean): true => {
     const at = atStart ? motion.at(0) : ends.endCommit(motion);
-    if (at && !s.discard) s.set(s.axes.from(at));
-    letGo(at ?? s.axes.to(s.get()));
+    commitAndLetGo(at, () => at ?? s.axes.to(s.get()));
     ctx.reportEnd(id);
     ends.onDone?.();
     return true;
   };
   const release = (): void => {
     if (gone) return;
-    const a = entry();
-    const backward = a ? table.rateOf(a) < 0 : false;
-    const at = local();
+    const [a, at] = [entry(), local()];
     letGo(null);
-    child = ends.takeBack(motion, at, backward, () => {
-      if (!ctx.has(id)) return;
-      ctx.reportEnd(id);
-      ends.onDone?.();
-      ctx.finish(id);
-    });
-    if (a?.paused) child.pause();
-    if (a && a.timeScale !== 1) child.setTimeScale(a.timeScale);
-    ctx.defer(id, Infinity);
+    child = carryOn(hs, id, a, motion, at, ends, () => canceling);
   };
   const handoff = {
     read: () => motion.at(local()),
     release,
     stop: () => { table.retire(id); },
+    owner: ctx.targets.token,
   };
 
   seed.compositor = true;
@@ -131,17 +153,17 @@ export function launch(
     if (child) return false;
     const at = nowMs - placed.offset;
     if (scale < 0 && at <= 0) return end(true);
-    if (scale >= 0 && at >= motion.ms) return end(false);
+    if (scale > 0 && at >= motion.ms) return end(false);
     // The browser ended ahead of the animator's clock: placed back, it finishes again.
     if (finished) { finished = false; hs.place(placed); ctx.defer(id, motion.ms - at); }
     return false;
   };
   seed.onCancel = () => {
+    canceling = true;
     if (child) { child.cancel(); return; }
     if (gone) return;
     const value = motion.at(local());
-    if (!s.discard) s.set(s.axes.from(value));
-    letGo(s.discard ? s.axes.to(s.get()) : value);
+    commitAndLetGo(value, () => (s.discard ? s.axes.to(s.get()) : value));
   };
   seed.onRate = (paused, timeScale) => {
     if (child) {

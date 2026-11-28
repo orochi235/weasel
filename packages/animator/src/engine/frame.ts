@@ -10,6 +10,9 @@ export interface AnimatorClock {
   /** The timestamp the codec last advanced to. Null after the page was hidden and while nothing
    *  runs, so neither gap is charged to the codec; a tween starting then seeds it from `now()`. */
   frameT: number | null;
+  /** The `frameT` a read between frames charged up to, until the next frame: a frame stamped
+   *  before it has already been counted, so it leaves `frameT` there rather than charge it twice. */
+  readT: number | null;
   /** The virtual ms its frames have advanced it by: each animation's own clock is read off it. */
   elapsed: number;
   timeScale: number;
@@ -115,7 +118,8 @@ export function createFrame(host: FrameHost): Frame {
       // ~600ms apart. Time never runs against the way it is driven, so such a sample is never real.
       // A gap past the double range counts as the largest double, and the clock stops there, as clock's does.
       const frameDt = clock.frameT == null ? 0 : Math.min(Number.MAX_VALUE, Math.max(0, (t - clock.frameT) * clock.drive));
-      clock.frameT = t;
+      if (clock.readT == null || clock.frameT !== clock.readT || t >= clock.readT) clock.frameT = t;
+      clock.readT = null;
       framing = true;
       try {
         // Backward is each animation's own rate: the clock under them only goes forward.

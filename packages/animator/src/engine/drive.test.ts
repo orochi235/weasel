@@ -60,4 +60,36 @@ describe('a pass started at its end to play backward', () => {
     a.follow(90, -1);
     expect(done).toBe(false);
   });
+
+  it('paused there, stays where it is rather than end forward at its destination', () => {
+    const a = hosted();
+    let ends = 0;
+    a.follow(0, 1);
+    a.animator.loop((_i, next) => a.animator.tween({
+      from: 0, to: 100, ms: 100, easing: 'linear', onTick: () => {}, onDone: () => { ends += 1; next(); },
+    }), { count: 3 });
+    a.follow(150, 1);
+    a.follow(90, -1);
+    a.animator.pause();
+    a.follow(90, -1);
+    a.follow(90, -1);
+    expect(ends).toBe(2);
+  });
+
+  it('paused there on a target, stays where it is', () => {
+    const a = hosted();
+    let value = 0;
+    const target = createTarget({ get: () => value, set: (v: number) => { value = v; } });
+    let ends = 0;
+    a.follow(0, 1);
+    a.animator.loop((_i, next) => a.animator.tween({
+      target, from: 0, to: 100, ms: 100, easing: 'linear', onTick: () => {}, onDone: () => { ends += 1; next(); },
+    }), { count: 3 });
+    a.follow(150, 1);
+    a.follow(90, -1);
+    a.animator.pause();
+    a.follow(90, -1);
+    a.follow(90, -1);
+    expect(ends).toBe(2);
+  });
 });

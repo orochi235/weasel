@@ -4392,3 +4392,8 @@ Calls the lanes made without a ruling:
   last lap, as a nested timeline's blits clock does, was the alternative.
 - 2026-11-27 (the fixer's call): `bindClip` refuses a clip whose keys or events on a track go back in time, naming
   the first one out of order, rather than sorting them. Keys at one time stay allowed.
+## Scour fix fourteen (2026-11-27): the animator's engine
+
+- 2026-11-27 (the fixer's call): `animator.cancel(handle)` cancels through `handle.cancel()`, so another animator's
+  handle cancels its animation in that animator. Ignoring a handle this animator did not make was the alternative;
+  nothing on a handle says which animator made it once a loop, stagger, or timeline rewraps it.

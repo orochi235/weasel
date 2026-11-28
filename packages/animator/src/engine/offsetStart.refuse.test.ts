@@ -128,4 +128,13 @@ describe('an animation on a target whose setter throws as it is canceled', () =>
     expect(() => other.animator.tween({ target, to: 5, ms: 100 })).not.toThrow();
     vi.restoreAllMocks();
   });
+
+  it('refuses a destination, start, or velocity that is not finite', () => {
+    const a = hosted();
+    const { target } = numberTarget();
+    expect(() => a.animator.tween({ target, to: Infinity, ms: 100 })).toThrow(/shape/);
+    expect(() => a.animator.tween({ target, from: -Infinity, to: 5, ms: 100 })).toThrow(/shape/);
+    expect(() => a.animator.spring({ target, to: 5, velocity: Infinity })).toThrow(/shape/);
+    expect(target.active).toBe(false);
+  });
 });
