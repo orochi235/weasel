@@ -2,6 +2,8 @@
 '@weasel-js/ui': patch
 ---
 
-A `Field` given `true` for its `label`, `description` or `error`, as `error={valid || 'Invalid value'}` does when the value is valid, treats it as empty, drawing nothing and leaving its control valid.
+A `Field` treats `true` in its `label`, `description` or `error` as empty, leaving its control valid.
+
+So `error={valid || 'Invalid value'}` draws no error for a valid value.
 
 <!-- entry: fix -->
