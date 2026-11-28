@@ -140,4 +140,10 @@ describe('select keeps each id once', () => {
     expect(select(state, 'b', 'toggle').ids).toEqual(['a', 'b']);
     expect(select(state, 'a', 'toggle').ids).toEqual([]);
   });
+
+  it('ranges over an order that repeats an id with that id once', () => {
+    expect(rangeOf(['a', 'b', 'a', 'c'], 'a', 'c')).toEqual(['a', 'b', 'c']);
+    const state: Selection<string> = { ids: ['a'], anchor: 'a' };
+    expect(select(state, 'c', 'range', { order: ['a', 'b', 'a', 'c'] }).ids).toEqual(['a', 'b', 'c']);
+  });
 });
