@@ -100,7 +100,7 @@ function CanvasInner<TPose>(
   // One view's overlay-aware state. A hook, so N views are N components each
   // calling it once — not a loop in this body.
   const { stack: layers, slots } = useSlotLayers(props.layers, tools, props.backgroundFill, props.decorationLayer);
-  const { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn } = useExtraLayers(gateRef, useLatest(slots));
+  const { extrasRef, extrasVersion, registerLayer, paintedExtras, hitTestExtrasIn } = useExtraLayers(gateRef, useLatest(slots));
   const { helpers: viewHelpers } = useViewHelpers<TPose>({
     adapter: props.adapter, geometry, boundsOf: props.boundsOf, boundsOfPose: props.boundsOfPose,
     nodes: props.nodes, gestureSource: props.gestureSource, previewPoseExtra: props.previewPoseExtra,
@@ -112,7 +112,7 @@ function CanvasInner<TPose>(
   const helpersForLayers: CanvasHelpers<TPose> = { ...viewHelpers, getDebug: () => debugSink, viewId: null };
 
   useViewRegistrySurface(viewRegistry, layers, frame, {
-    requestRedraw, hitTestExtrasIn, extrasRef, clientToWorld: toWorld, setView: viewState.setViewFromInput,
+    requestRedraw, hitTestExtrasIn, paintedExtras, clientToWorld: toWorld, setView: viewState.setViewFromInput,
   });
   const layersWithDebug = useComposedLayers(layers, {
     viewRegistry, debugOverlay, extrasRef, extrasVersion, cursorLayer: paintedCursorLayer,

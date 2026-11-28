@@ -50,8 +50,10 @@ export interface SurfaceHandle {
     view: View,
     dims: Dims,
     data: unknown,
-    /** Consider only these layers — the ones the asking view paints. A layer
-     *  asked on a frame it was not drawn in answers for the wrong pixels. */
+    /** Consider only these layers — the ones the asking view paints, in the
+     *  order it paints them, already gated by its own `layerVisibility` and
+     *  `layerOrder`. A layer asked on a frame it was not drawn in answers for
+     *  the wrong pixels. `data`'s `getIsVisible` is the chrome predicate. */
     only?: readonly RenderLayer<unknown>[],
   ): { layerId: string; hit: LayerHit } | null;
   /** Whether a registered layer claims a canvas-local point on the surface's

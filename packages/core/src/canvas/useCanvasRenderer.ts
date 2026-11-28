@@ -52,7 +52,7 @@ export function useRedrawOnShaderSource(
   const key = shaderKeyOf(shaders);
   useEffect(() => {
     if (!key) return;
-    const ids = key.split('|');
+    const ids = JSON.parse(key) as string[];
     let seen = ids.map(getProgramSource);
     return programSourceRegistry.subscribe(() => {
       const now = ids.map(getProgramSource);
