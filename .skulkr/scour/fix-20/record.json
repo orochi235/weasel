@@ -1,0 +1,114 @@
+{
+ "run": 20,
+ "area": "ui.components.Field",
+ "commit": "44f1cfcc478b1ce9303b720553546434a6d4b530",
+ "on": "main",
+ "ledgerCommit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "size": 8,
+ "started": "2026-11-28T10:48:08.502Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "44f1cfcc478b1ce9303b720553546434a6d4b530",
+   "defects": [
+    {
+     "id": "D5",
+     "recurrent": false,
+     "files": [
+      "packages/ui/src/components/Field/Field.tsx"
+     ]
+    },
+    {
+     "id": "D1",
+     "recurrent": true,
+     "files": [
+      "packages/ui/src/components/Field/Field.tsx",
+      "packages/ui/src/components/Field/fieldSemantics.tsx"
+     ]
+    },
+    {
+     "id": "D4",
+     "recurrent": false,
+     "files": [
+      "packages/ui/src/components/Field/Field.tsx"
+     ]
+    },
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/ui/src/components/Field/fieldSemantics.tsx"
+     ]
+    },
+    {
+     "id": "D2",
+     "recurrent": false,
+     "files": [
+      "packages/ui/src/components/Field/fieldSemantics.tsx"
+     ]
+    },
+    {
+     "id": "D6",
+     "recurrent": false,
+     "files": [
+      "packages/ui/src/components/Field/Field.module.css"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D5",
+     "verdict": "fixed",
+     "line": "[D5] a click on the label around a Select opens its popover (scour): fixed 14fb951919. jsdom's redirected label click carries `detail: 1`, so React Aria does not open the Select there and that test passes before and after the fix. The failing-first test uses a plain button control and shows the label click pressing it. The label now cancels that click and focuses the button.",
+     "sha": "14fb951919"
+    },
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "[D1] label `htmlFor` kept the generated id when the control brought its own id (scour): fixed 49c603971d. The control now passes its id back to the field through a new optional `FieldSemantics.claim`. That is public API, so the changeset is `minor`, `fix api`.",
+     "sha": "49c603971d"
+    },
+    {
+     "id": "D4",
+     "verdict": "fixed",
+     "line": "[D4] the output slot tested `!== undefined` instead of `shows()` (scour): fixed f3d0739658.",
+     "sha": "f3d0739658"
+    },
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] a control that names itself also lost the field's description and error (scour): fixed 86ce8abec0. Only its name and id now give way. A group Field still hands its members nothing.",
+     "sha": "86ce8abec0"
+    },
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "[D2] `shows()` counted `true` as content, so a valid field read as invalid (scour): fixed cee49a8435.",
+     "sha": "cee49a8435"
+    },
+    {
+     "id": "D6",
+     "verdict": "fixed",
+     "line": "[D6] a row Field squeezes its label to zero width beside a control that fills the row (scour): fixed 320bf3846a. The label is now `flex: 1 0 auto`, so it keeps its own width and still pushes a fixed-width control to the end. Its test, `Field.row.browser.test.tsx`, is a browser test and did not run here.",
+     "sha": "320bf3846a"
+    }
+   ],
+   "commits": 8,
+   "branch": "scour20-ui.components.Field-b1",
+   "verify": {
+    "ok": true,
+    "files": 13,
+    "testFiles": {
+     "failed": 0,
+     "passed": 1312,
+     "total": 1312
+    },
+    "gui": true,
+    "repairs": 1
+   },
+   "repairs": 1,
+   "costUsd": 2.0134786,
+   "minutes": 17.851
+  }
+ ]
+}
