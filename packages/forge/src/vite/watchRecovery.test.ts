@@ -104,6 +104,27 @@ describe('watchRecovery', () => {
     expect(await get('/part.ts')).toContain('part = 1');
   });
 
+  it('leaves an edit to the watcher when its event arrives late', async () => {
+    const { root, server, get, warnings } = await start([watchRecovery({ quietMs: QUIET_MS })], {
+      'part.ts': 'export const part = 0;\n',
+    });
+    expect(await get('/part.ts')).toContain('part = 0');
+    edit(join(root, 'part.ts'), 'export const part = 1;\n');
+    await new Promise((done) => setTimeout(done, QUIET_MS * 3));
+    server.watcher.emit('change', join(root, 'part.ts'));
+    await new Promise((done) => setTimeout(done, 1000));
+    expect(warnings).toEqual([]);
+  });
+
+  it('drops a served file deleted with no event from the page once the watcher has been quiet', async () => {
+    const { root, get, warnings } = await start([watchRecovery({ quietMs: QUIET_MS })], { 'part.ts': 'export const part = 0;\n' });
+    expect(await get('/part.ts')).toContain('part = 0');
+    rmSync(join(root, 'part.ts'));
+    await expect.poll(() => warnings, PUSHED).toEqual([expect.stringContaining('[watch] part.ts was deleted with no file event')]);
+    await new Promise((done) => setTimeout(done, QUIET_MS * 4));
+    expect(warnings).toHaveLength(1);
+  });
+
   it('hands an importer that accepts the module a hot update rather than a reload', async () => {
     const { root, get, pushed } = await start([watchRecovery({ quietMs: QUIET_MS })], {
       'main.ts': `import { part } from './part.ts';\nconsole.log(part);\nimport.meta.hot?.accept(() => {});\n`,
@@ -114,6 +135,18 @@ describe('watchRecovery', () => {
     edit(join(root, 'part.ts'), 'export const part = 1;\n');
     await expect.poll(() => pushed.flatMap((p) => (p.type === 'update' ? p.updates.map((u) => u.path) : [])), PUSHED).toContain('/main.ts');
     expect(pushed.map((p) => p.type)).not.toContain('full-reload');
+  });
+
+  it('stops checking once a restarted server closes', async () => {
+    const { root, server, get, warnings } = await start([watchRecovery({ quietMs: QUIET_MS })], {
+      'part.ts': 'export const part = 0;\n',
+    });
+    await server.restart();
+    expect(await get('/part.ts')).toContain('part = 0');
+    await server.close();
+    edit(join(root, 'part.ts'), 'export const part = 1;\n');
+    await new Promise((done) => setTimeout(done, 1000));
+    expect(warnings).toEqual([]);
   });
 
   it('recovers once when a server is given it twice', async () => {
@@ -172,13 +205,18 @@ describe('watchRecovery stamps', () => {
       config: { base: '/', root, logger: { warn: (msg: string) => void warnings.push(msg) } },
       environments: { client: { moduleGraph: { onFileChange() {} } } },
     });
-    const env = (id: string) => ({
-      environment: { name: 'client', mode: 'dev', moduleGraph: { getModuleById: () => ({ file, url: `/${id.slice(root.length + 1)}` }) } },
+    const env = (id: string, name = 'client') => ({
+      environment: {
+        name,
+        mode: 'dev',
+        // Only the client's graph holds the module, as when another environment runs its plugins on an id directly.
+        moduleGraph: { getModuleById: () => (name === 'client' ? { file, url: `/${id.slice(root.length + 1)}` } : undefined) },
+      },
     });
     return {
       file,
       load: (id: string) => hook(plugin.load).call(env(id), id),
-      transform: (id: string) => hook(plugin.transform).call(env(id), '', id),
+      transform: (id: string, name?: string) => hook(plugin.transform).call(env(id, name), '', id),
       request: () => middleware({ url: '/part.ts' }, {}, () => {}),
       warnings,
     };
@@ -195,5 +233,15 @@ describe('watchRecovery stamps', () => {
     edit(file, 'export const part = 1;\n');
     request();
     expect(warnings).toEqual([]);
+  });
+
+  it("keeps the client's read for the client's transform when another environment transforms the module first", () => {
+    const { file, load, transform, request, warnings } = drive();
+    load(file);
+    transform(file, 'ssr');
+    transform(file);
+    edit(file, 'export const part = 1;\n');
+    request();
+    expect(warnings).toEqual([expect.stringContaining('part.ts changed with no file event')]);
   });
 });
