@@ -2,9 +2,9 @@ import { createEmitter } from '@weasel-js/registry';
 import { createCrossings } from './crossings';
 import { createEntry, type TimelineRegister } from './entry';
 import { timelineEnd } from './nestedClock';
-import { createPlayhead, landing } from './playhead';
-import { createTrackSampler, type OpenTrackHold } from './trackHolds';
-import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions } from './types';
+import { createPlayhead, landing, type Playhead } from './playhead';
+import { createTrackSampler, type OpenTrackHold, type TrackSampler } from './trackHolds';
+import type { EventTrack, TimelineEvent, TimelineHandle, TimelineOptions, Track } from './types';
 
 export type { TimelineRegister } from './entry';
 
@@ -15,6 +15,14 @@ export interface TimelineReport {
   /** `path` is a scratch stack the timeline goes on mutating; copy it to keep it. */
   fire(track: EventTrack, path: readonly number[], event: TimelineEvent, lateBy: number): void;
   lap(lap: number): void;
+}
+
+/** Samples `tracks` where `pos` stands. Off the animator's table, a finished timeline lets go of
+ *  its targets again, each keeping what it now shows. */
+function resample(sampler: TrackSampler, tracks: Track[], pos: Playhead, live: boolean): void {
+  if (pos.time() < 0 || pos.time() > pos.duration()) return;
+  sampler.apply(tracks, pos.time());
+  if (!live) sampler.release();
 }
 
 /**
@@ -61,7 +69,7 @@ export function createTimeline(
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, pos.time());
-    // A handler (on the outgoing lap's tail too) or an `onTick` canceled it: it is off the table, and does nothing more.
+    // An `onTick` canceled it: it is off the table, and does nothing more.
     if (canceled) return true;
     const sought = crossings.fire();
     if (canceled) return true;
@@ -103,9 +111,7 @@ export function createTimeline(
   };
 
   // Not left to the next frame: whoever seeks or edits and then reads a target sees it.
-  const sampleNow = (): void => {
-    if (entry.live() && pos.time() >= 0 && pos.time() <= pos.duration()) sampler.apply(opts.tracks, pos.time());
-  };
+  const sampleNow = (): void => { if (!canceled) resample(sampler, opts.tracks, pos, entry.live()); };
   return {
     ...entry.base,
     // Not just `onCancel`: canceling a finished timeline never reaches the animator, yet a seek must not revive it.

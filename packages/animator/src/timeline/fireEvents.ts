@@ -1,3 +1,4 @@
+import { lerp } from '@weasel-js/geom';
 import { firstAfter, firstAtOrAfter } from './booking';
 import type { TimelineReport } from './createTimeline';
 import { nestedLength } from './length';
@@ -7,8 +8,11 @@ import type { Track } from './types';
 
 /** Fires the events of `tracks` the playhead crossed going from `from` to `to`, at any depth.
  *  With `fromOpen`, an event exactly at `from` fires too. Stops once `moved` says a handler
- *  moved the playhead, and answers whether it did. */
-export type FireEvents = (tracks: Track[], from: number, to: number, fromOpen: boolean, moved: () => boolean) => boolean;
+ *  moved the playhead, and answers whether it did. `lateOf` answers how many root ms before the
+ *  frame a time on `tracks`' clock was crossed: `to - t` at the root. */
+export type FireEvents = (
+  tracks: Track[], from: number, to: number, fromOpen: boolean, moved: () => boolean, lateOf?: (t: number) => number,
+) => boolean;
 
 /** Where a timeline has fired its events up to. Events fire only going forward: a move back
  *  fires nothing, and the next move forward fires from where it stopped. */
@@ -59,7 +63,7 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
   // Track indexes from the root down to the track being fired, for `report`.
   const path: number[] = [];
   let warnedUnbooked = false;
-  const fire: FireEvents = (tracks, from, to, fromOpen, moved) => {
+  const fire: FireEvents = (tracks, from, to, fromOpen, moved, lateOf = (t) => to - t) => {
     for (let k = 0; k < tracks.length; k += 1) {
       const track = tracks[k];
       if (track.kind === 'event') {
@@ -67,10 +71,11 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
         const first = (fromOpen ? firstAtOrAfter : firstAfter)(track.events, from);
         for (let i = first; i < end; i += 1) {
           const ev = track.events[i];
-          ev.fire?.(to - ev.t);
+          const lateBy = Math.max(0, lateOf(ev.t));
+          ev.fire?.(lateBy);
           if (report?.watched) {
             path.push(k);
-            report.fire(track, path, ev, to - ev.t);
+            report.fire(track, path, ev, lateBy);
             path.pop();
           }
           if (ev.book && !booked && !warnedUnbooked) {
@@ -82,8 +87,12 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
       } else if (track.kind === 'timeline' && retimed(track)) {
         path.push(k);
         let stopped = false;
-        for (const [a, b, opens] of forwardRuns(track, from - track.at, to - track.at)) {
-          stopped = fire(track.timeline.tracks, a, b, opens || fromOpen, moved);
+        for (const run of forwardRuns(track, from - track.at, to - track.at)) {
+          // Through a remap a run's own clock is taken as moving evenly between its ends.
+          const span = run.to - run.from;
+          const parentAt = (t: number): number => track.at
+            + (span > 0 ? lerp(run.parentFrom, run.parentTo, (t - run.from) / span) : run.parentTo);
+          stopped = fire(track.timeline.tracks, run.from, run.to, run.opens || fromOpen, moved, (t) => lateOf(parentAt(t)));
           if (stopped) break;
         }
         path.pop();
@@ -92,7 +101,7 @@ export function createEventFirer(report: TimelineReport | undefined, booked: boo
         const end = nestedLength(track.timeline);
         if (from - track.at > end) continue;
         path.push(k);
-        const stopped = fire(track.timeline.tracks, from - track.at, Math.min(to - track.at, end), fromOpen, moved);
+        const stopped = fire(track.timeline.tracks, from - track.at, Math.min(to - track.at, end), fromOpen, moved, (t) => lateOf(t + track.at));
         path.pop();
         if (stopped) return true;
       }

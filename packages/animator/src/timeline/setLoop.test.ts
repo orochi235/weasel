@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { makeTimeline } from './createTimeline.test-harness';
 
 describe('setLoop', () => {
@@ -42,5 +42,33 @@ describe('setLoop', () => {
     handle.resume();
     advance(250);
     expect(handle.time()).toBeCloseTo(50, 6);
+  });
+
+  it('refuses a count of passes that is not whole', () => {
+    expect(() => makeTimeline({ duration: 100, loop: 2.5 })).toThrow(RangeError);
+    expect(() => makeTimeline({ duration: 100, loop: Number.NaN })).toThrow(RangeError);
+    const { handle } = makeTimeline({ duration: 100 });
+    expect(() => handle.setLoop(1.5)).toThrow(RangeError);
+    expect(handle.loop()).toBe(false);
+  });
+
+  it('stays endless through an advance whose lap count passes the double range', () => {
+    const { handle, advance } = makeTimeline({ duration: 0.5, loop: true });
+    advance(1e308);
+    expect(handle.loop()).toBe(true);
+    expect(handle.time()).toBeGreaterThanOrEqual(0);
+    expect(handle.time()).toBeLessThanOrEqual(0.5);
+  });
+
+  it('revives a finished timeline seeked to its seam once laps are left, as a live one plays on', () => {
+    const fire = vi.fn();
+    const { handle, advance } = makeTimeline({ duration: 100, tracks: [{ kind: 'event', events: [{ t: 10, fire }] }] });
+    advance(150);
+    expect(advance(150)).toBe(true);
+    handle.setLoop(true);
+    handle.seek(100);
+    advance(130);
+    expect(handle.time()).toBeCloseTo(30, 6);
+    expect(fire).toHaveBeenCalledTimes(2);
   });
 });

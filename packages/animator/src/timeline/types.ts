@@ -158,7 +158,8 @@ export interface NestedTimeline {
 
 /** What `animator.timeline` takes: a root timeline, which owns playback. */
 export interface TimelineOptions extends NestedTimeline {
-  /** Passes, as a clock counts them: `true` endless, `false` one, `n` that many. Default false. */
+  /** Passes, as a clock counts them: `true` endless, `false` one, `n` that many. Default false.
+   *  A count that is not a whole number throws a `RangeError`, here and in `setLoop`. */
   loop?: boolean | number;
   /** Default true. When false the timeline registers but holds at t=0 until resumed. */
   autoplay?: boolean;

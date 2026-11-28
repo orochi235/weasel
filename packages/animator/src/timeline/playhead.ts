@@ -5,8 +5,18 @@ const finite = (t: number): number => {
   return t;
 };
 
-/** The laps a loop policy allows past the pass it starts on: a count is passes, as a clock's is. */
-const lapsOf = (loop: boolean | number): number => Math.max(1, passesOf(loop)) - 1;
+/** The laps a loop policy allows past the pass it starts on: a count is passes, as a clock's is.
+ *  A root timeline counts whole laps, so a count that is not whole throws. */
+function lapsOf(loop: boolean | number): number {
+  const passes = passesOf(loop);
+  if (passes !== Infinity && !Number.isInteger(passes)) {
+    throw new RangeError(`a timeline's loop is true, false or a whole number of passes, not ${passes}`);
+  }
+  return Math.max(1, passes) - 1;
+}
+
+/** Whole laps of `duration` in `t`, held short of Infinity, so a lap count stays a number. */
+const lapsIn = (t: number, duration: number): number => Math.min(t / duration, Number.MAX_VALUE);
 
 /** `t` less `laps` laps of `duration`. Where the laps alone pass the double range, near
  *  `Number.MAX_VALUE`, where the animator's clock stops, that is where `t` stands in its lap. */
@@ -14,7 +24,7 @@ function lessLaps(t: number, laps: number, duration: number): number {
   // No laps of an endless duration are none, not `NaN`.
   if (laps === 0) return t;
   const span = laps * duration;
-  return Number.isFinite(span) ? t - span : wrapPositive(t, duration);
+  return Number.isSafeInteger(laps) && Number.isFinite(span) ? t - span : wrapPositive(t, duration);
 }
 
 /** The playhead and its offset from the entry's clock, which stands at `now`, `laps` laps back.
@@ -22,7 +32,8 @@ function lessLaps(t: number, laps: number, duration: number): number {
 function lapBack(playhead: number, offset: number, now: number, laps: number, duration: number): [number, number] {
   const span = laps * duration;
   const kept = offset - span;
-  if (Number.isFinite(span) && Number.isFinite(kept)) return [playhead - span, kept];
+  // Past 2^53 laps the product is no longer exact, and `playhead - span` lands outside the lap.
+  if (Number.isSafeInteger(laps) && Number.isFinite(span) && Number.isFinite(kept)) return [playhead - span, kept];
   const next = wrapPositive(playhead, duration);
   return [next, next - now];
 }
@@ -34,7 +45,7 @@ export interface Landing { at: number; laps: number }
  *  lands in a later lap, `laps` on, and a time on a seam is the end of the lap before. */
 export function landing(t: number, duration: number, lapsLeft: number): Landing {
   const to = Math.max(0, finite(t));
-  const laps = duration > 0 && to > duration ? Math.min(Math.ceil(to / duration) - 1, lapsLeft) : 0;
+  const laps = duration > 0 && to > duration ? Math.min(Math.ceil(lapsIn(to, duration)) - 1, lapsLeft) : 0;
   return { at: Math.min(lessLaps(to, laps, duration), duration), laps };
 }
 
@@ -44,8 +55,8 @@ export function landing(t: number, duration: number, lapsLeft: number): Landing 
  *  count below 0. */
 function lapsCrossed(playhead: number, duration: number, loopsLeft: number, lap: number): number {
   if (duration <= 0) return 0;
-  return playhead >= duration ? Math.min(Math.floor(playhead / duration), loopsLeft)
-    : playhead < 0 ? -Math.min(Math.ceil(-playhead / duration), lap) : 0;
+  return playhead >= duration ? Math.min(Math.floor(lapsIn(playhead, duration)), loopsLeft)
+    : playhead < 0 ? -Math.min(Math.ceil(lapsIn(-playhead, duration)), lap) : 0;
 }
 
 /** A timeline's position: where its playhead stands against the animator entry's clock, and the
@@ -63,8 +74,9 @@ export interface Playhead {
   setLoop(loop: boolean | number): void;
   /** Whether it stands on a seam with laps left: where a seek to the end of a lap leaves it. */
   onSeam(): boolean;
-  /** Whether it stands at the end it plays toward: going forward its end, and played backward
-   *  the start of its first lap, as one exactly on a later lap's start goes on into the lap behind. */
+  /** Whether it stands at the end it plays toward: going forward the end of its last lap, as one
+   *  on a seam goes on into the next, and played backward the start of its first lap, as one
+   *  exactly on a later lap's start goes on into the lap behind. */
   atEnd(backward: boolean): boolean;
   /** Follows the entry's clock to `virtualNow`, taking any laps that crosses and handing their count to `wrapped`. */
   advance(virtualNow: number, wrapped: (laps: number) => void): void;
@@ -82,6 +94,7 @@ export function createPlayhead(duration: number, loop: boolean | number): Playhe
   let lap = 0;
   let loopsLeft = lapsOf(loop);
   const take = (laps: number): void => { loopsLeft -= laps; lap += laps; };
+  const onSeam = (): boolean => duration > 0 && t === duration && loopsLeft > 0;
 
   return {
     time: () => t,
@@ -94,8 +107,8 @@ export function createPlayhead(duration: number, loop: boolean | number): Playhe
     lapsLeft: () => loopsLeft,
     loop: () => (loopsLeft === Infinity ? true : loopsLeft === 0 ? false : loopsLeft + 1),
     setLoop(next) { loopsLeft = lapsOf(next); },
-    onSeam: () => duration > 0 && t === duration && loopsLeft > 0,
-    atEnd: (backward) => (backward ? t <= 0 && lap === 0 : t >= duration),
+    onSeam,
+    atEnd: (backward) => (backward ? t <= 0 && lap === 0 : t >= duration && !onSeam()),
     advance(virtualNow, wrapped) {
       t = virtualNow + offset;
       const laps = lapsCrossed(t, duration, loopsLeft, lap);

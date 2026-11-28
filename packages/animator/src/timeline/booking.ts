@@ -28,7 +28,7 @@ export function firstAtOrAfter(events: EventTrack['events'], t: number): number 
 /** The timeline state a booker reads. `lap` counts wraps since creation and is
  *  never reset, so a (lap, root time) pair names one crossing for good. */
 export interface BookerHost {
-  tracks: Track[];
+  tracks(): Track[];
   duration(): number;
   /** Laps still allowed after the current one; `Infinity` when endless. */
   lapsLeft(): number;
@@ -56,6 +56,9 @@ interface Cursor { lap: number; r: number; open?: boolean }
 
 interface Booking {
   event: TimelineEvent;
+  track: EventTrack;
+  /** The placement of `track` it was booked from: see {@link placeKey}. */
+  place: string;
   lap: number;
   r: number;
   when: number;
@@ -71,10 +74,19 @@ const lapsOf = (laps: number, duration: number): number => (laps === 0 ? 0 : lap
 
 const isAfter = (a: Cursor, b: Cursor): boolean => a.lap > b.lap || (a.lap === b.lap && a.r > b.r);
 
-/** Cursors by track, then by the root time it is placed at: one track nested in two places is two runs of events. */
-type Cursors = Map<EventTrack, Map<number, Cursor>>;
+/** Cursors by track, then by placement: one track nested in two places is two runs of events. */
+type Cursors = Map<EventTrack, Map<string, Cursor>>;
 
-function placesOf(cursors: Cursors, track: EventTrack): Map<number, Cursor> {
+/** Names a placement of a track by the root time it starts at and where it stops, counting the ones a scan already
+ *  met with the same two: a placement is the same one from scan to scan while the tree around it is. */
+function placeKey(scanned: Map<string, Cursor> | undefined, at: number, end: number): string {
+  const base = `${at}:${end}`;
+  let key = base;
+  for (let n = 1; scanned?.has(key); n += 1) key = `${base}#${n}`;
+  return key;
+}
+
+function placesOf(cursors: Cursors, track: EventTrack): Map<string, Cursor> {
   let placed = cursors.get(track);
   if (!placed) cursors.set(track, placed = new Map());
   return placed;
@@ -84,6 +96,29 @@ function placesOf(cursors: Cursors, track: EventTrack): Map<number, Cursor> {
 function pullBack(cursors: Cursors, at: Cursor): void {
   for (const placed of cursors.values()) {
     for (const [from, c] of placed) if (isAfter(c, at)) placed.set(from, at);
+  }
+}
+
+/** Books `ev` for `when`, answering its stop handle, if any. */
+function bookEvent(ev: TimelineEvent, when: number): EventBookingHandle | undefined {
+  try {
+    return ev.book?.(when) ?? undefined;
+  } catch (err) {
+    console.error('timeline: book threw', err);
+    return undefined;
+  }
+}
+
+/** Calls `scan` for each event track in `tracks` that books ahead, with the root time it is placed at and where it
+ *  stops. A retimed nested timeline's events fire as they are crossed and are not booked ahead. */
+function visitPlacements(
+  tracks: Track[], at: number, end: number, scan: (track: EventTrack, at: number, end: number) => void,
+): void {
+  for (const track of tracks) {
+    if (track.kind === 'event') scan(track, at, end);
+    else if (track.kind === 'timeline' && !retimed(track)) {
+      visitPlacements(track.timeline.tracks, at + track.at, endWithin(end, at + track.at, track.timeline), scan);
+    }
   }
 }
 
@@ -105,6 +140,13 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
 
   const ahead = (b: Booking): boolean => isAfter(b, playheadCursor());
 
+  /** Moves every cursor past the playhead back to it, so the next scan starts where the playhead stands. */
+  const rewind = (): void => {
+    const at = playheadCursor();
+    pullBack(cursors, at);
+    if (isAfter(start, at)) start = at;
+  };
+
   const stopWhere = (now: number, pred: (b: Booking) => boolean): void => {
     bookings = bookings.filter((b) => {
       if (!b.handle || b.when <= now || !ahead(b) || !pred(b)) return true;
@@ -114,19 +156,16 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     // Back to the playhead, not to each retracted booking: whatever still
     // stands is skipped by identity, and an edit may have added events behind
     // the cursor that only a rescan finds.
-    const at = playheadCursor();
-    pullBack(cursors, at);
-    if (isAfter(start, at)) start = at;
+    rewind();
   };
 
-  const scanTrack = (
-    track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
-  ): void => {
+  const scanTrack = (track: EventTrack, at: number, end: number, horizon: number, lastLap: number, now: number, scale: number): void => {
     const lap = host.lap();
     const duration = host.duration();
     const playhead = host.playhead();
     const { events } = track;
-    let c = scanned.get(track)?.get(at) ?? cursors.get(track)?.get(at) ?? start;
+    const place = placeKey(scanned.get(track), at, end);
+    let c = cursors.get(track)?.get(place) ?? start;
     for (;;) {
       const lapStart = lapsOf(c.lap - lap, duration);
       if (lapStart > horizon) break;
@@ -144,31 +183,13 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       c = { lap: c.lap, r };
       for (let j = i; j < events.length && events[j].t === events[i].t; j += 1) {
         const ev = events[j];
-        if (!ev.book || bookings.some((b) => b.event === ev && b.lap === c.lap && b.r === r)) continue;
-        if ((playhead - u) / scale > maxLate) continue;
+        const same = (b: Booking): boolean => b.event === ev && b.lap === c.lap && b.r === r && b.track === track && b.place === place;
+        if (!ev.book || bookings.some(same) || (playhead - u) / scale > maxLate) continue;
         const when = clock.whenFor(u, playhead, scale, now);
-        let handle: EventBookingHandle | undefined;
-        try {
-          handle = ev.book(when) ?? undefined;
-        } catch (err) {
-          console.error('timeline: book threw', err);
-        }
-        bookings.push({ event: ev, lap: c.lap, r, when, handle });
+        bookings.push({ event: ev, track, place, lap: c.lap, r, when, handle: bookEvent(ev, when) });
       }
     }
-    placesOf(scanned, track).set(at, c);
-  };
-
-  const visit = (
-    tracks: Track[], at: number, end: number, horizon: number, lastLap: number, now: number, scale: number,
-  ): void => {
-    for (const track of tracks) {
-      if (track.kind === 'event') scanTrack(track, at, end, horizon, lastLap, now, scale);
-      // A retimed nested timeline's events fire as they are crossed and are not booked ahead.
-      else if (track.kind === 'timeline' && !retimed(track)) {
-        visit(track.timeline.tracks, at + track.at, endWithin(end, at + track.at, track.timeline), horizon, lastLap, now, scale);
-      }
-    }
+    placesOf(scanned, track).set(place, c);
   };
 
   return {
@@ -176,7 +197,11 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const now = opts.clock.now();
       bookings = bookings.filter(ahead);
       if (!(scale > 0)) {
+        // Crossings between where the playhead stood and where it went back to are played again going forward.
+        const was = start;
         if (clock.halt()) stopWhere(now, () => true);
+        else rewind();
+        bookings = bookings.filter((b) => isAfter(b, was));
         return;
       }
 
@@ -189,16 +214,18 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const duration = host.duration();
       const lastLap = host.lap() + (duration > 0 ? host.lapsLeft() : 0);
       scanned = new Map();
-      visit(host.tracks, 0, Infinity, playhead + lookahead * scale, lastLap, now, scale);
+      const horizon = playhead + lookahead * scale;
+      visitPlacements(host.tracks(), 0, Infinity, (track, at, end) => scanTrack(track, at, end, horizon, lastLap, now, scale));
       cursors = scanned;
       const reached = playheadCursor();
       if (isAfter(reached, start)) start = reached;
     },
     retract() {
+      // What stands still ahead of the playhead is a crossing not yet played, which a seek must not book twice.
+      bookings = bookings.filter(ahead);
       stopWhere(opts.clock.now(), () => true);
     },
     seek() {
-      bookings = [];
       cursors.clear();
       start = { ...playheadCursor(), open: true };
     },

@@ -4383,3 +4383,10 @@ Calls the lanes made without a ruling:
 - 2026-11-27 (the fixer's call): `fitSize` throws a `RangeError` for a `fill` outside (0, 1], with no override; a
   `fill` past 1, which would fit content larger than the viewport, is refused with the rest. Letting a `fill` past 1
   overfill was the alternative.
+
+## Audit scour fix fifteen (2026-11-27): animator's timeline
+- 2026-11-27 (the fixer's call): a root timeline's `loop` (and `setLoop`) throws a `RangeError` for a count that is
+  not a whole number, `NaN` included, with no override. A root timeline counts whole laps; playing a fraction of a
+  last lap, as a nested timeline's blits clock does, was the alternative.
+- 2026-11-27 (the fixer's call): `bindClip` refuses a clip whose keys or events on a track go back in time, naming
+  the first one out of order, rather than sorting them. Keys at one time stay allowed.

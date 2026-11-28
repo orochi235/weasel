@@ -215,14 +215,22 @@ const EASING_NAMES = new Map<unknown, EasingName>(
 
 /** Whether `v` round-trips through JSON, read before `tagTypedArrays`, which writes a `Map` as `{}`. With
  *  `typedArrays`, a typed array of finite numbers passes, as `tagTypedArrays` tags it. */
-function isClipValue(v: unknown, typedArrays: boolean): boolean {
+function isClipValue(v: unknown, typedArrays: boolean, open = new Set<object>()): boolean {
   if (v === null || typeof v === 'string' || typeof v === 'boolean') return true;
   if (typeof v === 'number') return Number.isFinite(v);
-  if (Array.isArray(v)) return v.every((m) => isClipValue(m, typedArrays));
+  // A value inside itself has no JSON form; one reached twice by different paths does.
+  if (typeof v === 'object' && open.has(v)) return false;
+  const members = (list: readonly unknown[]): boolean => {
+    open.add(v as object);
+    const ok = list.every((m) => isClipValue(m, typedArrays, open));
+    open.delete(v as object);
+    return ok;
+  };
+  if (Array.isArray(v)) return members(v);
   const tagged = typedArrays ? tagTypedArray(v) : undefined;
   if (tagged) return tagged.data.every((d) => d === '-0' || isFiniteNumber(d));
   if (typeof v !== 'object' || Object.prototype.toString.call(v) !== '[object Object]') return false;
-  return Object.values(v as object).every((member) => member === undefined || isClipValue(member, typedArrays));
+  return members(Object.values(v as object).filter((member) => member !== undefined));
 }
 
 /** `n`, refused where it is not finite: JSON writes that as `null`, which `bindClip` refuses. */
