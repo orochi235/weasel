@@ -1,5 +1,5 @@
 import { useId, useRef, type ReactElement, type ReactNode } from 'react';
-import { decimal, type Display, type Quantity } from '@weasel-js/quantity';
+import { decimal, normalizeBands, type Band, type Display, type Quantity, type RangeEdge } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
 import { QuantityText } from '../QuantityText';
 import { linearScale, type ContinuousScaleFactory } from '@weasel-js/scale';
@@ -13,7 +13,6 @@ import { BandRuler, rulerDisplay, type BandTick } from './BandRuler';
 import { BandStrip } from './BandStrip';
 import type { HoldProps } from '../Disabled';
 import { useControlHold } from '../Disabled/controlHold';
-import { normalizeBands, type Band, type RangeEdge } from './bands';
 import { useBandDraft } from './useBandDraft';
 import { createBandCommands } from './bandCommands';
 

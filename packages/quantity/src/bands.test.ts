@@ -5,12 +5,11 @@ import {
   mergeBand,
   scaleEdges,
   normalizeBands,
+  bandIndexAt,
   splitBands,
   toggleLock,
-  unitEdges,
   type Band,
 } from './bands';
-import { linearScale } from '@weasel-js/scale';
 
 const MIN = 0;
 const MAX = 100;
@@ -52,10 +51,23 @@ describe('bandBounds', () => {
   });
 });
 
-describe('unitEdges', () => {
-  it('reads the band edges off as track positions from 0 to 1', () => {
-    const bands = normalizeBands(fixture(), MIN);
-    expect(unitEdges(bands, linearScale, MIN, MAX)).toEqual([0, 0.2, 0.6, 1]);
+describe('bandIndexAt', () => {
+  const bands = normalizeBands(fixture(), MIN);
+
+  it('gives the band a value falls in, the later band on a seam', () => {
+    expect([0, 19.9, 20, 59, 60, 100].map((v) => bandIndexAt(bands, v, MIN, MAX))).toEqual([0, 0, 1, 1, 2, 2]);
+  });
+
+  it('clamps past either end, and gives NaN and an empty list −1', () => {
+    expect(bandIndexAt(bands, -Infinity, MIN, MAX)).toBe(0);
+    expect(bandIndexAt(bands, 1e9, MIN, MAX)).toBe(2);
+    expect(bandIndexAt(bands, NaN, MIN, MAX)).toBe(-1);
+    expect(bandIndexAt([], 5, MIN, MAX)).toBe(-1);
+  });
+
+  it('picks the last of several bands starting at one place', () => {
+    const stacked = [{ from: 0, data: 'a' }, { from: 50, data: 'b' }, { from: 50, data: 'c' }];
+    expect(bandIndexAt(stacked, 50, MIN, MAX)).toBe(2);
   });
 });
 

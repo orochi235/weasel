@@ -1,5 +1,4 @@
-import { amount, presentRange, retag, type Display, type Quantity } from '@weasel-js/quantity';
-import type { Band } from './bands';
+import { amount, presentRange, retag, type Band, type Display, type Quantity } from '@weasel-js/quantity';
 
 export function untag<T, F extends Quantity>(band: Band<T, F>): Band<T> {
   return typeof band.from === 'number' ? (band as Band<T>) : { ...band, from: amount(band.from) };

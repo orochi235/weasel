@@ -3,7 +3,7 @@ import { fireEvent, render } from '@testing-library/react';
 import { Disabled, ReadOnly } from '../Disabled';
 import { describeHold } from '../Disabled/testing/holdCases.fixtures';
 import { BandEditor } from './BandEditor';
-import type { Band } from './bands';
+import type { Band } from '@weasel-js/quantity';
 
 beforeAll(() => {
   Element.prototype.getBoundingClientRect = function getBoundingClientRect() {

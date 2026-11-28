@@ -1,3 +1,4 @@
+import type { Tones } from './tones';
 import type { Unit } from './units';
 
 /**
@@ -11,6 +12,8 @@ export interface Display {
   /** What ±Infinity reads as under this display — `'never'` on a timeout.
    *  Default `∞`, spoken `infinity`. Honored by every kind. */
   readonly infinity?: InfinityText;
+  /** Colors the value by the band it falls in. Honored by every kind. */
+  readonly tones?: Tones;
   readonly [option: string]: unknown;
 }
 

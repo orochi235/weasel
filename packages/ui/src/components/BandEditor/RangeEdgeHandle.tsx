@@ -4,11 +4,10 @@ import type {
   PointerEvent as ReactPointerEvent,
   ReactElement,
 } from 'react';
-import { qty, type Display, type Quantity } from '@weasel-js/quantity';
+import { edgeReach, qty, scaleEdges, type Band, type Display, type Quantity, type RangeEdge } from '@weasel-js/quantity';
 import s from './BandEditor.module.css';
-import { edgeReach, scaleEdges, unitEdges, type Band, type RangeEdge } from './bands';
+import { unitEdges, unitScale } from './scale';
 import type { ContinuousScaleFactory } from '@weasel-js/scale';
-import { unitScale } from './scale';
 import { useFieldLocale } from '../../useFieldLocale';
 import { KEY_STEP, pct } from './track';
 import { rangeKey } from '@weasel-js/ui-input';

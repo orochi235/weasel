@@ -4,7 +4,7 @@ import type {
   PointerEvent as ReactPointerEvent,
 } from 'react';
 import { focusedControlOwnsKey, isEditableTarget, isPrimaryPress } from '@weasel-js/gestures';
-import { bandBounds, mergeBand, splitBands, toggleLock, type Band } from './bands';
+import { bandBounds, mergeBand, splitBands, toggleLock, type Band } from '@weasel-js/quantity';
 
 /** The band key `e` presses: `x` or Delete merges, `l` locks, `s` splits. Null with a modifier held: `x` is a bare
  *  letter and Cmd/Ctrl+X is cut, which must not be swallowed. Caps Lock reports the letters capitalized with no Shift. */

@@ -16,13 +16,34 @@ export {
   partsOf,
   partsToHtml,
   present,
-  qty,
-  QuantityView,
   registerDisplayKind,
   displayKindRegistry,
   type Presentation,
   type PresentOptions,
 } from './present';
+export { qty, QuantityView } from './view';
+export {
+  rarityTones,
+  toneAt,
+  toneOf,
+  withTones,
+  type Tone,
+  type Tones,
+  type ValueTone,
+} from './tones';
+export {
+  bandBounds,
+  bandIndexAt,
+  edgeReach,
+  mergeBand,
+  normalizeBands,
+  scaleEdges,
+  splitBands,
+  toggleLock,
+  withSeams,
+  type Band,
+  type RangeEdge,
+} from './bands';
 export {
   intlParts,
   numberPart,

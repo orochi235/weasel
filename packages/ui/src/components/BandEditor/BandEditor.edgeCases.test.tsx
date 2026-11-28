@@ -1,9 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useState } from 'react';
 import { fireEvent, render } from '@testing-library/react';
-import { fraction, percent, tag, type Tagged } from '@weasel-js/quantity';
+import { fraction, percent, tag, type Band, type Tagged } from '@weasel-js/quantity';
 import { BandEditor } from './BandEditor';
-import type { Band } from './bands';
 
 const BANDS: Band<string>[] = [{ from: 0, data: 'a' }, { from: 20, data: 'b' }, { from: 60, data: 'c' }];
 

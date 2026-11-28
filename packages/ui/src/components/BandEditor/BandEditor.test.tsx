@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { useState } from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import { decimal, fraction, percent, tag, type Tagged } from '@weasel-js/quantity';
+import { decimal, fraction, percent, tag, type Band, type Tagged } from '@weasel-js/quantity';
 import { I18nProvider } from '../../useFieldLocale';
 import { BandEditor } from './BandEditor';
-import type { Band } from './bands';
 
 const MIN = 0;
 const MAX = 100;

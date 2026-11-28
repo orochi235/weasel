@@ -1,8 +1,20 @@
-import { useState, type ComponentType } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
-import { fraction, type DecimalDisplay, type FractionDisplay, type PercentDisplay } from '@weasel-js/quantity';
+import {
+  fraction,
+  percent,
+  present,
+  rarityTones,
+  withTones,
+  type DecimalDisplay,
+  type FractionDisplay,
+  type PercentDisplay,
+  type Tone,
+  type Tones,
+} from '@weasel-js/quantity';
 import { BandEditor } from '@weasel-js/ui/components/BandEditor';
 import type { Band, BandEditorProps } from '@weasel-js/ui/components/BandEditor';
+import s from './BandEditor.stories.module.css';
 
 /** Each band's payload: the name of the layout a wedge uses across it. */
 type Slice = { name: string };
@@ -160,4 +172,44 @@ export const RescaleTheRange: Story = {
       'Drag either end of the strip to rescale the whole sequence; pull past the track and the axis squeezes to fit. Right-click a band, or select it and press l, to lock it: a locked band is hatched and holds its length while the rest stretch.',
   },
   render: (args) => <RangeWrapper {...args} initial={[FOUR[0], FOUR[1], { ...FOUR[2], locked: true }, FOUR[3]]} />,
+};
+
+const RARITY = rarityTones();
+const SAMPLES = [0.12, 0.4, 0.62, 0.8, 0.95];
+
+/** `data-tone` rules colored from the ramp itself, so the stylesheet and the tones can't disagree. */
+function toneSheet(tones: Tones): string {
+  return tones.stops.map(({ data }) => `.${s.tones} [data-tone="${data.name}"] { color: ${data.color}; }`).join('\n');
+}
+
+function TonesWrapper({ label }: { label?: ReactNode }) {
+  const [stops, setStops] = useState<Band<Tone>[]>(() => [...RARITY.stops]);
+  const display = withTones(percent(), { ...RARITY, stops });
+  return (
+    <div className={s.tones}>
+      <style>{toneSheet(RARITY)}</style>
+      <BandEditor<Tone>
+        label={label}
+        min={0}
+        max={1}
+        scale="linear"
+        display={percent()}
+        value={stops}
+        onChange={setStops}
+        renderBand={(band) => <span data-tone={band.data.name}>{band.data.name}</span>}
+        bandLabel={(band) => band.data.name ?? ''}
+      />
+      <p className={s.samples}>
+        {SAMPLES.map((v) => {
+          const shown = present(v, display);
+          return <data key={v} value={v} data-tone={shown.tone?.name}>{shown.text}</data>;
+        })}
+      </p>
+    </div>
+  );
+}
+
+export const EditATonesRamp: Story = {
+  args: { label: 'A rarity ramp from `rarityTones()`: drag a seam and the sample scores below change tone.' },
+  render: (args) => <TonesWrapper label={args.label} />,
 };
