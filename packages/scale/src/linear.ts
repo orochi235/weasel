@@ -1,6 +1,6 @@
 import { niceStep, lerp } from '@weasel-js/geom';
 import { replacedFormat } from './replacedFormat';
-import { FINEST_STEP, formatTick, tickDecimals } from './tickFormat';
+import { FINEST_STEP, MAX_DECIMALS, formatTick, tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link linearScale}. */
@@ -15,7 +15,8 @@ export interface LinearScaleOptions {
 export interface SpacedTickOptions {
   /** Smallest gap between neighboring ticks, in range units (px, for a scale onto the screen). */
   minSpacing: number;
-  /** Ticks closer than this to either end of the range are dropped, in range units. Default 0. */
+  /** Ticks closer than this to either end of the range are dropped, in range units. Default 0; negative throws a
+   *  `RangeError`. */
   inset?: number;
 }
 
@@ -36,15 +37,20 @@ export interface LinearScale extends ContinuousScale {
   tickStep(count?: number): number;
   /** Ticks on the finest 1/2/5 step that keeps neighbors `minSpacing` apart along the range, so a longer axis
    *  gets more of them. Empty for an empty domain or range, and where `minSpacing` spans more of the domain than
-   *  the largest double. */
+   *  the largest double. A spacing that would lay more than {@link MAX_TICKS} takes a coarser step. */
   spacedTicks(options: SpacedTickOptions): TickSet;
   tickFormat(count?: number): (value: number) => string;
 }
 
 const DEFAULT_TICKS = 5;
 
-/** `count`, or the default for a count that is not a finite number, as a `width / spacing` of 0 / 0 gives. */
-export const tickCount = (count: number | undefined, fallback = DEFAULT_TICKS): number => (Number.isFinite(count) ? count! : fallback);
+/** The most ticks a scale lays, and {@link stepTicks}'s default limit: far past any axis, and short of a hang. */
+export const MAX_TICKS = 1_000_000;
+
+/** `count`, or the default for a count that is not a finite number, as a `width / spacing` of 0 / 0 gives. Held to a
+ *  quarter of {@link MAX_TICKS}, which a round step near it keeps within the bound. */
+export const tickCount = (count: number | undefined, fallback = DEFAULT_TICKS): number =>
+  Number.isFinite(count) ? Math.min(count!, MAX_TICKS / 4) : fallback;
 
 /** The round step, 1, 2 or 5 times a power of ten, that cuts `lo`..`hi` into about `count` pieces. */
 export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number {
@@ -56,33 +62,40 @@ export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number 
   return niceStep(raw, 'nearest');
 }
 
-/** The most `toFixed` accepts. */
-const MAX_DECIMALS = 100;
-
-/** How many decimals a value on a grid of `step` needs; 0 for a step that is not a positive number. */
+/** How many decimals a value on a grid of `step` needs, its magnitude's places or its own digits' if more (0.25
+ *  needs 2); 0 for a step that is not a positive number. */
 export function decimalsOf(step: number): number {
   if (!(step > 0) || !Number.isFinite(step)) return 0;
-  return Math.min(MAX_DECIMALS, Math.max(0, -Math.floor(Math.log10(step) + 1e-9)));
+  const magnitude = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  return Math.min(MAX_DECIMALS, Math.max(magnitude, tickDecimals([step])));
 }
 
 /** Whether `i++` from `i` moves, so a loop over step indices ends. */
 const countable = (i: number): boolean => Math.abs(i) <= Number.MAX_SAFE_INTEGER;
 
-/** `i` steps of `step`, without the float noise a bare product carries. */
-const onGrid = (i: number, step: number): number => (step < FINEST_STEP ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
+/** Places a grid of `step` from {@link decimalsOf}, without the float noise a bare product carries. */
+function gridOf(step: number): (i: number) => number {
+  if (step < FINEST_STEP) return (i) => i * step + 0;
+  const places = decimalsOf(step);
+  return (i) => Number((i * step).toFixed(places));
+}
 
 /** {@link stepTicks}, or the one value of a domain holding only it. */
 export const domainTicks = (lo: number, hi: number, step: number): number[] =>
   lo === hi ? (Number.isFinite(lo) ? [lo] : []) : stepTicks(lo, hi, step);
 
-/** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. */
-export function stepTicks(lo: number, hi: number, step: number): number[] {
+/** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. Throws a
+ *  `RangeError` for a `step` that is not a positive finite number, or for more than `limit` ticks. */
+export function stepTicks(lo: number, hi: number, step: number, limit = MAX_TICKS): number[] {
+  if (!(step > 0) || !Number.isFinite(step)) throw new RangeError(`stepTicks: step ${step} is not a positive finite number`);
   const [a, b] = lo <= hi ? [lo, hi] : [hi, lo];
   const first = Math.ceil(a / step - 1e-9);
   const last = Math.floor(b / step + 1e-9);
   if (!countable(first) || !countable(last)) return [];
+  if (last - first + 1 > limit) throw new RangeError(`stepTicks: ${last - first + 1} ticks of ${step} pass the limit of ${limit}`);
+  const at = gridOf(step);
   const out: number[] = [];
-  for (let i = first; i <= last; i++) out.push(onGrid(i, step));
+  for (let i = first; i <= last; i++) out.push(at(i));
   return lo <= hi ? out : out.reverse();
 }
 
@@ -92,9 +105,10 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   const hi = Math.max(domain[0], domain[1]);
   const span = hi - lo;
   const { minSpacing, inset = 0 } = options;
+  if (inset < 0) throw new RangeError(`spacedTicks: inset ${inset} is negative`);
   if (!(span > 0) || !Number.isFinite(span) || !(length > 0) || !(minSpacing > 0)) return { values: [], step: 0, decimals: 0 };
   const perUnit = span / length;
-  const step = niceStep(minSpacing * perUnit);
+  const step = niceStep(Math.max(minSpacing * perUnit, span / (MAX_TICKS - 1)));
   // A spacing whose step in domain units is past the double range is wider than the axis.
   if (!Number.isFinite(step)) return { values: [], step: 0, decimals: 0 };
   const decimals = decimalsOf(step);
@@ -104,8 +118,9 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   const first = Math.ceil((lo + inset * perUnit) / step - slack);
   const last = Math.floor((hi - inset * perUnit) / step + slack);
   if (!countable(first) || !countable(last)) return { values: [], step, decimals };
+  const at = gridOf(step);
   const values: number[] = [];
-  for (let i = first; i <= last; i++) values.push(onGrid(i, step) + 0);
+  for (let i = first; i <= last; i++) values.push(at(i) + 0);
   return { values, step, decimals };
 }
 
@@ -119,10 +134,11 @@ export function formatNumber(value: number, step: number): string {
 /** `domain` widened to whole steps of a tick grid of about `count` ticks. */
 export function niceDomain(domain: readonly [number, number], count = DEFAULT_TICKS): [number, number] {
   const [lo, hi] = domain;
-  if (lo === hi) return lo === 0 ? [0, 1] : [Math.min(0, lo), Math.max(0, hi)];
+  if (lo === hi) return lo === 0 ? [0, 1] : niceDomain([Math.min(0, lo), Math.max(0, hi)], count);
   const step = tickStep(lo, hi, count);
-  const down = (v: number) => onGrid(Math.floor(v / step + 1e-9), step);
-  const up = (v: number) => onGrid(Math.ceil(v / step - 1e-9), step);
+  const at = gridOf(step);
+  const down = (v: number) => at(Math.floor(v / step + 1e-9));
+  const up = (v: number) => at(Math.ceil(v / step - 1e-9));
   // An end whose whole step overflows stays where it is, and so does a span too fine for its step to cut.
   const [a, b] = lo < hi ? [down(lo), up(hi)] : [up(lo), down(hi)];
   const out: [number, number] = [Number.isFinite(a) ? a : lo, Number.isFinite(b) ? b : hi];
@@ -162,12 +178,13 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
   const step = (count = DEFAULT_TICKS) => tickStep(d0, d1, count);
   const format = (v: number): string => formatNumber(v, step());
+  const rangeAlong = proportion(r0, r1).along;
   return {
     kind: 'linear',
     domain,
     range,
     position: map,
-    invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
+    invert: (at) => (r1 === r0 ? d0 : unmap(rangeAlong(at))),
     tickStep: step,
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
     ticks: (count = DEFAULT_TICKS) => domainTicks(d0, d1, step(count)),

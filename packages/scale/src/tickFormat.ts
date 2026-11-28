@@ -9,7 +9,8 @@ export interface TickFormatCtx {
 /** Turns a tick value into its label. */
 export type TickFormatter = (value: number, ctx: TickFormatCtx) => string;
 
-const MAX_DECIMALS = 20;
+/** The most places `toFixed` writes. */
+export const MAX_DECIMALS = 100;
 
 /** The most places after the point any of `values` needs, for a column of ticks given rather than generated: each to
  *  a billionth of itself, so small ticks keep their digits. */
@@ -27,7 +28,7 @@ export function tickDecimals(values: readonly number[]): number {
 /** `value.toFixed(decimals)`, without the exponent `toFixed` switches to at 1e21, and with `decimals` held to the 0 to
  *  100 `toFixed` takes rather than throwing past them. */
 export function toFixedPlain(value: number, places: number): string {
-  const decimals = Math.min(100, Math.max(0, Math.trunc(places) || 0));
+  const decimals = Math.min(MAX_DECIMALS, Math.max(0, Math.trunc(places) || 0));
   if (!(Math.abs(value) >= 1e21) || !Number.isFinite(value)) return value.toFixed(decimals);
   return plainDigits(value) + (decimals > 0 ? `.${'0'.repeat(decimals)}` : '');
 }

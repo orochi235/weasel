@@ -1,4 +1,4 @@
-import { decimalsOf, domainTicks, formatNumber, tickCount, tickStep } from './linear';
+import { decimalsOf, domainTicks, formatNumber, proportion, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -30,10 +30,18 @@ export function logScale(opts: LogScaleOptions): LogScale {
   const log = (v: number) => Math.log(v) / Math.log(base);
   const l0 = log(d0);
   const l1 = log(d1);
-  // Ends too near for their logarithms to differ are told apart by their distance, which a ratio rounds away.
-  const along = l1 !== l0 ? (v: number) => (log(v) - l0) / (l1 - l0) : (v: number) => Math.log1p((v - d0) / d0) / Math.log1p((d1 - d0) / d0);
+  // Ends within a factor of two are told apart by their distance: the difference of their logarithms rounds away as
+  // much of it as a logarithm's last digit holds.
+  const near = Math.abs(d1 - d0) < Math.min(d0, d1);
+  const nearSpan = Math.log1p((d1 - d0) / d0);
+  const along = near
+    ? (v: number) => {
+        const x = Math.log1p((v - d0) / d0);
+        return (Number.isFinite(x) ? x : Math.log(v) - Math.log(d0)) / nearSpan;
+      }
+    : (v: number) => (log(v) - l0) / (l1 - l0);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
-  const powerTicks = (count: number, thin = true): number[] => {
+  const powerTicks = (count: number, thin = true, limit = Infinity): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
     const first = Math.floor(lo + 1e-9);
@@ -52,11 +60,12 @@ export function logScale(opts: LogScaleOptions): LogScale {
         // Powers deep in the subnormals can round onto one another.
         if (v >= vlo - slack && v <= vhi + slack && v !== out.at(-1)) out.push(v);
       }
+      if (out.length >= limit) break;
     }
     return l0 <= l1 ? out : out.reverse();
   };
   // A domain holding fewer than two powers is nearly linear across it, and ticks and reads as a linear one would.
-  const linear = d0 === d1 || powerTicks(0, false).length < 2;
+  const linear = d0 === d1 || powerTicks(0, false, 2).length < 2;
   const ticks = (count = 5): number[] => {
     const n = tickCount(count);
     return linear ? domainTicks(d0, d1, tickStep(d0, d1, n)) : powerTicks(n);
@@ -65,10 +74,10 @@ export function logScale(opts: LogScaleOptions): LogScale {
   // Each label is as precise as its own decade, whatever the count, and another base's powers as their digits need.
   const decadeFormat = (v: number): string => {
     const decade = v >= 1 ? 0 : decimalsOf(10 ** Math.floor(Math.log10(v)));
-    // Digits counted on the value moved up past its decade, as `tickDecimals` counts no further than 20 places.
-    return formatNumber(v, 10 ** -(base === 10 ? decade : decade + tickDecimals([v * 10 ** decade])));
+    return formatNumber(v, 10 ** -(base === 10 ? decade : Math.max(decade, tickDecimals([v]))));
   };
   const format = linear ? linearFormat(5) : decadeFormat;
+  const rangeAlong = proportion(r0, r1).along;
   return {
     kind: 'log',
     base,
@@ -76,10 +85,10 @@ export function logScale(opts: LogScaleOptions): LogScale {
     range: [r0, r1],
     position: map,
     invert(at) {
-      const t = r1 === r0 ? 0 : (at - r0) / (r1 - r0);
+      const t = r1 === r0 ? 0 : rangeAlong(at);
       if (t === 0 || t === 1) return t === 0 ? d0 : d1;
       // A logarithm a rounding past the double range's end would turn into Infinity or 0.
-      const v = l1 !== l0 ? base ** lerp(l0, l1, t) : d0 + d0 * Math.expm1(t * Math.log1p((d1 - d0) / d0));
+      const v = near ? d0 + d0 * Math.expm1(t * nearSpan) : base ** lerp(l0, l1, t);
       return t > 0 && t < 1 ? Math.min(Math.max(d0, d1), Math.max(Math.min(d0, d1), v)) : v;
     },
     ticks,

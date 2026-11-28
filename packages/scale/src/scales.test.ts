@@ -3,7 +3,7 @@ import { bandScale } from './band';
 import { formatNumber, linearScale, niceDomain, tickStep } from './linear';
 import { logScale } from './log';
 import { ordinalScale } from './ordinal';
-import { timeScale } from './time';
+import { formatInstant, timeScale } from './time';
 
 describe('linearScale', () => {
   const s = linearScale({ domain: [0, 100], range: [400, 0] });
@@ -296,5 +296,61 @@ describe('a time scale ticking by weeks', () => {
     expect(ticks[1]! - ticks[0]!).toBe(7 * 24 * 3600 * 1000);
     expect(ticks.map((t) => new Date(t).getUTCDay())).toEqual(ticks.map(() => 1));
     expect(s.tickFormat()(ticks[0]!)).toBe('2026-11-02');
+  });
+});
+
+describe('a time scale before the year 1000', () => {
+  it('labels its years with four digits', () => {
+    const at = (year: number, month = 0) => new Date(0).setUTCFullYear(year, month, 1);
+    expect(formatInstant(at(50, 2), 'day')).toBe('0050-03-01');
+    expect(formatInstant(at(50), 'year')).toBe('0050');
+    expect(formatInstant(at(-50, 2), 'month')).toBe('-0050-03');
+    expect(formatInstant(at(2026), 'year')).toBe('2026');
+  });
+});
+
+describe('a time scale ticking by seconds across midnight', () => {
+  it('labels midnight with the date it starts', () => {
+    const midnight = Date.UTC(2026, 0, 2);
+    const s = timeScale({ domain: [midnight - 120000, midnight + 120000], range: [0, 100] });
+    const write = s.tickFormat(8);
+    expect(s.ticks(8).map(write)).toContain('2026-01-02');
+    expect(write(midnight + 30000)).toBe('00:00:30');
+  });
+});
+
+describe('a time scale shorter than a second', () => {
+  const at = Date.UTC(2026, 0, 1, 12, 0, 0);
+
+  it('ticks on milliseconds and labels them to the millisecond', () => {
+    const s = timeScale({ domain: [at + 10, at + 310], range: [0, 800] });
+    expect(s.ticks().map(s.tickFormat())).toEqual(['12:00:00.050', '12:00:00.100', '12:00:00.150', '12:00:00.200', '12:00:00.250', '12:00:00.300']);
+    expect(timeScale({ domain: [at, at + 500], range: [0, 800] }).ticks().length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('ticks no finer than a millisecond', () => {
+    const s = timeScale({ domain: [at, at + 2], range: [0, 800] });
+    expect(s.ticks(10)).toEqual([at, at + 1, at + 2]);
+  });
+});
+
+describe('a log scale over a domain narrow for its magnitude', () => {
+  it('places and inverts values at their distance along it', () => {
+    for (const domain of [[1e15, 1e15 + 100], [1e15 + 100, 1e15]] as const) {
+      const s = logScale({ domain, range: [0, 500] });
+      const quarter = Math.min(...domain) + 25;
+      expect(Math.abs(s.position(quarter) - (domain[0] < domain[1] ? 125 : 375))).toBeLessThan(1e-6);
+      expect(s.invert(s.position(quarter))).toBe(quarter);
+      expect(s.invert(250)).toBe(1e15 + 50);
+    }
+  });
+});
+
+describe('a log scale in a base near 1', () => {
+  it('is built without listing every power its domain holds', () => {
+    const start = performance.now();
+    const s = logScale({ domain: [1, 1.05], range: [0, 1], base: 1 + 1e-9 });
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(s.ticks().length).toBeGreaterThan(1);
   });
 });

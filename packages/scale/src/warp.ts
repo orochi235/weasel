@@ -92,12 +92,13 @@ export function warpScale(opts: WarpScaleOptions): WarpScale {
   const { along, unmap } = proportion(w0, w1);
   const map = (v: number) => (w1 === w0 ? (r0 + r1) / 2 : lerp(r0, r1, along(to(v))));
   const format = (v: number): string => formatNumber(v, gridOf(v));
+  const rangeAlong = proportion(r0, r1).along;
   return {
     kind: 'warp',
     domain: [d0, d1],
     range: [r0, r1],
     position: map,
-    invert: (at) => (r1 === r0 ? d0 : from(unmap((at - r0) / (r1 - r0)))),
+    invert: (at) => (r1 === r0 ? d0 : from(unmap(rangeAlong(at)))),
     ticks: (count = DEFAULT_TICKS) => warpTicks([d0, d1], to, from, count),
     format,
     tickFormat() {
