@@ -33,7 +33,7 @@ function pressDrag(
   // as the fallback for a consumer that wired neither.
   const sx = event.x ?? (event.kind === 'click' ? event.pressX : undefined) ?? 0;
   const sy = event.y ?? (event.kind === 'click' ? event.pressY : undefined) ?? 0;
-  const affordance = event.kind === 'pointerdown' ? (event.affordance as AffordanceHit | undefined) : undefined;
+  const affordance = event.affordance as AffordanceHit | undefined;
   return {
     world: { x: sx, y: sy },
     drag: {

@@ -15,3 +15,16 @@ describe('buildInvocationCtx world', () => {
     expect(buildInvocationCtx(event, {}, undefined).world).toEqual(worldPointOf(event));
   });
 });
+
+describe('buildInvocationCtx drag', () => {
+  const hit = { kind: 'handle', owner: 'n1' };
+
+  it.each<InputEvent>([
+    { kind: 'click', x: 1, y: 2, affordance: hit, ...MODS },
+    { kind: 'doubleclick', x: 1, y: 2, affordance: hit, ...MODS },
+    { kind: 'contextmenu', x: 1, y: 2, affordance: hit, ...MODS },
+  ])("carries $kind's affordance, as a press's", (event) => {
+    expect(buildInvocationCtx(event, {}, undefined).drag?.affordance).toBe(hit);
+  });
+
+});
