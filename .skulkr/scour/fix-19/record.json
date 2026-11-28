@@ -1,0 +1,76 @@
+{
+ "run": 19,
+ "area": "parallax",
+ "commit": "fd7824b9099fc76fd0b43c0fcad48e8abf4951f6",
+ "on": "main",
+ "ledgerCommit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "size": 8,
+ "started": "2026-11-28T10:36:07.497Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "fd7824b9099fc76fd0b43c0fcad48e8abf4951f6",
+   "defects": [
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/parallax/src/createParallaxLayer.ts",
+      "packages/parallax/src/createParallaxPlane.ts"
+     ]
+    },
+    {
+     "id": "D1",
+     "recurrent": false,
+     "files": [
+      "packages/parallax/src/createParallaxPlane.ts",
+      "packages/parallax/src/createParallaxLayer.ts"
+     ]
+    },
+    {
+     "id": "D2",
+     "recurrent": false,
+     "files": [
+      "packages/parallax/src/createTiledLayer.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] scour: `createParallaxLayer` read the caller's plain `parallax` object live. fixed 1992870e30. The layer now keeps its own frozen copy, made when it is built.",
+     "sha": "1992870e30"
+    },
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "[D1] scour: edits to the opts object a plane's `get` returned changed drawing without telling subscribers. fixed 68433789cc. `get` now returns frozen opts, so an edit in place throws; changes go through `set`. This is a strict behavior call with no opt-out, recorded in `docs/unruled.md`.",
+     "sha": "68433789cc"
+    },
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "[D2] scour: a view collapsed on an axis the lattice doesn't tile still drew tiled copies. fixed e354afa23b. The tiling guard now requires the whole visible rect to be finite.",
+     "sha": "e354afa23b"
+    }
+   ],
+   "commits": 5,
+   "branch": "scour19-parallax-b1",
+   "verify": {
+    "ok": true,
+    "files": 10,
+    "testFiles": {
+     "failed": 0,
+     "passed": 25,
+     "total": 25
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 0.5690769999999999,
+   "minutes": 4.930433333333333
+  }
+ ]
+}
