@@ -73,6 +73,12 @@ export function shapeGeneratorOf(data: unknown): ShapeGenerator | null {
 
 const count = (v: number): number => clamp(Math.round(v), SHAPE_COUNT_RANGE.min, SHAPE_COUNT_RANGE.max);
 
+/** The side or point count a polygon or star is drawn with for a declared `v`: rounded and held in
+ *  {@link SHAPE_COUNT_RANGE}, and `fallback` where `v` is absent or not a number. */
+export function shapeCountFor(v: number | undefined, fallback: number): number {
+  return typeof v === 'number' && !Number.isNaN(v) ? count(v) : fallback;
+}
+
 /** `g` with its counts rounded and every field held in range. */
 export function clampShapeGenerator(g: ShapeGenerator): ShapeGenerator {
   if (g.kind === 'polygon') return { kind: 'polygon', sides: count(g.sides), rotation: g.rotation };

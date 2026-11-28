@@ -2,6 +2,7 @@ import {
   ellipsePath,
   regularPolygonPath,
   starPath,
+  transformPath,
   type Path
 } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
@@ -10,11 +11,11 @@ import { nodeMemo } from 'core/scene/nodeMemo';
 import type { RectPose } from 'core/scene/types';
 import { commandFill, commandStroke } from '@weasel-js/renderer';
 import { PAINT_SLOT } from './memo';
-import { SHAPE_DEFAULTS } from 'domains/paths/shapeGenerator';
+import { SHAPE_DEFAULTS, shapeCountFor } from 'domains/paths/shapeGenerator';
 import { inkReach, inkStroke, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import { resolveFill, resolveStroke } from '@weasel-js/paint';
 import { paintsPose, poseBoxBounds } from './poseBox';
-import { outsetPoseBox, strokedPoseBox } from './strokedBounds';
+import { poseOutlineDrawnBounds } from './strokedBounds';
 
 type ShapeData = {
   shape: string;
@@ -69,23 +70,13 @@ export const SHAPE_PAINTER: NodeShapeEntry<unknown, RectPose> = {
   // Every shape kind is inscribed in the pose box.
   bounds: (node, pose, ctx) =>
     poseBoxBounds(pose, resolveStroke(((node.data ?? {}) as ShapeData).stroke, ctx?.inherited?.stroke), ctx),
-  // A rect's or an ellipse's stroke reaches its box evenly, unless something sticks out of the ribbon; a
-  // polygon's or a star's corners are sharper than a right angle, so their miters are measured.
   drawnBounds: (node, pose, ctx) => {
     const d = (node.data ?? {}) as ShapeData;
     const stroke = resolveStroke(d.stroke, ctx?.inherited?.stroke);
-    return d.shape === 'polygon' || d.shape === 'star' || (stroke !== null && protrudes(stroke))
-      ? strokedPoseBox(node, pose, stroke, ctx, (at) => pathForShape(d, at))
-      : outsetPoseBox(pose, stroke, ctx);
+    const outline = d.shape === 'polygon' || d.shape === 'star' ? 'sharp' : d.shape === 'ellipse' ? 'ellipse' : 'rect';
+    return poseOutlineDrawnBounds(node, pose, stroke, ctx, outline, (at) => pathForShape(d, at));
   },
 };
-
-/** Whether `stroke` paints past an even outset of a smooth closed outline: a marker head, or a square cap on
- *  an end a dash or a trim opens, whose corners stand off a curve. */
-function protrudes(stroke: Stroke): boolean {
-  if (stroke.markerStart !== undefined || stroke.markerMid !== undefined || stroke.markerEnd !== undefined) return true;
-  return stroke.cap === 'square' && ((stroke.dash?.length ?? 0) > 0 || stroke.trim !== undefined);
-}
 
 export const SHAPE_KINDS = new Set(['rect', 'ellipse', 'polygon', 'star']);
 
@@ -103,20 +94,22 @@ export function pathForShape(
   switch (d.shape) {
     case 'ellipse':
       return ellipsePath(p);
-    case 'polygon': {
-      const cx = p.x + p.width / 2;
-      const cy = p.y + p.height / 2;
-      const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
-      return regularPolygonPath({ x: cx, y: cy }, r, d.sides ?? SHAPE_DEFAULTS.sides);
-    }
-    case 'star': {
-      const cx = p.x + p.width / 2;
-      const cy = p.y + p.height / 2;
-      const r = Math.min(Math.abs(p.width), Math.abs(p.height)) / 2;
-      return starPath({ x: cx, y: cy }, r, d.points ?? SHAPE_DEFAULTS.points);
-    }
+    case 'polygon':
+      return inscribed(p, (c, r) => regularPolygonPath(c, r, shapeCountFor(d.sides, SHAPE_DEFAULTS.sides)));
+    case 'star':
+      return inscribed(p, (c, r) => starPath(c, r, shapeCountFor(d.points, SHAPE_DEFAULTS.points)));
     case 'rect':
     default:
       return { kind: 'rect', x: p.x, y: p.y, width: p.width, height: p.height };
   }
+}
+
+/** The shape `at` builds on the largest circle inside `p`, mirrored on each axis `p` is. */
+function inscribed(p: RectPose, at: (center: { x: number; y: number }, radius: number) => Path): Path {
+  const cx = p.x + p.width / 2;
+  const cy = p.y + p.height / 2;
+  const path = at({ x: cx, y: cy }, Math.min(Math.abs(p.width), Math.abs(p.height)) / 2);
+  const sx = Math.sign(p.width) || 1;
+  const sy = Math.sign(p.height) || 1;
+  return sx > 0 && sy > 0 ? path : transformPath(path, [sx, 0, 0, sy, cx - sx * cx, cy - sy * cy]);
 }

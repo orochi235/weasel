@@ -86,7 +86,7 @@ export function inkExtentsOf(
   const reached = members.length > 0 ? membersExtents(scene, members, own, opts) : NO_INK_EXTENTS;
   const ctx = inkCtx(opts.scale, own);
   const drawn = node.kind === 'group'
-    ? groupBoxDrawnBounds(node.data, pose, ctx)
+    ? groupBoxDrawnBounds(node, pose, ctx)
     : findShapeDrawnBounds(node, pose, withInherited(scene, node, ctx));
   if (drawn === null) return reached;
   const ink = inkExtentsBetween(normalized(unframed), drawn);
