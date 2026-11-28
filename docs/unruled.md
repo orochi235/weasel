@@ -20,6 +20,9 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-27 (my call, scour fix 17): a press, a wheel or a right-click activates the scope of the innermost surface
+  whose dispatcher runs that channel, the one that handles it, and only with none the innermost surface it landed in.
+  A press in a nested surface with its pointer channel off now activates the canvas around it, which runs the press.
 - 2026-11-27 (my call, scour fix 17): a dialog without `aria-modal` counts as modal only when the hiding is the
   dialog's: the canvas sits in an `inert` or `aria-hidden` element beside one holding the dialog, or, with no canvas,
   everything outside the dialog is hidden (scripts, styles, and `aria-live` regions aside). Any hidden ancestor of the

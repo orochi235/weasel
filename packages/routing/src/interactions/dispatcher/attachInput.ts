@@ -143,7 +143,7 @@ export function attachInput(
     listeners.on(win, 'paste', ingest.onPaste);
   }
   const offCarry = channels.carry ? carryInput(core) : null;
-  const releaseSurface = canvas ? holdSurface(canvas, channels.pointer) : null;
+  const releaseSurface = canvas ? holdSurface(canvas, channels) : null;
 
   return () => {
     if (channels.pointer) src.heldPointer()?.(null);
