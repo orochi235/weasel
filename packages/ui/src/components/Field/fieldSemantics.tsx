@@ -1,4 +1,4 @@
-import { createContext, useContext, useId, type ReactElement, type ReactNode } from 'react';
+import { createContext, useContext, useId, useLayoutEffect, type ReactElement, type ReactNode } from 'react';
 import { describedBy } from '../Disabled/HoldReason';
 
 /**
@@ -14,6 +14,8 @@ export interface FieldSemantics {
   describedBy?: string;
   /** The field shows an error. */
   invalid?: boolean;
+  /** Told the id the control takes in place of `id`, or `undefined` when it gives it up, so the label can point at it. */
+  claim?: (id: string | undefined) => void;
 }
 
 const FieldContext = createContext<FieldSemantics | null>(null);
@@ -83,6 +85,13 @@ export function useFieldControl(own: OwnFieldSemantics = {}): FieldControlAttrs 
   const described = describedBy(field?.describedBy, own['aria-describedby']);
   if (described !== undefined) attrs['aria-describedby'] = described;
   if (field?.invalid) attrs['aria-invalid'] = true;
+  const claim = naming?.claim;
+  const claimed = own.id !== undefined && own.id !== naming?.id ? own.id : undefined;
+  useLayoutEffect(() => {
+    if (claim === undefined || claimed === undefined) return undefined;
+    claim(claimed);
+    return () => claim(undefined);
+  }, [claim, claimed]);
   return attrs;
 }
 

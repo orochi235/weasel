@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { FieldScope, shows, useFieldIds } from './fieldSemantics';
 import { NativeFieldFoot } from './fieldSlots';
 import s from './Field.module.css';
@@ -57,17 +57,18 @@ export function Field({ orientation = 'stacked', label, output, description, err
   const described = shows(description);
   const invalid = shows(error);
   const ids = useFieldIds({ label: named, description: described, error: invalid });
+  const [claimed, claim] = useState<string>();
   const cls = [s.field, orientation === 'row' && s.row, (described || invalid) && s.footed, className].filter(Boolean).join(' ');
   const labelEl = named && (group
     ? <span id={ids.labelId} className={s.label}>{label}</span>
-    : <label id={ids.labelId} htmlFor={ids.id} className={s.label}>{label}</label>);
+    : <label id={ids.labelId} htmlFor={claimed ?? ids.id} className={s.label}>{label}</label>);
   // The control announces its own value; a live region here would say it twice through a drag.
   const outputEl = shows(output) && <output aria-live="off" className={s.output}>{output}</output>;
   const foot = <NativeFieldFoot ids={ids} description={description} error={error} />;
   const root = group
     ? { role: 'group', 'aria-labelledby': ids.labelId, 'aria-describedby': ids.describedBy, ...(invalid ? { 'data-invalid': '' } : {}) }
     : invalid ? { 'data-invalid': '' } : {};
-  const scope = group ? null : { id: ids.id, labelId: ids.labelId, describedBy: ids.describedBy, invalid: ids.invalid };
+  const scope = group ? null : { id: ids.id, labelId: ids.labelId, describedBy: ids.describedBy, invalid: ids.invalid, claim };
   const body = <FieldScope value={scope}>{children}</FieldScope>;
   if (orientation === 'row') {
     return <div className={cls} {...root}>{labelEl}{body}{outputEl}{foot}</div>;
