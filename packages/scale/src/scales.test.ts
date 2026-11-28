@@ -318,3 +318,18 @@ describe('a time scale ticking by seconds across midnight', () => {
     expect(write(midnight + 30000)).toBe('00:00:30');
   });
 });
+
+describe('a time scale shorter than a second', () => {
+  const at = Date.UTC(2026, 0, 1, 12, 0, 0);
+
+  it('ticks on milliseconds and labels them to the millisecond', () => {
+    const s = timeScale({ domain: [at + 10, at + 310], range: [0, 800] });
+    expect(s.ticks().map(s.tickFormat())).toEqual(['12:00:00.050', '12:00:00.100', '12:00:00.150', '12:00:00.200', '12:00:00.250', '12:00:00.300']);
+    expect(timeScale({ domain: [at, at + 500], range: [0, 800] }).ticks().length).toBeGreaterThanOrEqual(5);
+  });
+
+  it('ticks no finer than a millisecond', () => {
+    const s = timeScale({ domain: [at, at + 2], range: [0, 800] });
+    expect(s.ticks(10)).toEqual([at, at + 1, at + 2]);
+  });
+});

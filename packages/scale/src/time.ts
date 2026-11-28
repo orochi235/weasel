@@ -10,7 +10,7 @@ export interface TimeScaleOptions {
   range: readonly [number, number];
 }
 
-/** A scale over instants, whose ticks fall on whole seconds, minutes, hours, days, Mondays, months, or years, in UTC. */
+/** A scale over instants, whose ticks fall on 1, 2 or 5 times a power of ten milliseconds below a second, or on whole seconds, minutes, hours, days, Mondays, months, or years, in UTC. */
 export interface TimeScale extends ContinuousScale {
   readonly kind: 'time';
   tickFormat(count?: number): (value: number) => string;
@@ -26,7 +26,7 @@ const MONDAY = 4 * DAY;
 /** A tick interval: a fixed span laid from the instant `from` (default the epoch), or a count of calendar months. */
 type Interval = { ms: number; from?: number; months?: never; unit: TimeUnit } | { months: number; ms?: never; unit: TimeUnit };
 /** A calendar step a time scale ticks by, and the precision {@link formatInstant} writes to. */
-export type TimeUnit = 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
+export type TimeUnit = 'millisecond' | 'second' | 'minute' | 'hour' | 'day' | 'month' | 'year';
 
 const INTERVALS: readonly Interval[] = [
   { ms: SECOND, unit: 'second' }, { ms: 5 * SECOND, unit: 'second' }, { ms: 15 * SECOND, unit: 'second' }, { ms: 30 * SECOND, unit: 'second' },
@@ -39,9 +39,14 @@ const INTERVALS: readonly Interval[] = [
 const MONTH_MS = 30 * DAY;
 const spanOf = (i: Interval): number => i.ms ?? i.months * MONTH_MS;
 
-/** The interval nearest a cut of `span` into `count` pieces; whole years past the table's end. */
+/** The interval nearest a cut of `span` into `count` pieces: a 1, 2 or 5 step of milliseconds, no finer than one,
+ *  below the table's start, and whole years past its end. */
 function intervalFor(span: number, count: number): Interval {
   const target = span / Math.max(1, tickCount(count));
+  if (target < SECOND) {
+    const ms = Math.max(1, tickStep(0, span, count));
+    if (ms < SECOND) return { ms, unit: 'millisecond' };
+  }
   let best = INTERVALS[0]!;
   for (const i of INTERVALS) if (Math.abs(Math.log(spanOf(i) / target)) < Math.abs(Math.log(spanOf(best) / target))) best = i;
   if (best.unit === 'year' && target > 12 * MONTH_MS) {
@@ -104,9 +109,11 @@ export function formatInstant(t: number, unit: TimeUnit): string {
     case 'month': return month;
     case 'day': return date;
   }
-  const seconds = unit === 'second' ? d.getUTCSeconds() : 0;
+  const seconds = unit === 'second' || unit === 'millisecond' ? d.getUTCSeconds() : 0;
+  const ms = unit === 'millisecond' ? d.getUTCMilliseconds() : 0;
   // Midnight, to the unit's precision, reads as the date it starts, so an axis shows the day it crosses into.
-  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && seconds === 0) return date;
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && seconds === 0 && ms === 0) return date;
+  if (unit === 'millisecond') return `${time}:${pad(seconds)}.${pad(ms, 3)}`;
   return unit === 'second' ? `${time}:${pad(seconds)}` : time;
 }
 
