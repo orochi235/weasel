@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { Action } from '../actions/action';
+import type { OngoingInvoker } from '../actions/invoker';
 import { createDispatcher } from './dispatcher';
 import type { InputEvent } from './matcher';
 import { makeCtx, makeRegistry, ongoingAction } from './testing/dispatcherStubs';
@@ -24,4 +25,14 @@ describe('the cursor of a gesture in flight', () => {
     expect(dispatcher.inFlightCursor()).toBe('ew-resize');
   });
 
+  it('is not shown for a drag held by its threshold until the action starts', () => {
+    const action = ongoingAction('grab', { kind: 'drag' }, vi.fn(() => ({ onMove: vi.fn() })));
+    (action.invoker as OngoingInvoker).dragThresholdPx = 8;
+    action.activeCursor = 'grabbing';
+    const { dispatcher, send } = run(action);
+    send(at('pointerdown', 100));
+    expect(dispatcher.inFlightCursor()).toBeNull();
+    send(at('pointermove', 120));
+    expect(dispatcher.inFlightCursor()).toBe('grabbing');
+  });
 });

@@ -267,10 +267,16 @@ export function invokeAction(
     };
     const endings = run.endings;
     let handle: OngoingHandle;
+    let started: (() => boolean) | undefined;
     try {
-      handle = event.kind === 'pointerdown' && threshold !== undefined && threshold > 0
-        ? deferredStart(begin, threshold, (err) => { threw(err); endGesture(run, gestureId, event, 'cancel'); })
-        : begin();
+      if (event.kind === 'pointerdown' && threshold !== undefined && threshold > 0) {
+        ({ handle, started } = deferredStart(begin, threshold, (err) => {
+          threw(err);
+          endGesture(run, gestureId, event, 'cancel');
+        }));
+      } else {
+        handle = begin();
+      }
     } catch (err) {
       threw(err);
       run.facts.drop(gestureId);
@@ -292,7 +298,10 @@ export function invokeAction(
       return 'fired';
     }
     run.inFlight.open(gestureId, handle, match.ownerId, {
-      action, over: match.binding.opts?.over === true, params: () => resolveParams(bindingOptionsOf(match.binding)?.params),
+      action,
+      over: match.binding.opts?.over === true,
+      params: () => resolveParams(bindingOptionsOf(match.binding)?.params),
+      ...(started ? { started } : {}),
     });
     if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set() });
     return 'fired';

@@ -44,6 +44,8 @@ export interface OpenedBy {
   params?(): Record<string, unknown> | undefined;
   /** Its binding is live only while the pointer is over the surface (`BindingOptions.over`). */
   over?: boolean;
+  /** Whether the action has started: one held by its drag threshold shows no cursor of its own until it has. */
+  started?(): boolean;
 }
 
 /** In-flight handles, `changed` called when one of them says what it shows changed (`OngoingHandle.subscribe`). */
@@ -98,7 +100,8 @@ export function createInFlightGestures(changed: () => void = () => {}): InFlight
       // and each gestureId is set exactly once, so the last entry is the newest.
       let cursor: CursorSpec | null = null;
       for (const [id, handle] of handles) {
-        const { action, params } = openedBy.get(id) ?? {};
+        const { action, params, started } = openedBy.get(id) ?? {};
+        if (started?.() === false) continue;
         const spec = handle.cursor?.() ?? action?.activeCursor ?? actionCursor(action, params?.());
         // The spec, not its CSS form: a painted glyph resolves to 'none', which
         // would tell the pump to hide the cursor and paint nothing.
