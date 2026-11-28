@@ -116,12 +116,13 @@ export function timeScale(opts: TimeScaleOptions): TimeScale {
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
   const interval = (count = 5) => intervalFor(span, count);
   const format = (v: number): string => formatInstant(v, interval().unit);
+  const rangeAlong = proportion(r0, r1).along;
   return {
     kind: 'time',
     domain: [d0, d1],
     range: [r0, r1],
     position: map,
-    invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
+    invert: (at) => (r1 === r0 ? d0 : unmap(rangeAlong(at))),
     ticks: (count = 5) => {
       const out = gridTicks(Math.min(d0, d1), Math.max(d0, d1), interval(count));
       return d0 <= d1 ? out : out.reverse();

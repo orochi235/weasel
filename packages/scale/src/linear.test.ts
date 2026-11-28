@@ -26,6 +26,19 @@ describe('niceDomain of a single value', () => {
   });
 });
 
+describe('inverting onto a range wider than the largest double', () => {
+  const range = [-Number.MAX_VALUE, Number.MAX_VALUE] as const;
+  it.each([
+    ['linear', linearScale({ domain: [0, 10], range })],
+    ['pow', powScale({ domain: [0, 10], range, exponent: 1 })],
+    ['time', timeScale({ domain: [0, 10], range })],
+    ['log', logScale({ domain: [1, 100], range })],
+  ])('finds the midpoint and the far end on a %s scale', (_, s) => {
+    expect(s.invert(0)).toBeCloseTo(s.kind === 'log' ? 10 : 5, 9);
+    expect(s.invert(Number.MAX_VALUE)).toBe(s.domain[1]);
+  });
+});
+
 describe('ticks finer than 1e-20', () => {
   it('keep their digits', () => {
     const d = tickDecimals([1e-25, 2e-25, 3e-25]);

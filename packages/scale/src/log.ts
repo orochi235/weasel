@@ -1,4 +1,4 @@
-import { decimalsOf, domainTicks, formatNumber, tickCount, tickStep } from './linear';
+import { decimalsOf, domainTicks, formatNumber, proportion, tickCount, tickStep } from './linear';
 import { replacedFormat } from './replacedFormat';
 import { tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
@@ -68,6 +68,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
     return formatNumber(v, 10 ** -(base === 10 ? decade : Math.max(decade, tickDecimals([v]))));
   };
   const format = linear ? linearFormat(5) : decadeFormat;
+  const rangeAlong = proportion(r0, r1).along;
   return {
     kind: 'log',
     base,
@@ -75,7 +76,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
     range: [r0, r1],
     position: map,
     invert(at) {
-      const t = r1 === r0 ? 0 : (at - r0) / (r1 - r0);
+      const t = r1 === r0 ? 0 : rangeAlong(at);
       if (t === 0 || t === 1) return t === 0 ? d0 : d1;
       // A logarithm a rounding past the double range's end would turn into Infinity or 0.
       const v = l1 !== l0 ? base ** lerp(l0, l1, t) : d0 + d0 * Math.expm1(t * Math.log1p((d1 - d0) / d0));

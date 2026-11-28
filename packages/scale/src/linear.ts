@@ -168,12 +168,13 @@ export function linearScale(opts: LinearScaleOptions): LinearScale {
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
   const step = (count = DEFAULT_TICKS) => tickStep(d0, d1, count);
   const format = (v: number): string => formatNumber(v, step());
+  const rangeAlong = proportion(r0, r1).along;
   return {
     kind: 'linear',
     domain,
     range,
     position: map,
-    invert: (at) => (r1 === r0 ? d0 : unmap((at - r0) / (r1 - r0))),
+    invert: (at) => (r1 === r0 ? d0 : unmap(rangeAlong(at))),
     tickStep: step,
     spacedTicks: (options) => spacedTicks(domain, Math.abs(r1 - r0), options),
     ticks: (count = DEFAULT_TICKS) => domainTicks(d0, d1, step(count)),
