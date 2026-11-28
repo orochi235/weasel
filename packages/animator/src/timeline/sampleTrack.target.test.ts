@@ -101,6 +101,6 @@ describe('sampling a track with a target', () => {
     const t: SampledTrack<number[]> = { kind: 'sampled', target, keys: [{ t: 0, value: [0] }, { t: 100, value: second }] };
     sampleTrack(t, 50);
     expect(second).toEqual([6]);
-    expect(sampleTrack(t, 100)[0]!).toBeCloseTo(6 - Math.PI * 2, 9);
+    expect(sampleTrack(t, 100)).toEqual([expect.closeTo(6 - Math.PI * 2, 9)]);
   });
 });
