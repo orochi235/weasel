@@ -291,7 +291,9 @@ export function invokeAction(
       runOnEnd(gestureId, handle, uiInvocationCtx({}), 'cancel');
       return 'fired';
     }
-    run.inFlight.open(gestureId, handle, match.ownerId, action, match.binding.opts?.over === true);
+    run.inFlight.open(gestureId, handle, match.ownerId, {
+      action, over: match.binding.opts?.over === true, params: () => resolveParams(bindingOptionsOf(match.binding)?.params),
+    });
     if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set() });
     return 'fired';
   }

@@ -17,11 +17,9 @@ export interface InFlightGestures {
   readonly handles: ReadonlyMap<string, OngoingHandle>;
   /**
    * Put `handle` in flight. `ownerId` is the entry whose binding opened it,
-   * `null` for an ambient action or a UI-driven handle; `action` is whose
-   * handle it is, where a cursor may be read from it. `over`: its binding
-   * is live only while the pointer is over the surface (`BindingOptions.over`).
+   * `null` for an ambient action or a UI-driven handle.
    */
-  open(gestureId: string, handle: OngoingHandle, ownerId: string | null, action?: Action, over?: boolean): void;
+  open(gestureId: string, handle: OngoingHandle, ownerId: string | null, by?: OpenedBy): void;
   /** Whether the gesture in flight under `gestureId` was opened by an `over` binding. */
   openedOver(gestureId: string): boolean;
   /** Take a gesture out of flight, returning its handle so the caller can end it. */
@@ -38,35 +36,42 @@ export interface InFlightGestures {
   latest(): { kind: string | null; id: string | null };
 }
 
+/** What opened a gesture in flight. */
+export interface OpenedBy {
+  /** Whose handle it is, where a cursor may be read from it. */
+  action?: Action;
+  /** The params of the binding that opened it, as they are now: what a function `Action.cursor` is resolved with. */
+  params?(): Record<string, unknown> | undefined;
+  /** Its binding is live only while the pointer is over the surface (`BindingOptions.over`). */
+  over?: boolean;
+}
+
 /** In-flight handles, `changed` called when one of them says what it shows changed (`OngoingHandle.subscribe`). */
 export function createInFlightGestures(changed: () => void = () => {}): InFlightGestures {
   const handles = new Map<string, OngoingHandle>();
   const owners = new Map<string, string | null>();
-  const actions = new Map<string, Action>();
-  const over = new Set<string>();
+  const openedBy = new Map<string, OpenedBy>();
   const heard = new Map<string, () => void>();
 
   const forget = (gestureId: string): void => {
     handles.delete(gestureId);
     owners.delete(gestureId);
-    actions.delete(gestureId);
-    over.delete(gestureId);
+    openedBy.delete(gestureId);
     heard.get(gestureId)?.();
     heard.delete(gestureId);
   };
 
   return {
     handles,
-    open(gestureId, handle, ownerId, action, opensOver) {
+    open(gestureId, handle, ownerId, by) {
       heard.get(gestureId)?.();
       heard.delete(gestureId);
       handles.set(gestureId, handle);
       if (handle.subscribe) heard.set(gestureId, handle.subscribe(changed));
       owners.set(gestureId, ownerId);
-      if (action) actions.set(gestureId, action);
-      if (opensOver) over.add(gestureId);
+      if (by) openedBy.set(gestureId, by);
     },
-    openedOver: (gestureId) => over.has(gestureId),
+    openedOver: (gestureId) => openedBy.get(gestureId)?.over === true,
     take(gestureId) {
       const handle = handles.get(gestureId);
       forget(gestureId);
@@ -93,8 +98,8 @@ export function createInFlightGestures(changed: () => void = () => {}): InFlight
       // and each gestureId is set exactly once, so the last entry is the newest.
       let cursor: CursorSpec | null = null;
       for (const [id, handle] of handles) {
-        const action = actions.get(id);
-        const spec = handle.cursor?.() ?? action?.activeCursor ?? actionCursor(action);
+        const { action, params } = openedBy.get(id) ?? {};
+        const spec = handle.cursor?.() ?? action?.activeCursor ?? actionCursor(action, params?.());
         // The spec, not its CSS form: a painted glyph resolves to 'none', which
         // would tell the pump to hide the cursor and paint nothing.
         if (spec !== undefined && cursorCss(spec)) cursor = spec;
