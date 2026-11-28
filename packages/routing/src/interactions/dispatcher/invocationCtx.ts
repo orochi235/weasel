@@ -93,6 +93,22 @@ function pumpDrag(
   };
 }
 
+// A cancel carries no point: the drag ends where it last was, with the trail it had drawn.
+function cancelDrag(facts: GestureFacts): Pick<InvocationCtx, 'world' | 'drag'> | undefined {
+  const { origin, points } = facts;
+  if (!origin) return undefined;
+  const last = points?.at(-1) ?? origin;
+  return {
+    world: { x: last.x, y: last.y },
+    drag: {
+      start: { x: origin.x, y: origin.y },
+      current: { x: last.x, y: last.y },
+      delta: { x: last.x - origin.x, y: last.y - origin.y },
+      ...(points !== undefined ? { points: [...points] } : {}),
+    },
+  };
+}
+
 function multiTouchOf(
   event: InputEvent & { kind: 'multitouch' },
   facts: GestureFacts,
@@ -151,6 +167,8 @@ export function buildInvocationCtx(
     Object.assign(base, pressDrag(event));
   } else if (event.kind === 'pointermove' || event.kind === 'pointerup') {
     Object.assign(base, pumpDrag(event, facts, toLocal));
+  } else if (event.kind === 'pointercancel') {
+    Object.assign(base, cancelDrag(facts));
   } else if (event.kind === 'multitouch') {
     base.multiTouch = multiTouchOf(event, facts);
   } else if (event.kind === 'carry') {
