@@ -2282,6 +2282,7 @@
     "sceneGestureFrames": "function",
     "sceneHistorySelection": "function",
     "sceneInheritedPaintOf": "function",
+    "sceneLayerPaintedFrom": "function",
     "sceneMagnification": "function",
     "sceneMutators": "function",
     "sceneNodeClientRect": "function",
