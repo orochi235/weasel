@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { formatUnit, IMPERIAL_INCHES, METRIC_MM, ANGLE_RADIANS, resolveAxes, resolveUnit, unitScale, type UnitEntry, type UnitSystem } from './units';
 import { formatScoped, fromRoot, resolveScoped, toRoot, type UnitScope } from './scope';
 import { scaleBar } from './scaleBar';
-import { qty } from './present';
+import { qty } from './view';
 import { finite, runs, typed } from './pbt.fixture';
 
 const RUNS = runs(200);

@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fieldLocale } from './fieldLocale';
 import { defaultLocale } from './localized';
 import { decimal } from './kinds/plain';
-import { parseAs, qty } from './present';
+import { parseAs } from './present';
+import { qty } from './view';
 import { LOCALES } from './pbt.fixture';
 
 describe('fieldLocale', () => {
