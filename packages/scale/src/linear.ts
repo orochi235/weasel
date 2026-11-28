@@ -56,17 +56,23 @@ export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number 
   return niceStep(raw, 'nearest');
 }
 
-/** How many decimals a value on a grid of `step` needs; 0 for a step that is not a positive number. */
+/** How many decimals a value on a grid of `step` needs, its magnitude's places or its own digits' if more (0.25
+ *  needs 2); 0 for a step that is not a positive number. */
 export function decimalsOf(step: number): number {
   if (!(step > 0) || !Number.isFinite(step)) return 0;
-  return Math.min(MAX_DECIMALS, Math.max(0, -Math.floor(Math.log10(step) + 1e-9)));
+  const magnitude = Math.max(0, -Math.floor(Math.log10(step) + 1e-9));
+  return Math.min(MAX_DECIMALS, Math.max(magnitude, tickDecimals([step])));
 }
 
 /** Whether `i++` from `i` moves, so a loop over step indices ends. */
 const countable = (i: number): boolean => Math.abs(i) <= Number.MAX_SAFE_INTEGER;
 
-/** `i` steps of `step`, without the float noise a bare product carries. */
-const onGrid = (i: number, step: number): number => (step < FINEST_STEP ? i * step + 0 : Number((i * step).toFixed(decimalsOf(step))));
+/** Places a grid of `step` from {@link decimalsOf}, without the float noise a bare product carries. */
+function gridOf(step: number): (i: number) => number {
+  if (step < FINEST_STEP) return (i) => i * step + 0;
+  const places = decimalsOf(step);
+  return (i) => Number((i * step).toFixed(places));
+}
 
 /** {@link stepTicks}, or the one value of a domain holding only it. */
 export const domainTicks = (lo: number, hi: number, step: number): number[] =>
@@ -78,8 +84,9 @@ export function stepTicks(lo: number, hi: number, step: number): number[] {
   const first = Math.ceil(a / step - 1e-9);
   const last = Math.floor(b / step + 1e-9);
   if (!countable(first) || !countable(last)) return [];
+  const at = gridOf(step);
   const out: number[] = [];
-  for (let i = first; i <= last; i++) out.push(onGrid(i, step));
+  for (let i = first; i <= last; i++) out.push(at(i));
   return lo <= hi ? out : out.reverse();
 }
 
@@ -101,8 +108,9 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   const first = Math.ceil((lo + inset * perUnit) / step - slack);
   const last = Math.floor((hi - inset * perUnit) / step + slack);
   if (!countable(first) || !countable(last)) return { values: [], step, decimals };
+  const at = gridOf(step);
   const values: number[] = [];
-  for (let i = first; i <= last; i++) values.push(onGrid(i, step) + 0);
+  for (let i = first; i <= last; i++) values.push(at(i) + 0);
   return { values, step, decimals };
 }
 
@@ -118,8 +126,9 @@ export function niceDomain(domain: readonly [number, number], count = DEFAULT_TI
   const [lo, hi] = domain;
   if (lo === hi) return lo === 0 ? [0, 1] : [Math.min(0, lo), Math.max(0, hi)];
   const step = tickStep(lo, hi, count);
-  const down = (v: number) => onGrid(Math.floor(v / step + 1e-9), step);
-  const up = (v: number) => onGrid(Math.ceil(v / step - 1e-9), step);
+  const at = gridOf(step);
+  const down = (v: number) => at(Math.floor(v / step + 1e-9));
+  const up = (v: number) => at(Math.ceil(v / step - 1e-9));
   // An end whose whole step overflows stays where it is, and so does a span too fine for its step to cut.
   const [a, b] = lo < hi ? [down(lo), up(hi)] : [up(lo), down(hi)];
   const out: [number, number] = [Number.isFinite(a) ? a : lo, Number.isFinite(b) ? b : hi];
