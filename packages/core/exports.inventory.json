@@ -304,6 +304,8 @@
     "Dispatcher": "type",
     "DispatcherChannels": "type",
     "DispatcherContext": "type",
+    "DispatcherOverlaySlotConfig": "type",
+    "DispatcherOverlayStyle": "type",
     "DragGestureController": "type",
     "DragGestureCtx": "type",
     "DragGestureEndCtx": "type",
