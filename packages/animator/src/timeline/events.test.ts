@@ -332,3 +332,33 @@ describe('event crossing lateness', () => {
     expect(done).toEqual([100]);
   });
 });
+
+describe('event lateness in a nested timeline', () => {
+  it('measures an event at a nested end against the frame, not the end', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 1000,
+      tracks: [{ kind: 'timeline', at: 0, timeline: { duration: 100, tracks: [{ kind: 'event', events: [{ t: 100, fire: (l) => late.push(l) }] }] } }],
+    });
+    h.advance(0);
+    h.advance(95);
+    h.advance(130);
+    expect(late).toEqual([30]);
+  });
+
+  it('measures an event in a looping nested timeline against the frame, in its parent\'s ms', () => {
+    const h = harness();
+    const late: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 1000,
+      tracks: [{
+        kind: 'timeline', at: 0, rate: 2, loop: 2,
+        timeline: { duration: 100, tracks: [{ kind: 'event', events: [{ t: 80, fire: (l) => late.push(l) }] }] },
+      }],
+    });
+    h.advance(0);
+    h.advance(100);
+    expect(late).toEqual([60, 10]);
+  });
+});

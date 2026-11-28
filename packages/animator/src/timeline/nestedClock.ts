@@ -94,7 +94,18 @@ export function nestedTime(track: TimelineTrack, t: number): number {
  * reversed window or a curve that turns back does, it contributes nothing, as backward playback
  * fires nothing.
  */
-export function forwardRuns(track: TimelineTrack, from: number, to: number): [number, number, boolean][] {
+export interface ForwardRun {
+  /** Where the stretch starts and ends on the nested timeline's own clock. */
+  from: number;
+  to: number;
+  /** Whether the crossing takes in its start. */
+  opens: boolean;
+  /** Where it starts and ends in ms past the track's `at`, on its parent's clock. */
+  parentFrom: number;
+  parentTo: number;
+}
+
+export function forwardRuns(track: TimelineTrack, from: number, to: number): ForwardRun[] {
   const rate = track.rate ?? 1;
   if (!(rate > 0) || !(to >= from)) return [];
   const pass = passLength(track);
@@ -104,7 +115,7 @@ export function forwardRuns(track: TimelineTrack, from: number, to: number): [nu
   const b = Math.min(run, to * rate);
   if (!(b >= a) || !(pass > 0)) return [];
   const at = (e: number): number => sourceAt(track.remap ?? {}, e, own, false);
-  const out: [number, number, boolean][] = [];
+  const out: ForwardRun[] = [];
   for (let p = Math.floor(a / pass); p * pass <= b && p * pass < run; p += 1) {
     const start = p * pass;
     const lo = Math.max(a, start) - start;
@@ -115,7 +126,9 @@ export function forwardRuns(track: TimelineTrack, from: number, to: number): [nu
     // crossed from its very start, so an event there fires; one starting exactly at its end fires
     // only what is at its start.
     const opens = start > from * rate;
-    if (hi > lo ? cb > ca : opens || to === from) out.push([ca, cb, opens]);
+    if (hi > lo ? cb > ca : opens || to === from) {
+      out.push({ from: ca, to: cb, opens, parentFrom: (start + lo) / rate, parentTo: (start + hi) / rate });
+    }
   }
   return out;
 }
