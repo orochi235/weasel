@@ -9,7 +9,7 @@ import {
 import type { KitSettingsStore } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
-import { pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
+import { landedNestedIn, pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
 import { multiTouchGestureId } from '../dispatcher';
 import { LONG_PRESS_HAPTIC_MS, type LongPressOptions } from '../longPressState';
 import { underPointer } from '../underPointer';
@@ -26,7 +26,7 @@ export interface PointerInputOptions {
   onDoubleClick(): WorldObserver;
   /** Outlives this listener set: a re-bind between two clicks must not drop the double click. */
   clicks: ClickMemory;
-  hover: Pick<HoverCursorInput, 'moved' | 'released'>;
+  hover: Pick<HoverCursorInput, 'moved' | 'released' | 'onLeave'>;
   /** See `UseGestureDispatcherOptions.controls`. */
   controls(): 'leave' | 'take';
   /** Whether a secondary press may drag. Only while the contextmenu channel
@@ -337,7 +337,10 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       recognizer.press(press);
     },
     onHoverMove(e) {
-      if (!sessions.has(e.pointerId)) onMove(e);
+      if (sessions.has(e.pointerId)) return;
+      // A hover over a surface nested in this one is that surface's, and leaves this one.
+      if (landedNestedIn(canvas, e)) opts.hover.onLeave();
+      else onMove(e);
     },
     onNativeDoubleClick(e) {
       if (!claimedDoubleClick) return;

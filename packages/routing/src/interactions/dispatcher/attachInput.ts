@@ -5,7 +5,7 @@
  */
 import { heldPointers } from '@weasel-js/gestures';
 import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
-import { createDispatchCore, holdSurface, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
+import { createDispatchCore, holdSurface, landedNestedIn, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
 import type { Dispatcher } from './dispatcherApi';
 import type { HeldPointerFeed } from './gestureDispatcherOptions';
 import { dispatcherWatch } from './dispatcherWatch';
@@ -189,6 +189,10 @@ function listenHover(listeners: ListenerSet, canvas: HTMLElement | null, core: D
   listeners.on(window, 'keyup', hover.onKey);
   listeners.on(canvas, 'pointerleave', hover.onLeave);
   listeners.on(canvas, 'pointermove', (e: PointerEvent) => {
+    if (landedNestedIn(canvas, e)) {
+      hover.onLeave();
+      return;
+    }
     core.routeAt(null, e.clientX, e.clientY);
     hover.moved(e);
   });
@@ -208,15 +212,26 @@ function trackPointerOver(
   core: Pick<DispatchCore, 'pointerOver' | 'setPointerOver'>,
   keys: { arrive: (e: PointerEvent) => void; leave: () => void },
 ): void {
+  /** Each pointer over the canvas: one leaving while another stays leaves the canvas pointed at. */
+  const over = new Set<number>();
+  const onOut = (e: PointerEvent): void => {
+    over.delete(e.pointerId);
+    if (over.size > 0) return;
+    core.setPointerOver(false);
+    keys.leave();
+  };
   const onOver = (e: PointerEvent): void => {
+    // A pointer over a surface nested in this one is that surface's.
+    if (landedNestedIn(canvas, e)) {
+      if (over.has(e.pointerId)) onOut(e);
+      return;
+    }
+    over.add(e.pointerId);
     if (core.pointerOver()) return;
     core.setPointerOver(true);
     keys.arrive(e);
   };
   listeners.on(canvas, 'pointerenter', onOver);
   listeners.on(canvas, 'pointermove', onOver);
-  listeners.on(canvas, 'pointerleave', () => {
-    core.setPointerOver(false);
-    keys.leave();
-  });
+  listeners.on(canvas, 'pointerleave', onOut);
 }
