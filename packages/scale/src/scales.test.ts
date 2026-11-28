@@ -333,3 +333,15 @@ describe('a time scale shorter than a second', () => {
     expect(s.ticks(10)).toEqual([at, at + 1, at + 2]);
   });
 });
+
+describe('a log scale over a domain narrow for its magnitude', () => {
+  it('places and inverts values at their distance along it', () => {
+    for (const domain of [[1e15, 1e15 + 100], [1e15 + 100, 1e15]] as const) {
+      const s = logScale({ domain, range: [0, 500] });
+      const quarter = Math.min(...domain) + 25;
+      expect(Math.abs(s.position(quarter) - (domain[0] < domain[1] ? 125 : 375))).toBeLessThan(1e-6);
+      expect(s.invert(s.position(quarter))).toBe(quarter);
+      expect(s.invert(250)).toBe(1e15 + 50);
+    }
+  });
+});
