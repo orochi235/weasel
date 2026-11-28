@@ -105,6 +105,13 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
 
   const ahead = (b: Booking): boolean => isAfter(b, playheadCursor());
 
+  /** Moves every cursor past the playhead back to it, so the next scan starts where the playhead stands. */
+  const rewind = (): void => {
+    const at = playheadCursor();
+    pullBack(cursors, at);
+    if (isAfter(start, at)) start = at;
+  };
+
   const stopWhere = (now: number, pred: (b: Booking) => boolean): void => {
     bookings = bookings.filter((b) => {
       if (!b.handle || b.when <= now || !ahead(b) || !pred(b)) return true;
@@ -114,9 +121,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     // Back to the playhead, not to each retracted booking: whatever still
     // stands is skipped by identity, and an edit may have added events behind
     // the cursor that only a rescan finds.
-    const at = playheadCursor();
-    pullBack(cursors, at);
-    if (isAfter(start, at)) start = at;
+    rewind();
   };
 
   const scanTrack = (
@@ -176,7 +181,11 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       const now = opts.clock.now();
       bookings = bookings.filter(ahead);
       if (!(scale > 0)) {
+        // Crossings between where the playhead stood and where it went back to are played again going forward.
+        const was = start;
         if (clock.halt()) stopWhere(now, () => true);
+        else rewind();
+        bookings = bookings.filter((b) => isAfter(b, was));
         return;
       }
 

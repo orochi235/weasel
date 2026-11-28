@@ -251,6 +251,26 @@ describe('event booking across transport changes', () => {
     expect(whens).toEqual([START + 150, START + 250]);
   });
 
+  it('books again what the playhead played back over once it plays forward', () => {
+    const r = withEvents({ duration: 1000 }, [300, 400]);
+    for (let v = 0; v <= 500; v += 50) r.frame(v);
+    r.handle.setTimeScale(-1);
+    for (let v = 450; v >= 200; v -= 50) r.frame(1000 - v, v);
+    r.handle.setTimeScale(1);
+    for (let v = 250; v <= 450; v += 50) r.frame(1000 - 200 + (v - 200), v);
+    expect(r.log.map((b) => b.label)).toEqual(['@300', '@400', '@300', '@400']);
+  });
+
+  it('books again what a backward lap crossing played back over', () => {
+    const r = withEvents({ duration: 1000, loop: true }, [900]);
+    for (let v = 0; v <= 1100; v += 50) r.frame(v);
+    r.handle.setTimeScale(-1);
+    for (let v = 1050; v >= 800; v -= 50) r.frame(2200 - v, v);
+    r.handle.setTimeScale(1);
+    for (let v = 850; v <= 1000; v += 50) r.frame(2200 - 800 + (v - 800), v);
+    expect(r.log.filter((b) => !b.stopped).map((b) => b.label)).toEqual(['@900', '@900']);
+  });
+
   it('retimes a pending booking when the time scale changes', () => {
     const r = withEvents({ duration: 1000 }, [80]);
     r.frame(0);
