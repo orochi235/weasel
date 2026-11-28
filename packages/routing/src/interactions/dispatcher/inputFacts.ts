@@ -112,11 +112,14 @@ export function immediateRunParams(
   resolved: Record<string, unknown> | undefined,
   run: { action: Action; binding: GestureBinding; viewId: string | null | undefined; apple: boolean },
 ): ImmediateParams & Record<string, unknown> {
-  const params = immediateParams(event, resolved);
-  if (run.viewId !== undefined) params.viewId = run.viewId;
+  const mods = modifierStateOf(event);
   const keys = roleKeysOf(run.action.modifierRoles, run.binding.opts?.roles);
-  if (keys && params.mods) params.roles = resolveRoles(platformRoleKeys(keys, run.apple), params.mods, false);
-  return params;
+  return {
+    ...carried(event), mods,
+    ...(run.viewId !== undefined ? { viewId: run.viewId } : {}),
+    ...(keys ? { roles: resolveRoles(platformRoleKeys(keys, run.apple), mods, false) } : {}),
+    ...resolved,
+  };
 }
 
 type Landed = Extract<InputEvent, { kind: 'click' | 'doubleclick' | 'contextmenu' | 'pointerdown' | 'longpress' | 'hover' | 'carry' }>;
@@ -126,10 +129,13 @@ function landed(event: Landed): ImmediateParams {
   return {
     ...at(event),
     clientX: event.clientX, clientY: event.clientY,
-    affordance: event.affordance,
-    bodyTarget: event.bodyTarget,
-    bodyKind: event.bodyKind,
+    ...under(event),
   };
+}
+
+/** What a pointer event landed on. */
+function under(event: Landed | Extract<InputEvent, { kind: 'wheel' | 'pinch' }>): ImmediateParams {
+  return { affordance: event.affordance, bodyTarget: event.bodyTarget, bodyKind: event.bodyKind };
 }
 
 function carried(event: InputEvent): ImmediateParams {
@@ -139,14 +145,14 @@ function carried(event: InputEvent): ImmediateParams {
         deltaX: event.deltaX, deltaY: event.deltaY,
         clientX: event.clientX, clientY: event.clientY,
         ...at(event),
-        affordance: event.affordance,
+        ...under(event),
       };
     case 'pinch':
       return {
         scale: event.scale, rotation: event.rotation,
         clientX: event.clientX, clientY: event.clientY,
         ...at(event),
-        affordance: event.affordance,
+        ...under(event),
       };
     case 'click':
     case 'doubleclick':
