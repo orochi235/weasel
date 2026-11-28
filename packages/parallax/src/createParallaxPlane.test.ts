@@ -16,6 +16,19 @@ describe('createParallaxPlane', () => {
     expect(before.pan).toBe(0.5);
   });
 
+  it('answers opts that cannot be edited in place, so every change goes through set and is heard', () => {
+    const plane = createParallaxPlane({ pan: { x: 0, y: 1 }, anchor: { x: 1, y: 2 } });
+    const heard = vi.fn();
+    plane.subscribe(heard);
+    const got = plane.get() as { pan: { x: number; y: number }; anchor: { x: number; y: number } };
+    expect(() => { got.pan.x = 1; }).toThrow(TypeError);
+    expect(() => { got.anchor.y = 5; }).toThrow(TypeError);
+    expect(() => { (got as { zoom?: number }).zoom = 2; }).toThrow(TypeError);
+    expect(plane.get()).toEqual({ pan: { x: 0, y: 1 }, anchor: { x: 1, y: 2 } });
+    plane.set({ pan: { x: 1, y: 1 } });
+    expect(heard).toHaveBeenCalledTimes(1);
+  });
+
   it('notifies subscribers on every write until they unsubscribe', () => {
     const plane = createParallaxPlane({ pan: 0.5 });
     const fn = vi.fn();
