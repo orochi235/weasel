@@ -124,6 +124,73 @@ describe('readTypedoc in a project whose paths are relative to each package', ()
     expect(docs.component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
     expect(docs.component('Button', join(root, 'ui', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The ui label.');
   });
+
+  it("gives a package TypeDoc did not read no other package's docs for a same-named component", () => {
+    const one: TdReflection = { id: 0, name: 'docs', kind: 1, children: [{ id: 10, name: '@a/ui', kind: 2, packageVersion: '1.0.0', children: [button(11, 'The ui label.')] }] };
+    expect(readTypedoc(one, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))).toBeNull();
+    expect(readTypedoc(one, 0).component('Button', join(root, 'ui', 'src', 'Button.tsx'))).not.toBeNull();
+    const single: TdReflection = { id: 0, name: 'docs', kind: 1, packageName: '@a/ui', children: [button(11, 'The ui label.')] };
+    expect(readTypedoc(single, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))).toBeNull();
+  });
+
+  it('takes a match whose path reaches above the package, whatever package TypeDoc read', () => {
+    const merged = { ...button(11, 'The kit label.'), sources: [{ fileName: 'kit/src/Button.tsx' }] };
+    const project: TdReflection = { id: 0, name: 'docs', kind: 1, packageName: 'root', children: [merged] };
+    expect(readTypedoc(project, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
+  });
+});
+
+describe('readTypedoc on a lone component', () => {
+  const text = (value: string) => ({ summary: [{ kind: 'text', text: value }] });
+  const lone = (fileName: string, props: TdReflection[]): TdReflection => ({
+    id: 0,
+    name: 'docs',
+    kind: 1,
+    children: [
+      {
+        id: 1,
+        name: 'Button',
+        variant: 'declaration',
+        kind: 64,
+        sources: [{ fileName }],
+        signatures: [
+          {
+            id: 2,
+            name: 'Button',
+            variant: 'signature',
+            kind: 4096,
+            parameters: [
+              {
+                id: 3,
+                name: 'props',
+                variant: 'param',
+                kind: 32768,
+                type: { type: 'reflection', declaration: { id: 4, name: '__type', variant: 'declaration', kind: 65536, children: props } },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  const label: TdReflection = { id: 5, name: 'label', variant: 'declaration', kind: 1024, comment: text('The label.') };
+
+  it('documents a prop declared as a method from its signature\'s comment', () => {
+    const onSelect: TdReflection = {
+      id: 6,
+      name: 'onSelect',
+      variant: 'declaration',
+      kind: 2048,
+      signatures: [{ id: 7, name: 'onSelect', variant: 'signature', kind: 4096, comment: text('Called on a pick.') }],
+    };
+    const docs = readTypedoc(lone('src/Button.tsx', [onSelect]), 0).component('Button', '/repo/src/Button.tsx');
+    expect(docs?.props.get('onSelect')?.description).toBe('Called on a pick.');
+  });
+
+  it('matches a source TypeDoc wrote above its base path, with ../', () => {
+    const docs = readTypedoc(lone('../other/src/Button.tsx', [label]), 0).component('Button', '/repo/other/src/Button.tsx');
+    expect(docs?.props.get('label')?.description).toBe('The label.');
+  });
 });
 
 describe('withTypedoc', () => {

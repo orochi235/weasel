@@ -39,3 +39,21 @@ describe('what a module declares', () => {
     expect(await trace().declaring('/kit.ts', 'Icons')).toBeNull();
   });
 });
+
+describe('a name more than one export * answers for', () => {
+  const files: Record<string, string> = {
+    '/kit.ts': "export * from './a';\nexport * from './b';\nexport * from './c';\n",
+    '/a.ts': 'export function story() {}\nexport function meta() {}\n',
+    '/b.ts': 'export function story() {}\n',
+    '/c.ts': "export { meta } from './a';\n",
+  };
+  const trace = () => createTracer((file) => files[file]!)(async (spec) => `/${spec.slice(2)}.ts`);
+
+  it('is ambiguous, and exported by neither, when the modules declare it differently', async () => {
+    expect(await trace().declaring('/kit.ts', 'story')).toBeNull();
+  });
+
+  it('is exported when every module answers with the same binding', async () => {
+    expect(await trace().declaring('/kit.ts', 'meta')).toBe('/a.ts#meta');
+  });
+});
