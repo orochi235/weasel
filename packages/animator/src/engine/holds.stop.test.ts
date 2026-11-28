@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createHostedAnimator } from '../createHostedAnimator';
-import { createTarget } from '../target';
+import { createTarget, type Target } from '../target';
 import { createTargetTable } from '../targetTable';
 import type { Track } from '../timeline/types';
 
@@ -10,7 +10,7 @@ function hosted() {
   return { animator: h.animator, tick: (t: number) => { now = t; h.tick(t); } };
 }
 
-const ramp = (target: Track['target'], to: unknown = 1000): Track =>
+const ramp = (target: Target<unknown>, to: unknown = 1000): Track =>
   ({ kind: 'sampled', keys: [{ t: 0, value: typeof to === 'number' ? 0 : [0] }, { t: 1000, value: to }], target } as Track);
 
 afterEach(() => { vi.restoreAllMocks(); });
@@ -20,7 +20,7 @@ describe("a timeline track's hold on its target", () => {
     const a = hosted();
     let v = 0;
     const target = createTarget<number>({ get: () => v, set: (n) => { v = n; } });
-    a.animator.timeline({ tracks: [ramp(target)] });
+    a.animator.timeline({ tracks: [ramp(target as Target<unknown>)] });
     a.tick(0);
     a.tick(100);
     expect(target.read()).toBeCloseTo(100);
@@ -36,7 +36,7 @@ describe("a timeline track's hold on its target", () => {
     const a = hosted();
     let v = 0;
     const target = createTarget<number>({ get: () => v, set: (n) => { v = n; }, show: () => { throw new Error('show'); } });
-    a.animator.timeline({ tracks: [ramp(target)] });
+    a.animator.timeline({ tracks: [ramp(target as Target<unknown>)] });
     for (const t of [0, 16, 32, 48]) a.tick(t);
     expect(target.active).toBe(false);
     expect(error.mock.calls.filter(([m]) => String(m).includes("target's show threw"))).toHaveLength(1);
@@ -46,7 +46,7 @@ describe("a timeline track's hold on its target", () => {
     const a = hosted();
     const table = createTargetTable({ axes: 1 });
     const row = table.add([0]);
-    a.animator.timeline({ tracks: [ramp(table.target(row), [1000])] });
+    a.animator.timeline({ tracks: [ramp(table.target(row) as Target<unknown>, [1000])] });
     a.tick(0);
     a.tick(100);
     expect(table.target(row).read()[0]).toBeCloseTo(100);
