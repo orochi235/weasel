@@ -133,3 +133,11 @@ describe('select', () => {
     expect(select(state(['a'], 'z'), 'c', 'range', { order })).toEqual({ ids: ['c'], anchor: 'c' });
   });
 });
+
+describe('select keeps each id once', () => {
+  it('drops a duplicate the incoming selection held when it toggles', () => {
+    const state: Selection<string> = { ids: ['a', 'a'], anchor: 'a' };
+    expect(select(state, 'b', 'toggle').ids).toEqual(['a', 'b']);
+    expect(select(state, 'a', 'toggle').ids).toEqual([]);
+  });
+});

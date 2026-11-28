@@ -63,7 +63,7 @@ export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, cont
   const forceSingle = context.forceSingle ?? never;
   if (forceSingle(id)) intent = 'alone';
   if (intent === 'toggle') {
-    const kept = state.ids.filter((x) => !forceSingle(x));
+    const kept = once(state.ids).filter((x) => !forceSingle(x));
     return { ids: kept.includes(id) ? kept.filter((x) => !sameId(x, id)) : [...kept, id], anchor: id };
   }
   if (intent === 'range' && state.anchor !== null) {
