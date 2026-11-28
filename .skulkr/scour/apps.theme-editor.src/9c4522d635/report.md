@@ -4,8 +4,8 @@ Repeated blind reviews of the area `apps.theme-editor.src` (50 files, 5879 lines
 `9c4522d635`, with no fixes between them, from `codex`, `claude`.
 Each occasion is one review, or one ingested report; its findings are matched against the ledger of distinct
 defects so far. Reviews stop once fewer than 1 defect per thousand lines is estimated unseen, the chance that the next occasion
-finds something new falls under 15%, the next defect would cost over $1.49, or 40 occasions have run.
-Stopped: the next defect would cost about $1.75, over the limit of $1.49 (3× the $0.50 going rate). The next defect should cost about $1.75. `skulkr scour report apps.theme-editor.src` rewrites this file from the ledger.
+finds something new falls under 15%, the next defect would cost over $1.98, or 40 occasions have run.
+Stopped: the next defect would cost about $2.22, over the limit of $1.98 (4× the $0.49 going rate). The next defect should cost about $2.22. `skulkr scour report apps.theme-editor.src` rewrites this file from the ledger.
 
 ## Yield by occasion
 
@@ -28,6 +28,7 @@ occasion up to the row has cost, divided by the distinct defects found so far.
 |  11 | claude |        4 |   3 |       18 |  12 |   4 |       34.4 |   16.4 |    43.3% | $1.55 |    $0.67 |     5.1 |
 |  12 | claude |        2 |   1 |       19 |  13 |   4 |       38.4 |   19.4 |    44.0% | $1.57 |    $0.72 |     6.0 |
 |  13 | claude |        2 |   1 |       20 |  13 |   5 |       35.6 |   15.6 |    40.7% | $2.13 |    $0.79 |     7.0 |
+|  14 | claude |        1 |   0 |       20 |  13 |   5 |       35.7 |   15.7 |    39.6% | $2.64 |    $0.92 |     4.3 |
 
 ## Estimates
 
@@ -37,8 +38,8 @@ the same things every time. Chapman between two sources is better while they fin
 | over           | estimator | occasions | distinct | est. total | unseen | next-new | overlap |
 |----------------|-----------|----------:|---------:|-----------:|-------:|---------:|--------:|
 | codex          | Chao2     |         1 |        2 |          – |      – |        – |       – |
-| claude         | Chao2     |        12 |       19 |       32.2 |   13.2 |    39.8% |       – |
-| all sources    | Chao2     |        13 |       20 |       35.6 |   15.6 |    40.7% |       – |
+| claude         | Chao2     |        13 |       19 |       32.3 |   13.3 |    38.7% |       – |
+| all sources    | Chao2     |        14 |       20 |       35.7 |   15.7 |    39.6% |       – |
 | codex × claude | Chapman   |         – |       20 |       29.0 |    9.0 |        – |       1 |
 
 ## Defects
@@ -49,7 +50,7 @@ Each source's column counts the occasions that found the defect.
 |-----|----------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|------:|------:|-------:|----------|
 | D1  | Inspector ignores inline declarations, so it reports a stylesheet token that has lost the cascade to an inline style                                           | apps/theme-editor/src/theme/inspect.ts:74                                                                                       |     1 |     1 |      3 | medium   |
 | D2  | Reload completion increments a generation shared by every workbench key, so a pending reload of theme A remounts theme B's workbench and drops its local state | apps/theme-editor/src/ThemeEditor.tsx:106                                                                                       |     1 |     1 |      0 | low      |
-| D3  | Jumping from the inspector to an inherited pins-only token opens the Pins page, which does not list that token                                                 | apps/theme-editor/src/theme/model.ts:66 (jumpLayerFor)                                                                          |     2 |     0 |      3 | medium   |
+| D3  | Jumping from the inspector to an inherited pins-only token opens the Pins page, which does not list that token                                                 | apps/theme-editor/src/theme/model.ts:66 (jumpLayerFor)                                                                          |     2 |     0 |      4 | medium   |
 | D4  | Turning "Varies by <axis>" off and back on rewrites a non-mode variation as a mode variation                                                                   | apps/theme-editor/src/layers/SemanticDrawer.tsx:186 (setVaries)                                                                 |     2 |     0 |      1 | low      |
 | D5  | A categorical ramp's plain `surface` gate is neither editable nor shown in the gates editor                                                                    | apps/theme-editor/src/layers/RampsLayer.tsx:118 (GatesEditor)                                                                   |     3 |     0 |      1 | low      |
 | D6  | A pinned semantic with no generated value shows `undefined` as its "Rule produced" text                                                                        | apps/theme-editor/src/theme/semantics.ts:107 (semanticRows)                                                                     |     3 |     0 |      2 | low      |

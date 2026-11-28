@@ -183,6 +183,17 @@
    "minutes": 6.9596,
    "at": "2026-11-26T11:55:09.899Z",
    "findings": 2
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 2.636008800000001,
+   "minutes": 4.3360666666666665,
+   "at": "2026-11-28T00:31:56.325Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
   }
  ],
  "defects": [
@@ -249,13 +260,15 @@
    "sightings": [
     2,
     6,
-    10
+    10,
+    14
    ],
    "sources": {
     "claude": [
      2,
      6,
-     10
+     10,
+     14
     ]
    }
   },

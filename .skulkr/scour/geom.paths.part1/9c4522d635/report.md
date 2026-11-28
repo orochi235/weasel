@@ -4,7 +4,7 @@ Repeated blind reviews of the area `geom.paths.part1` (38 files, 5706 lines) at 
 `9c4522d635`, with no fixes between them, from `codex`, `claude`.
 Each occasion is one review, or one ingested report; its findings are matched against the ledger of distinct
 defects so far. Reviews stop once fewer than 1 defect per thousand lines is estimated unseen, the chance that the next occasion
-finds something new falls under 15%, the next defect would cost over $1.49, or 40 occasions have run.
+finds something new falls under 15%, the next defect would cost over $1.98, or 40 occasions have run.
 Stopped: fewer than 1 defect per thousand lines estimated unseen (0.58). The next defect should cost about $2.09. `skulkr scour report geom.paths.part1` rewrites this file from the ledger.
 
 ## Yield by occasion
