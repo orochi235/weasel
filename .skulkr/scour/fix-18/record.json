@@ -1,0 +1,74 @@
+{
+ "run": 18,
+ "area": "select",
+ "commit": "fa57555d6c735e85707cdd2a0a0895685343862e",
+ "on": "main",
+ "ledgerCommit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "size": 8,
+ "started": "2026-11-28T10:18:36.234Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "fa57555d6c735e85707cdd2a0a0895685343862e",
+   "defects": [
+    {
+     "id": "D2",
+     "recurrent": false,
+     "files": [
+      "packages/select/src/select.ts"
+     ]
+    },
+    {
+     "id": "D1",
+     "recurrent": false,
+     "files": [
+      "packages/select/src/select.ts"
+     ]
+    },
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/select/src/tree.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "[D2] toggle keeps duplicate ids already in the selection (scour): fixed 67fa0572c5",
+     "sha": "67fa0572c5"
+    },
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "[D1] ordered range keeps duplicate ids when the order repeats one (scour): fixed 542c547f66",
+     "sha": "542c547f66"
+    },
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] holderOf and outermost loop forever on a parentOf cycle (scour): fixed cda7b096bd. They now throw a `RangeError` naming an id on the cycle, with no opt-in override. That was my own call, so it is recorded in `docs/unruled.md` under \"Audit scour fix eighteen (2026-11-28): select\".",
+     "sha": "cda7b096bd"
+    }
+   ],
+   "commits": 3,
+   "branch": "scour18-select-b1",
+   "verify": {
+    "ok": true,
+    "files": 8,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2893,
+     "total": 2893
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 0.5466367999999999,
+   "minutes": 9.627833333333333
+  }
+ ]
+}
