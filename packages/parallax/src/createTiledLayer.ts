@@ -108,8 +108,10 @@ export function createTiledLayer<TData>(
       // Past a safe integer `i++` never moves, so a view panned that far draws no copies either.
       const nx = kx.to - kx.from + 1;
       const ny = ky.to - ky.from + 1;
+      // The shown rect is checked whole, since an untiled axis answers copy 0 whatever its span.
       const tiling = nx > 0 && ny > 0 && nx * ny <= MAX_COPIES
-        && [kx.from, kx.to, ky.from, ky.to].every(Number.isSafeInteger);
+        && [kx.from, kx.to, ky.from, ky.to].every(Number.isSafeInteger)
+        && [shown.x, shown.y, shown.width, shown.height].every(Number.isFinite);
 
       // Layer by layer, so a later source sits above an earlier one in every copy, and a
       // layer's effects run once over all of its copies.
