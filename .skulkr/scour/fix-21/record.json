@@ -1,0 +1,216 @@
+{
+ "run": 21,
+ "area": "scale",
+ "commit": "bb201046c7782f3a11360810c8f5beff1e2171c7",
+ "on": "main",
+ "ledgerCommit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "size": 8,
+ "started": "2026-11-28T11:24:10.412Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "bb201046c7782f3a11360810c8f5beff1e2171c7",
+   "defects": [
+    {
+     "id": "D2",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/linear.ts"
+     ]
+    },
+    {
+     "id": "D11",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/linear.ts"
+     ]
+    },
+    {
+     "id": "D9",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/linear.ts"
+     ]
+    },
+    {
+     "id": "D10",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/linear.ts"
+     ]
+    },
+    {
+     "id": "D4",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/linear.ts"
+     ]
+    },
+    {
+     "id": "D1",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/linear.ts"
+     ]
+    },
+    {
+     "id": "D5",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/tickFormat.ts",
+      "packages/scale/src/linear.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "[D2] onGrid took decimals from the step's magnitude, so 0.25 rounded 0.75 to 0.8 (scour): fixed 6e0b114823. The fix is in `decimalsOf`, so it also corrects tick labels and the plot editors' grid snapping (xychart and radar `edit.ts`).",
+     "sha": "6e0b114823"
+    },
+    {
+     "id": "D11",
+     "verdict": "fixed",
+     "line": "[D11] stepTicks returned [] for a negative step (scout): fixed edce4399ce. It now throws a `RangeError`, recorded in `docs/unruled.md`.",
+     "sha": "edce4399ce"
+    },
+    {
+     "id": "D9",
+     "verdict": "fixed",
+     "line": "[D9] stepTicks had no bound on how many ticks it builds (scour): fixed edce4399ce. It now throws past a `limit` argument that defaults to the new `MAX_TICKS` (1,000,000), and `ticks(count)` holds `count` within that bound. Recorded in `docs/unruled.md`.",
+     "sha": "edce4399ce"
+    },
+    {
+     "id": "D10",
+     "verdict": "fixed",
+     "line": "[D10] spacedTicks had no cap, and a negative inset was accepted (scour): fixed edce4399ce. It now coarsens its step to stay within `MAX_TICKS` and throws on a negative inset. Recorded in `docs/unruled.md`.",
+     "sha": "edce4399ce"
+    },
+    {
+     "id": "D4",
+     "verdict": "fixed",
+     "line": "[D4] niceDomain left a single value's far end unrounded (scour): fixed 7f27d5d9a7",
+     "sha": "7f27d5d9a7"
+    },
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "[D1] invert divided by the raw range difference, which overflows on a wide range (scour): fixed aafc2b884b. Same fix applied to the power, time, and log scales.",
+     "sha": "aafc2b884b"
+    },
+    {
+     "id": "D5",
+     "verdict": "fixed",
+     "line": "[D5] tickDecimals capped at 20 places (scour): fixed 4a21761e2f. This also drops the log scale's workaround for the old cap.",
+     "sha": "4a21761e2f"
+    }
+   ],
+   "commits": 6,
+   "branch": "scour21-scale-b1",
+   "verify": {
+    "ok": true,
+    "files": 16,
+    "testFiles": {
+     "failed": 0,
+     "passed": 1237,
+     "total": 1237
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 1.4863698000000003,
+   "minutes": 20.907283333333332
+  },
+  {
+   "n": 2,
+   "on": "60bca50ab99545cf9ce02d46245ed339ae423000",
+   "defects": [
+    {
+     "id": "D12",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/time.ts"
+     ]
+    },
+    {
+     "id": "D8",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/time.ts"
+     ]
+    },
+    {
+     "id": "D7",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/time.ts"
+     ]
+    },
+    {
+     "id": "D6",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/log.ts"
+     ]
+    },
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/scale/src/log.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D12",
+     "verdict": "fixed",
+     "line": "[D12] timeScale gives a sub-second domain zero or one tick (scour): fixed a848ee6167",
+     "sha": "a848ee6167"
+    },
+    {
+     "id": "D8",
+     "verdict": "fixed",
+     "line": "[D8] formatInstant leaves years 0–999 unpadded (scour): fixed 6611655ba2",
+     "sha": "6611655ba2"
+    },
+    {
+     "id": "D7",
+     "verdict": "fixed",
+     "line": "[D7] a seconds-unit axis never marks the day it crosses into (scour): fixed 0abb0c2f34",
+     "sha": "0abb0c2f34"
+    },
+    {
+     "id": "D6",
+     "verdict": "fixed",
+     "line": "[D6] a narrow log domain places and inverts values with precision error (scour): fixed 866f9ac3b5",
+     "sha": "866f9ac3b5"
+    },
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] the log scale constructor lists every power just to count to two (scour): fixed 44de74ca5a",
+     "sha": "44de74ca5a"
+    }
+   ],
+   "commits": 6,
+   "branch": "scour21-scale-b2",
+   "verify": {
+    "ok": true,
+    "files": 8,
+    "testFiles": {
+     "failed": 0,
+     "passed": 1236,
+     "total": 1236
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 1.0849172,
+   "minutes": 13.646816666666666
+  }
+ ]
+}
