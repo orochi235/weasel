@@ -7,7 +7,7 @@ import { makeCtx, makeRegistry } from '../testing/dispatcherStubs';
 import { dropPreview } from './dropPreview';
 
 const event: Extract<InputEvent, { kind: 'drop' }> = {
-  kind: 'drop', items: [{ pending: 'file', mime: 'image/png' }], x: 1, y: 2, clientX: 1, clientY: 2,
+  kind: 'drop', items: [{ pending: 'file', mime: 'image/png' }] as never, x: 1, y: 2, clientX: 1, clientY: 2,
   altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
 };
 

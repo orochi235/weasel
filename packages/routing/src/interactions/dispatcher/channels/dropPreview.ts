@@ -3,6 +3,7 @@
  * action its drop would run shows what that would do, through `Action.preview`.
  * A dragover never invokes the action, so this is the only place it is asked.
  */
+import { deepEqual } from '@weasel-js/registry';
 import { createActionDeps } from '../../actions/buildDeps';
 import type { DispatcherContext, ResolveOnlyResult } from '../dispatcherApi';
 import { immediateRunParams } from '../inputFacts';
@@ -21,25 +22,6 @@ function keyOf(event: Extract<InputEvent, { kind: 'drop' }>, winner: ResolveOnly
   const mods = [event.altKey, event.ctrlKey, event.metaKey, event.shiftKey].map(Number).join('');
   const mimes = event.items.map((it) => it.mime).join(',');
   return `${winner.actionId}|${event.x},${event.y}|${mods}|${mimes}`;
-}
-
-/** Whether two resolutions of a binding's params hold the same values, for thunks that build a fresh object each call. */
-function sameParams(a: Record<string, unknown> | undefined, b: Record<string, unknown> | undefined): boolean {
-  if (a === b) return true;
-  if (!a || !b) return false;
-  const keys = Object.keys(a);
-  if (keys.length !== Object.keys(b).length) return false;
-  return keys.every((k) => Object.hasOwn(b, k) && sameValue(a[k], b[k]));
-}
-
-function sameValue(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) return true;
-  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
-  try {
-    return JSON.stringify(a) === JSON.stringify(b);
-  } catch {
-    return false;
-  }
 }
 
 export function dropPreview(): DropPreview {
@@ -62,7 +44,8 @@ export function dropPreview(): DropPreview {
 
   const show: DropPreview['show'] = (event, winner, ctx) => {
     const next = keyOf(event, winner);
-    if (next === key && sameParams(params, winner.params)) return;
+    // Params compare by value: a thunk may build a fresh object each call.
+    if (next === key && deepEqual(params, winner.params)) return;
     end();
     key = next;
     params = winner.params;
