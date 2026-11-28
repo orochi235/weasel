@@ -6,14 +6,9 @@ For the session picking this up: what is in flight and what has no other home. O
 
 ## In flight (2026-11-28)
 
-- **Batch `batch/2026-11-28` (worktree `.worktrees/batch-2026-11-28`) holds `outline-mask`**: `outline.mask`, so
-  shapes painted in front cover a selection outline, plus the fix for `check:numeric`, which fails on main
-  (`BandEditor.stories.module.css`). Its `test:batch` run is at ea803bf04a. Green: fast-forward main, tell
-  `skulkr-e0` to set `mask: true` in skulkr's `Treemap.tsx`, and delete the batch and `outline-mask` worktrees and
-  branches. test-ledger's `80814dcd6b` fixes the same stylesheet; drop it from that branch when it batches.
 - **The test-gate rework is unfinished on `test-ledger`** (worktree `.worktrees/test-ledger`; session
   `test-ledger-39`, which stopped at a usage limit). What is left is in that branch's `HANDOFF.md`, "test-ledger
-  branch". It touches build tooling, so its batch gets a full run. The daily run's launchd install needs Mike's go.
+  branch". Its `80814dcd6b` (the `check:numeric` stylesheet fix) is already on main another way; drop it there. It touches build tooling, so its batch gets a full run. The daily run's launchd install needs Mike's go.
 
 ## Decisions taken in conversation and not visible in the code
 
