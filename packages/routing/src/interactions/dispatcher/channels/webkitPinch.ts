@@ -25,6 +25,8 @@ export function webkitPinchInput(core: DispatchCore): {
   let pinchRotation = 0;
   // Set by `end` mid-gesture: the stream's cumulative scale outlives the reset baseline.
   let halted: { claimed: boolean } | null = null;
+  // The view the pinch began over, which its every step runs on, as a held pointer's moves do.
+  let pinView: string | null | undefined;
 
   const endPinch = (): void => {
     pinchLive = false;
@@ -43,8 +45,13 @@ export function webkitPinchInput(core: DispatchCore): {
       ? undefined : canvas?.getBoundingClientRect();
     const cx = typeof g.clientX === 'number' ? g.clientX : (rect ? rect.left + rect.width / 2 : 0);
     const cy = typeof g.clientY === 'number' ? g.clientY : (rect ? rect.top + rect.height / 2 : 0);
-    routeAt(null, cx, cy);
-    const local = core.toCanvasLocal(cx, cy);
+    if (pinView === undefined) {
+      routeAt(null, cx, cy);
+      pinView = core.routedView();
+    } else {
+      core.setRoutedView(pinView);
+    }
+    const local = core.toViewLocal(cx, cy);
     const hitPoint = toWorld(cx, cy);
     const mods = {
       altKey: g.altKey === true, ctrlKey: g.ctrlKey === true,
@@ -71,6 +78,7 @@ export function webkitPinchInput(core: DispatchCore): {
   const onGestureStart = (e: Event) => {
     halted = null;
     endPinch();
+    pinView = undefined;
     if (eventTaken(e)) return;
     // Claimed up front, with a probe at unit scale: Safari starts its own
     // page zoom from an unprevented start, before any change arrives.
@@ -112,6 +120,7 @@ export function webkitPinchInput(core: DispatchCore): {
     if (pinchLive || halted?.claimed) e.preventDefault();
     halted = null;
     endPinch();
+    pinView = undefined;
   };
 
   return { onGestureStart, onGestureChange, onGestureEnd, live: () => pinchLive, end: halt };

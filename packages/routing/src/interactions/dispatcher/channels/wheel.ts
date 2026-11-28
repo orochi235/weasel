@@ -32,9 +32,10 @@ export function wheelInput(core: DispatchCore, pinchLive: () => boolean): {
       return;
     }
     routeAt(null, e.clientX, e.clientY);
-    // Canvas-local, not client: an anchored wheel zoom would otherwise drift
-    // by the canvas's offset from the viewport's top-left.
-    const local = core.toCanvasLocal(e.clientX, e.clientY);
+    core.routeToHeld();
+    // View-local, not client: an anchored wheel zoom would otherwise drift
+    // by the view's offset from the viewport's top-left.
+    const local = core.toViewLocal(e.clientX, e.clientY);
     const hitPoint = toWorld(e.clientX, e.clientY);
     const px = wheelPixels(e, pageOf(core.canvas));
     const ev: InputEvent = {

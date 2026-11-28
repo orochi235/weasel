@@ -33,7 +33,8 @@ export interface WheelEvent extends EventModifiers {
   kind: 'wheel';
   deltaX: number;
   deltaY: number;
-  /** The pointer, canvas-local: client coords minus the canvas's bounding rect. */
+  /** The pointer in CSS px from the top-left of the view it landed in, the space that view's
+   *  camera anchors in: the canvas's own top-left for a canvas with no views. */
   clientX: number;
   clientY: number;
   /** The pointer in client pixels, when the source knows it: `InvocationCtx.screen`. */
@@ -58,8 +59,7 @@ export interface PinchEvent extends EventModifiers {
   scale: number;
   /** Rotation since the previous sample, in degrees, clockwise positive. */
   rotation: number;
-  /** Focal point, canvas-local like {@link WheelEvent}'s: client coords minus
-   *  the canvas's bounding rect. */
+  /** Focal point, view-local like {@link WheelEvent}'s. */
   clientX: number;
   clientY: number;
   /** The focal point in client pixels, when the source knows it: `InvocationCtx.screen`. */

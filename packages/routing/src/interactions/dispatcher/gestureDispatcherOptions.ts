@@ -243,7 +243,8 @@ export interface UseGestureDispatcherOptions {
 
   /**
    * Converts a client point to CSS pixels from the canvas's top-left: where
-   * the painted cursor draws, where a wheel or pinch zoom anchors, and where a
+   * the painted cursor draws, where a wheel or pinch zoom anchors in a view
+   * with no mapping of its own, and where a
    * pending long-press is published. Without this, the element's rect is
    * subtracted — wrong for a canvas under a CSS transform, whose host already
    * owns the mapping. `<SceneCanvas>` wires it from its own camera, so a

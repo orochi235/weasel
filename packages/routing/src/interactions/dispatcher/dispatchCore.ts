@@ -11,6 +11,7 @@ import type { ActionsRegistry } from '../actions/registry';
 import type { Dispatcher, DispatcherContext, KeyReach } from './dispatcherApi';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 import type { InputEvent } from './matcher';
+import { isMultiTouchGestureId, isPointerGestureId } from './gestureIds';
 import type { KeymapStack } from '../../keymaps/keymapStack';
 
 /** What a channel reads and calls. Every member is a closure over the
@@ -22,6 +23,10 @@ export interface DispatchCore {
   /** Route an event with coordinates. `pointerId` is `null` for input with
    *  nothing to capture: wheel, hover, contextmenu, drop. */
   routeAt(pointerId: number | null, clientX: number, clientY: number): void;
+  /** Route to the view whose dispatcher runs a held pointer's or a hand's
+   *  gesture, when the routed one runs none: input with no pointer of its own
+   *  (a wheel) goes where a live drag is pinned. */
+  routeToHeld(): void;
   /** The routed view's id, and a way to put one back: an event that
    *  dispatches later runs on the view it landed in. */
   routedView(): string | null;
@@ -147,6 +152,11 @@ function innermostSurface(target: EventTarget | null): Element | null {
   return null;
 }
 
+function holdsPointer(d: Dispatcher): boolean {
+  for (const id of d.inFlight().keys()) if (isPointerGestureId(id) || isMultiTouchGestureId(id)) return true;
+  return false;
+}
+
 export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCore {
   const { canvas } = src;
   // An id rather than a record: the record is rebuilt every render, so holding
@@ -191,6 +201,12 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     },
     routeDown: (pointerId, clientX, clientY) => {
       routedId = src.views()?.resolver.begin(pointerId, clientX, clientY).id ?? null;
+    },
+    routeToHeld: () => {
+      if (holdsPointer(dispatcherNow())) return;
+      if (holdsPointer(src.root().dispatcher)) { routedId = null; return; }
+      const view = src.views()?.targets().find((t) => holdsPointer(t.dispatcher));
+      if (view) routedId = view.id;
     },
     routeRelease: (pointerId) => { src.views()?.resolver.end(pointerId); },
     routedView: () => routedId,

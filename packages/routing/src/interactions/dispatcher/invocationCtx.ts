@@ -19,7 +19,7 @@ export function uiInvocationCtx(deps: ActionDeps, params?: Record<string, unknow
 // The pointer in client pixels, where the event carries it. Not every kind
 // does, which is why `ctx.screen` is optional.
 function clientPoint(ev: InputEvent): Point2 | undefined {
-  // A wheel's and a pinch's `clientX`/`clientY` are canvas-local.
+  // A wheel's and a pinch's `clientX`/`clientY` are view-local.
   if (ev.kind === 'wheel' || ev.kind === 'pinch') return ev.screen;
   const cx = (ev as { clientX?: number }).clientX;
   const cy = (ev as { clientY?: number }).clientY;
