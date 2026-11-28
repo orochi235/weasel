@@ -124,6 +124,12 @@ describe("a click on a Field's label", () => {
     expect(screen.getByRole('textbox')).toHaveFocus();
   });
 
+  it("focuses a Select's trigger without opening it", async () => {
+    renderWithIcons(<Field label="Font"><Select options={OPTIONS} /></Field>);
+    await userEvent.click(screen.getByText('Font'));
+    expect(screen.getAllByRole('button')[0]).toHaveFocus();
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
 });
 
 describe('a control drawing its own label in a Field', () => {

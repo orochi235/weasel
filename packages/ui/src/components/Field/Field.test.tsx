@@ -86,6 +86,17 @@ describe('Field', () => {
     expect(screen.getByRole('checkbox')).toBeChecked();
   });
 
+  it('focuses a button control from a click on its label, without pressing it', async () => {
+    let presses = 0;
+    function Trigger() {
+      return <button type="button" onClick={() => presses++} {...useFieldControl()}>Pick</button>;
+    }
+    render(<Field label="Font"><Trigger /></Field>);
+    await userEvent.click(screen.getByText('Font'));
+    expect(screen.getByRole('button')).toHaveFocus();
+    expect(presses).toBe(0);
+  });
+
   describe('group', () => {
     it('is a group named and described by the field, its members named by themselves', () => {
       render(
