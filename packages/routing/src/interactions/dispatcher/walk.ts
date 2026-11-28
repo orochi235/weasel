@@ -162,12 +162,7 @@ export function walk(
     tried.add(actionId);
     const action = r.actionMap.get(actionId);
     if (!action) {
-      if (attempt) {
-        console.warn(
-          `weasel dispatcher: binding resolved actionId "${actionId}" which has `
-          + `no registered action. Skipping. (misconfiguration)`,
-        );
-      }
+      if (attempt) reportUnregistered(actionId);
       push({ kind: 'no-such-action' });
       continue;
     }
@@ -194,6 +189,17 @@ export function walk(
     if (result === 'fired') winner = { match, action };
   }
   return { steps, stop, winner };
+}
+
+const reportedUnregistered = new Set<string>();
+
+function reportUnregistered(actionId: string): void {
+  if (reportedUnregistered.has(actionId)) return;
+  reportedUnregistered.add(actionId);
+  console.warn(
+    `weasel dispatcher: binding resolved actionId "${actionId}" which has `
+    + `no registered action. Skipping. (misconfiguration)`,
+  );
 }
 
 /** Every ranked candidate of a predicting walk, with why it would or would not fire. */
