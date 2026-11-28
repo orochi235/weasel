@@ -13,6 +13,17 @@ export interface KeymapKeys {
   clear(): void;
 }
 
+interface Place { id: string; depth: number }
+
+/** The innermost open keymap and how deep it sits; a snapshot is rebuilt whenever a level changes, so identity says nothing. */
+function placeOf(s: KeymapStack | undefined): Place | null {
+  const open = s?.open() ?? [];
+  const top = open.at(-1);
+  return top === undefined ? null : { id: top.id, depth: open.length };
+}
+
+const samePlace = (a: Place, b: Place | null): boolean => b !== null && a.id === b.id && a.depth === b.depth;
+
 export function keymapKeys(stack: () => KeymapStack | undefined): KeymapKeys {
   // Leader keys still down, each with whether Cmd was held when it went down.
   const leaders = new Map<string, boolean>();
@@ -24,12 +35,12 @@ export function keymapKeys(stack: () => KeymapStack | undefined): KeymapKeys {
   return {
     quiet: (physical) => leaders.has(physical) || quiet.has(physical),
     press: (e, physical, run) => {
-      const before = stack()?.innermost() ?? null;
+      const before = placeOf(stack());
       run();
       const s = stack();
       if (s?.holdOpened(`key:${physical}`)) leaders.set(physical, e.metaKey);
       // Its repeats would otherwise reach whatever the key does outside the keymap it just closed.
-      else if (before !== null && s?.innermost() !== before) quiet.set(physical, e.metaKey);
+      else if (before !== null && !samePlace(before, placeOf(s))) quiet.set(physical, e.metaKey);
     },
     up: (e, physical) => {
       quiet.delete(physical);
