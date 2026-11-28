@@ -60,8 +60,8 @@ export interface FieldControlAttrs {
 
 /**
  * The name, id and description a control's focusable element takes: the field's around it, merged with the
- * control's own. A control that names itself — an `aria-label`, an `aria-labelledby`, or a label it draws — is
- * not the field's control and takes nothing from it, so a member of a compound control keeps its own name.
+ * control's own. A control that names itself — an `aria-label`, an `aria-labelledby`, or a label it draws — keeps
+ * that name and its own id, and the field's description and error still describe it.
  *
  * ```tsx
  * function Knob(props: { 'aria-label'?: string }) {
@@ -73,16 +73,16 @@ export interface FieldControlAttrs {
 export function useFieldControl(own: OwnFieldSemantics = {}): FieldControlAttrs {
   const field = useFieldSemantics();
   const named = own.labeled || own['aria-label'] !== undefined || own['aria-labelledby'] !== undefined;
-  const taken = named ? null : field;
+  const naming = named ? null : field;
   const attrs: FieldControlAttrs = {};
-  const id = own.id ?? taken?.id;
+  const id = own.id ?? naming?.id;
   if (id !== undefined) attrs.id = id;
   if (own['aria-label'] !== undefined) attrs['aria-label'] = own['aria-label'];
-  const labelledBy = own['aria-labelledby'] ?? taken?.labelId;
+  const labelledBy = own['aria-labelledby'] ?? naming?.labelId;
   if (labelledBy !== undefined) attrs['aria-labelledby'] = labelledBy;
-  const described = describedBy(taken?.describedBy, own['aria-describedby']);
+  const described = describedBy(field?.describedBy, own['aria-describedby']);
   if (described !== undefined) attrs['aria-describedby'] = described;
-  if (taken?.invalid) attrs['aria-invalid'] = true;
+  if (field?.invalid) attrs['aria-invalid'] = true;
   return attrs;
 }
 

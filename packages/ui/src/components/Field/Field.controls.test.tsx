@@ -115,3 +115,13 @@ describe('a compound field', () => {
     expect(screen.getByRole('spinbutton')).not.toHaveAttribute('aria-invalid');
   });
 });
+
+describe('a control drawing its own label in a Field', () => {
+  it("still takes the field's description and error", () => {
+    renderWithIcons(<Field description="Required to continue." error="You must accept the terms."><Checkbox>Accept terms</Checkbox></Field>);
+    const box = screen.getByRole('checkbox');
+    expect(box).toHaveAccessibleName('Accept terms');
+    expect(box).toHaveAccessibleDescription('Required to continue. You must accept the terms.');
+    expect(box).toHaveAttribute('aria-invalid', 'true');
+  });
+});

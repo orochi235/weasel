@@ -42,6 +42,14 @@ describe('Field', () => {
     expect(screen.getByRole('slider').id).not.toBe('');
   });
 
+  it('leaves a control that names itself its name, and describes it still', () => {
+    render(<Field label="Gain" description="d" error="e"><Knob aria-label="Trim" /></Field>);
+    const knob = screen.getByRole('slider');
+    expect(knob).toHaveAccessibleName('Trim');
+    expect(knob).toHaveAccessibleDescription('d e');
+    expect(knob).toHaveAttribute('aria-invalid', 'true');
+  });
+
   it('treats a true slot as empty, as React draws it', () => {
     const { container } = render(<Field label="Gain" error={true} description={true}><Knob /></Field>);
     const knob = screen.getByRole('slider');
