@@ -1,0 +1,80 @@
+{
+ "area": "ui.components.GradientEditor",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/GradientEditor/GradientEditor.module.css",
+  "packages/ui/src/components/GradientEditor/GradientEditor.stories.tsx",
+  "packages/ui/src/components/GradientEditor/GradientEditor.tsx",
+  "packages/ui/src/components/GradientEditor/GradientHandles.stories.module.css",
+  "packages/ui/src/components/GradientEditor/GradientHandles.stories.tsx",
+  "packages/ui/src/components/GradientEditor/GradientHandles.tsx",
+  "packages/ui/src/components/GradientEditor/GradientStops.module.css",
+  "packages/ui/src/components/GradientEditor/GradientStops.tsx",
+  "packages/ui/src/components/GradientEditor/StopEditor.tsx",
+  "packages/ui/src/components/GradientEditor/handleOverlay.module.css",
+  "packages/ui/src/components/GradientEditor/handleOverlay.tsx",
+  "packages/ui/src/components/GradientEditor/index.ts",
+  "packages/ui/src/components/GradientEditor/useFocusAfterCommit.ts",
+  "packages/ui/src/components/GradientEditor/useStopSelection.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2222756,
+   "minutes": 0.2154,
+   "at": "2026-11-27T00:25:17.444Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A fractional in-range controlled selectedStop passes the bounds check and crashes StopEditor on an undefined stop instead of falling back to the first stop",
+   "where": "packages/ui/src/components/GradientEditor/useStopSelection.ts:31",
+   "severity": "low",
+   "scenario": "With two or more stops, selectedStop = 0.5 passes the bounds check; GradientStops passes undefined to StopEditor, which reads stop.offset and throws",
+   "fix": [
+    "packages/ui/src/components/GradientEditor/useStopSelection.ts"
+   ],
+   "size": "line",
+   "cause": "selection check tests bounds, not integer index",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Releasing a dragged handle at its starting value emits neither commit nor cancel, leaving an open preview/edit transaction",
+   "where": "packages/ui/src/components/GradientEditor/handleOverlay.tsx:57",
+   "severity": "medium",
+   "scenario": "User drags a handle, previews via onInput, then releases at the start value; commit path clears its start marker and calls neither commit nor cancel, so a host's open transaction or a local preview is never cleaned up",
+   "fix": [
+    "packages/ui/src/components/GradientEditor/handleOverlay.tsx"
+   ],
+   "size": "line",
+   "cause": "no-change release path emits no end signal",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1198
+}

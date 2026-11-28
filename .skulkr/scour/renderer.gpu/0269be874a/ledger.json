@@ -1,0 +1,101 @@
+{
+ "area": "renderer.gpu",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/renderer/src/gpu/blend.ts",
+  "packages/renderer/src/gpu/bufferWrite.ts",
+  "packages/renderer/src/gpu/samplerIndex.ts",
+  "packages/renderer/src/gpu/samplingMerge.ts",
+  "packages/renderer/src/gpu/textureSize.ts",
+  "packages/renderer/src/gpu/types.ts",
+  "packages/renderer/src/gpu/uniformTypes.ts",
+  "packages/renderer/src/gpu/vertexLayout.ts",
+  "packages/renderer/src/gpu/webgl/GlProgram.ts",
+  "packages/renderer/src/gpu/webgl/WebGLDevice.ts",
+  "packages/renderer/src/gpu/webgl/bitmapCanvas.ts",
+  "packages/renderer/src/gpu/webgl/contextAttributes.ts",
+  "packages/renderer/src/gpu/webgl/glCache.ts",
+  "packages/renderer/src/gpu/webgl/glResources.ts",
+  "packages/renderer/src/gpu/webgl/glTargets.ts",
+  "packages/renderer/src/gpu/webgl/openWebGL.ts",
+  "packages/renderer/src/gpu/webgl/uniformUpload.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1789984,
+   "minutes": 0.237,
+   "at": "2026-11-26T05:21:27.210Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A texImage2D throw in withTexture skips the unbind and cache update, so the binding cache goes stale and a later draw may skip a required texture bind",
+   "where": "packages/renderer/src/gpu/webgl/glCache.ts:218 (withTexture)",
+   "severity": "medium",
+   "scenario": "A tainted source makes texImage2D throw during creation; the cache keeps a stale binding and a later draw skips its bind; the allocated texture leaks",
+   "fix": [
+    "packages/renderer/src/gpu/webgl/glCache.ts"
+   ],
+   "size": "line",
+   "cause": "no cleanup path when upload throws",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A texImage2D throw during texture creation leaks the newly allocated texture handle, which is never deleted",
+   "where": "packages/renderer/src/gpu/webgl/glCache.ts:218 (withTexture)",
+   "severity": "medium",
+   "scenario": "A tainted source makes texImage2D throw during creation; the cache keeps a stale binding and a later draw skips its bind; the allocated texture leaks",
+   "fix": [
+    "packages/renderer/src/gpu/webgl/glCache.ts"
+   ],
+   "size": "line",
+   "cause": "no cleanup path when upload throws",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A null fragment createShader throws before constructor cleanup, leaking the already-created vertex shader",
+   "where": "packages/renderer/src/gpu/webgl/GlProgram.ts:61 (constructor)",
+   "severity": "low",
+   "scenario": "Fragment createShader returns null after the vertex stage is compiled; the vertex shader leaks",
+   "fix": [
+    "packages/renderer/src/gpu/webgl/GlProgram.ts"
+   ],
+   "size": "line",
+   "cause": "stage cleanup covers only stages that reached constructor cleanup",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1674
+}

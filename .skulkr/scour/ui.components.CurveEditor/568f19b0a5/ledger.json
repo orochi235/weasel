@@ -1,0 +1,77 @@
+{
+ "area": "ui.components.CurveEditor",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/CurveEditor/CurveEditor.module.css",
+  "packages/ui/src/components/CurveEditor/CurveEditor.pointPlotter.stories.tsx",
+  "packages/ui/src/components/CurveEditor/CurveEditor.stories.tsx",
+  "packages/ui/src/components/CurveEditor/CurveEditor.tsx",
+  "packages/ui/src/components/CurveEditor/CurveFill.tsx",
+  "packages/ui/src/components/CurveEditor/CustomLayer.tsx",
+  "packages/ui/src/components/CurveEditor/Diamond.tsx",
+  "packages/ui/src/components/CurveEditor/FunctionLayer.tsx",
+  "packages/ui/src/components/CurveEditor/KeyframeLayer.tsx",
+  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.stories.module.css",
+  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.stories.tsx",
+  "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx",
+  "packages/ui/src/components/CurveEditor/anchorRules.ts",
+  "packages/ui/src/components/CurveEditor/createFunctionLayer.tsx",
+  "packages/ui/src/components/CurveEditor/createKeyframeLayer.tsx",
+  "packages/ui/src/components/CurveEditor/functionAnchorEdits.ts",
+  "packages/ui/src/components/CurveEditor/functionCurve.ts",
+  "packages/ui/src/components/CurveEditor/functionLayerTypes.ts",
+  "packages/ui/src/components/CurveEditor/functionMarks.tsx",
+  "packages/ui/src/components/CurveEditor/hitTest.ts",
+  "packages/ui/src/components/CurveEditor/index.ts",
+  "packages/ui/src/components/CurveEditor/keyframeCurve.ts",
+  "packages/ui/src/components/CurveEditor/keyframeEdits.ts",
+  "packages/ui/src/components/CurveEditor/keyframeMarks.tsx",
+  "packages/ui/src/components/CurveEditor/layerCtx.ts",
+  "packages/ui/src/components/CurveEditor/layerDispatch.ts",
+  "packages/ui/src/components/CurveEditor/layerHost.ts",
+  "packages/ui/src/components/CurveEditor/layerMarks.ts",
+  "packages/ui/src/components/CurveEditor/layerTypes.ts",
+  "packages/ui/src/components/CurveEditor/presets.ts",
+  "packages/ui/src/components/CurveEditor/setCurveOp.ts",
+  "packages/ui/src/components/CurveEditor/useLayerGesture.ts",
+  "packages/ui/src/components/CurveEditor/useLayerHistory.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2137916,
+   "minutes": 0.21758333333333332,
+   "at": "2026-11-27T00:23:47.030Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Undo skips restoring a custom layer whose snapshotted state was undefined, because restoration checks Map.get against undefined rather than Map.has",
+   "where": "packages/ui/src/components/CurveEditor/useLayerHistory.ts:50",
+   "severity": "low",
+   "scenario": "A CustomLayer starts in an unset (undefined) state, commits its first value, then the user runs built-in Undo; the layer keeps the committed value instead of returning to undefined",
+   "fix": [
+    "packages/ui/src/components/CurveEditor/useLayerHistory.ts"
+   ],
+   "size": "line",
+   "cause": "Map.get result compared to undefined instead of Map.has",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3193
+}

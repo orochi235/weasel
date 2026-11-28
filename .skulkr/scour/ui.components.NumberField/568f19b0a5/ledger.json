@@ -1,0 +1,76 @@
+{
+ "area": "ui.components.NumberField",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/NumberField/NumberField.module.css",
+  "packages/ui/src/components/NumberField/NumberField.stories.module.css",
+  "packages/ui/src/components/NumberField/NumberField.stories.tsx",
+  "packages/ui/src/components/NumberField/NumberField.tsx",
+  "packages/ui/src/components/NumberField/Steppers.tsx",
+  "packages/ui/src/components/NumberField/UnitField.stories.tsx",
+  "packages/ui/src/components/NumberField/UnitField.tsx",
+  "packages/ui/src/components/NumberField/index.ts",
+  "packages/ui/src/components/NumberField/useStepRepeat.ts",
+  "packages/ui/src/components/NumberField/useUnitTyping.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2209036,
+   "minutes": 0.25651666666666667,
+   "at": "2026-11-27T00:29:49.158Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A disabled named UnitField still submits its value through a hidden input that never gets the disabled state",
+   "where": "packages/ui/src/components/NumberField/UnitField.tsx:144",
+   "severity": "low",
+   "scenario": "A UnitField with `name`, disabled directly or through the kit's disabled scope, inside a submitted form: its value still appears in FormData",
+   "fix": [
+    "packages/ui/src/components/NumberField/UnitField.tsx"
+   ],
+   "size": "line",
+   "cause": "hidden input not passed disabled state",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "The wheel handler compares the input with the document's active element (the shadow host inside a shadow root), so a focused field there scrolls instead of stepping",
+   "where": "packages/ui/src/components/NumberField/UnitField.tsx:257",
+   "severity": "low",
+   "scenario": "A UnitField focused inside a shadow root receives a wheel event: document.activeElement is the shadow host, so the handler treats the input as unfocused and lets the page scroll",
+   "fix": [
+    "packages/ui/src/components/NumberField/UnitField.tsx"
+   ],
+   "size": "line",
+   "cause": "document.activeElement ignores shadow roots",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 891
+}

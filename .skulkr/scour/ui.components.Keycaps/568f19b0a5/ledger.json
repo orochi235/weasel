@@ -1,0 +1,72 @@
+{
+ "area": "ui.components.Keycaps",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Keycaps/KeyBank.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyBank.tsx",
+  "packages/ui/src/components/Keycaps/KeyDiagram.module.css",
+  "packages/ui/src/components/Keycaps/KeyDiagram.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyDiagram.tsx",
+  "packages/ui/src/components/Keycaps/KeySequence.stories.tsx",
+  "packages/ui/src/components/Keycaps/KeyboardLayout.stories.tsx",
+  "packages/ui/src/components/Keycaps/Keycap.stories.tsx",
+  "packages/ui/src/components/Keycaps/Keycap.tsx",
+  "packages/ui/src/components/Keycaps/Keycaps.module.css",
+  "packages/ui/src/components/Keycaps/Keycaps.stories.module.css",
+  "packages/ui/src/components/Keycaps/Keycaps.tsx",
+  "packages/ui/src/components/Keycaps/ShortcutKeys.stories.tsx",
+  "packages/ui/src/components/Keycaps/ShortcutKeys.tsx",
+  "packages/ui/src/components/Keycaps/index.ts",
+  "packages/ui/src/components/Keycaps/keyBankContext.ts",
+  "packages/ui/src/components/Keycaps/keyGlyph.ts",
+  "packages/ui/src/components/Keycaps/keyLegendsFromChord.ts",
+  "packages/ui/src/components/Keycaps/keyLegendsFromFormatted.ts",
+  "packages/ui/src/components/Keycaps/keyboardLayout.ts",
+  "packages/ui/src/components/Keycaps/keycapFonts.story.ts",
+  "packages/ui/src/components/Keycaps/keycapLegends.story.ts",
+  "packages/ui/src/components/Keycaps/legendFit.ts",
+  "packages/ui/src/components/Keycaps/legendIcons.ts",
+  "packages/ui/src/components/Keycaps/legendMeasure.ts",
+  "packages/ui/src/components/Keycaps/useHeldKeys.ts",
+  "packages/ui/src/components/Keycaps/useLegendFit.ts",
+  "packages/ui/src/components/Keycaps/variantIcons.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2194196,
+   "minutes": 0.22091666666666668,
+   "at": "2026-11-27T00:26:11.558Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "useHeldKeys uses its own window for blur and Node checks instead of the target's, so a key target in another window can leave a key lit after focus leaves, or clear held keys when focus moves inside the target",
+   "where": "packages/ui/src/components/Keycaps/useHeldKeys.ts:40 (useHeldKeys)",
+   "severity": "low",
+   "scenario": "An explicit target from a popout or iframe. Focus leaves the popout: its blur is never heard and the keyup goes elsewhere, so the key stays lit. Or the target is an element in the other window: focus moves between its descendants, the ambient `Node` checks fail, and held keys are cleared.",
+   "fix": [
+    "packages/ui/src/components/Keycaps/useHeldKeys.ts"
+   ],
+   "size": "function",
+   "cause": "blur and Node checks bound to the ambient window, not the target's",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1931
+}

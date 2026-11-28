@@ -1,0 +1,69 @@
+{
+ "area": "symmetry",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/symmetry/src/bake.ts",
+  "packages/symmetry/src/controller.ts",
+  "packages/symmetry/src/frames.ts",
+  "packages/symmetry/src/group.ts",
+  "packages/symmetry/src/guide.ts",
+  "packages/symmetry/src/handleDrag.ts",
+  "packages/symmetry/src/index.ts",
+  "packages/symmetry/src/kinds.ts",
+  "packages/symmetry/src/pbt.fixture.ts",
+  "packages/symmetry/src/settings.ts",
+  "packages/symmetry/src/wallpaper.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2271676,
+   "minutes": 0.11605,
+   "at": "2026-11-26T23:11:10.171Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Wallpaper lattice collapse test uses an absolute cell-area threshold, so a small but regular lattice is treated as collapsed and all copies are suppressed",
+   "where": "packages/symmetry/src/wallpaper.ts:55",
+   "severity": "medium",
+   "scenario": "Scale a lattice with perpendicular axes and its extent down uniformly; the cell area drops below the absolute threshold and no copies draw, though few copies would be visible",
+   "cause": "scale-dependent absolute area threshold",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Baking rounds a real authored scale below 1e-12 to zero, leaving a singular baked pose",
+   "where": "packages/symmetry/src/bake.ts:43 (carryPose)",
+   "severity": "low",
+   "scenario": "Bake symmetry on a node whose pose has a nonzero scale below 1e-12; the baked pose is singular while the live copy still draws with nonzero scale",
+   "cause": "cleanup applied to authored coefficients, not just round-off",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1441
+}

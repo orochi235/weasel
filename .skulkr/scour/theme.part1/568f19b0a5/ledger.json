@@ -1,0 +1,94 @@
+{
+ "area": "theme.part1",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/theme/src/appearance.ts",
+  "packages/theme/src/applyTheme.ts",
+  "packages/theme/src/axes.ts",
+  "packages/theme/src/blendTheme.ts",
+  "packages/theme/src/boxShadow.ts",
+  "packages/theme/src/capText.module.css",
+  "packages/theme/src/chainTokens.ts",
+  "packages/theme/src/colorList.ts",
+  "packages/theme/src/colorListItems.ts",
+  "packages/theme/src/colorMode.ts",
+  "packages/theme/src/colorSource.ts",
+  "packages/theme/src/cssNumber.ts",
+  "packages/theme/src/currentColor.ts",
+  "packages/theme/src/definition.ts",
+  "packages/theme/src/dtcg/axesExtension.ts",
+  "packages/theme/src/dtcg/color.ts",
+  "packages/theme/src/dtcg/flatten.ts",
+  "packages/theme/src/dtcg/resolve.ts",
+  "packages/theme/src/dtcg/types.ts",
+  "packages/theme/src/dtcg/value.ts",
+  "packages/theme/src/engine.ts",
+  "packages/theme/src/faces.css",
+  "packages/theme/src/fonts.css",
+  "packages/theme/src/fromDtcg.ts",
+  "packages/theme/src/generated/manifest.ts",
+  "packages/theme/src/generated/themes.ts",
+  "packages/theme/src/generated/tokens.css",
+  "packages/theme/src/hooks.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2197996,
+   "minutes": 0.24951666666666666,
+   "at": "2026-11-27T00:13:43.348Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Bake key concatenates raw axis selections with ',' and '=' delimiters, so distinct selections whose values contain those characters collide, and one selection's bake row overwrites the other's tokens",
+   "where": "packages/theme/src/axes.ts:115 (axis choice bake key)",
+   "severity": "low",
+   "scenario": "Axes a and b; the selections (a='x', b='y,b=z') and (a='x,b=y', b='z') both serialize to 'a=x,b=y,b=z', so the later bake row replaces the earlier one",
+   "fix": [
+    "packages/theme/src/axes.ts"
+   ],
+   "size": "line",
+   "cause": "unescaped delimiters in key serialization",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "DTCG override keys use the same unescaped ',' and '=' delimiter convention, so variants whose values contain those characters can lose their identity",
+   "where": "packages/theme DTCG import override keys",
+   "severity": "low",
+   "scenario": "Axes a and b; the selections (a='x', b='y,b=z') and (a='x,b=y', b='z') both serialize to 'a=x,b=y,b=z', so the later bake row replaces the earlier one",
+   "fix": [
+    "packages/theme/src/axes.ts"
+   ],
+   "size": "line",
+   "cause": "unescaped delimiters in key serialization",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 6376
+}

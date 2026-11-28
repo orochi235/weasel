@@ -40,6 +40,186 @@
    "minutes": 0.11495,
    "at": "2026-11-25T21:18:25.099Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.468191,
+   "minutes": 5.100033333333333,
+   "at": "2026-11-26T05:27:15.977Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 2.01431,
+   "minutes": 5.958516666666667,
+   "at": "2026-11-26T05:34:18.416Z",
+   "findings": 4
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.7895058,
+   "minutes": 4.025833333333333,
+   "at": "2026-11-26T05:38:20.110Z",
+   "findings": 3
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.6886745999999999,
+   "minutes": 3.2719833333333335,
+   "at": "2026-11-26T05:41:36.625Z",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.8981907999999998,
+   "minutes": 4.683450000000001,
+   "at": "2026-11-26T05:46:17.781Z",
+   "findings": 3
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.8122575999999999,
+   "minutes": 3.8984,
+   "at": "2026-11-26T05:50:11.983Z",
+   "findings": 1
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.9709619999999999,
+   "minutes": 5.084066666666667,
+   "at": "2026-11-26T05:55:17.192Z",
+   "findings": 2
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.2515822,
+   "minutes": 6.824566666666667,
+   "at": "2026-11-26T06:02:06.824Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.4438715999999998,
+   "minutes": 5.558783333333333,
+   "at": "2026-11-26T06:07:40.539Z",
+   "findings": 2
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.3891778000000001,
+   "minutes": 7.206966666666667,
+   "at": "2026-11-26T06:14:53.083Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.8412504000000001,
+   "minutes": 4.080583333333333,
+   "at": "2026-11-26T06:18:58.057Z",
+   "findings": 3
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.000738,
+   "minutes": 5.109216666666667,
+   "at": "2026-11-26T06:24:04.787Z",
+   "findings": 2
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.8325746,
+   "minutes": 4.178783333333333,
+   "at": "2026-11-26T06:28:15.641Z",
+   "findings": 2
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.8363840000000001,
+   "minutes": 3.935983333333333,
+   "at": "2026-11-26T06:32:11.932Z",
+   "findings": 4
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 1.0022928000000002,
+   "minutes": 4.422433333333333,
+   "at": "2026-11-26T06:36:37.400Z",
+   "findings": 4
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 0.8385706,
+   "minutes": 4.4047,
+   "at": "2026-11-26T06:41:01.800Z",
+   "findings": 1
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 1.1752196000000001,
+   "minutes": 3.73935,
+   "at": "2026-11-26T06:44:46.280Z",
+   "findings": 3
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 1.621426,
+   "minutes": 6.0463,
+   "at": "2026-11-26T06:50:49.179Z",
+   "findings": 3
   }
  ],
  "defects": [
@@ -72,6 +252,573 @@
      1
     ]
    }
+  },
+  {
+   "id": "D3",
+   "claim": "An edit that lands while deps.js is being served, after a graph has already gone out, can leave the page and depsSent holding the pre-edit graph",
+   "where": "packages/forge/src/vite/depsFeed.ts:96 (createDepsFeed → module / redeps)",
+   "severity": "medium",
+   "scenario": "a graph has been sent once (`depsSent !== null`); a page reloads (or a second tab opens) and requests `deps.js`, so `module()` starts building and reads file F. F is edited: the plugin invalidates F and calls `redeps`, which, since `depsSent !== null`, starts `rebuild` concurrently instead of recording `editedWhileServing`. The rebuild reads the new F, sets `depsSent = G1` and pushes `forge:deps` G1. Then `module()` finishes with the graph it built from the old F, overwrites `depsSent = G0` and serves G0; the page's `import('virtual:forge/deps.js').then(setDependencies)` lands after the push and replaces G1 with G0. The page shows the stale graph, and because `depsSent` now equals G0, nothing re-pushes until a later edit happens to change the graph again. Should: an edit during `module()` always schedules a rebuild after it is served (the `editedWhileServing` path), whatever `depsSent` holds, or `module()` should not overwrite a `depsSent` written by a rebuild that started after it.",
+   "fix": [
+    "packages/forge/src/vite/depsFeed.ts"
+   ],
+   "size": "function",
+   "cause": "edit-while-serving recorded only when nothing was sent yet",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4,
+    7,
+    9,
+    10,
+    12,
+    14,
+    17,
+    18
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4,
+     7,
+     9,
+     10,
+     12,
+     14,
+     17,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "When an allowlisted response carries several Set-Cookie headers, passThrough forwards only the last one to the capture page",
+   "where": "packages/forge/src/vite/capture/browser.ts:97 (passThrough)",
+   "severity": "low",
+   "scenario": "a story loads from an origin in `allowOrigins`, and that server answers with two `Set-Cookie` headers. Node's `Headers` iterator yields each `set-cookie` as its own entry, and `Object.fromEntries` keeps only the last, so the page receives one cookie where the browser would have stored both. A story that depends on the first cookie (a session plus a CSRF token, say) renders differently in the capture than on screen. Should: build the fulfilled headers so repeated `set-cookie` values all go through (for example `response.headers.getSetCookie()` joined the way Playwright's `headers` accepts, or `headersArray`).",
+   "size": "line",
+   "cause": "multi-valued header collapsed by Object.fromEntries",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    6,
+    13,
+    16,
+    19
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     6,
+     13,
+     16,
+     19
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/capture/browser.ts"
+   ]
+  },
+  {
+   "id": "D5",
+   "claim": "componentOf's meta reader stops at an identifier argument, so the API table names a different component than the graph",
+   "where": "packages/forge/src/vite/componentOf.ts:79 (objectOf)",
+   "severity": "medium",
+   "scenario": "`const config = { title: 'ui/Card', component: Button }; export default meta(config);`. The indexer's `objectOf` (ast.ts:281) follows the identifier through top-level `const`s, so the entry's `componentName` is `Button` and the dependency graph (bindings.ts `componentOf`) keys `Button`. componentOf.ts's `objectOf` sees an Identifier as `meta`'s argument (or as a `const meta = base` initializer), drops out of its loop with `undefined`, so `assigned` finds nothing and `componentOf` falls back to the title's last segment, `Card`. The props table shows Card's API, or none at all, while the graph says Button. The doc comment says it picks the component \"as the dependency graph picks it\". It should follow an identifier to its declaration's initializer, as the indexer does.",
+   "fix": [
+    "packages/forge/src/vite/componentOf.ts"
+   ],
+   "size": "function",
+   "cause": "identifier not followed in objectOf loop",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    19
+   ],
+   "sources": {
+    "claude": [
+     3,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "componentOf reads `component` through a spread of an imported object, but the indexer treats that spread as setting nothing",
+   "where": "packages/forge/src/vite/componentOf.ts:150 (componentIn)",
+   "severity": "low",
+   "scenario": "`import { base } from './shared'; export default meta({ ...base, title: 'ui/Card' })` where `base = { component: Button }`. `componentIn` resolves the spread's symbol across files and returns `Button`. The indexer's `lookup` (ast.ts:331) reads a spread only through the file's own `bindings`, finds no `base`, and records no `componentName`, so the graph keys the title stand-in `Card`. The API table and the dependency graph then describe different components. The function's own doc says a spread it cannot read \"is taken to set nothing, as the story indexer takes it\", but it reads spreads the indexer cannot. The two readers need to agree on how far they reach.",
+   "fix": [
+    "packages/forge/src/vite/componentOf.ts",
+    "packages/forge/src/vite/ast.ts"
+   ],
+   "size": "function",
+   "cause": "two readers answer the same question differently",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    11
+   ],
+   "sources": {
+    "claude": [
+     3,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A component whose props are a union lists only the props shared by every member",
+   "where": "packages/forge/src/vite/apiTable.ts:42 (apiTable)",
+   "severity": "medium",
+   "scenario": "`type Props = { kind: 'link'; href: string } | { kind: 'button'; onPress: () => void }`. `checker.getPropertiesOfType(getApparentType(props))` on a union returns only the common properties, so the table lists `kind` and drops `href` and `onPress`, along with their docs, defaults and type defs. The table should cover each member's props, for example by iterating `props.types` and marking the props that are not shared as conditional.",
+   "size": "function",
+   "cause": "properties read from the union, not from its members",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A capture's cache key leaves out the origins it was allowed to load, so captures that allow different origins share one cache entry",
+   "where": "packages/forge/src/vite/capture/endpoint.ts:203 (serveCapture capture)",
+   "severity": "low",
+   "scenario": "`allowOrigins` is a thunk \"read at each capture\", so it can change while the server runs. A payload captured while a font or image origin was not allowed renders without it, and its PNG is cached under `keyOf(payload)`. After the allowlist changes, the same payload is served from the cache with the blocked resource still missing until some client module edit calls `revise()`. The key should include `allowOrigins()`, or a change to the allowlist should clear the cache.",
+   "fix": [
+    "packages/forge/src/vite/capture/endpoint.ts"
+   ],
+   "size": "line",
+   "cause": "cache key omits a render input",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "An unscoped package's release tag pattern also matches a scoped package's tags with the same base name",
+   "where": "packages/forge/src/vite/history.ts:136 (createHistoryReader load)",
+   "severity": "low",
+   "scenario": "for a file in package `foo`, the refs are `--refs=foo@[0-9]*`. `git name-rev --refs` matches a pattern against every suffix of the refname after a `/`, so the tag `refs/tags/@scope/foo@2.0.0` matches too, through its suffix `foo@2.0.0`. In a repo with both `foo` and `@scope/foo`, `introduced` and `modifiedIn` for `foo`'s files can name `@scope/foo`'s release. The pattern should be anchored, for example `refs/tags/foo@[0-9]*`, and likewise for `v[0-9]*` and `[0-9]*`.",
+   "fix": [
+    "packages/forge/src/vite/history.ts"
+   ],
+   "size": "line",
+   "cause": "unanchored name-rev ref pattern",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "ownHost refuses hosts that vite's own host check accepts, such as server.origin and hmr.host",
+   "where": "packages/forge/src/vite/capture/endpoint.ts:118 (ownHost)",
+   "severity": "low",
+   "scenario": "a project sets `server.origin: 'http://dev.example.test:5173'` (or `server.hmr.host: 'dev.example.test'`) without `allowedHosts` and opens the workshop at that name → vite's host check passes it (vite adds server.host, hmr.host, the origin's hostname and preview.host to the allowed set), but `ownHost` only knows IPs, localhost, `server.host`, `allowedHosts` and the printed URLs, so `GET __forge/issues` answers 403 on a page vite serves. The docstring says it asks what vite asks; the two answers differ",
+   "fix": [
+    "packages/forge/src/vite/issues/endpoint.ts",
+    "packages/forge/src/vite/capture/endpoint.ts"
+   ],
+   "size": "function",
+   "cause": "partial copy of vite's allowed-host set",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    9
+   ],
+   "sources": {
+    "claude": [
+     5,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "The issues endpoint parses req.url with new URL(req.url, base), so a request path starting with //host/ is read as a host and the path match goes wrong",
+   "where": "packages/forge/src/vite/issues/endpoint.ts:150 (serveIssues middleware)",
+   "severity": "low",
+   "scenario": "a request for `//anything/__forge/issues?component=X` parses as host `anything`, pathname `/__forge/issues`, so the endpoint answers a path that is not its own, while the capture endpoint (`req.url.split('?')[0]`) would not — the same \"is this request for me\" decision answered two ways in two places",
+   "size": "line",
+   "cause": "protocol-relative req.url parsed against a base URL",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "componentOf's forge-wrapper check rejects a meta the story indexer accepts, such as a namespace import of a re-exporting module or an `export *` from forge, so the two disagree on the component",
+   "where": "packages/forge/src/vite/componentOf.ts:107 (isForgeWrapper)",
+   "severity": "medium",
+   "scenario": "`import * as h from './storyHelpers'` where storyHelpers has `export { meta } from '@weasel-js/forge'`, and the story file does `export default h.meta({ component: Button })`. `foreignCallees` (indexFile.ts:73-79) reports `h.meta` as a namespace-member callee, the wrapper resolver finds forge's `meta` behind it, and the indexer treats the file as native. `isForgeWrapper` only accepts a namespace import whose own specifier is `@weasel-js/forge` (`fromForge(d)` on the NamespaceImport), so `objectOf` stops at the call, `assigned` finds no `component`, and `componentOf`/`metaComponentOf` fall back to the title stand-in or the meta type's `component` property (props `any`). The same happens for a named import from a helper that does `export * from '@weasel-js/forge'`: `getImmediateAliasedSymbol` jumps straight to forge's own declaration and never meets a specifier whose text is `@weasel-js/forge`, so the loop ends false. The doc comment says \"The story indexer reads no other call as a meta, so neither does this\", but the indexer reads both cases. Expected: one answer for whether a callee is forge's `meta`/`story`. Actual: the args table and the component graph get a different component from the one the index reports (or none).",
+   "fix": [
+    "packages/forge/src/vite/componentOf.ts"
+   ],
+   "size": "function",
+   "cause": "wrapper check reimplemented narrower than the indexer's resolver",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    15,
+    16
+   ],
+   "sources": {
+    "claude": [
+     6,
+     15,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "componentOf does not see through a TypeScript cast: an identifier inside a cast in objectOf, or a cast or call inside a spread in componentIn, is not followed where the babel indexer follows it",
+   "where": "packages/forge/src/vite/componentOf.ts:72 (objectOf), packages/forge/src/vite/componentOf.ts:137 (componentIn)",
+   "severity": "low",
+   "scenario": "`const meta = { component: Button }; export default meta satisfies Meta<typeof Button>;`. Because the default export is not a bare identifier, TS creates no alias symbol for it. Its declaration is an ExportAssignment whose expression is a SatisfiesExpression. The loop unwraps that to the Identifier `meta` and then gives up, since Identifier is neither an object literal, a call, nor a cast. `assigned` returns undefined, so the args table loses the component, or `metaComponentOf` reads the `Meta` type's `component` and gets `any` props. In the same way, a spread `...(base as Meta)` or `...meta({ component: X })` in componentIn goes through `getSymbolAtLocation` on a non-identifier expression, which yields no symbol, so the component the spread carries is dropped. The babel side (`ast.ts` objectOf/lookup) follows identifiers through casts and wrapper calls in both positions, so the indexer's `componentName` and the TS-side component disagree.",
+   "fix": [
+    "packages/forge/src/vite/componentOf.ts"
+   ],
+   "size": "function",
+   "cause": "identifier/cast/call not unwrapped in TS-side object resolution",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    18
+   ],
+   "sources": {
+    "claude": [
+     6,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A rebuild queued before reset() runs against the new root and marks the graph as sent though no page requested it",
+   "where": "packages/forge/src/vite/depsFeed.ts:73 (createDepsFeed → rebuild / reset)",
+   "severity": "low",
+   "scenario": "An edit lands while a rebuild is running, so `coalesced` holds it in `next`. Then `reset()` runs for a new root: it bumps `generation` and sets `depsSent = null`, meaning no page has asked for this root's graph yet. When the queued run starts, it reads `started = generation` (the new value), builds the new root's graph, finds `json !== depsSent` (null), and sets `depsSent`, invalidates `deps.js` and pushes `forge:deps`. Every later edit then rebuilds the graph and runs git for a root whose graph no page has asked for. What should happen: `reset` drops the queued call, or the run checks against the generation in effect when the call was queued.",
+   "fix": [
+    "packages/forge/src/vite/depsFeed.ts"
+   ],
+   "size": "function",
+   "cause": "coalesced queue survives reset; generation captured at run start, not at enqueue",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "The name-rev --refs pattern lets a package's version be read from another package's tag whose name has a path segment starting with a digit or v+digit",
+   "where": "packages/forge/src/vite/history.ts:139 (createHistoryReader → load, name-rev --refs)",
+   "severity": "low",
+   "scenario": "`git name-rev --refs=<pattern>` matches the pattern against every `/`-separated tail of the ref name, and its wildmatch `*` also matches `/`. So `--refs=[0-9]*` and `--refs=v[0-9]*`, meant to catch unscoped `1.2.0` or `v1.2.0` tags, also match a scoped package's tag such as `@scope/3d@1.0.0` (its tail `3d@1.0.0` matches `[0-9]*`) or `@scope/v2-utils@4.0.0`. A component in another package can then get `introduced`/`modifiedIn` set to that package's version. What should happen: anchor the unscoped patterns to the full ref, e.g. `--refs=refs/tags/v[0-9]*`, and `refs/tags/[0-9]*` refined to exclude `/`.",
+   "fix": [
+    "packages/forge/src/vite/history.ts"
+   ],
+   "size": "line",
+   "cause": "name-rev --refs matches ref name subpaths",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "A redirected allowlisted request is fulfilled at its original URL, so relative references in the body resolve against the pre-redirect location",
+   "where": "packages/forge/src/vite/capture/browser.ts:78 (passThrough)",
+   "severity": "medium",
+   "scenario": "a story loads `https://unpkg.com/some-pkg` (allowlisted), which 302s to `https://unpkg.com/some-pkg@1.2.3/dist/index.js`. passThrough follows the hop in Node and calls `route.fulfill` with the final body, but the browser still believes the response came from `https://unpkg.com/some-pkg`. The module's `import './chunk.js'` then resolves to `https://unpkg.com/chunk.js` instead of `…/some-pkg@1.2.3/dist/chunk.js`. A stylesheet's relative `url(font.woff2)` behind a CDN redirect breaks the same way, and the capture renders without that dependency or with a missing font. The screen, which follows the redirect natively, renders correctly, so the capture differs from what the screen shows.",
+   "fix": [
+    "packages/forge/src/vite/capture/browser.ts"
+   ],
+   "size": "function",
+   "cause": "redirect chain collapsed into one response at the original URL",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "repoOf treats an SSH host alias such as `github-work` as a GitHub Enterprise host instead of github.com",
+   "where": "packages/forge/src/vite/issues/endpoint.ts:62 (repoOf)",
+   "severity": "low",
+   "scenario": "the remote is `git@github-work:owner/repo.git`, a common `~/.ssh/config` alias convention. The github.com test `^(?:[\\w-]+\\.)*github\\.com(?:[-_][\\w-]+)?$` needs a literal `github.com`, so `host` stays `github-work`. `ghRepo` then becomes `github-work/owner/repo`, and gh fails on the unknown host. The panel shows an error (502), or \"not logged in\" if gh says to run `gh auth login`, where it should list the github.com issues. The doc promises that a host \"named for\" github.com counts, but only the `github.com-work` and `work.github.com` spellings are accepted.",
+   "size": "line",
+   "cause": "alias pattern only accepts a `github.com` stem",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "assignedNames misses an assignment whose target is a TS cast or non-null assertion, so a reassigned top-level let is read as its initializer",
+   "where": "packages/forge/src/vite/ast.ts:120 (assignedNames), packages/forge/src/vite/ast.ts:131 (patternNames)",
+   "severity": "low",
+   "scenario": "`let base = meta({ title: 'A' }); (base as any) = meta({ title: 'B' }); export default base;` (or `base! = …`). Babel puts a TSAsExpression or TSNonNullExpression as `left`, and `patternNames` answers `[]` for both. So `base` is never seen as reassigned, `bindingsOf` binds it to its first initializer, and the indexer titles the file 'A'. It should treat the binding as unreadable (the declarator), as it does for any other reassigned `let`. The same gap applies to such targets inside a destructuring (`[x!] = arr`).",
+   "fix": [
+    "packages/forge/src/vite/ast.ts"
+   ],
+   "size": "line",
+   "cause": "patternNames does not unwrap TS expression wrappers on an assignment target",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11,
+    12
+   ],
+   "sources": {
+    "claude": [
+     11,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "Capture browser contexts are cached and reused across stories, keeping each story's storage, so a capture's output depends on the captures that ran before it",
+   "where": "packages/forge/src/vite/capture/browser.ts:150 (contextCache / contextFor)",
+   "severity": "medium",
+   "scenario": "every capture with the same dpr and protocol opens its page in one long-lived BrowserContext. Only the page is closed after a capture, so localStorage, sessionStorage, IndexedDB and cookies on the dev server's origin carry over into the next capture. Say story A writes a persisted preference (a theme, a panel size, labkit or forge state kept in localStorage). A later capture of story B in the same context renders with A's state, and a recapture of the same payload can come out differently depending on what ran in between. The endpoint caches by payload alone, so whichever variant came first is what gets kept. What should happen: each capture starts from clean storage (a fresh context per capture, or clear the context's storage and cookies between captures).",
+   "size": "function",
+   "cause": "context reused across captures without clearing storage",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12,
+    15
+   ],
+   "sources": {
+    "claude": [
+     12,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "A story with `isolate: undefined` makes isolateOf throw, which drops the whole file from the index",
+   "where": "packages/forge/src/vite/indexFile.ts:197 (isolateOf)",
+   "severity": "low",
+   "scenario": "a story under an isolating meta writes `isolate: undefined` (or `parameters: { forge: { isolate: undefined } }`). `prop` returns the `undefined` Identifier, `stringOf` → `valueOf` finds no binding for it and answers undefined, so `isolateOf` throws `\"<export>: isolate must be a string literal\"`. `indexFile` rethrows, and every story in the file disappears from the workshop and from `forgeTest`, where the runtime would simply have read the story as not isolated, falling back to the meta's reason. The literal `undefined` (and `void 0`) should read as \"not set\" and fall through to `metaIsolate`, not as an unreadable value.",
+   "size": "line",
+   "cause": "`undefined` identifier treated as a non-literal value",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "The auto-title port drops an Index/INDEX file name from the title where Storybook keeps it",
+   "where": "packages/forge/src/vite/autoTitle.ts:25 (titleParts)",
+   "severity": "low",
+   "scenario": "given `src/components/Index.stories.tsx`, forge's `/^index$/i` treats `Index` as an index file and titles the story `components`. As I recall it, Storybook's `sanitize` tests `/^index$/` with no `i` flag and titles it `components/Index`. The file says it must agree with Storybook or ids and links diverge, so the story's id and link would differ between the two.",
+   "size": "line",
+   "cause": "case-insensitive flag not in upstream",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "passThrough never consumes or cancels a redirect hop's response body",
+   "where": "packages/forge/src/vite/capture/browser.ts:80 (passThrough)",
+   "severity": "low",
+   "scenario": "an allowlisted origin answers with a 30x carrying a body (most servers send a short HTML body). The loop reads `location` and `continue`s without `response.body?.cancel()` or reading the body, and it does the same on the `reach` abort path. undici holds the connection and its buffers until the body is consumed or garbage-collected. A story whose assets redirect, captured repeatedly, ties up keep-alive sockets to that origin; the next hop or capture to the same origin can stall behind them until GC runs. Every hop should cancel the body it drops.",
+   "size": "line",
+   "cause": "unconsumed fetch body",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "indexProgram drops `__namedExportsOrder` without applying its order to the stories",
+   "where": "packages/forge/src/vite/indexFile.ts:180 (indexProgram)",
+   "severity": "low",
+   "scenario": "a CSF file exports `__namedExportsOrder = ['B', 'A']`, which Storybook's CSF reader uses to order the stories (bundlers emit it for re-export-heavy files). Here it is only filtered out, and entries keep source order, so forge's tree and ids order the stories differently from Storybook for the same file, although this indexer otherwise ports Storybook's reading.",
+   "size": "function",
+   "cause": "ported rule applied partially",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "A failed import resolution is cached as null and never retried until the importer itself changes",
+   "where": "packages/forge/src/vite/bindings.ts:46 (createBindings resolveFrom)",
+   "severity": "low",
+   "scenario": "`resolve(spec, importer)` rejects once (a plugin's resolveId throws while a file is mid-write, or the env isn't ready yet). The `() => null` handler stores a resolved `null` promise in `resolutions`, the map shared across builds. Every later graph build treats that import as unresolvable, so the component loses its `uses` edge, until the importer is edited or a file add/unlink calls `reset()`. A transient error should not be stored like a real \"not a source file\" answer.",
+   "size": "line",
+   "cause": "rejection memoized like a real answer",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "`tags` written with a spread element are silently dropped from the index",
+   "where": "packages/forge/src/vite/indexFile.ts:221 (tagsOf)",
+   "severity": "low",
+   "scenario": "`tags: [...sharedTags, 'beta']` with `const sharedTags = ['autodocs']`. `stringOf(SpreadElement)` is undefined, so `flatMap` drops it, and the entry gets `['beta']` where the runtime story carries both. The `!tag` removal in `combineTags` then works on an incomplete set. `valueOf` can already follow the spread's argument through top-level consts, so each spread could be expanded the way `lookup` expands object spreads.",
+   "size": "function",
+   "cause": "array spreads not followed",
+   "confidence": "sure",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "A top-level var redeclared with a value inside a block or a for…of/for…in head is not counted as an assignment, so the name is treated as never reassigned",
+   "where": "packages/forge/src/vite/ast.ts:119 (assignedNames)",
+   "severity": "low",
+   "scenario": "`var meta = { title: 'A' }; if (flag) { var meta = { title: 'B' }; }` or `var s = X; for (var s of list) {}`. Each nested `var` with an initializer, and each `for (var x of …)` head, assigns the same top-level binding. `assignedNames` only counts `=`, `++` and `for` heads that are not a VariableDeclaration, and the top-level declaration of the name hides nothing. So `bindingsOf` keeps the first initializer as the binding's value, and `objectOf`/`stringOf` read a title, component or isolate value the module may not hold at runtime. Expected: the binding is treated as reassigned and bound to its declarator.",
+   "fix": [
+    "packages/forge/src/vite/ast.ts"
+   ],
+   "size": "function",
+   "cause": "var declarators with init below top level not counted as assignments",
+   "confidence": "sure",
+   "firstOccasion": 18,
+   "sightings": [
+    18
+   ],
+   "sources": {
+    "claude": [
+     18
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "A story file with a syntax error fails without naming the file, because indexStoryResolved parses it with foreignCallees before indexFile",
+   "where": "packages/forge/src/vite/indexStory.ts:41 (indexStoryResolved), packages/forge/src/vite/indexFile.ts:57 (foreignCallees)",
+   "severity": "low",
+   "scenario": "a story file with a syntax error, transformed by `forgeTest` or indexed by the workshop. `foreignCallees` calls `parseFile` with no try/catch, so babel's bare SyntaxError (\"Unexpected token (3:5)\") escapes. The `${file}: …` wrapping in `indexFile` (indexFile.ts:37) is never reached, so the message gives no file name.",
+   "fix": [
+    "packages/forge/src/vite/indexFile.ts"
+   ],
+   "size": "line",
+   "cause": "file-name wrapping on only one of two parse paths",
+   "confidence": "sure",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
   }
- ]
+ ],
+ "lines": 3196
 }

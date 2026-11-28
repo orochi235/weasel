@@ -1,0 +1,640 @@
+{
+ "area": "routing.interactions.actions",
+ "commit": "758e1efac7f7b00b7fbbcf6a13741249d6c3640f",
+ "files": [
+  "packages/routing/src/interactions/actions/ActionsProvider.tsx",
+  "packages/routing/src/interactions/actions/action.ts",
+  "packages/routing/src/interactions/actions/actionEnabled.ts",
+  "packages/routing/src/interactions/actions/actionIcon.typetest.ts",
+  "packages/routing/src/interactions/actions/actionIds.ts",
+  "packages/routing/src/interactions/actions/actionItems.ts",
+  "packages/routing/src/interactions/actions/actionSettings.ts",
+  "packages/routing/src/interactions/actions/actionShortcuts.ts",
+  "packages/routing/src/interactions/actions/actionTags.ts",
+  "packages/routing/src/interactions/actions/activeToolContext.tsx",
+  "packages/routing/src/interactions/actions/betweenGestures.ts",
+  "packages/routing/src/interactions/actions/binding.ts",
+  "packages/routing/src/interactions/actions/bindingOpts.ts",
+  "packages/routing/src/interactions/actions/bindingOverrides.ts",
+  "packages/routing/src/interactions/actions/buildDeps.ts",
+  "packages/routing/src/interactions/actions/defineAction.ts",
+  "packages/routing/src/interactions/actions/depNode.ts",
+  "packages/routing/src/interactions/actions/depRegistry.tsx",
+  "packages/routing/src/interactions/actions/handleWith.ts",
+  "packages/routing/src/interactions/actions/holdPreview.ts",
+  "packages/routing/src/interactions/actions/inputScope.tsx",
+  "packages/routing/src/interactions/actions/invoker.ts",
+  "packages/routing/src/interactions/actions/keyOrder.ts",
+  "packages/routing/src/interactions/actions/lastOperation.ts",
+  "packages/routing/src/interactions/actions/modifierRoles.ts",
+  "packages/routing/src/interactions/actions/overlay.ts",
+  "packages/routing/src/interactions/actions/refusal.ts",
+  "packages/routing/src/interactions/actions/registry.ts",
+  "packages/routing/src/interactions/actions/scopeNode.ts",
+  "packages/routing/src/interactions/actions/showPreview.ts",
+  "packages/routing/src/interactions/actions/toolOffhand.ts",
+  "packages/routing/src/interactions/actions/tunedForm.ts",
+  "packages/routing/src/interactions/actions/tuning.ts",
+  "packages/routing/src/interactions/actions/useCommand.ts",
+  "packages/routing/src/interactions/actions/useLastOperation.ts",
+  "packages/routing/src/interactions/actions/useOngoingAction.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/01-claude.md",
+   "costUsd": 1.6235182000000001,
+   "minutes": 5.13515,
+   "at": "2026-11-25T23:22:16.030Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.2169478,
+   "minutes": 2.8123,
+   "at": "2026-11-25T23:25:04.877Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.9545014000000003,
+   "minutes": 6.181983333333334,
+   "at": "2026-11-25T23:33:18.282Z",
+   "findings": 1
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 2.4825616,
+   "minutes": 5.325066666666666,
+   "at": "2026-11-26T16:31:15.497Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 3.1503129999999997,
+   "minutes": 7.3365833333333335,
+   "at": "2026-11-26T16:39:35.985Z",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/06-codex.md",
+   "costUsd": 0.2956876,
+   "minutes": 0.4166166666666667,
+   "at": "2026-11-26T23:22:17.449Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 9
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.6282300000000003,
+   "minutes": 2.9758999999999998,
+   "at": "2026-11-26T23:26:17.601Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.990037,
+   "minutes": 4.664933333333333,
+   "at": "2026-11-26T23:30:57.696Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.9151520000000004,
+   "minutes": 4.1505833333333335,
+   "at": "2026-11-26T23:35:07.009Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.1017424,
+   "minutes": 3.7958666666666665,
+   "at": "2026-11-26T23:38:55.027Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "An action without `requires` gets a different deps bag from `trigger`/`begin`/`preview` than from its own bindings",
+   "where": "packages/routing/src/interactions/actions/ActionsProvider.tsx:47 (depsFor)",
+   "severity": "medium",
+   "scenario": "an action declares no `requires`, and its `run` reads `deps.selection`. When the palette or a menu fires it through `ActionsRegistry.trigger`, `depsFor` hands over the fixed legacy bag (selection, scene, history, view, activeTool, booleansAdapter), so it works. When its own key binding fires it, the dispatcher builds the bag with `createActionDeps(action, …)` (walk.ts:176), which reads `requires ?? []` and passes an empty bag. In dev that bag is the undeclared-read Proxy, so `deps.selection` throws; in prod it is `undefined`. The same split shows up in `begin` vs a gesture and in `registry.preview` vs `dropPreview`. The same action should get the same deps on every path. walk.ts's comment says the bag is \"Shared with `ActionsRegistry.trigger`, including the dev undeclared-read guard\", but the legacy branch is a plain object with no guard.",
+   "fix": [
+    "packages/routing/src/interactions/actions/ActionsProvider.tsx",
+    "packages/routing/src/interactions/actions/buildDeps.ts",
+    "packages/routing/src/interactions/dispatcher/walk.ts",
+    "walk.ts"
+   ],
+   "size": "function",
+   "cause": "two dep-bag builders, one keeping a legacy fallback",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    3,
+    4,
+    7,
+    8,
+    9
+   ],
+   "sources": {
+    "claude": [
+     1,
+     2,
+     3,
+     4,
+     7,
+     8,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A merged tuning form loses the added form's name when the action's own form has no name",
+   "where": "packages/routing/src/interactions/actions/tunedForm.ts:27 (formWith)",
+   "severity": "low",
+   "scenario": "an action's own `params` form has `name: ''`, which `PrefGroup` defines as \"no heading\". A tuning adds a `form` named \"Brush\". `formWith` returns `{ ...form, ...a, … }`, so own's empty `name` overwrites \"Brush\". The last-operation panel then titles the run `schema.name || action.label`, which gives the action's label instead of \"Brush\". This contradicts formWith's own doc: \"named for `own` where it names itself\".",
+   "fix": [
+    "packages/routing/src/interactions/actions/tunedForm.ts"
+   ],
+   "size": "line",
+   "cause": "spread lets an empty name win",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "claude": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "The last-operation wrapper seals history after an ongoing action's start instead of before, so an edit made in start coalesces with the gesture's later stops",
+   "where": "packages/routing/src/interactions/actions/lastOperation.ts:283 (LastOperationKeeper.ongoing)",
+   "severity": "low",
+   "scenario": "an ongoing action that declares `params` and whose handle has `replay`, and whose `start` writes its first edit straight to the history (no journal) with later moves coalescing into it. `invoker.start(ctx, opts)` runs first, then `watchEntry(stack)` calls `stack.seal()`, so the moves' edits can no longer coalesce into the entry `start` pushed: one gesture leaves two undo entries only because a history is present and the action declares `params`. The watch also never saw that first push, so the later coalesce or push marks it unclean and the operation is not kept either. The immediate path (`wrap`) seals before running; the ongoing path should seal before `start` too (the stack is already read before `start`).",
+   "size": "line",
+   "cause": "seal ordered after start",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "An unparseable binding override warns again on every change to the actions tree",
+   "where": "packages/routing/src/interactions/actions/bindingOverrides.ts:42 (resolveBindingOverrides), called from ActionsProvider.tsx:152 (ActionsNode.overridesHere)",
+   "severity": "low",
+   "scenario": "A host passes `overrideBindings({ 'undo.key': 'Mod+Z' })`, a shortcut rather than a route.",
+   "size": "line",
+   "cause": "warning not deduplicated across cache recomputes",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    8,
+    9
+   ],
+   "sources": {
+    "claude": [
+     4,
+     8,
+     9
+    ]
+   },
+   "fix": [
+    "packages/routing/src/interactions/actions/bindingOverrides.ts"
+   ]
+  },
+  {
+   "id": "D5",
+   "claim": "withRoleMods widens a binding for a role whose old keys only an earlier role's widening admitted",
+   "where": "packages/routing/src/interactions/actions/modifierRoles.ts:72 (withRoleMods)",
+   "severity": "low",
+   "scenario": "An action declares role A with keys `['shift']` and role B with keys `['alt']`. Its binding is written with mods `{ shift: 'optional' }`, so it admits A's key and not B's. A tuning moves A to `['alt']` and B to `['ctrl']`. The loop handles A first: A's old key `shift` is admitted, so `allow('alt')` adds `alt: 'optional'` to `mods`. Then it handles B. The check `was.every((k) => admitted(mods, k))` reads that same mutated `mods`, so B's old key `alt` now passes, and `ctrl` is widened as well. Ctrl-drags now reach a binding that was never written for role B. Reverse the role declaration order and `ctrl` is not widened, so the result depends on the order roles are declared in.",
+   "fix": [
+    "packages/routing/src/interactions/actions/modifierRoles.ts"
+   ],
+   "size": "line",
+   "cause": "the admitted check reads mods being widened, not the spec's own mods",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "pushOwner's release removes the newest copy of a value pushed twice, reordering the stack",
+   "where": "packages/routing/src/interactions/actions/scopeNode.ts:123 (pushOwner)",
+   "severity": "medium",
+   "scenario": "One value is pushed twice onto the same owner stack, for example a module-constant `BindingOverrides` map or `ActionTuning` that two components pass to `overrideBindings` / `tune` on one node. Another holder's value sits between the two. The stack is `[T(first), U, T(second)]`. When the first holder releases, `lastIndexOf(value)` removes index 2, which is the second holder's slot, leaving `[T, U]`. U now beats T, although the T still registered was pushed after U and should win: \"a later one beats an earlier one in the same scope\". The doc promises that \"the release takes out *its own* entry wherever it now sits\", but with equal values it cannot find its own entry.",
+   "fix": [
+    "packages/routing/src/interactions/actions/scopeNode.ts"
+   ],
+   "size": "function",
+   "cause": "release identifies its entry by value, not by a per-push token",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    6
+   ],
+   "sources": {
+    "claude": [
+     5
+    ],
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A grouped settings form's default change params use a dotted flat key while its values and the last operation are nested",
+   "where": "packages/routing/src/interactions/actions/actionSettings.ts:56 (actionSettingsParams)",
+   "severity": "medium",
+   "scenario": "An `ActionSettings` whose schema has a group (leaf path `stroke.width`) and no `params` function. `read()` returns values nested as the groups nest, and menus and panels read them back with `prefValueAt(values, 'stroke.width')`. When that field changes, the default returns `{ 'stroke.width': v }`, a literal dotted key. The action is triggered with it, so an invoker reading `params.stroke?.width` (the nested shape that `read` and the last-operation keeper's `withValues` / `nestPrefValues` use) gets nothing, and the change is silently dropped. Only flat schemas work with the default.",
+   "fix": [
+    "packages/routing/src/interactions/actions/actionSettings.ts"
+   ],
+   "size": "line",
+   "cause": "default params not nested at the leaf path",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A variant key can equal another action's id, so a saved menu entry resolves to the wrong action",
+   "where": "packages/routing/src/interactions/actions/actionItems.ts:41 (actionItems)",
+   "severity": "medium",
+   "scenario": "Action `align` with variant `left` and a separate action `align:left` both get key `align:left`; resolveMenu matches the exact action id first and runs the separate action",
+   "fix": [
+    "packages/routing/src/interactions/actions/actionItems.ts",
+    "packages/routing/src/menus/resolveMenu.ts"
+   ],
+   "cause": "generated variant key not unique against action ids",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "handleWith's proxy breaks on a frozen handle, so reading a method throws a TypeError",
+   "where": "packages/routing/src/interactions/actions/handleWith.ts:11 (handleWith)",
+   "severity": "medium",
+   "scenario": "Ongoing action returns Object.freeze({onMove, onEnd}); a param tuning wraps it; isEmptyOngoingHandle throws on the first method read",
+   "fix": [
+    "packages/routing/src/interactions/actions/handleWith.ts"
+   ],
+   "cause": "Proxy substitutes non-configurable, non-writable properties",
+   "confidence": "sure",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "Held-key preview and release check enabled without the view id and with a made-up world point, unlike the dispatcher's admission",
+   "where": "packages/routing/src/interactions/actions/holdPreview.ts:58 (holding)",
+   "severity": "medium",
+   "scenario": "Hold bound in view `detail` with enabled true only for `detail`; dispatcher admits it, but showPreview/checkEnabled get no view, so nothing previews and release does nothing",
+   "fix": [
+    "packages/routing/src/interactions/actions/holdPreview.ts"
+   ],
+   "cause": "routing facts not carried into gate calls",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "After an id change, drive sends the new action's input to the previous action's open control",
+   "where": "packages/routing/src/interactions/actions/useOngoingAction.ts:56 (drive)",
+   "severity": "medium",
+   "scenario": "Open A with input; switch the id to B and call edit.input from a layout effect; A gets B's params and commits, and B never opens",
+   "fix": [
+    "packages/routing/src/interactions/actions/useOngoingAction.ts"
+   ],
+   "cause": "effect ordering versus the latest-id ref",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "begin admits the child's action, but an inherited parent dispatcher starts the parent's implementation without its gate",
+   "where": "packages/routing/src/interactions/actions/ActionsProvider.tsx:327 (registry.begin)",
+   "severity": "medium",
+   "scenario": "A nested InputScope with no dispatcher registers a different ongoing action at the same id; begin through the child starts the parent's action with the child's deps",
+   "fix": [
+    "packages/routing/src/interactions/actions/ActionsProvider.tsx",
+    "dispatcher/uiOngoing.ts"
+   ],
+   "cause": "dispatcher looks the id up again instead of using the admitted descriptor",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "Adjusting an immediate last operation replays raw given params, so the current tuning changes params the form doesn't show",
+   "where": "packages/routing/src/interactions/actions/lastOperation.ts:275 (LastOperationKeeper.wrap)",
+   "severity": "medium",
+   "scenario": "Thunk tuning gives axis x; trigger; change the thunk to y; adjust distance in the panel; the replay uses axis y",
+   "fix": [
+    "packages/routing/src/interactions/actions/lastOperation.ts"
+   ],
+   "cause": "immediate path doesn't capture resolved params",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A mixed modifier/letter held-key alias lets Ctrl/Cmd+letter start the offhand tool and blocks the browser chord",
+   "where": "packages/routing/src/interactions/actions/toolOffhand.ts:56 (heldKeySpec)",
+   "severity": "low",
+   "scenario": "buildToolOffhandBindings([{toolId:'hand', key:['Shift','k']}]); Cmd+K starts the hand tool and prevents the browser default",
+   "fix": [
+    "packages/routing/src/interactions/actions/toolOffhand.ts"
+   ],
+   "cause": "mods relaxation applied spec-wide",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "Shortcut lookup evaluates params thunks for bindings that have no displayable shortcut, and one can throw",
+   "where": "packages/routing/src/interactions/actions/actionShortcuts.ts:76 (bindingShortcuts)",
+   "severity": "low",
+   "scenario": "A variant with a keyboard binding and a pointer binding whose thunk needs pointer state; actionItemShortcuts runs the thunk early and it throws",
+   "fix": [
+    "packages/routing/src/interactions/actions/actionShortcuts.ts"
+   ],
+   "cause": "params evaluated before the shortcut filter",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "codex": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "A tuning's params never reach ctx.params of a UI-driven ongoing action begun without params",
+   "where": "packages/routing/src/interactions/actions/tuning.ts:93 (wrapInvoker, ongoing start)",
+   "severity": "low",
+   "scenario": "`registry.tune('opacity.set', { params: { step: 0.1 } })`, then a control calls `begin('opacity.set')` with no params (or `useOngoingAction(...).input` before any value). The dispatcher starts the invoker with `uiInvocationCtx(deps, undefined)` (`dispatcher/uiOngoing.ts:92`); `wrapInvoker` lays the tuning only when `ctx.params` is set (`ctx.params ? { ...ctx, params: base(ctx.params) } : ctx`), so the action reading `ctx.params` — where the `InvocationCtx.params` doc says UI-driven actions get theirs — sees no tuned params on start, then sees them on the first `update` that carries params. The `ActionTuning.params` doc promises \"params every invocation starts from\". The same guard on `onMove` drops them for an update with no params.",
+   "size": "line",
+   "cause": "tuning laid only over present params",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "trigger reports true (\"it ran\") when the action's run threw",
+   "where": "packages/routing/src/interactions/actions/ActionsProvider.tsx:300 (registry.trigger)",
+   "severity": "low",
+   "scenario": "`run` throws partway (say a missing dep in prod). The catch logs the error and falls through to `return true`. The contract in `registry.ts` says `trigger` returns whether it ran one, and lists every other failure as `false`. A palette or menu caller that treats `true` as \"done\" (closing, toasting success) reports success for a failed command. It should return `false` from the catch.",
+   "size": "line",
+   "cause": "catch falls through to the success return",
+   "confidence": "sure",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "A hold made by holdPreview keeps the label of the descriptor it was made from, not the live one it follows",
+   "where": "packages/routing/src/interactions/actions/holdPreview.ts:46 (holdingLive)",
+   "severity": "low",
+   "scenario": "`holdPreview(defaultAction)` is registered, and a consumer later registers a replacement under `action.id` with another label. `holdingLive` replaces the gates and invoker with the live action's but keeps `rest.label` from the hold, which is the original's label. The doc says the hold \"follows whatever that registry resolves for `action.id`: its replacement\". A keymap editor or a shortcut list showing the hold names the replaced action.",
+   "size": "line",
+   "cause": "label copied once at construction, not taken from the live action",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "Tuned, session and binding params merge shallowly, so a nested param group loses leaves",
+   "where": "packages/routing/src/interactions/actions/tuning.ts:160 (tunedParams)",
+   "severity": "low",
+   "scenario": "an action's `params` form has a group, e.g. `fill.color` and `fill.opacity`. After a last-operation adjust, the session tuning holds the nested `{ fill: { color, opacity } }` (`remember` → `nestPrefValues`). A binding or `trigger` then passes `{ fill: { color: 'red' } }`, and `tunedParams` does `{ ...out, ...given }`, which replaces the whole `fill` object, so `fill.opacity` from the session or a tuning is dropped and the run uses the action's default. `lastOperation.withValues` sets values by leaf path, so the store does treat params as nested; the layering that feeds `run`, `paramsOf` and `invokedParams` does not.",
+   "fix": [
+    "packages/routing/src/interactions/actions/tuning.ts"
+   ],
+   "size": "function",
+   "cause": "shallow spread over nested param groups",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "holdPreview of a legacy-bag action with an `eligible` rule passes only `ruleCtx`, losing every other dep",
+   "where": "packages/routing/src/interactions/actions/holdPreview.ts:52 (holding)",
+   "severity": "medium",
+   "scenario": "an action with no `requires` (so `depsFor` hands it the legacy fixed bag: selection, scene, history, view, activeTool, booleansAdapter) but with an `eligible` rule is wrapped by `holdPreview`. `holding` gives the hold `requires: [...(action.requires ?? []), 'ruleCtx']` = `['ruleCtx']`, so the hold's deps are built by `createActionDeps` from that list alone. On the press, `showPreview` calls `action.enabled` / `action.preview` with that bag; in dev the deps Proxy throws on `deps.selection` (enabled reads as `predicate-threw`, preview logs and shows nothing), in prod they read `undefined`. On release `invoker.run(ctx.deps, now)` runs without `scene`/`selection`. Expected: the hold gets the deps the action itself would get — the legacy bag plus `ruleCtx`, or the action's gates and run read through the action's own deps.",
+   "fix": [
+    "packages/routing/src/interactions/actions/holdPreview.ts",
+    "packages/routing/src/interactions/actions/ActionsProvider.tsx"
+   ],
+   "size": "function",
+   "cause": "`requires` added where the action declared none flips it from the legacy bag to declared deps",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "adjust stores session params for an action whose tuning `keep`s them, so they surface once that tuning is removed",
+   "where": "packages/routing/src/interactions/actions/lastOperation.ts:259 (LastOperationKeeper.adjust → remember)",
+   "severity": "low",
+   "scenario": "a tool's options tuning with `keep` is live for action X; the user changes a value in the last-operation panel. `adjust` calls `held.keep(...)` (correct) and also `this.remember(id, values)` unconditionally. `tuningsOf` hides the session tuning only while a `keep` tuning is present; after a tool switch releases that tuning, the stale session params come back and are laid over every `under` tuning (tool defaults) for the rest of the session. docs/unruled.md (round fourteen) rules that such an action \"stores no session params\". Expected: skip `remember` when a tuning of `id` keeps the params.",
+   "fix": [
+    "packages/routing/src/interactions/actions/lastOperation.ts",
+    "packages/routing/src/interactions/actions/ActionsProvider.tsx"
+   ],
+   "size": "line",
+   "cause": "session write not gated on a keeping tuning",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A yoke member mounted under another `<ActionsProvider>` takes that provider's menu host instead of its yoke tree's",
+   "where": "packages/routing/src/interactions/actions/inputScope.tsx:68 (Provide)",
+   "severity": "low",
+   "scenario": "`useYoke()` is called under ActionsProvider P1; a canvas `<InputScope yoke={yoke}>` sits elsewhere, under ActionsProvider P2 (the `Yoke` doc says members \"can sit anywhere in the tree\"). Its actions/deps/tool nodes hang on P1's tree, but `Provide` takes `useContext(MenuHostContext)`, which is P2's, before falling back to `nodes.actions.menuHost()`. Context menus and menu rows inside that canvas list and trigger P2's actions against P2's active scope, never the canvas's own. Expected: use the menu host of the tree the nodes belong to (`nodes.actions.menuHost()`), which already returns the root's shared host.",
+   "size": "line",
+   "cause": "menu host chosen by React location rather than by the node's tree",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  }
+ ],
+ "lines": 4087
+}

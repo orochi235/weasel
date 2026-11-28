@@ -1,0 +1,73 @@
+{
+ "area": "theme.engine",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/theme/src/engine/axisIssues.ts",
+  "packages/theme/src/engine/bake.ts",
+  "packages/theme/src/engine/color/generate.ts",
+  "packages/theme/src/engine/color/hueNames.ts",
+  "packages/theme/src/engine/color/hueSearch.ts",
+  "packages/theme/src/engine/color/oklch.ts",
+  "packages/theme/src/engine/color/paletteStats.ts",
+  "packages/theme/src/engine/color/placement.ts",
+  "packages/theme/src/engine/definition.fixture.ts",
+  "packages/theme/src/engine/deps.ts",
+  "packages/theme/src/engine/derive.ts",
+  "packages/theme/src/engine/emit/css.ts",
+  "packages/theme/src/engine/emit/dtcg.ts",
+  "packages/theme/src/engine/emit/e.tokens.css",
+  "packages/theme/src/engine/emit/manifest.ts",
+  "packages/theme/src/engine/emit/themes.ts",
+  "packages/theme/src/engine/emit/tokens.ts",
+  "packages/theme/src/engine/entries.ts",
+  "packages/theme/src/engine/merge.ts",
+  "packages/theme/src/engine/pinValues.ts",
+  "packages/theme/src/engine/ramps.ts",
+  "packages/theme/src/engine/references.ts",
+  "packages/theme/src/engine/ruleShape.ts",
+  "packages/theme/src/engine/safeNames.ts",
+  "packages/theme/src/engine/scales.ts",
+  "packages/theme/src/engine/semantics.ts",
+  "packages/theme/src/engine/steps.ts",
+  "packages/theme/src/engine/tokenSink.ts",
+  "packages/theme/src/engine/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2143836,
+   "minutes": 0.22965,
+   "at": "2026-11-26T23:57:18.056Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "DTCG alias points into the type group of the target's first axis branch, not the type group the target is emitted under for that variant",
+   "where": "packages/theme/src/engine/emit/dtcg.ts:62",
+   "severity": "low",
+   "scenario": "A token is `number` in one mode and `dimension` in another; an alias to it in the `dimension` mode still points into the `number` group, so a reader following literal DTCG paths cannot find the target",
+   "fix": [
+    "packages/theme/src/engine/emit/dtcg.ts"
+   ],
+   "size": "line",
+   "cause": "alias type taken from first axis branch, not per-variant leaf",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3262
+}

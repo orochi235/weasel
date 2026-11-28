@@ -1,0 +1,74 @@
+{
+ "area": "loupe",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/loupe/src/actionParamSchema.ts",
+  "packages/loupe/src/actions.ts",
+  "packages/loupe/src/aim.ts",
+  "packages/loupe/src/canvasSource.ts",
+  "packages/loupe/src/eyedropper.ts",
+  "packages/loupe/src/geometry.ts",
+  "packages/loupe/src/index.ts",
+  "packages/loupe/src/model.ts",
+  "packages/loupe/src/pbt.fixture.ts",
+  "packages/loupe/src/sampler.ts",
+  "packages/loupe/src/zoomStops.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1692434,
+   "minutes": 0.19495,
+   "at": "2026-11-26T05:13:28.147Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A throwing requestRedraw on first retain leaves the readers count incremented with no release, stranding a phantom reader.",
+   "where": "packages/loupe/src/canvasSource.ts:229 (retain)",
+   "severity": "medium",
+   "scenario": "The supplied requestRedraw throws during the first retain; readers stays at 1 with no release; frames keep being copied; the next real first reader skips the redraw.",
+   "fix": [
+    "packages/loupe/src/canvasSource.ts"
+   ],
+   "size": "line",
+   "cause": "count incremented before a call that can throw",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A zero-area source box falls back to scale 1 and still returns sampled color, so it can hide a visible layer below.",
+   "where": "packages/loupe/src/sampler.ts:139 (canvasPixelSource)",
+   "severity": "medium",
+   "scenario": "A source box of zero width or height whose backing canvas is populated, stacked above a visible layer; sampling near its origin returns its pixel instead of the lower layer's.",
+   "fix": [
+    "packages/loupe/src/sampler.ts"
+   ],
+   "size": "line",
+   "cause": "zero extent falls back to scale 1 instead of being treated as empty",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1275
+}

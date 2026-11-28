@@ -1,0 +1,53 @@
+{
+ "area": "ui.components.MenuBar",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/MenuBar/MenuBar.module.css",
+  "packages/ui/src/components/MenuBar/MenuBar.stories.module.css",
+  "packages/ui/src/components/MenuBar/MenuBar.stories.tsx",
+  "packages/ui/src/components/MenuBar/MenuBar.tsx",
+  "packages/ui/src/components/MenuBar/MenuBarTitle.tsx",
+  "packages/ui/src/components/MenuBar/index.ts",
+  "packages/ui/src/components/MenuBar/menuBarHandle.ts",
+  "packages/ui/src/components/MenuBar/menuBarTitles.ts",
+  "packages/ui/src/components/MenuBar/useMenuBarFocus.ts",
+  "packages/ui/src/components/MenuBar/useMenuBarKeys.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2152436,
+   "minutes": 0.4053333333333333,
+   "at": "2026-11-27T00:28:10.013Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "In a same-origin popout, focus capture uses the parent realm's Element/HTMLElement and activeElement, so the focus-return target is rejected and focus isn't restored when leaving the menu bar",
+   "where": "packages/ui/src/components/MenuBar/useMenuBarFocus.ts:57",
+   "severity": "low",
+   "scenario": "MenuBar rendered from the parent window into a same-origin popout; leaving the menu bar blurs the title and focus doesn't return to the popout control that held it before",
+   "fix": [
+    "packages/ui/src/components/MenuBar/useMenuBarFocus.ts"
+   ],
+   "cause": "cross-realm instanceof and the wrong document's activeElement",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 625
+}

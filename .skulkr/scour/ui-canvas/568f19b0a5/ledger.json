@@ -1,0 +1,81 @@
+{
+ "area": "ui-canvas",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotDataPanel.module.css",
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotDataPanel.stories.tsx",
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotDataPanel.tsx",
+  "packages/ui-canvas/src/components/PlotDataPanel/PlotTableView.tsx",
+  "packages/ui-canvas/src/components/PlotDataPanel/index.ts",
+  "packages/ui-canvas/src/components/PlotDataPanel/rowIds.ts",
+  "packages/ui-canvas/src/components/PlotDataPanel/valueControl.ts",
+  "packages/ui-canvas/src/components/Rulers/Rulers.module.css",
+  "packages/ui-canvas/src/components/Rulers/Rulers.stories.module.css",
+  "packages/ui-canvas/src/components/Rulers/Rulers.stories.tsx",
+  "packages/ui-canvas/src/components/Rulers/Rulers.tsx",
+  "packages/ui-canvas/src/components/Rulers/index.ts",
+  "packages/ui-canvas/src/components/SceneGradientHandles/SceneGradientHandles.tsx",
+  "packages/ui-canvas/src/components/SceneGradientHandles/index.ts",
+  "packages/ui-canvas/src/components/SceneLayerList/index.ts",
+  "packages/ui-canvas/src/components/SceneLayerList/useSceneLayerList.ts",
+  "packages/ui-canvas/src/components/inspector/AnchorFields/AnchorFields.stories.tsx",
+  "packages/ui-canvas/src/components/inspector/AnchorFields/AnchorFields.tsx",
+  "packages/ui-canvas/src/components/inspector/AnchorFields/index.ts",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/CharacterOptions.stories.tsx",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/CharacterOptions.tsx",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/characterSchema.ts",
+  "packages/ui-canvas/src/components/inspector/CharacterOptions/index.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.module.css",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.stories.module.css",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.stories.tsx",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/SelectionPanel.tsx",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/commitLeaf.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/declaredFields.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/index.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/nodeModel.ts",
+  "packages/ui-canvas/src/components/inspector/SelectionPanel/scopes.ts",
+  "packages/ui-canvas/src/icons.gen.ts",
+  "packages/ui-canvas/src/index.ts",
+  "packages/ui-canvas/src/kitIcons.ts",
+  "packages/ui-canvas/src/pbt.fixture.ts",
+  "packages/ui-canvas/src/testing/rectScene.ts",
+  "packages/ui-canvas/src/testing/withIcons.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2138836,
+   "minutes": 0.18705,
+   "at": "2026-11-27T00:15:49.334Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Declined table edits keep their proposed chart snapshots in `pending`, which grows while the host keeps the same `data` object",
+   "where": "packages/ui-canvas/src/components/PlotDataPanel/rowIds.ts:39",
+   "severity": "low",
+   "scenario": "A controlled host declines edits by keeping the same `data` object; each insert, removal or move attempt adds to `pending`, which grows for as long as the panel stays mounted with that chart",
+   "fix": [
+    "packages/ui-canvas/src/components/PlotDataPanel/rowIds.ts"
+   ],
+   "cause": "pending is cleared only when the data identity changes",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2254
+}

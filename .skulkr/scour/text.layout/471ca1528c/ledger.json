@@ -1,0 +1,364 @@
+{
+ "area": "text.layout",
+ "commit": "471ca1528c407484acdf7c57c5ade381f11336f3",
+ "files": [
+  "packages/text/src/layout/arrayPool.ts",
+  "packages/text/src/layout/bidiLines.ts",
+  "packages/text/src/layout/bidiRegistry.ts",
+  "packages/text/src/layout/bidiSeam.ts",
+  "packages/text/src/layout/decorationMetrics.ts",
+  "packages/text/src/layout/engineGeneration.ts",
+  "packages/text/src/layout/engineSlot.ts",
+  "packages/text/src/layout/glyphQuads.ts",
+  "packages/text/src/layout/layoutCache.ts",
+  "packages/text/src/layout/layoutColumns.ts",
+  "packages/text/src/layout/layoutEntries.ts",
+  "packages/text/src/layout/layoutLines.ts",
+  "packages/text/src/layout/layoutOpts.ts",
+  "packages/text/src/layout/layoutRuns.ts",
+  "packages/text/src/layout/lineBreak/lineBreakTable.ts",
+  "packages/text/src/layout/lineBreak/lineBreaks.ts",
+  "packages/text/src/layout/lineBreak/wrapLines.ts",
+  "packages/text/src/layout/mirrorEntries.ts",
+  "packages/text/src/layout/paintCache.ts",
+  "packages/text/src/layout/paintGroups.ts",
+  "packages/text/src/layout/paintRuns.ts",
+  "packages/text/src/layout/runsEntries.ts",
+  "packages/text/src/layout/runsKey.ts",
+  "packages/text/src/layout/shapedRuns.ts",
+  "packages/text/src/layout/shaperRegistry.ts",
+  "packages/text/src/layout/shaperSeam.ts",
+  "packages/text/src/layout/tabStops.ts",
+  "packages/text/src/layout/testing/fontFixtures.ts",
+  "packages/text/src/layout/testing/layoutAndPaint.ts",
+  "packages/text/src/layout/textFit.ts",
+  "packages/text/src/layout/textPoseLayout.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/01-claude.md",
+   "costUsd": 2.3555826,
+   "minutes": 6.29245,
+   "at": "2026-11-27T23:22:53.114Z",
+   "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 2.7114808,
+   "minutes": 7.411666666666667,
+   "at": "2026-11-27T23:30:18.047Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 6
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.7361156,
+   "minutes": 7.658083333333334,
+   "at": "2026-11-27T23:37:57.839Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 2.9500206,
+   "minutes": 13.922616666666666,
+   "at": "2026-11-27T23:51:53.438Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.547518,
+   "minutes": 6.583833333333334,
+   "at": "2026-11-27T23:58:28.659Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Line-breaking and measuring scratch grows to the longest text ever laid out and keeps its entries alive",
+   "where": "packages/text/src/layout/layoutLines.ts:83 (module `sum`, `tabs`, `broken`), packages/text/src/layout/layoutRuns.ts:200 (`ENTRIES`, `CPS`)",
+   "severity": "low",
+   "scenario": "one layout of a 1,000,000-code-point text (a pasted document, a log viewer) grows `sum` to 1M doubles (8 MB) through `doubles(entries.length + 1)`. Nothing ever shrinks it. `ENTRIES` keeps a reference to every `Entry` of that layout until the next layout runs. That includes the entries past `POOL_MAX` and every tab copy, along with their `ResolveResult`, metrics and atlas refs. `CPS` keeps 1M numbers, and the `broken` lines in use keep their `entries` arrays. The scratch everywhere else in this area stops at 1 << 16 and builds a call's own past that: `lineBreaks` `SCRATCH_MAX`, `wrapLines` `BREAK_SCRATCH_MAX`, `layoutEntries` `JOINED_ENDS_MAX`, `paintRuns` `SCRATCH_MAX`, `arrayPool` `TEMPLATE_LIMIT`. Expected: these follow the same rule, or are cut back after a call that overran it.",
+   "fix": [
+    "packages/text/src/layout/layoutLines.ts",
+    "packages/text/src/layout/layoutRuns.ts"
+   ],
+   "size": "function",
+   "cause": "unbounded module scratch",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    3
+   ],
+   "sources": {
+    "claude": [
+     1,
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A blank line in a right-to-left paragraph aligns as left-to-right under `direction: 'auto'`",
+   "where": "packages/text/src/layout/layoutRuns.ts:244 (layoutRuns, `reads`)",
+   "severity": "low",
+   "scenario": "take `\"שלום\\n\\nעולם\"` with `align: 'start'` (or `'end'`), `direction: 'auto'` and a bidi engine. The empty middle line gets `reads = directionOfLevel(0)`, which is `'ltr'`, because `line.entries.length === 0`. `alignOffset` then sets its zero-width box (`x0 === x1`, the line's only caret stop) at the left edge, while both neighboring lines sit at the right edge. The caret on the empty line jumps to the opposite side of the box. Expected: an empty line takes the direction of the text around it (the previous paragraph's, or the first resolved one) rather than defaulting to LTR.",
+   "size": "line",
+   "cause": "blank line has no paragraph, defaults to level 0",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    5
+   ],
+   "sources": {
+    "claude": [
+     1,
+     5
+    ]
+   },
+   "fix": [
+    "packages/text/src/layout/layoutRuns.ts"
+   ]
+  },
+  {
+   "id": "D3",
+   "claim": "Justify widens only U+0020, so gaps of no-break space stay narrow",
+   "where": "packages/text/src/layout/layoutLines.ts:228 (wordGaps)",
+   "severity": "low",
+   "scenario": "under `align: 'justify'`, a wrapped line `\"10 km and more\"` widens only its U+0020 gaps; the U+00A0 between `10` and `km` keeps its natural width. CSS Text counts U+00A0 (and U+3000, U+1361, etc.) as word-separator characters that justification expands. Expected: every word separator gets an equal share of the slack.",
+   "size": "line",
+   "cause": "word separator tested as cp === 32 only",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "claude": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "LB20a does not hold a word-initial hyphen before a Hebrew letter",
+   "where": "packages/text/src/layout/lineBreak/lineBreaks.ts:186 (decide)",
+   "severity": "low",
+   "scenario": "UAX #14 (Unicode 15.1+/16.0, the table's version) LB20a is `( sot | BK | CR | LF | NL | SP | ZW | CB | GL ) ( HY | ‐ ) × ( AL | HL )`. The code tests only `B === AL`, so for `\"-שלום\"` at the start of a text, or after a space, the pair HY HL falls through: LB21 does not apply (B is HL, not BA/HY/NS), LB21a needs an HL before the hyphen, and LB28 needs A alpha. The result is BREAK_ALLOWED at position 1, so the wrap can leave the hyphen alone on one line. It should be NO_BREAK.",
+   "fix": [
+    "packages/text/src/layout/lineBreak/lineBreaks.ts"
+   ],
+   "size": "line",
+   "cause": "rule transcribed as `× AL` instead of `× (AL | HL)`",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Recycled LayoutColumns in the spare pool keep every line box of the layout they held alive",
+   "where": "packages/text/src/layout/layoutColumns.ts:93 (LayoutColumns.recycle)",
+   "severity": "low",
+   "scenario": "`recycle()` gives back `num` and `ref` but leaves `boxes` (one `LineBox` per line) and `laid` as they are, then pushes the columns onto `spare`, which holds up to 1024. A 50,000-line text whose layout is released (for example by `evictRuns`, or by textFit's `boundsAt`) leaves 50,000 LineBox objects reachable from the spare pool. They stay until the next `take()` happens to pop those exact columns and `layoutRuns` sets `lines.length` back down. The pool caps how many columns it holds, but not how much any one of them holds.",
+   "fix": [
+    "packages/text/src/layout/layoutColumns.ts"
+   ],
+   "size": "function",
+   "cause": "spare pool bounded by count, not size",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "The array pool never evicts, so sizes nobody requests again fill it and block it permanently",
+   "where": "packages/text/src/layout/arrayPool.ts:48 (give)",
+   "severity": "low",
+   "scenario": "`give` turns an array away once `held + n > ARRAY_POOL_LIMIT`, and nothing ever drops a held array except a `take` of that exact length. Suppose a readout's text passes through many lengths, or a few large paragraphs are released. The pool fills with lengths that never recur, and from then on every `giveDoubles` and `giveRefs` is refused. Per-frame layouts go back to allocating, which is the thing the pool exists to prevent. Empty buckets also stay in the `Map` for every length ever pooled.",
+   "fix": [
+    "packages/text/src/layout/arrayPool.ts"
+   ],
+   "size": "function",
+   "cause": "no eviction policy on a full pool",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "The RTL-without-engine warning misses N'Ko, Samaritan and Mandaic",
+   "where": "packages/text/src/layout/bidiRegistry.ts:68 (RTL_BLOCKS)",
+   "severity": "low",
+   "scenario": "the ranges `[0x0600, 0x07bf]` and `[0x0860, 0x08ff]` leave out U+07C0–U+085F: N'Ko (07C0–07FF), Samaritan (0800–083F) and Mandaic (0840–085F), all Bidi_Class R. N'Ko text laid out with no engine registered draws reversed and never warns.",
+   "fix": [
+    "packages/text/src/layout/bidiRegistry.ts"
+   ],
+   "size": "line",
+   "cause": "block table gap",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "The shaping-without-engine warning misses Mandaic",
+   "where": "packages/text/src/layout/shaperRegistry.ts:83 (SHAPED_BLOCKS)",
+   "severity": "low",
+   "scenario": "Mandaic (U+0840–U+085F) is a joining script, but `[0x0600, 0x07ff]` and `[0x0860, 0x08ff]` skip it. Mandaic text laid out with no shaper is drawn unjoined, and the warning does not fire.",
+   "fix": [
+    "packages/text/src/layout/shaperRegistry.ts"
+   ],
+   "size": "line",
+   "cause": "block table gap",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "evictRunsForRefill blanks only the last structural entry a runs array filled, so other entries keep comparing against the refilled array",
+   "where": "packages/text/src/layout/layoutCache.ts:270 (evictRunsForRefill)",
+   "severity": "medium",
+   "scenario": "one runs array R is laid out under two option sets (say two `alignWidth`s). Each miss fills a structural entry (S1, then S2), and `entry.listed` is overwritten to S2. `evictRunsForRefill(R)` blanks S2 only, so S1 still holds `runs: R` with R's old hash. The caller then refills R in place with a change `runsHash` does not see: toggling small caps changes only `sizeMap`, and swapping `fontFeatures` for a list of the same length changes only their contents. `cachedLayoutRuns(R, opts1)` misses the emptied variants. In the structural list S1's hash still equals the new hash, `matches` passes, and `sameRuns(S1.runs, R)` compares R with itself and returns true, so the layout of R's old content is returned. Expected: a fresh layout. Even when the hash does change, S1 keeps its layout `listed` and R pinned until the LRU evicts it.",
+   "fix": [
+    "packages/text/src/layout/layoutCache.ts",
+    "packages/text/src/layout/runsEntries.ts"
+   ],
+   "size": "function",
+   "cause": "one `listed` slot per runs entry, though several structural entries can hold the same runs",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "registerTallFont leaves global.fetch stubbed when the registration throws",
+   "where": "packages/text/src/layout/testing/fontFixtures.ts:39 (registerTallFont)",
+   "severity": "low",
+   "scenario": "if `registerFont('tall', …)` rejects (for example, the font was already registered under a conflicting entry, or the prior stub rejects the png URL), the line `global.fetch = prior` never runs. Every later test in that worker then fetches through the tall-font wrapper rather than the stub it installed. The restore should sit in a `finally`.",
+   "size": "line",
+   "cause": "restore not in finally",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "evictRuns leaves the entry's painting keyed on the runs it drops, so a later key built from a refilled array can match stale painting",
+   "where": "packages/text/src/layout/layoutCache.ts:221 (evictRuns)",
+   "severity": "low",
+   "scenario": "Runs array A is painted on layout L. That painting `p` has `key === null` and `p.runs === A`, and sits in L's paintings list. L stays alive because another runs array W owns it through a structural hit. The caller calls `evictRuns(A)`, whose doc says passing A again \"is only a cache miss\", then rewrites A in place with new paints and lays it out again. Later W misses its own painting (the glyph generation moved, or the outline bucket changed) and searches L's list. `keyOf(p)` now builds the key from A's *new* paints. If those equal W's paints, W is handed `p`, whose groups and decorations carry A's *old* fills. `evictRunsForRefill` avoids this by calling `settlePainting(p, runs)`; `evictRuns` does not.",
+   "fix": [
+    "packages/text/src/layout/layoutCache.ts"
+   ],
+   "size": "line",
+   "cause": "the lazy painting key is not settled on evict",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "The array pool never deletes an emptied bucket, so its map grows with every distinct length ever handed back",
+   "where": "packages/text/src/layout/arrayPool.ts:39 (take / give)",
+   "severity": "low",
+   "scenario": "Text whose length varies (readouts, typed input, many different labels) gives back column and quad arrays of many distinct lengths (`size*13`, `size*5`, `count*11`). `take` drains a bucket to `n === 0` but leaves the `Map` entry, and its `items` array keeps its peak length. Element count is capped by `ARRAY_POOL_LIMIT`, but the number of buckets and the size of their slot arrays are not. A long session accumulates an entry for every length seen.",
+   "fix": [
+    "packages/text/src/layout/arrayPool.ts"
+   ],
+   "size": "line",
+   "cause": "the cache has no bound on its keys",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  }
+ ],
+ "lines": 4610
+}

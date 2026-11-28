@@ -1,0 +1,137 @@
+{
+ "area": "stroke",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/stroke/src/index.ts",
+  "packages/stroke/src/markerHeads.ts",
+  "packages/stroke/src/markerInset.ts",
+  "packages/stroke/src/markerSites.ts",
+  "packages/stroke/src/offsetPath.ts",
+  "packages/stroke/src/pbt.fixture.ts",
+  "packages/stroke/src/strokeAtScale.ts",
+  "packages/stroke/src/strokeEdge.ts",
+  "packages/stroke/src/strokeMarkerShapes.ts",
+  "packages/stroke/src/strokeMarkers.ts",
+  "packages/stroke/src/strokeToPath.ts",
+  "packages/stroke/src/tessellate/dash.ts",
+  "packages/stroke/src/tessellate/expandPolyline.ts",
+  "packages/stroke/src/tessellate/flattening.ts",
+  "packages/stroke/src/tessellate/innerJoins.ts",
+  "packages/stroke/src/tessellate/insets.ts",
+  "packages/stroke/src/tessellate/metric.ts",
+  "packages/stroke/src/tessellate/nib.ts",
+  "packages/stroke/src/tessellate/ribbon.ts",
+  "packages/stroke/src/tessellate/ribbonWindow.ts",
+  "packages/stroke/src/tessellate/stroke.ts",
+  "packages/stroke/src/tessellate/vertexWidths.ts",
+  "packages/stroke/src/test-seams.ts",
+  "packages/stroke/src/trim/clipRibbon.ts",
+  "packages/stroke/src/trim/clipWindow.ts",
+  "packages/stroke/src/trim/resolveTrim.ts",
+  "packages/stroke/src/trim/trimPathEnds.ts",
+  "packages/stroke/src/trim/trimSpan.ts",
+  "packages/stroke/src/trim/trimmedPath.ts",
+  "packages/stroke/src/trim/windowPolylines.ts",
+  "packages/stroke/src/wideStrokeUnion.bench.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2454836,
+   "minutes": 0.24185,
+   "at": "2026-11-26T23:10:23.376Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Stroke-edge query ignores stroke.trim, reporting edges on trimmed-away sections and when nothing is drawn",
+   "where": "packages/stroke/src/strokeEdge.ts:72",
+   "severity": "medium",
+   "scenario": "A stroke with a trim window excluding part of the path (or the whole path): the query returns a nearby edge on the excluded section, and a width handle using it locates ink that isn't drawn",
+   "fix": [
+    "packages/stroke/src/strokeEdge.ts"
+   ],
+   "cause": "trim not applied before edge query",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Metric normalization yields NaN when squaring a large anisotropic coefficient overflows while the determinant is finite",
+   "where": "packages/stroke/src/tessellate/metric.ts:69",
+   "severity": "low",
+   "scenario": "Finite, highly anisotropic coefficients: the square overflows to Infinity, normalization divides Infinity by Infinity, and a NaN coefficient reaches coordinate transforms",
+   "fix": [
+    "packages/stroke/src/tessellate/metric.ts"
+   ],
+   "cause": "unscaled squaring overflows",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A large finite uniform similarity overflows the determinant and is reported singular",
+   "where": "packages/stroke/src/tessellate/metric.ts:69",
+   "severity": "low",
+   "scenario": "Large uniform-scale matrix: the determinant overflows to Infinity and the metric is treated as singular",
+   "fix": [
+    "packages/stroke/src/tessellate/metric.ts"
+   ],
+   "cause": "determinant computed without scaling",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Absolute 1e-9 segment tolerance makes short dashed paths with proportionally short patterns lose their gaps",
+   "where": "packages/stroke/src/tessellate/dash.ts:166",
+   "severity": "low",
+   "scenario": "Scale the path and dash pattern down together: the run budget is unchanged, but segments under the absolute 1e-9 tolerance are treated as coincident points and dashed as solid",
+   "fix": [
+    "packages/stroke/src/tessellate/dash.ts"
+   ],
+   "cause": "absolute tolerance instead of relative",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3497
+}

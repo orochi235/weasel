@@ -1,0 +1,61 @@
+{
+ "area": "ui.components.PanelCells",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/PanelCells/LabeledRow.tsx",
+  "packages/ui/src/components/PanelCells/ObjectLeaf.tsx",
+  "packages/ui/src/components/PanelCells/PanelCells.module.css",
+  "packages/ui/src/components/PanelCells/cells.tsx",
+  "packages/ui/src/components/PanelCells/conditions.ts",
+  "packages/ui/src/components/PanelCells/index.ts",
+  "packages/ui/src/components/PanelCells/model.ts",
+  "packages/ui/src/components/PanelCells/nodeBounds.ts",
+  "packages/ui/src/components/PanelCells/objectField.tsx",
+  "packages/ui/src/components/PanelCells/objectFieldRows.tsx",
+  "packages/ui/src/components/PanelCells/panelCells.ts",
+  "packages/ui/src/components/PanelCells/panelSections.tsx",
+  "packages/ui/src/components/PanelCells/panelSource.ts",
+  "packages/ui/src/components/PanelCells/renderContext.ts",
+  "packages/ui/src/components/PanelCells/renderLeaf.tsx",
+  "packages/ui/src/components/PanelCells/sameMeaning.ts",
+  "packages/ui/src/components/PanelCells/selection.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2140516,
+   "minutes": 0.23343333333333333,
+   "at": "2026-11-27T00:30:42.157Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Path writer clones arrays with iterable spread, so editing one index fills holes in a sparse array (and in nested arrays along the path) with own undefined entries",
+   "where": "packages/ui/src/components/PanelCells/model.ts:268 (path writer)",
+   "severity": "low",
+   "scenario": "Editing index 1 of [ , 'old'] creates an own property with value undefined at index 0; consumers that tell absent entries from explicit undefined see a change outside the edited property",
+   "fix": [
+    "packages/ui/src/components/PanelCells/model.ts"
+   ],
+   "size": "line",
+   "cause": "iterable spread used to clone arrays",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1860
+}

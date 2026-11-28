@@ -1,0 +1,73 @@
+{
+ "area": "labkit.lab.part1",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/lab/Lab.less",
+  "packages/labkit/src/lab/Lab.stories.less",
+  "packages/labkit/src/lab/Lab.stories.tsx",
+  "packages/labkit/src/lab/Lab.tsx",
+  "packages/labkit/src/lab/LabActions.tsx",
+  "packages/labkit/src/lab/LabBoundary.tsx",
+  "packages/labkit/src/lab/LabCommands.tsx",
+  "packages/labkit/src/lab/LabContext.ts",
+  "packages/labkit/src/lab/LabFullChrome.stories.tsx",
+  "packages/labkit/src/lab/LabHeader.tsx",
+  "packages/labkit/src/lab/LabMenuBar.tsx",
+  "packages/labkit/src/lab/LabPage.tsx",
+  "packages/labkit/src/lab/LabPalette.tsx",
+  "packages/labkit/src/lab/LabPanes.tsx",
+  "packages/labkit/src/lab/LabProviders.tsx",
+  "packages/labkit/src/lab/LabRoot.tsx",
+  "packages/labkit/src/lab/LabRuntimeContexts.tsx",
+  "packages/labkit/src/lab/LabShell.less",
+  "packages/labkit/src/lab/LabShell.stories.tsx",
+  "packages/labkit/src/lab/LabShell.tsx",
+  "packages/labkit/src/lab/LabShortcutSheet.tsx",
+  "packages/labkit/src/lab/LabSurface.tsx",
+  "packages/labkit/src/lab/LabSwitcher.less",
+  "packages/labkit/src/lab/LabSwitcher.tsx",
+  "packages/labkit/src/lab/LabZoom.tsx",
+  "packages/labkit/src/lab/LentTopBuffer.tsx",
+  "packages/labkit/src/lab/PresentedTransport.tsx",
+  "packages/labkit/src/lab/TileGrip.stories.tsx",
+  "packages/labkit/src/lab/TileGrip.tsx",
+  "packages/labkit/src/lab/TrialWorkspace.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16299840000000002,
+   "minutes": 0.14416666666666667,
+   "at": "2026-11-26T05:10:00.471Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Lab switcher reads location.hash only at render and never subscribes to hash changes, so its current-page marker goes stale after Back/Forward or external hash navigation",
+   "where": "packages/labkit/src/lab/LabSwitcher.tsx:112",
+   "severity": "medium",
+   "scenario": "Switcher retained across same-document hash routes; browser Back/Forward or a link elsewhere changes the hash; switcher keeps marking the previous page until some unrelated render",
+   "fix": [
+    "packages/labkit/src/lab/LabSwitcher.tsx"
+   ],
+   "size": "line",
+   "cause": "no hashchange/popstate subscription",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2883
+}

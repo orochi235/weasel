@@ -1,0 +1,53 @@
+{
+ "area": "p-touch",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/p-touch/src/index.ts",
+  "packages/p-touch/src/lbx/carried.ts",
+  "packages/p-touch/src/lbx/sceneLbx.ts",
+  "packages/p-touch/src/lbx/shapes.ts",
+  "packages/p-touch/src/lbx/style.ts",
+  "packages/p-touch/src/lbx/writeLbx.ts",
+  "packages/p-touch/src/pbt.fixture.ts",
+  "packages/p-touch/src/print.ts",
+  "packages/p-touch/src/render.ts",
+  "packages/p-touch/src/tape.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16379339999999998,
+   "minutes": 0.1229,
+   "at": "2026-11-26T05:14:48.134Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Destination-dependent group composites rasterize onto a clear target in a separate run, so they never erase preceding native LBX objects and no skip reason is given",
+   "where": "packages/p-touch/src/lbx/writeLbx.ts:145",
+   "severity": "medium",
+   "scenario": "A solid black rectangle exported as a native LBX object, followed by a group with composite destination-out whose opaque child overlaps it: the canvas erases the overlap, but the export keeps the rectangle whole and reports nothing",
+   "fix": [
+    "packages/p-touch/src/lbx/writeLbx.ts"
+   ],
+   "size": "design",
+   "cause": "raster runs split at native object boundaries render without backdrop",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1020
+}

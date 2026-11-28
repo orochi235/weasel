@@ -16,7 +16,48 @@
    "minutes": 0.10185,
    "at": "2026-11-25T21:11:46.000Z",
    "findings": 0
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.31305540000000004,
+   "minutes": 0.5334,
+   "at": "2026-11-27T00:13:20.521Z",
+   "findings": 0
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.23873200000000003,
+   "minutes": 0.85285,
+   "at": "2026-11-27T00:14:12.267Z",
+   "findings": 0
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.2604278,
+   "minutes": 0.8986333333333333,
+   "at": "2026-11-27T00:15:06.836Z",
+   "findings": 0
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.14401899999999998,
+   "minutes": 0.5541333333333334,
+   "at": "2026-11-27T00:15:41.428Z",
+   "findings": 0
   }
  ],
- "defects": []
+ "defects": [],
+ "lines": 69
 }

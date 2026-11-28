@@ -1,11 +1,11 @@
 # editing.actions.move: saturation
 
-Repeated blind reviews of the area `editing.actions.move` (33 files) at the frozen commit
-`e368628b30`, with no fixes between them, from `codex`.
+Repeated blind reviews of the area `editing.actions.move` (33 files, 3108 lines) at the frozen commit
+`e368628b30`, with no fixes between them, from `codex`, `claude`.
 Each occasion is one review, or one ingested report; its findings are matched against the ledger of distinct
-defects so far. Reviews stop once fewer than one defect is estimated unseen, the chance that the next occasion
-finds something new falls under 15%, or 40 occasions have run.
-Not stopped yet. `skulkr saturate report editing.actions.move` rewrites this file from the ledger.
+defects so far. Reviews stop once fewer than 1 defect per thousand lines is estimated unseen, the chance that the next occasion
+finds something new falls under 15%, the next defect would cost over $1.49, or 40 occasions have run.
+Stopped: ready to fix: 8.4 known defects per thousand lines, at least 5. The next defect should cost about $1.18. `skulkr scour report editing.actions.move` rewrites this file from the ledger.
 
 ## Yield by occasion
 
@@ -16,22 +16,64 @@ occasion up to the row has cost, divided by the distinct defects found so far.
 |   # | source | findings | new | distinct |  Q1 |  Q2 | est. total | unseen | next-new |  cost | $/defect | minutes |
 |----:|--------|---------:|----:|---------:|----:|----:|-----------:|-------:|---------:|------:|---------:|--------:|
 |   1 | codex  |        2 |   2 |        2 |   2 |   0 |          – |      – |        – | $0.16 |    $0.08 |     0.1 |
+|   2 | claude |        2 |   2 |        4 |   4 |   0 |        7.0 |    3.0 |   100.0% | $1.07 |    $0.31 |     3.0 |
+|   3 | claude |        3 |   3 |        7 |   7 |   0 |       21.0 |   14.0 |   100.0% | $3.95 |    $0.74 |     9.7 |
+|   4 | claude |        7 |   6 |       13 |  12 |   1 |       67.0 |   54.0 |    81.2% | $3.10 |    $0.64 |     8.0 |
+|   5 | claude |        3 |   1 |       14 |  12 |   1 |       71.6 |   57.6 |    67.8% | $2.47 |    $0.77 |     6.3 |
+|   6 | claude |        3 |   2 |       16 |  13 |   2 |       51.2 |   35.2 |    61.2% | $1.54 |    $0.77 |     3.4 |
+|   7 | claude |        3 |   2 |       18 |  14 |   3 |       46.0 |   28.0 |    56.8% | $1.69 |    $0.78 |     3.6 |
+|   8 | claude |        2 |   1 |       19 |  14 |   4 |       40.4 |   21.4 |    51.8% | $0.74 |    $0.77 |     2.9 |
+|   9 | claude |        2 |   1 |       20 |  15 |   3 |       53.3 |   33.3 |    52.9% | $0.95 |    $0.78 |     3.7 |
+|  10 | claude |        4 |   1 |       21 |  14 |   4 |       43.0 |   22.1 |    42.5% | $1.13 |    $0.80 |     5.0 |
+|  11 | claude |        1 |   0 |       21 |  13 |   5 |       36.4 |   15.4 |    37.7% | $0.62 |    $0.83 |     2.3 |
+|  12 | claude |        3 |   1 |       22 |  13 |   5 |       37.5 |   15.5 |    34.7% | $0.80 |    $0.83 |     3.1 |
+|  13 | claude |        3 |   1 |       23 |  13 |   6 |       36.0 |   13.0 |    31.8% | $1.29 |    $0.85 |     4.8 |
+|  14 | claude |        3 |   1 |       24 |  14 |   5 |       42.2 |   18.2 |    32.4% | $0.93 |    $0.85 |     4.0 |
+|  15 | claude |        2 |   1 |       25 |  14 |   6 |       40.2 |   15.2 |    30.7% | $0.82 |    $0.85 |     3.8 |
+|  16 | claude |        2 |   0 |       25 |  14 |   6 |       40.3 |   15.3 |    29.4% | $0.67 |    $0.88 |     2.9 |
+|  17 | claude |        2 |   1 |       26 |  15 |   5 |       47.2 |   21.2 |    30.6% | $0.94 |    $0.88 |     3.7 |
 
 ## Estimates
 
 Chao2 over one source is a floor for what that reviewer can find: its reviews resemble each other, so it misses
 the same things every time. Chapman between two sources is better while they find different kinds of defect.
 
-| over        | estimator | occasions | distinct | est. total | unseen | next-new | overlap |
-|-------------|-----------|----------:|---------:|-----------:|-------:|---------:|--------:|
-| codex       | Chao2     |         1 |        2 |          – |      – |        – |       – |
-| all sources | Chao2     |         1 |        2 |          – |      – |        – |       – |
+| over           | estimator | occasions | distinct | est. total | unseen | next-new | overlap |
+|----------------|-----------|----------:|---------:|-----------:|-------:|---------:|--------:|
+| codex          | Chao2     |         1 |        2 |          – |      – |        – |       – |
+| claude         | Chao2     |        16 |       24 |       39.8 |   15.8 |    27.5% |       – |
+| all sources    | Chao2     |        17 |       26 |       47.2 |   21.2 |    30.6% |       – |
+| codex × claude | Chapman   |         – |       26 |       74.0 |   48.0 |        – |       0 |
 
 ## Defects
 
 Each source's column counts the occasions that found the defect.
 
-| id  | defect                                                                                                                                                                                      | where                                                         | first | codex | severity |
-|-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|------:|------:|----------|
-| D1  | Layout exit detection falls back to the pose's unrotated axis-aligned bounds for rotated containers without a contains callback, misclassifying releases inside/outside the drawn container | packages/editing/src/actions/move/layout/exits.ts:32          |     1 |     1 | medium   |
-| D2  | Swap dwell timer callback arms the captured target ID without rechecking that the node still exists or is eligible, previewing an absent target                                             | packages/editing/src/actions/move/behaviors/swapOnDrop.ts:133 |     1 |     1 | low      |
+| id  | defect                                                                                                                                                                                      | where                                                                                                                                                                                    | first | codex | claude | severity |
+|-----|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------:|------:|-------:|----------|
+| D1  | Layout exit detection falls back to the pose's unrotated axis-aligned bounds for rotated containers without a contains callback, misclassifying releases inside/outside the drawn container | packages/editing/src/actions/move/layout/exits.ts:32                                                                                                                                     |     1 |     1 |      0 | medium   |
+| D2  | Swap dwell timer callback arms the captured target ID without rechecking that the node still exists or is eligible, previewing an absent target                                             | packages/editing/src/actions/move/behaviors/swapOnDrop.ts:133                                                                                                                            |     1 |     1 |      0 | low      |
+| D3  | A move answered by a non-translating behavior (swap, delete, layout placement) is still recorded as a translate by the drag delta for "transform again"                                     | packages/editing/src/actions/move/action.ts:80 (moveAction invoker onEnd)                                                                                                                |     2 |     0 |      4 | medium   |
+| D4  | Riders of a reparented envelope root get only a translation, so a drop into a rotated parent leaves them unrotated                                                                          | packages/editing/src/actions/move/commit/reparent.ts:105 (landedCascadeOps)                                                                                                              |     2 |     0 |      2 | medium   |
+| D5  | A page that refuses a drop with a reason gives no feedback during the drag; the release is refused silently                                                                                 | packages/editing/src/actions/move/behaviors/pageDrop.ts:17 (pageDrop)                                                                                                                    |     3 |     0 |      4 | medium   |
+| D6  | A layout exit that lands a child back in the page it already belongs to appends it, losing its paint/stack order                                                                            | packages/editing/src/actions/move/commit/layoutRelease.ts:152 (layoutReleaseOps, exit reparent)                                                                                          |     3 |     0 |      1 | low      |
+| D7  | A release frame that throws skips every behavior's onEnd and onCancel, so dwell timers outlive the gesture and refresh republishes the dropped preview hold                                 | packages/editing/src/actions/move/action.ts:82 (moveAction onEnd), :58 (refresh)                                                                                                         |     3 |     0 |      4 | low      |
+| D8  | Layout exits ignore a plain container's refusal, so the node lands elsewhere instead of the drop moving nothing                                                                             | packages/editing/src/actions/move/layout/exits.ts:47 (resolveLayoutExits / landingOn), :62 (onPage)                                                                                      |     4 |     0 |      1 | medium   |
+| D9  | A layout drop's undo returns the dragged node to the strategy's originPose, not its stored pose                                                                                             | packages/editing/src/actions/move/commit/layoutDrop.ts:25 (layoutDropOps / rebaseOpToLocal); packages/editing/src/actions/move/commit/layoutRelease.ts:36 (releaseFrom / rebaseReleased) |     4 |     0 |      2 | medium   |
+| D10 | landedDescendantOps measures a caught root's landing from its shown pose, so its descendants land off by the catch offset                                                                   | packages/editing/src/actions/move/landedDescendants.ts:30 (landedDescendantOps)                                                                                                          |     4 |     0 |      3 | medium   |
+| D11 | Reparenting several roots above a sibling stacks them in reverse, while appending stacks them in order                                                                                      | packages/editing/src/actions/move/commit/reparent.ts:62 (landAbove), :174 (reparentOps); packages/editing/src/actions/move/commit/pageDrop.ts:156 (pageDropOps)                          |     4 |     0 |      3 | low      |
+| D12 | A refused container on another plane is outlined at its own-plane bounds, not where the edited plane shows it                                                                               | packages/editing/src/actions/move/layout/container.ts:121 (pickContainer, `bounds: worldAabb`); packages/editing/src/actions/move/refusal.ts:26 (worldBoundsOf)                          |     4 |     0 |      2 | low      |
+| D13 | snapToContainer previews a secondary root's descendants at the primary root's offset, not at that root's own slot                                                                           | packages/editing/src/actions/move/frame.ts:62 (nextFrame); packages/editing/src/actions/move/behaviors/snapToContainer.ts:83 (snapped)                                                   |     4 |     0 |      2 | low      |
+| D14 | A layout exit over a page that refuses the drop lands the node on the pasteboard or its own page instead of following the page rule                                                         | packages/editing/src/actions/move/layout/exits.ts:62 (resolveLayoutExits, onPage)                                                                                                        |     5 |     0 |      1 | medium   |
+| D15 | Swap's armed bounds are in the target's plane but are tested against, and drawn with, the edited-plane pointer                                                                              | packages/editing/src/actions/move/behaviors/swapOnDrop.ts:83 (arm), :128 (onMove inside(s.armed.bounds, point))                                                                          |     6 |     0 |      1 | low      |
+| D16 | A layout drop throws when the destination, a dragged node or a reflowed sibling is removed between the last move and the release                                                            | packages/editing/src/actions/move/commit/layoutDrop.ts:44, :49, :70                                                                                                                      |     6 |     0 |      1 | low      |
+| D17 | snapToContainer reparents the node into a container on a higher layer without moving it onto that container, so the scene throws.                                                           | packages/editing/src/actions/move/behaviors/snapToContainer.ts:178 (plantOps, `reparent`)                                                                                                |     7 |     0 |      1 | medium   |
+| D18 | The move's refresh stays wired after the gesture ends, so a dwell timer that outlives onEnd repaints a closed drag on the normal path, not only after a throw.                              | packages/editing/src/actions/move/action.ts:57 (start, `session.gestureCtx.refresh`)                                                                                                     |     7 |     0 |      2 | low      |
+| D19 | landedDescendantOps passes a stored-frame delta to carriedDescendants, which translates world poses, so descendants land in the wrong frame                                                 | packages/editing/src/actions/move/landedDescendants.ts:34 (landedDescendantOps)                                                                                                          |     8 |     0 |      4 | medium   |
+| D20 | Innermost layout-drop target breaks same-depth ties by tree index, not paint order, so a container on a lower layer can win over the one drawn above it.                                    | packages/editing/src/actions/move/layout/container.ts:62 (chooseContainer, innermost branch)                                                                                             |     9 |     0 |      1 | low      |
+| D21 | snapBackOrDelete records a flat index across all nodes as each root's sibling index, so snap-back or delete reinserts roots at the wrong position                                           | packages/editing/src/actions/move/behaviors/snapBackOrDelete.ts:62 (onStart), consumed at :87-93 (onEnd)                                                                                 |    10 |     0 |      1 | low      |
+| D22 | A root that a drop reparents skips its data-held geometry op, though the translate commit writes one                                                                                        | packages/editing/src/actions/move/commit/reparent.ts:175 (reparentOps)                                                                                                                   |    12 |     0 |      1 | medium   |
+| D23 | A cross-layer layout drop records the dragged node's undo pose in the destination's plane instead of the node's own plane, so undo restores it wrongly.                                     | packages/editing/src/actions/move/commit/layoutDrop.ts:27 (layoutDropOps rebaseOpToLocal)                                                                                                |    13 |     0 |      1 | low      |
+| D24 | clampMove does not clamp an Alt-drag clone, so the clone can be placed outside the clamp bounds.                                                                                            | packages/editing/src/actions/move/behaviors/clampMove.ts:43 (clampMove)                                                                                                                  |    14 |     0 |      1 | low      |
+| D25 | pageDropOps computes a landing index against a cached child list that still holds a root an earlier op moved out, so the index is wrong                                                     | packages/editing/src/actions/move/commit/pageDrop.ts:131 (pageDropOps, childrenOf cache)                                                                                                 |    15 |     0 |      1 | low      |
+| D26 | A root reparented by a layout drop or snap slot carries its envelope descendants by a stored-pose delta that mixes the old and new parent frames, so they land in the wrong place           | packages/editing/src/actions/move/commit/layoutDrop.ts:44 (layoutDropOps), packages/editing/src/actions/move/behaviors/snapToContainer.ts:197 (plantOps, slotted loop)                   |    17 |     0 |      1 | medium   |

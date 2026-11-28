@@ -1,0 +1,60 @@
+{
+ "area": "ui.components.BandEditor",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/BandEditor/BandEditor.module.css",
+  "packages/ui/src/components/BandEditor/BandEditor.stories.tsx",
+  "packages/ui/src/components/BandEditor/BandEditor.tsx",
+  "packages/ui/src/components/BandEditor/BandRuler.tsx",
+  "packages/ui/src/components/BandEditor/BandStrip.tsx",
+  "packages/ui/src/components/BandEditor/DraftGhost.tsx",
+  "packages/ui/src/components/BandEditor/RangeEdgeHandle.tsx",
+  "packages/ui/src/components/BandEditor/bandCommands.ts",
+  "packages/ui/src/components/BandEditor/bands.ts",
+  "packages/ui/src/components/BandEditor/index.ts",
+  "packages/ui/src/components/BandEditor/retag.ts",
+  "packages/ui/src/components/BandEditor/scale.ts",
+  "packages/ui/src/components/BandEditor/seamGhost.ts",
+  "packages/ui/src/components/BandEditor/track.ts",
+  "packages/ui/src/components/BandEditor/useBandDraft.ts",
+  "packages/ui/src/components/BandEditor/useTrackPointer.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2134556,
+   "minutes": 0.28741666666666665,
+   "at": "2026-11-27T00:21:10.072Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Activating a band button by click or keyboard without a focus or pointerdown event does not select the band",
+   "where": "packages/ui/src/components/BandEditor/BandStrip.tsx:82",
+   "severity": "low",
+   "scenario": "Assistive technology invokes the button directly with no focus or pointerdown, or Enter/Space on an already-focused button after the controlled selection moved elsewhere; the band is not selected",
+   "fix": [
+    "packages/ui/src/components/BandEditor/BandStrip.tsx"
+   ],
+   "size": "line",
+   "cause": "selection wired to focus/pointerdown instead of the activation (click) path",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1479
+}

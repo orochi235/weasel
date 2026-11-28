@@ -1,0 +1,888 @@
+{
+ "area": "text-dom",
+ "commit": "8640a85e55e43ca481ee4bb55113417ee3cce5cb",
+ "files": [
+  "packages/text-dom/src/armedStyle.ts",
+  "packages/text-dom/src/domOffsets.ts",
+  "packages/text-dom/src/domRuns.ts",
+  "packages/text-dom/src/editOverlay.ts",
+  "packages/text-dom/src/editSession.ts",
+  "packages/text-dom/src/heldNodeStyle.ts",
+  "packages/text-dom/src/index.ts",
+  "packages/text-dom/src/overlayBaseline.ts",
+  "packages/text-dom/src/overlayCarry.ts",
+  "packages/text-dom/src/overlayDirection.ts",
+  "packages/text-dom/src/overlayDraft.ts",
+  "packages/text-dom/src/overlayEdits.ts",
+  "packages/text-dom/src/overlayFollow.ts",
+  "packages/text-dom/src/overlayFrame.ts",
+  "packages/text-dom/src/overlayHistory.ts",
+  "packages/text-dom/src/overlayListeners.ts",
+  "packages/text-dom/src/overlayOpen.ts",
+  "packages/text-dom/src/overlayPlace.ts",
+  "packages/text-dom/src/overlayScroll.ts",
+  "packages/text-dom/src/overlaySeed.ts",
+  "packages/text-dom/src/overlaySelection.ts",
+  "packages/text-dom/src/overlayStyle.ts",
+  "packages/text-dom/src/overlayTyping.ts",
+  "packages/text-dom/src/pasteRuns.ts",
+  "packages/text-dom/src/pbt.fixture.ts",
+  "packages/text-dom/src/publishedRange.ts",
+  "packages/text-dom/src/runSplice.ts",
+  "packages/text-dom/src/runStyle.ts",
+  "packages/text-dom/src/selectionStyling.ts",
+  "packages/text-dom/src/styleShortcuts.ts",
+  "packages/text-dom/src/testing/baselineDrop.ts",
+  "packages/text-dom/src/testing/overlayDirection.ts",
+  "packages/text-dom/src/testing/overlayReady.ts",
+  "packages/text-dom/src/testing/textEditHarness.ts",
+  "packages/text-dom/src/textEditTypes.ts",
+  "packages/text-dom/src/useTextEdit.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/01-claude.md",
+   "costUsd": 2.1059358000000006,
+   "minutes": 9.255666666666666,
+   "at": "2026-11-26T11:04:37.693Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.4827703999999997,
+   "minutes": 8.034216666666667,
+   "at": "2026-11-26T11:12:39.959Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.1157916,
+   "minutes": 5.478266666666666,
+   "at": "2026-11-26T11:18:08.813Z",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.5948238,
+   "minutes": 8.216416666666667,
+   "at": "2026-11-26T11:26:21.963Z",
+   "findings": 3
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.7627875999999998,
+   "minutes": 7.937833333333334,
+   "at": "2026-11-26T11:34:18.396Z",
+   "findings": 4
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.8089164,
+   "minutes": 3.6856500000000003,
+   "at": "2026-11-26T11:37:59.685Z",
+   "findings": 3
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.1241202000000001,
+   "minutes": 4.8122,
+   "at": "2026-11-26T11:42:48.577Z",
+   "findings": 2
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.69002,
+   "minutes": 8.577083333333333,
+   "at": "2026-11-26T11:51:23.334Z",
+   "findings": 4
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.3068204,
+   "minutes": 6.6327,
+   "at": "2026-11-26T11:58:01.430Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.425241,
+   "minutes": 7.17895,
+   "at": "2026-11-26T12:05:12.310Z",
+   "findings": 4
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.5140104,
+   "minutes": 7.8829,
+   "at": "2026-11-26T12:13:05.418Z",
+   "findings": 5
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 1.0957248,
+   "minutes": 4.832233333333333,
+   "at": "2026-11-26T12:17:55.501Z",
+   "findings": 2
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.8176888,
+   "minutes": 9.401083333333334,
+   "at": "2026-11-26T12:27:19.705Z",
+   "findings": 2
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 1.7071269999999998,
+   "minutes": 5.470866666666667,
+   "at": "2026-11-26T12:32:48.086Z",
+   "findings": 3
+  },
+  {
+   "n": 15,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/15-codex.md",
+   "costUsd": 0.2983836,
+   "minutes": 0.38408333333333333,
+   "at": "2026-11-26T23:19:24.790Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 6
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A lone CR left by an edit stays raw text in the overlay, so the overlay stops breaking where the canvas breaks",
+   "where": "packages/text-dom/src/domRuns.ts:357 (normalizeSmallCaps / normalizeText)",
+   "severity": "low",
+   "scenario": "a node seeded with `\"a\\r\\nb\"`. `appendOverlayText` leaves the CR as raw text because an LF follows it (`domRuns.ts:57`), and the module's own comment says the CR then draws nothing. If the user puts the caret at the start of `b` and presses Backspace (deleting the LF), or types a character between the CR and the LF, the DOM holds `\"a\\rb\"` or `\"a\\rX\\nb\"`. Each keystroke then runs `resplitSmallCaps` → `normalizeSmallCaps`, which rewrites a stretch only when `piecesMatch` fails. Raw CR text matches its pieces, so the CR never becomes a `<span data-break>`. The canvas treats the lone CR as a hard break (`isHardLineBreak(13)`) and shows two lines; the overlay draws nothing there and shows one, and the caret walks a different layout than the text it stands for. It stays that way until some restyle or paste happens to rewrite the runs. It should be turned into a break stand-in once it is no longer followed by an LF.",
+   "fix": [
+    "packages/text-dom/src/domRuns.ts"
+   ],
+   "size": "function",
+   "cause": "stand-ins only written on full rewrites, never re-derived after browser edits",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "claude": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "`setStyle` docs say it is needed only for underline/strikethrough/overline, but taking off a node-level script needs it too",
+   "where": "packages/text-dom/src/textEditTypes.ts:160 (UseTextEditOptions.setStyle doc)",
+   "severity": "low",
+   "scenario": "a node whose `TextStyle` has `script: 'super'`, edited without `setStyle` or `onChange`. Cmd+Shift+= over a range produces `{ script: undefined }`. `applyStyle` takes the `unsetScript` rewrite only when `canWriteStyle` is true (`selectionStyling.ts:93`). Without it, the patch goes to `applyStyleToRange`, which changes nothing because the runs have no script, so the toggle is silently declined. The doc (\"needed only to turn underline, strikethrough or overline **off**\") tells a host it can leave `setStyle` out if it never lowers those three flags, and `applyStyleToSelection`'s doc (`textEditTypes.ts:285`) also names only flags. Both should name a node-level `script`.",
+   "fix": [
+    "packages/text-dom/src/textEditTypes.ts"
+   ],
+   "size": "line",
+   "cause": "doc not updated when clearScriptOverRange path was added",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    6,
+    11
+   ],
+   "sources": {
+    "claude": [
+     1,
+     2,
+     6,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Typing over a selection that starts at a run boundary takes the earlier run's style, but pasting over the same selection takes the first replaced character's style",
+   "where": "packages/text-dom/src/overlayTyping.ts:120 (onBeforeInput)",
+   "severity": "medium",
+   "scenario": "runs `[{text:'ab'}, {text:'cd', bold:true}]`, selection [2,4) (the bold \"cd\"), made by `selectOffsets` or a drag that anchors at the end of \"ab\"'s text node (`charOffsetToDomPosition(2)` returns `(text \"ab\", 2)`). Typing \"x\": `onBeforeInput` returns early for any non-collapsed caret, so the browser deletes the range and inserts into the text node holding the start, giving a plain \"x\" (the run before). Pasting \"x\" over the same selection goes through `styledForRange`, which reads `runStyleAt(runs, at.start + 1)`, the first replaced character, giving a bold \"x\". The same replacement gets two answers depending on whether it was typed or pasted (and, for typing, on which side of the boundary the DOM anchored the selection).",
+   "fix": [
+    "packages/text-dom/src/overlayTyping.ts"
+   ],
+   "size": "function",
+   "cause": "non-collapsed insertText left to the browser, paste styled by its own rule",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "The `applyStyleToSelection` doc leaves out that taking off a node-level script also needs `setStyle`/`onChange`",
+   "where": "packages/text-dom/src/textEditTypes.ts:285 (UseTextEditReturn.applyStyleToSelection)",
+   "severity": "low",
+   "scenario": "node style `{ script: 'super' }`, host passes neither `setStyle` nor `onChange`. Cmd+Shift+= over a range yields `{ script: undefined }`; `applyStyle`'s `unsetScript` branch requires `canWriteStyle`, so it falls through to `applyStyleToRange`, which changes no run, and the text stays superscript. The docs say `setStyle` is \"needed only to turn underline, strikethrough or overline off\", and `applyStyleToSelection` describes the node-rewrite path only for flags, so a host reading them has no reason to expect the script toggle to be declined (or that a commit will call `setStyle` for it).",
+   "fix": [
+    "packages/text-dom/src/textEditTypes.ts"
+   ],
+   "size": "line",
+   "cause": "doc not updated when `clearScriptOverRange` path was added",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    6,
+    11
+   ],
+   "sources": {
+    "claude": [
+     2,
+     6,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A paste whose preserved white space ends a block with a line feed gains an extra blank line",
+   "where": "packages/text-dom/src/pasteRuns.ts:83 (htmlToRuns, write)",
+   "severity": "medium",
+   "scenario": "paste HTML `<pre>a\\n</pre><p>b</p>` (a code block copied with its trailing newline, which is how most copied `<pre>` blocks end). The `keep` text `\"a\\n\"` goes through `write`, which sets `onLine = true` though the text ended its line. The closing `boundary(pre)` then sets `gap.line`, and `b` is written with a leading `\\n`, giving `\"a\\n\\nb\"`. A browser draws `a` then `b` with no empty line between them, because a line feed at the end of a block opens no line box. The `<br>` path gets this right: `lineBreak` resets `onLine = false` after its `\\n`, so `<p>a<br></p><p>b</p>` reads `\"a\\nb\"`. The `keep`/`spaces` text path does not, so the same visual break comes out two ways. A paste that ends there (`<pre>a\\n</pre>` alone) keeps a trailing `\\n`, which the canvas shows as an extra break.",
+   "fix": [
+    "packages/text-dom/src/pasteRuns.ts"
+   ],
+   "size": "line",
+   "cause": "onLine set true for text ending in a line feed",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    8,
+    11,
+    15
+   ],
+   "sources": {
+    "claude": [
+     3,
+     8,
+     11
+    ],
+    "codex": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "Arming a style at a collapsed caret does not seal the undo step, so the next typed character merges into the preceding typing step",
+   "where": "packages/text-dom/src/selectionStyling.ts:139 (applyStyle, collapsed-caret arm path)",
+   "severity": "low",
+   "scenario": "type `abc`. The history opens a `type` step with its caret at 3. Press Cmd+B: `applyStyleToSelection` runs `before('other')`, then `applyStyle` only arms `{bold: true}`. Nothing changed, so `after()` returns early and leaves `open` as it was. Type `d`: `before('type')` sees caret 3, which equals `open.caret`, so the bold `d` joins the `abc` step. One Undo then removes `abcd` together and the armed bold with it, though the restyle sat between them. The history's own rule (overlayHistory.ts:18–19: \"anything else is a step alone\") counts a restyle as a boundary. Arming should `seal()` the history the way `onCompositionStart` does.",
+   "fix": [
+    "packages/text-dom/src/selectionStyling.ts",
+    "packages/text-dom/src/overlayHistory.ts"
+   ],
+   "size": "line",
+   "cause": "a no-content `other` change leaves the open step unsealed",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A `<br>` that closes the last line of pasted markup pastes as an extra trailing newline",
+   "where": "packages/text-dom/src/pasteRuns.ts:146 (htmlToRuns, visit BR branch / lineBreak)",
+   "severity": "low",
+   "scenario": "clipboard `text/html` of `<p>a<br></p>` (or `<div>a<br></div>` last in the fragment) → `lineBreak` writes `'\\n'` unconditionally, so `htmlToRuns` returns `[{ text: 'a\\n' }]`, and the paste leaves a newline the source never showed. A browser draws no line for a `<br>` that ends a block. The same `<br>` in the middle of the fragment comes out right, because `onLine = false` stops the next block's boundary from adding a second newline. Only the last one survives, since nothing later absorbs it.",
+   "fix": [
+    "packages/text-dom/src/pasteRuns.ts"
+   ],
+   "size": "function",
+   "cause": "a block-final break is written eagerly rather than held as a pending gap",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "Edit teardown leaves `focusRef` pointing at the removed overlay's scroller focus",
+   "where": "packages/text-dom/src/useTextEdit.ts:121 (useTextEdit effect cleanup)",
+   "severity": "low",
+   "scenario": "open an edit, then commit or cancel it → the cleanup resets `placeRef`, `overlayRef` and `historyRef`, but `focusRef.current` still holds the old `OverlayScroll.focus` closure. That closure keeps the detached overlay and its scroll box alive until the next edit opens. Every other ref the effect sets is reset on the way out, so this one is left behind by teardown.",
+   "size": "line",
+   "cause": "missing reset in effect cleanup",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "`commit` / `startEdit` read a stale edit id captured from the render they were made in",
+   "where": "packages/text-dom/src/useTextEdit.ts:63 (commit, `const id = editingId`)",
+   "severity": "low",
+   "scenario": "a host binds `startEdit` once, e.g. a dispatcher action registered at mount, or any handler whose closure predates the edit. The edit on A is open and the host calls that stale `startEdit('B')` → `liveIdRef` says A is open, so it calls the `commit` from that old render, whose `editingId` is `null`. That takes the `id == null` branch: `setEditingId(null)` reports `onEnd('A')`, and A's typed text is dropped without being written. With a fresh closure the same call writes A. `setEditingId` already keeps `liveIdRef` for exactly this ahead-of-render reading, and `commit` ignores it.",
+   "size": "line",
+   "cause": "render-state id where the live ref exists",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5
+    ]
+   },
+   "fix": [
+    "packages/text-dom/src/useTextEdit.ts"
+   ]
+  },
+  {
+   "id": "D10",
+   "claim": "A run's script (super/subscript) is drawn full size in the overlay while the canvas shrinks it",
+   "where": "packages/text-dom/src/domRuns.ts:228 (runsToDom)",
+   "severity": "medium",
+   "scenario": "runs `[{ text: 'E=mc' }, { text: '2', script: 'super' }, { text: ' and more text' }]`. The canvas (`resolveRuns`, packages/text/src/runs/resolveRuns.ts:216-222) sets the `2` at `scriptMetricsFor(...)[script].size` (about 0.58 of the inherited size) and raises it by `script.shift`. `runsToDom` writes only `vertical-align: super`, which raises the glyph by the browser's own amount and keeps it at full size. Everything after the run sits further right in the overlay than on the canvas, a wrapped line can break in a different place, and the caret is out of step with what the canvas showed. The node-level case is handled (`typeset` in overlayPlace.ts:94-101 sizes the font from `scriptMetricsFor`), so the two places answer \"how big is script text\" differently.",
+   "fix": [
+    "packages/text-dom/src/domRuns.ts",
+    "packages/text-dom/src/runStyle.ts"
+   ],
+   "size": "function",
+   "cause": "run-level script not given the preset's size/shift",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A restyle, undo, paste or small-caps resplit turns a backward selection into a forward one",
+   "where": "packages/text-dom/src/overlaySelection.ts:28 (selectOffsets)",
+   "severity": "low",
+   "scenario": "the user selects right to left with Shift+Left five times, then presses Cmd+B. `applyStyle` → `writeRunsPreservingSelection` → `selectOffsets` rebuilds the range with `addRange`, which puts the anchor at `start` and the focus at `end`. The user's next Shift+Left now shrinks the selection from its right end, where it should grow it to the left. `readSelectionOffsets` drops the direction (`TextEditSelection` has no field for it), so `restoreOverlayFocus`, `resplitSmallCaps` after every input in a small-caps run, and the history's `write` (via overlayEdits.ts) all reset it too.",
+   "fix": [
+    "packages/text-dom/src/overlaySelection.ts",
+    "packages/text-dom/src/overlayTyping.ts",
+    "packages/text-dom/src/selectionStyling.ts"
+   ],
+   "size": "function",
+   "cause": "selection read and written without its direction (use `setBaseAndExtent`)",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    9
+   ],
+   "sources": {
+    "claude": [
+     5,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "The overlay keeps the node style it opened with, so commit can write that stale style back over a newer one",
+   "where": "packages/text-dom/src/useTextEdit.ts:107 (useTextEdit effect), packages/text-dom/src/heldNodeStyle.ts:32 (restyleNode)",
+   "severity": "medium",
+   "scenario": "while an edit is open, a node-level control (align, wrap, font family, fill) writes the node's style through the host. `baseRef` is set once at open and changed only by `restyleNode`; `frame.style()` and `applyOverlayStyle` never read `getStyle` again, so the overlay keeps the old alignment, face, wrap and color while the canvas has hidden the node. Worse, once the edit has rewritten the node style (lowering a node underline holds a whole `TextStyle` snapshot in `nodeStyleRef`), `commit` writes that snapshot through `setStyle`/`onChange`, which puts back the font family or alignment the control just changed.",
+   "fix": [
+    "packages/text-dom/src/heldNodeStyle.ts",
+    "packages/text-dom/src/useTextEdit.ts",
+    "packages/text-dom/src/overlayDraft.ts"
+   ],
+   "size": "design",
+   "cause": "node style snapshotted at open and held whole rather than as a delta",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "An unclipped overlay inherits the container's CSS direction, so direction 'auto' text with no strong character lays out RTL in an RTL page while the canvas lays it out LTR",
+   "where": "packages/text-dom/src/overlayDirection.ts:17 (applyOverlayDirection)",
+   "severity": "low",
+   "scenario": "host page or container is `dir=\"rtl\"`; a node with `direction: 'auto'`, `align: 'start'` holds digits only, or is empty when an edit opens on it. `applyOverlayDirection` clears `direction` to `''`, so the overlay inherits `rtl` from the container. Under `unicode-bidi: plaintext`, a paragraph with no strong character falls back to that inherited direction, and `text-align: start` follows it, so the caret and text sit at the right edge. The canvas's `paragraphDirection` returns `ltr` for the same text, and `overlayAlignEdge` (canvas side) anchors left. So the overlay and the canvas disagree. `placeScrolled` pins `direction: ltr` on its box, so a clipping node inherits LTR, but `placeLoose`'s `bareBox` sets nothing. The two placements answer the fallback direction differently. It should be `ltr` on both, as the canvas does.",
+   "fix": [
+    "packages/text-dom/src/overlayDirection.ts",
+    "packages/text-dom/src/overlayPlace.ts"
+   ],
+   "size": "line",
+   "cause": "auto direction leaves CSS `direction` to inheritance",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A U+2028 or other non-LF hard break acts as a paragraph separator in the overlay's alignment and bidi because its stand-in holds a line feed",
+   "where": "packages/text-dom/src/overlayDirection.ts:31 (overlayAlignEdge)",
+   "severity": "low",
+   "scenario": "node text `\"",
+   "fix": [
+    "packages/text-dom/src/overlayDirection.ts",
+    "packages/text-dom/src/domRuns.ts"
+   ],
+   "size": "function",
+   "cause": "textContent read instead of restored source text",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "A node's `{ px }` letterSpacing is scaled by the zoom in the overlay, while the canvas keeps it in screen pixels",
+   "where": "packages/text-dom/src/overlayPlace.ts:120 (typeset)",
+   "severity": "medium",
+   "scenario": "a node with `style.letterSpacing: { px: 2 }`, edited at view zoom 3. `useTextEdit` (and `restyleNode` in heldNodeStyle.ts:38) resolve the style with `resolveTextStyle(style, paint)`, no scale, so `style.letterSpacing` is 2 as if it were world units. With `pose.zoom` set, `typeset` writes `letter-spacing: 2px` pre-scale and the transform makes it 6 screen px; with no `pose.zoom`, `scale = pose.fontSize / style.fontSize` (3) multiplies it to 6px as well. The canvas draws 2 screen px (`pose.pxScale` is the scale a `{ px }` length resolves against), so every glyph in the overlay drifts further from the canvas text the longer the line. Should divide a `{ px }` tracking by `pose.pxScale ?? pose.zoom` under a transform (as `runsToDom`'s `setLength` does for runs via `--weasel-zoom`) and not multiply it at all in the screen-pixel path.",
+   "fix": [
+    "packages/text-dom/src/overlayPlace.ts",
+    "packages/text-dom/src/useTextEdit.ts",
+    "packages/text-dom/src/heldNodeStyle.ts"
+   ],
+   "size": "function",
+   "cause": "`{ px }` length resolved at scale 1 and then treated as world units",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    10,
+    12,
+    14
+   ],
+   "sources": {
+    "claude": [
+     7,
+     10,
+     12,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "A CR kept before an LF draws as a space in the overlay, though the comment says it draws nothing",
+   "where": "packages/text-dom/src/domRuns.ts:57 (appendOverlayText)",
+   "severity": "low",
+   "scenario": "text `\"ab\\r\\ncd\"` with `align: 'right'` and `wrap: false`. The CR is left in the text node; CSS Text 3 treats U+000D as a space, and under the overlay's `white-space: pre` a trailing preserved space does not hang, so line one is a space wider than on the canvas (which draws the CR as nothing): the right-aligned first line sits one space left of the canvas glyphs, and `max-content` width grows by it. Should keep the CR as a stand-in that takes no advance (or a `data-break`-style span with zero width), so source offsets stay equal while nothing is drawn.",
+   "size": "function",
+   "cause": "CR assumed invisible in CSS preserved white space",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "Pasting through the HTML path keeps U+00A0 characters, while the plain-text path turns the same copied text into ordinary spaces",
+   "where": "packages/text-dom/src/pasteRuns.ts:127 (htmlToRuns `collapsed`, keep branch at :146)",
+   "severity": "low",
+   "scenario": "copying `a  b` (two spaces) or text ending in a space next to an element in Chrome puts `a&nbsp; b` in `text/html` and `a  b` in `text/plain`. `clipboardRuns` prefers the HTML, and nothing there maps U+00A0 back to a space: `collapsed` splits only on `[ \\t\\n\\f]`, so the run holds `a  b`. The pasted text then wraps differently (no break opportunity at the NBSP), and it differs from what the same copy pastes when the HTML is absent. The answer to \"what do the clipboard's spaces become\" depends on which flavor was present.",
+   "fix": [
+    "packages/text-dom/src/pasteRuns.ts"
+   ],
+   "size": "line",
+   "cause": "NBSP from markup serialization not normalized",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "The edit overlay reads the selection from, and listens on, the global document, so it stops responding when its container is in another document",
+   "where": "packages/text-dom/src/overlayListeners.ts:75 (listenToOverlay), packages/text-dom/src/overlaySelection.ts:13 (readSelectionOffsets)",
+   "severity": "low",
+   "scenario": "a host portals its canvas into an iframe (or a popup window) and passes a `container` there. `onBlur` checks `overlay.ownerDocument.hasFocus()`, but `selectionchange` and the outside `pointerdown` are registered on the global `document`, and `readSelectionOffsets` and `selectOffsets` use the global `window.getSelection()`. The iframe's selection never fires those listeners, and the outer selection is never inside the overlay, so `readSelectionOffsets` is always `null`. No range is ever published, so `applyStyleToSelection` and `toggleStyle` return early: the style shortcuts and chrome do nothing, and a press outside never commits. overlayScroll.ts:108, overlayOpen.ts:33/69 (`document.createRange`, `document.head`) and domOffsets.ts:108 have the same split between the global document and `ownerDocument`.",
+   "fix": [
+    "packages/text-dom/src/overlayListeners.ts",
+    "packages/text-dom/src/overlaySelection.ts",
+    "packages/text-dom/src/overlayScroll.ts",
+    "packages/text-dom/src/overlayOpen.ts",
+    "packages/text-dom/src/editOverlay.ts",
+    "packages/text-dom/src/overlayTyping.ts"
+   ],
+   "size": "design",
+   "cause": "global document/window instead of overlay.ownerDocument",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "The plain text-edit test harness keys its texts on an object that has a prototype, so keys such as inherited property names collide",
+   "where": "packages/text-dom/src/testing/textEditHarness.ts:7 (makeHarness)",
+   "severity": "low",
+   "scenario": "`makeHarness({})` followed by an edit of id `__proto__` (or a commit to it). `texts = { ...initial }` has `Object.prototype`, so `setText('__proto__', 'x')` assigns through the `__proto__` setter. A string is ignored there, so nothing is stored, `getText('__proto__')` stays `''`, and `getScreenPose('__proto__')` stays `null`. `makeRichHarness` beside it uses `Object.create(null)` for this exact reason, so the two harnesses give different answers for the same id.",
+   "size": "line",
+   "cause": "user-keyed table with a prototype",
+   "confidence": "sure",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    14
+   ],
+   "sources": {
+    "claude": [
+     8,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "A node's own trailing break is dropped once any browser edit leaves the text not ending in a break, and stays dropped even after a later edit restores it",
+   "where": "packages/text-dom/src/overlaySeed.ts:62 (seedOverlay, `edited`)",
+   "severity": "medium",
+   "scenario": "a node seeded with text `\"a\\n\"` (ownBreak true: the trailing newline is the node's, not a caret holder). The user puts the caret at the end, types `x` (browser insert → `edited` sees `\"a\\nx\"`, sets `ownBreak = false`), then presses Backspace (browser delete). The DOM is back to `\"a\\n\"` with no holder added (the same state Chromium seeds with no holder), but `ownBreak` stays `false`, so `trim` strips the node's own `\\n`. `finished()` compares `\"a\"` with the opened `\"a\\n\"`, finds a change and commits `\"a\"`: an edit that changed nothing deletes the node's final line break. `edited` can only ever clear `ownBreak`; nothing on the browser-edit path sets it again (only `reseed`, which runs on history writes).",
+   "fix": [
+    "packages/text-dom/src/overlaySeed.ts"
+   ],
+   "size": "function",
+   "cause": "one-way ownBreak flag on browser edits",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "Node-level small-caps text that the browser types outside a run span is never split into small-caps pieces",
+   "where": "packages/text-dom/src/domRuns.ts:355 (normalizeSmallCaps, `visit` non-run branch)",
+   "severity": "low",
+   "scenario": "a node with `fontVariantCaps: 'small-caps'` in a face with no small caps of its own. The user selects all and types. The browser replaces the selection itself (`overlayTyping` leaves a non-collapsed selection to the browser), which can leave a bare text node in the overlay root with no `data-run` span. `normalizeSmallCaps` only rewrites children of run spans. For text directly in the root it only adds the text to `before`, so those letters are drawn by the browser's own `font-variant: small-caps` synthesis on the root (`applyOverlayStyle`). The browser uses its fixed factor, not `smallCapsScaleFor`. That is the mismatch with the canvas that the module header says the pieces exist to prevent, and it lasts until the next full `runsToDom`.",
+   "size": "function",
+   "cause": "normalization skips text outside run spans",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    14
+   ],
+   "sources": {
+    "claude": [
+     9,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A carried edit survives its own commit when the same node is reopened before a render, so the stale carry is taken again",
+   "where": "packages/text-dom/src/useTextEdit.ts:60 (commit), packages/text-dom/src/overlayCarry.ts:39 (takeCarry)",
+   "severity": "medium",
+   "scenario": "an edit of `a` is carried while `container` is null. The host calls `commitEdit()` and then `startEdit('a')` in one handler. `commit` writes the carried draft through a detached overlay but leaves `carryRef` alone. It goes to `setEditingId(null)` and then `a` again with no render between, so the next effect calls `takeCarry('a', false)` and keeps the stale carry. When a container arrives, the overlay opens on the old content, history steps, armed style and draft, not on the node's current text. Its `finished` still compares against the original seed, so committing it again unchanged writes again. Committing should consume the carry.",
+   "fix": [
+    "packages/text-dom/src/useTextEdit.ts",
+    "packages/text-dom/src/overlayCarry.ts"
+   ],
+   "size": "function",
+   "cause": "commit reads the carry with peek, never takes it",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    12,
+    13,
+    15
+   ],
+   "sources": {
+    "claude": [
+     10,
+     12,
+     13
+    ],
+    "codex": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "The test harness's dispatchBeforeInput throws when the caret is the default select-all selection",
+   "where": "packages/text-dom/src/testing/textEditHarness.ts:126 (dispatchBeforeInput)",
+   "severity": "low",
+   "scenario": "`startEdit(id)` defaults to `caret: 'all'`, and `openingRange` uses `range.selectNodeContents(overlay)`, so the selection's `startContainer` is the overlay element. The hook does not handle a non-collapsed caret (`overlayTyping.ts` returns before `preventDefault`), so `dispatchEvent` returns true. The helper then casts the overlay element to `Text` and calls `node.insertData(...)`, which throws a TypeError. Even with a text-node range it never deletes the selected text, so it does not stand in for the browser's default it claims to imitate. A test typing straight after `startEdit` crashes or checks the wrong text.",
+   "size": "function",
+   "cause": "assumes a collapsed caret inside a text node",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "Pasted markup keeps text that is hidden with display: none",
+   "where": "packages/text-dom/src/pasteRuns.ts:133 (htmlToRuns visit)",
+   "severity": "low",
+   "scenario": "clipboard HTML holding `<span style=\"display:none\">x</span>` (or `visibility:hidden`), which office-suite markup and some copy handlers emit. `UNSEEN` filters only by tag name and the inline style is never consulted, so the hidden text lands in the node, though the module promises only \"text a reader sees\".",
+   "size": "line",
+   "cause": "hidden content filtered by tag only",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    11,
+    15
+   ],
+   "sources": {
+    "claude": [
+     10,
+     11
+    ],
+    "codex": [
+     15
+    ]
+   },
+   "fix": [
+    "packages/text-dom/src/pasteRuns.ts"
+   ]
+  },
+  {
+   "id": "D25",
+   "claim": "A line break typed at the start of a break stand-in trades places with the stand-in's own break",
+   "where": "packages/text-dom/src/domRuns.ts:44 (restoreBreak)",
+   "severity": "low",
+   "scenario": "a node's text is `a",
+   "fix": [
+    "packages/text-dom/src/domRuns.ts",
+    "packages/text-dom/src/overlayTyping.ts"
+   ],
+   "size": "function",
+   "cause": "the stand-in's own break is identified by position (first `\\n`), not by node",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11,
+    13
+   ],
+   "sources": {
+    "claude": [
+     11,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "Turning off a node-level underline when no style writer is set still rewrites the runs",
+   "where": "packages/text-dom/src/selectionStyling.ts:93 (useSelectionStyling applyStyle)",
+   "severity": "low",
+   "scenario": "the host passes neither `setStyle` nor `onChange`. The node's style sets `underline: true`, and its runs carry `underline: true` too (as runs pasted or copied from elsewhere can). Cmd+U over the range gives `{ underline: false }`. Without a writer `unsetFlag` is `undefined`, so the patch falls through to `applyStyleToRange`, which strips the runs' own underline. The text still draws underlined, but the runs changed: a draft goes out, an undo step is recorded, and commit writes the stripped runs. `UseTextEditOptions.setStyle` documents that \"without this or `onChange`, such a toggle is declined and nothing changes\".",
+   "fix": [
+    "packages/text-dom/src/selectionStyling.ts",
+    "packages/text-dom/src/textEditTypes.ts"
+   ],
+   "size": "function",
+   "cause": "a declined unset still runs the additive path",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "A <br> nested inside a break stand-in is dropped by textContent serialization, so the offsets and the serialized runs disagree by one",
+   "where": "packages/text-dom/src/domRuns.ts:77 (domToRuns)",
+   "severity": "medium",
+   "scenario": "Overlay for a\\u2028b, and a native edit leaves <span data-break=\"2028\">\\n<br></span>: the offsets count 4 units but serialization gives 3; the extra break is lost and a selection after it is off by one",
+   "fix": [
+    "packages/text-dom/src/domRuns.ts"
+   ],
+   "size": "line",
+   "cause": "stand-in read as an opaque subtree via textContent",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "codex": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D28",
+   "claim": "An input that arrives before selectionchange spends the armed style at a caret other than the one where it was armed",
+   "where": "packages/text-dom/src/overlayTyping.ts:129 (onBeforeInput)",
+   "severity": "medium",
+   "scenario": "Arm bold at the end of 'ab', collapse the caret to 0 and dispatch an insertText 'X' beforeinput in the same task: bold X is inserted at 0 instead of plain Xab; paste has the same problem",
+   "fix": [
+    "packages/text-dom/src/overlayTyping.ts",
+    "packages/text-dom/src/armedStyle.ts"
+   ],
+   "size": "function",
+   "cause": "pending patch not tied to the caret where it was armed",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "codex": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D29",
+   "claim": "overlayAlignEdge reads textContent, which merges DOM block paragraphs, so direction 'auto' alignment picks the wrong edge",
+   "where": "packages/text-dom/src/overlayDirection.ts:31 (overlayAlignEdge)",
+   "severity": "medium",
+   "scenario": "Unwrapped editor, direction auto, align start, DOM 123<div>אבג</div>: the serializer sees 123\\nאבג (LTR, anchored left), but the helper sees one paragraph 123אבג and anchors right",
+   "fix": [
+    "packages/text-dom/src/overlayDirection.ts"
+   ],
+   "size": "function",
+   "cause": "uses textContent, not serialized paragraph boundaries",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "codex": [
+     15
+    ]
+   }
+  }
+ ],
+ "lines": 3872
+}

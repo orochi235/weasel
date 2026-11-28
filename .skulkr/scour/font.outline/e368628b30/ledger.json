@@ -28,6 +28,56 @@
    "minutes": 0.15428333333333333,
    "at": "2026-11-25T21:17:48.092Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.993646,
+   "minutes": 2.868333333333333,
+   "at": "2026-11-26T14:51:01.432Z",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.6762152,
+   "minutes": 3.1264166666666666,
+   "at": "2026-11-26T14:54:09.188Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.7561924000000001,
+   "minutes": 3.175783333333333,
+   "at": "2026-11-26T14:57:19.886Z",
+   "findings": 4
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.7927011999999999,
+   "minutes": 3.423983333333333,
+   "at": "2026-11-26T15:00:45.497Z",
+   "findings": 2
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.7159244000000001,
+   "minutes": 3.149366666666667,
+   "at": "2026-11-26T15:03:54.607Z",
+   "findings": 3
   }
  ],
  "defects": [
@@ -53,13 +103,186 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    5
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     5
+    ]
+   },
+   "scenario": "a variable OpenType font with a `CFF2` table and no `glyf`. The parser accepts it (`checkCff` handles CFF2, and opentype.js reads it), but `outlines` is `'cff'` only when `t.cff` is set. If opentype.js stores a CFF2 Top DICT anywhere other than `tables.cff`, the embedding says `'truetype'`, so a PDF writer embeds it as a TrueType program with no `glyf` table and the glyphs come out blank. The check should be on the sfnt's own tables (`tableOf(sfnt, 'CFF ') ?? tableOf(sfnt, 'CFF2')`, as the parser already does). The `FaceEmbedding.outlines` doc (\"a `CFF ` table and no `glyf`\") is silent on CFF2. Not verified: opentype.js is not installed in this tree.",
+   "cause": "outline kind read from parser state rather than tables",
+   "fix": [
+    "packages/font/src/outline/opentypeParser.ts",
+    "packages/font/src/outline/OutlineFace.ts"
+   ],
+   "size": "line",
+   "confidence": "likely"
+  },
+  {
+   "id": "D3",
+   "claim": "GPOS reader's work budget never counts subtables, so a small GPOS can still hang or exhaust memory in pairSubtables",
+   "where": "packages/font/src/outline/gposKerning.ts:191 (pairSubtables)",
+   "severity": "high",
+   "scenario": "The kern feature lists 65535 lookup indices (a 131 KB list). The LookupList has 65535 offsets, all pointing at one type-2 lookup whose subTableCount is 65535. `subtablesOf` is memoized by *index*, not by lookup offset, so every index walks and pushes all 65535 subtable offsets. That is ~4.3e9 reads and an array of ~4.3e9 numbers from a font of a few hundred KB, which is an OOM or hang during registration. After that, every `kernOf` call walks them all again. `workBudget` exists to stop exactly this case (\"tables share one long list\"), but `pairSubtables` never calls `spend`. It should charge `count` per lookup, or memoize by lookup offset so a shared lookup is walked once.",
+   "fix": [
+    "packages/font/src/outline/gposKerning.ts"
+   ],
+   "size": "function",
+   "cause": "subtable walk outside the work budget",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "A .ttc whose member offsets all name one huge directory makes membersOf reread it per member, quadratic work on a damaged file",
+   "where": "packages/font/src/outline/sfnt.ts:212 (membersOf)",
+   "severity": "medium",
+   "scenario": "A ttcf header has numFonts = 250 000 (1 MB of member offsets), and every offset names the same directory with numTables = 65535 (1 MB of records). `membersOf` calls `memberName` for every member, and each call builds the full 65535-record array just to find `name`. That is ~1.6e10 record objects from a 2 MB file, a hang inside `sfntFromCollection` before any parser runs. The `.dfont` path refuses a resource named twice for this reason (\"cannot copy more than the file\"), but the ttcf path does not dedupe directory offsets, and does not bound records × members. It could memoize by `dirOffset`, or refuse two members sharing a directory.",
+   "fix": [
+    "packages/font/src/outline/sfnt.ts"
+   ],
+   "size": "function",
+   "cause": "no dedupe of member directory offsets",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    6
+   ],
+   "sources": {
+    "claude": [
+     2,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "checkCff does quadratic work when many FDArray Font DICTs share one Private DICT's Subrs INDEX, rereading it each time",
+   "where": "packages/font/src/outline/cffCheck.ts:52 (checkCff)",
+   "severity": "low",
+   "scenario": "An FDArray INDEX holds 65535 small Font DICTs (~5 bytes each), each with a `Private` operator naming the same Private DICT, whose `Subrs` names one 65535-item INDEX (offSize 1 with zero-length items, ~64 KB). `readIndex` re-walks and re-allocates the 65535 items for every Font DICT: ~4.3e9 iterations from a CFF table of under 0.5 MB. The structural check meant to keep a damaged face from holding the thread becomes the hang. Checking each distinct `(at, size)` Private and each Subrs offset only once bounds it by the table size.",
+   "fix": [
+    "packages/font/src/outline/cffCheck.ts"
+   ],
+   "size": "function",
+   "cause": "shared Private/Subrs re-read per Font DICT",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "The cmap and CFF checks read a different table than opentype.js parses when a tag is listed twice or a table's length runs past the file",
+   "where": "packages/font/src/outline/opentypeParser.ts:236 (createOpenTypeParser), packages/font/src/outline/sfnt.ts:63 (tableOf)",
+   "severity": "high",
+   "scenario": "`tableOf` takes the first record with a tag, and returns null when `offset + length` runs past the file. opentype.js reads tables at their offset, ignores the length, and keeps the last record for `CFF `/`CFF2` and parses every `cmap` record. So (a) a truncated or damaged file whose `CFF ` or `cmap` record states an overlong length skips `checkCff`/`checkCmap` entirely, and opentype.js then parses the table from its offset; (b) a font listing `cmap` or `CFF ` twice has only the first copy checked. Either way the hang and heap blow-up the checks were written to refuse reach opentype.js. The same mismatch decides `glyf`/`loca` presence: an overlong `glyf` record makes the code treat a TrueType font as CFF. These should refuse a duplicate tag or out-of-file table, or check exactly what opentype.js will read.",
+   "fix": [
+    "packages/font/src/outline/sfnt.ts",
+    "packages/font/src/outline/opentypeParser.ts"
+   ],
+   "size": "function",
+   "cause": "table lookup disagrees with parser's",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "Pairs kerned only under a language-specific LangSys get kerned in default text",
+   "where": "packages/font/src/outline/gposKerning.ts:286 (pairKerning), packages/font/src/outline/gposKerning.ts:116 (lookupIndexSets)",
+   "severity": "low",
+   "scenario": "`lookupIndexSets` emits one set per LangSys: `latn` default, then each `latn` language system (e.g. `NLD `, `TRK `), then `DFLT`. `pairKerning` returns the first set that kerns the pair. A pair that `latn` default leaves unkerned but a language-specific LangSys kerns gets that language's adjustment in ordinary Latin text, which no shaper does. The doc comment calls the sets alternatives, but they are applied as a fallback chain. Language systems should come after every script's default LangSys, or be left out.",
+   "size": "function",
+   "cause": "language systems used as fallback",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "GPOS ScriptList records sharing one Script table multiply LangSys iteration past the work budget",
+   "where": "packages/font/src/outline/gposKerning.ts:124 (lookupIndexSets)",
+   "severity": "medium",
+   "scenario": "a GPOS whose ScriptList holds 65,535 records all pointing at one Script table with 65,535 LangSys records (~800 KB of tables). `langSysesOf` memoizes the Script table, so `spend(langSysCount)` is charged once, but `scripts` gets one entry per record sharing the same `langSysAt`, and the loop at line 149 walks all 65,535 × 65,535 ≈ 4.3e9 entries doing a `langSysSeen.has` each. The budget (4 per byte, ~3.2M here) never trips, and the face's load hangs for minutes. Dedupe `scripts` by Script table offset, or spend per record walked.",
+   "size": "line",
+   "cause": "memoized table shared by records, iteration not budgeted",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    6
+   ],
+   "sources": {
+    "claude": [
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A WOFF's output buffer is sized from recorded table lengths, up to 1032× the file size, before any table is inflated",
+   "where": "packages/font/src/outline/woff.ts:43 (sfntFromWoff)",
+   "severity": "low",
+   "scenario": "a 2 MB WOFF whose compressed tables each record `origLength = 1032 × compLength`. The ratio check passes, and `new ArrayBuffer(size)` asks for ~2 GB before `inflateInto` can find that the streams decompress to far less. The allocation either fails (the face fails to load, which is fine) or succeeds and holds 2 GB through every `await` of the inflate loop in a tab. The header's `totalSfntSize` (offset 16) states the real size and is never compared, nor is the buffer grown as tables actually inflate.",
+   "size": "function",
+   "cause": "allocation trusts recorded lengths",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
     ]
    }
   }
- ]
+ ],
+ "lines": 2223
 }

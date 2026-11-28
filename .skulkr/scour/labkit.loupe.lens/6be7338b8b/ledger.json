@@ -1,0 +1,1050 @@
+{
+ "area": "labkit.loupe.lens",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/loupe/lens/GridCanvas.tsx",
+  "packages/labkit/src/loupe/lens/LabLoupe.tsx",
+  "packages/labkit/src/loupe/lens/Lens.less",
+  "packages/labkit/src/loupe/lens/LensActions.tsx",
+  "packages/labkit/src/loupe/lens/LensChrome.tsx",
+  "packages/labkit/src/loupe/lens/LensOverlay.tsx",
+  "packages/labkit/src/loupe/lens/LensSlot.tsx",
+  "packages/labkit/src/loupe/lens/LensZoom.tsx",
+  "packages/labkit/src/loupe/lens/ScopeOf.tsx",
+  "packages/labkit/src/loupe/lens/cloneSource.ts",
+  "packages/labkit/src/loupe/lens/compare.ts",
+  "packages/labkit/src/loupe/lens/difference.ts",
+  "packages/labkit/src/loupe/lens/intoFrames.ts",
+  "packages/labkit/src/loupe/lens/lensActionDefs.ts",
+  "packages/labkit/src/loupe/lens/lensApi.fixture.ts",
+  "packages/labkit/src/loupe/lens/lensApi.ts",
+  "packages/labkit/src/loupe/lens/lensHitBoxes.ts",
+  "packages/labkit/src/loupe/lens/lensScene.ts",
+  "packages/labkit/src/loupe/lens/lensShapes.ts",
+  "packages/labkit/src/loupe/lens/lensSource.ts",
+  "packages/labkit/src/loupe/lens/lensTypes.ts",
+  "packages/labkit/src/loupe/lens/lensZoomTrack.ts",
+  "packages/labkit/src/loupe/lens/pixelGrid.ts",
+  "packages/labkit/src/loupe/lens/probeUnderLens.ts",
+  "packages/labkit/src/loupe/lens/reticleFollower.ts",
+  "packages/labkit/src/loupe/lens/scrollByWheel.ts",
+  "packages/labkit/src/loupe/lens/useCaptureDelay.ts",
+  "packages/labkit/src/loupe/lens/useFocusReports.ts",
+  "packages/labkit/src/loupe/lens/useFrameSchedule.ts",
+  "packages/labkit/src/loupe/lens/useLabBody.ts",
+  "packages/labkit/src/loupe/lens/useLensRemeasure.ts",
+  "packages/labkit/src/loupe/lens/useLensShapes.ts",
+  "packages/labkit/src/loupe/lens/useWheelPassThrough.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16915840000000001,
+   "minutes": 0.16368333333333332,
+   "at": "2026-11-26T05:10:43.970Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.324329,
+   "minutes": 3.5673166666666667,
+   "at": "2026-11-26T14:20:46.567Z",
+   "findings": 1
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.2620040000000001,
+   "minutes": 6.41165,
+   "at": "2026-11-26T14:27:11.603Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.709093,
+   "minutes": 7.044616666666667,
+   "at": "2026-11-26T14:34:14.543Z",
+   "findings": 1
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.9848232000000001,
+   "minutes": 3.87325,
+   "at": "2026-11-26T14:38:07.092Z",
+   "findings": 2
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 2.1945239999999995,
+   "minutes": 6.984566666666667,
+   "at": "2026-11-26T14:45:06.328Z",
+   "findings": 5
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.0841429999999999,
+   "minutes": 4.0593,
+   "at": "2026-11-26T14:49:10.027Z",
+   "findings": 1
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.548686,
+   "minutes": 6.105216666666667,
+   "at": "2026-11-26T14:55:16.495Z",
+   "findings": 5
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.1805878,
+   "minutes": 5.15255,
+   "at": "2026-11-26T15:00:25.803Z",
+   "findings": 4
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.795619,
+   "minutes": 3.2046833333333336,
+   "at": "2026-11-26T15:03:38.254Z",
+   "findings": 2
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.3854644000000003,
+   "minutes": 5.8168,
+   "at": "2026-11-26T15:09:27.404Z",
+   "findings": 4
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.9902936000000002,
+   "minutes": 3.66885,
+   "at": "2026-11-26T15:13:07.699Z",
+   "findings": 4
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.1890326000000002,
+   "minutes": 4.639683333333333,
+   "at": "2026-11-26T15:17:46.237Z",
+   "findings": 3
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.8819888,
+   "minutes": 3.8914833333333334,
+   "at": "2026-11-26T15:21:39.905Z",
+   "findings": 3
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 2.7540586000000005,
+   "minutes": 9.4045,
+   "at": "2026-11-26T15:33:13.955Z",
+   "findings": 4
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 2.0249558000000003,
+   "minutes": 6.824450000000001,
+   "at": "2026-11-26T15:40:03.605Z",
+   "findings": 3
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 1.5391794,
+   "minutes": 7.297466666666666,
+   "at": "2026-11-26T15:47:21.670Z",
+   "findings": 3
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.8344938,
+   "minutes": 3.2911666666666664,
+   "at": "2026-11-26T15:50:39.306Z",
+   "findings": 3
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 1.1630478000000002,
+   "minutes": 4.713433333333334,
+   "at": "2026-11-26T15:55:22.299Z",
+   "findings": 4
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A synchronous throw from the comparison capture strands the first capture's bitmap copy, which is never closed",
+   "where": "packages/labkit/src/loupe/lens/LensSlot.tsx:153",
+   "severity": "medium",
+   "scenario": "source returns a promise for the base capture but throws synchronously on the comparison request; the first capture's bitmap copy is never closed",
+   "fix": [
+    "packages/labkit/src/loupe/lens/LensSlot.tsx"
+   ],
+   "size": "line",
+   "cause": "captures invoked outside the cleanup block",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Wheel handoff drops the axis the local scroller can't consume instead of chaining it to an ancestor",
+   "where": "packages/labkit/src/loupe/lens/scrollByWheel.ts:65",
+   "severity": "low",
+   "scenario": "a diagonal trackpad gesture over a horizontal scroller nested in a vertical document scrolls only horizontally; the native event is canceled, so the vertical component never reaches the document",
+   "fix": [
+    "packages/labkit/src/loupe/lens/scrollByWheel.ts"
+   ],
+   "size": "function",
+   "cause": "per-element handling rather than per-axis",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "closeLens drops a lens's hold only under Follow, so closing a quick lens (which holds a Glass body) by a quick-key tap leaves its hold to be cleaned up only if the host api notices the deletion",
+   "where": "packages/labkit/src/loupe/lens/lensActionDefs.ts:258 (closeLens), :345 (quick onEnd tap path)",
+   "severity": "low",
+   "scenario": "open a quick lens with F2 and hold it while the pointer moves (followMove → `api.follow(..., carried)` takes `scene.overrides.hold()` on the Glass lens's body), release, then tap F2 again while moving: the tap path calls `closeLens`, which calls `api.unfollow` only when `s.aim === 'follow'`; the quick lens is Glass, so the hold on the deleted body is never dropped by the actions. `createLensApi` happens to release it from its scene watch, but `LensActionApi`'s contract (and `lensApiFixture`, which has no watch) does not; any host api built to the contract keeps an override for a deleted node id. Holds are taken under any aim `follow()` is called with, so closeLens should unfollow whenever the lens may be held (or the tap path should call `api.unfollow(lensId)` as the drag path does).",
+   "fix": [
+    "packages/labkit/src/loupe/lens/lensActionDefs.ts"
+   ],
+   "size": "line",
+   "cause": "hold release keyed on aim, not on whether a hold exists",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Live clone strips every id, so a trial styled by id selectors renders unstyled in the lens",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:89 (stillCopy)",
+   "severity": "medium",
+   "scenario": "a story whose stylesheet targets ids (`#chart .bar { fill: red }`, `#panel { padding: 8px }`, `:target`) is put under a Live lens in `LabLoupe`. `stillCopy` removes `id` from the copy root and every descendant, so none of those rules match the copy: the lens shows the bars unfilled and the panel unpadded, while the trial beside it shows them styled. The Live source is documented as \"a copy of the DOM under its reticle\", so the lens should look like the trial.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts"
+   ],
+   "size": "design",
+   "cause": "id removal also defeats CSS id matching",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    12
+   ],
+   "sources": {
+    "claude": [
+     3,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Pixel grid draws lines past the capture's edge, over area with no captured pixels",
+   "where": "packages/labkit/src/loupe/lens/pixelGrid.ts:128 (drawPixelGrid)",
+   "severity": "low",
+   "scenario": "the tint loop is bounded by `columns` and `rows`, but the line loops run from the origin to `size.width` / `size.height` whatever the capture's extent. A capture smaller than the cell, such as a reticle near the page's right or bottom edge where the capture box is clipped, or one whose `at` puts its first pixel inside the cell, gets boundary lines drawn across the empty part of the cell, so it reads as captured pixels that are not there. The lines should stop at `origin + columns*step` and `origin + rows*step`.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/pixelGrid.ts"
+   ],
+   "size": "function",
+   "cause": "line loops ignore capture extent",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    9
+   ],
+   "sources": {
+    "claude": [
+     3,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "Difference view shows a stale capture error again after Pixels becomes available",
+   "where": "packages/labkit/src/loupe/lens/LensSlot.tsx:225 (LensDifference)",
+   "severity": "low",
+   "scenario": "a capture rejects (for example a timeout), so `say(message)` stores it in `said`. Pixels then goes unavailable and comes back (`status` goes to a string, then back to `true`). `reason` becomes `said` again, which still holds the old error. That stale message hides the canvas until the next capture settles, at least `LENS_REST_MS` later, or for good if that capture's effect returns early. `said` should be cleared when `status` changes.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/LensSlot.tsx"
+   ],
+   "size": "line",
+   "cause": "`said` not reset on status change",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5,
+    18
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "Live lens clone shows open state kept outside the markup (exclusive <details name>, a showing popover) as closed because stillCopy/mirrorState don't carry it over",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:85 (stillCopy), :62 (mirrorState)",
+   "severity": "medium",
+   "scenario": "a trial renders `<details name=\"faq\" open>` (an exclusive accordion). `recopy` clones it and connects the copy to the same document. The copy and the trial's element are now two open `<details>` in one name group, and the HTML insertion steps for `<details>` close the newly inserted one. The lens shows the section collapsed while the trial shows it open. `stillCopy` already strips radio `name` for the same reason (joining the trial's group), but not `details[name]`, and `mirrorState` never copies `open`. Likewise, an element opened with `showPopover()` holds its showing state outside the markup. The clone is not showing, so the UA's `[popover]:not(:popover-open) { display: none }` hides it in the lens.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts"
+   ],
+   "size": "function",
+   "cause": "grouping and open state not stripped or mirrored",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    11,
+    16
+   ],
+   "sources": {
+    "claude": [
+     4,
+     11,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "paintDifference returns without drawing while the lens clears its message, so the previous diff is shown as if current",
+   "where": "packages/labkit/src/loupe/lens/difference.ts:85 (paintDifference)",
+   "severity": "low",
+   "scenario": "when `readBitmap` returns null for either capture (no 2d context), `paintDifference` returns 0 without touching `canvas`. LensDifference then calls `say(null)` (LensSlot.tsx:176), which un-hides the canvas, and the last diff drawn, for a different reticle, factor or comparison, is shown as this one. The early return should clear the canvas, or LensDifference should report that nothing was drawn.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/difference.ts",
+    "packages/labkit/src/loupe/lens/LensSlot.tsx"
+   ],
+   "size": "function",
+   "cause": "failed draw path leaves the old image and reports success",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    6
+   ],
+   "sources": {
+    "claude": [
+     5,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A press on a lens in a multi-lens selection focuses the first selected lens instead of the one pressed",
+   "where": "packages/labkit/src/loupe/lens/useFocusReports.ts:20 (report), :41 (end)",
+   "severity": "low",
+   "scenario": "lenses A and B both selected (Shift+click, or a marquee); the user presses a chrome toggle on A (focus → A), then presses B's body. The selection stays as it was, so `end` calls `report()`, which reports `scene.getSelection()[0]`, which is A. The lens actions keep landing on A even though the press was on B. The same happens when Shift+click adds B to [A]: the subscriber reports A, not the lens just clicked. The press handler already has `e.target.closest('.lk-lens-hit')` with `data-node`, which names the pressed lens.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/useFocusReports.ts"
+   ],
+   "size": "function",
+   "cause": "focus derived from selection order instead of from the press target",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    10
+   ],
+   "sources": {
+    "claude": [
+     6,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "Pixel grid draws the previous capture against the new factor and size until the next capture lands",
+   "where": "packages/labkit/src/loupe/lens/GridCanvas.tsx:79 (draw effect)",
+   "severity": "low",
+   "scenario": "a Pixels lens with Grid on, at 8×; the user zooms to 16× or resizes the body. The draw effect runs right away with the new `factor`/`w`/`h` but the old `read` (its `at`, `columns`, `mask` come from the capture taken for the old patch). It draws lines at the new step from an origin built from the old capture's `at` and tints mask cells indexed by the old capture's column count. The grid stays misplaced for at least `LENS_REST_MS` (250 ms) plus the capture's round trip, and stays misplaced if that capture fails, because a rejection or a `reason` reply only nulls `read` when it arrives. It should clear, or skip the draw, while `read` belongs to a different request.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/GridCanvas.tsx"
+   ],
+   "size": "function",
+   "cause": "cached capture not keyed to the request it answered",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    19
+   ],
+   "sources": {
+    "claude": [
+     6,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A clone source's copy loses every style inherited or matched from the root's ancestors",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:216 (CloneCell.recopy), packages/labkit/src/loupe/lens/Lens.less:221 (.lk-lens-copy)",
+   "severity": "medium",
+   "scenario": "the copy is re-parented under `.lk-lens-copy` in the lens layer. Inherited properties (`color`, `font-*`, `color-scheme`, custom properties such as a per-pane theme's `--wzl-*`), and every rule whose selector goes through an ancestor of the root (`.lk-trial .x`, `[data-mode=dark] .x`), now resolve against the lens layer's ancestors instead of the trial's. A story whose text color, font or tokens come from its trial or pane wrapper shows up in the lens in the lab's colors and font, so the lens magnifies something the trial does not show. `root` is a documented option (any selector), which makes this broader than `.lk-trial__body`.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts"
+   ],
+   "size": "design",
+   "cause": "clone detached from its cascade context",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "A clone of a padded or bordered content-box root is laid out wider than the original",
+   "where": "packages/labkit/src/loupe/lens/Lens.less:232 (.lk-lens-copy > *), packages/labkit/src/loupe/lens/cloneSource.ts:199 (CloneCell.position)",
+   "severity": "low",
+   "scenario": "the wrapper is sized to `root.offsetWidth × offsetHeight` (the border box), and `> * { width: 100%; height: 100% }` gives the cloned root that width as its *content* width under the default `box-sizing: content-box`. Take a root with `padding: 16px; border: 1px` (a custom `root` selector). The copy's border box is then 34px wider and taller than the original. Centered or right-aligned content, and anything placed in percent, shifts by up to 17px times the factor, so the reticle's point no longer lands on the center of the interior.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/Lens.less"
+   ],
+   "size": "line",
+   "cause": "border-box size applied as content-box width",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "A clone source's copy is made inert, so the 'interior' probe can never land on it",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:122 (CloneCell constructor)",
+   "severity": "medium",
+   "scenario": "a host mounts `<LensOverlay sources={{ live: createCloneSource(...) }} renderReadouts={...}>` (both exported) and its readout finds the element under the reticle with `probeUnderLens(el, 'interior', () => elementsFromPoint(...))`, as forge's `topmostIn` does. Lens.less stands the interior and every descendant up to `pointer-events: auto` for that probe, but the HTML spec has hit testing treat an inert subtree as `pointer-events: none` whatever CSS says. So the probe never returns an element of the copy: a Token or Contrast readout over a Live clone lens reads nothing, or reads what lies beneath the lens layer. It should land on the copied story element the lens shows.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts",
+    "packages/labkit/src/loupe/lens/Lens.less"
+   ],
+   "size": "line",
+   "cause": "`inert` used to block interaction, which also removes the copy from hit testing",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    9,
+    16,
+    18
+   ],
+   "sources": {
+    "claude": [
+     7,
+     9,
+     16,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A press on a Follow lens's own body hits its reticle, because the lens canvas still picks the reticle",
+   "where": "packages/labkit/src/loupe/lens/lensShapes.ts:46 (lensShapes, labkit:lens-reticle matches/silhouette)",
+   "severity": "medium",
+   "scenario": "Set a lens to Follow (Alt+L, F) and move the pointer onto that lens's body. `loupe.follow` hears hover on the whole lab body, which holds the lens layer, so the reticle is held centered on the pointer, inside the body, and it paints above the body (it was inserted after it). Press the body to select or drag it: the press reaches the dispatcher through the body's hit box, and the canvas picks the topmost silhouette at that point, which is the Follow reticle. `lensShapes` gives it a silhouette for every aim but Glass. So the reticle gets selected and the drag writes `setPose` to it while the hold keeps overriding it: nothing visibly moves, and the body cannot be dragged at all while it is under the pointer. The press should take the body. `hitBoxesOf` already drops a Follow reticle's DOM box for this reason (\"a box would take every press meant for the trial\"), but the scene pick still answers for it. `held: 'optional'` on `loupe.follow` also keeps the reticle under the pointer throughout the drag.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/lensShapes.ts"
+   ],
+   "size": "line",
+   "cause": "Follow reticle left pickable in the scene",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "A Live copy is magnified twice by any scale the lab body and the lens layer share",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:178 (CloneCell.position)",
+   "severity": "low",
+   "scenario": "Put a lab inside an element scaled by a CSS transform (`scale(0.5)`), or under a page zoom applied as a transform, so `layoutBoxOf(root).scale` is 0.5 for the trial body and the lens layer is scaled 0.5 too. `position` sets the copy's scale to `factor * scale.x` and its translate to `size.width/2 - local.x * kx`. Both are in the slot's own px, which that same ancestor scale already shrinks, so the copy shows at `factor * 0.5 * 0.5` on screen instead of `factor * 0.5 / 0.5`: half the magnification the reticle marks, and off-center by the same ratio. Only the part of `scale` not shared with the slot (a zoomed pane's own transform) belongs in `kx`, so the slot's own scale should be divided out. `lensApi`'s `frame` doc names this case: an ancestor transform scales the layer.",
+   "size": "function",
+   "cause": "root's client scale used where the scale relative to the slot is needed",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "The aim actions (pinned, follow, glass) stay enabled when the lens already has that aim, unlike every other lens setting action",
+   "where": "packages/labkit/src/loupe/lens/lensActionDefs.ts:258 (lensLifeActions)",
+   "severity": "low",
+   "scenario": "With a Pinned lens current, `loupe.aim.pinned` is enabled: the palette and keymap list it as available, and firing it applies `setAimOps(... 'pinned')`, which returns `[]`, so it does nothing. Every action built with `set` reports `NotApplicable` when its write would change nothing (`changes(...)`). So \"does this action do anything here\" gets two different answers: Source: live on a live lens is disabled, but Aim: pinned on a pinned lens is not.",
+   "size": "function",
+   "cause": "aim actions built with `on`, skipping the no-change check",
+   "confidence": "sure",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "intoFrames maps a point into a frame using the frame's horizontal scale on both axes",
+   "where": "packages/labkit/src/loupe/lens/intoFrames.ts:23 (intoFrames)",
+   "severity": "low",
+   "scenario": "An isolated story frame scaled unevenly (`transform: scale(1, 0.5)`, or a pane stretched on one axis). `scale` is `box.width / offsetWidth` = 1 and is used for `top` and `y` too, so a wheel under a lens is dispatched to the frame at twice the true y. It lands on the wrong element or misses the frame's viewport. The y axis should use `box.height / offsetHeight`.",
+   "size": "line",
+   "cause": "one scale for both axes",
+   "confidence": "sure",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    11
+   ],
+   "sources": {
+    "claude": [
+     8,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "A new lens on a lab body narrower than the lens body hangs off the right edge",
+   "where": "packages/labkit/src/loupe/lens/lensApi.ts:72 (bodyBeside)",
+   "severity": "low",
+   "scenario": "The lab body (the region) is under 160px wide, e.g. a narrow sidebar layout or a small embedded lab. `region.left + half > region.right - half`, and geom's `clamp` returns `lo` when the bounds cross, so the body is centered at `left + 80` and runs past `right`, outside the lab body. The same happens vertically on a short body. It should center in the region when the region is smaller than the body.",
+   "size": "line",
+   "cause": "clamp with crossed bounds",
+   "confidence": "sure",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "A clone copy mirrors scroll offsets before it is sized, so a scrolled root shows unscrolled in the lens",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:196 (CloneCell.recopy)",
+   "severity": "medium",
+   "scenario": "a lens is added (or its reticle moves onto a new root) over a trial whose root element is itself scrolled, e.g. `.lk-trial__body` scrolled 300px. `recopy` connects the clone and calls `mirrorState` before `position()`. On the first copy the box has no `--lk-copy-w`/`--lk-copy-h` yet, so `width: var(...)` is invalid and the absolutely positioned box is shrink-to-fit with auto height; the root's copy (`> * { height: 100% }`) has no overflow, and `target.scrollTop = 300` clamps to 0. On a later recopy for a different root, the box still carries the previous root's size, so the clamp is against the wrong height. `drifted` is cleared, so nothing mirrors again until the trial next fires `scroll`/`input`/`change`. A static scrolled trial shows its top in the lens indefinitely. It should show the scrolled offset.",
+   "size": "line",
+   "cause": "mirrorState runs before position sizes the box",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    13,
+    14
+   ],
+   "sources": {
+    "claude": [
+     9,
+     13,
+     14
+    ]
+   },
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts"
+   ]
+  },
+  {
+   "id": "D20",
+   "claim": "LabLoupe offers Token and Contrast readouts that draw nothing",
+   "where": "packages/labkit/src/loupe/lens/LabLoupe.tsx:41 (LabLoupe)",
+   "severity": "low",
+   "scenario": "in a plain lab, press the chrome's \"Token\" or \"Contrast\" toggle, or Alt+L then `t`/`c`. The action writes the readout to the lens's settings and the toggle shows pressed. But `LabLoupe` passes no `renderReadouts` to `<LensOverlay>`, so nothing is drawn. \"Grid\" also only labels itself `GRID_NEEDS`, because LabLoupe has no Pixels source. The lens offers controls that silently do nothing. It should either hide or disable those readouts when no host renders them, or draw them itself.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/LensChrome.tsx",
+    "packages/labkit/src/loupe/lens/lensActionDefs.ts"
+   ],
+   "size": "function",
+   "cause": "readout toggles not gated on a renderer",
+   "confidence": "sure",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    18
+   ],
+   "sources": {
+    "claude": [
+     9,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "LensZoom's release microtask runs before the slider's own pointerup listeners on real input, so the zoom commit can land outside the press's undo entry",
+   "where": "packages/labkit/src/loupe/lens/LensZoom.tsx:57 (LensZoom, watchPress end)",
+   "severity": "low",
+   "scenario": "a user releases a zoom thumb drag. `end` is a window capture-phase listener, so it runs before the slider's pointerup handling. For a browser-dispatched event the microtask checkpoint runs after each listener returns, so the `queueMicrotask` body (`gesture.current += 1`, `onRelease()`) runs before the slider's listener calls `onChange`. If the committed value differs from the last `onInput` value, `write` then batches it under a new `lens-zoom:<id>:<n+1>` coalesce key, which makes a second undo entry for one press. `press.current` is already null by then, so `gesture` is bumped a second time. Focus also goes back to the lens input before the slider has finished the press. The comment (\"After the slider's own listeners for this event\") only holds for synthetic `dispatchEvent` in tests, where microtasks wait until the dispatch ends.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/LensZoom.tsx"
+   ],
+   "size": "function",
+   "cause": "microtask checkpoint between event listeners",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    12,
+    16
+   ],
+   "sources": {
+    "claude": [
+     10,
+     12,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A Live copy keeps its elements' name attributes, so the trial's getElementsByName and document[name] lookups also find the copies",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:91 (stillCopy)",
+   "severity": "low",
+   "scenario": "a story reads `document.getElementsByName('agree')` for a checkbox group, or reaches `document.settings` for a `<form name=\"settings\">`. While a Live lens's copy of that story is connected, the copy's elements keep their `name` (only radios lose theirs), so `getElementsByName` returns twice as many elements, the copy's among them. `document.settings` turns from the form into an HTMLCollection of two forms. A copy that has been taken out of the trial's id lookups should be out of its name lookups too. `stillCopy`'s doc lists the id cases but drops `name` on everything except radios.",
+   "size": "line",
+   "cause": "`name` kept on copied controls and forms",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11,
+    17
+   ],
+   "sources": {
+    "claude": [
+     11,
+     17
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "The clone source copies no shadow DOM, so web-component content renders blank in a Live lens",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:203 (CloneCell.recopy)",
+   "severity": "low",
+   "scenario": "a trial rendering a custom element with an (open, non-clonable) shadow root. `root.cloneNode(true)` copies the host but not its shadow root, so the lens shows the host empty (or only its light-DOM children unslotted); canvases and control state inside the shadow tree are never mirrored either, since `querySelectorAll` does not enter shadow roots.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts"
+   ],
+   "size": "design",
+   "cause": "cloneNode skips shadow roots",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12,
+    19
+   ],
+   "sources": {
+    "claude": [
+     12,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "scrollByWheel walks light-DOM parents, so it skips the shadow-tree scrollers a slotted element sits in",
+   "where": "packages/labkit/src/loupe/lens/scrollByWheel.ts:43 (parentOf)",
+   "severity": "low",
+   "scenario": "content slotted into a web component whose shadow tree wraps the `<slot>` in an `overflow: auto` scroller. Under a lens, the wheel is handed to the slotted element; `parentOf` returns its `parentElement` (the host, in light DOM) and never visits the scroller around the slot, so the scroller does not scroll, although the browser's own scroll chaining follows the flat tree (`assignedSlot`) and would scroll it.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/scrollByWheel.ts"
+   ],
+   "size": "line",
+   "cause": "light-tree parent instead of flat-tree parent",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "Two quick toggles of the same lens setting merge into one undo entry that changes nothing",
+   "where": "packages/labkit/src/loupe/lens/lensScene.ts:248 (setLensOps)",
+   "severity": "low",
+   "scenario": "every `setLensOps` op carries `coalesceKey: lens:<id>:<sorted patch keys>`. The history recorder (`packages/history/src/recording.ts` `canCoalesce`) merges consecutive entries with the same keys inside its coalesce window. So pressing Alt+L then `t` twice in quick succession (token readout on, then off), or `v`/`x` back and forth, or toggling a chrome readout on and off, folds into one entry. Its net effect is no change, and the first Undo press visibly does nothing. Zoom-in pressed twice likewise becomes a single undo step. Discrete toggles should not share a coalesce key: keep the key only for continuous writes (the seam, the factor while dragging), which pass their own.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/lensScene.ts",
+    "packages/labkit/src/loupe/lens/lensActionDefs.ts"
+   ],
+   "size": "function",
+   "cause": "coalesce key on discrete toggles",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "A canceled quick-lens press is treated as a tap and closes the lens",
+   "where": "packages/labkit/src/loupe/lens/lensActionDefs.ts:333 (quick action, onEnd)",
+   "severity": "low",
+   "scenario": "the quick lens is open, and F2 is pressed again and then canceled within 250 ms (window blur, a dialog taking focus, or the dispatcher canceling the held key). `onEnd` ignores its end reason and checks only the elapsed time, so the cancel runs `closeLens` and the lens disappears. A cancel should take the keep-or-unfollow path, not count as a tap.",
+   "size": "line",
+   "cause": "onEnd ignores end reason",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "In a default Split lens the interior probe hits the seam element instead of the content the lens shows",
+   "where": "packages/labkit/src/loupe/lens/Lens.less:58 ([data-probe='interior'] .lk-lens-interior *), packages/labkit/src/loupe/lens/LensSlot.tsx:250 (seam div)",
+   "severity": "medium",
+   "scenario": "a lens compares in Split with the seam at its default 0.5. A host readout (forge's `topmostIn`, under `probeUnderLens(..., 'interior')`) hit-tests the lens's aim, which is the interior's center. The probe rule sets `pointer-events: auto` on every descendant of the interior, `.lk-lens-seam` included. That element is 2px wide at `left: seamX - 1px`, with `seamX = round(width * 0.5)`, and it comes after the sides in DOM order. So it is topmost at the center, and the readout reports the seam's accent-colored div instead of the compared story. The same rule also stands up `.lk-lens-grid`, `.lk-lens-reason` and `.lk-lens-readouts`, which are the lens's own chrome too (the comment at Lens.less:63 excludes only the zoom). The compared-side `clip-path: none` rule at :105 was written for this same probe, but it does not get past the seam drawn on top.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/Lens.less"
+   ],
+   "size": "line",
+   "cause": "interior probe stands up lens chrome, not only source content",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D28",
+   "claim": "A lens's first attach and first capture use reticle (0, 0), so the real capture is delayed by LENS_REST_MS",
+   "where": "packages/labkit/src/loupe/lens/LensOverlay.tsx:178 (reticleClient), :318",
+   "severity": "low",
+   "scenario": "`layer` is state set by the portal div's own ref. So on the first render of the portal, `layer` is null and `reticleClient` returns `{x: 0, y: 0}` for every lens. `LensCell` attaches the source with that reticle: `CloneCell.place` runs a hit test at the page's corner and copies whatever root is there, or none. `GridCanvas`/`LensDifference` fire their first capture, with `useCaptureDelay` answering 0, at the wrong point. The re-render after `setLayer` carries the real reticle. Their effects then rerun, but `useCaptureDelay` now answers 250 ms, so the first correct capture waits LENS_REST_MS, against the contract that \"its first capture is taken at once\". The clone source also clones and observes a wrong root once.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/LensOverlay.tsx"
+   ],
+   "size": "line",
+   "cause": "reticle computed before the layer ref has landed",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D29",
+   "claim": "Ctrl+wheel (trackpad pinch) over a lens is passed through as a scroll of the story beneath instead of being left to zoom the page",
+   "where": "packages/labkit/src/loupe/lens/useWheelPassThrough.ts:40 (onWheel)",
+   "severity": "low",
+   "scenario": "the pointer is over a lens hit box above a story with a scroller and no wheel handler of its own; the user pinches on a trackpad, which arrives as `wheel` with `ctrlKey: true`. Nothing cancels the copy, so `scrollByWheel(beneath.el, copy)` scrolls the scroller by `deltaY` and returns true, and the hook calls `e.preventDefault()` on the original. The story scrolls and the browser's pinch zoom is suppressed. A trusted Ctrl+wheel never scrolls a box, and the hook's own comment promises to do what a browser does for a trusted wheel. Expected: with `ctrlKey` set, skip `scrollByWheel` and leave the original uncanceled unless the copy was canceled.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/useWheelPassThrough.ts",
+    "packages/labkit/src/loupe/lens/scrollByWheel.ts"
+   ],
+   "size": "line",
+   "cause": "modifier ignored when emulating a native scroll",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D30",
+   "claim": "Shift+wheel over a lens scrolls the story vertically, where a browser would scroll horizontally",
+   "where": "packages/labkit/src/loupe/lens/scrollByWheel.ts:61 (scrollByWheel)",
+   "severity": "low",
+   "scenario": "on Windows or Linux, a mouse wheel with Shift held arrives with `deltaY ≠ 0`, `deltaX = 0` and `shiftKey: true`. The browser scrolls that horizontally. `scrollByWheel` reads `wheelPixels(wheel)` as given, so over a lens a horizontal-only scroller (`overflow-x: auto`, no vertical room) does not move at all, and a box that can move both ways moves vertically. Expected: swap the axes for a `shiftKey` wheel that has no `deltaX`, as the platform does for a trusted wheel.",
+   "size": "line",
+   "cause": "shift axis swap not emulated",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D31",
+   "claim": "A scroller with overscroll-behavior: contain that is at its end still hands the lens's wheel on to the page instead of stopping the chain",
+   "where": "packages/labkit/src/loupe/lens/scrollByWheel.ts:56 (scrollByWheel / canMove)",
+   "severity": "low",
+   "scenario": "a story has an inner list with `overscroll-behavior: contain` (or `none`), scrolled to its bottom, inside a page that can scroll. A trusted wheel down over the list scrolls nothing, because the list blocks scroll chaining. Through a lens, `canMove` is false for the list, so the loop goes on to `parentOf(el)` and scrolls the outer scroller or the document. Expected: the walk stops at an element whose computed `overscroll-behavior-x/y` is not `auto` on the moving axis, once that element is a scroll container.",
+   "size": "function",
+   "cause": "scroll chaining ignores overscroll-behavior",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D32",
+   "claim": "Wheel pass-through hit-tests without piercing open shadow roots, so a wheel over a lens never reaches content inside a shadow tree beneath it",
+   "where": "packages/labkit/src/loupe/lens/useWheelPassThrough.ts:13 (onWheel); packages/labkit/src/loupe/lens/intoFrames.ts:20 (intoFrames)",
+   "severity": "low",
+   "scenario": "a story renders its scroller, or a canvas with a wheel-zoom listener, inside a web component's open shadow root. `elementFromPoint` retargets to the shadow host. `intoFrames` descends into frames but never into `host.shadowRoot.elementFromPoint`, so the copy is dispatched on the host. It cannot reach listeners inside the shadow tree: dispatching on the host never enters its shadow tree. `scrollByWheel` then starts its walk at the host and skips the inner scroller. Under a lens, the story's zoom and scroll stop working. `scrollByWheel`'s `parentOf` already climbs out of shadow roots, so a walk starting inside one is clearly meant to happen. Expected: follow the point down through open shadow roots, as is done for frames.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/intoFrames.ts"
+   ],
+   "size": "function",
+   "cause": "hit test does not descend into shadow roots",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D33",
+   "claim": "A round lens clips its unavailable-reason text to a sliver along the circle's top chord",
+   "where": "packages/labkit/src/loupe/lens/Lens.less:173 (.lk-lens-reason)",
+   "severity": "medium",
+   "scenario": "a lens of the default `circle` shape whose wanted source is unavailable (\"Pixels unavailable: needs Playwright\"), or a Difference lens with no Pixels source. `.lk-lens-reason` is a full-width strip at `top: 0` *inside* `.lk-lens-slot`, which a circle lens clips with `clip-path: ellipse(...)`. On a 160px body, about 10px down the chord is only about 76px wide, so most of the message is cut off and the first line is close to invisible. The readouts, which sit outside the slot, already get a circle rule (`top: 14%; max-width: 60%`). The reason gets none, so it should be readable inside the circle the same way.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/Lens.less"
+   ],
+   "size": "line",
+   "cause": "reason placed inside the clipped slot with no circle rule",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17
+   ],
+   "sources": {
+    "claude": [
+     17
+    ]
+   }
+  },
+  {
+   "id": "D34",
+   "claim": "Custom elements in a Live copy get upgraded and connected, rerunning their live behavior on every recopy",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:191 (CloneCell.recopy)",
+   "severity": "low",
+   "scenario": "a story that renders a defined custom element (a web-component widget that starts timers, fetches, or registers global listeners in `connectedCallback`). `root.cloneNode(true)` creates upgraded instances, and `replaceChildren` connects them. Every mutation under the root then recopies it, which can happen on every frame, and each recopy constructs and connects fresh instances and disconnects the old ones. `stillCopy` takes the live behavior out of frames, media and forms, but does nothing about custom elements. The copy duplicates the story's side effects and can churn them at frame rate.",
+   "size": "design",
+   "cause": "clone of upgraded custom elements is live",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17,
+    19
+   ],
+   "sources": {
+    "claude": [
+     17,
+     19
+    ]
+   },
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts"
+   ]
+  },
+  {
+   "id": "D35",
+   "claim": "Difference view stays blank with no reason shown when a Pixels source is available but has no capture",
+   "where": "packages/labkit/src/loupe/lens/LensSlot.tsx:139 (LensDifference)",
+   "severity": "low",
+   "scenario": "a host offers `sources.pixels` whose `status()` is `true` but omits `capture`, which `LensSource` types as optional. The effect returns early (`!pixels?.capture`), `said` stays null, so `reason` is null: the canvas shows empty and no `.lk-lens-reason` explains it. The chrome also shows no reason, since `shownSource` reports Pixels as shown. It should say the source cannot capture, as it does for an unavailable one.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/LensSlot.tsx",
+    "packages/labkit/src/loupe/lens/lensSource.ts"
+   ],
+   "size": "line",
+   "cause": "missing capture method not treated as unavailable",
+   "confidence": "sure",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
+  },
+  {
+   "id": "D36",
+   "claim": "A Live lens over a framed (isolated) story shows an empty frame because the clone does not carry the frame's content",
+   "where": "packages/labkit/src/loupe/lens/cloneSource.ts:23 (rootAt), :89 (stillCopy)",
+   "severity": "low",
+   "scenario": "the reticle aims at a story rendered in an `<iframe>` inside `.lk-trial__body`. `rootAt` uses the outer document's `elementsFromPoint`, which stops at the iframe element and does not follow into the frame as `intoFrames` does for the wheel pass-through. The trial body is copied, and `stillCopy` strips the copy's iframe `src`/`srcdoc`, so the lens shows a blank frame instead of the story under the reticle. The wheel path follows the same point into the frame (`useWheelPassThrough` → `intoFrames`), so the two paths answer differently about what lies under a lens.",
+   "fix": [
+    "packages/labkit/src/loupe/lens/cloneSource.ts"
+   ],
+   "size": "function",
+   "cause": "hit test does not descend into frames",
+   "confidence": "likely",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
+  }
+ ],
+ "lines": 3940
+}

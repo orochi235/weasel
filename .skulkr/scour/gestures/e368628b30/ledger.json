@@ -57,6 +57,50 @@
    "minutes": 0.13146666666666668,
    "at": "2026-11-25T21:19:04.796Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 2.055786,
+   "minutes": 4.330733333333334,
+   "at": "2026-11-26T17:40:35.210Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.8887204,
+   "minutes": 4.188766666666666,
+   "at": "2026-11-26T23:01:00.239Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.1587636000000001,
+   "minutes": 5.176550000000001,
+   "at": "2026-11-26T23:06:11.008Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.9638312,
+   "minutes": 3.522383333333333,
+   "at": "2026-11-26T23:09:42.510Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
   }
  ],
  "defects": [
@@ -82,13 +126,181 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    2,
+    3,
+    4
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     2,
+     3,
+     4
+    ]
+   },
+   "scenario": "a document-level keydown listener gets Space on a custom element whose open shadow root has a focused `<button>` (or a `<select>`, or a range input) inside it. The event is retargeted, so `e.target` is the shadow host. `isEditableTarget` follows `shadowRoot.activeElement` to the inner field, but `activatesFocusedControl`, `selectOwnsKey` and `stepperOwnsKey` test the host itself. So `focusedControlOwnsKey` answers false, the page claims the key (for example space-to-pan `keyHeld`), and its preventDefault cancels the inner button's activation or the select's type-ahead. It should resolve to the shadow root's focused element the same way `isEditableTarget` does.",
+   "cause": "shadow-root resolution exists only in isEditableTarget",
+   "size": "function",
+   "confidence": "likely",
+   "fix": [
+    "packages/gestures/src/ui/keyOwner.ts",
+    "packages/gestures/src/ui/controlTarget.ts"
+   ]
+  },
+  {
+   "id": "D3",
+   "claim": "formatShortcut drops `shift: 'optional'` only on the final key, so leader steps with optional shift render a spurious Shift",
+   "where": "packages/gestures/src/ui/formatShortcut.ts:72 (formatShortcut)",
+   "severity": "low",
+   "scenario": "`formatShortcut({ key: '2', leader: [{ label: 'Loupe', shortcut: { key: 'l', shift: 'optional' } }] })` rewrites only `b.shift` to `b.shift === true`. The leader's shortcut goes to `keyLegendsFromShortcut` unchanged, so its optional Shift is pushed as a legend and printed into the string (\"Loupe ▸ 2\" is preceded by a leader drawn with ⇧ / `Shift+`). The doc says `'optional'` is treated as falsy, so the leader should print without Shift, just as the key does.",
+   "size": "line",
+   "cause": "optional-shift normalization skips leader steps",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "routeGestureForSpecKind looks up a plain object, so inherited keys (e.g. `toString`, `constructor`) resolve as spec kinds",
+   "where": "packages/gestures/src/grammar/specKinds.ts:36 (routeGestureForSpecKind)",
+   "severity": "low",
+   "scenario": "a spec read from persisted JSON (keySugar says a spec is stored as plain JSON) whose `kind` is `'constructor'` or `'toString'` makes `SPEC_KIND_TO_GESTURE[kind]` return `Object.prototype`'s function rather than `undefined`. Callers then treat it as a gesture name instead of \"no route gesture\". It should use `getOwn`, as keyLegendFromCode and keySugar already do.",
+   "size": "line",
+   "cause": "prototype-chain lookup on a kind-keyed table",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "The press-ownership check reads the retargeted `e.target`, so a press on a control inside an open shadow root is not treated as the control's own press",
+   "where": "packages/gestures/src/ui/controlTarget.ts:17 (isInControlWithin)",
+   "severity": "medium",
+   "scenario": "a web component with an open shadow root that holds a `<button>`, `<select>` or `<input type=checkbox|range>` is focused, or pressed over the canvas. A document- or host-level listener sees `e.target` as the shadow host (say `<my-button>`), which matches none of the selectors. Pressing Space on the inner button gives `focusedControlOwnsKey` → false, so a page shortcut like space-to-pan takes the key and cancels the button's activation. A press on the inner button gives `isInControlWithin` → false, so the host's press handler takes it. `isEditableTarget` handles the same case by reading `target.shadowRoot.activeElement`, so whether a focused control owns a key gets two different answers depending on whether that control is a text field. The fix is to read the control as `isEditableTarget` does, or through `e.composedPath()[0]`.",
+   "fix": [
+    "packages/gestures/src/ui/keyOwner.ts",
+    "packages/gestures/src/ui/controlTarget.ts"
+   ],
+   "size": "function",
+   "cause": "shadow-retargeted event target not unwrapped",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "matchKey does not resolve the `Esc`/`Space` aliases its legend doc says it reads, so a hand-written KeySpec naming them never matches",
+   "where": "packages/gestures/src/ui/match.ts:76 (matchKey)",
+   "severity": "medium",
+   "scenario": "`{ kind: 'key', key: 'Space' }` or `{ kind: 'key', key: 'Esc' }` is written as a spec (not through `key()` or a route). `matchKey` compares `' '` against `'space'` and `'escape'` against `'esc'` case-insensitively and fails, so the binding never fires. Meanwhile `keyLegendFromKey('Space')` draws ␣, and its doc says \"`Esc` and `Space` are read in any case, as the matcher reads them\". Only `eventKeyName` in the grammar and in `keySugar` folds the aliases. That leaves two answers to which key `'Space'` names: legends and the grammar say the space bar, the matcher says no key.",
+   "fix": [
+    "packages/gestures/src/ui/match.ts"
+   ],
+   "size": "line",
+   "cause": "alias folding lives only in the grammar and sugar, not in the matcher",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "CONTROL_SELECTOR leaves out ARIA widgets that handle their own press and keys, so presses and keys on them are not treated as the control's own",
+   "where": "packages/gestures/src/ui/controlTarget.ts:4 (CONTROL_SELECTOR)",
+   "severity": "low",
+   "scenario": "a custom `[role=\"slider\"]`, `[role=\"spinbutton\"]`, `[role=\"combobox\"]`, `[role=\"textbox\"]`/`[role=\"searchbox\"]` or `[role=\"scrollbar\"]` sits over a canvas host. `isInControlWithin` returns false for it, so the host's press, drag and arrow-key handlers take events the widget is meant to handle (a slider thumb drag pans the canvas). The list already covers checkbox, switch, radio and tab, which are the same class of widget.",
+   "size": "line",
+   "cause": "incomplete role list",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "held('Shift') / key('Alt') sugar builds a spec that its own modifier key event can never match",
+   "where": "packages/gestures/src/ui/keySugar.ts:45 (held); packages/gestures/src/ui/match.ts:217 (matchSpec)",
+   "severity": "low",
+   "scenario": "`held('Shift')` → `{ kind: 'keyHeld', key: 'Shift' }` with no mods. The Shift keydown carries `shiftKey: true`; matchModifiers treats the omitted `shift` as forbidden, so the spec never matches. Callers in core/routing work around it by hand with `mods: { shift: 'optional' }` (toolOffhand's `heldKeySpec`, useGestureDispatcher.keyCode.test). The sugar should mark the modifier the key itself is as optional (or the matcher should ignore the modifier flag a modifier key sets on itself).",
+   "fix": [
+    "packages/gestures/src/ui/keySugar.ts"
+   ],
+   "size": "function",
+   "cause": "modifier key's own flag counted against strict mods",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "keyLegendFromCode skips key-name labels for modifier codes that keyLegendFromKey honors",
+   "where": "packages/gestures/src/ui/keyLegendFromCode.ts:29 (keyLegendFromCode)",
+   "severity": "low",
+   "scenario": "`opts.labels = { Shift: 'Umschalt' }` (labels by `KeyboardEvent.key`, as KeyLegendOptions documents). `keyLegendFromKey('Shift', opts)` → 'Umschalt'; `keyLegendFromCode('ShiftLeft', opts)` goes straight to `keyLegendsFromMods([{name:'shift'}])`, which only reads `labels.shift`, and draws ⇧. The doc says code labels fall back \"as it does for keyLegendFromKey\". Map the code to the key name (`Shift`, `Control`, `Alt`, `Meta`) and call keyLegendFromKey.",
+   "size": "line",
+   "cause": "modifier codes bypass keyLegendFromKey's label lookup",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
     ]
    }
   }
- ]
+ ],
+ "lines": 4641
 }

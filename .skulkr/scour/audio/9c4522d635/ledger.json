@@ -60,6 +60,106 @@
    "minutes": 0.1338,
    "at": "2026-11-25T21:13:27.854Z",
    "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 2.3863499999999997,
+   "minutes": 6.116066666666667,
+   "at": "2026-11-26T05:28:17.753Z",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 3.0219802,
+   "minutes": 9.281933333333333,
+   "at": "2026-11-26T05:37:34.975Z",
+   "findings": 4
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 2.0060608,
+   "minutes": 7.37835,
+   "at": "2026-11-26T05:45:10.773Z",
+   "findings": 6
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 2.0196268,
+   "minutes": 7.37385,
+   "at": "2026-11-26T05:52:33.347Z",
+   "findings": 6
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 2.0493624,
+   "minutes": 8.117966666666666,
+   "at": "2026-11-26T06:00:40.591Z",
+   "findings": 4
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.2751308000000001,
+   "minutes": 5.93885,
+   "at": "2026-11-26T06:06:37.055Z",
+   "findings": 4
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.7917024,
+   "minutes": 6.4774,
+   "at": "2026-11-26T06:13:05.859Z",
+   "findings": 2
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 2.2202702000000003,
+   "minutes": 8.637233333333333,
+   "at": "2026-11-26T06:21:44.217Z",
+   "findings": 5
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.9661474,
+   "minutes": 7.7089,
+   "at": "2026-11-26T06:29:26.876Z",
+   "findings": 4
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 2.2310878000000005,
+   "minutes": 8.388616666666666,
+   "at": "2026-11-26T06:37:50.316Z",
+   "findings": 3
   }
  ],
  "defects": [
@@ -70,13 +170,33 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    3,
+    4,
+    5,
+    7,
+    10
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     3,
+     4,
+     5,
+     7,
+     10
     ]
-   }
+   },
+   "scenario": "`engine.load(url)`, then `engine.dispose()` before the fetch resolves, on a consumer-owned context that stays open. `clear()` empties `buffers`, `byUrl` and `urlById`, but `inflight` is left alone. The task then decodes and calls `store(buffer)` and `byUrl.set(url, …)`, so a decoded buffer is held in a cache its engine has disposed. `clear()`'s doc says it frees every handle, and the engine's doc says dispose frees every sound. The same holds for `free` and `clear` called on a standalone cache while a load is pending: the buffer comes back after the clear.",
+   "cause": "clear does not invalidate in-flight loads",
+   "fix": [
+    "packages/audio/src/soundCache.ts",
+    "packages/audio/src/createAudioEngine.ts"
+   ],
+   "size": "function",
+   "confidence": "sure"
   },
   {
    "id": "D2",
@@ -107,6 +227,478 @@
      1
     ]
    }
+  },
+  {
+   "id": "D4",
+   "claim": "stop(), cancelKey() and stopAll() on a voice started inside the lookahead but not yet heard report onDone, where release() reports onDrop('stopped')",
+   "where": "packages/audio/src/voices.ts:173 (voiceHandle.stop)",
+   "severity": "medium",
+   "scenario": "`engine.play(sound, { when: engine.now() + 50, onDone, onDrop })` with the default 100 ms lookahead. The scheduler's microtask flush runs startVoice, so the voice has a source but nothing is audible yet. Then `handle.stop()` goes to `teardown`: the source is stopped before its start time, its `onended` fires, and `onDone` runs. `handle.release()` at the same moment clears `onended`, tears down, and calls `onDrop('stopped')`. The same `stop()` on a voice booked 150 ms out, past the lookahead, also gives `onDrop('stopped')`. So whether the owner hears \"played\" or \"never played\" depends on which method it called and on the lookahead, not on whether the voice sounded. `VoiceDropReason` says `stopped` covers \"stopped, released or cancelKeyed before it came due\". `stop`, `cancelKey` and `stopAll` (through `teardownVoice`) should take the not-yet-heard branch that `release` takes.",
+   "fix": [
+    "packages/audio/src/voices.ts"
+   ],
+   "size": "function",
+   "cause": "the \"started ahead, not heard\" check lives only in release()",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "catchUp() on a voice being torn down can steal an unrelated sounding voice",
+   "where": "packages/audio/src/voices.ts:174 (voiceHandle.stop)",
+   "severity": "medium",
+   "scenario": "Run `synthVoices: 'worklet'` with a bus at its voice limit. The main thread stalls, which is the case worklet voices exist for, so a booked voice's time passes before its scheduler pass. Calling `handle.stop()`, `release()` or `engine.cancelKey(k)` on that voice first runs `voice.catchUp()` → `begin` → `startVoice`. That calls `slots.pool.acquire`, which takes the bus's oldest or quietest voice and tears it down, and then the caught-up voice is torn down too. Stopping one voice silences another, unrelated one. `cancelKey` does the same for every keyed voice it catches up. Catch-up should mark the voice started without acquiring a slot, or skip the steal when teardown follows at once.",
+   "fix": [
+    "packages/audio/src/voices.ts"
+   ],
+   "size": "function",
+   "cause": "catch-up reuses the full start path, slot acquisition and steal included",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4,
+    7
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4,
+     7
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A freed sound's drop warns that the engine never loaded it",
+   "where": "packages/audio/src/createAudioEngine.ts:107 (bufferStarter.ready)",
+   "severity": "low",
+   "scenario": "`const s = await engine.load(url); engine.free(s); engine.play(s)`. The voice drops as `unready`, which is what `SoundCache.free` documents. But the console reports that the engine was handed a sound \"which this engine never loaded… A handle belongs to the engine that produced it\", which points the consumer at a cross-engine mix-up that never happened. The warning is latched once per engine, so a later real cross-engine mistake goes unreported after it.",
+   "fix": [
+    "packages/audio/src/voiceDrops.ts",
+    "packages/audio/src/soundCache.ts"
+   ],
+   "size": "function",
+   "cause": "one warning covers both \"freed\" and \"foreign handle\"",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A finite value past float32's range passes every audio param check, then throws from the AudioParam after writeParam has already canceled the ramp in flight",
+   "where": "packages/audio/src/param.ts:20 (writeParam / checkParam / checkGain / checkFinite / checkRate)",
+   "severity": "medium",
+   "scenario": "`engine.bus('music').setGain(1e39, 200)` while the bus is ramping: `checkGain` accepts the value because it is finite, `s.gain = 1e39` is kept, and `writeParam` calls `cancelScheduledValues(now)` and then `linearRampToValueAtTime(1e39, …)`. WebIDL's `float` conversion throws a TypeError on any double that rounds past ±2^128, and `AudioParam.value`, `setValueAtTime` and `linearRampToValueAtTime` all take `float`. So the call throws after the ramp in flight is gone, which is the outcome `writeParam`'s own comment says the early check exists to prevent. Because the value is kept, every later `apply()` that recomputes the bus (an unmute, an unsolo) throws again; `checkGain`'s doc names exactly this trap. The voice path breaks the same way. `voice.setGain(1e39)` stores `baseGain` and then throws. After that, `place()` throws for that voice on every `setPosition`, and `engine.setListener` → `respatialize()` throws partway through its loop, so the voices after it are never respatialized. The worklet path plays the same input: `voiceKernel`'s `tuning` clamps to FLOAT32_MAX, and the posted level is a JS number. So the two voice paths disagree on the same input.",
+   "fix": [
+    "packages/audio/src/param.ts",
+    "packages/audio/src/voices.ts",
+    "packages/audio/src/buses.ts"
+   ],
+   "size": "function",
+   "cause": "finiteness check where the param needs a float32 range check",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A voice pan past float32's range throws during launch and leaks a voice chain still wired to the bus",
+   "where": "packages/audio/src/voiceChains.ts:46 (createChainPool.take), packages/audio/src/voices.ts:270 (launch)",
+   "severity": "low",
+   "scenario": "`engine.play(sound, { pan: 1e39 })`: `checkVoice` → `checkFinite('voice pan')` passes, and `chains.take` writes the gain, then sets `panner.pan.value = 1e39`, which throws a TypeError (WebIDL `float`). On the step-gain path `amp.connect(bus)` comes after that line, so a fresh chain is merely lost. A chain reused from `idle` was popped first and is never pushed back. Later, on a live voice, `handle.setPan(1e39)` clears `voice.position` and sets `spatialGain = 1` in `place()`, then throws from `out.pan` before the level is rewritten. The voice keeps its old distance gain at the sound level while its state says it has no position and a gain of 1. The worklet path takes the same pan and clamps it (`voiceMixer` render).",
+   "fix": [
+    "packages/audio/src/param.ts",
+    "packages/audio/src/voices.ts"
+   ],
+   "size": "line",
+   "cause": "finiteness check where the param needs a float32 range check",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "setTempo called outside a step moves the already-booked step's end, unlike the in-onStep path",
+   "where": "packages/audio/src/patternPlayer.ts:285 (createPatternPlayer → setTempo)",
+   "severity": "medium",
+   "scenario": "a player is running at 120 bpm (125 ms steps), and the step at T has been booked with its notes gated to 125 ms. A UI calls `setTempo(240)` between steps. `nextAt = max(lastAt + stepMs(), now)` puts the next step at T + 62.5 ms, using the new length, so it overlaps the booked step's notes. At 60 bpm it would leave a gap instead. Called from `onStep`, the same change books the next step at `when + ms`, the old length (\"which keeps its own length\"). The next step should come at `lastAt` plus the length that step was booked with.",
+   "fix": [
+    "packages/audio/src/patternPlayer.ts"
+   ],
+   "size": "line",
+   "cause": "next time recomputed from the new tempo instead of the booked step's length",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "patternVoicePeaks leads each voice by lookahead only, but the slot is taken up to lookahead + tickInterval early, so the peak count is too low",
+   "where": "packages/audio/src/patternLoad.ts:52 (patternVoicePeaks, lead)",
+   "severity": "low",
+   "scenario": "a step's booking is a `waited` scheduler entry, so it fires on a pass anywhere in (at − lookahead − interval, at − lookahead]. Its voices are booked inside the window and take their slots at that microtask. Take a voice ending at t and the next voice on its bus sounding at t + lookahead + 10 ms: the computed spans don't overlap, but the engine can hold both slots at once. The peak is then one short, and against `voiceLimit` it fails to warn of a steal. Neither `tickInterval` nor the pass jitter shows up in the options.",
+   "fix": [
+    "packages/audio/src/patternLoad.ts"
+   ],
+   "size": "line",
+   "cause": "pass interval jitter not in the lead",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "setEvents(events, length) called from beforeStep applies the new events to a step index computed with the old length",
+   "where": "packages/audio/src/patternPlayer.ts:220 (fire: step = count % length read before beforeStep)",
+   "severity": "low",
+   "scenario": "a loop of length 16 at count 12. `beforeStep` calls `setEvents(newEvents, 8)`. `step` is still 12, so `byStep.get(12)` of the new 8-step pattern plays (nothing, or an event past its length that should never sound), and `onStep` reports step 12 of an 8-step pattern. The `!loop && count >= length` end check also ran against the old length. `beforeStep`'s doc promises \"events ... set here apply to this step\".",
+   "fix": [
+    "packages/audio/src/patternPlayer.ts"
+   ],
+   "size": "line",
+   "cause": "step derived before the hook that may change length",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    8
+   ],
+   "sources": {
+    "claude": [
+     4,
+     8
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "An insert effect whose nodes cannot be wired makes add throw while leaving the slot in order, so every later chain edit throws again",
+   "where": "packages/audio/src/inserts.ts:130 (chain.add), packages/audio/src/insertSlot.ts:27 (buildSlot)",
+   "severity": "low",
+   "scenario": "`bus.inserts.add({ input: nodeFromAnotherContext, output: … })` (an effect built on an `OfflineAudioContext`, say). `used.add(effect)` and `order.splice` happen, then `pump()` → `spliceIn` → `buildSlot` → `n.in.connect(effect.input)` throws `InvalidAccessError`. The slot stays in `order` with `nodes: null`, so every later `add`, `moveTo`, `remove` or `clear` on that bus calls `pump()`, whose `nextStep` returns the same `in` step and throws again; `settled()` never resolves. The effect is also marked used forever. Expected: a failed add leaves the chain as it was.",
+   "fix": [
+    "packages/audio/src/inserts.ts",
+    "packages/audio/src/insertRoute.ts"
+   ],
+   "size": "function",
+   "cause": "state committed before the throwing splice",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "Partials whose gains sum past the double range normalize to 0, so a note with large gains is silent",
+   "where": "packages/audio/src/synthVoice.ts:107 (resolvePartials)",
+   "severity": "low",
+   "scenario": "`playNote({ pitch: 'A4', wave: { partials: [{ ratio: 1, gain: 1e308 }, { ratio: 2, gain: 1e308 }] } })`. `total` overflows to Infinity, each `gain / total` is 0, and both the node path and the kernel play silence. Only the ratios are meant to matter (\"scaled so their levels sum to 1\"), as `toUnitPeak` already ensures for harmonic levels.",
+   "fix": [
+    "packages/audio/src/synthVoice.ts"
+   ],
+   "size": "line",
+   "cause": "sum not scaled by largest gain first",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    6
+   ],
+   "sources": {
+    "claude": [
+     5,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "resolveEnvelope passes NaN through despite promising every value in range",
+   "where": "packages/audio/src/envelope.ts:24 (resolveEnvelope)",
+   "severity": "low",
+   "scenario": "`resolveEnvelope({ sustain: NaN })` returns `sustain: NaN` (`Math.min(1, Math.max(0, NaN))` is NaN), and `envelopeLevel` / `envelopePoints` on it return NaN levels. It is exported and its type says \"every default filled in and every value in range\". Voice paths are guarded by `checkEnvelope`, so this bites a direct caller only.",
+   "size": "line",
+   "cause": "Math.min/max do not clamp NaN",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "createNoiseKernel/renderNoise index past the table when random returns 1 or a negative, writing NaN",
+   "where": "packages/audio/src/voiceKernel.ts:186 (createNoiseKernel)",
+   "severity": "low",
+   "scenario": "`renderNoise({ noise: 'white', duration: 50 }, 48000, () => 1)`. `at = floor(1 * loop.length) = loop.length`, `loop[at]` is undefined, and the first sample is NaN. A negative return does the same at every sample until `%` brings it back in range. The `random` parameter's doc states no range, and the node path (`random() * duration` as a start offset) plays fine with 1, so the two paths disagree.",
+   "size": "line",
+   "cause": "start index not wrapped into the loop",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "load called after dispose still fetches and decodes",
+   "where": "packages/audio/src/soundCache.ts:52 (load), packages/audio/src/createAudioEngine.ts:316 (dispose)",
+   "severity": "low",
+   "scenario": "`engine.load('big.ogg')`, then `engine.dispose()` before it resolves. `sounds.clear()` empties the maps, then the task resolves and does `buffers.set` / `byUrl.set`, so the decoded buffer stays held by a disposed engine for as long as anything references the engine. `engine.load` after `dispose()` also fetches and decodes with no disposed check, unlike `analyser` and `graph`, which throw.",
+   "fix": [
+    "packages/audio/src/soundCache.ts",
+    "packages/audio/src/createAudioEngine.ts"
+   ],
+   "size": "function",
+   "cause": "no disposed state in the cache",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "The 'quietest' steal policy never sees a fading or releasing voice's level fall, so it ranks voices by a stale gain",
+   "where": "packages/audio/src/voices.ts:184 (voiceHandle.setGain), packages/audio/src/voices.ts:173 (stop fade path)",
+   "severity": "low",
+   "scenario": "The bus is full and uses `steal: 'quietest'`. One voice is fading out after `stop(500)`, or running its release after `release()`, and goes to silence while still holding its slot. Its pool record keeps the gain from before the fade, because `stop(fadeMs)` and `release()` never call `poolGain`, and `setGain` returns early while fading. The next play therefore steals the voice with the lowest recorded gain. That can be an audible quiet voice, while the one already on its way to silence keeps its slot.",
+   "fix": [
+    "packages/audio/src/voices.ts",
+    "packages/audio/src/voicePool.ts"
+   ],
+   "size": "function",
+   "cause": "pool gain not updated on fade/release",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    9
+   ],
+   "sources": {
+    "claude": [
+     6,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "A worklet voice that ended before the scheduler reached it still takes a pool slot and can steal a live voice",
+   "where": "packages/audio/src/voices.ts:128 (startVoice), packages/audio/src/worklet/workletVoices.ts:36 (workletSource onended setter)",
+   "severity": "low",
+   "scenario": "With `synthVoices: 'worklet'`, a short note (50 ms) is booked and then the main thread stalls for 300 ms. The processor plays the note and posts `ended`, and `source.end()` sets `ended`. When the stalled pass finally runs `begin`, `startVoice` acquires a slot on a full bus and tears down the stolen victim. Only after that does the `onended` setter queue the teardown of a voice that is already over. After a stall, a backlog of finished worklet notes evicts voices that are still sounding.",
+   "fix": [
+    "packages/audio/src/voices.ts",
+    "packages/audio/src/worklet/workletVoices.ts"
+   ],
+   "size": "function",
+   "cause": "no \"already ended\" check before acquire",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "A fade short enough to finish synchronously makes the insert pump overwrite the cancel of the next crossfade",
+   "where": "packages/audio/src/insertPump.ts:52 (pump)",
+   "severity": "low",
+   "scenario": "`insertFadeMs: 0.0005`, which `checkSpan` accepts. Then `left = ms / 1000 ≤ 1e-6`, so `afterRamp` → `atAudioTime` runs its callback synchronously, inside the `afterRamp(...)` call. The callback sets `busy = false`, finishes the step and calls `pump()` recursively. That nested pump starts the next step and stores that step's async cancel in `cancel`. Back in the outer frame, `cancel = afterRamp(...)` then overwrites it with the spent cancel of the first ramp. A later `stop()` (bus `dispose`) cancels nothing, so the second step's timer still fires after `route.drop()`. Its `finish` then unlinks links that are already gone: `l.from.disconnect(l.gain)` throws from a timer callback, or `links.splice(-1, 1)` drops an unrelated link from the bookkeeping.",
+   "fix": [
+    "packages/audio/src/insertPump.ts"
+   ],
+   "size": "line",
+   "cause": "cancel assigned after a call that can re-enter pump",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    11
+   ],
+   "sources": {
+    "claude": [
+     7,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "A voice whose start throws has already stolen a sounding voice",
+   "where": "packages/audio/src/voices.ts:133 (startVoice)",
+   "severity": "low",
+   "scenario": "on a full bus, `startVoice` acquires a slot and tears down the victim (line 133) before calling `starter.start`. If the start then throws, the new voice is torn down as `failed` and the stolen voice stays dead, so a play that never sounded silences one that was playing. Ways a start can throw: a stream whose element is already routed into another AudioContext (`createMediaElementSource` throws), or a stream `rate` the element refuses (see the next finding).",
+   "fix": [
+    "packages/audio/src/voices.ts"
+   ],
+   "size": "function",
+   "cause": "steal is committed before the start succeeds",
+   "confidence": "sure",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    10
+   ],
+   "sources": {
+    "claude": [
+     9,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "A stream rate that passes checkRate still makes the element's playbackRate setter throw a non-RangeError",
+   "where": "packages/audio/src/streamStarter.ts:91 (createStreamStarters.starter / retune)",
+   "severity": "low",
+   "scenario": "`engine.stream(el, { rate: 20 })` or `handle.setRate(20)` on a stream voice passes `checkRate` (any positive finite number is accepted). `el.playbackRate = 20` then throws `NotSupportedError` in Chromium, which only accepts roughly 0.0625–16. At start that fails the voice, after a steal; on `setRate` the throw escapes with `voice.rate` already set to 20. The setter is documented as throwing a RangeError only on a rate that is not positive and finite. The node voices accept any finite rate (the node clamps it), so one rate gets two answers.",
+   "fix": [
+    "packages/audio/src/streamStarter.ts",
+    "packages/audio/src/voices.ts"
+   ],
+   "size": "function",
+   "cause": "media element rate range not checked or clamped",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    11
+   ],
+   "sources": {
+    "claude": [
+     9,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "checkScoreMood lets a missing axis through, so every bar's notes throw",
+   "where": "packages/audio/src/scoreMood.ts:59 (checkScoreMood)",
+   "severity": "low",
+   "scenario": "`score.setMood({ valence: 0.5, tension: 0.2 })` from JS, or a mood built by spreading an object with an `undefined` axis. `Number.isNaN(undefined)` is false, so the check passes. `clamp(undefined, 0, 1)` then gives NaN, `resolveScoreMood` returns a NaN register and tempo, and `player.setTempo(NaN)` throws inside `beforeStep`. The pattern player catches that and keeps going on the old tempo, but every note's `{ midi: NaN }` pitch throws in `toFrequency`. The result is a silent score that logs an error on every step, not one RangeError at `setMood`.",
+   "size": "line",
+   "cause": "NaN check instead of a finite-number check",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "patternVoicePeaks measures a fractional-step event's slot from the event's own time, but the slot is taken a lookahead before the event's step boundary, so it under-counts voices",
+   "where": "packages/audio/src/patternLoad.ts:62 (patternVoicePeaks, from: at - lead)",
+   "severity": "medium",
+   "scenario": "The player books a fractional event with the whole step it sits in (`eventsByStep` floors the step). That step's booking fires up to a lookahead before `floor(step) * stepMs`, and `voices.launch` takes the slot in the next microtask, because the event's `when` is already inside the window. So the slot is held from `floor(step)*stepMs - lead`, but the code uses `step*stepMs - lead`. Example: 120 bpm with 4 steps per beat (125 ms steps) and lead 100. Hit A on step 0 lasts 300 ms. Hit B is on step 3.9. B's slot is taken at about 275–300 ms while A is still sounding, so 2 voices are held. The computed span for B starts at 387.5 ms, so the function reports a peak of 1. With `voiceLimit: 1` the real playback steals A.",
+   "size": "line",
+   "cause": "lead measured from the fractional time, not the booking step",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
   }
- ]
+ ],
+ "lines": 5219
 }

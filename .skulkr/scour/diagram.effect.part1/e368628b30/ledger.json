@@ -44,6 +44,176 @@
    "minutes": 0.1471,
    "at": "2026-11-25T21:16:05.643Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.5497926,
+   "minutes": 4.159183333333333,
+   "at": "2026-11-26T13:03:52.678Z",
+   "findings": 1
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.329933,
+   "minutes": 5.282616666666667,
+   "at": "2026-11-26T13:09:09.920Z",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.9694931999999999,
+   "minutes": 3.3354833333333334,
+   "at": "2026-11-26T13:12:30.415Z",
+   "findings": 1
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.7107462000000002,
+   "minutes": 6.394116666666666,
+   "at": "2026-11-26T13:18:54.299Z",
+   "findings": 2
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.9008765999999999,
+   "minutes": 3.3632999999999997,
+   "at": "2026-11-26T13:22:16.287Z",
+   "findings": 1
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.2559376000000002,
+   "minutes": 4.32045,
+   "at": "2026-11-26T13:26:35.753Z",
+   "findings": 4
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.7297197999999998,
+   "minutes": 6.594533333333334,
+   "at": "2026-11-26T13:33:11.718Z",
+   "findings": 3
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.8149580000000001,
+   "minutes": 3.2946666666666666,
+   "at": "2026-11-26T13:36:29.588Z",
+   "findings": 1
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.4024568000000002,
+   "minutes": 5.79315,
+   "at": "2026-11-26T13:42:17.375Z",
+   "findings": 4
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.2200039999999999,
+   "minutes": 4.7568166666666665,
+   "at": "2026-11-26T13:47:03.079Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 1.0765128,
+   "minutes": 4.087133333333333,
+   "at": "2026-11-26T13:51:08.648Z",
+   "findings": 3
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.949579,
+   "minutes": 3.5498,
+   "at": "2026-11-26T13:54:41.881Z",
+   "findings": 1
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 1.0653994,
+   "minutes": 4.789166666666667,
+   "at": "2026-11-26T13:59:30.351Z",
+   "findings": 4
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.8177458,
+   "minutes": 3.43195,
+   "at": "2026-11-26T14:02:56.528Z",
+   "findings": 1
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 1.0473744,
+   "minutes": 4.5645500000000006,
+   "at": "2026-11-26T14:07:30.585Z",
+   "findings": 2
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 1.2633688,
+   "minutes": 4.755766666666667,
+   "at": "2026-11-26T14:12:16.093Z",
+   "findings": 1
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 1.3420334,
+   "minutes": 4.811183333333333,
+   "at": "2026-11-26T14:17:04.923Z",
+   "findings": 3
   }
  ],
  "defects": [
@@ -69,13 +239,468 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    11
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     11
+    ]
+   },
+   "scenario": "a pipeline with two sources, one of whose `start` throws (an `AudioGraph.start` contract case: \"A source whose start throws is left stopped while the rest start, and the first error is rethrown\"). `play()` calls `graph.start()`, which throws after starting the other sources, so `set({ playing: true })` never runs and the promise rejects. The graph is audibly playing, but `state.playing` is false: `useFollowAudioRunner` never starts its preview loop, a UI shows a Play button for sound already playing, and the failing stage gets no error in the run. It should publish `playing: true` (the graph is running) and report the failed stage under `errors`, as `applyStructure` does for a source that fails to start.",
+   "cause": "exception from a partial start skips the state update",
+   "fix": [
+    "packages/diagram/src/effect/audio/liveRunner.ts"
+   ],
+   "size": "function",
+   "confidence": "likely"
+  },
+  {
+   "id": "D3",
+   "claim": "nextStageId mints an id a cluster already has, so adding a stage makes that cluster vanish",
+   "where": "packages/diagram/src/effect/edit.ts:17 (nextStageId)",
+   "severity": "medium",
+   "scenario": "a doc has a cluster whose id is `blur` (or `audio.gain`, any id equal to a stage type name; clusters from a loaded file can be named anything). `EffectEditorApi.addStage(blurType)` calls `nextStageId(d.pipeline, 'blur')`, which checks only `p.stages`, so the new stage gets id `blur`. Now a stage and a cluster share an id: `checkPipeline` reports `duplicate-cluster` (\"has the id of a stage\"), `uniqueClusters` drops the cluster from every look, and `editorScene.clusterOf` answers `undefined` for it, so the user's group disappears and can no longer be edited. It should have minted `blur-2`, as `nextClusterId` already does in the other direction by excluding stage ids.",
+   "fix": [
+    "packages/diagram/src/effect/edit.ts"
+   ],
+   "size": "line",
+   "cause": "id-taken set omits cluster ids",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    8,
+    14
+   ],
+   "sources": {
+    "claude": [
+     2,
+     8,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "moveRunInChain picks a moved run's unwired main port without regard to type or control, refusing valid moves",
+   "where": "packages/diagram/src/effect/chainEdit.ts:85 (moveRunInChain)",
+   "severity": "low",
+   "scenario": "the stage being moved is the head of the main chain (`i === 0`, so `mainIn` has no entry for it), and its first open input is a control-typed port, for example inputs `[{ id: 'amount', type: 'number' }, { id: 'in', type: 'image' }]` with `number` marked `control`. Dragging it into the middle of the chain gives `sIn = pick(first, 'inputs')`, which is `'amount'`. The wire into it, a→first, reuses `wAB`'s data output (`aOut = p.wires[wAB].from.port`, an image port). `canWire` then sees `image` ≠ `number` and the move returns `null`, so the drop is refused even though `'in'` would take the wire. The same happens on the `sOut = pick(last, 'outputs')` side for a run whose last stage is the chain's tail and whose first output is control-typed. The code should pick a non-control port, or one matching the type of the neighbor it is being wired to (the `type` argument `pick` already accepts).",
+   "size": "function",
+   "cause": "port pick ignores the neighbor's type and control wires",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "clusterContents and clusterParents disagree with how clusters are drawn when a member is named twice or clusters loop",
+   "where": "packages/diagram/src/effect/clusterEdit.ts:150 (clusterContents), clusterEdit.ts:44 (clusterParents)",
+   "severity": "low",
+   "scenario": "stage `s` is listed in cluster A and again in cluster B (A first). `nestClusters` (packages/diagram/src/clusterTree.ts:48) draws `s` only in A. `clusterContents(doc, 'B')` still counts `s`, so dragging B's box under nodeGraph (`dragEdit` → `moveCluster`) also moves `s`, which is drawn inside A. `clusterRuns`/`clusterGripOf` read the same over-broad membership. For a loop (A holds B, B holds A), `nestClusters` drops B's claim on A, so A is drawn at the top level. `clusterParents` still records B as A's parent, so `clusterDepth` and `clusterSlotsAt`'s sibling set are computed against a tree the drawing does not have. Both inputs are ones `checkPipeline` reports but a doc can still hold, and the editor draws them. The rule for who holds what is decided once in `nestClusters`, and again, differently, here.",
+   "fix": [
+    "packages/diagram/src/effect/clusterEdit.ts",
+    "packages/diagram/src/effect/clusterOrder.ts"
+   ],
+   "size": "function",
+   "cause": "second definition of cluster membership diverges from nestClusters",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "canConnect counts an id-less or repeated-id wire as feeding its own input while its end is dragged",
+   "where": "packages/diagram/src/effect/editorHandlers.ts:96 (editHandlers → canConnect)",
+   "severity": "medium",
+   "scenario": "doc has an id-less wire `src.out → gain.in` (or a second wire repeating an earlier wire's id), `gain.in` takes one wire. The user drags that wire's `from` end to another output. `except` is `built.wireOf(moving.edge)`, the id the wire gets in `ensureWireIds(doc)` (e.g. `w1`), but `fed` filters `now().doc.pipeline.wires` — the raw doc, where the wire's id is `undefined` (or the earlier wire's id). The filter keeps the moving wire, `inputFed` sees `gain.in` already fed, and `canConnect` refuses every target, so the reconnect can never be made. `onReconnect` itself runs on `ensureWireIds(d)` and would accept it; the two disagree on which wire is being moved. Should test against `ensureWireIds(doc).pipeline`.",
+   "size": "line",
+   "cause": "raw doc ids compared with ensured ids",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    6,
+    15,
+    17
+   ],
+   "sources": {
+    "claude": [
+     4,
+     6,
+     15,
+     17
+    ]
+   },
+   "fix": [
+    "packages/diagram/src/effect/editorHandlers.ts"
+   ]
+  },
+  {
+   "id": "D7",
+   "claim": "Live audio previews always land on port `out` regardless of the stage's actual output port name",
+   "where": "packages/diagram/src/effect/audio/livePreviews.ts:73 (createLivePreviews → draw)",
+   "severity": "low",
+   "scenario": "a caller passes its own `nodes` (`LiveAudioRunnerOptions.nodes`, `AudioStageNodes` keyed by any stage type) for a stage whose output port is `signal`, not `out`. While playing with previews on, every frame draws a bitmap into `stages[id].previews.out`. The look keeps its preview slot under `previewRowId('signal')`, so nothing ever shows in that slot. A new bitmap is still made every frame for a key nobody reads. The preview should go to the stage's shown port (its first output, as `shownPorts` gives).",
+   "fix": [
+    "packages/diagram/src/effect/audio/livePreviews.ts",
+    "packages/diagram/src/effect/audio/liveRunner.ts"
+   ],
+   "size": "function",
+   "cause": "port id hard-coded; previews never see the pipeline",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A bypassed stage whose ports are not typed `audio` cuts the signal instead of passing it through",
+   "where": "packages/diagram/src/effect/audio/plan.ts:73 (livePlan)",
+   "severity": "low",
+   "scenario": "with custom `nodes`, a stage type whose ports are typed something else (e.g. `signal`) sits mid-chain and has `bypassed: true`. `firstAudio` is `undefined`, so `fed` keeps only wires where `w.to.port === undefined`, which is none. The stage has inputs and nothing fed, so the plan `continue`s without setting `origins`. Everything downstream then has no origin and is left out, so bypassing the stage silences the chain. It should carry its first input through. `played` itself never checks port types, so these stages otherwise play normally.",
+   "size": "line",
+   "cause": "bypass pass-through keyed to the literal port type 'audio'",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A wire id equal to a stage id (or a minted id colliding across the wire and stage namespaces) makes diagramScene throw, and checkPipeline never reports the collision",
+   "where": "packages/diagram/src/effect/edit.ts:20 (nextWireId), edit.ts:15 (nextStageId), packages/diagram/src/effect/check.ts:98 (checkPipeline wire loop)",
+   "severity": "medium",
+   "scenario": "a doc with a stage whose id is `w1` (any user-chosen id) and no wires; the user connects two ports in `EffectEditor`. `addWire` → `nextWireId` checks only wire ids and mints `w1`. `wireEdges`/`drawableWires` keep the wire's id as the edge id, so the edge spec and the stage's node spec are both `w1`, and `diagramScene` throws \"two things would share the scene id \\\"w1\\\"\" (fromData.ts:249): the editor and `EffectChart` crash on the next render. The same happens for a loaded pipeline whose wire id equals a stage or cluster id, and `ensureWireIds` mints the same way. Likewise `nextStageId` avoids only stage ids: adding a stage whose type id equals an existing cluster id (a hand-written cluster `source`, then Add stage \"source\") makes `uniqueClusters` silently drop that cluster and its box. Expected: minted ids avoid every id sharing the scene's id space (stages, clusters, wires), and `checkPipeline` reports a wire id that names a stage or cluster, as it does a cluster id naming a stage.",
+   "fix": [
+    "packages/diagram/src/effect/edit.ts",
+    "packages/diagram/src/effect/check.ts",
+    "packages/diagram/src/effect/draw.ts"
+   ],
+   "size": "function",
+   "cause": "id minting checks only its own namespace",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    13
+   ],
+   "sources": {
+    "claude": [
+     7,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "Reordering lanes drops every laneOrder entry whose type has no stage yet",
+   "where": "packages/diagram/src/effect/editorReorder.ts:117 (laneMove)",
+   "severity": "low",
+   "scenario": "doc.laneOrder is `['mask', 'image', 'number']` and the pipeline currently has no mask stage. `lanes` draws only used types (`laneTypes` keeps the `first` the pipeline uses), so the drawn lane order is image, number. Dragging number above image calls `setLaneOrder(doc, ['number', 'image'])`, erasing `mask`; adding a mask stage later puts its lane last instead of first. Expected: the move reorders the drawn lanes and keeps the undrawn entries of `doc.laneOrder` (and the options' `lanes`) where they were.",
+   "size": "function",
+   "cause": "lane order rebuilt from drawn lanes only",
+   "confidence": "sure",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "An edit that changes the errors while paused wipes the previews already drawn, and they stay blank until play",
+   "where": "packages/diagram/src/effect/audio/liveRunner.ts:226 (publishErrors), liveRunner.ts:271 (frame)",
+   "severity": "low",
+   "scenario": "previews on 'scope', play, pause: the last frame's scopes stay on the stages. Now edit a stage so it errors (or clear an error): `publishErrors` publishes `errorsRun(next)`, a run with no previews, so every scope on the chart disappears; `frame` only runs while playing, so nothing redraws them until the user plays again. Expected: an error change keeps the previews of the run it replaces (or redraws from the taps), so the frozen scopes stay up.",
+   "size": "function",
+   "cause": "errors-only run replaces preview run",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    9,
+    11,
+    12,
+    16
+   ],
+   "sources": {
+    "claude": [
+     7,
+     9,
+     11,
+     12,
+     16
+    ]
+   },
+   "fix": [
+    "packages/diagram/src/effect/audio/liveRunner.ts",
+    "packages/diagram/src/effect/audio/livePreviews.ts"
+   ]
+  },
+  {
+   "id": "D12",
+   "claim": "checkPipeline does not report a cluster that names the same member twice",
+   "where": "packages/diagram/src/effect/check.ts:138 (checkPipeline, duplicate-member)",
+   "severity": "low",
+   "scenario": "`clusters: [{ id: 'g', members: ['a', 'a'] }]`: the second `a` finds `holder.get('a') === 'g'` and the `first !== cluster.id` test skips it, so no problem is reported, though `duplicate-member` exists for a member held twice and the repeat reaches the looks and `dissolveCluster` (which then splices `a` into the parent twice). Expected: a `duplicate-member` problem for the repeat.",
+   "size": "line",
+   "cause": "same-cluster repeat exempted",
+   "confidence": "sure",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    12,
+    14,
+    18
+   ],
+   "sources": {
+    "claude": [
+     7,
+     12,
+     14,
+     18
+    ]
+   },
+   "fix": [
+    "packages/diagram/src/effect/check.ts"
+   ]
+  },
+  {
+   "id": "D13",
+   "claim": "Live audio runner draws every scope and spectrum at the default 48-unit size, ignoring the look's previewSize",
+   "where": "packages/diagram/src/effect/audio/livePreviews.ts:74 (createLivePreviews → draw)",
+   "severity": "low",
+   "scenario": "a chart or editor whose look sets `showPreviews: true, previewSize: { width: 160, height: 48 }` (or `96`) shows a live audio pipeline from `useLiveAudioRunner`. The slot is laid out at 160×48, but `draw` paints each tap at `PREVIEW_SIZE` × `PREVIEW_SIZE` (48×48 → 96×96 device px), so the bitmap is stretched: a wide slot gets a distorted waveform, and a larger square slot gets a blurry one. The image runner takes the same setting as an option (`runner/pass.ts:23`, `useEffectRunner`'s `previewSize`). `LiveAudioRunnerOptions`/`UseLiveAudioRunnerOptions` have no matching field, so the option is dropped on this path.",
+   "fix": [
+    "packages/diagram/src/effect/audio/livePreviews.ts",
+    "packages/diagram/src/effect/audio/liveRunner.ts",
+    "packages/diagram/src/effect/audio/useLiveAudioRunner.ts",
+    "packages/diagram/src/effect/audio/useFollowAudioRunner.ts"
+   ],
+   "size": "function",
+   "cause": "preview size hard-coded; no option threaded through",
+   "confidence": "sure",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A structural batch the graph refuses blocks every param write in that sync and every later sync until the structure changes",
+   "where": "packages/diagram/src/effect/audio/liveRunner.ts:237 (createLiveAudioRunner → sync)",
+   "severity": "low",
+   "scenario": "the graph refuses a structural patch during `graph.check`, for example a custom `AudioStageNode.build` that hands back a def already in use (`defInUse`). `landed` is then false, so `sets` is `[]` and `plan` stays `from`. Every later `setPipeline` re-diffs from that same `from`, rebuilds the same refused structure, and is refused again. While that persists, no level change to any other stage reaches the graph. If `failingStage` finds no quoted id in the message, no stage gets an error either, and the only sign is a `console.warn`. Sets on nodes that are unchanged in both plans could still be applied.",
+   "size": "function",
+   "cause": "param writes gated on the whole structural batch landing",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "clusterStages deletes a boxed cluster it empties, whereas moveToCluster keeps it",
+   "where": "packages/diagram/src/effect/clusterEdit.ts:93 (clusterStages)",
+   "severity": "low",
+   "scenario": "under `nodeGraph`, cluster `P` has a `clusterBoxes` entry and holds only stage `A`; stage `B` is top level. `EffectEditorApi.cluster(['A', 'B'])` → the members have different parents, so `pruneClusters(clusters, taken)` runs with no `keep`, `P` is emptied and dropped, and `withClusters` drops its box too. Dragging `A` out of `P` instead goes through `moveToCluster`, whose `boxed` keep leaves `P` and its box in place. The same question, whether a boxed cluster survives being emptied, gets two answers. Taking members out for a new group should keep a boxed `P`, as a drag does.",
+   "fix": [
+    "packages/diagram/src/effect/clusterEdit.ts"
+   ],
+   "size": "line",
+   "cause": "pruneClusters called without the boxed keep",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    18
+   ],
+   "sources": {
+    "claude": [
+     10,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "Renaming a cluster whose label has leading or trailing spaces records a 'Rename group' edit when nothing changed",
+   "where": "packages/diagram/src/effect/clusterTitle.tsx:44 (useClusterTitle done)",
+   "severity": "low",
+   "scenario": "a doc loaded with cluster label `\" Mix \"` (docShape accepts any string). The user opens the rename field and presses Enter, or clicks away, without typing. `ClusterTitleField` hands back `text.trim()` = `\"Mix\"`, and `\"Mix\" !== \" Mix \"`, so `onChange` gets a doc and an undo entry for an edit the user never made. It should compare against the trimmed label, or not trim.",
+   "size": "line",
+   "cause": "trimmed text compared to untrimmed label",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "Clearing a route that does not exist still sends an 'Edit route' edit under nodeGraph",
+   "where": "packages/diagram/src/effect/editorHandlers.ts:111 (editHandlers onEditRoute)",
+   "severity": "low",
+   "scenario": "under `nodeGraph`, a wire with no entry in `doc.routes` reports a `RouteChange` with empty `waypoints`. `setWireRoute(d, id, [])` returns a new doc with `routes: {}`, and `commit` hands it to `onChange` as 'Edit route': an undo entry that changes nothing, and an empty `routes` written into the doc. The rack/lanes branch just above returns `null` for the same case (`was === undefined`), so each look answers it differently.",
+   "fix": [
+    "packages/diagram/src/effect/edit.ts"
+   ],
+   "size": "line",
+   "cause": "no no-op check on the nodeGraph path",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "The cluster reorder counts order items that have no drawn box as drawn, while the stage reorder drops them",
+   "where": "packages/diagram/src/effect/editorReorder.ts:136 (clusterReorder moved)",
+   "severity": "low",
+   "scenario": "the stage reorder passes `drawnOrder(order, boxOf)` to `stageMove`, so only items with a drawn box count as \"drawn\" (the comment at `drawnOrder` says a move's indices count only these). `clusterReorder` passes the raw `order` to `clusterMove`, and `drawnOf(order)` there treats an item with no box as drawn. `dropInGap` then stops trying gaps at that stage, and `indices(before, true)` counts it. A look item without a box (one not yet laid out, or one the look leaves undrawn) can therefore make a cluster drop that the stage path would accept come back `null`, or land in a different gap. The two reorders read \"drawn\" differently.",
+   "size": "line",
+   "cause": "drawnOrder filter not applied on the cluster path",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    16
+   ],
+   "sources": {
+    "claude": [
+     10,
+     16
+    ]
+   },
+   "fix": [
+    "packages/diagram/src/effect/editorReorder.ts"
+   ]
+  },
+  {
+   "id": "D19",
+   "claim": "checkPipeline does not report two wires feeding an input that does not accept many",
+   "where": "packages/diagram/src/effect/check.ts:96 (checkPipeline, wire loop)",
+   "severity": "low",
+   "scenario": "a pipeline loaded from a file has wires a.out→b.in and c.out→b.in, where `b.in` has no `many`. The editor treats that input as already fed (`inputFed`/`canWire` in edit.ts refuse a second wire), and the runner reads only one value for a non-`many` input, but `checkPipeline` reports nothing, `drawableWires` draws neither wire as a problem, and `onProblems` says the pipeline is fine. The same question (\"may this input take a second wire?\") gets two different answers. checkPipeline should report the second wire (for example as a new `kind`) so the drawing flags it.",
+   "fix": [
+    "packages/diagram/src/effect/check.ts"
+   ],
+   "size": "function",
+   "cause": "fan-in rule enforced only in the editor",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "typeColors uses up a series color for every type that already has its own color, so later types get shifted colors",
+   "where": "packages/diagram/src/effect/draw.ts:73 (typeColors)",
+   "severity": "low",
+   "scenario": "the colors are `{ image: '#fff' }` and the ports, in order, are `image` then `number`. `colors.size` counts `image`, so `number` gets `series[1]` and `series[0]` is never used. With one given type per pipeline, the documented \"next in `series`\" order is shifted by one for every given color before it.",
+   "fix": [
+    "packages/diagram/src/effect/draw.ts"
+   ],
+   "size": "line",
+   "cause": "series index counts given colors",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "A delay node's maximum delay time is fixed when it is built, so a time later raised as a level past that maximum is not honored",
+   "where": "packages/diagram/src/effect/audio/nodes.ts:87 ('audio.delay')",
+   "severity": "low",
+   "scenario": "`time` is a level, so editing it sends a `set` patch and never a rebuild. `createDelayNode` fixes `maxTime = max(2000, time)` when it is built. Built at 300 ms and then set to 5000 ms, the live graph clamps the delay at 2000 ms. After `reset`, or any rebuild of that node, the same pipeline plays a 5000 ms delay. One pipeline plays two ways depending on how it got there.",
+   "fix": [
+    "packages/diagram/src/effect/audio/nodes.ts"
+   ],
+   "size": "function",
+   "cause": "build-time max for a live level",
+   "confidence": "sure",
+   "firstOccasion": 14,
+   "sightings": [
+    14,
+    18
+   ],
+   "sources": {
+    "claude": [
+     14,
+     18
     ]
    }
   }
- ]
+ ],
+ "lines": 3497
 }

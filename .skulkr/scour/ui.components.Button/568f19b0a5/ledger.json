@@ -1,0 +1,59 @@
+{
+ "area": "ui.components.Button",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Button/Button.close.stories.module.css",
+  "packages/ui/src/components/Button/Button.close.stories.tsx",
+  "packages/ui/src/components/Button/Button.module.css",
+  "packages/ui/src/components/Button/Button.native.stories.module.css",
+  "packages/ui/src/components/Button/Button.native.stories.tsx",
+  "packages/ui/src/components/Button/Button.stories.module.css",
+  "packages/ui/src/components/Button/Button.stories.tsx",
+  "packages/ui/src/components/Button/Button.tsx",
+  "packages/ui/src/components/Button/closeButtonProps.tsx",
+  "packages/ui/src/components/Button/index.ts",
+  "packages/ui/src/components/Button/lab/ButtonLab.stories.module.css",
+  "packages/ui/src/components/Button/lab/ButtonLab.stories.tsx",
+  "packages/ui/src/components/Button/lab/ButtonLabView.tsx",
+  "packages/ui/src/components/Button/lab/buttonLabConfig.ts",
+  "packages/ui/src/components/Button/variantIcons.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2135916,
+   "minutes": 0.20338333333333333,
+   "at": "2026-11-27T00:23:04.699Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "domButton.measure drops fullWidth, so a full-width button measures at its intrinsic width but draws at 100% of its container",
+   "where": "packages/ui/src/components/Button/Button.tsx:221 (domButton.measure)",
+   "severity": "low",
+   "scenario": "A regular fullWidth button with a short label, measured with a finite maximum and a smaller minimum, reports its intrinsic width; drawn in a container of that maximum width it fills 100%, wider than the reserved space",
+   "fix": [
+    "packages/ui/src/components/Button/Button.tsx"
+   ],
+   "size": "line",
+   "cause": "fullWidth dropped when props are converted to a face for measure",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1396
+}

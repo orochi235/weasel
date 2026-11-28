@@ -1,0 +1,75 @@
+{
+ "area": "labkit.surface",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/surface/SurfaceContext.ts",
+  "packages/labkit/src/surface/clip.ts",
+  "packages/labkit/src/surface/composeRects.ts",
+  "packages/labkit/src/surface/deviceRect.ts",
+  "packages/labkit/src/surface/index.ts",
+  "packages/labkit/src/surface/measureTiles.ts",
+  "packages/labkit/src/surface/rect.ts",
+  "packages/labkit/src/surface/shadowScrolls.ts",
+  "packages/labkit/src/surface/tiledSurface.ts",
+  "packages/labkit/src/surface/useElementWatch.ts",
+  "packages/labkit/src/surface/useSurfaceTile.ts",
+  "packages/labkit/src/surface/useTiledSurface.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1694534,
+   "minutes": 0.17921666666666666,
+   "at": "2026-11-26T05:12:35.440Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Realm-dependent ShadowRoot/HTMLElement instanceof checks break shadow ancestry and padding-edge clipping for tiles in a same-origin iframe",
+   "where": "packages/labkit/src/surface/clip.ts:124",
+   "severity": "medium",
+   "scenario": "Tiles rendered into a same-origin iframe from parent-realm code: ancestor traversal stops at the shadow root and clips use border edges",
+   "fix": [
+    "packages/labkit/src/surface/clip.ts"
+   ],
+   "cause": "realm-dependent instanceof checks",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Releasing one key unobserves a shared element still watched by another key, so its resize changes stop arriving",
+   "where": "packages/labkit/src/surface/useElementWatch.ts:30",
+   "severity": "medium",
+   "scenario": "Same element registered as both container and tile, or under two tile ids; releasing one key unobserves it for both",
+   "fix": [
+    "packages/labkit/src/surface/useElementWatch.ts"
+   ],
+   "cause": "no per-element reference count on observation",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1055
+}

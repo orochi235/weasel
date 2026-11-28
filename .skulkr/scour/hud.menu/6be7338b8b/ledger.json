@@ -1,0 +1,97 @@
+{
+ "area": "hud.menu",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/hud/src/menu/accessibleMenu.ts",
+  "packages/hud/src/menu/attachMenuHost.ts",
+  "packages/hud/src/menu/chipRepeat.ts",
+  "packages/hud/src/menu/colorPicker.ts",
+  "packages/hud/src/menu/menu.fixture.ts",
+  "packages/hud/src/menu/menuEnv.ts",
+  "packages/hud/src/menu/menuWidget.ts",
+  "packages/hud/src/menu/panelCommands.ts",
+  "packages/hud/src/menu/placePanels.ts",
+  "packages/hud/src/menu/textEdit.ts",
+  "packages/hud/src/menu/textWidth.ts",
+  "packages/hud/src/menu/typedLine.ts",
+  "packages/hud/src/menu/valueRows.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1756334,
+   "minutes": 0.22081666666666666,
+   "at": "2026-11-26T05:06:58.829Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Cached panel placement ignores canvasSize changes, leaving panels out of bounds after a canvas-only resize",
+   "where": "packages/hud/src/menu/placePanels.ts:62",
+   "severity": "medium",
+   "scenario": "Element resize shrinks the canvas without a window resize event; the menu stays open and redraws with the stale rect out of bounds",
+   "fix": [
+    "packages/hud/src/menu/placePanels.ts"
+   ],
+   "size": "function",
+   "cause": "placement cache key omits canvasSize",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Dismissal listeners attach to the module window instead of the canvas's window, so dismissal fails for canvases in iframes",
+   "where": "packages/hud/src/menu/attachMenuHost.ts:61",
+   "severity": "medium",
+   "scenario": "HUD attached from the parent window to a canvas in an iframe; a wheel outside the menu inside the iframe never reaches the parent window, scrolls the canvas, and the menu stays open",
+   "fix": [
+    "packages/hud/src/menu/attachMenuHost.ts"
+   ],
+   "size": "line",
+   "cause": "global window used instead of canvas's defaultView",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Active editor swallows Tab/Shift+Tab as handled, so Tab cannot close the menu while a text row is being edited",
+   "where": "packages/hud/src/menu/menuWidget.ts:99",
+   "severity": "medium",
+   "scenario": "Editing a text row and pressing Tab: nothing happens and focus stays in the edit until Enter or Escape",
+   "fix": [
+    "packages/hud/src/menu/menuWidget.ts"
+   ],
+   "size": "function",
+   "cause": "editor claims keys it does not handle",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1408
+}

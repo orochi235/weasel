@@ -1,0 +1,93 @@
+{
+ "area": "labkit.part2",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/overview/TrialOverview.tsx",
+  "packages/labkit/src/overview/index.ts",
+  "packages/labkit/src/passthrough/weasel-canvas.ts",
+  "packages/labkit/src/pbt.fixture.ts",
+  "packages/labkit/src/rulers/CameraRulers.less",
+  "packages/labkit/src/rulers/CameraRulers.tsx",
+  "packages/labkit/src/rulers/guideSnap.ts",
+  "packages/labkit/src/rulers/rulersEntry.ts",
+  "packages/labkit/src/rulers/rulersPart.tsx",
+  "packages/labkit/src/rulers/trialGuides.ts",
+  "packages/labkit/src/rulers/types.ts",
+  "packages/labkit/src/rulers/useTrialRulers.ts",
+  "packages/labkit/src/styles.dev.ts",
+  "packages/labkit/src/styles.less",
+  "packages/labkit/src/test-setup.ts",
+  "packages/labkit/src/testing/lab.ts",
+  "packages/labkit/src/testing/lens.ts",
+  "packages/labkit/src/testing/liveTest.ts",
+  "packages/labkit/src/theme/Interstellar.stories.less",
+  "packages/labkit/src/theme/Interstellar.stories.tsx",
+  "packages/labkit/src/theme/base.less",
+  "packages/labkit/src/theme/index.ts",
+  "packages/labkit/src/theme/interstellar.ts",
+  "packages/labkit/src/tools/labTool.ts",
+  "packages/labkit/src/tools/types.ts",
+  "packages/labkit/src/undo/editStamp.ts",
+  "packages/labkit/src/undo/historyStamps.ts",
+  "packages/labkit/src/undo/index.ts",
+  "packages/labkit/src/undo/stateOp.ts",
+  "packages/labkit/src/undo/useUndoKeys.ts",
+  "packages/labkit/src/vite/index.ts",
+  "packages/labkit/src/vite/labRoutes.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1686734,
+   "minutes": 0.16978333333333334,
+   "at": "2026-11-26T05:11:20.800Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Stamp pruning drops timestamps for entries on retained, reopenable history branches, so stampOf falls back to the rounded history timestamp",
+   "where": "packages/labkit/src/undo/historyStamps.ts:20",
+   "severity": "medium",
+   "scenario": "Prune threshold reached while a non-active branch holds entries; switching to that branch loses their precise stamps",
+   "fix": [
+    "packages/labkit/src/undo/historyStamps.ts"
+   ],
+   "cause": "pruning ignores retained branches",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Page switcher produces dotted clean paths (report.v2) that the dev/preview middleware rejects, so the page isn't served",
+   "where": "packages/labkit/src/vite/labRoutes.ts:44",
+   "severity": "low",
+   "scenario": "A page named report.v2.html; switcher links to report.v2, which the middleware refuses",
+   "fix": [
+    "packages/labkit/src/vite/labRoutes.ts"
+   ],
+   "cause": "switcher and middleware disagree on clean-path rule",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2268
+}

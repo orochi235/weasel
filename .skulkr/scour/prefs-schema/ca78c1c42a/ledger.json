@@ -1,0 +1,298 @@
+{
+ "area": "prefs-schema",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/prefs-schema/src/action.ts",
+  "packages/prefs-schema/src/alias.ts",
+  "packages/prefs-schema/src/bounds.ts",
+  "packages/prefs-schema/src/build.ts",
+  "packages/prefs-schema/src/condition.ts",
+  "packages/prefs-schema/src/groupConditions.ts",
+  "packages/prefs-schema/src/groups.ts",
+  "packages/prefs-schema/src/helpers.ts",
+  "packages/prefs-schema/src/holding.ts",
+  "packages/prefs-schema/src/index.ts",
+  "packages/prefs-schema/src/internal.ts",
+  "packages/prefs-schema/src/judge.ts",
+  "packages/prefs-schema/src/label.ts",
+  "packages/prefs-schema/src/leafValue.ts",
+  "packages/prefs-schema/src/list.ts",
+  "packages/prefs-schema/src/map.ts",
+  "packages/prefs-schema/src/number.ts",
+  "packages/prefs-schema/src/object.ts",
+  "packages/prefs-schema/src/paths.ts",
+  "packages/prefs-schema/src/presets.ts",
+  "packages/prefs-schema/src/repair.ts",
+  "packages/prefs-schema/src/schema.ts",
+  "packages/prefs-schema/src/schemaIcon.typetest.ts",
+  "packages/prefs-schema/src/scope.ts",
+  "packages/prefs-schema/src/scopeSpec.ts",
+  "packages/prefs-schema/src/shown.ts",
+  "packages/prefs-schema/src/status.ts",
+  "packages/prefs-schema/src/statusAt.ts",
+  "packages/prefs-schema/src/testing/pbt.fixture.ts",
+  "packages/prefs-schema/src/union.ts",
+  "packages/prefs-schema/src/unit.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17194340000000002,
+   "minutes": 0.17708333333333334,
+   "at": "2026-11-26T05:19:29.490Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.2319422,
+   "minutes": 3.1821333333333333,
+   "at": "2026-11-26T15:58:39.577Z",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.2264336,
+   "minutes": 6.140816666666667,
+   "at": "2026-11-26T16:04:48.227Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.8244604,
+   "minutes": 3.1984833333333333,
+   "at": "2026-11-26T16:08:00.321Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.8432276000000001,
+   "minutes": 3.8583333333333334,
+   "at": "2026-11-26T16:11:51.988Z",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 1.0317828,
+   "minutes": 4.860233333333333,
+   "at": "2026-11-26T16:16:43.987Z",
+   "findings": 4
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Unit places above 100 make toDisplay call toFixed with an out-of-range argument and throw RangeError",
+   "where": "packages/prefs-schema/src/unit.ts:110 (toDisplay)",
+   "severity": "medium",
+   "scenario": "A linear unit with scale 1 and places 101, which the schema editor's Unit places control accepts; toDisplay calls toFixed(101) and throws RangeError, so the field cannot render",
+   "fix": [
+    "packages/prefs-schema/src/unit.ts"
+   ],
+   "size": "line",
+   "cause": "places not clamped to the formatter limit",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A custom suffix colliding with a system unit's suffix is remapped to that unit's factor, so a round trip reads back at the wrong magnitude",
+   "where": "packages/prefs-schema/src/unit.ts:148",
+   "severity": "low",
+   "scenario": "A metric unit displaying centimeters with custom suffix mm: the accepted-suffix mapping gives mm factor 1, then the loop replaces it with the millimeter-to-centimeter factor 0.1, so a formatted value reads back at a tenth of its magnitude",
+   "fix": [
+    "packages/prefs-schema/src/unit.ts"
+   ],
+   "size": "function",
+   "cause": "suffix map lets system units override the custom suffix",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "An owner's switch inside a section is never spared, so the owner can never be turned back on",
+   "where": "packages/prefs-schema/src/status.ts:136 (leafWalk members → section)",
+   "severity": "medium",
+   "scenario": "an `object` leaf `stroke` with `enableIf: { path: 'stroke.on' }`, whose field `on` sits under a section `edge` in `children` (a section adds nothing to the path, so `stroke.on` is directly a field of `stroke`). With `on` false: `stroke` is disabled and its owner `disablesOwn`. `members` calls `section(child, …, owner.status, …, owner.switchOf)`; the section's status is `prefStatusUnder(owner.status, …)` = disabled, and the section's own owner has `above.enabled === false`, so `disablesOwn` is false and `switchReads` is never asked about `stroke.on`. `on` comes out disabled with everything else, so the switch can never be flipped back on. The same holds for a section schema root, or any section, whose `enableIf` reads a member of a nested section. It should be spared the way a field sitting directly in `children` is. `statusMatching` in statusAt.ts:173 builds the section owner the same way, so `prefStatusAt` gives the same wrong answer.",
+   "fix": [
+    "packages/prefs-schema/src/status.ts",
+    "packages/prefs-schema/src/statusAt.ts"
+   ],
+   "size": "function",
+   "cause": "section owner drops the enclosing owner's switch (switchOf only passed through, never set to the disabling owner)",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    6
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "prefAliasedLeaf draws the target's disabledReason and hidden in place of the alias's own",
+   "where": "packages/prefs-schema/src/alias.ts:51 (prefAliasedLeaf)",
+   "severity": "low",
+   "scenario": "an alias with its own `disabledReason: 'Turn on Snap first'` (it has its own `enableIf`, which status.ts honors) is drawn through `prefAliasedLeaf` by routing's `resolveMenu` and prefs' `aliasTargets`/`edit/aliases`. `...rest` is the target's fields, and the alias contributes only name/description/short/access/pair/heading/tags. So the tooltip shows the target's reason (or none), and a target marked `hidden` (shown on purpose only through an alias elsewhere) makes the drawn leaf `hidden: true`. The alias's own presentational fields should win where it gives them, as its name does.",
+   "fix": [
+    "packages/prefs-schema/src/alias.ts"
+   ],
+   "size": "line",
+   "cause": "alias's own PrefBase fields not overlaid",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A root-path condition into a list or map entry compares the stored form, not the shown one",
+   "where": "packages/prefs-schema/src/holding.ts:68 (insideLeaf)",
+   "severity": "low",
+   "scenario": "a list `styles` whose item is an object with a boolean field `italic` carrying an `encoding` (stores `'italic'`). The condition `{ path: 'styles.0.italic', is: true }` is judged by `prefJudge`. `prefReader` reads through the item (`fieldValue` → `entryAt`), but `prefShownReader` asks `prefLeavesHolding`, which returns `UNSEEN` for any path into a `list`/`map`, so the value is never decoded and `'italic' === true` fails. Two pathways answer \"which leaf describes this value\" differently: the reader knows the item, the decoder does not. `insideLeaf` should descend into `item` for an entry step, as `prefLeavesHoldingIn` does for `from: 'item'`.",
+   "fix": [
+    "packages/prefs-schema/src/holding.ts"
+   ],
+   "size": "function",
+   "cause": "list/map treated as unseen though `item` describes entries",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    6
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "repairPrefValue throws on a list or map leaf with no item, which status.ts says an app's leaf may have",
+   "where": "packages/prefs-schema/src/repair.ts:118 (repairMap), packages/prefs-schema/src/repair.ts:133 (repairList)",
+   "severity": "medium",
+   "scenario": "an app draws its own leaf under the built-in kind `list` (or `map`) with no `item`. status.ts:117 handles exactly this (\"A leaf an app's renderer draws under a built-in's kind may hold no item\"), and so do judge.ts `entryAt`, helpers.ts `visibleInside` and statusAt.ts `statusInside`. When a non-empty array (or object) is stored for that leaf, `repairList` maps each entry through `repairPrefValue(leaf.item, …)` with `leaf.item === undefined`. `leaf.kind` then throws a TypeError, so reading the stored value fails. It should pass the entries through unrepaired, or treat the leaf as an app-defined kind.",
+   "fix": [
+    "packages/prefs-schema/src/repair.ts"
+   ],
+   "size": "line",
+   "cause": "missing `item === undefined` guard, answered differently from the other walks",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    6
+   ],
+   "sources": {
+    "claude": [
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A condition treats any scope-shaped value as a split value, even on a leaf with no scopes",
+   "where": "packages/prefs-schema/src/judge.ts:150 (shownValue)",
+   "severity": "low",
+   "scenario": "a `map` leaf (keys nobody declared) holds `{ $by: 'mode', $in: { a: 1 } }`, two keys a person can type, or an `object` / app-defined leaf has fields `$by` (a string) and `$in` (an object). `isPrefScope(value)` is true, `prefScopesOf(leaf)` is empty, so the selection is empty and `prefScopeValue` returns the scope's `$else`, else `leaf.default`. A condition on that leaf (`{ path: 'tags' }`, `isSet`) then compares the default rather than the value stored: it reads \"not set\" while the map holds two keys. It should be read as a scope only when the leaf declares `scopes`.",
+   "fix": [
+    "packages/prefs-schema/src/judge.ts"
+   ],
+   "size": "line",
+   "cause": "scope shape tested without checking the leaf declares scopes",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A condition reads a cleared clearable number as its default, while the form shows it empty",
+   "where": "packages/prefs-schema/src/judge.ts:164 (unsetValue)",
+   "severity": "medium",
+   "scenario": "`{ kind: 'number', name: 'Limit', clearable: true, default: 5 }` (PrefNumber allows a clearable leaf a numeric default: \"its default may be too\"), held as `undefined` after the person empties the field. `prefValueOrDefault` (leafValue.ts:16) says a clearable leaf holding nothing \"is cleared, and shows nothing\", so the row draws an empty field. `prefReader`/`prefJudge` read the same path through `unsetValue`, which returns `leaf.default` = 5, so `{ path: 'limit' }` holds and `{ path: 'limit', is: null }` fails while the field visibly holds nothing. `prefJudge` promises to compare \"each value as the control over its leaf ... shows it\". The same applies to a clearable field of an object or a list entry (`fieldValue`, `entryValue`). Two answers to \"what does a leaf holding nothing show\"; `unsetValue` should answer `undefined` for a clearable leaf, as `prefValueOrDefault` does.",
+   "fix": [
+    "packages/prefs-schema/src/judge.ts",
+    "packages/prefs-schema/src/leafValue.ts"
+   ],
+   "size": "line",
+   "cause": "clearable ignored in the condition reader's absent-value fallback",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  }
+ ],
+ "lines": 3544
+}

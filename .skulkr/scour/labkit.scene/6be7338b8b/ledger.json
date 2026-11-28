@@ -1,0 +1,50 @@
+{
+ "area": "labkit.scene",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/scene/TrialSceneCanvas.less",
+  "packages/labkit/src/scene/TrialSceneCanvas.stories.tsx",
+  "packages/labkit/src/scene/TrialSceneCanvas.tsx",
+  "packages/labkit/src/scene/index.ts",
+  "packages/labkit/src/scene/sceneResets.ts",
+  "packages/labkit/src/scene/sceneTrialHistory.ts",
+  "packages/labkit/src/scene/useSceneCamera.ts",
+  "packages/labkit/src/scene/useSceneRulers.tsx",
+  "packages/labkit/src/scene/useSceneToolSlot.ts",
+  "packages/labkit/src/scene/useTrialScene.ts",
+  "packages/labkit/src/scene/useTrialSceneReset.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1620934,
+   "minutes": 0.15676666666666667,
+   "at": "2026-11-26T05:11:49.068Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Reset does not reopen the original path edit when state.scene was already null, since the reset notification only fires on a stored-scene change to null",
+   "where": "packages/labkit/src/scene/useTrialScene.ts:66 (useTrialScene)",
+   "severity": "medium",
+   "scenario": "User leaves the canvas's default path edit without editing a scene node, so state.scene stays null; reset leaves it null, the effect sees no change, and TrialSceneCanvas never reopens the original path",
+   "cause": "reset signaled via scene-value change instead of an explicit reset event",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 552
+}

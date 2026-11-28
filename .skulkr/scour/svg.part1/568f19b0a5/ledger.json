@@ -1,0 +1,127 @@
+{
+ "area": "svg.part1",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/svg/src/__fixtures__/fixtures.ts",
+  "packages/svg/src/absoluteUnits.ts",
+  "packages/svg/src/alignedTextStroke.ts",
+  "packages/svg/src/animate/css.ts",
+  "packages/svg/src/animate/easing.ts",
+  "packages/svg/src/animate/index.ts",
+  "packages/svg/src/animate/plan.ts",
+  "packages/svg/src/animate/smil.ts",
+  "packages/svg/src/animate/trim.ts",
+  "packages/svg/src/animationTypes.ts",
+  "packages/svg/src/animations.ts",
+  "packages/svg/src/bakeTransforms.ts",
+  "packages/svg/src/bitmapHref.ts",
+  "packages/svg/src/booleanGroup.ts",
+  "packages/svg/src/cascade.ts",
+  "packages/svg/src/color.ts",
+  "packages/svg/src/condition.ts",
+  "packages/svg/src/conditional.ts",
+  "packages/svg/src/container.ts",
+  "packages/svg/src/cssAnimation.ts",
+  "packages/svg/src/cssScan.ts",
+  "packages/svg/src/cssTiming.ts",
+  "packages/svg/src/decorateXml.ts",
+  "packages/svg/src/draftFades.ts",
+  "packages/svg/src/draftPaint.ts",
+  "packages/svg/src/draftPose.ts",
+  "packages/svg/src/draftSpecs.ts",
+  "packages/svg/src/draftTakes.ts",
+  "packages/svg/src/elements.ts",
+  "packages/svg/src/fadePaint.ts",
+  "packages/svg/src/fillPaint.ts",
+  "packages/svg/src/fontSize.ts",
+  "packages/svg/src/framedText.ts",
+  "packages/svg/src/fromKit.ts",
+  "packages/svg/src/glyphRises.ts",
+  "packages/svg/src/glyphShifts.ts",
+  "packages/svg/src/glyphTurns.ts",
+  "packages/svg/src/gradientStops.ts",
+  "packages/svg/src/gradients.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2343316,
+   "minutes": 0.15066666666666667,
+   "at": "2026-11-26T23:10:38.721Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Opacity on the outer SVG element is dropped on import; no opacity group is made for the root as one is for a nested svg",
+   "where": "packages/svg/src/parse.ts:107",
+   "severity": "medium",
+   "scenario": "An outer <svg opacity=\"0.5\"> imports at full opacity, while the same opacity on a nested <svg> produces an opacity group",
+   "fix": [
+    "packages/svg/src/parse.ts"
+   ],
+   "size": "line",
+   "cause": "no container applies the root's non-inherited opacity",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Hidden-text precheck inspects only immediate tspans, so a visible grandchild tspan is dropped with the whole text",
+   "where": "packages/svg/src/hiddenElement.ts:17",
+   "severity": "medium",
+   "scenario": "An immediate tspan inherits hidden and an inner tspan sets visibility=visible; the whole text is dropped before the recursive reader can resolve the visible inner run",
+   "fix": [
+    "packages/svg/src/hiddenElement.ts"
+   ],
+   "size": "function",
+   "cause": "precheck is not recursive",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Length reader falls back to parseFloat on a malformed length, accepting its numeric prefix and bypassing the fallback and unit diagnostics",
+   "where": "packages/svg/src/lengths.ts:101",
+   "severity": "low",
+   "scenario": "An attribute like width=\"10px garbage\" fails the full-token match, then parseFloat returns 10 instead of the configured fallback, and no diagnostic is raised",
+   "fix": [
+    "packages/svg/src/lengths.ts"
+   ],
+   "size": "line",
+   "cause": "parseFloat fallback after a failed strict match",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3989
+}

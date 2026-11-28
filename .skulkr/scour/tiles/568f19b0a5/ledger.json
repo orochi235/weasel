@@ -1,0 +1,71 @@
+{
+ "area": "tiles",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/tiles/src/cache.ts",
+  "packages/tiles/src/index.ts",
+  "packages/tiles/src/pyramid.ts",
+  "packages/tiles/src/scheme.ts",
+  "packages/tiles/src/stream.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2205676,
+   "minutes": 0.2548,
+   "at": "2026-11-27T00:15:16.886Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A falsy look-ahead view (e.g. numeric 0) is ignored because the optional argument is checked for truthiness, so its tiles are never prefetched",
+   "where": "packages/tiles/src/stream.ts:78 (update)",
+   "severity": "low",
+   "scenario": "With a numeric-position scheme, update(5, 0) ignores the look-ahead view 0, so tiles at position zero are never prefetched by that call",
+   "fix": [
+    "packages/tiles/src/stream.ts"
+   ],
+   "size": "line",
+   "cause": "truthiness check on optional argument",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "planeFloor drops a level without checking that the finer grid already fits the tile limit, so an aligned box gets a coarser floor than the finest that fits",
+   "where": "packages/tiles/src/scheme.ts:148 (planeFloor)",
+   "severity": "low",
+   "scenario": "Tile size 512, limit of two tiles per side, bounds [0, 0, 512, 512]: returns one level-0 tile though level 1 covers the bounds with two tiles per side, giving a less detailed stand-in",
+   "fix": [
+    "packages/tiles/src/scheme.ts"
+   ],
+   "size": "line",
+   "cause": "unconditional level decrement",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 778
+}

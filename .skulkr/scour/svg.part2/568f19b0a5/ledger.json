@@ -1,0 +1,127 @@
+{
+ "area": "svg.part2",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/svg/src/groupBox.ts",
+  "packages/svg/src/groupPaint.ts",
+  "packages/svg/src/groupPaintXml.ts",
+  "packages/svg/src/hiddenElement.ts",
+  "packages/svg/src/hugeStrokeBounds.bench.ts",
+  "packages/svg/src/index.ts",
+  "packages/svg/src/internal.ts",
+  "packages/svg/src/kitInherits.ts",
+  "packages/svg/src/kitPaint.ts",
+  "packages/svg/src/laidLines.ts",
+  "packages/svg/src/lengths.ts",
+  "packages/svg/src/lowerLeaf.ts",
+  "packages/svg/src/markerDefs.ts",
+  "packages/svg/src/media.ts",
+  "packages/svg/src/metaXml.ts",
+  "packages/svg/src/metricScale.ts",
+  "packages/svg/src/nestedTspans.ts",
+  "packages/svg/src/openSubpathFill.ts",
+  "packages/svg/src/paintServers.ts",
+  "packages/svg/src/paintThroughMatrix.ts",
+  "packages/svg/src/painterLeaf.ts",
+  "packages/svg/src/parse.ts",
+  "packages/svg/src/patterns.ts",
+  "packages/svg/src/pbt.fixture.ts",
+  "packages/svg/src/placeBox.ts",
+  "packages/svg/src/prettyXml.ts",
+  "packages/svg/src/properties.ts",
+  "packages/svg/src/readClips.ts",
+  "packages/svg/src/readGradients.ts",
+  "packages/svg/src/readImage.ts",
+  "packages/svg/src/readMarkers.ts",
+  "packages/svg/src/readMeta.ts",
+  "packages/svg/src/readPaint.ts",
+  "packages/svg/src/readRuns.ts",
+  "packages/svg/src/readText.ts",
+  "packages/svg/src/regionSvg.ts",
+  "packages/svg/src/regionSvgNodes.ts",
+  "packages/svg/src/resolvedDashes.ts",
+  "packages/svg/src/seatedHeads.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2334436,
+   "minutes": 0.17693333333333333,
+   "at": "2026-11-26T23:10:55.208Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Generated definition IDs are not reserved against authored node IDs, producing duplicate IDs and ambiguous fragment references on export",
+   "where": "packages/svg/src/serialize.ts:47",
+   "severity": "medium",
+   "scenario": "A node with id grad0 or clip0 is serialized in a document that also generates a gradient or clip definition; both get the same id",
+   "fix": [
+    "packages/svg/src/serialize.ts"
+   ],
+   "size": "line",
+   "cause": "definition registry ignores node IDs",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Clip reader skips display/visibility checks, so a hidden clip shape still clips imported content",
+   "where": "packages/svg/src/readClips.ts:49",
+   "severity": "medium",
+   "scenario": "A clipPath whose only shape has display:none or inherits visibility:hidden still contributes clip geometry on import",
+   "fix": [
+    "packages/svg/src/readClips.ts"
+   ],
+   "size": "line",
+   "cause": "clip path bypasses element reader's visibility checks",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Symbol branch of use skips systemLanguage/requiredExtensions checks, so a symbol with failing conditions still imports",
+   "where": "packages/svg/src/use.ts:55",
+   "severity": "low",
+   "scenario": "A <use> references a <symbol> with a failing systemLanguage or requiredExtensions; its children still appear in the import",
+   "fix": [
+    "packages/svg/src/use.ts"
+   ],
+   "size": "line",
+   "cause": "symbol branch bypasses conditional-processing checks",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 5222
+}

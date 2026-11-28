@@ -1,0 +1,72 @@
+{
+ "area": "icons",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/icons/src/icons.gen.ts",
+  "packages/icons/src/icons.table.ts",
+  "packages/icons/src/index.ts",
+  "packages/icons/src/mark.ts",
+  "packages/icons/src/names.ts",
+  "packages/icons/src/pbt.fixture.ts",
+  "packages/icons/src/react.ts",
+  "packages/icons/src/react/IconRegistryProvider.tsx",
+  "packages/icons/src/react/useIconGlyph.ts",
+  "packages/icons/src/react/useIconVariant.ts",
+  "packages/icons/src/registry.ts",
+  "packages/icons/src/shapes.ts",
+  "packages/icons/src/spec.ts",
+  "packages/icons/src/table.ts",
+  "packages/icons/src/variants.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1677984,
+   "minutes": 0.19288333333333332,
+   "at": "2026-11-26T05:07:50.376Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Removing a variant during addTables' synchronous registry notice strands its glyphs and namespace claim",
+   "where": "packages/icons/src/variants.ts:61 (addTables)",
+   "severity": "medium",
+   "scenario": "A subscriber removes the variant during the change notification emitted by addTables. When addTables returns, the stale run stores the disposer for an unknown variant, so its glyphs and namespace claim are never released",
+   "cause": "a synchronous notification fires before the release function is recorded",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Registry accepts namespace/names that toIconRef/toIconSpec reject, so registered refs fail to round-trip",
+   "where": "packages/icons/src/registry.ts:82",
+   "severity": "low",
+   "scenario": "A table with an empty namespace or a name containing a colon is registered, and its ref shows up in entries and a picker. Reading the saved ref back through toIconRef or toIconSpec throws",
+   "cause": "the add path does not validate names against the ref grammar",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 713
+}

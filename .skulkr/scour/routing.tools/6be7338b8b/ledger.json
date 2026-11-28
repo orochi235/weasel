@@ -1,0 +1,996 @@
+{
+ "area": "routing.tools",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/routing/src/tools/defineTool.ts",
+  "packages/routing/src/tools/describeShortcuts.ts",
+  "packages/routing/src/tools/returnToModeDefault.ts",
+  "packages/routing/src/tools/routeTypes.ts",
+  "packages/routing/src/tools/routing/gestures.ts",
+  "packages/routing/src/tools/routing/index.ts",
+  "packages/routing/src/tools/routing/reflection/conflictKeys.ts",
+  "packages/routing/src/tools/routing/reflection/conflicts.ts",
+  "packages/routing/src/tools/routing/reflection/index.ts",
+  "packages/routing/src/tools/routing/reflection/registry.ts",
+  "packages/routing/src/tools/routing/routeGrammar.ts",
+  "packages/routing/src/tools/toolGaps.ts",
+  "packages/routing/src/tools/toolOptionPrefs.ts",
+  "packages/routing/src/tools/toolOptionSteps.ts",
+  "packages/routing/src/tools/toolOptions.ts",
+  "packages/routing/src/tools/toolSet.ts",
+  "packages/routing/src/tools/toolShortcuts.ts",
+  "packages/routing/src/tools/toolsScope.tsx",
+  "packages/routing/src/tools/tuneToolOptions.ts",
+  "packages/routing/src/tools/types.ts",
+  "packages/routing/src/tools/useModeDefaultTool.ts",
+  "packages/routing/src/tools/useToolLifecycle.ts",
+  "packages/routing/src/tools/useToolOptionValues.ts",
+  "packages/routing/src/tools/useToolShortcuts.ts",
+  "packages/routing/src/tools/useTools.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/01-claude.md",
+   "costUsd": 1.0541684,
+   "minutes": 3.0183166666666668,
+   "at": "2026-11-26T00:30:52.529Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.8996158,
+   "minutes": 1.9709666666666668,
+   "at": "2026-11-26T00:32:51.000Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.8077810000000001,
+   "minutes": 3.0799166666666666,
+   "at": "2026-11-26T00:35:56.004Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.9389019999999999,
+   "minutes": 3.1539333333333333,
+   "at": "2026-11-26T00:39:05.519Z",
+   "findings": 3
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.7539022000000002,
+   "minutes": 2.844716666666667,
+   "at": "2026-11-26T00:41:56.782Z",
+   "findings": 2
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.8379198,
+   "minutes": 3.4482666666666666,
+   "at": "2026-11-26T00:45:23.826Z",
+   "findings": 3
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.5610010000000001,
+   "minutes": 2.2837333333333336,
+   "at": "2026-11-26T00:47:40.935Z",
+   "findings": 4
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.769014,
+   "minutes": 2.5271166666666667,
+   "at": "2026-11-26T00:50:12.645Z",
+   "findings": 3
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.5814906000000001,
+   "minutes": 2.149916666666667,
+   "at": "2026-11-26T00:52:21.731Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.6366348000000001,
+   "minutes": 1.8309333333333333,
+   "at": "2026-11-26T00:54:11.669Z",
+   "findings": 1
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.5405346,
+   "minutes": 2.055,
+   "at": "2026-11-26T00:56:15.057Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.6727912,
+   "minutes": 2.27965,
+   "at": "2026-11-26T00:58:31.940Z",
+   "findings": 2
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.7488386,
+   "minutes": 2.5466499999999996,
+   "at": "2026-11-26T01:01:04.832Z",
+   "findings": 2
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.609789,
+   "minutes": 2.5654833333333333,
+   "at": "2026-11-26T01:03:38.892Z",
+   "findings": 2
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 1.1145676,
+   "minutes": 4.4138,
+   "at": "2026-11-26T01:08:03.818Z",
+   "findings": 3
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.8619392000000001,
+   "minutes": 2.9699,
+   "at": "2026-11-26T01:11:02.093Z",
+   "findings": 2
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 0.604276,
+   "minutes": 2.0681666666666665,
+   "at": "2026-11-26T01:13:06.276Z",
+   "findings": 2
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.5568154000000001,
+   "minutes": 2.133,
+   "at": "2026-11-26T01:15:14.349Z",
+   "findings": 1
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 0.6893134,
+   "minutes": 2.18885,
+   "at": "2026-11-26T01:17:25.765Z",
+   "findings": 1
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 0.5894972,
+   "minutes": 1.9817,
+   "at": "2026-11-26T01:19:24.797Z",
+   "findings": 1
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 0.5415602,
+   "minutes": 1.9880333333333333,
+   "at": "2026-11-26T01:21:24.251Z",
+   "findings": 2
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.7905404,
+   "minutes": 2.9729,
+   "at": "2026-11-26T01:24:22.720Z",
+   "findings": 6
+  },
+  {
+   "n": 23,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/23-claude.md",
+   "costUsd": 0.6553162,
+   "minutes": 2.62765,
+   "at": "2026-11-26T01:27:00.463Z",
+   "findings": 4
+  },
+  {
+   "n": 24,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/24-claude.md",
+   "costUsd": 0.5720224,
+   "minutes": 2.1529333333333334,
+   "at": "2026-11-26T01:29:09.734Z",
+   "findings": 1
+  },
+  {
+   "n": 25,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/25-claude.md",
+   "costUsd": 0.5989405999999999,
+   "minutes": 2.4150833333333335,
+   "at": "2026-11-26T01:31:34.729Z",
+   "findings": 2
+  },
+  {
+   "n": 26,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/26-claude.md",
+   "costUsd": 0.8322892,
+   "minutes": 2.8533166666666667,
+   "at": "2026-11-26T01:34:26.018Z",
+   "findings": 2
+  },
+  {
+   "n": 27,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/27-claude.md",
+   "costUsd": 0.8584366000000001,
+   "minutes": 2.956033333333333,
+   "at": "2026-11-26T01:37:23.467Z",
+   "findings": 2
+  },
+  {
+   "n": 28,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/28-claude.md",
+   "costUsd": 0.622638,
+   "minutes": 2.529933333333333,
+   "at": "2026-11-26T01:39:55.353Z",
+   "findings": 2
+  },
+  {
+   "n": 29,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/29-claude.md",
+   "costUsd": 0.6403684000000001,
+   "minutes": 2.4216166666666665,
+   "at": "2026-11-26T01:42:20.745Z",
+   "findings": 2
+  },
+  {
+   "n": 30,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/30-claude.md",
+   "costUsd": 0.7996296,
+   "minutes": 3.5465833333333334,
+   "at": "2026-11-26T01:45:53.634Z",
+   "findings": 5
+  },
+  {
+   "n": 31,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/31-codex.md",
+   "costUsd": 0.2785596,
+   "minutes": 0.30291666666666667,
+   "at": "2026-11-26T23:21:15.585Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 8
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A conflict is lost when another tie among different bindings uses the same spec objects",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:131 (addConflict)",
+   "severity": "medium",
+   "scenario": "the conflict key is built from the gesture, the target, and each member's `identityKeyOf(e.spec)` and modifiers. It has no owner and no binding identity in it. Bindings often share one spec object, such as a module constant like `{ kind: 'key', key: 'Escape' }` or `STEP_KEYS`. Two components in one bucket that don't tie with each other then get the same key. For example, gated actions A and B can hold together in mode M1, C and D in mode M2, A/B and C/D are exclusive, and all four bind the same spec constant. `tieComponents` yields [A,B] and [C,D]. The second reaches `conflicts.get(key)`, only adds its platform, and returns, so C–D is never reported. Both should be reported.",
+   "fix": [
+    "packages/routing/src/tools/routing/reflection/conflicts.ts"
+   ],
+   "size": "line",
+   "cause": "conflict key omits owner/binding identity",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    6,
+    7,
+    25,
+    26,
+    31
+   ],
+   "sources": {
+    "claude": [
+     1,
+     6,
+     7,
+     25,
+     26
+    ],
+    "codex": [
+     31
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "`ToolsApi.hotkeyEngaged` can name another canvas's tool",
+   "where": "packages/routing/src/tools/useTools.ts:211 (useTools)",
+   "severity": "low",
+   "scenario": "`hotkeyEngaged = ctx.hotkeyStack.at(-1)` reads the whole hotkey stack. That stack can sit in a provider shared by several canvases (useTools' own unmount comment says so, and `toolOptionSteps`/`tuneToolOptions` filter it with `liveTool(slot, among)` for this reason). Holding Space on canvas 2's hand tool makes canvas 1's `tools.hotkeyEngaged` read canvas 2's tool id, which is not in canvas 1's `registry`. A palette that does `registry[hotkeyEngaged]` or highlights that id shows the wrong thing. It should be the newest held id that this registry holds, the same answer `liveTool(…, among)` gives. Two answers to one question.",
+   "fix": [
+    "packages/routing/src/tools/useTools.ts"
+   ],
+   "size": "line",
+   "cause": "hotkey stack not filtered to own registry",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    7,
+    8,
+    13
+   ],
+   "sources": {
+    "claude": [
+     1,
+     2,
+     7,
+     8,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "describeShortcuts merges an action group named `other` into the ungrouped \"Other\" group",
+   "where": "packages/routing/src/tools/describeShortcuts.ts:150 (describeShortcuts)",
+   "severity": "low",
+   "scenario": "an action with `group: 'other'` is keyed `'other'`, the same key ungrouped actions use (`action.group ?? OTHER`). Its rows merge with the ungrouped rows under the heading \"Other\" and move to the end, instead of getting a group of their own (`groupTitle('other')`) in first-registered order. The tool-set side forbids the id `other` and throws, but the command side merges silently, so the two places answer the same reserved-id question in two different ways.",
+   "fix": [
+    "packages/routing/src/tools/describeShortcuts.ts"
+   ],
+   "size": "line",
+   "cause": "reserved group id shared with user group ids",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    22
+   ],
+   "sources": {
+    "claude": [
+     2,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "describeShortcuts lists a tool's declared bindings without applying binding overrides, so a rebound tool key shows its old shortcut",
+   "where": "packages/routing/src/tools/describeShortcuts.ts:120 (toolBindingsByAction / describeShortcuts)",
+   "severity": "medium",
+   "scenario": "a brush tool with `options.size` gets `brush.grow` bound to `]` on the tool's own `bindings` (defineTool → toolOptionSteps). The host rebinds it with `bindingOverrides` (binding id `brush.grow.key` → `=`). At runtime `assemble.ts:28` applies `overriddenBindings(entry.bindings, entry.id, overrides)` to the tool's bindings, so `=` fires. `describeShortcuts(registry.list(), { tools })` merges `tool.bindings` raw, so the sheet still shows `]` (and an unbound one still shows). The file's header promises \"a rebound key reads rebound and an unbound one is gone\"; the actions half holds because `list()` applied overrides, the tool half does not, and `DescribeShortcutsOptions` has no `overrides` field (describeKeymap and findScopedConflicts both take one).",
+   "fix": [
+    "packages/routing/src/tools/describeShortcuts.ts",
+    "packages/ui/src/components/ShortcutSheet/ShortcutSheet.tsx"
+   ],
+   "size": "function",
+   "cause": "overrides not applied to tool-declared bindings",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5,
+    6,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    23,
+    24,
+    26,
+    27,
+    28,
+    29,
+    31
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5,
+     6,
+     8,
+     9,
+     10,
+     11,
+     12,
+     14,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     23,
+     24,
+     26,
+     27,
+     28,
+     29
+    ],
+    "codex": [
+     31
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A shared number option held at ±Infinity reads as the default instead of being clamped, for a tool whose leaf is not endless",
+   "where": "packages/routing/src/tools/toolOptions.ts:141 (readHeld)",
+   "severity": "low",
+   "scenario": "tools A (size leaf `max: 500, endless: 'max'`) and B (size leaf `max: 500`, no endless) share `size`. A steps size to `Infinity` (steppedOption does this at the endless end). B reads the shared slot: `readHeld` rejects a non-finite number its own leaf does not allow and returns `undefined`, so B's params fall back to B's default (say 10) rather than 500. toolOptionsPrefs documents that \"each tool reads it held to its own\" bounds, and steppedOption itself treats a non-finite value as at the leaf's max/min; a finite 10_000 would read 500 while Infinity reads 10. Pressing `]` in B then writes `default+step` over A's value.",
+   "fix": [
+    "packages/routing/src/tools/toolOptions.ts"
+   ],
+   "size": "line",
+   "cause": "non-finite rejected before clamping",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "findScopedConflicts looks up an entry's eligible rule by ownerId, so a tool that shares an id with a gated action inherits that action's rule",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:91 (findConflictsKeyed, ruleOf)",
+   "severity": "low",
+   "scenario": "`rules` is keyed by action id, but `ruleOf` reads `rules.get(entry.ownerId)` for every entry, tools and contributions included. A registry/ambient tool `text` beside a gated action `text` (eligible only in mode X) has its bindings treated as gated: two ambient entries colliding with the tool are then excused whenever the action's rule is exclusive with theirs (rulesExclusive / no mode lets both hold), and a real tie goes unreported. The comment says \"Only actions carry a rule, so a tool's ... bindings count as eligible always\", which the id lookup does not enforce.",
+   "fix": [
+    "packages/routing/src/tools/routing/reflection/conflicts.ts"
+   ],
+   "size": "function",
+   "cause": "tool and action ids share one key space",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    22
+   ],
+   "sources": {
+    "claude": [
+     3,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "liveTool picks a held tool that the active mode bars, so tool options and step keys follow a tool that input does not route to",
+   "where": "packages/routing/src/tools/toolOptions.ts:116 (liveTool)",
+   "severity": "medium",
+   "scenario": "brush is active, and a tool `eraser` with options is held on its key (`tool.offhand` pushes it onto the hotkey stack with no mode check, `toolOffhand.ts:86`) while the active mode's capabilities bar it. `useContributions`' `routedTool` skips the barred hold and routes input to brush. But `liveTool` returns `eraser`: `tuneToolOptions` tunes brush's action with nothing (its `active()` is false) and the panel shows eraser's options, and `[` / `]` run `enabledFor('brush')`, which declines because `liveFrom` says `eraser`. So while the hold lasts, the brush's options no longer reach its strokes and its size keys do nothing. Both should use the same rule: the newest hold the mode allows, else the active tool if allowed (`ToolsApi.routed`).",
+   "fix": [
+    "packages/routing/src/tools/toolOptions.ts",
+    "packages/routing/src/tools/tuneToolOptions.ts",
+    "packages/routing/src/tools/toolOptionSteps.ts",
+    "packages/routing/src/contributions/useContributions.ts"
+   ],
+   "size": "design",
+   "cause": "two definitions of \"the live tool\", one ignoring mode eligibility",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    15,
+    23,
+    31
+   ],
+   "sources": {
+    "claude": [
+     4,
+     15,
+     23
+    ],
+    "codex": [
+     31
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "useToolOptionParams passes values.subscribe to useSyncExternalStore unbound, losing its `this`",
+   "where": "packages/routing/src/tools/useToolOptionValues.ts:33 (useToolOptionParams)",
+   "severity": "low",
+   "scenario": "a host implements `ToolOptionValues` as a class whose `subscribe` reads `this` (e.g. `this.listeners.add(l)`). That is valid against the public interface, but `useSyncExternalStore(values.subscribe, …)` calls it with `this` undefined, so the options row throws on mount. Every other call site goes through `values.get(...)` / `values.set(...)` as methods, so only this path breaks. Should pass `(l) => values.subscribe(l)`, memoized on `values`.",
+   "size": "line",
+   "cause": "method extracted from interface object",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    8,
+    30
+   ],
+   "sources": {
+    "claude": [
+     4,
+     8,
+     30
+    ]
+   },
+   "fix": [
+    "packages/routing/src/tools/useToolOptionValues.ts"
+   ]
+  },
+  {
+   "id": "D9",
+   "claim": "A conflict's ownerIds can include two bindings that never tie with each other, because tie components are merged transitively",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:94 (findConflictsKeyed / tieComponents)",
+   "severity": "low",
+   "scenario": "three tools bind the same key: A with `views: ['x']`, B with `views: ['x','y']`, C with `views: ['y']`. A–B tie in view x and B–C tie in view y, but A and C are never live together (`viewsTie` is false). `tieComponents` takes the transitive closure, so one conflict reports `declared by A, B, C`, and `reportRouteConflicts` warns that \"two bindings declare the same … tuple in the same scope\". A host told A and C collide may change one of them for nothing. The same happens with `phasesTie` or exclusive `eligible` rules. Reporting the pairs (or maximal cliques) that really tie would be accurate.",
+   "size": "function",
+   "cause": "transitive closure over a non-transitive tie relation",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    9,
+    11,
+    12,
+    13,
+    14,
+    17,
+    21,
+    22,
+    23,
+    27,
+    29,
+    30
+   ],
+   "sources": {
+    "claude": [
+     4,
+     9,
+     11,
+     12,
+     13,
+     14,
+     17,
+     21,
+     22,
+     23,
+     27,
+     29,
+     30
+    ]
+   },
+   "fix": [
+    "packages/routing/src/tools/routing/reflection/conflicts.ts"
+   ]
+  },
+  {
+   "id": "D10",
+   "claim": "toolOptionsPrefs silently ignores a host shared default whose key no tool names",
+   "where": "packages/routing/src/tools/toolOptionPrefs.ts:141 (toolOptionsPrefs)",
+   "severity": "low",
+   "scenario": "a host passes `shared: { fil: '#f00' }` (a typo for `fill`), or a key no mounted tool shares. The loop does `if (!leaf || !('kind' in leaf)) continue;`, so the default is dropped with no error. Every shape's `fill` then starts at the first tool's declared default. A default that a leaf rejects throws in the same function, so one bad host default is reported and the other is not.",
+   "size": "line",
+   "cause": "unmatched shared key skipped silently",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A hotkey-tier action that shadows an ambient tool's binding is never reported as a conflict, though the same shadow over a registry tool is",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:302 (findScopedConflicts)",
+   "severity": "low",
+   "scenario": "an action with `scope: 'hotkey'` and a default `Escape` binding, and an always-on ambient tool binding `Escape` to its own action. The hotkey tier is walked before ambient, so the ambient binding fires only when the action declines, the exact situation the `shadows` report describes. The shadow loop pairs hotkey actions only with `registry` tools; `ambient` (ambient tools plus ungated actions) is never compared with `hotkeyActions`/`gatedHotkey`, and the hotkey group holds only registry tools. Result: no warning for the ambient case, a `shadows` warning for the identical registry case.",
+   "size": "line",
+   "cause": "shadow pass limited to registry tools",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "The shadow pass misses a hotkey-tier action that outranks a tool's binding at a different specificity or target",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:302 (findScopedConflicts, shadow loop)",
+   "severity": "low",
+   "scenario": "The shadow check reuses `findConflictsKeyed`, whose buckets include the specificity `rank`, the exact `targetKey`, and the required-modifier count. The dispatcher ranks tier before specificity. So a hotkey-tier action with an untargeted `click` takes every click from a tool's `click` on `empty`, and an action on bare `x` takes Shift+x from a tool whose binding has `mods: { shift: 'optional' }`. Neither case is reported as `shadows`, although the tool's binding fires only when the action declines. Only exact rank and target matches are reported.",
+   "size": "function",
+   "cause": "within-scope tie keys reused for a cross-tier comparison",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "withoutTools gives an unlabeled tool set the heading \"<Id> without\"",
+   "where": "packages/routing/src/tools/toolSet.ts:77 (withoutTools)",
+   "severity": "low",
+   "scenario": "A set with no `label` is headed by its id, and `withoutTools` renames it `${id}-without`. Pass `withoutTools(SHAPE_TOOLS, 'line')` as `describeShortcuts`' `toolSets` (the form apps/draw passes as stacks) and the group heading becomes `groupTitle('shapes-without')`, which reads \"Shapes without\". It should still read as the set's own name. A label taken from the original id is missing.",
+   "fix": [
+    "packages/routing/src/tools/toolSet.ts"
+   ],
+   "size": "line",
+   "cause": "suffixed id leaks into the label fallback",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "foldPlatformCopies folds away a binding duplicated with `mod` so it is never reported as a conflict, though the same duplicate spelled with `ctrl` is reported",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:186 (foldPlatformCopies)",
+   "severity": "low",
+   "scenario": "one owner declares `{ kind: 'key', key: 'z', mods: { mod: true } }` to `history.undo` twice with equal params (or a tool declares the same `mod` binding twice). Both entries are `platformBound` and `sameOutcome`, so the fold keeps one and the bucket drops to 1 member; `addConflict` returns early and nothing is flagged on either platform. The same pair written with `ctrl: true` is not platform-bound, survives the fold, ties on both platforms and is flagged. `findConflicts`' doc says \"The same pair tying on both platforms is a plain duplicate and is flagged.\" The fold is meant only for a `mod` copy against a `ctrl`/`meta` copy of one binding, i.e. pairs whose platform-boundness differs.",
+   "size": "line",
+   "cause": "fold condition `platformBound(k) || platformBound(e)` should require exactly one to be bound",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    15
+   ],
+   "sources": {
+    "claude": [
+     9,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "toolOptionsPrefs throws a misleading \"would share one place\" error when one tool is listed twice",
+   "where": "packages/routing/src/tools/toolOptionPrefs.ts:101 (placeToolGroup)",
+   "severity": "low",
+   "scenario": "a host builds the schema from every tool it mounts, e.g. `toolOptionsPrefs([...Object.values(registry), ...ambient])`. `useTools` explicitly allows the same tool object in both `registry` and `ambient`. On the second visit the tool's group already holds its own option keys, so the check fires: `tool \"brush\"'s option \"size\" and the tool \"brush.size\" would share one place`. The tool is the same object and nothing collides. Expected: a tool seen again under the same id is skipped (or merged idempotently), and the throw is kept for a real option/tool-id collision.",
+   "fix": [
+    "packages/routing/src/tools/toolOptionPrefs.ts"
+   ],
+   "size": "function",
+   "cause": "no dedupe of tools by id before placing groups",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15,
+    30
+   ],
+   "sources": {
+    "claude": [
+     15,
+     30
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "findScopedConflicts reports one self-collision twice when a group pass joins a third binding to it",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:285 (findScopedConflicts)",
+   "severity": "low",
+   "scenario": "ambient tool T has two bindings on the same tuple, and ambient tool U has a third. The self pass `findConflictsKeyed([T])` reports the conflict {T.b1, T.b2}. The ambient group pass then finds the component {T.b1, T.b2, U.b}, whose `addConflict` key holds three spec identities and whose ownerIds are [T, T, U], so the `seen` dedupe (key + ownerIds) does not match the first. Both get reported, and the [T, T] pair shows up twice in `reportRouteConflicts` output. The same thing happens in the hotkey group for two hotkey-capable registry tools.",
+   "size": "function",
+   "cause": "dedupe keyed on the whole component, not on the pairs it contains",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "A wheel reversal steps immediately or only after 60px of travel, depending on whether the leftover travel is exactly 0",
+   "where": "packages/routing/src/tools/toolOptionSteps.ts:113 (wheelSizeAction run)",
+   "severity": "low",
+   "scenario": "inside a burst, a reversal counts as a fresh burst only when `burst.travel !== 0`. After the first event (travel reset to 0), or after a run of deltas that used up its travel exactly (say +60 → one step, remainder 0), a reversed delta is not fresh. It is added to the travel and needs a full `WHEEL_SIZE_STEP_PX` before stepping. Had the remainder been +1px, the same reversal would step at once. One notch the other way right after a first notch (a mouse wheel at 120px per notch within 150 ms) therefore steps the reversed way only once the reversed travel reaches 60px, not on its first notch as \"the first event of a burst steps at once\" promises. The burst should carry its direction separately from `travel`.",
+   "fix": [
+    "packages/routing/src/tools/toolOptionSteps.ts"
+   ],
+   "size": "line",
+   "cause": "direction inferred from residual travel",
+   "confidence": "sure",
+   "firstOccasion": 22,
+   "sightings": [
+    22,
+    31
+   ],
+   "sources": {
+    "claude": [
+     22
+    ],
+    "codex": [
+     31
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "ToolsScope remounts its children when `isolate` or an outer scope changes",
+   "where": "packages/routing/src/tools/toolsScope.tsx:53 (ToolsScope)",
+   "severity": "low",
+   "scenario": "`ToolsScope` returns a fragment when an outer slot is in scope and `isolate` is false, and a `ToolsSlotContext.Provider` otherwise. Toggling `isolate`, or an outer `ToolsScope` mounting or unmounting above it, swaps the element type at that position. React then unmounts and remounts the whole subtree: canvases lose their state, scene and GL contexts, and they re-publish. It should keep one element shape, for example always render the Provider with `value={outer && !isolate ? outer : own}`.",
+   "size": "line",
+   "cause": "conditional element type at a fixed tree position",
+   "confidence": "sure",
+   "firstOccasion": 22,
+   "sightings": [
+    22
+   ],
+   "sources": {
+    "claude": [
+     22
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "onSwitch can fire twice for one dropped tool",
+   "where": "packages/routing/src/tools/useToolLifecycle.ts:42 (useToolLifecycle effect)",
+   "severity": "low",
+   "scenario": "the active tool T leaves `entriesById` while `active` still reads `T`. `dropped` is true and `onSwitch` runs (ending T's in-flight handles), and `prevActiveRef` stays `T`. When the slot is later cleared or moved (`active` becomes `null` or U, which a host or the context does after a tool is removed), `switched` is true, so `onSwitch` runs a second time for the same outgoing tool and may end handles the incoming state already started. A drop should record that T's switch has been handled, for example by setting `prevActiveRef` to `null`.",
+   "size": "line",
+   "cause": "drop path leaves prevActiveRef pointing at the ended tool",
+   "confidence": "likely",
+   "firstOccasion": 22,
+   "sightings": [
+    22
+   ],
+   "sources": {
+    "claude": [
+     22
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "withToolOptionDefault installs a caller's starting value without checking it against the option's leaf",
+   "where": "packages/routing/src/tools/toolOptions.ts:85 (withToolOptionDefault)",
+   "severity": "low",
+   "scenario": "a tool hook's caller passes a starting `size: 0` (or a string, or 500) for a leaf with `min: 1, max: 100`. The value becomes `leaf.default` unrepaired. `toolOptionParams` hands that default straight to the action while nothing is held, and `stepOption` starts stepping from it. Every held value goes through `readHeld`/`repairPrefValue`, so only the default path skips bounds and kind checks.",
+   "size": "line",
+   "cause": "default not repaired against the leaf",
+   "confidence": "likely",
+   "firstOccasion": 23,
+   "sightings": [
+    23,
+    30
+   ],
+   "sources": {
+    "claude": [
+     23,
+     30
+    ]
+   },
+   "fix": [
+    "packages/routing/src/tools/toolOptions.ts"
+   ]
+  },
+  {
+   "id": "D21",
+   "claim": "A dotted tool id whose parent has no options gets a prefs group with an empty name",
+   "where": "packages/routing/src/tools/toolOptionPrefs.ts:84 (placeToolGroup)",
+   "severity": "low",
+   "scenario": "`toolOptionsPrefs([pathBrushTool])` where the id is `path.brush` and no tool `path` has options. The intermediate segment `path` gets a placeholder `{ name: '', children: {} }`, and nothing ever names it. A prefs panel drawing the schema then shows an untitled group holding the brush's options. The group should carry a name, such as the segment itself or the parent tool's label.",
+   "size": "line",
+   "cause": "placeholder group never named",
+   "confidence": "likely",
+   "firstOccasion": 25,
+   "sightings": [
+    25,
+    28
+   ],
+   "sources": {
+    "claude": [
+     25,
+     28
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A shared number option's widened leaf keeps the first tool's clearable, scale, stops and step, which may not hold over the merged range",
+   "where": "packages/routing/src/tools/toolOptionPrefs.ts:58 (widenedNumber)",
+   "severity": "low",
+   "scenario": "tool A declares shared `size` as `{ min: 1, max: 100, scale: 'log' }`, tool B as `{ min: 0, max: 50, clearable: true }` → the shared leaf is `{ min: 0, max: 100, scale: 'log' }` without `clearable`: B clearing its field writes `undefined`, which the store's `repairNumber` reads as the default, so B can never clear; and the log scale now spans 0, which warns and draws linear. Widening widens bounds only; the other fields that constrain what a value may be are taken from whichever tool came first.",
+   "size": "function",
+   "cause": "only min/max/endless widened",
+   "confidence": "likely",
+   "firstOccasion": 30,
+   "sightings": [
+    30
+   ],
+   "sources": {
+    "claude": [
+     30
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "Ingest bindings with overlapping but different MIME filters are bucketed apart, so real ties go unreported",
+   "where": "packages/routing/src/tools/routing/reflection/conflicts.ts:90 (findConflictsKeyed)",
+   "severity": "low",
+   "scenario": "Two ambient drop bindings, same target/phase/mods, types ['image/*'] and ['image/png']; dropping a PNG matches both at equal rank, but no tie is reported",
+   "cause": "conflict key buckets by MIME filter string",
+   "confidence": "sure",
+   "firstOccasion": 31,
+   "sightings": [
+    31
+   ],
+   "sources": {
+    "codex": [
+     31
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "phasesTie's 1 << n enumeration overflows at 31+ channels so identical phase lists fail to tie, and blows up near 30",
+   "where": "packages/routing/src/tools/routing/reflection/conflictKeys.ts:103 (phasesTie)",
+   "severity": "medium",
+   "scenario": "Two equal-rank bindings with identical phase lists naming 29 channels; with the owner and a sentinel, 1 << 31 is negative, so no state is tested",
+   "cause": "power-set enumeration with signed 32-bit shift",
+   "confidence": "sure",
+   "firstOccasion": 31,
+   "sightings": [
+    31
+   ],
+   "sources": {
+    "codex": [
+     31
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "Releasing a programmatic hotkey hold pops the last same-id entry, removing a later keyboard hold's priority",
+   "where": "packages/routing/src/tools/useTools.ts:244 (disengageHotkey)",
+   "severity": "medium",
+   "scenario": "Stack A(programmatic), B, A(key); releasing the programmatic A leaves A, B, so B wins while A's key is still down",
+   "cause": "API stores only the tool id; popHotkey removes the last match",
+   "confidence": "sure",
+   "firstOccasion": 31,
+   "sightings": [
+    31
+   ],
+   "sources": {
+    "codex": [
+     31
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "steppedOption's 12-significant-digit cleanup can move a large value by more than the step",
+   "where": "packages/routing/src/tools/toolOptions.ts:226 (steppedOption)",
+   "severity": "medium",
+   "scenario": "Step up from 1000000000009 with step 0.2; the result rounds to 1000000000010, a jump of 1",
+   "cause": "significant-digit cleanup rather than step-relative rounding",
+   "confidence": "sure",
+   "firstOccasion": 31,
+   "sightings": [
+    31
+   ],
+   "sources": {
+    "codex": [
+     31
+    ]
+   }
+  }
+ ],
+ "lines": 2569
+}

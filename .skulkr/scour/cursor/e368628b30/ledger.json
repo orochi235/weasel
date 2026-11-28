@@ -25,6 +25,116 @@
    "minutes": 0.12223333333333333,
    "at": "2026-11-25T21:15:13.618Z",
    "findings": 1
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.7279124000000001,
+   "minutes": 1.8225833333333332,
+   "at": "2026-11-26T13:01:30.738Z",
+   "findings": 1
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.8025507999999999,
+   "minutes": 3.61925,
+   "at": "2026-11-26T13:05:08.092Z",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.6891522000000001,
+   "minutes": 2.9685,
+   "at": "2026-11-26T13:08:06.499Z",
+   "findings": 5
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.7376913999999999,
+   "minutes": 3.2900333333333336,
+   "at": "2026-11-26T13:11:26.122Z",
+   "findings": 2
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.6702352000000001,
+   "minutes": 2.7712666666666665,
+   "at": "2026-11-26T13:14:12.580Z",
+   "findings": 2
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.7600308,
+   "minutes": 3.12005,
+   "at": "2026-11-26T13:17:19.932Z",
+   "findings": 2
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.7217746,
+   "minutes": 2.96585,
+   "at": "2026-11-26T13:20:18.102Z",
+   "findings": 1
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.6373946,
+   "minutes": 2.5467833333333334,
+   "at": "2026-11-26T13:22:51.073Z",
+   "findings": 2
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.6384448,
+   "minutes": 2.4026166666666664,
+   "at": "2026-11-26T13:25:15.392Z",
+   "findings": 2
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.0836156,
+   "minutes": 3.878016666666667,
+   "at": "2026-11-26T13:29:08.236Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.589842,
+   "minutes": 2.5924,
+   "at": "2026-11-26T13:31:44.316Z",
+   "findings": 5
   }
  ],
  "defects": [
@@ -35,13 +145,340 @@
    "severity": "low",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    7,
+    12
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     7,
+     12
+    ]
+   },
+   "scenario": "`setBase({ kind: 'painted', glyph: 'brush', angle: 0, worldRadius: 4, fallback: 'crosshair' })`, then `setBase({ …same…, fallback: 'default' })` (useToolCursor re-calls `setBase` when only `tier.fallback` changes, since its key includes it). `same()` compares glyph, mark, angle, size and worldRadius but not `fallback`, so the second write returns early without storing the new object, and `current().cursor.fallback` still answers `'crosshair'`. It should store the new cursor; skipping the notify is fine because nothing drawn changed. No caller in the repo reads the state's `fallback` today (the sink keeps its own copy), so the stale value only shows through the public `current()`.",
+   "cause": "structural equality omits a field",
+   "fix": [
+    "packages/cursor/src/paintedCursorState.ts"
+   ],
+   "size": "line",
+   "confidence": "sure"
+  },
+  {
+   "id": "D2",
+   "claim": "brushRing draws a negative or NaN radius as the default 24px ring, and turns a negative world radius into a fixed-px CSS cursor",
+   "where": "packages/cursor/src/brushRing.ts:20 (brushRing)",
+   "severity": "low",
+   "scenario": "`brushRing(-5)` → `size = Math.round(-5 * 24 / 9.9) = -12`; `brushRing(NaN)` → `size = NaN`. Both specs reach `resolveCursor`, whose `positive()` drops the size, so the ring bakes at the default 24px (a ~9.9px-radius ring) instead of being refused. `brushRing(-5, 'world')` (or `NaN, 'world'`) returns `{ worldRadius: -5 }`; `resolveCursor` ignores the non-positive world radius and returns a CSS cursor baked at 24px, so a world-unit brush silently stops following zoom. The function refuses infinite radii and an overflowed size explicitly \"rather than draw it at the default\", and floors tiny positive radii at 1px for the same reason, but a negative or NaN radius (a real result of a computed brush radius, e.g. a slider minus an offset, or 0/0) still lands on exactly that default. It should either refuse (RangeError, as for Infinity) or clamp to the 1px ring that 0 draws.",
+   "fix": [
+    "packages/cursor/src/brushRing.ts"
+   ],
+   "size": "line",
+   "cause": "guard covers only ±Infinity, not negative/NaN",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    12
+   ],
+   "sources": {
+    "claude": [
+     2,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "The pencil glyph's detail line extends past the ink and halo, so it shows as an unhaloed white stub",
+   "where": "packages/cursor/src/glyphs.ts:22 (GLYPHS.pencil)",
+   "severity": "low",
+   "scenario": "the detail is collinear with the ink's butt edge (16,8)–(19,11) (all three points lie on y = x − 8) and overshoots the corner (16,8) by 2.83 units to (14,6). A `detail` is drawn in the halo color with no halo of its own and is meant to be \"a division inside the silhouette\" (types.ts). Here it straddles the outer edge, shaving 0.6 units of ink off the butt end, and its last ~1.5 units sit outside the 1.3-unit halo around that corner. On white paper that stub is invisible. On dark chrome, both tiers draw a white tick sticking out of the pencil's outline with no ink edge, because the painter and the baker share `cursorPaintOps`. It should lie inside the body, as the pen's detail `M 8.4 13.9 L 12.2 10.1` does. `haloFitsInBox` cannot catch this: the stub stays inside the box.",
+   "fix": [
+    "packages/cursor/scripts/glyphs/draw.mjs",
+    "packages/cursor/src/glyphs.ts",
+    "bake.test.ts",
+    "/",
+    "paint.test.ts",
+    "packages/cursor/scripts/gen-cursors.mjs"
+   ],
+   "size": "line",
+   "cause": "detail authored on the silhouette edge, not inside it",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    6
+   ],
+   "sources": {
+    "claude": [
+     3,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "bakeFallback rejects valid url(…) hotspots that use a + sign, an exponent, or no space after the closing paren",
+   "where": "packages/cursor/src/bake.ts:40 (IMAGE_ENTRY / bakeFallback)",
+   "severity": "low",
+   "scenario": "the hotspot grammar is `-?\\d*\\.?\\d+` behind a mandatory `\\s+`. CSS `<number>` also allows a leading `+` and an exponent, so `fallback: 'url(a.png) +4 4, default'` and `'url(a.png) 1e1 4, default'` are valid cursor values. The browser takes them, but `bakeFallback` throws `RangeError: … is not a cursor value`, which reaches `bakeCursor`, `cursorFor` and `resolveCursor` on every tier. So a fallback the doc says is accepted (\"optionally after `url(…)` images of its own\") throws for an ordinary spelling of the hotspot. `image-set(…)` entries, which Chrome takes in `cursor`, are refused the same way.",
+   "size": "function",
+   "cause": "hotspot regex narrower than the CSS number grammar",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5,
+    6,
+    10
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5,
+     6,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "The fit guards bound a zero-radius arc by a circle on its chord, so they refuse a turn the glyph could take",
+   "where": "packages/cursor/src/types.ts:118 (walk)",
+   "severity": "low",
+   "scenario": "a glyph path `M 6 12 A 0 0 0 0 1 18 12` (SVG draws a zero-radius arc as a straight line). `walk` takes `r = max(|rx|, half)` = 6 and sees a disc of radius 6 at (12, 12), so `rotationFitsInBox` and `haloFitsInBox` measure a bulge the browser never draws. A glyph that fits is reported as not fitting, and `bakeCursor`/`resolveCursor` throw a `RangeError` for any nonzero angle on it. They should bound the arc as the segment it is (its two endpoints as radius-0 discs).",
+   "size": "line",
+   "cause": "zero radius not read as a line",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    12
+   ],
+   "sources": {
+    "claude": [
+     4,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "The fit guards bound an arc whose ends meet by a full circle the browser never draws",
+   "where": "packages/cursor/src/types.ts:118 (walk)",
+   "severity": "low",
+   "scenario": "`M 12 12 A 9 9 0 0 1 12 12`: SVG leaves an arc out entirely when its endpoints are equal. Here `half` is 0, `r` is 9 and the center is the point itself, so `walk` reports a radius-9 disc. That can push a fitting glyph out of `haloFitsInBox`/`rotationFitsInBox`, and a turn on it throws. The arc should add nothing past its endpoint.",
+   "size": "line",
+   "cause": "omitted arc still measured",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A circular arc whose rx is written negative is refused as elliptical",
+   "where": "packages/cursor/src/types.ts:115 (walk)",
+   "severity": "low",
+   "scenario": "`A -3 3 0 0 1 …`: SVG reads both radii by their absolute values, so this is a circle of radius 3. But `rx !== ry` compares the signed values, so the guard throws \"elliptical arc (-3 by 3)\", and `bakeCursor` throws for any nonzero angle on such a glyph. The comparison should be `Math.abs(rx) !== Math.abs(ry)`, which matches the `Math.abs(rx)` the next lines already use.",
+   "size": "line",
+   "cause": "sign not stripped before comparing",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    12
+   ],
+   "sources": {
+    "claude": [
+     4,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "worldCursorPx returns Infinity for a finite world radius at a large zoom",
+   "where": "packages/cursor/src/paint.ts:117 (worldCursorPx)",
+   "severity": "low",
+   "scenario": "`resolveCursor({ glyph: 'brush', worldRadius: 1e300 })` resolves without complaint to a painted cursor. At a view scale of 1e9, `worldRadius * scale * (box / r)` overflows to `Infinity`, and `Math.max(1, Infinity)` keeps it. A painter that feeds that size to `cursorPaintMatrix` gets infinite entries (a·0 → NaN in the translation), and `chromeLineWidthScale` gives 0. The px unit refuses an overflowing size (`brushRing` throws; ruled in cursor audit 88), so the world unit answers the same overflow a second way: it hands out a non-finite size instead of refusing or capping it.",
+   "fix": [
+    "packages/cursor/src/paint.ts",
+    "packages/cursor/src/brushRing.ts"
+   ],
+   "size": "function",
+   "cause": "overflow not guarded",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    9,
+    12
+   ],
+   "sources": {
+    "claude": [
+     4,
+     9,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "bakeFallback refuses a fallback with an image-set() entry, though that is a valid cursor value",
+   "where": "packages/cursor/src/bake.ts:39 (IMAGE_ENTRY / bakeFallback)",
+   "severity": "low",
+   "scenario": "`bakeCursor(g, { fallback: 'image-set(\"a.png\" 1x, \"a@2x.png\" 2x) 4 4, pointer' })` or the `-webkit-image-set(...)` form, both of which the browser accepts in a `cursor` list. `IMAGE_ENTRY` peels off only `url(…)` entries, so what remains is not a keyword and the call throws a `RangeError` \"is not a cursor value\". The doc comment promises refusal only for a fallback that does not end a `cursor` value in a keyword.",
+   "size": "function",
+   "cause": "image entry grammar covers url() only",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5,
+    6,
+    7
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5,
+     6,
+     7
+    ]
+   },
+   "fix": [
+    "packages/cursor/src/bake.ts"
+   ]
+  },
+  {
+   "id": "D10",
+   "claim": "A cursor sink overwrites another writer's painted override and, on release, clears it to null instead of restoring the earlier value",
+   "where": "packages/cursor/src/cursorSink.ts:75 (createCursorSink → writePainted)",
+   "severity": "low",
+   "scenario": "two writers share one `PaintedCursorState` (another sink, or code calling `painted.setOverride` directly, as `createCursorSink`'s doc says it leaves alone). Writer A sets override painted `{glyph:'brush'}`. Sink B, which does not own the base, calls `setOverride('pointer')` → writePainted sets the state's override to `'none'` and marks `ownsPaintedOverride`. B then calls `setOverride(null)` → writePainted calls `painted.setOverride(null)`. A's brush override is gone while A still believes it is set; nothing paints until A writes again. The element's style is handled the other way: `write` records `prior` and `giveBack` restores it only if unchanged since. The painted slot gets no prior and no \"unchanged since\" check, so the two halves of one sink answer \"put back what I replaced\" differently. Likewise a sink that owns the base clears any override another writer set on the state on every write (`else if (ownsBase || ownsPaintedOverride) painted.setOverride(null)`).",
+   "fix": [
+    "packages/cursor/src/cursorSink.ts",
+    "packages/cursor/src/paintedCursorState.ts"
+   ],
+   "size": "function",
+   "cause": "painted override slot written without recording/restoring the prior value",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    9,
+    10,
+    12
+   ],
+   "sources": {
+    "claude": [
+     5,
+     9,
+     10,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "bakeFallback refuses -webkit- prefixed cursor keyword aliases (e.g. -webkit-grab) that Chrome accepts",
+   "where": "packages/cursor/src/bake.ts:35 (CURSOR_KEYWORDS / bakeFallback)",
+   "severity": "low",
+   "scenario": "`cursorFor('pencil', { fallback: '-webkit-grab' })`, or `{ fallback: 'image-set(\"a.png\" 1x, \"a@2x.png\" 2x) 4 4, default' }`, throws `RangeError: cursor fallback … is not a cursor value`. Chrome parses both: it keeps `-webkit-grab`/`-webkit-grabbing`/`-webkit-zoom-in`/`-webkit-zoom-out` as aliases, and `image-set()`/`-webkit-image-set()` are valid `<cursor-image>` entries. The rule (docs/unruled.md, cursor audit 88) is to refuse what is *not* a cursor value, so these should pass. The `image-set` case is the more realistic one, since it is the usual way to give a bitmap cursor a retina variant.",
+   "fix": [
+    "packages/cursor/src/bake.ts"
+   ],
+   "size": "function",
+   "cause": "keyword/entry grammar narrower than CSS",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "A px-unit brushRing draws its ring line thicker as the radius grows, while the same ring in world units stays at chrome weight",
+   "where": "packages/cursor/src/brushRing.ts:21 (brushRing)",
+   "severity": "medium",
+   "scenario": "`brushRing(60, 'px')` gives `{ glyph: 'brush', size: 145 }`. That goes to the painted tier with a fixed size, and `paintedCursorLayer` passes no `lineWidthScale` for a fixed size. The 1.6-unit stroke therefore draws at 1.6 × 145 / 24 ≈ 9.7 CSS px, inside a halo about 25 px wide. Below the cap, `brushRing(20, 'px')` bakes at size 48 with a 3.2 px line. On a zoom where 60 world units come to 60 px, `brushRing(60, 'world')` draws the same ring radius with a 1.6 px line, because the layer applies `chromeLineWidthScale` to a world-sized spec. So one function gives two line weights for the same on-screen ring, depending only on the unit. A brush ring should keep chrome line weight in either unit, as `worldCursorPx` / `chromeLineWidthScale` intend for a glyph that measures something.",
+   "fix": [
+    "packages/cursor/src/brushRing.ts",
+    "packages/cursor/src/resolve.ts",
+    "packages/cursor/src/bake.ts",
+    "packages/core/src/canvas/paintedCursorLayer.ts"
+   ],
+   "size": "design",
+   "cause": "line weight scaled with size on the fixed-size path, chrome weight on the world path",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    11
+   ],
+   "sources": {
+    "claude": [
+     8,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "bakeFallback refuses a valid url(…) fallback whose unquoted URL contains a CSS escape",
+   "where": "packages/cursor/src/bake.ts:40 (IMAGE_ENTRY, used by bakeFallback)",
+   "severity": "low",
+   "scenario": "`bakeCursor(GLYPHS.pen, { fallback: 'url(pen.png) 1e1 4, auto' })`, or `'url(pen.png) +4 +4, auto'`, or `'url(a\\\\(b.png), auto'` → `RangeError: cursor fallback … is not a cursor value`. Each is a valid CSS `cursor` list (a hotspot is a CSS `<number>`, which allows a sign and an exponent; an unquoted `url()` allows backslash escapes), so the browser would accept it. The hotspot pattern `-?\\d*\\.?\\d+` and the unquoted-url class `[^\\s\"'()\\\\]*` reject them, the regex fails to consume the entry, and the remainder is not a keyword. The same validation runs in `cursorFor` and `resolveCursor`, so every tier throws.",
+   "size": "line",
+   "cause": "hand-rolled number/url grammar narrower than CSS",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "Painted cursor state keeps a stale pointer position while inactive, so a reactivated painted cursor draws at the old pointer position",
+   "where": "packages/cursor/src/paintedCursorState.ts:86 (setPointer), :101 (current)",
+   "severity": "low",
+   "scenario": "the hover pump writes `setPointer` only while `active()` (`hoverCursor.ts:137`), as this module's `active()` doc invites. A brush tool is active with the pointer at A; something sets a CSS override (`setOverride('none')`, e.g. hovering a handle) or the base clears, and the pointer moves to B with no `setPointer`, since nothing is painted. When the painted cursor comes back without a pointer move (the override clears on a timer or a non-key state change; `setBase` from a `<Canvas>` render after a tool change from code), `current()` returns `{ cursor, at: A }` and the ring draws at A, far from the real pointer, until the next move. `at` should be dropped when nothing is shown (so nothing draws until a fresh position), or the state should say a position is stale.",
+   "fix": [
+    "packages/cursor/src/paintedCursorState.ts"
+   ],
+   "size": "function",
+   "cause": "position kept past the period it stops being written",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
     ]
    }
   }
- ]
+ ],
+ "lines": 1346
 }

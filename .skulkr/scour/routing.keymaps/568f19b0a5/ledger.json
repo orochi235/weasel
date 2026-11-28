@@ -1,0 +1,76 @@
+{
+ "area": "routing.keymaps",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/routing/src/keymaps/captureGesture.ts",
+  "packages/routing/src/keymaps/captureKey.ts",
+  "packages/routing/src/keymaps/capturePointer.ts",
+  "packages/routing/src/keymaps/captureSpec.ts",
+  "packages/routing/src/keymaps/createKeymapContribution.ts",
+  "packages/routing/src/keymaps/describeKeymap.ts",
+  "packages/routing/src/keymaps/index.ts",
+  "packages/routing/src/keymaps/keymapStack.ts",
+  "packages/routing/src/keymaps/useInnermostKeymap.ts",
+  "packages/routing/src/keymaps/useOpenKeymap.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2420466,
+   "minutes": 0.13066666666666665,
+   "at": "2026-11-26T23:09:00.985Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A second pointer's release or cancel clears the shared drag-capture slot without matching pointer ID, settling or discarding the first pointer's drag early",
+   "where": "packages/routing/src/keymaps/capturePointer.ts:151",
+   "severity": "medium",
+   "scenario": "Two recognized pointers down; releasing the second settles or clears the first pointer's in-progress drag capture",
+   "fix": [
+    "packages/routing/src/keymaps/capturePointer.ts"
+   ],
+   "size": "line",
+   "cause": "release/cancel listeners don't match pointerId",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Keydown capture accepts IME composing events, recording keys like Process as a shortcut or treating a composing Escape as cancel",
+   "where": "packages/routing/src/keymaps/captureGesture.ts:73",
+   "severity": "low",
+   "scenario": "User composes with an IME while capturing a shortcut; Process key gets recorded or composing Escape cancels",
+   "fix": [
+    "packages/routing/src/keymaps/captureGesture.ts"
+   ],
+   "size": "line",
+   "cause": "no isComposing check",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 791
+}

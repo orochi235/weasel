@@ -1,0 +1,67 @@
+{
+ "area": "icons-plugin",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/icons-plugin/src/annotate.ts",
+  "packages/icons-plugin/src/bundlers.ts",
+  "packages/icons-plugin/src/catalog.ts",
+  "packages/icons-plugin/src/collect.ts",
+  "packages/icons-plugin/src/index.ts",
+  "packages/icons-plugin/src/parse.ts",
+  "packages/icons-plugin/src/pbt.fixture.ts",
+  "packages/icons-plugin/src/rewrite.ts",
+  "packages/icons-plugin/src/scope.ts",
+  "packages/icons-plugin/src/tables.ts",
+  "packages/icons-plugin/src/virtual.ts",
+  "packages/icons-plugin/src/walk.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16757840000000002,
+   "minutes": 0.16128333333333333,
+   "at": "2026-11-26T05:07:33.263Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Chunk substitution rewrites ordinary app string literals that match a placeholder marker, injecting icon data or failing the build on an unknown variant",
+   "where": "packages/icons-plugin/src/index.ts:151",
+   "severity": "medium",
+   "scenario": "An app logs a string equal to the default marker: the build replaces it with serialized icon data. A string matching an unknown variant marker makes the build fail at catalog lookup.",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Production watch builds do not add icon table JSON to the watch list, so catalog edits leave stale glyphs in the output",
+   "where": "packages/icons-plugin/src/index.ts:189",
+   "severity": "medium",
+   "scenario": "Rollup watch build in production: the catalog JSON changes while no module in the bundle graph does, and the output keeps the old glyphs",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1172
+}

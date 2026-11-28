@@ -1,0 +1,75 @@
+{
+ "area": "prefs-editor",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/prefs-editor/src/PrefConditionEditor/ConditionClipboard.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/ConditionGroupRows.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/ConditionRow.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.module.css",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.stories.module.css",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.stories.tsx",
+  "packages/prefs-editor/src/PrefConditionEditor/PrefConditionEditor.tsx",
+  "packages/prefs-editor/src/icons.gen.ts",
+  "packages/prefs-editor/src/index.ts",
+  "packages/prefs-editor/src/testing/prefSchemaEditor.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17347839999999998,
+   "minutes": 0.17846666666666666,
+   "at": "2026-11-26T05:18:19.788Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "An outstanding clipboard read resolving after a newer condition edit (or after a later paste) overwrites that edit with its stale result",
+   "where": "packages/prefs-editor/src/PrefConditionEditor/ConditionClipboard.tsx:36",
+   "severity": "medium",
+   "scenario": "Click Paste while readText is pending, then edit a condition row; when the read resolves it replaces the condition, discarding the edit; two pastes resolving out of order do the same",
+   "fix": [
+    "packages/prefs-editor/src/PrefConditionEditor/ConditionClipboard.tsx"
+   ],
+   "size": "function",
+   "cause": "async paste callback not guarded against staleness",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Copy reports success for conditions with non-finite numeric values that JSON.stringify writes as null, so Paste rejects them or changes their meaning",
+   "where": "packages/prefs-editor/src/PrefConditionEditor/ConditionClipboard.tsx:18",
+   "severity": "low",
+   "scenario": "Copy a condition with above = Infinity; copy succeeds, Paste rejects it because an ordering bound must be a number; an equality comparison with Infinity pastes as a null comparison",
+   "fix": [
+    "packages/prefs-editor/src/PrefConditionEditor/ConditionClipboard.tsx"
+   ],
+   "size": "line",
+   "cause": "validator permits non-finite numbers JSON cannot encode",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 657
+}

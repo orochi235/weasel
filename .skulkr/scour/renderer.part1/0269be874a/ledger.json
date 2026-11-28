@@ -1,0 +1,113 @@
+{
+ "area": "renderer.part1",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/renderer/src/DrawCommand.ts",
+  "packages/renderer/src/WeaselRenderer.ts",
+  "packages/renderer/src/batchBuffers.ts",
+  "packages/renderer/src/batchClip.ts",
+  "packages/renderer/src/batchHull.ts",
+  "packages/renderer/src/batchStage.ts",
+  "packages/renderer/src/contextLoss.ts",
+  "packages/renderer/src/contextResources.ts",
+  "packages/renderer/src/cullDrawCommands.ts",
+  "packages/renderer/src/cullTree.fixture.ts",
+  "packages/renderer/src/draw.ts",
+  "packages/renderer/src/drawBatch.ts",
+  "packages/renderer/src/drawStream.ts",
+  "packages/renderer/src/dropShadow.ts",
+  "packages/renderer/src/effects/EffectTargets.ts",
+  "packages/renderer/src/effects/builtins.ts",
+  "packages/renderer/src/effects/composite.ts",
+  "packages/renderer/src/effects/compositeOp.ts",
+  "packages/renderer/src/effects/effectPrelude.ts",
+  "packages/renderer/src/effects/types.ts",
+  "packages/renderer/src/glyphCorners.ts",
+  "packages/renderer/src/glyphOutlineMesh.ts",
+  "packages/renderer/src/images/bitmapHolds.ts",
+  "packages/renderer/src/images/bitmapNames.ts",
+  "packages/renderer/src/images/imageCache.ts",
+  "packages/renderer/src/images/imageLoader.ts",
+  "packages/renderer/src/images/imageReads.ts",
+  "packages/renderer/src/index.ts",
+  "packages/renderer/src/markerCommands.ts",
+  "packages/renderer/src/math/patternSpace.ts",
+  "packages/renderer/src/mesh.ts",
+  "packages/renderer/src/meshPaint/bake.ts",
+  "packages/renderer/src/meshPaint/bakeCache.ts",
+  "packages/renderer/src/meshPaint/handles.ts",
+  "packages/renderer/src/meshPaint/index.ts",
+  "packages/renderer/src/meshPaint/meshPaint.ts",
+  "packages/renderer/src/meshPaint/meshShader.ts",
+  "packages/renderer/src/meshPaint/surface.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17935339999999997,
+   "minutes": 0.21721666666666667,
+   "at": "2026-11-26T05:22:02.073Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A synchronous throw from a custom image loader leaves the cache entry pending forever, so imagePending stays true, imageLoadsSettled has nothing to await, and retryImage skips it",
+   "where": "packages/renderer/src/images/imageCache.ts:158",
+   "severity": "medium",
+   "scenario": "An installed loader throws synchronously after the cache has set its loading state, so neither promise handler runs and the entry stays pending forever",
+   "cause": "loading state is set before the loader call, and a synchronous throw is never caught",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A sizing load that throws synchronously leaves the vector reraster pending flag stuck",
+   "where": "packages/renderer/src/images/imageCache.ts (vector reraster sizing load)",
+   "severity": "medium",
+   "scenario": "An installed loader throws synchronously after the cache has set its loading state, so neither promise handler runs and the entry stays pending forever",
+   "cause": "loading state is set before the loader call, and a synchronous throw is never caught",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A failed picking frame strands borrowed effect targets because the ID frame path never reclaims the pool, so repeated failures keep allocating new targets",
+   "where": "packages/renderer/src/WeaselRenderer.ts:289 (renderIds / renderIdsAsync)",
+   "severity": "medium",
+   "scenario": "A child or effect throws during renderIds while a borrowed offscreen target is held; later picking frames before the next color frame allocate more targets instead of getting the stranded ones back",
+   "cause": "pool reclaim runs only in render(), not on the ID frame path",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 5384
+}

@@ -25,6 +25,49 @@
    "minutes": 0.18643333333333334,
    "at": "2026-11-25T21:17:43.270Z",
    "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.9605524000000002,
+   "minutes": 1.1615,
+   "at": "2026-11-26T23:09:02.394Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.5494939999999999,
+   "minutes": 1.0775333333333335,
+   "at": "2026-11-26T23:10:07.287Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.4320812,
+   "minutes": 0.8041,
+   "at": "2026-11-26T23:10:55.739Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.3764424,
+   "minutes": 1.0173666666666668,
+   "at": "2026-11-26T23:11:57.128Z",
+   "findings": 0
   }
  ],
  "defects": [
@@ -35,13 +78,24 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    2
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     2
     ]
-   }
+   },
+   "scenario": "select an operand of a boolean/compound node (reachable by entering it: `enteredGroup.isEnterable` allows consumesChildren). The operand is never painted on its own; `sceneContentBounds` excludes such nodes (`consumed`, contentBounds.ts:36). selectionRegion returns the operand's full drawn box, so an intersect/subtract result exports with a region framing ink that is not there (or a result that draws nothing exports as non-null). Expected: the operand treated like other undrawn nodes (or mapped to its consuming ancestor).",
+   "cause": "no consumed-ancestor check",
+   "fix": [
+    "packages/export/src/selectionRegion.ts"
+   ],
+   "size": "line",
+   "confidence": "likely"
   },
   {
    "id": "D2",
@@ -72,6 +126,95 @@
      1
     ]
    }
+  },
+  {
+   "id": "D4",
+   "claim": "selectionRegion omits the copies a selected container draws via copiesFromPose, so the exported crop cuts them off",
+   "where": "packages/export/src/selectionRegion.ts:35 (selectionRegion)",
+   "severity": "medium",
+   "scenario": "select a symmetry group (a container with `copiesFromPose`) and export the selection as PNG/SVG/PDF. `boxOf` answers `drawnAabbOf` of the group, which unions its members' boxes but never carries them through the copies (drawnBounds.ts `inkExtentsOf` has no copy step). The region is the original's box only, so every mirrored/rotated copy outside it is cut off. `sceneContentBounds` (core/canvas/contentBounds.ts:38-44) answers the same \"what does this draw\" question with `copiesWithin` and covers the copies — two answers to one decision.",
+   "fix": [
+    "packages/export/src/selectionRegion.ts",
+    "/"
+   ],
+   "size": "function",
+   "cause": "copies not carried into selection bounds",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "shownIds recurses into children of a consumesChildren node on a hidden or annotation layer, counting ones the render walk never paints",
+   "where": "packages/export/src/selectionRegion.ts:51 (shownIds)",
+   "severity": "low",
+   "scenario": "a boolean/compound node (`consumesChildren: true`) sits on a hidden layer (or an annotation layer) and is selected. `shown` replaces it with `doc.childrenOf(id).flatMap(shown)`, so its operands' boxes become the region, though the walk draws neither the node nor its operands (`buildSceneTree` gives a consuming node no children; `sceneContentBounds` contentBounds.ts:33 and `paintedMembers` drawnBounds.ts:108 both return [] here). Expected `null` / \"draws nothing\"; got a region over undrawn operands, exporting an empty or wrong image. The same \"what does a hidden-layer node draw\" rule is answered three ways.",
+   "fix": [
+    "packages/export/src/selectionRegion.ts"
+   ],
+   "size": "line",
+   "cause": "missing consumesChildren check",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "selectionRegion treats a zero-width or zero-height region as drawing something, so the PNG export then refuses it",
+   "where": "packages/export/src/selectionRegion.ts:38 (selectionRegion)",
+   "severity": "low",
+   "scenario": "select only a straight horizontal (or vertical) path with no stroke, or any node whose drawn box is degenerate on one axis. `unionAabb` returns a box with `height: 0`, so `selectionRegion` returns a region rather than `null`, and `selectionRegionSource` does not raise its \"draws nothing\" error. `exportRegions(scene, selectionRegionsSource(ids), 'png')` then reaches `planPixelRender`, whose `checkPixelRenderRect` throws `renderSceneToPixels: sourceRect.height must be a positive finite number, got 0`. Expected: either `null` / the \"draws nothing\" error that the doc promises for a selection drawing nothing, or a region the formats accept.",
+   "fix": [
+    "packages/export/src/selectionRegion.ts"
+   ],
+   "size": "line",
+   "cause": "degenerate box not treated as empty",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "Dev 'unread option' warning is suppressed for an override of the same format id that reads different options",
+   "where": "packages/export/src/exportFormats.ts:89 (warnUnreadOptions)",
+   "severity": "low",
+   "scenario": "`exportRegions(scene, r, 'png', { dpi: 2 })` warns once and records `png\\0dpi`. A consumer then registers its own `png` format declaring `options: []` (or a different set), or disposes it and the built-in reappears; a later misspelled/unsupported `dpi` passed to the new format is never warned about, because the dedupe key is the id, not the format object whose `options` decided the warning. Keyed by format (e.g. a WeakMap<ExportFormat, Set<string>>) each registration would warn for itself.",
+   "size": "function",
+   "cause": "dedupe keyed by id rather than the format registered",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
   }
- ]
+ ],
+ "lines": 628
 }

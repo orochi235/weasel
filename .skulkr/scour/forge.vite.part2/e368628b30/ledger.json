@@ -39,6 +39,276 @@
    "minutes": 0.12353333333333333,
    "at": "2026-11-25T21:18:33.235Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.0930604,
+   "minutes": 2.875983333333333,
+   "at": "2026-11-26T09:28:53.634Z",
+   "findings": 4
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.6656396,
+   "minutes": 3.0695833333333336,
+   "at": "2026-11-26T09:31:58.055Z",
+   "findings": 5
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.7138422,
+   "minutes": 3.280383333333333,
+   "at": "2026-11-26T09:35:15.060Z",
+   "findings": 5
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.6405711999999999,
+   "minutes": 2.653,
+   "at": "2026-11-26T09:37:54.402Z",
+   "findings": 7
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.6870310000000001,
+   "minutes": 3.1243,
+   "at": "2026-11-26T09:41:02.051Z",
+   "findings": 6
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.6486296,
+   "minutes": 2.9218333333333333,
+   "at": "2026-11-26T09:43:57.502Z",
+   "findings": 6
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.5679444,
+   "minutes": 2.4178666666666664,
+   "at": "2026-11-26T09:46:22.745Z",
+   "findings": 1
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.597859,
+   "minutes": 2.3140333333333336,
+   "at": "2026-11-26T09:48:41.742Z",
+   "findings": 6
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.651124,
+   "minutes": 3.0651333333333333,
+   "at": "2026-11-26T09:51:45.836Z",
+   "findings": 5
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.8079338,
+   "minutes": 3.4959,
+   "at": "2026-11-26T09:55:15.746Z",
+   "findings": 5
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.6859999999999999,
+   "minutes": 3.1054166666666663,
+   "at": "2026-11-26T09:58:22.241Z",
+   "findings": 2
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.6651396,
+   "minutes": 3.12695,
+   "at": "2026-11-26T10:01:30.023Z",
+   "findings": 5
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.6930259999999999,
+   "minutes": 3.3363166666666664,
+   "at": "2026-11-26T10:04:50.389Z",
+   "findings": 3
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.6310348,
+   "minutes": 2.876516666666667,
+   "at": "2026-11-26T10:07:43.149Z",
+   "findings": 6
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.9721406,
+   "minutes": 4.5363,
+   "at": "2026-11-26T10:12:15.736Z",
+   "findings": 3
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 0.9261132000000001,
+   "minutes": 4.016033333333334,
+   "at": "2026-11-26T10:16:16.978Z",
+   "findings": 6
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.8302284,
+   "minutes": 3.8710500000000003,
+   "at": "2026-11-26T10:20:09.474Z",
+   "findings": 5
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 0.7590450000000001,
+   "minutes": 3.561916666666667,
+   "at": "2026-11-26T10:23:43.389Z",
+   "findings": 6
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 0.6850880000000001,
+   "minutes": 3.2075333333333336,
+   "at": "2026-11-26T10:26:56.163Z",
+   "findings": 5
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 0.6893583999999999,
+   "minutes": 3.2648333333333337,
+   "at": "2026-11-26T10:30:12.464Z",
+   "findings": 4
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.8344482,
+   "minutes": 4.127183333333333,
+   "at": "2026-11-26T10:34:20.280Z",
+   "findings": 10
+  },
+  {
+   "n": 23,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/23-claude.md",
+   "costUsd": 0.5881508000000001,
+   "minutes": 2.6074333333333337,
+   "at": "2026-11-26T10:36:57.193Z",
+   "findings": 5
+  },
+  {
+   "n": 24,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/24-claude.md",
+   "costUsd": 0.5979874,
+   "minutes": 2.8133833333333333,
+   "at": "2026-11-26T10:39:46.241Z",
+   "findings": 4
+  },
+  {
+   "n": 25,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/25-claude.md",
+   "costUsd": 0.6570159999999999,
+   "minutes": 2.87575,
+   "at": "2026-11-26T10:42:38.964Z",
+   "findings": 2
+  },
+  {
+   "n": 26,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/26-claude.md",
+   "costUsd": 1.0241612000000002,
+   "minutes": 4.94645,
+   "at": "2026-11-26T10:47:35.960Z",
+   "findings": 4
+  },
+  {
+   "n": 27,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/27-claude.md",
+   "costUsd": 0.9297472,
+   "minutes": 4.287983333333333,
+   "at": "2026-11-26T10:51:53.430Z",
+   "findings": 5
+  },
+  {
+   "n": 28,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/28-claude.md",
+   "costUsd": 0.7207858,
+   "minutes": 3.31745,
+   "at": "2026-11-26T10:55:12.666Z",
+   "findings": 3
   }
  ],
  "defects": [
@@ -49,13 +319,24 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    28
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     28
     ]
-   }
+   },
+   "scenario": "The watcher is silent (the case this plugin exists for) and a served file is deleted. `missed` gets `mtimeOf(file) === undefined` and answers false, so no `unlink` is replayed: the page keeps the deleted module and vite's graph still holds it. The `stamps` entry is only removed by an `unlink` event, and that event is exactly what went missing, so the entry stays. Every `quietMs` after that, `sweep` calls `statSync` on the deleted file and the stat throws. A stamped file that no longer exists should be replayed as `unlink` (and its entries dropped).",
+   "cause": "missing-file case treated as unchanged",
+   "fix": [
+    "packages/forge/src/vite/watchRecovery.ts"
+   ],
+   "size": "function",
+   "confidence": "likely"
   },
   {
    "id": "D2",
@@ -64,13 +345,1053 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    6,
+    11,
+    18,
+    19
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     6,
+     11,
+     18,
+     19
+    ]
+   },
+   "scenario": "`settleAll` (first load of `virtual:forge/index.js`) or one `update`'s settle is awaiting `decide(file, …)` for story S; meanwhile the watcher reports S unlinked and a concurrent `update` runs `current.delete(S)`/`wrappersOf.delete(S)`. When the await returns, settle does `wrappersOf.set(S, next)` and, the resolution differing from the now-undefined `before`, `readInto(current, S)`, whose `readFileSync` throws ENOENT: an error is logged and S is set back into the map with `[]`. S stays in `files()` (fed to propControls' TypeScript roots, re-settled on later events) and its stale `wrappersOf` entry keeps triggering re-reads, though the file is gone. The `current.has(file)` check is made only before the await; it should be repeated after it.",
+   "cause": "membership check not repeated after await",
+   "fix": [
+    "packages/forge/src/vite/storyIndex.ts",
+    "packages/forge/src/vite/plugin.ts"
+   ],
+   "size": "function",
+   "confidence": "likely"
+  },
+  {
+   "id": "D3",
+   "claim": "A server restart that reuses forge's plugin objects lets the old server's close tear down the new server's capture endpoint",
+   "where": "packages/forge/src/vite/plugin.ts:198 (forge, configureServer / closeServer)",
+   "severity": "medium",
+   "scenario": "a dev server built programmatically (`createServer({ plugins: [forge(...)] })`, or any inline config whose plugin objects survive `server.restart()`, e.g. on an `.env` change). vite's `restartServer` (node_modules/vite/dist/node/chunks/node.js:25206) creates the new server first, which runs `configureServer` and sets the shared `capture` to the new endpoint, then awaits `server._closeServer('restart')`, whose `closeServer` hook runs `capture?.close()` — on the new endpoint. The old endpoint is never closed and the live server's capture endpoint is shut down. It should close the endpoint the closing server opened (keep it per server, or only close when `capture` belongs to the server being closed).",
+   "size": "function",
+   "cause": "module-level state overwritten before the old server's teardown",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "On a restart that reuses plugin objects, the old server's buildEnd clears the new server's sweep timer",
+   "where": "packages/forge/src/vite/watchRecovery.ts:172 (watchRecovery, buildEnd) and :150 (configureServer)",
+   "severity": "low",
+   "scenario": "with a plugin instance reused across `server.restart()` (inline config), the new server's `configureServer` assigns `timer = setInterval(sweep, …)`, overwriting the old handle without clearing it; then the old server's teardown calls `buildEnd`, which clears `timer` — the new interval. The old interval stays alive (unref'd, but it keeps sweeping `stamps` and replaying changes through the now-reassigned `server`), and the live server never sweeps, so a missed edit is only recovered on request. `stamps`/`fileOfUrl` also carry over from the old server. Clear the previous timer in `configureServer` and tie teardown to the server that set it.",
+   "size": "function",
+   "cause": "one timer slot shared by successive servers",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Two separate implementations of the nearest package.json's name lookup disagree on the answer",
+   "where": "packages/forge/src/vite/typedoc/index.ts:102 (packageNameOf)",
+   "severity": "low",
+   "scenario": "`typedoc/index.ts` defines its own `packageNameOf(dir)` (undefined on none, no `top` bound, starts at the dir given) beside `packageName.ts`'s exported `packageNameOf(file, top)` (null on none, bounded by `top`, starts at `dirname(file)`), which `apiTable.ts` and `history.ts` use. The same question has two implementations that can drift; `exportIn` should call `packageNameOf(file)` from `packageName.ts`.",
+   "fix": [
+    "packages/forge/src/vite/typedoc/index.ts",
+    "packages/forge/src/vite/packageName.ts"
+   ],
+   "size": "function",
+   "cause": "duplicated lookup",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     13,
+     14,
+     15,
+     16,
+     17,
+     18,
+     19,
+     20,
+     21,
+     22,
+     23,
+     24,
+     25,
+     26,
+     27,
+     28
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "packageNameOf's top bound is checked as a string prefix, so a sibling directory sharing the prefix counts as inside it",
+   "where": "packages/forge/src/vite/packageName.ts:6 (packageNameOf)",
+   "severity": "medium",
+   "scenario": "`dir.startsWith(top)` accepts a sibling directory sharing the prefix: with `top = '/repo/pkg'` and a file resolved to `/repo/pkg-old/src/x.ts` (history.ts resolves `top` + a path that can climb with `..`), the walk reads `/repo/pkg-old/package.json`, which is outside `top`, and names that package instead of returning null. Compare against `top` with a separator (`dir === top || dir.startsWith(top + sep)`).",
+   "size": "line",
+   "cause": "string prefix used as path containment",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4,
+    5,
+    7,
+    9,
+    11,
+    12,
+    13,
+    14,
+    15,
+    18,
+    19,
+    20,
+    23,
+    24,
+    25
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4,
+     5,
+     7,
+     9,
+     11,
+     12,
+     13,
+     14,
+     15,
+     18,
+     19,
+     20,
+     23,
+     24,
+     25
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/packageName.ts"
+   ]
+  },
+  {
+   "id": "D7",
+   "claim": "TypeDoc source paths written with `../` never match, so the component gets no TypeDoc docs",
+   "where": "packages/forge/src/vite/typedoc/index.ts:76 (suffixOf)",
+   "severity": "low",
+   "scenario": "TypeDoc writes `sources[].fileName` relative to its base path; a component outside that base (a monorepo run from one package with `entryPoints` reaching a sibling) is written `../other/src/Button.tsx`. `suffixOf` strips only a leading `./`, and `at.endsWith('/../other/src/Button.tsx')` is false for every absolute file, so `exportIn` finds nothing and the API panel loses descriptions, overloads and the page link. Stripping leading `../` segments before the suffix match (the suffix scoring already ranks ties) would keep them.",
+   "size": "line",
+   "cause": "only `./` prefix normalized",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    17
+   ],
+   "sources": {
+    "claude": [
+     3,
+     17
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A merged interface's definition prints only its first declaration",
+   "where": "packages/forge/src/vite/typeDefs.ts:55 (addTypeDef)",
+   "severity": "low",
+   "scenario": "a project type `interface Theme { a: string }` augmented elsewhere with `interface Theme { b: number }` (declaration merging, common for theme/registry types). `getDeclarations().find(definedBy)` takes the first and prints it, so the API panel's definition of `Theme` shows `a` only while the props table (read from the checker) shows a prop typed `Theme` that also takes `b`. Every interface declaration should be printed, or the merged members shown.",
+   "size": "function",
+   "cause": "first declaration taken as the whole type",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    11,
+    22
+   ],
+   "sources": {
+    "claude": [
+     3,
+     11,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "Workshop pages answer GET only, so HEAD for `/` or `/frame.html` falls through to vite's 404",
+   "where": "packages/forge/src/vite/servePages.ts:27 (servePages middleware)",
+   "severity": "low",
+   "scenario": "`curl -I http://localhost:5173/` (or any health check / link checker using HEAD) reaches `next()` because `req.method === 'GET'` fails; forge's pages are virtual, so vite has no `index.html` to fall back to and answers 404 although a GET of the same URL is 200. HEAD should get the same status and headers without the body.",
+   "size": "line",
+   "cause": "method check excludes HEAD",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    21
+   ],
+   "sources": {
+    "claude": [
+     3,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "TypeDoc prop docs keep the first declaration seen, so a prop redeclared after Omit<Base, 'x'> shows Base's comment instead of its own",
+   "where": "packages/forge/src/vite/typedoc/index.ts:141 (collect)",
+   "severity": "medium",
+   "scenario": "`type Props = Omit<ButtonProps, 'onClick'> & { /** Fires with the row id. */ onClick(id: string): void }`. The intersection's first part is `Omit`, a reference outside the project, so `collect` walks its type arguments into `ButtonProps` and stores `ButtonProps.onClick` under `onClick`; the later reflection's own `onClick` is skipped by `!props.has(child.name)`. The API panel shows ButtonProps' description, deprecation, default and `inheritedFrom` for a prop the component redeclared. `Omit`/`Pick`'s key argument is ignored, so omitted keys are collected too, and first-wins lets them shadow the real declaration.",
+   "fix": [
+    "packages/forge/src/vite/typedoc/index.ts"
+   ],
+   "size": "function",
+   "cause": "first-wins merge, Omit keys ignored",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "Story files added outside the vite root are never indexed because only files that already exist are watched",
+   "where": "packages/forge/src/vite/plugin.ts:73 (watchSources)",
+   "severity": "low",
+   "scenario": "`stories: ['../../packages/*/src/**/*.stories.tsx']` from `apps/workshop`. `server.watcher.add([...files])` adds the story files present at startup, and chokidar reports only those paths. A new `Foo.stories.tsx` created in that tree outside the root never fires `add`, so `stories.update` never runs and the story stays out of the index until the server restarts. Watching the globs' base directories, or the globs themselves, would report new files.",
+   "size": "function",
+   "cause": "watches files, not globs",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    10,
+    22
+   ],
+   "sources": {
+    "claude": [
+     4,
+     10,
+     22
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/plugin.ts"
+   ]
+  },
+  {
+   "id": "D12",
+   "claim": "watchRecovery's URL-to-file map is never pruned, so it grows without bound",
+   "where": "packages/forge/src/vite/watchRecovery.ts:165 (transform handler)",
+   "severity": "low",
+   "scenario": "every module served adds `fileOfUrl.set(url, file)`. An `unlink` deletes the file's `stamps` entry but not its URLs, so a long dev session spent renaming or generating files grows the map without bound, and a stale URL still maps to a deleted file (`missed` then returns false, so it does no harm beyond the leak).",
+   "size": "line",
+   "cause": "unlink skips fileOfUrl",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    7
+   ],
+   "sources": {
+    "claude": [
+     4,
+     7
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "closeServer is not a vite plugin hook, so the capture endpoint and its headless Chromium are never closed",
+   "where": "packages/forge/src/vite/plugin.ts:201 (forge, plugin object)",
+   "severity": "medium",
+   "scenario": "start a dev server, request a capture (launches Chromium through `serveCapture`), then `server.close()` or restart the server on a config edit. Vite's server close runs the plugin container's `buildEnd`/`closeBundle`, never a `closeServer` property, so `capture.close()` never runs: the browser and its contexts outlive the server. A restart leaks one per restart. Should close from `buildEnd`/`closeBundle` (as watchRecovery does with `buildEnd`) or from `server.httpServer`'s `close` event inside `configureServer`.",
+   "fix": [
+    "packages/forge/src/vite/plugin.ts"
+   ],
+   "size": "line",
+   "cause": "nonexistent hook name",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    9
+   ],
+   "sources": {
+    "claude": [
+     5,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "mayBeStory resolves an identifier inside a function against the file's top-level bindings, ignoring parameters and locals that shadow it",
+   "where": "packages/forge/src/vite/nativeExports.ts:118 (mayBeStory, Identifier case)",
+   "severity": "low",
+   "scenario": "`const s = { a: 1 }; const keep = (s) => s; export const Primary = keep(story(...));` — the call resolves `keep`, its body returns `s`, and `s` is looked up in `scope.bindings` (top level) → `{ a: 1 }` → an object with no spread → false. A real story export is judged not a story and dropped from the loader. Same with a `const` declared inside the function body that shares a top-level name. A name a function binds itself should read as unknown (true), as an unresolved name does.",
+   "size": "function",
+   "cause": "no scope tracking inside function bodies",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    10,
+    26
+   ],
+   "sources": {
+    "claude": [
+     5,
+     10,
+     26
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/nativeExports.ts"
+   ]
+  },
+  {
+   "id": "D15",
+   "claim": "A numeric key in a namespace destructure is recorded as a number rather than a string import name",
+   "where": "packages/forge/src/vite/moduleInfo.ts:53 (moduleInfo, declareStatement)",
+   "severity": "low",
+   "scenario": "`import * as ns from './x'; const { 0: zero } = ns;` — `p.key` is a NumericLiteral, cast to StringLiteral, and `nameOf` returns its numeric `value`, so `imports.get('zero').imported` is the number `0`, breaking the `Import.imported: string` contract and `mod.exports.get(0)` lookups in trace (finds nothing where `'0'` is the export). Should `String()` it or skip non-identifier/string keys.",
+   "size": "line",
+   "cause": "unchecked cast of key node",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    7,
+    9,
+    22
+   ],
+   "sources": {
+    "claude": [
+     5,
+     7,
+     9,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "fileEventsArrive leaks the watcher when an injected watch reports synchronously",
+   "where": "packages/forge/src/vite/watchProbe.ts:68 (fileEventsArrive)",
+   "severity": "low",
+   "scenario": "a `watch` option whose `onEvent` fires before it returns (or the default `write()` triggering a synchronous callback in a test double): `settle` runs while `stop` is still undefined, so `stop?.()` does nothing; then `watch` returns its stopper, which is assigned but never called — the watcher stays open. Should call `stop` after assignment when already settled.",
+   "size": "function",
+   "cause": "stopper assigned after settle can run",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    7,
+    19,
+    20,
+    26,
+    27
+   ],
+   "sources": {
+    "claude": [
+     5,
+     7,
+     19,
+     20,
+     26,
+     27
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/watchProbe.ts"
+   ]
+  },
+  {
+   "id": "D17",
+   "claim": "Config modules and frame styles are written as platform paths while every other id is posix",
+   "where": "packages/forge/src/vite/virtualModules.ts:42 (virtualModules, configModule/frameStyles)",
+   "severity": "low",
+   "scenario": "on Windows, `resolve(src.root(), path)` yields `C:\\\\proj\\\\forge.config.ts`; story files, watch paths and module ids all go through `posixResolve`. The virtual module then imports a backslash path that does not match vite's id for the same file, so an edit to the config file may not be matched to the imported module (duplicate module / no HMR). Same in plugin.ts's `optimizeDeps.entries` (`resolve(at, path)`).",
+   "fix": [
+    "packages/forge/src/vite/virtualModules.ts",
+    "packages/forge/src/vite/plugin.ts"
+   ],
+   "size": "line",
+   "cause": "resolve instead of posixResolve",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "addTypeDefs treats every identifier-shaped word in a type's text as a type reference, string literals and property names included",
+   "where": "packages/forge/src/vite/typeDefs.ts:39 (addTypeDefs)",
+   "severity": "low",
+   "scenario": "a prop typed `{ kind: 'Color' | 'Size' }` (or `mode: 'Theme'`) has its text scanned with `/[A-Za-z_$][\\w$]*/g`, so `Color`, `Size`, `kind` are all looked up in scope; where the project declares a type `Color`, the API panel shows `Color`'s definition for a prop that never references it (and property keys that collide with type names do the same). Words inside quotes and before `:` in a member should be excluded, or the names taken from the type's references instead of its text.",
+   "size": "function",
+   "cause": "regex scan over printed text",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "TypeDoc lookup accepts a class component but reads no props from it, so its docs come out empty",
+   "where": "packages/forge/src/vite/typedoc/index.ts:84 (exportIn) / :118 (propsTypeOf)",
+   "severity": "low",
+   "scenario": "`exportIn` admits `Kind.Class` exports, but `propsTypeOf` reads only `signatures[0].parameters[0].type ?? type`; a class reflection has neither (its props are in `extendedTypes`, `Component<P>`), so `collect` gets `undefined` and the component's TypeDoc props and ref members are always empty: no descriptions, deprecations or `inheritedFrom` reach the panel for a class component that TypeDoc documents, while it is still matched and given its `href`.",
+   "size": "function",
+   "cause": "class reflection shape not read",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    11,
+    22,
+    24,
+    27
+   ],
+   "sources": {
+    "claude": [
+     6,
+     11,
+     22,
+     24,
+     27
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/typedoc/index.ts"
+   ]
+  },
+  {
+   "id": "D20",
+   "claim": "watchRecovery's transform takes a pending read that the client load recorded, even when the transform runs in another environment",
+   "where": "packages/forge/src/vite/watchRecovery.ts:160 (transform handler)",
+   "severity": "low",
+   "scenario": "`load` records a pending read only for the `client` environment, but `transform` calls `read.take(id)` in every environment before checking anything. With an ssr (or other dev) environment transforming the same id between the client's load and transform, the ssr transform consumes the entry and stamps it from its own module graph; the client's transform then finds nothing, so the client module is never stamped and an unreported edit to it is never recovered. The take should be guarded by `this.environment.name === 'client'` like the load.",
+   "size": "line",
+   "cause": "environment guard missing on take",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    15,
+    22
+   ],
+   "sources": {
+    "claude": [
+     6,
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "A ref handle's accessor members lose their TypeDoc description",
+   "where": "packages/forge/src/vite/typedoc/index.ts:205 (memberDocs)",
+   "severity": "low",
+   "scenario": "TypeDoc writes an accessor's comment on its `getSignature`/`setSignature`, not on the accessor reflection; `memberDocs` falls back only to `signatures[0]?.comment`, which an accessor does not have, so `get value(): number` documented with `/** The current value. */` on a ref handle class shows no description or `@deprecated` in the panel.",
+   "size": "line",
+   "cause": "accessor comment location not read",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    26
+   ],
+   "sources": {
+    "claude": [
+     6,
+     26
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "propControls always appends an API export, even when the story has no component",
+   "where": "packages/forge/src/vite/propControls.ts:66 (storyExports)",
+   "severity": "low",
+   "scenario": "With `api` on and a story whose meta names no component (and no fallback), `read` is null and `table` is null. The code still appends `export const <API_EXPORT> = null;`, so `added.code` is never empty. Every story module is rewritten with `map: null`, and that drops the story's source map for a file with nothing to add. The early `if (!added.code) return undefined` can never fire while `api` is on.",
+   "size": "line",
+   "cause": "null table still emitted",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "`export default interface` is read as a value default export",
+   "where": "packages/forge/src/vite/moduleInfo.ts:96 (moduleInfo, ExportDefaultDeclaration)",
+   "severity": "low",
+   "scenario": "`export default interface Props { … }` — `decl.type` is `TSInterfaceDeclaration`, not Function/Class/Identifier, so it falls to `declare(DEFAULT_LOCAL, decl)` and `exports.set('default', local)`, making a type-only export look like a value export that `declaring(..., 'default')` resolves to a binding. Type declarations (`TSInterfaceDeclaration`, `TSDeclareFunction`) should be skipped like `import type`.",
+   "size": "line",
+   "cause": "type-only default not filtered",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    23,
+    24
+   ],
+   "sources": {
+    "claude": [
+     9,
+     23,
+     24
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "A type definition declared `export default interface` prints with a stray `default` keyword",
+   "where": "packages/forge/src/vite/typeDefs.ts:71 (addTypeDef)",
+   "severity": "low",
+   "scenario": "a props type written `export default interface ButtonProps { … }` prints as `export default interface ButtonProps {…}`; the regex `^(export\\s+)?(declare\\s+)?` strips `export ` only, leaving `default interface ButtonProps {…}` in the API panel's type definition.",
+   "size": "line",
+   "cause": "modifier regex misses `default`",
+   "confidence": "sure",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    14,
+    15,
+    16,
+    19,
+    22,
+    27
+   ],
+   "sources": {
+    "claude": [
+     9,
+     14,
+     15,
+     16,
+     19,
+     22,
+     27
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "A rejected TypeScript reader promise is cached, so one failure disables prop controls and the API panel for the rest of the server's life",
+   "where": "packages/forge/src/vite/propControls.ts:107 (propControls transform)",
+   "severity": "low",
+   "scenario": "`reader ??= createPropReader(...)` stores the promise; if `createPropReader` throws past its `require` guard (e.g. `parseJsonConfigFileContent` or `createLanguageService` throwing on a broken `tsconfig.json`), the rejected promise stays in `reader` and every later story transform rejects with the same error, failing every story module, even after the tsconfig is fixed, until a config reload. It should fall back to null (and warn) rather than poisoning every transform.",
+   "fix": [
+    "packages/forge/src/vite/propControls.ts",
+    "packages/forge/src/vite/propTypes.ts"
+   ],
+   "size": "line",
+   "cause": "rejected promise memoized",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    15,
+    18
+   ],
+   "sources": {
+    "claude": [
+     10,
+     15,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "moduleInfo exports `declare`d values, which have no runtime binding",
+   "where": "packages/forge/src/vite/moduleInfo.ts:43 (declareStatement)",
+   "severity": "low",
+   "scenario": "`export declare const meta: ...` or `export declare function story(...)` in a `.ts` file is recorded as a local export and traced as the binding a name is declared as; `TSEnumDeclaration` already skips `declare`, but `VariableDeclaration`/`FunctionDeclaration` (`TSDeclareFunction` aside) with `declare: true` do not, so the tracer can resolve a name to a declaration that does not exist at runtime instead of following on.",
+   "fix": [
+    "packages/forge/src/vite/moduleInfo.ts"
+   ],
+   "size": "line",
+   "cause": "missing `declare` check",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "A story served before TypeDoc's JSON exists never picks up its docs once the JSON is written",
+   "where": "packages/forge/src/vite/propControls.ts:73 (storyExports)",
+   "severity": "low",
+   "scenario": "dev server starts with no `dist/typedoc.json`; a story is transformed and `typedoc.file` is not added to its watch files (`docs` is null). Running `typedoc --json` afterward writes the file, but nothing in the module graph links it to the story, so the story is never re-transformed and its API panel keeps showing the types-only reading until some unrelated edit touches the story or its sources. The `typedoc` option's doc says every component is read from types alone only \"while there is no JSON\".",
+   "fix": [
+    "packages/forge/src/vite/propControls.ts",
+    "packages/forge/src/vite/plugin.ts"
+   ],
+   "size": "function",
+   "cause": "watch link added only when the file already exists",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D28",
+   "claim": "Wrapper tracing stops at a local const alias, so a project helper re-exporting forge's meta that way is not recognized",
+   "where": "packages/forge/src/vite/trace.ts:51 (declaring)",
+   "severity": "low",
+   "scenario": "helper module `import { meta } from '@weasel-js/forge'; export const defineMeta = meta;` and a story calling `defineMeta({...})`. `declaring` finds export `defineMeta` as `local`, finds no import named `defineMeta`, and returns `helper#defineMeta`, which is not forge's `meta` key, so the callee is not a wrapper and the story's meta reads as no meta at all. `export { meta as defineMeta }` works, the `const` alias spelling of the same thing does not. `moduleInfo` already records `refs`, but `declaring` never follows a binding whose initializer is a bare identifier.",
+   "fix": [
+    "packages/forge/src/vite/moduleInfo.ts"
+   ],
+   "size": "function",
+   "cause": "identifier initializers not followed",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D29",
+   "claim": "fileEventsArrive with a NaN waitMs never settles and keeps rewriting its temp file forever",
+   "where": "packages/forge/src/vite/watchProbe.ts:83 (fileEventsArrive)",
+   "severity": "low",
+   "scenario": "`waitMs: NaN` (e.g. computed from an unset env var) on a machine whose watcher reports nothing: `NaN <= LONGEST_TIMER_MS` is false, so no deadline is set, the 250 ms rewrite interval runs for the life of the process and the temp directory is never removed. The doc only promises waiting forever past 2^31-1 and at Infinity; NaN (and negative values, which fire at once and report false) are not rejected the way `watchRecovery` rejects a bad `quietMs`.",
+   "size": "line",
+   "cause": "unvalidated wait",
+   "confidence": "sure",
+   "firstOccasion": 13,
+   "sightings": [
+    13,
+    23
+   ],
+   "sources": {
+    "claude": [
+     13,
+     23
+    ]
+   }
+  },
+  {
+   "id": "D30",
+   "claim": "A bare `return;` makes returnsStory treat a function as one that may return a story",
+   "where": "packages/forge/src/vite/nativeExports.ts:68 (returnsStory)",
+   "severity": "low",
+   "scenario": "`function make(x) { if (!x) return; return { title: 'x' }; }` then `export const A = make(1)`: `returnsStory` hands `stmt.argument ?? undefined` to `mayBeStory`, whose `!node` branch answers true (\"cannot be read\"), so `make` reads as returning a story and `A` stays in the loader's set. A missing argument is perfectly readable: it returns `undefined`, never a story; it should answer false.",
+   "size": "line",
+   "cause": "absent return argument conflated with unreadable node",
+   "confidence": "sure",
+   "firstOccasion": 15,
+   "sightings": [
+    15,
+    28
+   ],
+   "sources": {
+    "claude": [
+     15,
+     28
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/nativeExports.ts"
+   ]
+  },
+  {
+   "id": "D31",
+   "claim": "warnOnce's per-logger set of seen messages has no bound and never forgets, unlike registry's capped createWarnOnce",
+   "where": "packages/forge/src/vite/warnOnce.ts:9 (warnOnce)",
+   "severity": "low",
+   "scenario": "across a long dev session every distinct message is kept forever: each `story id X is declared by …` from `warnShared` (one per id and file set, and the text includes paths) and each dropped `allowOrigins` entry. The set only grows. There is a second consequence: once a story-id collision is fixed and then reintroduced, the same text is never logged again, so the workshop silently shows only the first story and gives no warning. Registry's `createWarnOnce`, which the comment says this replaces, has a `cap` (unruled.md, round 85) and forgets old messages. This copy leaves that out.",
+   "size": "function",
+   "cause": "unbounded seen-set",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D32",
+   "claim": "watchRecovery's quiet sweep replays an edit the watcher is about to report, warning \"changed with no file event\" and pushing the change twice",
+   "where": "packages/forge/src/vite/watchRecovery.ts:105 (sweep / missed)",
+   "severity": "low",
+   "scenario": "a file is saved at T; the sweep interval fires at T+δ, before chokidar reports the change (off macOS `settledWatch` holds every change for awaitWriteFinish's 50 ms stability; fsevents itself reports ~100 ms late). `lastEvent` is older than `quietMs`, `missed(file)` sees the new mtime, so `recover` logs the \"[watch] … changed with no file event; pushing it to the page\" warning and emits `change`. Then the real event arrives and vite processes the same edit again: a false warning on a healthy watcher and a double HMR update/reload. With a 2 s sweep and ~50–100 ms latency this hits a few percent of ordinary saves. The check should only treat a change as missed once its mtime is older than the watcher's own latency (e.g. `Date.now() - mtime > grace`).",
+   "size": "function",
+   "cause": "no grace period between mtime and expected event",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17,
+    27
+   ],
+   "sources": {
+    "claude": [
+     17,
+     27
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/watchRecovery.ts"
+   ]
+  },
+  {
+   "id": "D33",
+   "claim": "A user's own watchRecovery({ quietMs }) placed after forge() is silently inactive",
+   "where": "packages/forge/src/vite/plugin.ts:101 (companions)",
+   "severity": "low",
+   "scenario": "`plugins: [forge({ stories }), watchRecovery({ quietMs: 10_000 })]`. forge always adds its own default `watchRecovery()` first; `configResolved` makes only the first copy by name active, so the user's `quietMs` is dropped with no warning, and `ForgeOptions` has no way to configure or turn off forge's copy. Either the companion should defer to a copy already in `config.plugins`, or forge should take the options.",
+   "fix": [
+    "packages/forge/src/vite/plugin.ts",
+    "packages/forge/src/vite/watchRecovery.ts"
+   ],
+   "size": "function",
+   "cause": "first-copy-wins with forge always first",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17
+   ],
+   "sources": {
+    "claude": [
+     17
+    ]
+   }
+  },
+  {
+   "id": "D34",
+   "claim": "A component documented in one package hands its TypeDoc docs to a same-named component in an undocumented package",
+   "where": "packages/forge/src/vite/typedoc/index.ts:81 (exportIn)",
+   "severity": "medium",
+   "scenario": "TypeDoc (packages strategy) writes paths relative to each package, so package A's `Button` has `sources[0].fileName = 'src/Button.tsx'`. Package B also exports `Button` from `packages/b/src/Button.tsx` but is not in the TypeDoc run. For B's story, `suffixOf` matches A's export (B's path ends with `/src/Button.tsx`), there is only one candidate, and `found.length <= 1` returns it without the package check that the tie branch applies. B's API panel shows A's descriptions, deprecations, overloads and `href`. The package-name check should apply whenever the suffix is shorter than the full path, not only on ties.",
+   "size": "function",
+   "cause": "package check only on ties",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17,
+    21,
+    23
+   ],
+   "sources": {
+    "claude": [
+     17,
+     21,
+     23
+    ]
+   },
+   "fix": [
+    "packages/forge/src/vite/typedoc/index.ts"
+   ]
+  },
+  {
+   "id": "D35",
+   "claim": "Plain value exports in a native story file, such as -1, a + b, new Map() or undefined, are indexed as stories",
+   "where": "packages/forge/src/vite/nativeExports.ts:118 (mayBeStory)",
+   "severity": "low",
+   "scenario": "in a native file, `export const MIN = -1;` (UnaryExpression), `export const label = 'a' + 'b';` (BinaryExpression), or `export const none = undefined;` reach the `default`/`Identifier` branches: `UnaryExpression`/`BinaryExpression`/`NewExpression`/`TemplateLiteral`-free expressions are not in `LITERALS`, so `!isLiteralValue` says \"may be a story\", and the global `undefined` is read as an unresolved import (`foreign.value('undefined') ?? true`). indexFile.ts:158 keeps each, so the sidebar lists stories that are not ones. The doc comment says \"a value written out is not\". Likewise a bare `return;` in a helper (`mayBeStory(undefined)` → true). Globals (`isGlobal`) and operator expressions over literals should read as values.",
+   "fix": [
+    "packages/forge/src/vite/nativeExports.ts",
+    "packages/forge/src/vite/ast.ts"
+   ],
+   "size": "function",
+   "cause": "globals and operator expressions not treated as values",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17
+   ],
+   "sources": {
+    "claude": [
+     17
+    ]
+   }
+  },
+  {
+   "id": "D36",
+   "claim": "TypeDoc prop docs are never found for a memo-wrapped component",
+   "where": "packages/forge/src/vite/typedoc/index.ts:131 (collect)",
+   "severity": "low",
+   "scenario": "`export const Button = memo(function Button(props: ButtonProps) {…})`. TypeDoc types the export as `MemoExoticComponent<(props: ButtonProps) => Element>`. `collect` looks through the external reference to its type argument, which is a `reflection` holding a call signature and no `children`. The `reflection` branch reads only `declaration.children`, so it collects no props. Every prop row then keeps only the live reader's text, with no TypeDoc description, `@deprecated` or inheritedFrom. `forwardRef` works only because its argument is an intersection of references. The lookup should go through a lone call signature's first parameter, the same way `propsTypeOf` does for a function export.",
+   "fix": [
+    "packages/forge/src/vite/typedoc/index.ts"
+   ],
+   "size": "line",
+   "cause": "reflection branch ignores signatures",
+   "confidence": "likely",
+   "firstOccasion": 18,
+   "sightings": [
+    18
+   ],
+   "sources": {
+    "claude": [
+     18
+    ]
+   }
+  },
+  {
+   "id": "D37",
+   "claim": "A story passed through Object.defineProperty, defineProperties or setPrototypeOf, or a computed Object['freeze'] call, is not recognized as a story",
+   "where": "packages/forge/src/vite/nativeExports.ts:76 (PASS_THROUGH / objectCallSources), :120 (mayBeStory CallExpression)",
+   "severity": "medium",
+   "scenario": "`export const Primary = Object.defineProperty(story({...}), 'x', { value: 1 })` — these `Object` methods hand back their first argument just as `freeze` does, but they are not in `PASS_THROUGH`, so the call falls to the MemberExpression rule, whose callee object `Object` is a global, and `mayBeStory` answers false: the export is dropped from the index. The same happens for `Object['freeze'](story(...))`, since `objectCallSources` rejects a computed property. Should count as a story when the first argument may be one.",
+   "size": "line",
+   "cause": "incomplete pass-through list; computed member not read",
+   "confidence": "sure",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
+  },
+  {
+   "id": "D38",
+   "claim": "The recovering warning promises a sweep \"within seconds\", but a quietMs longer than one timer means the sweep never runs",
+   "where": "packages/forge/src/vite/watchProbe.ts:91 (RECOVERING / warnWhenWatchIsSilent)",
+   "severity": "low",
+   "scenario": "`watchRecovery({ quietMs: Infinity })` beside a silent watcher: `warnWhenWatchIsSilent` sees the plugin by name and logs that edits are found \"within seconds once the watcher is quiet\", but `watchRecovery` starts no interval past `LONGEST_TIMER_MS`, so edits are only found on request.",
+   "fix": [
+    "packages/forge/src/vite/watchProbe.ts",
+    "packages/forge/src/vite/watchRecovery.ts"
+   ],
+   "size": "function",
+   "cause": "message ignores the plugin's option",
+   "confidence": "sure",
+   "firstOccasion": 20,
+   "sightings": [
+    20
+   ],
+   "sources": {
+    "claude": [
+     20
+    ]
+   }
+  },
+  {
+   "id": "D39",
+   "claim": "A name exported by two `export *` modules resolves to the first one, where ES modules treat it as ambiguous and export neither",
+   "where": "packages/forge/src/vite/trace.ts:61 (declaring)",
+   "severity": "low",
+   "scenario": "`export * from './a'; export * from './b'` with both declaring `story`: the ambiguous binding is not exported by the module (importing it is a SyntaxError), but `declaring` returns `a`'s, so a callee can be taken for forge's `story`/`meta` through a module that does not export it.",
+   "fix": [
+    "packages/forge/src/vite/trace.ts"
+   ],
+   "size": "function",
+   "cause": "star exports searched first-match",
+   "confidence": "likely",
+   "firstOccasion": 20,
+   "sightings": [
+    20
+   ],
+   "sources": {
+    "claude": [
+     20
+    ]
+   }
+  },
+  {
+   "id": "D40",
+   "claim": "typeText prints a template literal type without escaping backticks or `${` in its text parts, so the printed type is malformed",
+   "where": "packages/forge/src/vite/typedoc/print.ts:39 (typeText, case 'templateLiteral')",
+   "severity": "low",
+   "scenario": "a prop typed `` `a\\`b${string}` `` (or with a literal `${` written `\\${`): TypeDoc's `head`/`tail` hold the cooked text with a bare backtick, and the printed signature is `` `a`b${string}` ``, which is not valid TypeScript and misreads as two types. `head` and each tail text need `` ` ``, `\\` and `${` escaped as `literalText` does for string literals.",
+   "size": "line",
+   "cause": "unescaped template text",
+   "confidence": "likely",
+   "firstOccasion": 21,
+   "sightings": [
+    21,
+    22
+   ],
+   "sources": {
+    "claude": [
+     21,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D41",
+   "claim": "On Windows packageNameOf never matches a git-derived `top` written with `/` against `dirname` paths written with `\\`, so no package is found",
+   "where": "packages/forge/src/vite/packageName.ts:6 (packageNameOf)",
+   "severity": "low",
+   "scenario": "history.ts:128 calls `packageNameOf(resolve(top, path), top)` with `top` from `git rev-parse --show-toplevel`, which prints `C:/repo` on Windows. `resolve` gives `C:\\repo\\packages\\x\\src\\a.ts`, so `dirname(file).startsWith('C:/repo')` is false on the first test, the loop never runs, and every file is filed under package `null`; per-package release tags (`<name>@[0-9]*`) are never searched. It should compare normalized paths (or a `relative` that does not climb).",
+   "fix": [
+    "packages/forge/src/vite/packageName.ts"
+   ],
+   "size": "line",
+   "cause": "string prefix test across mixed separators",
+   "confidence": "likely",
+   "firstOccasion": 22,
+   "sightings": [
+    22
+   ],
+   "sources": {
+    "claude": [
+     22
+    ]
+   }
+  },
+  {
+   "id": "D42",
+   "claim": "A prop declared as a method signature gets no TypeDoc docs because entryDocs reads prop.comment while TypeDoc puts the comment on the signature",
+   "where": "packages/forge/src/vite/typedoc/index.ts:62 (readTypedoc.component)",
+   "severity": "low",
+   "scenario": "`interface Props { /** Called with {@link Item}. @deprecated use onPick */ onSelect(id: string): void }` — TypeDoc writes the comment on `signatures[0].comment`. `entryDocs(prop, prop.comment, linker)` passes undefined, so the row loses the resolved `{@link}`, the `@deprecated` and the `@default`. `memberDocs` already falls back to `signatures[0]?.comment` for ref members; props answer the same question differently.",
+   "fix": [
+    "packages/forge/src/vite/typedoc/index.ts"
+   ],
+   "size": "line",
+   "cause": "missing signature-comment fallback for props",
+   "confidence": "likely",
+   "firstOccasion": 22,
+   "sightings": [
+    22
+   ],
+   "sources": {
+    "claude": [
+     22
+    ]
+   }
+  },
+  {
+   "id": "D43",
+   "claim": "When top ends in a path separator, the climb never checks top's own directory, so a package.json at top is never found",
+   "where": "packages/forge/src/vite/packageName.ts:6 (packageNameOf)",
+   "severity": "low",
+   "scenario": "Take `top = '/repo/pkg'` and `file = '/repo/pkg-extra/src/a.ts'`. `'/repo/pkg-extra'.startsWith('/repo/pkg')` is true, so the function reads `/repo/pkg-extra/package.json` and returns that name. The doc says the manifest must be \"at or under `top`\". If `top` is instead written `'/repo/pkg/'`, `dirname` never produces a trailing slash, so `'/repo/pkg'.startsWith('/repo/pkg/')` is false: `top`'s own manifest is skipped and the function returns null. The comparison should be on path segments (`dir === top || dir.startsWith(top + sep)`, with `top` normalized).",
+   "size": "line",
+   "cause": "string prefix used as path containment",
+   "confidence": "likely",
+   "firstOccasion": 25,
+   "sightings": [
+    25
+   ],
+   "sources": {
+    "claude": [
+     25
     ]
    }
   }
- ]
+ ],
+ "lines": 2516
 }

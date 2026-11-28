@@ -1,0 +1,286 @@
+{
+ "area": "paint-kinds",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/paint-kinds/src/icons.gen.ts",
+  "packages/paint-kinds/src/icons.table.ts",
+  "packages/paint-kinds/src/index.ts",
+  "packages/paint-kinds/src/mesh.ts",
+  "packages/paint-kinds/src/meshKind.ts",
+  "packages/paint-kinds/src/meshKindLazy.ts",
+  "packages/paint-kinds/src/paintKindEntry.ts",
+  "packages/paint-kinds/src/paintKinds.ts",
+  "packages/paint-kinds/src/react.ts",
+  "packages/paint-kinds/src/svgNative.ts",
+  "packages/paint-kinds/src/test-seams.ts",
+  "packages/paint-kinds/src/tileSvg.ts",
+  "packages/paint-kinds/src/usePaintKinds.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1734834,
+   "minutes": 0.20073333333333335,
+   "at": "2026-11-26T05:15:05.571Z",
+   "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.1227628,
+   "minutes": 1.8342666666666667,
+   "at": "2026-11-26T23:09:45.013Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.1379470000000003,
+   "minutes": 1.8809833333333332,
+   "at": "2026-11-26T23:11:38.060Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.7344109999999999,
+   "minutes": 1.74465,
+   "at": "2026-11-26T23:13:22.923Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.7656151999999999,
+   "minutes": 1.7905833333333332,
+   "at": "2026-11-26T23:15:10.517Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Removal notifies subscribers before dropDraw, so editor and draw registrations disagree inside the notification",
+   "where": "packages/paint-kinds/src/paintKinds.ts:152",
+   "severity": "low",
+   "scenario": "Register a kind, subscribe, call its disposer; inside the notification the editor and draw registrations disagree, and no later editor notification arrives once they match",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Declaring a loader never notifies paintKindRegistry, so a mounted usePaintKind for that id never loads it",
+   "where": "packages/paint-kinds/src/paintKinds.ts:173",
+   "severity": "low",
+   "scenario": "Mount usePaintKind for an unknown custom id, then declare its loader; the editor stays on the unknown-kind view and the loader never runs without an unrelated render",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Gradient colorOf takes the first duplicate start stop while sampling takes the last, seeding the wrong color",
+   "where": "packages/paint-kinds/src/paintKinds.ts:98 (colorOf)",
+   "severity": "low",
+   "scenario": "Stops red@0, blue@0, x@1: the visible gradient starts blue but PaintInput seeds the next kind with red",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    5
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     5
+    ]
+   },
+   "cause": "strict `<` keeps the first tie; the sort is stable, so the painted stop is the last tie in write order (`<=` picks it)",
+   "size": "line"
+  },
+  {
+   "id": "D4",
+   "claim": "seedTile('chunks', …) seeds a fully transparent ground, so the ground the comment requires is never present",
+   "where": "packages/paint-kinds/src/paintKinds.ts:79 (seedTile)",
+   "severity": "low",
+   "scenario": "an editor switches a solid to Chunks → `{ kind: 'chunks', color, bg: '#00000000', units: 'bounds' }`. `tileGeometry` (packages/renderer/src/patterns/tileGeometry.ts:87) pushes a full-tile rect in `spec.bg`, here alpha 0, so the tile draws exactly as with no `bg` (plus one invisible rect per tile) — the scatter reads as \"loose specks on whatever sits beneath\", the outcome the comment says the `bg` exists to prevent. Either the seed should carry a visible ground (e.g. a contrasting color, as `twoStopRamp` picks for gradients) or the comment/field is wrong.",
+   "fix": [
+    "packages/paint-kinds/src/paintKinds.ts"
+   ],
+   "size": "line",
+   "cause": "transparent placeholder bg",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "nativeSvgKind decides by kind name, so an override of a native kind registered with registerPaintKind is never serialized through its own toSvg",
+   "where": "packages/paint-kinds/src/svgNative.ts:11 (nativeSvgKind)",
+   "severity": "low",
+   "scenario": "a consumer calls `registerPaintKind({ id: 'linear-gradient', …, toSvg })` — the registry documents re-registering an id as an override, and `withPaintKind` honors overrides (it skips `withGradientKind` when either side is not the built-in entry). On SVG export, `hasNativeSvgForm` (packages/svg/src/paintServers.ts:10) asks `nativeSvgKind('linear-gradient')` → true, so the reference carries no fallback color and no `wzl:` namespace, and `paintServerXml` takes the built-in `gradientXml` path before ever consulting the entry. The override's `toSvg` and `colorOf` are silently dropped for export while the renderer and editor use the override: one decision (is this kind the built-in one?) answered by identity in `withPaintKind` and by name here.",
+   "fix": [
+    "packages/paint-kinds/src/svgNative.ts",
+    "packages/svg/src/paintServers.ts"
+   ],
+   "size": "function",
+   "cause": "native check by name, not by live entry",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "Gradient seed treats only exact white as white, so a near-white color seeds an invisible white-to-white ramp",
+   "where": "packages/paint-kinds/src/paintKinds.ts:105 (twoStopRamp)",
+   "severity": "low",
+   "scenario": "switching a solid `#fefefe` (or `#fafafa`, `whitesmoke`, `oklch(0.99 0 0)`) to Linear/Radial/Conic calls `seed` → `twoStopRamp`; `isWhite` requires r, g and b to equal exactly 1, so the end stop is `#ffffffff` and the seeded gradient shows no visible ramp. A contrasting end should be picked by lightness, not by exact equality to white.",
+   "size": "line",
+   "cause": "exact equality instead of a lightness threshold",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "The image and texture entries' seed returns a hatch paint, which breaks the seed contract",
+   "where": "packages/paint-kinds/src/paintKinds.ts:44 (BUILTINS image/texture seed)",
+   "severity": "low",
+   "scenario": "an editor offering the `image` or `texture` entry calls `entry.seed(color)` to switch a solid to that kind (\"a paint of this kind seeded from a color\", paintKindEntry.ts:56). It gets `{ kind: 'hatch', … }`, so `paintKindOf(result).id === 'hatch'`, not the kind that was picked, and the kind bar lands on Hatch instead of Image or Texture. The entry has no way to say \"can't be seeded\", so every caller has to special-case these two ids or show the wrong kind.",
+   "fix": [
+    "packages/paint-kinds/src/paintKindEntry.ts",
+    "packages/paint-kinds/src/paintKinds.ts"
+   ],
+   "size": "design",
+   "cause": "an unseedable kind is forced to fit a seed slot that every kind must have",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A mesh paint missing `patches` or a gradient missing `stops` makes withPaintKind throw, while colorOf on the same paint tolerates the gap",
+   "where": "packages/paint-kinds/src/meshKind.ts:25 (meshGradientKind.stopsOf); packages/paint-kinds/src/paintKinds.ts:89 (gradientKind stopsOf)",
+   "severity": "low",
+   "scenario": "`colorOf` is written defensively: `asMesh(paint).patches?.[0]?.colors?.[0]` and `firstStop((paint as Partial<GradientPaint>).stops)`. `stopsOf` is not. Take a partial paint loaded from JSON, `{ kind: 'mesh-gradient' }`, and call `withPaintKind(p, 'linear-gradient')`. It calls `meshStops(asMesh(paint))`, which runs `mesh.patches.filter(...)` and throws a TypeError. The swatch and the SVG fallback read that same paint without trouble. Likewise `{ kind: 'linear-gradient' }` with no `stops`, converted to `mesh-gradient`, reaches `meshFromStops(undefined)` → `stops.length` and throws. The conversion should treat a missing list as empty, the way `colorOf` does, or `withPaintKind` should return `undefined`.",
+   "fix": [
+    "packages/paint-kinds/src/meshKind.ts",
+    "packages/paint-kinds/src/paintKinds.ts"
+   ],
+   "size": "line",
+   "cause": "the two slots guard the same input differently",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "Mesh kind's colorOf reads the first patch even when the renderer skips that patch as invalid",
+   "where": "packages/paint-kinds/src/meshKind.ts:23 (meshGradientKind.colorOf)",
+   "severity": "low",
+   "scenario": "Take a mesh whose `patches[0]` has the wrong number of points, say 8, followed by one valid patch. `isValidPatch` rejects the first patch, so nothing draws it, and `meshStops` filters it out too. `colorOf` still returns `patches[0].colors[0]`. The fallback swatch and the SVG fallback color (which `@weasel-js/svg` takes from `colorOf`) then show a color the painted mesh never contains. It should read the first valid patch, as `meshStops` does.",
+   "fix": [
+    "packages/paint-kinds/src/meshKind.ts"
+   ],
+   "size": "line",
+   "cause": "two answers to \"which patch counts\"",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "derivedList duplicates registry's createValuesReader instead of using it",
+   "where": "packages/paint-kinds/src/paintKinds.ts:190 (derivedList / allKinds)",
+   "severity": "low",
+   "scenario": "`allKinds = derivedList((all) => all.map((e) => e.value))` is the same thing as `createValuesReader(KINDS.reflection)` (packages/registry/src/reflectable.ts:289): a frozen array of live values that stays the same until `entries()` changes. So the question \"the registry's values as a stable snapshot\" has two answers. Right now they behave the same, but a change to one, such as the ordering or freezing rules, would not reach the other. `allKinds` should use `createValuesReader`, and `gradientKinds` should derive from its output.",
+   "size": "function",
+   "cause": "duplicate snapshot helper",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  }
+ ],
+ "lines": 603
+}

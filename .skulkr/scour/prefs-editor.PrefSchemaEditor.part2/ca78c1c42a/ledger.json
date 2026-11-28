@@ -1,0 +1,98 @@
+{
+ "area": "prefs-editor.PrefSchemaEditor.part2",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/prefs-editor/src/PrefSchemaEditor/UnplacedTree.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/aliasChoices.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/assetEdits.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/attrRenderers.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/attributeForm.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/attributeKey.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/attributeRenderers.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/autoValueRenderer.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/defaults.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/editorActions.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/editorPrefs.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/heirAfter.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/iconPickerModel.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/nodeIcon.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/paneWidths.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/panelPaths.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/pointerDrag.fixture.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/previewDrop.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/rowSearch.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/structureRows.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/treeDropRules.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/treeRows.fixture.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useActionCatalog.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useAssetChanges.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useAssetView.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useBundleView.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/useDocument.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useEditorSelection.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useHeldPlace.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useNodeAdder.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/usePaletteDrop.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/usePreviewDrag.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/usePreviewDropZone.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useRowMarks.tsx",
+  "packages/prefs-editor/src/PrefSchemaEditor/useSelectedNodes.ts",
+  "packages/prefs-editor/src/PrefSchemaEditor/useTreeDragOut.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1714634,
+   "minutes": 0.16438333333333333,
+   "at": "2026-11-26T05:18:55.044Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A host acknowledgment arriving before send records the pending async submission is never reconciled into the draft and undo history",
+   "where": "packages/prefs-editor/src/PrefSchemaEditor/useDocument.ts:102",
+   "severity": "p2",
+   "scenario": "Asynchronous submission callback updates the host baseline and sets taken=true before its promise resolves; the effect does not retry while taken stays true",
+   "size": "function",
+   "cause": "acknowledgment effect races the submission record",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "useSyncExternalStore history subscription lacks getServerSnapshot, so server-rendering AssetEditor throws",
+   "where": "packages/prefs-editor/src/PrefSchemaEditor/useDocument.ts:64",
+   "severity": "p3",
+   "scenario": "Server-render the public AssetEditor, even with a controlled asset set and no stored draft; React rejects the render",
+   "fix": [
+    "packages/prefs-editor/src/PrefSchemaEditor/useDocument.ts"
+   ],
+   "size": "line",
+   "cause": "missing getServerSnapshot",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2180
+}

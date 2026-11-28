@@ -1,0 +1,122 @@
+{
+ "area": "routing",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/routing/src/ambient/PointerContext.tsx",
+  "packages/routing/src/ambient/SelectionContext.tsx",
+  "packages/routing/src/contributions/assemble.ts",
+  "packages/routing/src/contributions/eligibility.ts",
+  "packages/routing/src/contributions/heldModifier.ts",
+  "packages/routing/src/contributions/index.ts",
+  "packages/routing/src/contributions/merge.ts",
+  "packages/routing/src/contributions/modeShortcuts.ts",
+  "packages/routing/src/contributions/types.ts",
+  "packages/routing/src/contributions/useContributions.ts",
+  "packages/routing/src/dlog.ts",
+  "packages/routing/src/eligibility/deviceProfile.ts",
+  "packages/routing/src/eligibility/exclusive.ts",
+  "packages/routing/src/eligibility/index.ts",
+  "packages/routing/src/eligibility/rule.ts",
+  "packages/routing/src/eligibility/ruleCtx.ts",
+  "packages/routing/src/index.ts",
+  "packages/routing/src/ingestion/ingestItems.ts",
+  "packages/routing/src/internal.ts",
+  "packages/routing/src/kitSettings.ts",
+  "packages/routing/src/menus/MenuHostContext.tsx",
+  "packages/routing/src/menus/compoundRows.ts",
+  "packages/routing/src/menus/menuHost.ts",
+  "packages/routing/src/menus/paths.ts",
+  "packages/routing/src/menus/pickMenu.ts",
+  "packages/routing/src/menus/resolveMenu.ts",
+  "packages/routing/src/menus/separators.ts",
+  "packages/routing/src/menus/types.ts",
+  "packages/routing/src/menus/valueRows.ts",
+  "packages/routing/src/pbt.fixture.ts",
+  "packages/routing/src/react.ts",
+  "packages/routing/src/testing/registerAction.tsx",
+  "packages/routing/src/viewport/clientToCanvas.ts",
+  "packages/routing/src/viewport/useElementSize.ts",
+  "packages/routing/src/vocabulary.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1777784,
+   "minutes": 0.19578333333333334,
+   "at": "2026-11-26T05:23:33.919Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A string item suppresses the fallback FileList, so files exposed only through dataTransfer.files are lost on ingestion",
+   "where": "packages/routing/src/ingestion/ingestItems.ts:100 (materializer)",
+   "severity": "medium",
+   "scenario": "DataTransfer with a string item in items and files only in the files list: the materializer drops the files, and the drag preview never shows the file type",
+   "fix": [
+    "packages/routing/src/ingestion/ingestItems.ts"
+   ],
+   "size": "line",
+   "cause": "fallback read only when no files and no strings were collected",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "itemTypesFromDataTransfer skips the files fallback when string items exist, hiding a pending file type and blocking a matching file-drop preview",
+   "where": "packages/routing/src/ingestion/ingestItems.ts (itemTypesFromDataTransfer)",
+   "severity": "medium",
+   "scenario": "DataTransfer with a string item in items and files only in the files list: the materializer drops the files, and the drag preview never shows the file type",
+   "fix": [
+    "packages/routing/src/ingestion/ingestItems.ts"
+   ],
+   "size": "line",
+   "cause": "fallback read only when no files and no strings were collected",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "The paint color setter spreads the paint captured when the menu resolved, writing back stale opacity and other paint fields",
+   "where": "packages/routing/src/menus/compoundRows.ts:207 (paint color row setter)",
+   "severity": "low",
+   "scenario": "Opacity changes while the paint color row's menu is open; picking a color then restores the old opacity",
+   "fix": [
+    "packages/routing/src/menus/compoundRows.ts"
+   ],
+   "size": "line",
+   "cause": "spreads a captured value instead of reading the current one",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3449
+}

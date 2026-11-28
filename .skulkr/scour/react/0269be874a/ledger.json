@@ -1,0 +1,96 @@
+{
+ "area": "react",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/react/src/adoptCss.ts",
+  "packages/react/src/assignRef.ts",
+  "packages/react/src/colorScheme.ts",
+  "packages/react/src/copyText.ts",
+  "packages/react/src/index.ts",
+  "packages/react/src/kitSettings.ts",
+  "packages/react/src/media.ts",
+  "packages/react/src/pageStorage.ts",
+  "packages/react/src/pbt.fixture.ts",
+  "packages/react/src/reducedMotion.ts",
+  "packages/react/src/scheduledFrame.ts",
+  "packages/react/src/test-seams.ts",
+  "packages/react/src/testing/abandonRender.tsx",
+  "packages/react/src/testing/baselineOf.ts",
+  "packages/react/src/testing/domResidue.ts",
+  "packages/react/src/testing/giveKeys.ts",
+  "packages/react/src/testing/leakProbe.ts",
+  "packages/react/src/testing/renderSettled.tsx",
+  "packages/react/src/testing/stubMatchMedia.ts",
+  "packages/react/src/useCanvasFocus.ts",
+  "packages/react/src/useElapsed.ts",
+  "packages/react/src/useKitSetting.ts",
+  "packages/react/src/useLatest.ts",
+  "packages/react/src/useLatestOnly.ts",
+  "packages/react/src/useNearViewport.ts",
+  "packages/react/src/useNotified.ts",
+  "packages/react/src/useStableByContent.ts",
+  "packages/react/src/useVisibleRaf.ts",
+  "packages/react/src/useWindowEvent.ts",
+  "packages/react/src/watchElementMove.ts",
+  "packages/react/src/watchResize.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1715334,
+   "minutes": 0.16215,
+   "at": "2026-11-26T05:20:19.023Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A canceled update invoked from a drained paint snapshot cancels its replacement handle and runs in the stale slot",
+   "where": "packages/react/src/scheduledFrame.ts:29",
+   "severity": "medium",
+   "scenario": "A paint frame and two update loops share one clock; while the paint drains its update snapshot, the first update cancels the second and requests it again. The snapshot still calls the canceled entry, which cancels the replacement and runs it in the stale slot instead of leaving it queued on its own frame",
+   "fix": [
+    "packages/react/src/scheduledFrame.ts"
+   ],
+   "size": "line",
+   "cause": "no identity check in early callback",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "countOf subscribes during render and discards the unsubscribe, leaking a subscription when the render never commits",
+   "where": "packages/react/src/useNotified.ts:13 (countOf)",
+   "severity": "low",
+   "scenario": "A component calls useNotified on a long-lived source and suspends before commit; no cleanup runs, so a source that polls while it has listeners keeps polling with no mounted users",
+   "fix": [
+    "packages/react/src/useNotified.ts"
+   ],
+   "size": "function",
+   "cause": "subscription side effect during render",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1900
+}

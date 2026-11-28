@@ -1,0 +1,98 @@
+{
+ "area": "text-tools",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/text-tools/src/actionParamSchema.ts",
+  "packages/text-tools/src/actions/editEffectText.ts",
+  "packages/text-tools/src/actions/enterTextEdit.ts",
+  "packages/text-tools/src/actions/enterTextEditAt.ts",
+  "packages/text-tools/src/editor/canvasEditor.tsx",
+  "packages/text-tools/src/editor/editingDrawOne.ts",
+  "packages/text-tools/src/editor/hostTextEditors.ts",
+  "packages/text-tools/src/editor/sceneTextDrafts.ts",
+  "packages/text-tools/src/editor/textEditDep.ts",
+  "packages/text-tools/src/editor/textEditScreenPose.ts",
+  "packages/text-tools/src/editor/textEditStub.ts",
+  "packages/text-tools/src/editor/textHitAt.ts",
+  "packages/text-tools/src/editor/textLayer.ts",
+  "packages/text-tools/src/editor/useSceneTextEdit.ts",
+  "packages/text-tools/src/featurePresets.ts",
+  "packages/text-tools/src/icons.gen.ts",
+  "packages/text-tools/src/index.ts",
+  "packages/text-tools/src/ingest/textHandler.ts",
+  "packages/text-tools/src/node/insert.ts",
+  "packages/text-tools/src/node/properties.ts",
+  "packages/text-tools/src/node/textFrame.ts",
+  "packages/text-tools/src/node/textItems.ts",
+  "packages/text-tools/src/node/textLadder.ts",
+  "packages/text-tools/src/node/textOutline.ts",
+  "packages/text-tools/src/node/textPainter.ts",
+  "packages/text-tools/src/presets.ts",
+  "packages/text-tools/src/testing/openAt.ts",
+  "packages/text-tools/src/testing/textPainter.ts",
+  "packages/text-tools/src/toolSets.ts",
+  "packages/text-tools/src/tools/sticky/stickyNode.ts",
+  "packages/text-tools/src/tools/sticky/useStickyTool.ts",
+  "packages/text-tools/src/tools/text/useTextTool.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2285956,
+   "minutes": 0.1272,
+   "at": "2026-11-26T23:11:48.543Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "An open edit survives a scene swap and its commit writes the old overlay's text and runs into a same-ID unlocked node in the replacement scene",
+   "where": "packages/text-tools/src/editor/useSceneTextEdit.ts:278",
+   "severity": "medium",
+   "scenario": "The scene prop changes on a mounted host with the same container while an edit is open; onChange looks up the editing ID through the latest sceneRef, so the old edit overwrites the replacement scene's node with that ID",
+   "fix": [
+    "packages/text-tools/src/editor/useSceneTextEdit.ts"
+   ],
+   "size": "function",
+   "cause": "editing ID and overlay not reset on scene change",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Replacing the first character of a styled run takes the left run's style at the boundary, so the bold run's replacement comes out plain",
+   "where": "packages/text-tools/src/node/properties.ts:131 (respellRuns)",
+   "severity": "low",
+   "scenario": "Plain 'a' then bold 'b' edited to 'ac' in the Text property gives a plain 'c' where bold was replaced",
+   "fix": [
+    "packages/text-tools/src/node/properties.ts"
+   ],
+   "size": "line",
+   "cause": "boundary lookup favors the left run",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2312
+}

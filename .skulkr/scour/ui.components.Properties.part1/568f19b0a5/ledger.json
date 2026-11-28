@@ -1,0 +1,81 @@
+{
+ "area": "ui.components.Properties.part1",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Properties/ColorControls.tsx",
+  "packages/ui/src/components/Properties/CurveField.module.css",
+  "packages/ui/src/components/Properties/CurveField.stories.tsx",
+  "packages/ui/src/components/Properties/CurveField.tsx",
+  "packages/ui/src/components/Properties/CurveMarks.tsx",
+  "packages/ui/src/components/Properties/DialogRow.stories.tsx",
+  "packages/ui/src/components/Properties/DialogRow.tsx",
+  "packages/ui/src/components/Properties/EnumControl.tsx",
+  "packages/ui/src/components/Properties/FontControls.tsx",
+  "packages/ui/src/components/Properties/NumberControls.tsx",
+  "packages/ui/src/components/Properties/Properties.gallery.stories.module.css",
+  "packages/ui/src/components/Properties/Properties.gallery.stories.tsx",
+  "packages/ui/src/components/Properties/Properties.metrics.stories.module.css",
+  "packages/ui/src/components/Properties/Properties.metrics.stories.tsx",
+  "packages/ui/src/components/Properties/Properties.module.css",
+  "packages/ui/src/components/Properties/PropertyAutoReadout.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyAutoReadout.tsx",
+  "packages/ui/src/components/Properties/PropertyCaption.tsx",
+  "packages/ui/src/components/Properties/PropertyControl.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyField.stories.module.css",
+  "packages/ui/src/components/Properties/PropertyField.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyField.tsx",
+  "packages/ui/src/components/Properties/PropertyGroup.css",
+  "packages/ui/src/components/Properties/PropertyGroup.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyGroup.tsx",
+  "packages/ui/src/components/Properties/PropertyHelp.module.css",
+  "packages/ui/src/components/Properties/PropertyHelp.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyHelp.tsx",
+  "packages/ui/src/components/Properties/PropertyList.css",
+  "packages/ui/src/components/Properties/PropertyList.stories.module.css",
+  "packages/ui/src/components/Properties/PropertyList.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyList.tsx",
+  "packages/ui/src/components/Properties/PropertyNote.stories.tsx",
+  "packages/ui/src/components/Properties/PropertyPanel.css",
+  "packages/ui/src/components/Properties/PropertyPanel.stance.css",
+  "packages/ui/src/components/Properties/PropertyPanel.stories.module.css",
+  "packages/ui/src/components/Properties/PropertyPanel.stories.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.21479959999999998,
+   "minutes": 0.3731333333333333,
+   "at": "2026-11-27T00:33:15.600Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Picking black on a mixed or unset color field with separate opacity is never committed, because the change check's baseline falls back to black",
+   "where": "packages/ui/src/components/Properties/ColorControls.tsx:47",
+   "severity": "low",
+   "scenario": "A mixed or unset color field with separately stored opacity and an opacity commit callback; the user explicitly picks black, which equals the black fallback baseline, so the RGB commit is skipped and a controlled field stays mixed or unset",
+   "fix": [
+    "packages/ui/src/components/Properties/ColorControls.tsx"
+   ],
+   "size": "line",
+   "cause": "black fallback used as the change-detection baseline",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 4079
+}

@@ -51,6 +51,50 @@
    "minutes": 0.13768333333333332,
    "at": "2026-11-25T21:18:50.499Z",
    "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.9741027999999998,
+   "minutes": 3.6587666666666667,
+   "at": "2026-11-26T17:39:53.935Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.985687,
+   "minutes": 3.8448166666666665,
+   "at": "2026-11-26T17:43:44.843Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 2.0808258,
+   "minutes": 4.59345,
+   "at": "2026-11-26T17:48:20.612Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 2.2992912,
+   "minutes": 4.489116666666667,
+   "at": "2026-11-26T22:56:43.659Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 6
   }
  ],
  "defects": [
@@ -98,6 +142,214 @@
      1
     ]
    }
+  },
+  {
+   "id": "D4",
+   "claim": "writeAnchorField under syms applies a `by` handle entry twice when an anchor and its mirror image are both selected",
+   "where": "packages/geom/src/paths/anchorFields.ts:93 (writeAnchorField)",
+   "severity": "medium",
+   "scenario": "a path with 180° rotational symmetry. Anchors A and B are partners under it, and both are selected. Type `outLength` `{ by: 5 }` with `syms` set. A's out handle goes L → L+5, and `moveHandleSymmetric` also writes B's out handle to L+5 as A's image. The loop then reaches B, reads its already-moved handle (L+5) and adds 5 again, giving L+10, and that image is written back onto A. Both handles end at L+10 when they should be at L+5. `inAngle`/`outAngle` with `by` drift the same way. The x/y branch avoids this: it collects deltas first, and `translateEachSymmetric` moves \"an anchor that is itself in `deltas` as asked, not as another's image\". The handle branch has no such guard.",
+   "fix": [
+    "packages/geom/src/paths/anchorFields.ts",
+    "packages/geom/src/paths/anchorSymmetry.ts"
+   ],
+   "size": "function",
+   "cause": "handle targets are computed one anchor at a time, each after the previous anchor's symmetric images have already landed",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "offsetCornerTraces builds its probe wedge without an origin, so traces lose float32 precision far from 0",
+   "where": "packages/geom/src/paths/cornerOffset.ts:46 (offsetCornerTraces)",
+   "severity": "medium",
+   "scenario": "a path with origin (1e7, 1e7) and a round corner. The wedge is built with `new PathBuilder().moveTo(at.x + …)`, with no `autoOrigin`/`setOrigin`, so its world coordinates are stored raw in a Float32Array, whose spacing near 1e7 is 1 unit. The trace's `start`/`end` from `cornerCuts(withCorner(wedge, …))` are then off by up to about 0.5 units. `restoreCorners` matches traces at a tolerance of 1e-3, so near the origin the offset corners fold back into specs, but far from it they stay expanded. The rest of the package measures from an origin for exactly this reason (`autoOrigin`).",
+   "size": "line",
+   "cause": "PathBuilder without autoOrigin for world-space geometry",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "offsetCornerTraces resizes from the stored radius rather than the clamped cut the corner actually draws",
+   "where": "packages/geom/src/paths/cornerOffset.ts:40 (offsetCornerTraces)",
+   "severity": "low",
+   "scenario": "a corner whose spec radius is larger than its short edges allow, so `contourCuts` clamps its trim (cut.start/cut.end lie `trim` from the anchor, not `radius`). The new radius is computed as `spec.radius + sign*distance/tan(half)`, and the wedge cuts at that radius. So the trace sits where an unclamped corner would be, not where the offset outline draws the clamped one: it never matches, and the corner stays expanded. `inLen`/`outLen` (the drawn trim) are computed a few lines above but not used for the radius.",
+   "size": "line",
+   "cause": "stored radius used in place of the clamped trim",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "restoreCorners drops a corner spec stored on a closed contour's twin anchor",
+   "where": "packages/geom/src/paths/cornerRestore.ts:239 (restoreCorners)",
+   "severity": "low",
+   "scenario": "`result` is `M a L b L c L a Z`, a closing line onto the first point, which the walkers keep as a separate twin anchor at flat 3, with a corner spec at index 3. `contourCuts` honors that spec for anchor 0 via `c.twin`. `restoreCorners` builds `specs` only from `result.corners[c.first + k]` over `c.anchors`, which no longer include the twin. So when another trace folds in and the path is rewritten, the twin's spec is gone. The docstring says \"Specs `result` already holds are kept\".",
+   "size": "function",
+   "cause": "twin index not consulted when collecting existing specs",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "nearestOpenEnds ignores lone anchors that subpathEndAt and joinSubpathEnds treat as joinable ends",
+   "where": "packages/geom/src/paths/joinAnchors.ts:139 (nearestOpenEnds)",
+   "severity": "low",
+   "scenario": "a set holding an open two-anchor line and a lone point near its end. `subpathEndAt` reports the lone anchor as end `'last'`, and `joinAnchorsAt(line end, lone point)` joins them. But `nearestOpenEnds` skips every subpath with `sub.length < 2`, so a Join that picks the nearest ends returns null, or joins two farther ends instead. The question \"is a lone anchor an open end\" gets two different answers.",
+   "size": "line",
+   "cause": "inconsistent lone-anchor rule between end lookup and nearest-end search",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "bendSegmentSymmetric throws when a grip names a subpath past the end, where bendSegment returns false",
+   "where": "packages/geom/src/paths/anchorSymmetry.ts:213 (flatOf, via bendSegmentSymmetric)",
+   "severity": "low",
+   "scenario": "`bendSegmentSymmetric(set, { sub: set.anchors.length, segIdx: 0, t: .5 }, dx, dy, syms)` with non-empty `syms` (a grip kept from before a subpath was deleted) → `flatOf` reads `set.anchors[k].length` for an undefined `k` and throws TypeError; with `syms = []` the same call returns false via `bendSegment`/`segmentEnds`. `flatOf` duplicates `flatAnchorIndex` in anchorEdits, which returns -1 for this case.",
+   "fix": [
+    "packages/geom/src/paths/anchorSymmetry.ts"
+   ],
+   "size": "function",
+   "cause": "duplicate flat-index helper without range check",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "outsideSide divides by a zero tangent, sending windingOf into a 2^40-deep recursion",
+   "where": "packages/geom/src/paths/contourSides.ts:52 (outsideSide)",
+   "severity": "medium",
+   "scenario": "growRegion on a path with two or more contours, one of them a closed out-and-back cusp curve such as `M0 0 C10 0 10 0 0 0 Z` beside an ordinary square. That curve is its contour's longest segment. Its derivative at t = 0.5 is zero (`l.c[6]-l.c[4]` = 0), and its chord is zero too, so the fallback also gives `tx = ty = 0` and `tl = 0`. Then `nx`/`ny` are NaN, and `windingOf(contours, NaN, NaN)` reaches `crossings`, where every comparison against NaN is false. Neither early return fires and the `minX > px` fallback never does either, so every segment splits in two until depth 40: about 10^12 calls, a hang. It should answer `null` (no side) for a contour with no usable tangent.",
+   "fix": [
+    "packages/geom/src/paths/contourSides.ts"
+   ],
+   "size": "line",
+   "cause": "no guard for a zero tangent length",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "boundsOfPaths pulls the union out to (0, 0) whenever the set contains an empty path",
+   "where": "packages/geom/src/paths/boundsOfPaths.ts:18 (boundsOfPaths)",
+   "severity": "low",
+   "scenario": "`boundsOfPath` returns a zero-size rect at (0, 0) for a path with no commands (for example `polygonFromPoints([])`), whatever the path's origin. boundsOfPaths folds that rect in like any other, so the envelope of `[emptyPath, shapeAt(10000, 10000)]` runs from (0, 0) to the shape's far corner rather than covering only the shape. An empty path has no extent and should be skipped (and the result should be `null` if every path is empty).",
+   "fix": [
+    "packages/geom/src/paths/boundsOfPaths.ts",
+    "packages/geom/src/paths/bounds.ts"
+   ],
+   "size": "function",
+   "cause": "an empty path's placeholder rect is treated as real bounds",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "anchorsToPath re-encodes far-moved anchors in float32 when `like` has no origin, losing precision",
+   "where": "packages/geom/src/paths/anchors.ts:178 (anchorsToPath)",
+   "severity": "low",
+   "scenario": "`editAnchorSet` on a path near 0 (no origin), with an edit that moves anchors far out, for example `translateAnchorBy` by 1e7. Because `like` is given, the builder neither sets an origin nor calls `autoOrigin`. The result stores coords near 1e7 in a Float32Array, where the spacing between representable values is 1. The fractions are lost, which `autoOrigin` exists to prevent. It should fall back to `autoOrigin` when `like.origin` is undefined.",
+   "size": "line",
+   "cause": "autoOrigin skipped whenever `like` is passed",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5
+    ]
+   }
   }
- ]
+ ],
+ "lines": 5706
 }

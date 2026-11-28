@@ -1,0 +1,49 @@
+{
+ "area": "modes",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/modes/src/capabilities.ts",
+  "packages/modes/src/decorations.ts",
+  "packages/modes/src/eligibility.ts",
+  "packages/modes/src/index.ts",
+  "packages/modes/src/modeDefinition.ts",
+  "packages/modes/src/pbt.fixture.ts",
+  "packages/modes/src/presets/default.ts",
+  "packages/modes/src/registry.ts",
+  "packages/modes/src/scopingLayer.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1625334,
+   "minutes": 0.13023333333333334,
+   "at": "2026-11-26T05:14:35.026Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Mutating a registered ModeDefinition's allows array changes registry eligibility without a version bump, leaving the canvas reader's allowedCapabilities stale",
+   "where": "packages/modes/src/registry.ts:34",
+   "severity": "medium",
+   "scenario": "After a canvas primes createActiveModeReader, push a tag into the active definition's allows array; isToolEligible says eligible while the canvas reader still returns the old set",
+   "size": "design",
+   "cause": "definitions held by reference without copy or freeze",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 589
+}

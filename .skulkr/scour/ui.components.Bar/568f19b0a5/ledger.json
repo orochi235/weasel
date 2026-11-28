@@ -1,0 +1,103 @@
+{
+ "area": "ui.components.Bar",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Bar/Bar.module.css",
+  "packages/ui/src/components/Bar/Bar.overflow.stories.module.css",
+  "packages/ui/src/components/Bar/Bar.overflow.stories.tsx",
+  "packages/ui/src/components/Bar/Bar.stories.module.css",
+  "packages/ui/src/components/Bar/Bar.stories.tsx",
+  "packages/ui/src/components/Bar/Bar.tsx",
+  "packages/ui/src/components/Bar/BarAlong.module.css",
+  "packages/ui/src/components/Bar/BarAlong.tsx",
+  "packages/ui/src/components/Bar/BarField.fixtures.tsx",
+  "packages/ui/src/components/Bar/BarField.stories.tsx",
+  "packages/ui/src/components/Bar/BarField.tsx",
+  "packages/ui/src/components/Bar/BarLine.tsx",
+  "packages/ui/src/components/Bar/BarMenu.stories.tsx",
+  "packages/ui/src/components/Bar/BarMenu.tsx",
+  "packages/ui/src/components/Bar/BarOverflow.tsx",
+  "packages/ui/src/components/Bar/BarPopover.stories.tsx",
+  "packages/ui/src/components/Bar/BarPopover.tsx",
+  "packages/ui/src/components/Bar/barFrames.module.css",
+  "packages/ui/src/components/Bar/barItems.tsx",
+  "packages/ui/src/components/Bar/barLabel.module.css",
+  "packages/ui/src/components/Bar/barLeadHandle.tsx",
+  "packages/ui/src/components/Bar/barLines.ts",
+  "packages/ui/src/components/Bar/barMenuRoot.ts",
+  "packages/ui/src/components/Bar/barOrder.ts",
+  "packages/ui/src/components/Bar/barParts.module.css",
+  "packages/ui/src/components/Bar/barParts.tsx",
+  "packages/ui/src/components/Bar/barSide.ts",
+  "packages/ui/src/components/Bar/barTurn.module.css",
+  "packages/ui/src/components/Bar/index.ts",
+  "packages/ui/src/components/Bar/lab/BarArc.stories.module.css",
+  "packages/ui/src/components/Bar/lab/BarArc.stories.tsx",
+  "packages/ui/src/components/Bar/lab/BarArcView.tsx",
+  "packages/ui/src/components/Bar/lab/barArcConfig.ts",
+  "packages/ui/src/components/Bar/lab/useBarMeasure.ts",
+  "packages/ui/src/components/Bar/popFace.tsx",
+  "packages/ui/src/components/Bar/renderBarLeaf.tsx",
+  "packages/ui/src/components/Bar/useBarOverflow.ts",
+  "packages/ui/src/components/Bar/useBarReorder.ts",
+  "packages/ui/src/components/Bar/useBarReorderKeys.ts",
+  "packages/ui/src/components/Bar/useMenuLeast.ts",
+  "packages/ui/src/components/Bar/useTurnToFit.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2213156,
+   "minutes": 0.2884333333333333,
+   "at": "2026-11-27T00:22:26.482Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Overflow fit mixes transformed child widths with the bar's untransformed client width, so a scaled ancestor misjudges overflow",
+   "where": "packages/ui/src/components/Bar/useBarOverflow.ts:58",
+   "severity": "low",
+   "scenario": "Bar under an ancestor scaled 2x: two 40px controls in a 100px row measure as 160px, so the overflow menu appears though they fit",
+   "fix": [
+    "packages/ui/src/components/Bar/useBarOverflow.ts"
+   ],
+   "cause": "mixed reference frames in width measurement",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Reorder hook overwrites, then removes, a control's aria-keyshortcuts, erasing its own declared shortcuts",
+   "where": "packages/ui/src/components/Bar/useBarReorderKeys.ts:79",
+   "severity": "low",
+   "scenario": "Control declares its own aria-keyshortcuts; reordering enabled replaces it, then disabled while mounted removes it, so the control's shortcut is no longer announced",
+   "fix": [
+    "packages/ui/src/components/Bar/useBarReorderKeys.ts"
+   ],
+   "cause": "replaces rather than merges the attribute",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2937
+}

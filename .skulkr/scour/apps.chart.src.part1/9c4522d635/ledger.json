@@ -41,6 +41,47 @@
    "minutes": 0.1101,
    "at": "2026-11-25T21:11:46.474Z",
    "findings": 1
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.7510807999999998,
+   "minutes": 3.0059,
+   "at": "2026-11-27T00:19:50.163Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.9555542,
+   "minutes": 2.61485,
+   "at": "2026-11-27T00:22:27.580Z",
+   "findings": 0
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.1261784,
+   "minutes": 3.0980333333333334,
+   "at": "2026-11-27T00:25:34.652Z",
+   "findings": 0
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.5047246,
+   "minutes": 1.8660833333333333,
+   "at": "2026-11-27T00:27:28.297Z",
+   "findings": 0
   }
  ],
  "defects": [
@@ -51,13 +92,25 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    2
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     2
     ]
-   }
+   },
+   "scenario": "open a `.weaselchart.json` whose snapshot has a node with `locked: true` and a child under it (a locked container or group, e.g. saved by another weasel app or edited by hand). `replaceChart` lifts the lock guard only around `removeMany`; the `scene.add(spec)` loop runs guarded, so adding the child calls `refuse(parent, 'add under')` (packages/core/src/core/scene/treeEdits.ts:96) on the just-added locked parent and throws \"Scene: cannot add under …\". The batch fails and Open reports \"Could not open the file\" for a valid file. It should load the file as saved, with the lock last (as `docs/unruled.md`'s 2026-11-10 duplicate ruling does), e.g. by running the whole replacement inside `scene.unlocked`.",
+   "cause": "lock guard lifted for removal only, not for restoring the saved nodes",
+   "fix": [
+    "apps/chart/src/chartPersistence.ts"
+   ],
+   "size": "line",
+   "confidence": "likely"
   }
- ]
+ ],
+ "lines": 1481
 }

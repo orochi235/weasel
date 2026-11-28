@@ -1,0 +1,108 @@
+{
+ "area": "plot.part1",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/plot/src/PlotView.tsx",
+  "packages/plot/src/axes.ts",
+  "packages/plot/src/chartTitle.ts",
+  "packages/plot/src/editing/createPlotEditingContribution.ts",
+  "packages/plot/src/editing/dragAction.ts",
+  "packages/plot/src/editing/editors.ts",
+  "packages/plot/src/editing/handleLayer.ts",
+  "packages/plot/src/editing/lists.ts",
+  "packages/plot/src/editing/schemaKit.ts",
+  "packages/plot/src/editing/schemaTypes.ts",
+  "packages/plot/src/editing/schemas.ts",
+  "packages/plot/src/editing/textEdit.ts",
+  "packages/plot/src/gantt/compile.ts",
+  "packages/plot/src/gantt/dates.ts",
+  "packages/plot/src/gantt/edit.ts",
+  "packages/plot/src/gantt/editor.ts",
+  "packages/plot/src/gantt/schedule.ts",
+  "packages/plot/src/gantt/schema.ts",
+  "packages/plot/src/gantt/structure.ts",
+  "packages/plot/src/gantt/text.ts",
+  "packages/plot/src/gantt/types.ts",
+  "packages/plot/src/gitgraph/compile.ts",
+  "packages/plot/src/gitgraph/edit.ts",
+  "packages/plot/src/gitgraph/editor.ts",
+  "packages/plot/src/gitgraph/replay.ts",
+  "packages/plot/src/gitgraph/schema.ts",
+  "packages/plot/src/gitgraph/structure.ts",
+  "packages/plot/src/gitgraph/types.ts",
+  "packages/plot/src/index.ts",
+  "packages/plot/src/journey/compile.ts",
+  "packages/plot/src/journey/edit.ts",
+  "packages/plot/src/journey/editor.ts",
+  "packages/plot/src/journey/schema.ts",
+  "packages/plot/src/journey/structure.ts",
+  "packages/plot/src/journey/types.ts",
+  "packages/plot/src/marks/boxes.ts",
+  "packages/plot/src/marks/clip.ts",
+  "packages/plot/src/marks/paths.ts",
+  "packages/plot/src/marks/text.ts",
+  "packages/plot/src/marks/types.ts",
+  "packages/plot/src/measure.ts",
+  "packages/plot/src/packet/compile.ts",
+  "packages/plot/src/packet/edit.ts",
+  "packages/plot/src/packet/editor.ts",
+  "packages/plot/src/packet/schema.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17331839999999998,
+   "minutes": 0.20718333333333333,
+   "at": "2026-11-26T05:17:46.797Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Dismissing an unchanged plot text editor calls scene.undo on a trimmed-tag spec diff, undoing an unrelated edit",
+   "where": "packages/plot/src/editing/textEdit.ts:55 (foldPlotText)",
+   "severity": "medium",
+   "scenario": "A GitGraphData commit tag has surrounding spaces. Make an unrelated scene edit, then open the tag editor and dismiss it unchanged. onEnd fires, the trimmed tag differs from the raw one, and scene.undo reverts the unrelated edit and normalizes the tag",
+   "fix": [
+    "packages/plot/src/editing/textEdit.ts"
+   ],
+   "size": "function",
+   "cause": "unconditional undo on a spec that differs from normalization alone",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Hidden plot marks still emit drag handles because only the root's visibility and locking are checked",
+   "where": "packages/plot/src/editing/handleLayer.ts:91 (plotHandles)",
+   "severity": "medium",
+   "scenario": "Hide one draggable plot mark (a bar or Gantt span) while its root stays visible. Its handle still claims the pointer over its old area, and a drag mutates the chart data",
+   "fix": [
+    "packages/plot/src/editing/handleLayer.ts"
+   ],
+   "size": "line",
+   "cause": "visibility checked on the root only, not on each child",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3558
+}

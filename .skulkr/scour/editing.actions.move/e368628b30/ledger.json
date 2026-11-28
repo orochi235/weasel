@@ -46,6 +46,167 @@
    "minutes": 0.1439,
    "at": "2026-11-25T21:17:17.839Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.0658987999999998,
+   "minutes": 2.9520833333333334,
+   "at": "2026-11-26T16:19:50.731Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 3.9476151999999995,
+   "minutes": 9.705066666666667,
+   "at": "2026-11-26T16:33:59.611Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 3.0972736100000002,
+   "minutes": 7.9818,
+   "at": "2026-11-26T16:42:09.891Z",
+   "matcher": "claude-haiku-5-5",
+   "findings": 7
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 2.4652931299999996,
+   "minutes": 6.2825999999999995,
+   "at": "2026-11-26T16:49:34.196Z",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 1.5414340500000003,
+   "minutes": 3.408783333333333,
+   "at": "2026-11-26T16:52:58.930Z",
+   "findings": 3
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.68872135,
+   "minutes": 3.5610833333333334,
+   "at": "2026-11-26T16:56:32.777Z",
+   "findings": 3
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.74014515,
+   "minutes": 2.8569,
+   "at": "2026-11-26T16:59:24.356Z",
+   "findings": 2
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.9538733500000001,
+   "minutes": 3.6632333333333333,
+   "at": "2026-11-26T17:03:04.327Z",
+   "findings": 2
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.13405085,
+   "minutes": 5.033616666666666,
+   "at": "2026-11-26T17:08:06.628Z",
+   "findings": 4
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.61672885,
+   "minutes": 2.3387000000000002,
+   "at": "2026-11-26T17:10:27.228Z",
+   "findings": 1
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.8030745500000002,
+   "minutes": 3.1283833333333333,
+   "at": "2026-11-26T17:13:35.186Z",
+   "findings": 3
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.2908773500000004,
+   "minutes": 4.761666666666667,
+   "at": "2026-11-26T17:18:21.098Z",
+   "findings": 3
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.93035165,
+   "minutes": 3.969116666666667,
+   "at": "2026-11-26T17:22:19.487Z",
+   "findings": 3
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.8155624499999999,
+   "minutes": 3.8147,
+   "at": "2026-11-26T17:26:08.685Z",
+   "findings": 2
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.66870255,
+   "minutes": 2.90805,
+   "at": "2026-11-26T17:29:03.468Z",
+   "findings": 2
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 0.9435189500000001,
+   "minutes": 3.6915,
+   "at": "2026-11-26T17:32:45.207Z",
+   "findings": 2
   }
  ],
  "defects": [
@@ -78,6 +239,584 @@
      1
     ]
    }
+  },
+  {
+   "id": "D3",
+   "claim": "A move answered by a non-translating behavior (swap, delete, layout placement) is still recorded as a translate by the drag delta for \"transform again\"",
+   "where": "packages/editing/src/actions/move/action.ts:80 (moveAction invoker onEnd)",
+   "severity": "medium",
+   "scenario": "drag one node with `swapOnDrop: 'dwell'`, rest over another until armed, release → `swapOps` trades the two nodes' places, `committed` is true, and `recordTransform(scene, { kind: 'translate', ...frame.delta }, subject)` records the pointer delta. Transform-again then translates the next selection by that delta, although the swap moved nothing by it. The same happens when `snapBackOrDelete({ onFreeRelease: 'delete' })` deletes the dragged nodes (a translate is recorded against deleted ids), and when a layout container's `commitDrop` places the node in a slot unrelated to the delta. Only a commit that actually translated by `frame.delta` (the default translate, reparent and page drops that keep the dragged world pose) should record one; the others should record nothing, or call `forgetTransform`.",
+   "fix": [
+    "packages/editing/src/actions/move/action.ts",
+    "packages/editing/src/actions/move/commit/index.ts"
+   ],
+   "size": "function",
+   "cause": "commit success taken as \"translated by delta\"",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    11,
+    12,
+    16
+   ],
+   "sources": {
+    "claude": [
+     2,
+     11,
+     12,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Riders of a reparented envelope root get only a translation, so a drop into a rotated parent leaves them unrotated",
+   "where": "packages/editing/src/actions/move/commit/reparent.ts:105 (landedCascadeOps)",
+   "severity": "medium",
+   "scenario": "drag a group that does not define a frame (its children are stored in the group's parent frame), with `reparentOnDrop: 'inside'`, into a group rotated 30°. The root's pose is rebased whole by `landedLocalPose` → `rebaseLocalPose`, which takes the rotation into the new frame. Each rider's landed local pose is computed the same way, but only its bounds' x/y difference is kept (`own.set(id, { dx: to.x - from.x, ... })`) and applied through `translateNodeOps`. The rider keeps its old local rotation, so in world it turns by 30° with the parent frame while the root does not: the children no longer sit where the drag showed them. The same function serves page drops (`pageDropOps`) and layout exits (`layoutReleaseOps`). The rider's stored pose should be the landed pose, not a translate of the start pose.",
+   "size": "function",
+   "cause": "rebased pose reduced to a translation delta",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    12
+   ],
+   "sources": {
+    "claude": [
+     2,
+     12
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A page that refuses a drop with a reason gives no feedback during the drag; the release is refused silently",
+   "where": "packages/editing/src/actions/move/behaviors/pageDrop.ts:17 (pageDrop)",
+   "severity": "medium",
+   "scenario": "a paged scene has a `canDropInto` dep that refuses a page child landing on page P, with a reason (\"page is full\"). The move binding is at its default `reparentOnDrop: 'off'`. Dragging a node from page Q over P draws no overlay during the drag. At release, `pageDrops` answers `'refused'` (commit/pageDrop.ts:74) and the move snaps back. `pageDrop` has no `onMove`. For drops that aren't layout drops, `reparentOnDrop.onMove` is the only thing that draws a refusal, and its `dropAt` returns null whenever `reparentOnDrop() === 'off'` (behaviors/reparentOnDrop.ts:20). So the page's refusal never reaches `refusalOverlays`. The layout drop and reparent-on-drop both draw, during the drag, any refusal they will act on at release. The page drop should too.",
+   "fix": [
+    "packages/editing/src/actions/move/behaviors/pageDrop.ts",
+    "packages/editing/src/actions/move/commit/pageDrop.ts"
+   ],
+   "size": "function",
+   "cause": "page-drop refusal has no onMove path",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    5,
+    14
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     5,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A layout exit that lands a child back in the page it already belongs to appends it, losing its paint/stack order",
+   "where": "packages/editing/src/actions/move/commit/layoutRelease.ts:152 (layoutReleaseOps, exit reparent)",
+   "severity": "low",
+   "scenario": "a page node has a layout, and the pasteboard is off. The exit pass treats any parent that `getLayout` answers for as a source layout; only `pickContainer` skips page structure. Drag one of the page's children so the drop center falls off every page, and release. `resolveLayoutExits` → `onPage` returns the node's own page (layout/exits.ts:63-65), so `toParent === node.parent`. The exit then pushes `coreOps.reparent({ fromParentId: page, toParentId: page })` with no `toIndex`, which appends the child to the end of the page's children. It jumps to the top of the paint order, and to the end of the page layout's order. The 2026-11-25 ruling (docs/unruled.md, round 87) says a drop that lands a node in the parent it already has keeps its place. `landAbove`/`landOps` do that for reparent-on-drop and the page drop, but this path bypasses them.",
+   "fix": [
+    "packages/editing/src/actions/move/commit/layoutRelease.ts",
+    "packages/editing/src/actions/move/layout/exits.ts"
+   ],
+   "size": "line",
+   "cause": "exit reparent skips landAbove / same-parent check",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A release frame that throws skips every behavior's onEnd and onCancel, so dwell timers outlive the gesture and refresh republishes the dropped preview hold",
+   "where": "packages/editing/src/actions/move/action.ts:82 (moveAction onEnd), :58 (refresh)",
+   "severity": "low",
+   "scenario": "the pointer is released past the last move point, so `onEnd` runs `show(endCtx)` for a final frame. A behavior's `onMove` throws in that frame: a binding behavior, or the layout drop calling a strategy's `getDropTargets`. Control goes straight to `finally`.",
+   "size": "function",
+   "cause": "release-frame throw bypasses end/cancel; refresh not disarmed at close",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    8,
+    9,
+    13
+   ],
+   "sources": {
+    "claude": [
+     3,
+     8,
+     9,
+     13
+    ]
+   },
+   "fix": [
+    "packages/editing/src/actions/move/action.ts"
+   ]
+  },
+  {
+   "id": "D8",
+   "claim": "Layout exits ignore a plain container's refusal, so the node lands elsewhere instead of the drop moving nothing",
+   "where": "packages/editing/src/actions/move/layout/exits.ts:47 (resolveLayoutExits / landingOn), :62 (onPage)",
+   "severity": "medium",
+   "scenario": "Child C sits in layout container L. Plain group G lies outside L, `canDropInto(G)` answers a `DropRefusal` with a reason, and `reparentOnDrop: 'into'` is set. While C is dragged out of L and held over G, `reparentOnDrop.onMove` draws G as refused with its reason, because no layout container claims the drop. On release, `layoutDrop.onEnd` runs first, finds `drop.refused` undefined and calls `layoutReleaseOps`. `landingOn` skips G because `session.admits(G)` is false and falls through to an outer admitting container, or to null (top level), so C is reparented there. `onPage` does the same for a page that refuses with a reason: it falls back to C's own page. `CanDropIntoDep` documents the opposite: where it answers a refusal, \"a release there moves nothing\". `resolveDrop` and `pickContainer` both honor that. The exits are the one path that treats a refusal like a silent `false`.",
+   "fix": [
+    "packages/editing/src/actions/move/layout/exits.ts",
+    "packages/editing/src/actions/move/commit/layoutRelease.ts"
+   ],
+   "size": "function",
+   "cause": "exits test `admits` (=== true) and never `refusalOf(verdict)`",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A layout drop's undo returns the dragged node to the strategy's originPose, not its stored pose",
+   "where": "packages/editing/src/actions/move/commit/layoutDrop.ts:25 (layoutDropOps / rebaseOpToLocal); packages/editing/src/actions/move/commit/layoutRelease.ts:36 (releaseFrom / rebaseReleased)",
+   "severity": "medium",
+   "scenario": "Strategies write the dragged node's op as `from: dragged.originPose` (`guides/.../sequence.ts`, `freeform.ts`), and `setPose.invert` restores `from`. That pose has two problems.",
+   "fix": [
+    "packages/editing/src/actions/move/commit/layoutDrop.ts",
+    "packages/editing/src/actions/move/commit/layoutRelease.ts"
+   ],
+   "size": "function",
+   "cause": "undo `from` taken from strategy op instead of the node's stored pose",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "landedDescendantOps measures a caught root's landing from its shown pose, so its descendants land off by the catch offset",
+   "where": "packages/editing/src/actions/move/landedDescendants.ts:30 (landedDescendantOps)",
+   "severity": "medium",
+   "scenario": "`from` is `startPoses.get(id) ?? a.from`. For a root caught mid-glide, `startPoses` holds the shown pose S = D + c (document pose D plus catch offset c). A layout drop or `snapToContainer` lands the root at T, and its envelope descendants (not carried by a frame) are then moved from their document poses by T − S. The correct delta is T − D, so they end up c away from where the root took them. The translate commit adds `caught` for exactly this reason (`translate.ts:20`); this path does not.",
+   "size": "function",
+   "cause": "shown (caught) start pose used as the document \"from\"",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    7,
+    10
+   ],
+   "sources": {
+    "claude": [
+     4,
+     7,
+     10
+    ]
+   },
+   "fix": [
+    "packages/editing/src/actions/move/commit/layoutDrop.ts",
+    "packages/editing/src/actions/move/behaviors/snapToContainer.ts",
+    "packages/editing/src/actions/move/landedDescendants.ts"
+   ]
+  },
+  {
+   "id": "D11",
+   "claim": "Reparenting several roots above a sibling stacks them in reverse, while appending stacks them in order",
+   "where": "packages/editing/src/actions/move/commit/reparent.ts:62 (landAbove), :174 (reparentOps); packages/editing/src/actions/move/commit/pageDrop.ts:156 (pageDropOps)",
+   "severity": "low",
+   "scenario": "Roots `[A, B]` dropped with `reparentOnDrop: 'above'` over sibling S, where the destination's children are `[S, X]`. A gets `hit + 1 = 1` → `[S, A, X]`. B also gets `hit + 1 = 1` → `[S, B, A, X]`, so A paints over B. Dropped without a hit sibling, the same roots append as `[…, A, B]`, so B paints over A. The two modes order the same roots in opposite directions, and the 'above' result reverses the order the roots are processed in.",
+   "size": "function",
+   "cause": "every root inserted at the same index just above the hit",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    10,
+    17
+   ],
+   "sources": {
+    "claude": [
+     4,
+     10,
+     17
+    ]
+   },
+   "fix": [
+    "packages/editing/src/actions/move/commit/reparent.ts",
+    "packages/editing/src/actions/move/commit/pageDrop.ts"
+   ]
+  },
+  {
+   "id": "D12",
+   "claim": "A refused container on another plane is outlined at its own-plane bounds, not where the edited plane shows it",
+   "where": "packages/editing/src/actions/move/layout/container.ts:121 (pickContainer, `bounds: worldAabb`); packages/editing/src/actions/move/refusal.ts:26 (worldBoundsOf)",
+   "severity": "low",
+   "scenario": "With a parallax plane (`planeOf(view, layer)` non-null), `pickContainer` already carries the pointer into the container's plane (`toPlane(plane, center)`). The refusal it records keeps `worldAabb` in the container's own plane, and so does `resolveDrop` through `worldBoundsOf`. `refusalOverlays` then draws that rect, next to the reason label placed at the edited-plane pointer, so the \"refused\" outline is offset from the container it names.",
+   "fix": [
+    "packages/editing/src/actions/move/layout/container.ts",
+    "packages/editing/src/actions/move/refusal.ts",
+    "packages/editing/src/actions/move/layout/dropPass.ts"
+   ],
+   "size": "function",
+   "cause": "bounds not carried back into the edited plane",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    6
+   ],
+   "sources": {
+    "claude": [
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "snapToContainer previews a secondary root's descendants at the primary root's offset, not at that root's own slot",
+   "where": "packages/editing/src/actions/move/frame.ts:62 (nextFrame); packages/editing/src/actions/move/behaviors/snapToContainer.ts:83 (snapped)",
+   "severity": "low",
+   "scenario": "Two roots are snapped into a container, each given its own slot by `findTarget`. `snapped` returns `poses` for the roots only and a `transform` equal to the primary root's offset to its slot. `nextFrame` previews every non-root id in `startPoses` with `draggedStoredPose(..., dx, dy)` using that one transform. The secondary root's envelope descendants are therefore drawn moved by the primary's offset, detached from their root at its own slot. At commit, `landedDescendantOps` moves them by that root's real landing, so preview and commit disagree.",
+   "fix": [
+    "packages/editing/src/actions/move/behaviors/snapToContainer.ts"
+   ],
+   "size": "function",
+   "cause": "per-root slot poses not propagated to descendants in the preview",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    13
+   ],
+   "sources": {
+    "claude": [
+     4,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A layout exit over a page that refuses the drop lands the node on the pasteboard or its own page instead of following the page rule",
+   "where": "packages/editing/src/actions/move/layout/exits.ts:62 (resolveLayoutExits, onPage)",
+   "severity": "medium",
+   "scenario": "The scene is paged. A child of a layout container is dragged out of the container and released over page B, which `canDropInto` refuses.",
+   "fix": [
+    "packages/editing/src/actions/move/layout/exits.ts",
+    "packages/editing/src/actions/move/commit/layoutRelease.ts"
+   ],
+   "size": "function",
+   "cause": "exit landing re-implements the page rule without refusals or overlap",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "Swap's armed bounds are in the target's plane but are tested against, and drawn with, the edited-plane pointer",
+   "where": "packages/editing/src/actions/move/behaviors/swapOnDrop.ts:83 (arm), :128 (onMove inside(s.armed.bounds, point))",
+   "severity": "low",
+   "scenario": "with `swapOnDrop: 'dwell'`, the drag is over a target node on a layer on another plane. `arm` measures `home` and `bounds` with `frame.world(...)` in each node's own plane, but `point` is `ctx.pointer.worldX/Y` in the edited plane. While armed, `inside(bounds, point)` decides whether the pointer still holds the target, so a pointer resting visibly over the target disarms (or a pointer elsewhere stays armed), and `outline(armed.bounds)` is drawn at the wrong place. When the dragged node and the target are on different planes, the preview slide `home - bounds` also mixes two planes' coordinates.",
+   "fix": [
+    "packages/editing/src/actions/move/behaviors/swapOnDrop.ts"
+   ],
+   "size": "function",
+   "cause": "plane map not applied to armed bounds",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "A layout drop throws when the destination, a dragged node or a reflowed sibling is removed between the last move and the release",
+   "where": "packages/editing/src/actions/move/commit/layoutDrop.ts:44, :49, :70",
+   "severity": "low",
+   "scenario": "the drop pass is computed on the last `onMove`; a remote edit or a timer-driven command deletes the destination container, a dragged root, or a source-reflow sibling before the pointer is let go. `layoutDropOps` dereferences each with `!` (and `landOps` does `scene.get(id)!` then `node.layer`), so the release throws a TypeError instead of skipping the missing node, as `reparentOps` (\"A node removed mid-drag is skipped\") and `pageDrops` do. The move's commit fails with an exception rather than committing or aborting cleanly.",
+   "fix": [
+    "packages/editing/src/actions/move/commit/layoutDrop.ts",
+    "packages/editing/src/actions/move/commit/reparent.ts"
+   ],
+   "size": "function",
+   "cause": "non-null assertions on nodes read at release",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "snapToContainer reparents the node into a container on a higher layer without moving it onto that container, so the scene throws.",
+   "where": "packages/editing/src/actions/move/behaviors/snapToContainer.ts:178 (plantOps, `reparent`)",
+   "severity": "medium",
+   "scenario": "the node is on layer `content` and `findTarget` answers a container on a layer above it (say `structures`). The release commits `coreOps.reparent` straight into that container. `Scene.move` rejects any move that drops a node below its new parent's layer (packages/core/src/core/scene/types.ts:205), so the whole commit throws. The move commit's own `landOps` (commit/reparent.ts:130) handles this case by detaching the node, running `setLayer`, then reparenting; plantOps never does. The clone path (`end.copyOps`) may have the same gap.",
+   "fix": [
+    "packages/editing/src/actions/move/behaviors/snapToContainer.ts",
+    "packages/editing/src/actions/move/commit/reparent.ts"
+   ],
+   "size": "function",
+   "cause": "layer change missing on reparent; two pathways for \"land a node in a container\"",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "The move's refresh stays wired after the gesture ends, so a dwell timer that outlives onEnd repaints a closed drag on the normal path, not only after a throw.",
+   "where": "packages/editing/src/actions/move/action.ts:57 (start, `session.gestureCtx.refresh`)",
+   "severity": "low",
+   "scenario": "the timers from snapToContainer and swapOnDrop are cleared only in their own `onEnd` or `onCancel`. In onEnd's commit branch, `show(endCtx)` (nextFrame / behavior onMove) and `endBehaviors`' `draggedStoredPose` loop both run before `reduceBehaviorEnd`. If either throws, no behavior gets `onEnd` or `onCancel`. The `finally` block then runs `closeRun`, but the pending `after` still fires later, calls `ctx.refresh`, and so runs `show(lastMove)` → `hold.set(preview.poses())` on a hold that was already dropped, leaving the old drag's preview overrides on the scene. The fix is to clear `refresh` in the `finally` block, and to cancel the behaviors whenever the commit throws before they ran.",
+   "fix": [
+    "packages/editing/src/actions/move/action.ts"
+   ],
+   "size": "line",
+   "cause": "refresh closure not torn down on close",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    15
+   ],
+   "sources": {
+    "claude": [
+     7,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "landedDescendantOps passes a stored-frame delta to carriedDescendants, which translates world poses, so descendants land in the wrong frame",
+   "where": "packages/editing/src/actions/move/landedDescendants.ts:34 (landedDescendantOps)",
+   "severity": "medium",
+   "scenario": "`carriedDescendants`' `translate` receives each descendant's *world* pose and rebases the result (core `carryDescendants.ts:53`), but `dx, dy` here come from the bounds of the root's `from`/`to` as stored in its parent's frame. A layout reflow sibling inside a rotated (or scaled) layout container, or a dragged envelope group planted by `snapToContainer` / a layout `commitDrop` under a turned container, has envelope children stored in that container's frame: they get the local-frame delta applied along world axes, so on commit they land off their parent (rotated by the container's angle / scaled wrongly). The preview disagrees with the commit: `reflowCarry` in `layout/dropPass.ts:150` computes the same carry from world bounds, which is correct, so the children jump on release. With pure-translation frames the error cancels, which is why tests without turned containers pass.",
+   "fix": [
+    "packages/editing/src/actions/move/landedDescendants.ts",
+    "packages/editing/src/actions/move/commit/layoutDrop.ts",
+    "packages/editing/src/actions/move/behaviors/snapToContainer.ts"
+   ],
+   "size": "function",
+   "cause": "local delta applied as world delta",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    10,
+    14,
+    16
+   ],
+   "sources": {
+    "claude": [
+     8,
+     10,
+     14,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "Innermost layout-drop target breaks same-depth ties by tree index, not paint order, so a container on a lower layer can win over the one drawn above it.",
+   "where": "packages/editing/src/actions/move/layout/container.ts:62 (chooseContainer, innermost branch)",
+   "severity": "low",
+   "scenario": "two overlapping layout containers at the same depth on different layers, the one on the upper layer earlier in `scene.roots` (roots are not ordered by layer). Dropping where both contain the center picks the later-indexed one — the container painted underneath — while the user sees the drop land in the one on top. The `topmost` branch right above handles exactly this with `scene.renderOrder()` and says a sibling-index path cannot; the `innermost` tie-break claims \"higher z = later index\", which is false across layers (and across subtrees whose parents sit on different layers). Expected: equal-depth ties broken by render order, as `topmost` does.",
+   "size": "function",
+   "cause": "zPath sibling index used as paint order",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "snapBackOrDelete records a flat index across all nodes as each root's sibling index, so snap-back or delete reinserts roots at the wrong position",
+   "where": "packages/editing/src/actions/move/behaviors/snapBackOrDelete.ts:62 (onStart), consumed at :87-93 (onEnd)",
+   "severity": "low",
+   "scenario": "`indexes` is `adapter.getNodes().findIndex(...)`, a position in the flat list of every node. `ops.delete`'s `index` is the ordinal among the node's siblings (delete.ts:28 \"Sibling ordinal\"). For a nested root, or a root after another tree's descendants, the recorded index is too large. It is only a seed that apply re-observes, but the \"topmost first\" sort of several roots also uses these flat positions. For roots under different parents that order means nothing, and a slot the adapter cannot observe falls back to the wrong index on undo.",
+   "fix": [
+    "packages/editing/src/actions/move/behaviors/snapBackOrDelete.ts"
+   ],
+   "size": "line",
+   "cause": "flat node index used as sibling ordinal",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A root that a drop reparents skips its data-held geometry op, though the translate commit writes one",
+   "where": "packages/editing/src/actions/move/commit/reparent.ts:175 (reparentOps)",
+   "severity": "medium",
+   "scenario": "`geometryProjection` dep wired (geometry held in `data`), reparent-on-drop on. Drag a node over a group and release. The root gets a bare `coreOps.setPose` with no geometry data op. Its riders go through `translateNodeOps`, which does emit `createGeometryDataOp`. Result: the root's pose moves but its data-held geometry stays where it was, while its descendants' geometry moves. A plain translate of the same drag (`translateOps`) updates both. The same bare setPose for a landed root is in `pageDropOps` (commit/pageDrop.ts:160), the layout exits in `layoutReleaseOps` (commit/layoutRelease.ts:150), and the descendant ops `landedDescendantOps` adds (landedDescendants.ts:49). So the commit answers the geometry question one way on the translate path and another way on every landing path. (layoutDropOps carries a TODO saying it skips this; the other paths don't.)",
+   "fix": [
+    "packages/editing/src/actions/move/commit/reparent.ts",
+    "packages/editing/src/actions/move/commit/pageDrop.ts",
+    "packages/editing/src/actions/move/commit/layoutRelease.ts",
+    "packages/editing/src/actions/move/landedDescendants.ts"
+   ],
+   "size": "function",
+   "cause": "landing paths write setPose directly instead of going through translateNodeOps / createGeometryDataOp",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "A cross-layer layout drop records the dragged node's undo pose in the destination's plane instead of the node's own plane, so undo restores it wrongly.",
+   "where": "packages/editing/src/actions/move/commit/layoutDrop.ts:27 (layoutDropOps rebaseOpToLocal)",
+   "severity": "low",
+   "scenario": "a node on a layer with its own plane (parallax `planeOf(view, layer)` non-identity) is dropped into a layout container on another plane. `placeAll` hands `commitDrop` the dragged child carried into the destination's plane (`carryDragged`), and strategies answer `from: dragged.originPose` (diagram's `containerLayout.ts:44`, `laneStack.ts:168`). `rebaseOpToLocal` rebases that `from` under the node's pre-commit parent without carrying it back to the source layer's plane. Undo replays the setPose inverse with that `from`, then the reparent/setLayer inverses, leaving the node back on its old layer but displaced by the plane difference. Should: carry `from` back to the source layer's plane (or use `session.startPoses`) before rebasing it under `curParent`.",
+   "size": "line",
+   "cause": "`from` rebased in the wrong plane",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "clampMove does not clamp an Alt-drag clone, so the clone can be placed outside the clamp bounds.",
+   "where": "packages/editing/src/actions/move/behaviors/clampMove.ts:43 (clampMove)",
+   "severity": "low",
+   "scenario": "a select tool's `move.behaviors: [clampMove({ bounds })]`. `selectionContributions.ts:54` hands the clone binding only each behavior's `clone` part, and `clampMove` returns none, so an Alt-drag copies the selection and lets it be dropped anywhere, outside the bounds the doc says the dragged nodes stay inside. `snapToContainer` and `snapBackOrDelete` each ship a `clone` part for this reason.",
+   "size": "function",
+   "cause": "missing clone half",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "pageDropOps computes a landing index against a cached child list that still holds a root an earlier op moved out, so the index is wrong",
+   "where": "packages/editing/src/actions/move/commit/pageDrop.ts:131 (pageDropOps, childrenOf cache)",
+   "severity": "low",
+   "scenario": "Two dragged roots sit on pages A and B. On release, root R1's box mostly overlaps page B, so it moves A→B. Root R2 lands on page A (the page under the pointer) with `reparentOnDrop: 'above'`, so it should land just above the hit sibling H. `childrenOf(A)` is first read from the scene when R2 is handled, after R1's reparent op is already queued but before any op has run. The list therefore still includes R1. If R1 came before H in A, `landAbove` returns `indexOf(H) + 1`, which counts R1. When the ops apply, R1 has already left A, so R2 lands one slot too high: above the node above H instead of directly above H. `childrenOf` only tracks arrivals, which `landAbove` splices in. It never tracks departures from a parent through earlier `landOps`. That includes the orphaning reparent to `null` on a layer change, which `scene.roots` also misses.",
+   "fix": [
+    "packages/editing/src/actions/move/commit/pageDrop.ts"
+   ],
+   "size": "function",
+   "cause": "sibling cache ignores departures",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "A root reparented by a layout drop or snap slot carries its envelope descendants by a stored-pose delta that mixes the old and new parent frames, so they land in the wrong place",
+   "where": "packages/editing/src/actions/move/commit/layoutDrop.ts:44 (layoutDropOps), packages/editing/src/actions/move/behaviors/snapToContainer.ts:197 (plantOps, slotted loop)",
+   "severity": "medium",
+   "scenario": "Drag a group whose pose is not a frame (an envelope: its children are stored in its parent's frame), and drop it into a layout container, or a `snapToContainer` slot, whose frame is turned or scaled. These paths write only the root's ops: a `transform` from its old-parent-local pose to a pose local to the destination. `commitMove` then runs `landedDescendantOps`, which moves every non-carried descendant by `to.bounds − from.bounds` of the root. Those two boxes are in different frames, so under a turned/scaled destination the delta is not the world motion. The descendants are left in the old frame's numbers shifted by that delta, and land away from the group, rotated wrong. The other landing paths do this properly: `reparentOps`, page drops and layout exits use `landedCascadeOps`, and the unslotted roots in `plantOps` use `keptInPlace`, which rebase each descendant through world. So the same question gets two answers, and one of them is wrong under any non-translation frame.",
+   "fix": [
+    "packages/editing/src/actions/move/commit/layoutDrop.ts",
+    "packages/editing/src/actions/move/behaviors/snapToContainer.ts"
+   ],
+   "size": "function",
+   "cause": "delta between poses in two different frames",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17
+   ],
+   "sources": {
+    "claude": [
+     17
+    ]
+   }
   }
- ]
+ ],
+ "lines": 3108
 }

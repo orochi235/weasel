@@ -1,0 +1,1335 @@
+{
+ "area": "ui.components.Timeline",
+ "commit": "8640a85e55e43ca481ee4bb55113417ee3cce5cb",
+ "files": [
+  "packages/ui/src/components/Timeline/AnimatedTimeline.tsx",
+  "packages/ui/src/components/Timeline/Lane.tsx",
+  "packages/ui/src/components/Timeline/LaneGraph.tsx",
+  "packages/ui/src/components/Timeline/LaneMarks.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.module.css",
+  "packages/ui/src/components/Timeline/TimeRuler.stories.tsx",
+  "packages/ui/src/components/Timeline/TimeRuler.tsx",
+  "packages/ui/src/components/Timeline/Timeline.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.module.css",
+  "packages/ui/src/components/Timeline/Timeline.stories.tsx",
+  "packages/ui/src/components/Timeline/Timeline.tsx",
+  "packages/ui/src/components/Timeline/TimelineInspector.tsx",
+  "packages/ui/src/components/Timeline/index.ts",
+  "packages/ui/src/components/Timeline/keys.ts",
+  "packages/ui/src/components/Timeline/lanes.ts",
+  "packages/ui/src/components/Timeline/timeScale.ts",
+  "packages/ui/src/components/Timeline/timelineState.ts",
+  "packages/ui/src/components/Timeline/useKeyDrag.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/01-claude.md",
+   "costUsd": 0.9444083999999998,
+   "minutes": 2.8890166666666666,
+   "at": "2026-11-26T12:35:46.178Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.1321202000000001,
+   "minutes": 4.032583333333333,
+   "at": "2026-11-26T12:39:48.241Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.3176049999999997,
+   "minutes": 4.605816666666667,
+   "at": "2026-11-26T12:44:24.697Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.9703408,
+   "minutes": 3.864116666666667,
+   "at": "2026-11-26T12:48:16.650Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.6109498,
+   "minutes": 2.2415333333333334,
+   "at": "2026-11-26T12:50:31.250Z",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.6189908000000001,
+   "minutes": 2.274766666666667,
+   "at": "2026-11-26T12:52:47.882Z",
+   "findings": 4
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.1781564,
+   "minutes": 5.0894,
+   "at": "2026-11-26T12:57:53.380Z",
+   "findings": 3
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.0802502,
+   "minutes": 3.8065,
+   "at": "2026-11-26T13:01:41.907Z",
+   "findings": 2
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.687863,
+   "minutes": 2.517183333333333,
+   "at": "2026-11-26T13:04:13.149Z",
+   "findings": 2
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.8403238,
+   "minutes": 3.192766666666667,
+   "at": "2026-11-26T13:07:24.951Z",
+   "findings": 3
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.7893802000000001,
+   "minutes": 2.8596833333333334,
+   "at": "2026-11-26T13:10:16.770Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 1.2403566000000004,
+   "minutes": 4.916183333333334,
+   "at": "2026-11-26T13:15:11.959Z",
+   "findings": 4
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.47133200000000003,
+   "minutes": 1.6759833333333334,
+   "at": "2026-11-26T13:16:52.698Z",
+   "findings": 1
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 1.0388538,
+   "minutes": 3.8225333333333333,
+   "at": "2026-11-26T13:20:42.225Z",
+   "findings": 2
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 1.2915712,
+   "minutes": 4.655633333333333,
+   "at": "2026-11-26T13:25:21.735Z",
+   "findings": 2
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.8288198,
+   "minutes": 3.27925,
+   "at": "2026-11-26T13:28:38.728Z",
+   "findings": 2
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 1.0138521999999999,
+   "minutes": 4.0319666666666665,
+   "at": "2026-11-26T13:32:40.845Z",
+   "findings": 2
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.694669,
+   "minutes": 2.7762333333333333,
+   "at": "2026-11-26T13:35:28.046Z",
+   "findings": 2
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 0.7003514,
+   "minutes": 2.589166666666667,
+   "at": "2026-11-26T13:38:03.727Z",
+   "findings": 2
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 1.0654352,
+   "minutes": 4.286383333333333,
+   "at": "2026-11-26T13:43:34.982Z",
+   "findings": 4
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 0.6825261999999999,
+   "minutes": 2.662333333333333,
+   "at": "2026-11-26T13:46:14.928Z",
+   "findings": 1
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.7714176000000001,
+   "minutes": 3.178733333333333,
+   "at": "2026-11-26T13:49:25.931Z",
+   "findings": 3
+  },
+  {
+   "n": 23,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/23-claude.md",
+   "costUsd": 0.8821378,
+   "minutes": 3.1494500000000003,
+   "at": "2026-11-26T13:52:35.118Z",
+   "findings": 4
+  },
+  {
+   "n": 24,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/24-claude.md",
+   "costUsd": 0.7984232,
+   "minutes": 2.909616666666667,
+   "at": "2026-11-26T13:55:29.950Z",
+   "findings": 3
+  },
+  {
+   "n": 25,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/25-claude.md",
+   "costUsd": 0.5879466,
+   "minutes": 2.4944,
+   "at": "2026-11-26T13:57:59.826Z",
+   "findings": 3
+  },
+  {
+   "n": 26,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/26-claude.md",
+   "costUsd": 1.6386824,
+   "minutes": 6.285683333333333,
+   "at": "2026-11-26T14:04:17.219Z",
+   "findings": 2
+  },
+  {
+   "n": 27,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/27-claude.md",
+   "costUsd": 0.7689831999999999,
+   "minutes": 2.7368,
+   "at": "2026-11-26T14:07:01.636Z",
+   "findings": 2
+  },
+  {
+   "n": 28,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/28-claude.md",
+   "costUsd": 0.9919018,
+   "minutes": 3.9013500000000003,
+   "at": "2026-11-26T14:10:55.894Z",
+   "findings": 3
+  },
+  {
+   "n": 29,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/29-claude.md",
+   "costUsd": 1.0682608,
+   "minutes": 3.9862666666666664,
+   "at": "2026-11-26T14:14:55.221Z",
+   "findings": 4
+  },
+  {
+   "n": 30,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/30-claude.md",
+   "costUsd": 0.7442908000000001,
+   "minutes": 2.7635166666666664,
+   "at": "2026-11-26T14:17:41.201Z",
+   "findings": 4
+  },
+  {
+   "n": 31,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/31-claude.md",
+   "costUsd": 0.7563812,
+   "minutes": 3.18275,
+   "at": "2026-11-26T14:20:52.338Z",
+   "findings": 2
+  },
+  {
+   "n": 32,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/32-claude.md",
+   "costUsd": 1.251143,
+   "minutes": 6.5262,
+   "at": "2026-11-26T14:27:24.103Z",
+   "findings": 4
+  },
+  {
+   "n": 33,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/33-claude.md",
+   "costUsd": 0.9725826000000001,
+   "minutes": 3.9242166666666667,
+   "at": "2026-11-26T14:31:19.731Z",
+   "findings": 2
+  },
+  {
+   "n": 34,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/34-claude.md",
+   "costUsd": 1.4270601999999997,
+   "minutes": 5.313866666666667,
+   "at": "2026-11-26T14:36:38.716Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "An arrow step on a key past the timeline's duration jumps it back to the duration, whichever arrow is pressed",
+   "where": "packages/ui/src/components/Timeline/Lane.tsx:178 (markKeys)",
+   "severity": "medium",
+   "scenario": "`duration` 2000, a sampled key at t 3000 (the duration shrank, or the tracks came in that way). Focus the key and press ArrowRight: `to = max(0, min(last=2000, 3010)) = 2000`, so `to !== t` and `onKeyChange(i, 2000)` moves the key 1000 ms to the left. ArrowLeft does the same (2990 → 2000), a 990 ms jump for a 10 ms step. A rightward step should leave the key where it is (or refuse), and a leftward one should move it by one step. Same for a nested row whose `offset` exceeds `limit`: `last` is 0 and any step sends the key to 0.",
+   "size": "function",
+   "cause": "clamp applied to the target rather than to the step's direction",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    14,
+    17,
+    18,
+    20,
+    23,
+    24,
+    26,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34
+   ],
+   "sources": {
+    "claude": [
+     1,
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     11,
+     12,
+     14,
+     17,
+     18,
+     20,
+     23,
+     24,
+     26,
+     28,
+     29,
+     30,
+     31,
+     32,
+     33,
+     34
+    ]
+   },
+   "fix": [
+    "packages/ui/src/components/Timeline/Lane.tsx",
+    "packages/ui/src/components/Timeline/LaneGraph.tsx",
+    "packages/ui/src/components/CurveEditor/keyframeEdits.ts",
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "CurveEditor/keyframeEdits.ts"
+   ]
+  },
+  {
+   "id": "D2",
+   "claim": "A nested timeline with an empty label gives its children folds without its prefix, colliding with top-level rows",
+   "where": "packages/ui/src/components/Timeline/lanes.ts:51 (buildLanes)",
+   "severity": "low",
+   "scenario": "tracks `[{ kind: 'timeline', label: '', timeline: { tracks: [{ kind: 'timeline', label: 'a', … }] } }, { kind: 'timeline', label: 'a', … }]`. The outer timeline's fold is `''`; its child's is `'' + ('' ? '/' : '') + 'a'` = `'a'`, the same as the top-level `a`. Expanding either nested `a` opens both, and folding one shuts the other. The `parent ? '/' : ''` test treats an empty-label parent as no parent at all; `foldName` gives `''` for `label: ''` (only `undefined` falls back to `(kind)`). Separators should depend on depth, not on the parent's string being non-empty.",
+   "size": "line",
+   "cause": "separator gated on truthiness of parent fold",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "claude": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A nested timeline's fold counts same-labeled siblings of any kind, so adding or removing an unrelated track flips its open/shut state",
+   "where": "packages/ui/src/components/Timeline/lanes.ts:48 (buildLanes)",
+   "severity": "low",
+   "scenario": "tracks `[sampled \"blink\", timeline \"blink\"]`. The timeline's fold is `blink#1`, because `seen` is keyed on the label alone and the sampled track counted first. The user expands it, which stores `blink#1`. The consumer then removes the sampled track, so the timeline's fold becomes `blink`, and the row renders collapsed; adding the sampled track back reverses it. `LaneRow.fold`'s doc promises that a track inserted or removed beside it from outside leaves it open or shut. Only timeline rows fold, so the count should cover timeline siblings only, or `foldName` should include the kind for labeled tracks too.",
+   "fix": [
+    "packages/ui/src/components/Timeline/lanes.ts"
+   ],
+   "size": "line",
+   "cause": "fold disambiguation counter shared across track kinds",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "A graph lane's value-axis labels are clipped away by the lane track's overflow: clip",
+   "where": "packages/ui/src/components/Timeline/Timeline.module.css:47 (.laneTrack)",
+   "severity": "medium",
+   "scenario": "`<Timeline mode=\"graph\">` with a numeric sampled track. `LaneGraph` asks for `yTicks={{ labels: 'outside', gap: 10 }}`, which Plot2D draws past the plot's start edge (its SVG is `overflow: visible`), into the label column that `.lane[data-graph='true'] .laneLabel` reserves 32px for. But `.laneTrack` (the graph host's containing block) has `overflow: clip` with `overflow-clip-margin: calc(var(--wzl-handle-size) * 0.75 + 3px)` = 9.75px at the 9px token. The labels start 10px out from the edge, so every value label falls outside the clip and none is drawn. They should be visible in the reserved column. The clip came from 26c336fa18 (2026-11-22), which was written for dope marks; its browser test covers no graph lane.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.module.css"
+   ],
+   "size": "line",
+   "cause": "clip margin sized for key marks, not for outside tick labels",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "On a read-only graph lane, dragging a key past its neighbor selects the neighbor",
+   "where": "packages/ui/src/components/Timeline/LaneGraph.tsx:93 (onLayerChange)",
+   "severity": "medium",
+   "scenario": "Timeline `readOnly` (so `edits` is false), `mode=\"graph\"`, keys at 0/800/1600. Press key 0 and drag it past 800, then release. `refuseSteps` blocks only arrow keys, so the layer still runs the pointer drag. On release `useLayerGesture` publishes the settled state. `applyKeyframeDrag` re-sorts and sets `selectedKey: 1` (keyframeEdits.ts:64). `onLayerChange` calls `onSelect(1)` before its `!edits` check. `onLayerCommit` then refuses the keys, so nothing moved, but the selection is now on the key at 800. The selection should stay on the pressed key (index 0). The same happens with `hold.edits` false while a press holds edits.",
+   "fix": [
+    "packages/ui/src/components/Timeline/LaneGraph.tsx"
+   ],
+   "size": "line",
+   "cause": "selection forwarded from a drag-settled state the lane refuses",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    24
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     24
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A dope-sheet drag snapped back onto its own time still commits a tiny move on a fractionally offset row",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:98 (onEnd)",
+   "severity": "low",
+   "scenario": "a nested row whose `offset` is not exactly representable when added back (e.g. nested `at: 0.1`, key `t: 0.2`). Drag the key away and back so it snaps to its own stop `0.2 + 0.1` = `0.30000000000000004`. `at` returns `stop - offset`, and `0.30000000000000004 - 0.1` = `0.20000000000000004`, so `t !== times[i]`. `onKeyChange` then fires. `bindLaneEdits.onKeyChange`'s `keyTime(...) === toMs` check fails the same way, so the timeline commits a real edit (an `onChange`, and an undo step for the consumer) that moves the key by 1 ULP. The release should be treated as \"back on its own time\" and revert, as the 2026-11-22 ruling says.",
+   "fix": [
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "function",
+   "cause": "exact float equality after a ruler→row offset round trip",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "Pressing Delete while a segment or disclosure has focus deletes the selected key on a different row",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:118 (onRootKeyDown)",
+   "severity": "low",
+   "scenario": "key 1 on row \"x\" is selected; the user Tabs to a segment mark (or the nested-timeline disclosure) on row \"opacity\", which focuses but does not select it, and presses Delete. `markedKey` returns `undefined` (the target is in a lane but on no key mark), so `target` falls back to `selection` and key 1 on \"x\" is deleted while focus and attention are on another row. Delete on a non-key element inside a lane should do nothing; the fallback to `selection` is only meaningful when the target is the root itself.",
+   "size": "line",
+   "cause": "fallback to selection for any in-lane target",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "deleteKey is documented to select the key before the deleted one, which is false when the first key is deleted",
+   "where": "packages/ui/src/components/Timeline/keys.ts:155 (deleteKey)",
+   "severity": "low",
+   "scenario": "delete key 0 of three: selection becomes index `Math.max(0, -1) = 0`, which is the key that came *after* it. The docstring says it selects the one before; Lane.tsx's comment says \"the key selected after it\". One of the two descriptions (and the behavior callers rely on) is wrong.",
+   "fix": [
+    "packages/ui/src/components/Timeline/keys.ts",
+    "packages/ui/src/components/Timeline/Lane.tsx"
+   ],
+   "size": "line",
+   "cause": "doc/behavior mismatch",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A dope-sheet drag echoed through onInput commits against the previewed tracks, so crossing a neighbor moves the neighbor",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:216 (bindLaneEdits, onKeyChange / onKeyInput)",
+   "severity": "high",
+   "scenario": "keys `[0 (v0), 500 (v10)]`; the consumer writes `onInput` back into `tracks` (the protocol in `docs/conventions.md` \"Edit callbacks\" expects this). Drag key 0 to 700: the preview re-sorts it, and the echoed tracks read `[500 (v10), 700 (v0)]`. On release `useKeyDrag` calls `onKeyChange(0, 700)` with the index the key had at press. `bindLaneEdits` resolves it against the current, echoed `tracks`, where index 0 is now the neighbor at 500, so `moveKey` moves the v10 key to 700. The result is two keys at 700 and the dragged key's move lost. A second `pointermove` after the crossing does the same during the drag: `moveKey(tracks, {keyIndex: i})` picks the neighbor. It should apply the move to the tracks the drag began from. The test \"keeps the key editor on the dragged key while its preview re-sorts it past a neighbor\" checks only the editor's `700`, which both keys now read, so it passes over this.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx",
+    "packages/ui/src/components/Timeline/useKeyDrag.ts"
+   ],
+   "size": "function",
+   "cause": "press-time index resolved against live, echoed tracks",
+   "confidence": "sure",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "An echoed dope-sheet drag never fires onChange",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:219 (bindLaneEdits, onKeyChange)",
+   "severity": "high",
+   "scenario": "the consumer echoes `onInput` into `tracks` and drags key 1 from 500 to 600 without crossing a neighbor. The last preview has already put the key at 600 in `tracks`. On release, `keyTime(tracks, sel) === Math.max(0, toMs)` is true, so it returns without `commit`. `onChange` is never called for a drag that changed the value. A consumer that records an undo step or saves on `onChange` loses the edit. The protocol says `onChange` fires once per edit with its final value. The no-op check should compare against the time the key had at press, which `useKeyDrag` already holds as `times[i]`.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "line",
+   "cause": "no-op check reads echoed tracks, not the drag's start",
+   "confidence": "sure",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "Canceling an echoed dope-sheet drag reverts to the last preview instead of the drag's starting position",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:212 (bindLaneEdits, onKeyRevert)",
+   "severity": "high",
+   "scenario": "the consumer echoes `onInput`, drags a key from 500 to 700, then presses Escape. `onKeyRevert` sends `onInput(tracks.slice())`, but `tracks` is now the echoed preview with the key at 700, so the key stays at 700 and `onCancel` fires. The protocol says the control sends `onInput` the value the edit began from before `onCancel`. `LaneGraph` handles this correctly by keeping `previewed.current ??= prev.keys` from the first preview; the dope path holds no such start value.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx",
+    "packages/ui/src/components/Timeline/useKeyDrag.ts"
+   ],
+   "size": "function",
+   "cause": "start-of-drag tracks not captured",
+   "confidence": "sure",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "A dope-sheet key drag is not canceled when a hold starts mid-drag and still commits its edit, unlike the graph lane",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:70 (onKeyPointerDown), packages/ui/src/components/Timeline/Lane.tsx:73 (Lane → useKeyDrag)",
+   "severity": "medium",
+   "scenario": "a consumer sets `readOnly` (or `disabled`) on `<Timeline>` while the user is dragging a key in dope mode, for example when playback starts. `drags: hold.edits` is read only at press. The open pointer session keeps calling `onKeyInput`, and on release it calls `onKeyChange`, which `bindLaneEdits` passes on to `commit` → `props.onChange`. Lane hands `onKeyInput`/`onKeyChange` through without gating them on `hold.edits`. So a read-only timeline emits an edit. In graph mode the same hold change cancels the drag: `LayeredCurveEditor` runs `useEffect(() => { if (hold.refuses) cancel(); })`, and `LaneGraph.onLayerCommit` checks `edits` again. The two modes give different answers to \"does a hold that starts mid-drag end the drag?\"",
+   "fix": [
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "packages/ui/src/components/Timeline/Lane.tsx"
+   ],
+   "size": "function",
+   "cause": "hold read at press only; no cancel on hold change",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    15
+   ],
+   "sources": {
+    "claude": [
+     7,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "A nested row's dragged key snaps to stops before the row's start, so the ghost shows a position the key will not land on",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:58 (at)",
+   "severity": "medium",
+   "scenario": "take a nested timeline at `at: 600` with keys at 50 and 200, and a top-level key at ruler time 590. `snapTimes` holds ruler times from every drawn row and is not limited to this row's range. `sliderAt` clamps to `[offset, limit]` = `[600, …]` first and only then runs `attract` over the stops (ui-input `slider.ts:97-98`), and `attract` can return any stop. Drag the key at 200 to the row's start edge: q clamps to 600 (or about 605). The 590 stop is within the snap radius and nearer than 650, so `at` returns 590 − 600 = −10. The ghost (`pct(drag.t)`) is drawn at 590, left of where the row's time starts. The preview and the commit both go through `moveKey`, which clamps to 0, so the key lands at 600, not under its ghost. A drag should only offer stops the key can actually reach.",
+   "fix": [
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "[track.min",
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "line",
+   "cause": "snap stops not limited to the track's clamp",
+   "confidence": "sure",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    28,
+    32
+   ],
+   "sources": {
+    "claude": [
+     7,
+     28,
+     32
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A graph-mode key drag never sets the preview, so the inspector shows the neighbor key while the dragged key is past it",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:225 (bindLaneEdits, onKeysInput)",
+   "severity": "medium",
+   "scenario": "graph mode, `onInput` wired and echoed back into `tracks` (the kit's edit protocol), `renderKeyEditor` given. Select key 0 of `x` and drag it past key 1. `onKeysInput` sends `setKeys(...)` with the keys re-sorted, but unlike the dope sheet's `onKeyInput` it never calls `report.preview`. `useKeyAndSegment`'s `inspected` therefore stays at index 0, and `TimelineInspector` reads index 0 of the echoed tracks, which is now the other key. Until release, the editor shows the neighbor's value, and a `commit`/`setEasing` from it lands on the neighbor. The dope sheet avoids this by setting the preview, so the two paths answer the question two ways.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx",
+    "packages/ui/src/components/Timeline/LaneGraph.tsx"
+   ],
+   "size": "function",
+   "cause": "graph live edits skip the `preview` path the dope path uses",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    10,
+    12,
+    17,
+    20,
+    24,
+    27,
+    30,
+    32
+   ],
+   "sources": {
+    "claude": [
+     8,
+     10,
+     12,
+     17,
+     20,
+     24,
+     27,
+     30,
+     32
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "A graph lane's value range is recomputed from the keys being dragged, so dragging the top or bottom key outward makes the range chase the pointer",
+   "where": "packages/ui/src/components/Timeline/LaneGraph.tsx:134 (LaneGraph, valueRange(state.keys))",
+   "severity": "medium",
+   "scenario": "graph mode, numeric track with keys 0, 120, 40. Drag the key at 120 upward inside the lane. Each move, `onLayerChange` sets `live` to the dragged state, so `yRange` is recomputed from the live keys and widens past the new value. The editor maps the pointer through the current `yRange` (`useLayerGesture` calls `toModel` with the live plot each move, and `LaneGraph` passes no `yClamp`), so the same pixel now reads a larger value, and every further pixel of travel adds more than the last. The key is drawn below the pointer, and the value climbs faster than the hand moves. The same happens dragging the lowest key down. Expected: the range is held for the length of the gesture (from `committed.keys`, or the range at press), so the key stays under the pointer.",
+   "fix": [
+    "packages/ui/src/components/Timeline/LaneGraph.tsx"
+   ],
+   "size": "function",
+   "cause": "plot range derived from in-flight drag state",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    21,
+    29
+   ],
+   "sources": {
+    "claude": [
+     9,
+     21,
+     29
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "onCancel fires for key drags whose input the consumer never received",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:93 (onKeyPointerDown onEnd/onCancel); packages/ui/src/components/Timeline/Timeline.tsx:188 (bindLaneEdits onKeyInput)",
+   "severity": "low",
+   "scenario": "a `<Timeline>` given `onChange` and `onCancel` but no `onInput`. In a dope lane, drag a key past the threshold, then release it back on its own time or press Escape. `bindLaneEdits.onKeyInput` returns early because `report.onInput` is unset, but `useKeyDrag` still sets `previewed = true` on every move, so the release or cancel calls `onRevert` and then `onCancel()`. The consumer gets a cancel for an edit it never saw start. Graph mode does the same: Lane always passes `onKeysInput` (bindLaneEdits makes it an `onInput?.` no-op), so `LaneGraph` records `previewed.current` and `onLayerCancel` calls `onCancel`. Under the edit protocol, a cancel answers inputs that were sent, so nothing should fire here.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx",
+    "packages/ui/src/components/Timeline/Lane.tsx",
+    "packages/ui/src/components/Timeline/LaneGraph.tsx"
+   ],
+   "size": "function",
+   "cause": "the preview is recorded at the lane even when the timeline forwards no input",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    26
+   ],
+   "sources": {
+    "claude": [
+     10,
+     26
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "A read-only Timeline in graph mode selects no key or segment because its ReadOnly scope makes the curve editor refuse every press and key",
+   "where": "packages/ui/src/components/Timeline/LaneGraph.tsx:126 (LaneGraph)",
+   "severity": "medium",
+   "scenario": "`<Timeline readOnly mode=\"graph\" …>` (or inside a `<ReadOnly>` scope). `Timeline` wraps its body in `hold.scope(...)` → `holdScope(own, …)`, which puts a `ReadOnly` context around every lane (Disabled.tsx:84). `LayeredCurveEditor` reads that context through its own `useControlHold`, so `hold.refuses` is true and it mounts `onPointerDown={hold.gate(onSvgPointerDown)}` and `onKeyDown={hold.gate(onSvgKeyDown)}` (LayeredCurveEditor.tsx:183–185), which `gate` turns into no-ops. The keyframe layer selects a key or segment from those handlers (createKeyframeLayer.tsx:126/163), so pressing a key or segment, or Enter on one, selects nothing, and the inspector never shows. Timeline's doc says read-only \"keys and segments still select … and the view … switches to the graph\"; dope mode honors that (Lane's `looks` gate), and LaneGraph's own `edits={false}` path (`refuseSteps`, `onLayerChange` keeping selection) was written for exactly that case but never runs because the editor refuses first.",
+   "fix": [
+    "packages/ui/src/components/Timeline/LaneGraph.tsx",
+    "packages/ui/src/components/CurveEditor/LayeredCurveEditor.tsx",
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "function",
+   "cause": "outer ReadOnly scope reaches the nested editor, whose gate refuses selection too",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11,
+    34
+   ],
+   "sources": {
+    "claude": [
+     11,
+     34
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "Deleting a row's last key by keyboard drops focus to the document body",
+   "where": "packages/ui/src/components/Timeline/Lane.tsx:225 (useFocusFollowsKey)",
+   "severity": "low",
+   "scenario": "focus the only key on a sampled row and press Delete. The lane sets `refocus`, the root deletes the key, and `deleteKey` returns `selection: null`. The effect runs with `selection === null` and focuses nothing, while the focused mark has been removed from the DOM, so focus falls to `document.body`. Further Delete/arrow/Escape presses no longer reach the timeline's root handler and keyboard users lose their place. Focus should land somewhere inside the timeline (the lane track, the root, or a neighboring row's key).",
+   "size": "function",
+   "cause": "no fallback focus target when no key is selected after delete",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "A nested timeline's run length reimplements animator's default duration instead of using it",
+   "where": "packages/ui/src/components/Timeline/lanes.ts:96 (timelineSpan, trackEnd, declaredSpan)",
+   "severity": "low",
+   "scenario": "`timelineSpan`/`trackEnd` copy animator's `tracksEnd`/`trackEnd` (packages/animator/src/timeline/createTimeline.ts:21) rather than calling one definition. They already differ at the edge: animator's `lengthOf` throws a `RangeError` on a `NaN` duration, while `declaredSpan` silently reads it as 0, so the lane draws a zero-length nested bar and marks every key past its end for a timeline the animator would refuse. Any later change to how animator derives a nested timeline's end will not reach the ruler.",
+   "fix": [
+    "packages/animator/src/timeline/createTimeline.ts"
+   ],
+   "size": "function",
+   "cause": "duplicated derivation of timeline end",
+   "confidence": "sure",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "Committing a graph-mode key move that re-sorts the key leaves the timeline's selection on the old index, which now holds a different key",
+   "where": "packages/ui/src/components/Timeline/LaneGraph.tsx:118 (onLayerCommit)",
+   "severity": "medium",
+   "scenario": "graph mode, keys at t=0/800/1600 on a numeric row. Select key 1 and drag it (or arrow-step it) past t=1600. The keyframe layer commits a state whose `selectedKey` follows the key to index 2 (`createKeyframeLayer.tsx:138` and `:180`; the layer's test at `createKeyframeLayer.test.tsx:117` expects `selectedKey` 2 after a re-sort). `onLayerCommit` passes on only `next.keys` through `onKeysChange` and never reports `next.selectedKey`. `Timeline` routes `onKeysChange` to plain `onChange`, not `commit`, so `selectKey` is never called. `useKeyAndSegment` sees the track change as the timeline's own edit (it matches `sent`) and keeps selection `{keyIndex: 1}`. Result: the key that was at 1600 shows `aria-current`, the inspector's `renderKeyEditor`, `commit` and `setEasing` edit that key, and so does the next step on the selected key. The layer has already moved focus to index 2, so focus and selection disagree. The dope-sheet path does this correctly: `moveKey` reports the new index and `commit` reselects it.",
+   "fix": [
+    "packages/ui/src/components/Timeline/LaneGraph.tsx",
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "function",
+   "cause": "committed layer selection dropped on the commit path",
+   "confidence": "sure",
+   "firstOccasion": 13,
+   "sightings": [
+    13,
+    19
+   ],
+   "sources": {
+    "claude": [
+     13,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "Escape pressed anywhere in the timeline, including the inspector and transport, drops the selected segment",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:105 (onRootKeyDown)",
+   "severity": "low",
+   "scenario": "Select a segment, so the inspector shows its `EasingPicker`. Focus a control in the picker or the transport and press Escape, for example to back out of something inside the picker that does not `preventDefault` the key. The keydown bubbles to the root. The Escape branch checks only `segmentSelection && !hold.disabled`. It does not check `onTimeline(e)`, which the Delete branch below it does. So `dropSegment()` runs and the inspector the user was working in unmounts under them. Escape should drop the segment only when the press lands on the root or the lanes, the same scope Delete uses.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "line",
+   "cause": "missing onTimeline scope on Escape branch",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A key selection is dropped when the consumer applies the timeline's edit after the render that the edit triggers",
+   "where": "packages/ui/src/components/Timeline/timelineState.ts:63 (useKeyAndSegment)",
+   "severity": "medium",
+   "scenario": "An arrow step or a drag commit calls `commit`, which runs `onChange(r.tracks)` and then `selectKey(r.selection, r.tracks)`, pinning the key to how the track reads in `r.tracks`. Suppose a consumer applies `onChange` asynchronously (a store updated after an `await`, or a debounced write). The re-render from `setHeld` then still sees the old `tracks`. In `readsOwn`, the old reading matches neither the pin (new) nor `sent` (new), so `stale` is set, the effect calls `setHeld(null)`, and `onSelectionChange(null)` fires. When the new tracks arrive a frame later, nothing is selected. The same happens when a consumer rejects or normalizes the edit. Expected: the selection survives until the tracks actually change by something the timeline did not send. Today, \"the tracks have not caught up yet\" is read as \"changed from outside\".",
+   "size": "function",
+   "cause": "pin taken from the sent tracks before the consumer's tracks show them",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15,
+    31
+   ],
+   "sources": {
+    "claude": [
+     15,
+     31
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "A dope-sheet key drag commits against the tracks captured at press, so any edit that landed during the drag is undone",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:236 (bindLaneEdits, onKeyChange), packages/ui/src/components/Timeline/useKeyDrag.ts:70 (onKeyPointerDown)",
+   "severity": "medium",
+   "scenario": "`onKeyPointerDown` captures that render's `onKeyChange`, and `bindLaneEdits` closes over that render's `tracks`, so the release runs `moveKey(pressTimeTracks, …)` and `onChange` sends the whole list. Example: finger A drags a key on lane 1 while finger B drags a key on lane 2 (each Lane has its own session, so both drags run). A lets go, and `onChange` carries A's move. Then B lets go, and its `onChange` is built from the tracks as they were before A's move, so A's edit is reverted. The same happens to an edit made outside the timeline during a drag, e.g. `handle.edit` on an `AnimatedTimeline`'s handle. `useKeyEditsHeldByPress` guards only keyboard edits against this, though its own comment names the cause (\"the drag's release commits against the tracks it began from, and would undo them\"). What should happen: the release applies the move to the current tracks, re-finding the dragged key from its press-time identity or time. Graph mode doesn't have this bug, because `setKeys` reads the current `tracks` at commit.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx",
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "packages/ui/src/components/Timeline/timelineState.ts"
+   ],
+   "size": "function",
+   "cause": "commit closure captures press-time tracks",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16,
+    22,
+    30,
+    33
+   ],
+   "sources": {
+    "claude": [
+     16,
+     22,
+     30,
+     33
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "Canceling a bezier-handle drag in graph mode never fires onCancel",
+   "where": "packages/ui/src/components/Timeline/LaneGraph.tsx:112 (onLayerCancel)",
+   "severity": "low",
+   "scenario": "In graph mode, select a segment with a bezier easing, drag one of its handles, then press Escape, or the pointer is canceled. The layer settles with 'cancel' and `onLayerCancel` runs. A handle drag never sends `onKeysInput` (left out on purpose, so the easing cache doesn't grow per pixel), so `previewed.current` is null and the function returns before `onCancel?.()`. The handle drag is an edit: if released, it would commit through `onKeysChange`. The edit protocol (docs/conventions.md, \"Edit callbacks\") says a canceled edit fires `onCancel` once, and Lane documents its `onCancel` as \"A drag in either mode was canceled\". So a consumer that opened something when the gesture began (a transaction, an overlay) never hears the end of it. What should happen: `onCancel` fires for any canceled drag that changed the layer's state, with or without an `onInput` preview.",
+   "size": "line",
+   "cause": "onCancel gated on a sent preview",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "During a dope-sheet drag whose preview the consumer echoes back, segments follow the preview while key marks stay where they were at press time",
+   "where": "packages/ui/src/components/Timeline/Lane.tsx:131 (Lane, SegmentMarks vs KeyMarks)",
+   "severity": "low",
+   "scenario": "with `onInput` wired back into `tracks` (the controlled pattern), dragging key 1 of [0, 800, 1600] past 1600 re-sorts the echoed keys. `KeyMarks` draws `drag.times`, the press-time order [0, 800, 1600]. `SegmentMarks` reads `sampledKeys` from the echoed track, so it draws segments and their \"segment into N ms\" names from [0, 1600, 1700]. The selected-segment highlight and the segment geometry then disagree with the key marks drawn beside them until release. Both should read from one key list.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Lane.tsx",
+    "packages/ui/src/components/Timeline/LaneMarks.tsx"
+   ],
+   "size": "function",
+   "cause": "two key lists drawn on one lane mid-drag",
+   "confidence": "likely",
+   "firstOccasion": 18,
+   "sightings": [
+    18,
+    19,
+    23
+   ],
+   "sources": {
+    "claude": [
+     18,
+     19,
+     23
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "A dope-sheet pointer drag that re-sorts a key leaves focus on the mark now drawing its neighbor, so Delete and the arrows act on the wrong key",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:91 (onKeyPointerDown, onEnd)",
+   "severity": "medium",
+   "scenario": "a sampled row with keys at 0, 800, 1600 ms. Press key 0 (a `tabIndex=0` div; nothing calls `preventDefault` on the press, and `openPointerSession` does not either, so the mark takes focus) and drag it to 1200 ms. `moveKey` re-sorts it to index 1 and `commit` selects index 1, but `KeyMarks` are keyed by index, so the focused element is still `data-keyframe-index=\"0\"`, which now draws the key at 800 ms. Pressing Delete: `markedKey` reads the focused mark first and `deleteKey` removes the 800 ms key, not the one just dragged and shown selected. An arrow step likewise moves the 800 ms key (`markKeys(i=0, t=800)`). `useFocusFollowsKey` would put focus on the selected key, but `refocus` is set only for keyboard steps and deletes, never at the end of a pointer drag. Expected: focus follows the dragged key to its new index, as it does after a keyboard step.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Lane.tsx"
+   ],
+   "size": "function",
+   "cause": "refocus not requested after a pointer drag re-sort",
+   "confidence": "likely",
+   "firstOccasion": 20,
+   "sightings": [
+    20
+   ],
+   "sources": {
+    "claude": [
+     20
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "Key and segment names format times separately from the ruler's labels, and the format is not localized",
+   "where": "packages/ui/src/components/Timeline/timeScale.ts:26 (msLabel)",
+   "severity": "low",
+   "scenario": "under a `de` locale the ruler reads `1,5s` / `500ms` through `secondsText`/`millisecondsText` with `useFieldLocale`, while every key's and segment's accessible name (and the graph's `formatX`) reads `1500 ms` from `msLabel`: one decision about how a timeline time reads, answered two ways, the second ignoring the locale. Expected: one formatter for a time on the timeline, locale-aware, used by the ruler and the mark names alike.",
+   "fix": [
+    "packages/ui/src/components/Timeline/LaneMarks.tsx",
+    "packages/ui/src/components/Timeline/LaneGraph.tsx",
+    "packages/ui/src/components/Timeline/TimeRuler.tsx"
+   ],
+   "size": "function",
+   "cause": "duplicated time formatting",
+   "confidence": "sure",
+   "firstOccasion": 20,
+   "sightings": [
+    20,
+    32
+   ],
+   "sources": {
+    "claude": [
+     20,
+     32
+    ]
+   }
+  },
+  {
+   "id": "D28",
+   "claim": "A dope-sheet key drag still commits its edit when the timeline turns read-only or disabled mid-drag, unlike graph mode, which refuses",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:93 (onKeyPointerDown, session onEnd)",
+   "severity": "low",
+   "scenario": "a drag starts on a dope-sheet key while the timeline is editable. Before release, the consumer sets `readOnly` (or `disabled`, or a scope holds it). `drags` is read only at press, and the session's `onEnd` calls the press-time `onKeyChange`. That is `bindLaneEdits`'s closure, which has no hold check, so `onChange` fires with the moved key. The same drag in graph mode reads the current `edits` in `LaneGraph.onLayerCommit` and refuses the commit. So the \"is this edit allowed\" question gets answered two ways. Expected: a hold that lands mid-drag cancels or refuses the dope drag, as graph mode does.",
+   "fix": [
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "packages/ui/src/components/Timeline/Lane.tsx"
+   ],
+   "size": "function",
+   "cause": "`drags` sampled at press only",
+   "confidence": "likely",
+   "firstOccasion": 22,
+   "sightings": [
+    22,
+    23
+   ],
+   "sources": {
+    "claude": [
+     22,
+     23
+    ]
+   }
+  },
+  {
+   "id": "D29",
+   "claim": "A plain click on a dope-sheet key shows drag feedback (dimmed key and ghost) for as long as the button is held, because drag state is set at press",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:76 (onKeyPointerDown, setDrag at press)",
+   "severity": "low",
+   "scenario": "the user presses a key without moving. `setDrag({ keyIndex: i, t: times[i], times })` runs before the drag threshold is passed. `KeyMarks` then sets `data-dragging='true'` (opacity 0.4), and `KeyGhost` renders over the key until release. The code's own comment says \"a press that never travels is a click: it selects and moves nothing\". Expected: drag state is set only once `traveled` passes the threshold, in `onMove`.",
+   "size": "line",
+   "cause": "drag state set before threshold",
+   "confidence": "sure",
+   "firstOccasion": 22,
+   "sightings": [
+    22
+   ],
+   "sources": {
+    "claude": [
+     22
+    ]
+   }
+  },
+  {
+   "id": "D30",
+   "claim": "Unmounting a lane mid-drag sends the consumer's onInput the whole track list as captured at press",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:45 (unmount cleanup) → packages/ui/src/components/Timeline/Timeline.tsx:207 (bindLaneEdits onKeyRevert)",
+   "severity": "low",
+   "scenario": "during a dope drag that has previewed, the lane unmounts. For example, the consumer removes that track, or replaces `tracks` so the row's key changes. The cleanup's `cancel()` runs `onCancel` → `onRevert` → `report.onInput(tracks.slice())`, using the tracks captured at the press. A consumer that applies `onInput` (the documented edit protocol) gets back the deleted track and every other change made since the press. It also gets `onCancel`, from a component that is gone.",
+   "fix": [
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "function",
+   "cause": "teardown reuses the user-cancel path, which reverts to press-time tracks",
+   "confidence": "likely",
+   "firstOccasion": 23,
+   "sightings": [
+    23,
+    29
+   ],
+   "sources": {
+    "claude": [
+     23,
+     29
+    ]
+   }
+  },
+  {
+   "id": "D31",
+   "claim": "A graph-mode key drag snaps to its own live position when the consumer echoes onInput, so a slow drag sticks",
+   "where": "packages/ui/src/components/Timeline/LaneGraph.tsx:78 (LaneGraph, snapX memo)",
+   "severity": "medium",
+   "scenario": "Timeline in `mode=\"graph\"` with `onInput={setTracks}` (echoing the preview back). Each move, `onKeysInput` → `setKeys` → new `tracks` → `buildLanes` → `snapTimesOf` (Timeline.tsx:292) now holds the dragged key's last previewed time → new `snapX` → `KeyframeLayer` rebuilds the layer with it (KeyframeLayer.tsx:16) → `keyGesture.onMove` attracts `t` to `cfg.snapX` read live (createKeyframeLayer.tsx:83–85). A pointer that moves less than the snap radius per event is pulled back onto the key's previous time every move, so the key does not follow a slow drag; it only jumps once one event overshoots the radius. The dope path guards against exactly this by freezing the stops at press (useKeyDrag.ts:56–58, 76 \"a consumer echoing the preview back would otherwise add the dragged key's own last time\"); the graph path answers the same question the other way. The layer being recreated mid-gesture on every move may also disturb the gesture itself (not traced).",
+   "fix": [
+    "packages/ui/src/components/Timeline/LaneGraph.tsx"
+   ],
+   "size": "function",
+   "cause": "snap stops read live, not frozen at press",
+   "confidence": "likely",
+   "firstOccasion": 25,
+   "sightings": [
+    25
+   ],
+   "sources": {
+    "claude": [
+     25
+    ]
+   }
+  },
+  {
+   "id": "D32",
+   "claim": "The ruler swallows the page's wheel and does nothing when window is controlled without onWindowChange",
+   "where": "packages/ui/src/components/Timeline/Timeline.tsx:158 (Timeline → TimeRuler onWindowChange)",
+   "severity": "low",
+   "scenario": "`<Timeline window={{from:0,to:1000}} duration={5000} …>` with no `onWindowChange` (a fixed view). Timeline always hands `setWindow` to the ruler unless disabled, so TimeRuler's wheel handler (TimeRuler.tsx:85–98) computes a pan that differs from `win`, calls `preventDefault()`, and calls `setWindow`, which in useTimeWindow (timelineState.ts:27–30) neither stores it (`given` is set) nor reports it (no callback). The page cannot be scrolled with the wheel over the ruler and the view never moves. TimeRuler's own contract (\"Omitted, the wheel is left to the page\") is meant to cover this case; Timeline should pass `undefined` when the window is controlled and unobserved.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx",
+    "packages/ui/src/components/Timeline/timelineState.ts"
+   ],
+   "size": "line",
+   "cause": "setWindow handed over even when it can do nothing",
+   "confidence": "sure",
+   "firstOccasion": 25,
+   "sightings": [
+    25
+   ],
+   "sources": {
+    "claude": [
+     25
+    ]
+   }
+  },
+  {
+   "id": "D33",
+   "claim": "An event mark is announced to assistive tech as a \"key\"",
+   "where": "packages/ui/src/components/Timeline/LaneMarks.tsx:66 (KeyMarks)",
+   "severity": "low",
+   "scenario": "an event track's marks get `data-testid=\"timeline-event\"` and the `eventMark` class, but the same `aria-label={`${row.label} key at …`}` as keyframes, so a screen reader reads \"footstep key at 300 ms\" for an event crossing. The `event` flag is already computed on line 59 and not used for the name.",
+   "size": "line",
+   "cause": "label ignores row kind",
+   "confidence": "sure",
+   "firstOccasion": 25,
+   "sightings": [
+    25
+   ],
+   "sources": {
+    "claude": [
+     25
+    ]
+   }
+  },
+  {
+   "id": "D34",
+   "claim": "The ruler keeps its ew-resize scrub cursor while the timeline is read-only or disabled, though nothing scrubs",
+   "where": "packages/ui/src/components/Timeline/Timeline.module.css:5 (.ruler)",
+   "severity": "low",
+   "scenario": "`readOnly` or `disabled` Timeline. `Timeline.tsx` passes `onSeek={edits ? onSeek : ignore}`, so a press on the ruler does nothing, but `.ruler` still shows `cursor: ew-resize`. The held rule at the bottom of the stylesheet resets the cursor only for `.key, .eventMark` (\"nothing invites a drag\"), not for the ruler.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.module.css"
+   ],
+   "size": "line",
+   "cause": "held-cursor rule misses the ruler",
+   "confidence": "sure",
+   "firstOccasion": 27,
+   "sightings": [
+    27
+   ],
+   "sources": {
+    "claude": [
+     27
+    ]
+   }
+  },
+  {
+   "id": "D35",
+   "claim": "In graph mode the hold's tab order and focus attributes are never passed to the keys",
+   "where": "packages/ui/src/components/Timeline/Lane.tsx:110 (Lane → LaneGraph)",
+   "severity": "low",
+   "scenario": "`TimelineProps` says that when disabled with no reason given, \"the marks leave the tab order\". `laneHold.tabIndex` is -1 then, and `hold.focus` carries the hold's focus attributes. Dope marks apply both through `mark`. `LaneGraph` is handed only `edits`, and the curve editor's key, segment and handle marks hard-code `tabIndex={0}` (`CurveEditor/keyframeMarks.tsx:42,69,89`). So a disabled timeline in graph mode leaves every graph key and segment tabbable, without the hold's attributes. Tabbing through it stops on each one.",
+   "fix": [
+    "packages/ui/src/components/Timeline/LaneGraph.tsx",
+    "packages/ui/src/components/CurveEditor/keyframeMarks.tsx"
+   ],
+   "size": "function",
+   "cause": "hold not threaded into graph lanes",
+   "confidence": "likely",
+   "firstOccasion": 28,
+   "sightings": [
+    28
+   ],
+   "sources": {
+    "claude": [
+     28
+    ]
+   }
+  },
+  {
+   "id": "D36",
+   "claim": "Switching to graph mode during a dope-sheet key drag leaves the drag running, and its release commits a move nobody can see",
+   "where": "packages/ui/src/components/Timeline/Lane.tsx:72 (Lane, useKeyDrag kept across mode)",
+   "severity": "low",
+   "scenario": "press and drag a key in dope mode, then (keyboard on the Graph switch, or a controlled `mode` change) switch to graph. The `Lane` stays mounted under the same key, so the session keeps firing `onKeyInput` and on release `onKeyChange`, while the lane now draws `LaneGraph` with no ghost. The drag should be canceled when the lane stops drawing dope marks.",
+   "fix": [
+    "packages/ui/src/components/Timeline/useKeyDrag.ts"
+   ],
+   "size": "function",
+   "cause": "session not tied to the mode that started it",
+   "confidence": "likely",
+   "firstOccasion": 29,
+   "sightings": [
+    29
+   ],
+   "sources": {
+    "claude": [
+     29
+    ]
+   }
+  },
+  {
+   "id": "D37",
+   "claim": "On a read-only timeline the inspector's easing picker and key editor stay enabled and silently drop every change",
+   "where": "packages/ui/src/components/Timeline/TimelineInspector.tsx:35 (TimelineInspector)",
+   "severity": "low",
+   "scenario": "`<Timeline readOnly>` (or disabled) with a segment selected: the `EasingPicker` renders fully interactive, the user picks a curve, `onChange` is swallowed by `if (edits)`, and the picker snaps back with no sign it was refused. `KeyEditorCtx` carries no `edits`/hold flag either, so a consumer's `renderKeyEditor` cannot show itself read-only; its `commit`/`setEasing` just do nothing. The rest of the timeline applies its hold (`hold.button`, tab order, `data-held`) to every control it draws.",
+   "fix": [
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "function",
+   "cause": "hold not forwarded to inspector controls",
+   "confidence": "likely",
+   "firstOccasion": 30,
+   "sightings": [
+    30
+   ],
+   "sources": {
+    "claude": [
+     30
+    ]
+   }
+  },
+  {
+   "id": "D38",
+   "claim": "A dope-sheet key drag released on a stop outside the row's range fires neither onChange nor onCancel",
+   "where": "packages/ui/src/components/Timeline/useKeyDrag.ts:62 (useKeyDrag `at`)",
+   "severity": "medium",
+   "scenario": "Take a nested timeline at `at: 600` that holds a key at track time 0, with a top-level key at ruler 590 (any ruler time just before the row's start, or the 0 stop, works). Drag the nested key left. `sliderAt` clamps to `min: offset` (600) first and then `attract`s to the stops. `attract` (ui-input slider.ts:36) returns the 590 stop with no bound, so `at` returns −10. The ghost is drawn at ruler 590 and `onKeyInput(i, −10)` fires, but `moveKey` clamps that to 0, so the preview and the ghost disagree. On release `t (−10) !== times[i] (0)`, so `onKeyChange` runs. `bindLaneEdits.onKeyChange` then finds `keyTime === Math.max(0, −10)` and returns: it calls `preview(null)` but never `onInput` with the starting tracks, and never `onCancel`. A gesture that sent `onInput` ends with neither `onChange` nor `onCancel`, against the edit protocol and the 2026-11-22 ruling in docs/unruled.md. The graph lane answers the same question another way: createKeyframeLayer clamps *after* attracting (`clampTo(attract(...), cfg.xClamp)`).",
+   "fix": [
+    "packages/ui/src/components/Timeline/useKeyDrag.ts",
+    "packages/ui/src/components/Timeline/Timeline.tsx"
+   ],
+   "size": "line",
+   "cause": "snap applied after clamp; stops not limited to [offset, limit]",
+   "confidence": "sure",
+   "firstOccasion": 32,
+   "sightings": [
+    32
+   ],
+   "sources": {
+    "claude": [
+     32
+    ]
+   }
+  },
+  {
+   "id": "D39",
+   "claim": "The inspector fires onChange for an edit that changed nothing",
+   "where": "packages/ui/src/components/Timeline/TimelineInspector.tsx:50 (TimelineInspector, commit / setEasing)",
+   "severity": "low",
+   "scenario": "a `renderKeyEditor` whose field commits on blur calls `commit({ ...key })` with the key's current value, or `setEasing` with the easing already set (or the EasingPicker reports the current curve). `setKeyValue`/`setKeyEasing` build a new track array and `onChange` fires with tracks equal to the old ones, creating an undo step for nothing. The edit protocol (`docs/conventions.md`, \"Edit callbacks\") says `onChange` never fires \"for one that changed nothing\", and the dope-mode key paths honor it (Timeline.tsx `onKeyChange` returns when the time is unchanged; Lane's `markKeys` skips `to === t`).",
+   "fix": [
+    "packages/ui/src/components/Timeline/TimelineInspector.tsx"
+   ],
+   "size": "line",
+   "cause": "no unchanged-value check before onChange",
+   "confidence": "likely",
+   "firstOccasion": 34,
+   "sightings": [
+    34
+   ],
+   "sources": {
+    "claude": [
+     34
+    ]
+   }
+  }
+ ],
+ "lines": 1951
+}

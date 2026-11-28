@@ -1,0 +1,53 @@
+{
+ "area": "ui-logic",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui-logic/src/button.ts",
+  "packages/ui-logic/src/controlSize.ts",
+  "packages/ui-logic/src/focus.ts",
+  "packages/ui-logic/src/hold.ts",
+  "packages/ui-logic/src/index.ts",
+  "packages/ui-logic/src/measure.ts",
+  "packages/ui-logic/src/menuPanel.ts",
+  "packages/ui-logic/src/pbt.fixture.ts",
+  "packages/ui-logic/src/rowList.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2124436,
+   "minutes": 0.23246666666666665,
+   "at": "2026-11-27T00:17:19.799Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "buttonParts truthiness checks drop a numeric 0 leading/trailing decoration from both measured width and rendered button",
+   "where": "packages/ui-logic/src/button.ts:39 (buttonParts)",
+   "severity": "low",
+   "scenario": "DOM Button given leading or trailing decoration of 0 (a renderable React node); buttonParts treats it as absent and omits the slot from measurement and render",
+   "fix": [
+    "packages/ui-logic/src/button.ts"
+   ],
+   "size": "line",
+   "cause": "truthiness check instead of null/undefined check",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 702
+}

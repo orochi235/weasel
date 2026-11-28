@@ -1,0 +1,77 @@
+{
+ "area": "hud.loupe",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/hud/src/loupe/aimInput.ts",
+  "packages/hud/src/loupe/contentWatch.ts",
+  "packages/hud/src/loupe/createLoupe.ts",
+  "packages/hud/src/loupe/halo.ts",
+  "packages/hud/src/loupe/lensControls.ts",
+  "packages/hud/src/loupe/lensTone.ts",
+  "packages/hud/src/loupe/loupeColors.ts",
+  "packages/hud/src/loupe/loupeRoutes.ts",
+  "packages/hud/src/loupe/modeSwitch.ts",
+  "packages/hud/src/loupe/pinDraw.ts",
+  "packages/hud/src/loupe/pinHandle.ts",
+  "packages/hud/src/loupe/pixelReadback.ts",
+  "packages/hud/src/loupe/rimTracks.ts",
+  "packages/hud/src/loupe/textAlong.ts",
+  "packages/hud/src/loupe/vectorLens.ts",
+  "packages/hud/src/loupe/zoomTrack.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1687034,
+   "minutes": 0.1888,
+   "at": "2026-11-26T05:06:39.608Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Edge-clamped crop is stretched into the lens uncompensated, so the displayed center diverges from the aim and the sampled center color",
+   "where": "packages/hud/src/loupe/pixelReadback.ts:88",
+   "severity": "medium",
+   "scenario": "A 40-device-pixel crop requested at x=3 clamps its left edge to 0, so the lens middle shows x=20 while the center and picked color still use x=3",
+   "fix": [
+    "packages/hud/src/loupe/pixelReadback.ts"
+   ],
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Shared contribution routes hover and leave to every attached surface, not just the dispatching canvas",
+   "where": "packages/hud/src/loupe/loupeRoutes.ts:37",
+   "severity": "medium",
+   "scenario": "Moving in one canvas changes the aim and controls of another canvas using client coordinates read against the wrong element; leaving one canvas resets the other lens's held-pointer state",
+   "fix": [
+    "packages/hud/src/loupe/loupeRoutes.ts"
+   ],
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1426
+}

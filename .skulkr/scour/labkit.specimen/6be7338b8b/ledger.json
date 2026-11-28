@@ -1,0 +1,61 @@
+{
+ "area": "labkit.specimen",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/specimen/ButtonsAndToggles.tsx",
+  "packages/labkit/src/specimen/Cell.tsx",
+  "packages/labkit/src/specimen/Dot.tsx",
+  "packages/labkit/src/specimen/EditorsAndPlots.tsx",
+  "packages/labkit/src/specimen/FieldsAndPickers.tsx",
+  "packages/labkit/src/specimen/LabChrome.tsx",
+  "packages/labkit/src/specimen/ListsAndData.tsx",
+  "packages/labkit/src/specimen/OverlaysAndFeedback.tsx",
+  "packages/labkit/src/specimen/PanelsAndRows.tsx",
+  "packages/labkit/src/specimen/PrefsCell.tsx",
+  "packages/labkit/src/specimen/Section.tsx",
+  "packages/labkit/src/specimen/ShapePanelCell.tsx",
+  "packages/labkit/src/specimen/SliderCells.tsx",
+  "packages/labkit/src/specimen/Specimen.less",
+  "packages/labkit/src/specimen/Specimen.stories.tsx",
+  "packages/labkit/src/specimen/Specimen.tsx",
+  "packages/labkit/src/specimen/ToolChrome.tsx",
+  "packages/labkit/src/specimen/alignItems.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1613734,
+   "minutes": 0.12245,
+   "at": "2026-11-26T05:12:01.807Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "JobProgress specimen's Cancel button is enabled but does nothing; the job stays running and its state never changes",
+   "where": "packages/labkit/src/specimen/LabChrome.tsx:28",
+   "severity": "low",
+   "scenario": "Activate Cancel on the JobProgress specimen, even repeatedly: the job stays running and nothing visible changes, so the specimen can't show cancellation",
+   "fix": [
+    "packages/labkit/src/specimen/LabChrome.tsx"
+   ],
+   "size": "line",
+   "cause": "constant running job with a no-op onCancel",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1060
+}

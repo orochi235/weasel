@@ -1,0 +1,96 @@
+{
+ "area": "prefs",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/prefs/src/KitSettingsFromPrefs.tsx",
+  "packages/prefs/src/aliasTargets.ts",
+  "packages/prefs/src/autoReset.ts",
+  "packages/prefs/src/blend.ts",
+  "packages/prefs/src/conditionCheck.ts",
+  "packages/prefs/src/css.ts",
+  "packages/prefs/src/defaultsSource.ts",
+  "packages/prefs/src/edit.entry.ts",
+  "packages/prefs/src/heading.ts",
+  "packages/prefs/src/hooks.ts",
+  "packages/prefs/src/hostAttributes.ts",
+  "packages/prefs/src/index.ts",
+  "packages/prefs/src/kinds.ts",
+  "packages/prefs/src/kitCss.ts",
+  "packages/prefs/src/merge.ts",
+  "packages/prefs/src/migrate.ts",
+  "packages/prefs/src/open.ts",
+  "packages/prefs/src/order.ts",
+  "packages/prefs/src/pair.ts",
+  "packages/prefs/src/react.ts",
+  "packages/prefs/src/scopedUnit.ts",
+  "packages/prefs/src/snapshot.ts",
+  "packages/prefs/src/sources/policy.ts",
+  "packages/prefs/src/sources/prefsSource.ts",
+  "packages/prefs/src/sources/selectionSource.ts",
+  "packages/prefs/src/sources/valuesSource.ts",
+  "packages/prefs/src/splitCheck.ts",
+  "packages/prefs/src/stamp.ts",
+  "packages/prefs/src/store.ts",
+  "packages/prefs/src/storeWrites.ts",
+  "packages/prefs/src/tabRuns.ts",
+  "packages/prefs/src/tags.ts",
+  "packages/prefs/src/testing/editAssetSet.ts",
+  "packages/prefs/src/type.ts",
+  "packages/prefs/src/usePrefsStore.ts",
+  "packages/prefs/src/vite.ts",
+  "packages/prefs/src/weightAxes.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1698184,
+   "minutes": 0.17911666666666667,
+   "at": "2026-11-26T05:19:10.643Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Migrating an older alias overwrites a newer current preference because the final value write ignores the set of current records",
+   "where": "packages/prefs/src/migrate.ts:111",
+   "severity": "medium",
+   "scenario": "Target version 1; old key stamped 0 and its replacement key stamped 1; a migration renames old to replacement; the stale old value replaces the current one",
+   "size": "line",
+   "cause": "final write skips current-record check",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Merging groups that share a section key throws a TypeError because sections use members, not children, and the recursion calls Object.entries(undefined)",
+   "where": "packages/prefs/src/merge.ts:15",
+   "severity": "medium",
+   "scenario": "Merge two valid groups whose children at the same key are sections with different member leaves; throws instead of preserving both sets of members",
+   "size": "line",
+   "cause": "section treated as group (members vs children)",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3095
+}

@@ -1,0 +1,95 @@
+{
+ "area": "renderer.shaders",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/renderer/src/shaders/CustomPrograms.ts",
+  "packages/renderer/src/shaders/ShaderProgram.ts",
+  "packages/renderer/src/shaders/batchFill.ts",
+  "packages/renderer/src/shaders/builtinPrograms.ts",
+  "packages/renderer/src/shaders/customPrelude.ts",
+  "packages/renderer/src/shaders/extractUniformNames.ts",
+  "packages/renderer/src/shaders/glslSource.ts",
+  "packages/renderer/src/shaders/glyphCell.ts",
+  "packages/renderer/src/shaders/glyphLayer.ts",
+  "packages/renderer/src/shaders/glyphPaint.ts",
+  "packages/renderer/src/shaders/gradFill.ts",
+  "packages/renderer/src/shaders/hullCoverage.ts",
+  "packages/renderer/src/shaders/idOutput.ts",
+  "packages/renderer/src/shaders/pathFill.ts",
+  "packages/renderer/src/shaders/patternFill.ts",
+  "packages/renderer/src/shaders/registerProgram.ts",
+  "packages/renderer/src/shaders/straightRgb.ts",
+  "packages/renderer/src/shaders/trimmedRibbon.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17628339999999998,
+   "minutes": 0.18458333333333332,
+   "at": "2026-11-26T05:22:42.807Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "ID injection's collision check omits weasel_main, so a shader already defining that helper gets a duplicate definition and fails to compile",
+   "where": "packages/renderer/src/shaders/idOutput.ts:58",
+   "severity": "medium",
+   "scenario": "a valid GLSL fragment defining a no-argument weasel_main helper fails to compile after injection, even in a color-only frame",
+   "size": "line",
+   "cause": "collision check omits weasel_main",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "pickId 0 passes validation and is written with opaque alpha, overwriting an earlier positive ID with the no-claim value",
+   "where": "packages/renderer/src/shaders/idOutput.ts:74",
+   "severity": "medium",
+   "scenario": "a later group with pickId 0 replaces an earlier positive ID with zero",
+   "cause": "zero sentinel accepted as a valid pick ID",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "conditional struct redefinitions merge members by name, dropping a later branch's larger array slots from uniform lookup",
+   "where": "packages/renderer/src/shaders/extractUniformNames.ts:214",
+   "severity": "low",
+   "scenario": "a later preprocessor branch declares more array slots for the same struct member, and the driver compiles that branch; the extra slots never reach lookup",
+   "size": "line",
+   "cause": "member merge keyed by name, ignoring array size",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2068
+}

@@ -1,0 +1,92 @@
+{
+ "area": "renderer.gpu.webgpu",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/renderer/src/gpu/webgpu/WebGPUDevice.ts",
+  "packages/renderer/src/gpu/webgpu/deviceLoss.ts",
+  "packages/renderer/src/gpu/webgpu/flags.ts",
+  "packages/renderer/src/gpu/webgpu/openWebGPU.ts",
+  "packages/renderer/src/gpu/webgpu/requestRendererDevice.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuFrame.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuPipelines.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuProgram.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuResources.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuTargets.ts",
+  "packages/renderer/src/gpu/webgpu/wgpuUtility.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/batchFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/common.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/composite.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/customPrelude.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/effectPrelude.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/effects.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/glyphCell.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/glyphLayer.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/glyphPaint.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/gradFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/hullCoverage.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/idComposite.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/idOut.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/kitPrograms.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/meshPaint.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/ownDrawPaint.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/paintPrelude.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/paintVertex.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/pathFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/patternFill.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/testNdc.ts",
+  "packages/renderer/src/gpu/webgpu/wgsl/trimmedRibbon.ts",
+  "packages/renderer/src/gpu/webgpu/wgslEntries.ts",
+  "packages/renderer/src/gpu/webgpu/wgslLexical.ts",
+  "packages/renderer/src/gpu/webgpu/wgslReflect.ts",
+  "packages/renderer/src/gpu/webgpu/wgslUniforms.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17057340000000001,
+   "minutes": 0.15273333333333333,
+   "at": "2026-11-26T05:21:43.597Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "an exception in the outsidePass callback leaves the ended render pass installed on Frame.pass, so later cleanup ends it a second time",
+   "where": "packages/renderer/src/gpu/webgpu/wgpuFrame.ts:113 (outsidePass)",
+   "severity": "medium",
+   "scenario": "the callback passed to outsidePass throws synchronously; cleanup through end or flush then ends the already-ended pass a second time",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "the a_-prefixed alias of an unprefixed vertex input can override a real a_-named input, so its location depends on declaration order",
+   "where": "packages/renderer/src/gpu/webgpu/wgslEntries.ts:70",
+   "severity": "low",
+   "scenario": "a shader declares both position and a_position at different locations; reversing their declaration order changes the location reported for a_position, and quad binding feeds position data to the wrong input",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3304
+}

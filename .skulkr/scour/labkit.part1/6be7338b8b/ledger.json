@@ -1,0 +1,119 @@
+{
+ "area": "labkit.part1",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/actionParamSchema.ts",
+  "packages/labkit/src/dragdrop/DragDropRuntime.tsx",
+  "packages/labkit/src/dragdrop/DragGhost.less",
+  "packages/labkit/src/dragdrop/DragGhost.tsx",
+  "packages/labkit/src/dragdrop/Palette.less",
+  "packages/labkit/src/dragdrop/Palette.tsx",
+  "packages/labkit/src/dragdrop/feedbackLayer.ts",
+  "packages/labkit/src/dragdrop/index.ts",
+  "packages/labkit/src/fontCascade.fixtures.tsx",
+  "packages/labkit/src/frames.stories.less",
+  "packages/labkit/src/icons.gen.ts",
+  "packages/labkit/src/index.ts",
+  "packages/labkit/src/instrument/defineInstrument.ts",
+  "packages/labkit/src/instrument/serializers.ts",
+  "packages/labkit/src/instrument/types.ts",
+  "packages/labkit/src/instrument/undo.ts",
+  "packages/labkit/src/job/index.ts",
+  "packages/labkit/src/job/types.ts",
+  "packages/labkit/src/job/useJob.ts",
+  "packages/labkit/src/kitSettings.ts",
+  "packages/labkit/src/layers/index.ts",
+  "packages/labkit/src/lightbox/Lightbox.less",
+  "packages/labkit/src/lightbox/Lightbox.tsx",
+  "packages/labkit/src/lightbox/LightboxContext.ts",
+  "packages/labkit/src/lightbox/LightboxLayers.tsx",
+  "packages/labkit/src/lightbox/index.ts",
+  "packages/labkit/src/lightbox/modal.ts",
+  "packages/labkit/src/lightbox/useLightboxModal.ts",
+  "packages/labkit/src/lightbox/useLightboxState.ts",
+  "packages/labkit/src/overview/OverviewMarks.tsx",
+  "packages/labkit/src/overview/TrialOverview.less",
+  "packages/labkit/src/overview/TrialOverview.stories.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.18075839999999999,
+   "minutes": 0.2543,
+   "at": "2026-11-26T05:11:04.020Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Queued setState updaters in drive and begin fold items from a canceled or superseded run because they never re-check the run token",
+   "where": "packages/labkit/src/job/useJob.ts:64 (drive)",
+   "severity": "medium",
+   "scenario": "With a deferred setter, a run enqueues an item, is canceled or superseded before the updater runs, and the updater still folds the stale item into state",
+   "fix": [
+    "packages/labkit/src/job/useJob.ts"
+   ],
+   "size": "function",
+   "cause": "run token checked only before enqueuing, not inside the updater",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "For a lightbox portalled into a same-origin frame, the Escape listener and focus capture/restore use the global document rather than the root's owner document, so Escape is never heard and focus is restored in the wrong document",
+   "where": "packages/labkit/src/lightbox/useLightboxModal.ts:106 (useLightboxModal)",
+   "severity": "medium",
+   "scenario": "React runs in the parent document and portals the lightbox into a frame; Escape pressed in the focused frame is never heard, focus capture and restore use the wrong document, and the latest-opened lightbox in the other document blocks or allows closing",
+   "fix": [
+    "packages/labkit/src/lightbox/useLightboxModal.ts"
+   ],
+   "size": "function",
+   "cause": "uses global document instead of root.ownerDocument; open order shared across documents",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "The module-wide lightbox open order is shared across documents, so the latest-opened lightbox in one document decides whether a lightbox in another document may close",
+   "where": "packages/labkit/src/lightbox/useLightboxModal.ts:106 (useLightboxModal)",
+   "severity": "medium",
+   "scenario": "React runs in the parent document and portals the lightbox into a frame; Escape pressed in the focused frame is never heard, focus capture and restore use the wrong document, and the latest-opened lightbox in the other document blocks or allows closing",
+   "fix": [
+    "packages/labkit/src/lightbox/useLightboxModal.ts"
+   ],
+   "size": "function",
+   "cause": "uses global document instead of root.ownerDocument; open order shared across documents",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2526
+}

@@ -1,0 +1,91 @@
+{
+ "area": "ui.components.Along",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Along/Along.module.css",
+  "packages/ui/src/components/Along/Along.stories.module.css",
+  "packages/ui/src/components/Along/Along.stories.tsx",
+  "packages/ui/src/components/Along/Along.tsx",
+  "packages/ui/src/components/Along/CurvedLabel.module.css",
+  "packages/ui/src/components/Along/CurvedLabel.stories.module.css",
+  "packages/ui/src/components/Along/CurvedLabel.stories.tsx",
+  "packages/ui/src/components/Along/CurvedLabel.tsx",
+  "packages/ui/src/components/Along/alongContext.ts",
+  "packages/ui/src/components/Along/arcInBox.ts",
+  "packages/ui/src/components/Along/boxPoint.ts",
+  "packages/ui/src/components/Along/index.ts",
+  "packages/ui/src/components/Along/lab/ClockSweep.stories.module.css",
+  "packages/ui/src/components/Along/lab/ClockSweep.stories.tsx",
+  "packages/ui/src/components/Along/lab/ClockSweepView.tsx",
+  "packages/ui/src/components/Along/lab/CurvedLabel.stories.module.css",
+  "packages/ui/src/components/Along/lab/CurvedLabel.stories.tsx",
+  "packages/ui/src/components/Along/lab/CurvedLabelView.tsx",
+  "packages/ui/src/components/Along/lab/InputTrace.stories.module.css",
+  "packages/ui/src/components/Along/lab/InputTrace.stories.tsx",
+  "packages/ui/src/components/Along/lab/InputTraceView.tsx",
+  "packages/ui/src/components/Along/lab/LensRim.stories.module.css",
+  "packages/ui/src/components/Along/lab/LensRim.stories.tsx",
+  "packages/ui/src/components/Along/lab/LensRimView.tsx",
+  "packages/ui/src/components/Along/lab/Presets.tsx",
+  "packages/ui/src/components/Along/lab/Readouts.tsx",
+  "packages/ui/src/components/Along/lab/TrackGeometry.stories.tsx",
+  "packages/ui/src/components/Along/lab/TrackGeometryView.tsx",
+  "packages/ui/src/components/Along/lab/lab.stories.module.css",
+  "packages/ui/src/components/Along/lab/labActions.tsx",
+  "packages/ui/src/components/Along/lab/lensImage.ts",
+  "packages/ui/src/components/Along/lab/trackDraw.ts",
+  "packages/ui/src/components/Along/lab/trackGeometry.ts",
+  "packages/ui/src/components/Along/lab/useEventLog.ts",
+  "packages/ui/src/components/Along/onRun.module.css",
+  "packages/ui/src/components/Along/placeOnRun.ts",
+  "packages/ui/src/components/Along/rowRun.ts",
+  "packages/ui/src/components/Along/runBend.ts",
+  "packages/ui/src/components/Along/runRow.module.css",
+  "packages/ui/src/components/Along/runSlots.ts",
+  "packages/ui/src/components/Along/runText.module.css",
+  "packages/ui/src/components/Along/runText.ts",
+  "packages/ui/src/components/Along/useBoxShape.ts",
+  "packages/ui/src/components/Along/useItemLengths.ts",
+  "packages/ui/src/components/Along/useRowRun.ts",
+  "packages/ui/src/components/Along/useRunRow.tsx",
+  "packages/ui/src/components/Along/useRunScroll.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2129236,
+   "minutes": 0.11806666666666667,
+   "at": "2026-11-27T00:17:48.575Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Grapheme spans advance by rounded integer offsetWidth, accumulating spacing error along the arc",
+   "where": "packages/ui/src/components/Along/CurvedLabel.tsx:47",
+   "severity": "low",
+   "scenario": "A repeated grapheme with a 7.4px advance gets 7px per span, losing 0.4px of spacing for each span",
+   "fix": [
+    "packages/ui/src/components/Along/CurvedLabel.tsx"
+   ],
+   "size": "line",
+   "cause": "integer offsetWidth used for fractional advances",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2713
+}

@@ -1,0 +1,242 @@
+{
+ "area": "registry",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/registry/src/after.ts",
+  "packages/registry/src/codePoint.ts",
+  "packages/registry/src/compositeKey.ts",
+  "packages/registry/src/deepEqual.ts",
+  "packages/registry/src/emitter.ts",
+  "packages/registry/src/extensionRegistry.ts",
+  "packages/registry/src/freshId.ts",
+  "packages/registry/src/getOwn.ts",
+  "packages/registry/src/grade.ts",
+  "packages/registry/src/index.ts",
+  "packages/registry/src/isDev.ts",
+  "packages/registry/src/isFiniteNumber.ts",
+  "packages/registry/src/isPlainObject.ts",
+  "packages/registry/src/latest.ts",
+  "packages/registry/src/match.ts",
+  "packages/registry/src/mixed.ts",
+  "packages/registry/src/part.ts",
+  "packages/registry/src/pbt.fixture.ts",
+  "packages/registry/src/reflectable.ts",
+  "packages/registry/src/sameList.ts",
+  "packages/registry/src/setOwn.ts",
+  "packages/registry/src/testing/hostile.fixture.ts",
+  "packages/registry/src/valueStore.ts",
+  "packages/registry/src/warnOnce.ts",
+  "packages/registry/src/xmlEscape.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1652684,
+   "minutes": 0.11778333333333334,
+   "at": "2026-11-26T05:20:31.131Z",
+   "findings": 1
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.9547034,
+   "minutes": 1.7518833333333335,
+   "at": "2026-11-26T17:28:21.257Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.8442242,
+   "minutes": 3.2439666666666667,
+   "at": "2026-11-26T17:31:36.451Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.702919,
+   "minutes": 2.623666666666667,
+   "at": "2026-11-26T17:34:14.122Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.8497205999999999,
+   "minutes": 3.6044,
+   "at": "2026-11-26T17:37:50.976Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Child release called from a handback notification no-ops and marks itself done, then relean restores a hold that can later retake ownership with no release left",
+   "where": "packages/registry/src/extensionRegistry.ts:116",
+   "severity": "medium",
+   "scenario": "Same value registered in parent and child; parent release hands it to the child, then it is re-registered in the parent within the same tick; during the microtask handback, untake removes the child's copy and notifies subscribers before relean restores the inherited hold; a child subscriber calling release then leaves a stuck hold",
+   "cause": "untake notifies subscribers before relean restores the inherited hold",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "deepEqual treats a null-prototype array as a plain object, so it compares equal to an object with matching index keys",
+   "where": "packages/registry/src/deepEqual.ts:33 (step)",
+   "severity": "low",
+   "scenario": "`a = Object.setPrototypeOf([1, 2], null)`, `b = { 0: 1, 1: 2 }`. `isPlainArray(a)` is false (its prototype `null` is not an array), so neither side takes the array branch; `isPlainObject(a)` is true because `isPlainPrototype(null)` is true, and `keysOf` of both sides is `['0', '1']` (an array's `length` is not enumerable). `deepEqual(a, b)` answers true. Under the doc, an array that is not plain is \"every other value\" and should equal only itself; and an array should never equal a non-array.",
+   "fix": [
+    "packages/registry/src/deepEqual.ts"
+   ],
+   "size": "line",
+   "cause": "array check falls through to plain-object check",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A child registry's entries() keeps a stale order when a release and re-register in the same tick turn its own copy into a lean",
+   "where": "packages/registry/src/extensionRegistry.ts:255 (register, lean branch) and :213 (entries cache)",
+   "severity": "low",
+   "scenario": "child registers `a` = V before the parent does (child `since` = 1); the parent later registers `a` = V (parent order 5). A React effect in the child re-runs: its release drops the own copy (store emits; a `useSyncExternalStore` listener reads `entries()` and caches it at version N, with `a` inherited and sorted at the parent's order 5), then in the same tick it re-registers V, which finds the parent's V and adds a lean whose `order` is the still-held `since` 1. Adding a lean changes nothing `getVersion` counts, so `entries()` keeps returning the version-N array with `a` at position 5, and `a` jumps back to position 1 only on the next unrelated change. The same happens in reverse when the lean is released (order goes back to the parent's with no version step). `orderOf` depends on `leans`, but the cache key does not.",
+   "fix": [
+    "packages/registry/src/extensionRegistry.ts"
+   ],
+   "size": "function",
+   "cause": "cache keyed on store+parent version, ignores lean order changes",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "The README's usage example triggers the clash warning that the library treats as a mistake",
+   "where": "packages/registry/README.md:20 (Usage)",
+   "severity": "low",
+   "scenario": "the example pushes `'pen'` = `'crosshair'` with source `'kit'`, then `'cell'` with source `'plugin'`, both at rank 0, on a store made without `layered: true` and with neither push a `fallback`. In development `push` calls `clashes.warn` (reflectable.ts:236), printing `weasel: \"plugin\" registered \"pen\" over \"kit\", which is not an engine default…`. The canonical example teaches a pattern the store warns about; it should push the kit one with `fallback: true` (or create with `layered: true`, or push the plugin at a higher rank).",
+   "fix": [
+    "packages/registry/README.md"
+   ],
+   "size": "line",
+   "cause": "example predates the clash warning",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "The README says `shadowed` is ordered oldest first, but it is ordered by rank first",
+   "where": "packages/registry/README.md:44 (Exports)",
+   "severity": "low",
+   "scenario": "a key with a rank-1 registrant pushed first and a rank-0 one pushed later has `shadowed` = [rank-0 (newer), …], not oldest first; `ReflectedEntry.shadowed`'s own doc (reflectable.ts:21) says \"lowest rank first, and oldest first within a rank\". A reader of the README orders them wrongly.",
+   "fix": [
+    "packages/registry/README.md"
+   ],
+   "size": "line",
+   "cause": "README not updated when ranks landed",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "deepEqual reads an array hole through the prototype chain, so a hole can compare equal to an inherited value",
+   "where": "packages/registry/src/deepEqual.ts:36 (step)",
+   "severity": "low",
+   "scenario": "`a = [ , ]`, `b = [undefined]` with `Array.prototype[0]` (or another realm's, or `Object.prototype['0']`) defined, say by polluted input: `todo.push([a[i], b[i]])` reads the hole as the inherited value, so the pair compares the inherited value against `undefined` and answers false. The PBT test states a hole reads as `undefined`. The same happens for every hole whose index the chain defines.",
+   "fix": [
+    "packages/registry/src/deepEqual.ts"
+   ],
+   "size": "line",
+   "cause": "bare index read on user data rather than `own(a, i)`",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "createPart makes two parts for one owner when make reads the part re-entrantly",
+   "where": "packages/registry/src/part.ts:15 (createPart)",
+   "severity": "low",
+   "scenario": "`make(owner)` calls something that reads the same part reader for `owner` (for example a part whose construction subscribes a helper that looks the part up). The inner read finds nothing in `parts`, calls `make` again and stores part P2. The outer call then overwrites it with P1. The inner caller keeps P2, and every later read returns P1, which breaks \"every later read of that owner returns the same part\". It should either detect the recursion and throw, or return the part already stored.",
+   "fix": [
+    "packages/registry/src/part.ts"
+   ],
+   "size": "function",
+   "cause": "no guard against re-entry between has() and set()",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  }
+ ],
+ "lines": 1390
+}

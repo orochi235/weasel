@@ -1,0 +1,78 @@
+{
+ "area": "menu",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/menu/src/access.ts",
+  "packages/menu/src/controller.ts",
+  "packages/menu/src/dismiss.ts",
+  "packages/menu/src/entries.ts",
+  "packages/menu/src/heldValues.ts",
+  "packages/menu/src/index.ts",
+  "packages/menu/src/keyPlan.ts",
+  "packages/menu/src/keys.ts",
+  "packages/menu/src/links.ts",
+  "packages/menu/src/numberText.ts",
+  "packages/menu/src/numberValues.ts",
+  "packages/menu/src/pbt.fixture.ts",
+  "packages/menu/src/placement.ts",
+  "packages/menu/src/triangle.ts",
+  "packages/menu/src/typeahead.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1675434,
+   "minutes": 0.1706,
+   "at": "2026-11-26T05:14:04.424Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A throwing setter leaves the rejected value cached as held, and a same-value retry is suppressed by the equality check",
+   "where": "packages/menu/src/heldValues.ts:12",
+   "severity": "medium",
+   "scenario": "A text, number or color row's setter throws before applying the value; the menu later reads the rejected value, and retrying the same value never reaches the setter",
+   "fix": [
+    "packages/menu/src/heldValues.ts"
+   ],
+   "cause": "cache written before setter succeeds",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "An oversized RTL menu with its anchor past the right edge is placed left of the bounds (e.g. x=-50) instead of clamped to the left bound",
+   "where": "packages/menu/src/placement.ts:13",
+   "severity": "low",
+   "scenario": "Bounds x=0 width=100, anchor x=200, menu width 150: returns -50",
+   "fix": [
+    "packages/menu/src/placement.ts"
+   ],
+   "cause": "reverse helper missing left-bound clamp the forward helper has",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 826
+}

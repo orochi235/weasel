@@ -17,6 +17,50 @@
    "minutes": 0.1616,
    "at": "2026-11-25T21:15:42.052Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.0320472,
+   "minutes": 2.0827333333333335,
+   "at": "2026-11-26T23:17:44.240Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.0088094,
+   "minutes": 2.0612833333333334,
+   "at": "2026-11-26T23:19:48.081Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.8011615999999999,
+   "minutes": 1.3298999999999999,
+   "at": "2026-11-26T23:21:08.119Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.0889308000000002,
+   "minutes": 2.00305,
+   "at": "2026-11-26T23:23:08.486Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
   }
  ],
  "defects": [
@@ -27,13 +71,26 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    4,
+    5
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     4,
+     5
     ]
-   }
+   },
+   "scenario": "`elkOptions: { 'elk.json.shapeCoords': 'PARENT' }` (or `edgeCoords`) is spread over the derived options; `fromElk` still reads every position as root-frame, so every node and cluster inside a cluster is placed offset by its ancestors' origin, and routes likewise. These two keys are the adapter's own contract, not a layout choice, and should be written after the caller's options.",
+   "cause": "user options spread over internal invariants",
+   "fix": [
+    "packages/diagram-elk/src/elkPlan.ts"
+   ],
+   "size": "line",
+   "confidence": "sure"
   },
   {
    "id": "D2",
@@ -49,6 +106,200 @@
      1
     ]
    }
+  },
+  {
+   "id": "D3",
+   "claim": "A centered edge label (offset 0) is given ELK room beside its wire, but the diagram draws it centered on the wire, so the reserved space and the drawn label disagree",
+   "where": "packages/diagram-elk/src/toElk.ts:174 (labelRoom)",
+   "severity": "medium",
+   "scenario": "an edge whose `label` is `{ width: 80, height: 20 }` with no `offset` (the default, \"centers the label on the wire\") goes to ELK with only its size and no `elk.edgeLabels.inline`, so ELK layered places the label dummy beside the edge, with the wire running along one side of the box. `planFrom` then takes the box center's nearest point on the route as `near` (elkPlan.ts:160), which lands on the wire at the box's edge, and the diagram draws the label centered there: half of it sits in the room ELK reserved, the other half (40 units here) on the side ELK left for neighbors at `nodeGap`, so it can overlap a neighboring node or wire. It should go in inline, as the offset case already does, so the room ELK leaves is centered on the wire where the label is drawn. Commit d1cffb2ce5 fixed this mismatch for `offset ≠ 0` only, and its message describes this exact failure (\"ELK reserved room at its own spot beside the wire and the diagram then drew the label offset past it\").",
+   "fix": [
+    "packages/diagram-elk/src/toElk.ts"
+   ],
+   "size": "line",
+   "cause": "inline option set only for nonzero offset",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Authored edges are passed to ELK as ordinary edges, so ELK reserves rank and label room for them, unlike the layered layout",
+   "where": "packages/diagram-elk/src/toElk.ts:106 (toElk, elkEdges map)",
+   "severity": "medium",
+   "scenario": "a graph with an `authored: true` edge spanning several ranks and carrying a `label`. `GraphEdge.authored` says layout \"keeps no room for it in the ranks it crosses\", and `layered` honors that (`layered/expand.ts:60` skips its label row, `:182` gives it no dummy chain). `toElk` sends it to ELK like any other edge, with a label of `labelRoom` size, so ELK inserts long-edge dummies and a label slot for it and spreads neighbors apart for a route `planFrom` then throws away (`edge.authored` → `continue`). The same graph lays out tighter under `layered` than under ELK for no reason the caller asked for.",
+   "fix": [
+    "packages/diagram-elk/src/toElk.ts"
+   ],
+   "size": "function",
+   "cause": "`authored` honored only when reading ELK's answer back, not when building its input",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "nodeGap, rankGap and the node-placement strategy are set only on the root, so ELK falls back to its own defaults inside clusters",
+   "where": "packages/diagram-elk/src/toElk.ts:162 (clusterOptions); packages/diagram-elk/src/elkPlan.ts:64 (elkRootOptions)",
+   "severity": "medium",
+   "scenario": "`elkPlan(graph, { nodeGap: 80, rankGap: 150 })` on a graph whose nodes sit in a cluster. ELK does not pass layout options down from parent to child: with `INCLUDE_CHILDREN`, layered builds each compound node's nested graph from that node's own properties. Each cluster's options hold only `elk.padding` and the minimum size, so nodes inside a cluster are spaced by ELK's defaults (20 / 20), and placed by Brandes–Köpf, which the root comment says can push a chain past the outermost node. Top-level nodes follow `nodeGap`/`rankGap`. The caller's gaps are dropped wherever clusters are used.",
+   "fix": [
+    "packages/diagram-elk/src/toElk.ts",
+    "packages/diagram-elk/src/elkPlan.ts"
+   ],
+   "size": "function",
+   "cause": "options derived for the root not repeated on compound nodes",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "minimumTransposed swaps a cluster's minimum width for every algorithm, not only layered",
+   "where": "packages/diagram-elk/src/toElk.ts:192 (minimumTransposed)",
+   "severity": "low",
+   "scenario": "`elkPlan(graph, { elkOptions: { 'elk.algorithm': 'mrtree' } })` (or `force`, `rectpacking`) with a cluster that has `minWidth: 300` and children. Direction defaults to `DOWN` and `hierarchyHandling` to `INCLUDE_CHILDREN`, so `minimumTransposed` answers true and writes `(0, 300)`. The swap compensates for layered's transposed handling of compound nodes with vertical ranks; another algorithm reads the pair as written, so the cluster gets a minimum *height* of 300 and no minimum width.",
+   "fix": [
+    "packages/diagram-elk/src/toElk.ts"
+   ],
+   "size": "line",
+   "cause": "transposition check ignores `elk.algorithm`",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "ELK lays out each node at its bare bounds and ignores GraphNode.margin",
+   "where": "packages/diagram-elk/src/toElk.ts:137 (leafOf)",
+   "severity": "medium",
+   "scenario": "a graph whose nodes carry `margin` (DiagramNode.margin, e.g. a node whose glow or badge reaches 12 past its bounds) → `leafOf` gives ELK only `bounds.width/height` and no `elk.margins`, so `nodeGap` is measured from the bare box and neighboring nodes' margins overlap; the diagram's own layouts (`planOf`) lay the node out as that much bigger. The option is silently dropped on the ELK path.",
+   "fix": [
+    "packages/diagram-elk/src/toElk.ts"
+   ],
+   "size": "line",
+   "cause": "margin not passed (`elk.margins` / enlarged box)",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A direction given in elkOptions by ELK's short suffix id is missed by the label-room and minimum-size logic",
+   "where": "packages/diagram-elk/src/toElk.ts:181 (crossAxis), packages/diagram-elk/src/toElk.ts:188 (minimumTransposed), packages/diagram-elk/src/elkPlan.ts:81 (shortIds)",
+   "severity": "low",
+   "scenario": "`elkPlan(g, { elkOptions: { direction: 'RIGHT' } })` — ELK resolves option ids by suffix, so it lays out left-to-right, but `shortIds` only rewrites the `org.eclipse.elk.` prefix, so the root also keeps the derived `elk.direction: 'DOWN'` beside it. ELK picks one; `crossAxis` and `minimumTransposed` read only `elk.direction` and answer for DOWN: an offset label's room is widened along the wrong axis, and a cluster's `minWidth` is written transposed (or not) for the wrong direction. The same decision is answered two ways.",
+   "fix": [
+    "packages/diagram-elk/src/elkPlan.ts",
+    "packages/diagram-elk/src/toElk.ts"
+   ],
+   "size": "function",
+   "cause": "id normalization covers only one alias form",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "elkPlanner(opts) lets an option passed explicitly as undefined erase the run's value for it",
+   "where": "packages/diagram-elk/src/elkPlan.ts:126 (elkPlanner)",
+   "severity": "low",
+   "scenario": "`elkPlanner({ direction: props.direction })` with `props.direction` undefined, used by a live run passing `{ direction: 'right' }` → `{ ...layout, ...opts }` sets `direction: undefined`, so `elkRootOptions` falls back to 'down' and the run's direction is dropped. Same for `nodeGap`, `rankGap`, `pin`, `tolerance`.",
+   "size": "line",
+   "cause": "object spread copies undefined-valued keys",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "The direction is compared case-sensitively, but ELK reads enum values case-insensitively, so a direction like 'down' or 'Right' is missed by the label-room and minimum-size logic",
+   "where": "packages/diagram-elk/src/toElk.ts:187 (crossAxis), packages/diagram-elk/src/toElk.ts:195 (minimumTransposed)",
+   "severity": "low",
+   "scenario": "`elkOptions: { 'elk.direction': 'right' }`. ELK's enum option parsing upper-cases the value and lays the graph out RIGHT, but `crossAxis` compares `=== 'RIGHT'` and answers `'width'`, and `minimumTransposed` compares `=== 'DOWN' || 'UP'` (and `'INCLUDE_CHILDREN'`), so label rooms and cluster minimums take the axis for the wrong direction. Should compare upper-cased values.",
+   "size": "line",
+   "cause": "exact-string enum comparison",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "elkPlanner drops the run's order, so a live re-layout does not keep the seeded order",
+   "where": "packages/diagram-elk/src/elkPlan.ts:119 (elkPlanner)",
+   "severity": "low",
+   "scenario": "`LayoutOptions.order` defaults to `'seeded'`: keep nodes in the order they already sit in. `DiagramView.layout` / a live run passing layout options to `elkPlanner().plan` gets ELK's crossing minimization from scratch on every run (no `elk.layered.crossingMinimization.semiInteractive`, `considerModelOrder`, or position hints derived), so a second run after a user rearranged a rank can reorder it, and neither `'seeded'` nor `'barycenter'` changes anything. `ElkLayoutOptions` omits `order` from its own type, but `ElkPlanner.plan` still takes `LayoutOptions` with it and ignores it without saying so.",
+   "size": "function",
+   "cause": "layout option with no ELK mapping, dropped on the planner path",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
   }
- ]
+ ],
+ "lines": 520
 }

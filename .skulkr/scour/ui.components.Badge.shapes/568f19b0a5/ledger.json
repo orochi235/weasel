@@ -1,0 +1,68 @@
+{
+ "area": "ui.components.Badge.shapes",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Badge/shapes/Beavis.tsx",
+  "packages/ui/src/components/Badge/shapes/Cloud.tsx",
+  "packages/ui/src/components/Badge/shapes/Coffin.tsx",
+  "packages/ui/src/components/Badge/shapes/Crest.tsx",
+  "packages/ui/src/components/Badge/shapes/Hexagon.tsx",
+  "packages/ui/src/components/Badge/shapes/House.tsx",
+  "packages/ui/src/components/Badge/shapes/Notched.tsx",
+  "packages/ui/src/components/Badge/shapes/Perforated.tsx",
+  "packages/ui/src/components/Badge/shapes/Pill.tsx",
+  "packages/ui/src/components/Badge/shapes/Plain.tsx",
+  "packages/ui/src/components/Badge/shapes/Plaque.tsx",
+  "packages/ui/src/components/Badge/shapes/Postage.tsx",
+  "packages/ui/src/components/Badge/shapes/Quatrefoil.tsx",
+  "packages/ui/src/components/Badge/shapes/Receipt.tsx",
+  "packages/ui/src/components/Badge/shapes/Ribbon.tsx",
+  "packages/ui/src/components/Badge/shapes/Scalloped.tsx",
+  "packages/ui/src/components/Badge/shapes/Shield.tsx",
+  "packages/ui/src/components/Badge/shapes/Sparkler.tsx",
+  "packages/ui/src/components/Badge/shapes/Square.tsx",
+  "packages/ui/src/components/Badge/shapes/Starburst.tsx",
+  "packages/ui/src/components/Badge/shapes/Urn.tsx",
+  "packages/ui/src/components/Badge/shapes/Wood.tsx",
+  "packages/ui/src/components/Badge/shapes/index.ts",
+  "packages/ui/src/components/Badge/shapes/params.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2133436,
+   "minutes": 0.14096666666666666,
+   "at": "2026-11-27T00:20:22.024Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "The focus ring on a perforated badge is clipped by the body mask, so keyboard focus is invisible",
+   "where": "packages/ui/src/components/Badge/shapes/Perforated.tsx:64",
+   "severity": "medium",
+   "scenario": "A perforated badge with ordinary dimensions and stroke width receives keyboard focus; the focus ring is drawn entirely outside the mask's white area and is not shown",
+   "fix": [
+    "packages/ui/src/components/Badge/shapes/Perforated.tsx"
+   ],
+   "size": "line",
+   "cause": "focus rect shares the body mask",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1055
+}

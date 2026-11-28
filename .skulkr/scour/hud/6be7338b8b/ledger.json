@@ -1,0 +1,366 @@
+{
+ "area": "hud",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/hud/src/accessibleMirror.ts",
+  "packages/hud/src/actionParamSchema.ts",
+  "packages/hud/src/attach.ts",
+  "packages/hud/src/boxShadow.ts",
+  "packages/hud/src/colors.ts",
+  "packages/hud/src/domFocus.ts",
+  "packages/hud/src/fonts/registerDefaultFont.ts",
+  "packages/hud/src/glyph.ts",
+  "packages/hud/src/host.ts",
+  "packages/hud/src/hover.ts",
+  "packages/hud/src/hud.ts",
+  "packages/hud/src/hudCanvas.fixture.tsx",
+  "packages/hud/src/index.ts",
+  "packages/hud/src/layerDeps.ts",
+  "packages/hud/src/layerDraw.ts",
+  "packages/hud/src/measureEnv.ts",
+  "packages/hud/src/openPresses.ts",
+  "packages/hud/src/pbt.fixture.ts",
+  "packages/hud/src/react/index.ts",
+  "packages/hud/src/react/useHud.ts",
+  "packages/hud/src/react/useLoupe.ts",
+  "packages/hud/src/textInputHost.ts",
+  "packages/hud/src/tool.ts",
+  "packages/hud/src/widget.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1837284,
+   "minutes": 0.23316666666666666,
+   "at": "2026-11-26T05:06:22.466Z",
+   "findings": 5
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.3199242,
+   "minutes": 2.328266666666667,
+   "at": "2026-11-26T23:36:19.614Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.9654446,
+   "minutes": 2.6337333333333337,
+   "at": "2026-11-26T23:38:57.931Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.0223912000000002,
+   "minutes": 3.103883333333333,
+   "at": "2026-11-26T23:42:04.754Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.7955858,
+   "minutes": 2.8054,
+   "at": "2026-11-26T23:44:53.743Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "An unrelated pointer release or cancel cancels every open HUD press, including held widgets and presses on other canvases",
+   "where": "packages/hud/src/openPresses.ts:30",
+   "severity": "medium",
+   "scenario": "A second pointer releases while a widget is held, or a contribution is reused across canvases; the window callback snapshots all open presses and cancels them",
+   "size": "function",
+   "cause": "window callback ignores the event's pointer and canvas",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    3,
+    4,
+    5
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "fix": [
+    "packages/hud/src/openPresses.ts",
+    "packages/hud/src/tool.ts"
+   ]
+  },
+  {
+   "id": "D2",
+   "claim": "useHud's attach effect omits canvasRef from its deps, so a new ref object leaves the HUD on the old canvas",
+   "where": "packages/hud/src/react/useHud.ts:37",
+   "severity": "medium",
+   "scenario": "A render supplies a different populated ref (or goes from no ref to one) while theme and font stay stable; the effect does not rerun",
+   "fix": [
+    "packages/hud/src/react/useHud.ts"
+   ],
+   "size": "line",
+   "cause": "missing effect dependency",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Layer cache calls widget deps without focusVisible, unlike the draw cache, so a focus-ring-only change leaves stale commands on screen",
+   "where": "packages/hud/src/attach.ts:110",
+   "severity": "low",
+   "scenario": "A widget whose deps change only when the focus ring is visible asks for a redraw, but the outer layer reports unchanged",
+   "size": "function",
+   "cause": "inconsistent deps context between the two caches",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Accessibility mirror erases the host canvas's preexisting aria-owns and aria-activedescendant",
+   "where": "packages/hud/src/accessibleMirror.ts:70",
+   "severity": "medium",
+   "scenario": "The initial follow calls clear unconditionally; after mirroring and clearing, the host's original values are lost",
+   "size": "function",
+   "cause": "clear does not save or restore the host's own ARIA values",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Captured drag calls a removed or disposed widget's handler on later moves and on end",
+   "where": "packages/hud/src/tool.ts:109",
+   "severity": "medium",
+   "scenario": "The widget is removed mid-drag; the next move or release reaches its disposed handler",
+   "size": "function",
+   "cause": "no disposal or membership check, unlike the open-press sweep",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    3
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     3
+    ]
+   },
+   "fix": [
+    "packages/hud/src/tool.ts"
+   ]
+  },
+  {
+   "id": "D6",
+   "claim": "A failed attach leaves its surface key in the contribution's surfaces set",
+   "where": "packages/hud/src/tool.ts:221 (createHudContribution attach)",
+   "severity": "low",
+   "scenario": "one `createHudContribution(hud)` entry is installed on a second canvas while `hud` is already attached elsewhere, or with a `font` pair that differs from the registered one. `surfaces.add(key)` runs first, then `attachHud` throws, and the returned cleanup that would delete the key never exists. `loupeAimActions(hud, surfaces)` then treats that surface as live for as long as the entry exists.",
+   "size": "line",
+   "cause": "side effect before a throwing call",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4,
+     5
+    ]
+   },
+   "fix": [
+    "packages/hud/src/tool.ts"
+   ]
+  },
+  {
+   "id": "D7",
+   "claim": "Pending sweep timeouts outlive watch's unwatch and still fire after it",
+   "where": "packages/hud/src/openPresses.ts:39 (sweep)",
+   "severity": "low",
+   "scenario": "a pointerup schedules `win.setTimeout(…, 0)`, then the contribution detaches in the same task (for example, the canvas unmounts on that click). The unwatch removes the listeners but not the queued timeout, so a widget still in the HUD's list gets `cancel` after its canvas detached. Teardown leaves a callback behind.",
+   "size": "function",
+   "cause": "timeout id not tracked or cleared",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "glyphCommands hard-codes the icon frame and stroke width instead of using the values @weasel-js/icons exports",
+   "where": "packages/hud/src/glyph.ts:142 (glyphCommands), packages/hud/src/glyph.ts:11 (ROOT)",
+   "severity": "low",
+   "scenario": "`glyphCommands` scales by `at.size / 20`, and `ROOT` sets `'stroke-width': '1.5'`. In the same file, `iconCommands` places the mark slot with `at.size / ICON_FRAME`. The icons package defines `ICON_FRAME = 20` and `ICON_STROKE = 1.5`, so the same decision is answered in two places. If the frame changes, the mark slot and the subject glyph scale differently, and the mark moves off its subject.",
+   "size": "line",
+   "cause": "duplicated constant",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     5
+    ]
+   },
+   "fix": [
+    "packages/hud/src/glyph.ts"
+   ]
+  },
+  {
+   "id": "D9",
+   "claim": "A closing tag whose opening tag the tag regex failed to match pops the parent frame",
+   "where": "packages/hud/src/glyph.ts:33 (tags), packages/hud/src/glyph.ts:154 (glyphCommands)",
+   "severity": "low",
+   "scenario": "a glyph body passed to the exported `glyphCommands` contains `<g transform='translate(2 2)'>…</g>` (single quotes), or an attribute written with spaces around `=`. The opening tag fails the regex and yields nothing, so no frame is pushed. The `</g>` does match, and it pops the enclosing `<g>`'s frame. Every later sibling then draws without that group's transform and inherited fill/stroke.",
+   "size": "function",
+   "cause": "open and close tags parsed asymmetrically",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "The hidden IME input is positioned only when the edit changes, so it is left behind when the canvas moves on the page",
+   "where": "packages/hud/src/textInputHost.ts:46 (sync)",
+   "severity": "low",
+   "scenario": "a text edit is running in a HUD widget. The page scrolls, or the layout moves or resizes the canvas, and the caret's canvas-px rect does not change. `sync` runs only on focus changes, on the `textInput` subscription and on canvas focus, so the `position: fixed` input keeps the client coordinates of the old `layoutBoxOf(element)`. The platform's IME candidate window then opens at the stale spot, away from the caret. Nothing repositions the input on scroll or resize.",
+   "fix": [
+    "packages/hud/src/textInputHost.ts"
+   ],
+   "size": "function",
+   "cause": "position cached without layout invalidation",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "Switching apps or windows blurs the document, which drops HUD keyboard focus and ends a running text edit",
+   "where": "packages/hud/src/domFocus.ts:70 (wireFocus onBlur); packages/hud/src/textInputHost.ts:94 (onBlur)",
+   "severity": "low",
+   "scenario": "a HUD widget is focused (or mid text edit through the hidden input); the user Cmd-Tabs to another app and back. The window losing focus fires `blur` on the active element with `relatedTarget === null`, so `hud.focus(null)` runs (and the input path composes '' then calls `on.blur` → `hud.focus(null)`). On return the browser restores DOM focus to the canvas/input, but the HUD's focused widget, its ring and the edit are gone, unlike DOM focus, which survives a window switch. Should skip the blur when `!doc.hasFocus()` / `doc.activeElement` is still the element or input.",
+   "fix": [
+    "packages/hud/src/domFocus.ts",
+    "packages/hud/src/textInputHost.ts"
+   ],
+   "size": "line",
+   "cause": "window blur treated as focus leaving",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "The hit walk stops at the first widget it hits, even one that claims only some gestures, so a gesture that widget declines goes to the scene instead of the widgets beneath it",
+   "where": "packages/hud/src/attach.ts:79 (widgetAt)",
+   "severity": "medium",
+   "scenario": "a widget with `claims: ['wheel']` (or `['contextMenu']`) overlaps a button. A press there: `widgetAt` returns the wheel-only widget, since its claim list is not empty. `hitTest` then returns an exclusive hit whose `claimedKinds` leaves out `pointer`, and `wireFocus`'s pointerdown sees a hit that does not claim `pointer`. The press goes to the scene, and the button underneath never hears it or takes focus. Expected: the walk skips a widget that declines the gesture, just as it skips decoration (`claims: []`), and goes on to the button. As written, only a widget that claims nothing at all is transparent.",
+   "fix": [
+    "packages/hud/src/attach.ts",
+    "packages/hud/src/domFocus.ts"
+   ],
+   "size": "design",
+   "cause": "hit walk not keyed on the gesture",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  }
+ ],
+ "lines": 2269
+}

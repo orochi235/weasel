@@ -1,0 +1,65 @@
+{
+ "area": "parallax",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/parallax/src/createParallaxLayer.ts",
+  "packages/parallax/src/createParallaxPlane.ts",
+  "packages/parallax/src/createTiledLayer.ts",
+  "packages/parallax/src/index.ts",
+  "packages/parallax/src/pbt.fixture.ts",
+  "packages/parallax/src/tileRange.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1722384,
+   "minutes": 0.17555,
+   "at": "2026-11-26T05:15:36.438Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Mutating the live options object returned by get changes drawing without notifying subscribers, and a later set with the mutated value is silent",
+   "where": "packages/parallax/src/createParallaxPlane.ts:26",
+   "severity": "medium",
+   "scenario": "Create a plane with pan {x: 0, y: 1}, subscribe, then set pan.x = 1 on the object get returns: the next draw uses the new pan, no subscriber hears of it, and a later set with that pan is silent too",
+   "size": "line",
+   "cause": "get exposes the internal mutable snapshot",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A non-invertible view with a collapsed untiled axis still draws world copies, bypassing the finite-span guard",
+   "where": "packages/parallax/src/createTiledLayer.ts:111",
+   "severity": "low",
+   "scenario": "Period 100, positive canvas size, x scale 1, y scale 0: viewportWorldRect reports infinite height, but the count and safe-integer checks accept the lattice and a callback runs for each horizontal copy under the invalid view",
+   "size": "function",
+   "cause": "untiled-axis short-circuit bypasses the degenerate-view guard",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 396
+}

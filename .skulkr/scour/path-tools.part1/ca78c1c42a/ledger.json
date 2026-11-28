@@ -1,0 +1,142 @@
+{
+ "area": "path-tools.part1",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/path-tools/src/actionParamSchema.ts",
+  "packages/path-tools/src/anchorSelect/anchorSelect.ts",
+  "packages/path-tools/src/bridge/bridge.ts",
+  "packages/path-tools/src/comb/comb.ts",
+  "packages/path-tools/src/constraints/anchorConstraints.ts",
+  "packages/path-tools/src/constraints/constraintGlyphs.ts",
+  "packages/path-tools/src/constraints/constraintLinkMarks.ts",
+  "packages/path-tools/src/constraints/constraintLinks.ts",
+  "packages/path-tools/src/constraints/constraintsExtension.ts",
+  "packages/path-tools/src/constraints/linkAnchor.ts",
+  "packages/path-tools/src/constraints/pathConstraints.ts",
+  "packages/path-tools/src/drape/drape.ts",
+  "packages/path-tools/src/extremes/addExtremes.ts",
+  "packages/path-tools/src/fairing/fairing.tsx",
+  "packages/path-tools/src/featurePresets.ts",
+  "packages/path-tools/src/fillet/cornerRadii.ts",
+  "packages/path-tools/src/fillet/editFillet.ts",
+  "packages/path-tools/src/fillet/filletCommands.ts",
+  "packages/path-tools/src/fillet/filletControls.ts",
+  "packages/path-tools/src/fillet/filletWidgets.ts",
+  "packages/path-tools/src/fillet/useFilletControls.ts",
+  "packages/path-tools/src/girth/girthActions.ts",
+  "packages/path-tools/src/girth/girthOverlay.ts",
+  "packages/path-tools/src/girth/index.ts",
+  "packages/path-tools/src/girth/useGirthTool.ts",
+  "packages/path-tools/src/girth/widthEdit.ts",
+  "packages/path-tools/src/groups.ts",
+  "packages/path-tools/src/handleLocks/handleLocks.tsx",
+  "packages/path-tools/src/handleSnap/handleSnap.ts",
+  "packages/path-tools/src/host/createPathEditHost.ts",
+  "packages/path-tools/src/host/usePathEditMode.ts",
+  "packages/path-tools/src/icons.gen.ts",
+  "packages/path-tools/src/icons.table.ts",
+  "packages/path-tools/src/index.ts",
+  "packages/path-tools/src/kitSettings.ts",
+  "packages/path-tools/src/knead/knead.ts",
+  "packages/path-tools/src/knead/kneadTargets.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1870434,
+   "minutes": 0.22328333333333333,
+   "at": "2026-11-26T05:15:55.863Z",
+   "findings": 4
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Host keeps the caller's mutable selection Set, so later mutations change selectedAnchors without notifying subscribers",
+   "where": "packages/path-tools/src/host/createPathEditHost.ts:89 (setSelectedAnchors)",
+   "severity": "low",
+   "scenario": "Pass a Set holding anchor 0 to setSelectedAnchors, then add another anchor to that Set: selectedAnchors reports the new index, no notification is emitted, and subscribed panels keep showing the old selection",
+   "fix": [
+    "packages/path-tools/src/host/createPathEditHost.ts"
+   ],
+   "size": "line",
+   "cause": "stores caller's Set without copying",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "useFilletControls omits getServerSnapshot from useSyncExternalStore, so server rendering throws",
+   "where": "packages/path-tools/src/fillet/useFilletControls.ts:61 (useFilletControls)",
+   "severity": "low",
+   "scenario": "Render a component using useFilletControls through React's server renderer: rendering fails even when the sources are stable and hold no open path",
+   "fix": [
+    "packages/path-tools/src/fillet/useFilletControls.ts"
+   ],
+   "size": "line",
+   "cause": "missing getServerSnapshot argument",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Girth drag grips an anchor on a different subpath from the grabbed stroke edge",
+   "where": "packages/path-tools/src/girth/widthEdit.ts:104 (gripAt)",
+   "severity": "medium",
+   "scenario": "Compound path with a horizontal subpath at y=0 and a second subpath's endpoint at (50,4), reach 6, stroke width 2: grabbing the lower edge near (50,-1) changes the other subpath's endpoint width instead of inserting a width point under the press",
+   "fix": [
+    "packages/path-tools/src/girth/widthEdit.ts"
+   ],
+   "size": "function",
+   "cause": "anchor search not limited to the hit subpath",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Knead uses a circular world radius from the larger axis extent, so under anisotropic scale it moves points outside the visible brush",
+   "where": "packages/path-tools/src/knead/knead.ts:67 (pxReach)",
+   "severity": "medium",
+   "scenario": "View scale x=4, y=1, brush radius 40px: the world radius becomes 40, so a point 20 world units away horizontally (80px from the center) is deformed",
+   "fix": [
+    "packages/path-tools/src/knead/knead.ts"
+   ],
+   "size": "function",
+   "cause": "isotropic world radius under anisotropic scale",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 4262
+}

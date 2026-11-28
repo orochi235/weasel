@@ -1,0 +1,86 @@
+{
+ "area": "ui.components.MotifFrame",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/MotifFrame/MotifFrame.module.css",
+  "packages/ui/src/components/MotifFrame/MotifFrame.stories.module.css",
+  "packages/ui/src/components/MotifFrame/MotifFrame.stories.tsx",
+  "packages/ui/src/components/MotifFrame/MotifFrame.tsx",
+  "packages/ui/src/components/MotifFrame/index.ts",
+  "packages/ui/src/components/MotifFrame/motifs/divider.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/divider.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/index.ts",
+  "packages/ui/src/components/MotifFrame/motifs/notch.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/notch.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/plaque.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/plaque.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/rule.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/rule.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/sheet.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/sheet.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/stereo.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/stereo.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/tab.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/tab.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/titlebar.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/titlebar.tsx",
+  "packages/ui/src/components/MotifFrame/motifs/well.module.css",
+  "packages/ui/src/components/MotifFrame/motifs/well.tsx",
+  "packages/ui/src/components/MotifFrame/root.ts",
+  "packages/ui/src/components/MotifFrame/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2196516,
+   "minutes": 0.3657166666666667,
+   "at": "2026-11-27T00:29:03.982Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Toggling `named` between omitted and supplied adds/removes an outer provider, remounting the frame's whole subtree",
+   "where": "packages/ui/src/components/MotifFrame/MotifFrame.tsx:46 (DefaultMotif)",
+   "severity": "medium",
+   "scenario": "Adding an unused named motif map to a frame resets a form's local state or drops focus in its contents",
+   "size": "line",
+   "cause": "conditional provider wrapper",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A disabled frame leaves its body interactive; only the root is marked and the title dimmed",
+   "where": "packages/ui/src/components/MotifFrame/MotifFrame.tsx:101",
+   "severity": "low",
+   "scenario": "A button in the body of a `disabled` frame still accepts clicks and keyboard activation unless its consumer separately disables it",
+   "size": "line",
+   "cause": "body not made inert",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1753
+}

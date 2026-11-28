@@ -1,0 +1,119 @@
+{
+ "area": "plot.part2",
+ "commit": "ca78c1c42a92855c2a3e72ac749e4854d9c29849",
+ "files": [
+  "packages/plot/src/packet/structure.ts",
+  "packages/plot/src/packet/types.ts",
+  "packages/plot/src/pbt.fixture.ts",
+  "packages/plot/src/pie/compile.ts",
+  "packages/plot/src/pie/edit.ts",
+  "packages/plot/src/pie/editor.ts",
+  "packages/plot/src/pie/schema.ts",
+  "packages/plot/src/pie/structure.ts",
+  "packages/plot/src/pie/types.ts",
+  "packages/plot/src/plotData.ts",
+  "packages/plot/src/plotScene.ts",
+  "packages/plot/src/plotViewSync.ts",
+  "packages/plot/src/quadrant/compile.ts",
+  "packages/plot/src/quadrant/edit.ts",
+  "packages/plot/src/quadrant/editor.ts",
+  "packages/plot/src/quadrant/schema.ts",
+  "packages/plot/src/quadrant/structure.ts",
+  "packages/plot/src/quadrant/types.ts",
+  "packages/plot/src/radar/compile.ts",
+  "packages/plot/src/radar/edit.ts",
+  "packages/plot/src/radar/editor.ts",
+  "packages/plot/src/radar/schema.ts",
+  "packages/plot/src/radar/structure.ts",
+  "packages/plot/src/radar/types.ts",
+  "packages/plot/src/sankey/compile.ts",
+  "packages/plot/src/sankey/edit.ts",
+  "packages/plot/src/sankey/editor.ts",
+  "packages/plot/src/sankey/layout.ts",
+  "packages/plot/src/sankey/schema.ts",
+  "packages/plot/src/sankey/structure.ts",
+  "packages/plot/src/sankey/types.ts",
+  "packages/plot/src/theme.ts",
+  "packages/plot/src/timeline/compile.ts",
+  "packages/plot/src/timeline/edit.ts",
+  "packages/plot/src/timeline/editor.ts",
+  "packages/plot/src/timeline/schema.ts",
+  "packages/plot/src/timeline/structure.ts",
+  "packages/plot/src/timeline/types.ts",
+  "packages/plot/src/xychart/compile.ts",
+  "packages/plot/src/xychart/edit.ts",
+  "packages/plot/src/xychart/editor.ts",
+  "packages/plot/src/xychart/schema.ts",
+  "packages/plot/src/xychart/structure.ts",
+  "packages/plot/src/xychart/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1747684,
+   "minutes": 0.1633,
+   "at": "2026-11-26T05:18:02.521Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "replacePlotData removes every child of the plot root, deleting unrelated non-mark children such as annotations",
+   "where": "packages/plot/src/plotScene.ts:115 (replacePlotData)",
+   "severity": "medium",
+   "scenario": "a plot in a shared scene has an annotation node parented to its root; calling replacePlotData deletes the annotation",
+   "size": "line",
+   "cause": "removal not filtered by plot mark trait",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "setRadarValue accepts a fractional axis index, makes no edit, and can zero-fill sparse entries instead of throwing",
+   "where": "packages/plot/src/radar/edit.ts:10 (setRadarValue)",
+   "severity": "low",
+   "scenario": "setRadarValue on a two-axis curve with axis 0.5 passes the range check and returns an unedited chart",
+   "size": "line",
+   "cause": "range check lacks integer check",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Sankey layout with a tiny positive flow overflows height/flow, collapsing scale to zero and every node and ribbon to zero height",
+   "where": "packages/plot/src/sankey/layout.ts:130",
+   "severity": "low",
+   "scenario": "a single link valued at Number.MIN_VALUE in a positive-height box lays out with zero-height nodes and ribbon",
+   "size": "line",
+   "cause": "scale division overflows to Infinity",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3058
+}

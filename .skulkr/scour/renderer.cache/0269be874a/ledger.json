@@ -1,0 +1,177 @@
+{
+ "area": "renderer.cache",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/renderer/src/cache/GLImageCache.ts",
+  "packages/renderer/src/cache/GLMeshCache.ts",
+  "packages/renderer/src/cache/GLTextureCache.ts",
+  "packages/renderer/src/cache/GradientRampAtlas.ts",
+  "packages/renderer/src/cache/cache.ts",
+  "packages/renderer/src/cache/markerCommandCache.ts",
+  "packages/renderer/src/cache/outlineMeshCache.ts",
+  "packages/renderer/src/cache/outlineStrokeMeshCache.ts",
+  "packages/renderer/src/cache/strokeMeshCache.ts",
+  "packages/renderer/src/cache/uploadPremultiplied.ts",
+  "packages/renderer/src/cache/whiteTexture.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17685339999999997,
+   "minutes": 0.20593333333333333,
+   "at": "2026-11-26T05:20:48.772Z",
+   "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.1298554,
+   "minutes": 2.5983833333333335,
+   "at": "2026-11-26T17:29:14.131Z",
+   "findings": 0
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.9198860000000004,
+   "minutes": 3.7333833333333333,
+   "at": "2026-11-26T17:32:58.615Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.5249863999999997,
+   "minutes": 4.1409666666666665,
+   "at": "2026-11-26T17:37:07.351Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.8276032,
+   "minutes": 4.458516666666666,
+   "at": "2026-11-26T17:42:02.306Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Failed page allocation leaves a phantom page claim in `pages`, so later uploads collide and texture(id) has nothing to bind",
+   "where": "packages/renderer/src/cache/GLTextureCache.ts:146",
+   "severity": "low",
+   "scenario": "Page texture allocation throws after the page ID is claimed; regular uploads under the ID are treated as collisions, so texture(id) returns nothing to bind",
+   "size": "line",
+   "cause": "state committed before fallible allocation",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Image cache reused after disposal is never re-added to `live`, so releaseImageSource and the latest-frame query miss its new texture",
+   "where": "packages/renderer/src/cache/GLImageCache.ts:156",
+   "severity": "low",
+   "scenario": "Dispose an image cache, then upload to it again; the new texture is untracked globally",
+   "size": "line",
+   "cause": "dispose removes live membership that reuse never restores",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Failed attribute replacement leaves the old mesh entry cached, whose resources were already queued for transient cleanup and get deleted by freeTransient",
+   "where": "packages/renderer/src/cache/GLMeshCache.ts:77",
+   "severity": "low",
+   "scenario": "Replacement allocation throws; after freeTransient, a request matching the previous attribute gets a handle to deleted GL resources",
+   "size": "line",
+   "cause": "old resources released before fallible allocation",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "subImageR8/subImageRGBA skip the kind check uploadR8/uploadRGBA enforce, so glyph bytes get written into a texture that belongs to an image",
+   "where": "packages/renderer/src/cache/GLTextureCache.ts:167 (subImageR8), :184 (subImageRGBA)",
+   "severity": "low",
+   "scenario": "an image is registered (or `upload`ed) under an id a dynamic glyph page later uses, e.g. `weasel-dyn-sdf-page-0`. `uploadR8` → `claimPage` sees the id taken by a non-page, warns \"only the one made first is kept\", and does nothing. But `dynamicPages.sync` (packages/font/src/dynamic/dynamicPages.ts:84-98) sees `cache.has(id)` true, skips the upload and patches: `subImageR8` looks the id up through `texture(id)` with no `pages` check and calls `writeSubTexture` with w×h single-channel bytes on the RGBA8 image texture. WebGL raises INVALID_OPERATION (or WebGPU a validation error) and nothing is written, or, for `subImageRGBA`, glyph texels overwrite the image's and its mipmaps are regenerated. Expected: the collision is settled one way, as `claimPage`/`collidesWithPage` settle it: the patch methods refuse a non-page id too.",
+   "fix": [
+    "packages/renderer/src/cache/GLTextureCache.ts"
+   ],
+   "size": "line",
+   "cause": "page ownership checked on create, not on patch",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A font-atlas upload under an id already registered drops that id from the sweep, so its texture outlives the registry entry",
+   "where": "packages/renderer/src/cache/GLTextureCache.ts:68 (upload)",
+   "severity": "low",
+   "scenario": "id `x` is drawn through `uploadRegistered` (added to `registered`), then a font atlas is uploaded under the same id with `upload`, which does `registered.delete(id)` and rewrites the texture (warned). When the texture registry later drops `x`, `sweep` never visits it, so the GPU texture lives until `free()`. Expected: the collision keeps one owner but the texture is freed once neither owner holds it.",
+   "size": "line",
+   "cause": "ownership flag cleared rather than shared",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  }
+ ],
+ "lines": 1383
+}

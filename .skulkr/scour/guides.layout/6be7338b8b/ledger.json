@@ -1,0 +1,75 @@
+{
+ "area": "guides.layout",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/guides/src/layout/perContainer.ts",
+  "packages/guides/src/layout/snaps.ts",
+  "packages/guides/src/layout/strategies/arrangements.ts",
+  "packages/guides/src/layout/strategies/freeform.ts",
+  "packages/guides/src/layout/strategies/index.ts",
+  "packages/guides/src/layout/strategies/pack.ts",
+  "packages/guides/src/layout/strategies/quadtree.ts",
+  "packages/guides/src/layout/strategies/sequence.ts",
+  "packages/guides/src/layout/strategies/slots.ts",
+  "packages/guides/src/layout/strategies/snapPoint.ts",
+  "packages/guides/src/layout/strategies/testing/moveLayoutStubs.ts",
+  "packages/guides/src/layout/strategies/tileCells.ts",
+  "packages/guides/src/layout/strategies/tileGrid.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17785440000000002,
+   "minutes": 0.13501666666666667,
+   "at": "2026-11-25T23:54:41.303Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Null cellRect passes the legacy metadata guard and throws in rectContainsPointHalfOpen instead of falling back to the target origin",
+   "where": "packages/guides/src/layout/snaps.ts:78",
+   "severity": "low",
+   "scenario": "custom layout target carrying cellRect: null metadata; nearest-target fallback throws instead of using the target origin",
+   "fix": [
+    "packages/guides/src/layout/snaps.ts"
+   ],
+   "size": "line",
+   "cause": "typeof null === 'object' in guard",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Quadtree offers the root cell as a fit for a child larger than the root, which is then shrunk to root size",
+   "where": "packages/guides/src/layout/strategies/quadtree.ts:158 (depthOf)",
+   "severity": "medium",
+   "scenario": "empty 100x100 container, child requiring 150 units passes the fit gate and default cellToPose shrinks it to the root dimensions",
+   "fix": [
+    "packages/guides/src/layout/strategies/quadtree.ts"
+   ],
+   "size": "function",
+   "cause": "depthOf clamps to zero without rejecting oversize",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

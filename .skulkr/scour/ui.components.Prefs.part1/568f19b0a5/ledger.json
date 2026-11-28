@@ -1,0 +1,106 @@
+{
+ "area": "ui.components.Prefs.part1",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Prefs/ActionLeaf.stories.tsx",
+  "packages/ui/src/components/Prefs/ActionLeaf.tsx",
+  "packages/ui/src/components/Prefs/ActionsLeaf.stories.tsx",
+  "packages/ui/src/components/Prefs/ActionsLeaf.tsx",
+  "packages/ui/src/components/Prefs/BarRootLayout.tsx",
+  "packages/ui/src/components/Prefs/GroupTabs.stories.tsx",
+  "packages/ui/src/components/Prefs/GroupTabs.tsx",
+  "packages/ui/src/components/Prefs/ListLeaf.tsx",
+  "packages/ui/src/components/Prefs/MapEditor.module.css",
+  "packages/ui/src/components/Prefs/MapEditor.stories.tsx",
+  "packages/ui/src/components/Prefs/MapEditor.tsx",
+  "packages/ui/src/components/Prefs/NoMatches.tsx",
+  "packages/ui/src/components/Prefs/ObjectLeaf.tsx",
+  "packages/ui/src/components/Prefs/PrefControl.tsx",
+  "packages/ui/src/components/Prefs/PrefKindBadge.module.css",
+  "packages/ui/src/components/Prefs/PrefKindBadge.stories.tsx",
+  "packages/ui/src/components/Prefs/PrefKindBadge.tsx",
+  "packages/ui/src/components/Prefs/PrefLabelLine.stories.tsx",
+  "packages/ui/src/components/Prefs/PrefMixed.module.css",
+  "packages/ui/src/components/Prefs/PrefMixed.stories.tsx",
+  "packages/ui/src/components/Prefs/PrefMixed.tsx",
+  "packages/ui/src/components/Prefs/PrefWords.module.css",
+  "packages/ui/src/components/Prefs/PrefWords.tsx",
+  "packages/ui/src/components/Prefs/Prefs.across.stories.tsx",
+  "packages/ui/src/components/Prefs/Prefs.heading.stories.tsx",
+  "packages/ui/src/components/Prefs/Prefs.kinds.stories.tsx",
+  "packages/ui/src/components/Prefs/Prefs.module.css",
+  "packages/ui/src/components/Prefs/Prefs.split.stories.tsx",
+  "packages/ui/src/components/Prefs/Prefs.stories.module.css",
+  "packages/ui/src/components/Prefs/Prefs.stories.tsx",
+  "packages/ui/src/components/Prefs/PrefsDialog.tsx",
+  "packages/ui/src/components/Prefs/PrefsForm.tsx",
+  "packages/ui/src/components/Prefs/PrefsPane.stories.tsx",
+  "packages/ui/src/components/Prefs/PrefsPane.tsx",
+  "packages/ui/src/components/Prefs/PrefsRail.stories.tsx",
+  "packages/ui/src/components/Prefs/PrefsRail.tsx",
+  "packages/ui/src/components/Prefs/PrefsRow.tsx",
+  "packages/ui/src/components/Prefs/RailLayout.tsx",
+  "packages/ui/src/components/Prefs/Split.module.css",
+  "packages/ui/src/components/Prefs/SplitRow.tsx"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.22099560000000001,
+   "minutes": 0.27576666666666666,
+   "at": "2026-11-27T00:31:36.505Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "GroupTabs throws on an empty tabs array by reading tabs[0].id",
+   "where": "packages/ui/src/components/Prefs/GroupTabs.tsx:32 (GroupTabs)",
+   "severity": "low",
+   "scenario": "A caller renders GroupTabs with an empty tabs array (e.g. every tab filtered away); render throws",
+   "fix": [
+    "packages/ui/src/components/Prefs/GroupTabs.tsx"
+   ],
+   "size": "line",
+   "cause": "unguarded tabs[0] access",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "SplitRow keys terminal rows by display label, giving duplicate keys and misrouted local state when options share a label",
+   "where": "packages/ui/src/components/Prefs/SplitRow.tsx:120 (SplitRow)",
+   "severity": "low",
+   "scenario": "Two selector options share a label but have distinct values; duplicate keys, and on reorder React reuses one row's input state for the other value",
+   "fix": [
+    "packages/ui/src/components/Prefs/SplitRow.tsx"
+   ],
+   "size": "line",
+   "cause": "label used as React key instead of stable value",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3922
+}

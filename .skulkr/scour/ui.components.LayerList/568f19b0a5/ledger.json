@@ -1,0 +1,55 @@
+{
+ "area": "ui.components.LayerList",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/LayerList/LayerList.module.css",
+  "packages/ui/src/components/LayerList/LayerList.stories.module.css",
+  "packages/ui/src/components/LayerList/LayerList.stories.tsx",
+  "packages/ui/src/components/LayerList/LayerList.tsx",
+  "packages/ui/src/components/LayerList/RowParts.tsx",
+  "packages/ui/src/components/LayerList/index.ts",
+  "packages/ui/src/components/LayerList/layerList.fixture.tsx",
+  "packages/ui/src/components/LayerList/layerListProps.ts",
+  "packages/ui/src/components/LayerList/layerNodes.tsx",
+  "packages/ui/src/components/LayerList/layerSolo.ts",
+  "packages/ui/src/components/LayerList/layerTree.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.21281560000000002,
+   "minutes": 0.23253333333333334,
+   "at": "2026-11-27T00:26:59.219Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "moveLayers duplicates a layer when the move's ids repeat, so tree rows lose unique ids",
+   "where": "packages/ui/src/components/LayerList/layerTree.ts:36 (moveLayers)",
+   "severity": "low",
+   "scenario": "moveLayers with ids ['a', 'a'] on [a, b] at root index 1 returns [b, a, a], so two rows share one id",
+   "fix": [
+    "packages/ui/src/components/LayerList/layerTree.ts"
+   ],
+   "size": "line",
+   "cause": "insertion block not deduplicated against lifted layers",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 887
+}

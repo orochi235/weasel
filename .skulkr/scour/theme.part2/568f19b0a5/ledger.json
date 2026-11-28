@@ -1,0 +1,72 @@
+{
+ "area": "theme.part2",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/theme/src/hooks/controls.ts",
+  "packages/theme/src/hooks/frame.ts",
+  "packages/theme/src/hooks/panels.ts",
+  "packages/theme/src/index.ts",
+  "packages/theme/src/inherited.module.css",
+  "packages/theme/src/numeric.module.css",
+  "packages/theme/src/panel.ts",
+  "packages/theme/src/pbt.fixture.ts",
+  "packages/theme/src/prefs.ts",
+  "packages/theme/src/prefs/leaf.ts",
+  "packages/theme/src/prefs/pins.ts",
+  "packages/theme/src/prefs/schema.ts",
+  "packages/theme/src/prefs/tokens.ts",
+  "packages/theme/src/react.tsx",
+  "packages/theme/src/resolveTheme.ts",
+  "packages/theme/src/scrollbars.ts",
+  "packages/theme/src/sizer.module.css",
+  "packages/theme/src/store.ts",
+  "packages/theme/src/testing/computedColor.ts",
+  "packages/theme/src/testing/themeGate.ts",
+  "packages/theme/src/theme.ts",
+  "packages/theme/src/themeSheet.ts",
+  "packages/theme/src/themes/platinum.ts",
+  "packages/theme/src/themes/win9x.ts",
+  "packages/theme/src/tokenGroup.ts",
+  "packages/theme/src/tokenPx.ts",
+  "packages/theme/src/useColorMode.ts",
+  "packages/theme/src/warnOnce.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2127996,
+   "minutes": 0.17896666666666666,
+   "at": "2026-11-27T00:14:33.045Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Switching useColorMode's storage option while keeping the same storageKey keeps the previous store's color mode; only the setter follows the new store",
+   "where": "packages/theme/src/useColorMode.ts:59",
+   "severity": "low",
+   "scenario": "A mounted host switches storage between two profile stores sharing a key; the UI keeps showing the first profile's light mode though the new store holds dark, and reads and writes are bound to different stores",
+   "fix": [
+    "packages/theme/src/useColorMode.ts"
+   ],
+   "size": "line",
+   "cause": "storage missing from refresh dependencies",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1959
+}

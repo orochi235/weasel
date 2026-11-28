@@ -63,6 +63,126 @@
    "minutes": 0.10606666666666667,
    "at": "2026-11-25T21:13:20.455Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.4362082,
+   "minutes": 2.929583333333333,
+   "at": "2026-11-26T11:06:16.011Z",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.2501398000000001,
+   "minutes": 4.38665,
+   "at": "2026-11-26T11:10:39.371Z",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.000173,
+   "minutes": 3.70135,
+   "at": "2026-11-26T11:14:21.602Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.1210278,
+   "minutes": 3.8447,
+   "at": "2026-11-26T11:18:12.416Z",
+   "findings": 5
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.8108328,
+   "minutes": 2.7255833333333332,
+   "at": "2026-11-26T11:20:56.082Z",
+   "findings": 2
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.1402574,
+   "minutes": 4.040266666666667,
+   "at": "2026-11-26T11:24:58.639Z",
+   "findings": 1
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.1549117999999998,
+   "minutes": 4.450033333333333,
+   "at": "2026-11-26T11:29:25.770Z",
+   "findings": 3
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.2239922,
+   "minutes": 3.4819833333333334,
+   "at": "2026-11-26T11:32:54.845Z",
+   "findings": 1
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.1697946,
+   "minutes": 4.242649999999999,
+   "at": "2026-11-26T11:37:09.538Z",
+   "findings": 2
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.5546927999999998,
+   "minutes": 5.07265,
+   "at": "2026-11-26T11:42:14.056Z",
+   "findings": 4
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 1.5718432,
+   "minutes": 5.9671,
+   "at": "2026-11-26T11:48:12.203Z",
+   "findings": 2
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 2.1322006,
+   "minutes": 6.9596,
+   "at": "2026-11-26T11:55:09.899Z",
+   "findings": 2
   }
  ],
  "defects": [
@@ -70,16 +190,31 @@
    "id": "D1",
    "claim": "Inspector ignores inline declarations, so it reports a stylesheet token that has lost the cascade to an inline style",
    "where": "apps/theme-editor/src/theme/inspect.ts:74",
-   "severity": "low",
+   "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    4,
+    9,
+    12
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     4,
+     9,
+     12
     ]
-   }
+   },
+   "scenario": "a kit component in the preview sets a property or a custom property in its `style` attribute (e.g. `style={{ '--thumb-color': 'var(--wzl-accent)' }}` or `background: var(--wzl-x)`). `tokensReadAt` only walks `sheets`' rules, so a token read through the inline declaration is never reported, and a stylesheet declaration the inline one overrides is reported as the winner, listing a token the element does not actually read. The cascade gives the style attribute precedence over all non-`!important` author rules; it should be seeded into `winners[i]` from `el.style` (or `getAttribute('style')`) with a specificity above any selector.",
+   "cause": "cascade model omits the style attribute",
+   "fix": [
+    "apps/theme-editor/src/theme/inspect.ts"
+   ],
+   "size": "function",
+   "confidence": "sure"
   },
   {
    "id": "D2",
@@ -95,6 +230,405 @@
      1
     ]
    }
+  },
+  {
+   "id": "D3",
+   "claim": "Jumping from the inspector to an inherited pins-only token opens the Pins page, which does not list that token",
+   "where": "apps/theme-editor/src/theme/model.ts:66 (jumpLayerFor)",
+   "severity": "medium",
+   "scenario": "The draft is a child of weasel (like `fixtures.ts`'s `child`). Inspect a component that reads a token weasel only pins, which the child does not pin itself (one of the `radius-*` pins other than `radius-md`). derive records it as `{ layer: 'pins', pinned: false }` (packages/theme/src/engine/derive.ts:120). `jumpLayerFor` skips the own-pin branch, because the child does not hold the pin, and falls through to `provenance.layer`, which is `'pins'`. `layerNames('pins')` lists only `def.pins` (model.ts:79), so the workbench switches to a Pins page with no row for the token, and nothing is highlighted or scrolled to. The token also appears on no other page. Expected: the jump lands on a page that lists the token, or the Pins page lists inherited pins that apply.",
+   "fix": [
+    "apps/theme-editor/src/theme/model.ts",
+    "apps/theme-editor/src/theme/entries.ts",
+    "apps/theme-editor/src/TokenLayer.tsx"
+   ],
+   "size": "function",
+   "cause": "the jump target and the page listing disagree about inherited pure pins",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    6,
+    10
+   ],
+   "sources": {
+    "claude": [
+     2,
+     6,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Turning \"Varies by <axis>\" off and back on rewrites a non-mode variation as a mode variation",
+   "where": "apps/theme-editor/src/layers/SemanticDrawer.tsx:186 (setVaries)",
+   "severity": "low",
+   "scenario": "A semantic rule is `{ by: 'density', comfortable: …, compact: … }`. The drawer labels the toggle `Varies by density` (`axis = rule.by`). Turn it off, and the rule collapses to the current branch. Turn it back on: `setVaries(true)` always writes `{ by: 'mode', …modeValues }`, so the rule now varies by mode rather than density, and a toggle that just read \"Varies by density\" has silently changed axis. Expected: turning it back on restores a variation over the axis it was turned off from.",
+   "size": "function",
+   "cause": "axis hard-coded to 'mode' when re-enabling",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A categorical ramp's plain `surface` gate is neither editable nor shown in the gates editor",
+   "where": "apps/theme-editor/src/layers/RampsLayer.tsx:118 (GatesEditor)",
+   "severity": "low",
+   "scenario": "a theme's own categorical ramp has `gates: { surface: '#ffffff' }`. `plain('surface', '#ffffff')` is true (string, same typeof as the default, not a `{ref}`), so the gate goes into `c`, not `held`. `ConstraintsPanel` has no surface row, so in \"Edit gates\" the gate is invisible. The editor never shows the surface the ramp is gated against, and nothing can change it. The read-only branch does list it (`values` from `entry.gates`). An editable gate the panel has no control for should show as written, like `held`, or get a control.",
+   "fix": [
+    "apps/theme-editor/src/layers/RampsLayer.tsx",
+    "apps/theme-editor/src/palette/ConstraintsPanel.tsx"
+   ],
+   "size": "function",
+   "cause": "plain/held split ignores which keys the panel renders",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A pinned semantic with no generated value shows `undefined` as its \"Rule produced\" text",
+   "where": "apps/theme-editor/src/theme/semantics.ts:107 (semanticRows)",
+   "severity": "low",
+   "scenario": "`produced: text(p.pinned ? p.generated?.value : token.value)`. `text` is `JSON.stringify` for any non-string, and `JSON.stringify(undefined)` returns `undefined`, not a string. So for a pinned token whose provenance has no `generated` (entries.ts:37 treats `pinned && generated === undefined` as a real case), `produced` is `undefined` although `SemanticCell.produced` is typed `string`. SemanticDrawer then draws an empty `<code>` under \"Rule produced\" where it should show \"—\", as the Pin column does for a missing value.",
+   "fix": [
+    "apps/theme-editor/src/theme/semantics.ts",
+    "apps/theme-editor/src/layers/SemanticDrawer.tsx"
+   ],
+   "size": "line",
+   "cause": "JSON.stringify(undefined) is not a string",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    8
+   ],
+   "sources": {
+    "claude": [
+     3,
+     8
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "Click-to-inspect counts token declarations inside an unmet @container, @scope or @starting-style rule as applying to the element",
+   "where": "apps/theme-editor/src/theme/inspect.ts:77 (tokensReadAt, applies)",
+   "severity": "low",
+   "scenario": "`applies` tests only `CSSMediaRule` and `CSSSupportsRule`; every other grouping rule returns true and its nested rules are visited. A component styled with `@container (min-width: 40rem) { .x { color: var(--wzl-fg-strong) } }` inside a narrow preview pane has that declaration counted, and by source order it can beat the declaration actually in force, so the inspector lists `fg-strong` and jumps to it although the element reads something else. Unmet conditional rules other than media/supports should not contribute (or, where untestable, should not override a declaration known to apply).",
+   "fix": [
+    "apps/theme-editor/src/theme/inspect.ts"
+   ],
+   "size": "line",
+   "cause": "conditional-rule check covers only media and supports",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A draft left for a theme whose file was deleted becomes an undiscardable theme entry that can only fail to reload",
+   "where": "apps/theme-editor/src/ThemeEditor.tsx:23 (withUnsavedDrafts); apps/theme-editor/src/ThemeWorkbench.tsx:220 (dead-draft actions)",
+   "severity": "medium",
+   "scenario": "theme `foo` is saved (draft stored with `baseHash: \"<sha>\"`), then `foo.json` is deleted on disk. On load, `withUnsavedDrafts` re-adds `foo` from its draft with `hash: ''`, and `start` is the stored draft, so `baseHash` is the old sha, not null. The workbench treats it as on-disk: the dead-draft screen offers only \"Discard the draft and reload from disk\", whose `api.get('foo')` throws; the healthy screen offers no discard at all, and a save with the stale base hash answers a conflict whose \"Reload from disk\" fails the same way. The theme cannot be dropped from the UI. Should: a theme not in `listed` with `hash === ''` is treated as unsaved (baseHash null / discard offered) whatever its draft says.",
+   "fix": [
+    "apps/theme-editor/src/ThemeEditor.tsx"
+   ],
+   "size": "function",
+   "cause": "draft's baseHash trusted over the list",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "Jump-to-token builds an unescaped attribute selector that throws on a token name containing `\"` or `\\`",
+   "where": "apps/theme-editor/src/TokenLayer.tsx:35 (TokenLayer effect)",
+   "severity": "low",
+   "scenario": "a definition pins a token whose key contains a double quote or backslash (pins are user-keyed); inspecting or jumping to it sets `highlight`, and `querySelector('[aria-label=\"a\"b\"]')` throws a SyntaxError inside the effect, taking the editor down. Should escape with `CSS.escape` (or compare `aria-label` values without a selector).",
+   "fix": [
+    "apps/theme-editor/src/TokenLayer.tsx"
+   ],
+   "size": "line",
+   "cause": "unescaped user string in selector",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    8
+   ],
+   "sources": {
+    "claude": [
+     5,
+     8
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "tokensReadAt never visits rules from @import-ed stylesheets, so tokens declared there are missed",
+   "where": "apps/theme-editor/src/theme/inspect.ts:84 (tokensReadAt, visit)",
+   "severity": "low",
+   "scenario": "a stylesheet that pulls in component CSS with `@import` has a `CSSImportRule` whose rules live on `rule.styleSheet.cssRules`, not `rule.cssRules`; `visit` recurses only through `cssRules`, so every token read by an imported sheet's declarations is missing from Inspect's list. Should visit `rule.styleSheet` (subject to its media) as well.",
+   "size": "line",
+   "cause": "CSSImportRule not followed",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A reference field being edited closes mid-typing when the store normalizes the value that was set",
+   "where": "apps/theme-editor/src/TokenReference.tsx:32 (TokenReference)",
+   "severity": "low",
+   "scenario": "the field stays open only while `Object.is(editing.value, ctx.value)`. `onChange` records the raw typed value, then `ctx.setValue(value)`; a store whose validator coerces or trims (or rejects) the value hands back a different `ctx.value`, so `open` turns false, the text field is swapped for the reference chip, and focus is lost on the keystroke. Should hold open on the value the leaf reports after the write, or until blur.",
+   "size": "function",
+   "cause": "open-state keyed on pre-write value",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    6
+   ],
+   "sources": {
+    "claude": [
+     5,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "Scale parameter sliders clamp a theme's own value when it falls outside their fixed ranges",
+   "where": "apps/theme-editor/src/layers/ScalesLayer.tsx:22 (PARAMS)",
+   "severity": "low",
+   "scenario": "a theme's own scale with `base: 96`, `step: -2` or `ratio: 4` renders a slider bounded to 0–64 / 0–32 / 1–3; the thumb shows the bound, and the first touch writes a value inside the range, silently replacing the authored one (a negative step can never be written). Should widen the range to include the current value, or show an out-of-range value as text as non-numeric ones are.",
+   "size": "function",
+   "cause": "fixed slider bounds over free-form data",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "A saved undo history containing a malformed step crashes the page at mount on every load",
+   "where": "apps/theme-editor/src/useLabHistory.ts:25 (stepsBackTo)",
+   "severity": "low",
+   "scenario": "localStorage holds a history under `weasel.theme-editor.palette-history` (or a theme's `draft-history.<name>`) whose `undoStack` is an array but one entry lacks `forwardOps`, or whose first op has no `args` (a hand edit, a format change, a truncated write). `savedHistoryOf` only checks that `undoStack`/`redoStack` are arrays and `version === 1`, so the save is accepted. `stepsBackTo` runs outside the `try` that guards `restore`, and reads `stack[i]!.forwardOps[0]` and `(first.args as SwapArgs).before` unguarded, so it throws a TypeError inside `useMemo`. The palette lab or theme workbench fails to render, and because nothing clears the key, it fails again on every reload. It should drop the unreadable history, as the strict-restore `catch` already does for a step that cannot be rebuilt.",
+   "fix": [
+    "apps/theme-editor/src/useLabHistory.ts",
+    "apps/theme-editor/src/historyStorage.ts"
+   ],
+   "size": "line",
+   "cause": "validation outside the try that guards restore",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "The app root never sets overflow: hidden, so the narrow workbench makes the whole document grow and scroll",
+   "where": "apps/theme-editor/src/app.css:1 (html, body, #root)",
+   "severity": "low",
+   "scenario": "`html, body, #root` get `height: 100%` and `margin: 0` but no `overflow: hidden`, and no labkit stylesheet sets it either (no `overflow` rule anywhere under `packages/labkit` matching `*.css`). At a viewport ≤ 900px, `ThemeEditor.module.css` switches `.workbench` to `height: auto`, so the rail, the editor and the preview stack at their full heights and the document itself scrolls instead of each pane scrolling inside its own box. The repo rule is that the root fills the viewport exactly and `scrollY` stays 0.",
+   "fix": [
+    "apps/theme-editor/src/app.css",
+    "apps/theme-editor/src/ThemeEditor.module.css"
+   ],
+   "size": "line",
+   "cause": "root overflow not pinned",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    11
+   ],
+   "sources": {
+    "claude": [
+     8,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "Click-to-inspect never counts tokens read by ::before / ::after rules, so tokens used only by an element's pseudo-elements go unreported",
+   "where": "apps/theme-editor/src/theme/inspect.ts:36 (specificityAt), apps/theme-editor/src/theme/inspect.ts:10 (matches)",
+   "severity": "low",
+   "scenario": "a kit control draws part of itself in a pseudo-element, for example `.switch::before { background: var(--wzl-…) }` for a thumb or a checkbox mark. `el.matches('.switch::before')` is false for the element, so `specificityAt` drops the rule and `tokensReadAt` leaves out the token the visible part reads. With Inspect on, clicking the Switch or Checkbox in the preview lists only the host element's tokens, and the jump skips the token the user actually sees. What should happen: match the selector with its pseudo-element stripped and count its declarations for that element.",
+   "size": "function",
+   "cause": "pseudo-element selectors never match an element",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    13
+   ],
+   "sources": {
+    "claude": [
+     10,
+     13
+    ]
+   },
+   "fix": [
+    "apps/theme-editor/src/theme/inspect.ts"
+   ]
+  },
+  {
+   "id": "D16",
+   "claim": "A saved history whose last step is a coalesced burst is dropped instead of stepped back to the state the page opens on",
+   "where": "apps/theme-editor/src/useLabHistory.ts:30 (stepsBackTo)",
+   "severity": "medium",
+   "scenario": "The theme editor stores a draft only while it derives, so after a reload it opens on the last draft that derived. Its saved history ends on the newer state, and `stepsBackTo` should find how many undos lead back. It reads `forwardOps[0].args.before` of each entry. But `coalesceEntry` (packages/history/src/entryOps.ts:124) sets `top.forwardOps = ops` on every merge. A coalesced entry's `forwardOps[0]` is therefore the *last* tick's swap, and its `before` is the state one tick before the end. The state before the burst lives only in `baseOps[0]`. Example: the draft derives as D0, and the user types `{a`, `{ac`, `{acc` into a pin field. That is one coalesced entry ending at D3, and none of those three drafts derives. On reload the page opens on D0. `stepsBackTo` compares D0 against D2, gets no match, and returns null, so the whole saved history is discarded. It should have found one step back. The same happens on the palette lab whenever the live state lags the history across a coalesced slider drag.",
+   "fix": [
+    "apps/theme-editor/src/useLabHistory.ts"
+   ],
+   "size": "line",
+   "cause": "reads forwardOps where coalescing keeps the original before in baseOps",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "Dragging a lightness slider on a ramp with no `lightness` writes an object instead of the two-number tuple",
+   "where": "apps/theme-editor/src/theme/ramps.ts:84 (writeParam)",
+   "severity": "low",
+   "scenario": "Take a lightness ramp whose `lightness` is absent, or anything other than an array. `LightnessParams` (layers/RampsLayer.tsx:79) still draws \"First L\" / \"Last L\" sliders at 0, because `readParam` answers undefined. Dragging one runs `writeParam(entry, 'lightness.0', v)`. The `top` there is not an array, so the call falls through to `{ ...undefined, '0': v }` and writes `lightness: { \"0\": v }`. derive requires `Array.isArray(l) && l.length === 2` (packages/theme/src/engine/entries.ts:117), so the ramp stays invalid however the slider moves. The array case only works once the tuple already exists.",
+   "fix": [
+    "apps/theme-editor/src/theme/ramps.ts"
+   ],
+   "size": "line",
+   "cause": "object fallback used for an array-shaped parameter",
+   "confidence": "sure",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "The hex Pin button pins an already-pinned color, giving the generator two identical anchors",
+   "where": "apps/theme-editor/src/SwatchPanel.tsx:172 (Pin button / add)",
+   "severity": "low",
+   "scenario": "The swatch grid treats pinning as a toggle by color (`isPinned` and `colorOf`), so the same color never goes in twice from there. The hex row's Pin button checks only `full` and `HEX6`. Pin `#e0e11c`, then press Pin again: `add` renames the second one to `<name>-2` and appends an anchor of the same color. Two anchors at distance 0 make any non-zero `minDistance` gate infeasible, and they take two slots. The grid would have shown that color as pinned and offered to unpin it.",
+   "size": "line",
+   "cause": "hex path skips the pinned-color check the grid applies",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "A negative px value in a scale draws a full-width ladder bar",
+   "where": "apps/theme-editor/src/layers/ScalesLayer.tsx:126 (ScaleSection)",
+   "severity": "low",
+   "scenario": "Take a scale whose steps resolve to a negative length, such as a tracking or offset scale with `-1px`. `pxOf` accepts the minus sign and returns -1. The bar then gets `width: -N%`, which is invalid CSS, so the browser drops it. The bar is `display: block` with no width, so it spans the whole cell: the most negative step draws as the widest bar. `widest` also ignores magnitude, so a scale whose values are all negative gets `widest = 1`. The bar should scale by `Math.abs(px)` against the widest magnitude.",
+   "size": "line",
+   "cause": "signed value used as a width",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "Click-to-inspect never reports tokens read through a custom property declared in an element's inline style",
+   "where": "apps/theme-editor/src/theme/inspect.ts:91 (tokensReadAt)",
+   "severity": "medium",
+   "scenario": "In the theme editor, turn Inspect on and click the specimen Slider. `Slider` writes `thumbSize`/`trackHeight` as inline custom properties on its root (`style=\"--rp-thumb-size: var(--wzl-slider-thumb-size); --rp-track-height: var(--wzl-slider-track-h)\"`, pinned by `Slider.metrics.test.tsx:24`). The stylesheet rules read `var(--rp-thumb-size)`, and `follow('rp-thumb-size', i)` looks for a declaration only among the `winners` built from `document.styleSheets`. It finds none, so `slider-thumb-size` and `slider-track-h` are never listed under \"Tokens read\", and a click cannot jump to them. An element's `style` attribute is a declaration in force, and it beats every stylesheet rule for that property. It should be folded into each chain element's winners (as the highest-ranked, non-important layer).",
+   "fix": [
+    "apps/theme-editor/src/theme/inspect.ts"
+   ],
+   "size": "function",
+   "cause": "inline style declarations left out of the cascade",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
   }
- ]
+ ],
+ "lines": 5879
 }

@@ -1,0 +1,90 @@
+{
+ "area": "labkit.trial.part1",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/trial/FloatSidebar.tsx",
+  "packages/labkit/src/trial/MissingTrial.tsx",
+  "packages/labkit/src/trial/Trial.less",
+  "packages/labkit/src/trial/Trial.stories.tsx",
+  "packages/labkit/src/trial/Trial.tsx",
+  "packages/labkit/src/trial/TrialBody.tsx",
+  "packages/labkit/src/trial/TrialChrome.tsx",
+  "packages/labkit/src/trial/TrialContexts.tsx",
+  "packages/labkit/src/trial/TrialDragContext.ts",
+  "packages/labkit/src/trial/TrialLayerList.tsx",
+  "packages/labkit/src/trial/TrialScope.tsx",
+  "packages/labkit/src/trial/TrialTheme.tsx",
+  "packages/labkit/src/trial/TrialTitleBar.tsx",
+  "packages/labkit/src/trial/UndockedSections.tsx",
+  "packages/labkit/src/trial/homeView.ts",
+  "packages/labkit/src/trial/index.ts",
+  "packages/labkit/src/trial/loupeSwitch.ts",
+  "packages/labkit/src/trial/renderContext.ts",
+  "packages/labkit/src/trial/trialConfigChange.ts",
+  "packages/labkit/src/trial/trialContent.tsx",
+  "packages/labkit/src/trial/trialEdit.ts",
+  "packages/labkit/src/trial/trialEditOp.ts",
+  "packages/labkit/src/trial/trialHistory.ts",
+  "packages/labkit/src/trial/trialHistoryOf.ts",
+  "packages/labkit/src/trial/trialOps.ts",
+  "packages/labkit/src/trial/trialTitle.ts",
+  "packages/labkit/src/trial/trialUndo.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16969839999999997,
+   "minutes": 0.1892,
+   "at": "2026-11-26T05:12:51.675Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Undocking or docking a sidebar section remounts its body through a different subtree, losing local component state",
+   "where": "packages/labkit/src/trial/TrialChrome.tsx:200",
+   "severity": "medium",
+   "scenario": "A docked section with local state is undocked or re-docked; React sees a distinct subtree and its state resets, contrary to the UndockedSections contract that only the DOM moves",
+   "fix": [
+    "packages/labkit/src/trial/TrialChrome.tsx"
+   ],
+   "cause": "dock and undock render the body under different parent components",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "marksFirst uses the stale render-time marks.moves snapshot, so undo skips a newer annotation and undoes an older instrument edit",
+   "where": "packages/labkit/src/trial/trialUndo.ts:77 (marksFirst)",
+   "severity": "medium",
+   "scenario": "An annotation is added after the bindings were created and undo fires before the next render; the captured false skips the annotation undo and undoes an earlier instrument edit instead",
+   "fix": [
+    "packages/labkit/src/trial/trialUndo.ts"
+   ],
+   "cause": "stale render-time snapshot of mark history",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2278
+}

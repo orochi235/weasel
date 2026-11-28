@@ -1,0 +1,77 @@
+{
+ "area": "renderer.testing",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/renderer/src/testing/batch.ts",
+  "packages/renderer/src/testing/fakeGpuDevice.ts",
+  "packages/renderer/src/testing/glRecorder.ts",
+  "packages/renderer/src/testing/ownDrawPaint.ts",
+  "packages/renderer/src/testing/parityHarness.ts",
+  "packages/renderer/src/testing/rampPosition.ts",
+  "packages/renderer/src/testing/recorderCtx.ts",
+  "packages/renderer/src/testing/standInKeys.ts",
+  "packages/renderer/src/testing/stencilledEvenOdd.ts",
+  "packages/renderer/src/testing/trimClip.ts",
+  "packages/renderer/src/testing/vertexUploads.ts",
+  "packages/renderer/src/testing/wgsl.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17265339999999998,
+   "minutes": 0.1762,
+   "at": "2026-11-26T05:22:59.425Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Parity readback comparison ignores buffer length mismatch; truncated second buffer gives NaN deltas and can report zero mismatches",
+   "where": "packages/renderer/src/testing/parityHarness.ts:228",
+   "severity": "low",
+   "scenario": "second readback buffer shorter than the first: missing bytes read as undefined, channel delta and max become NaN, mismatch count can stay zero; a longer second buffer is ignored entirely",
+   "fix": [
+    "packages/renderer/src/testing/parityHarness.ts"
+   ],
+   "size": "line",
+   "cause": "no length equality check",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Vertex upload tracker records float writes to any buffer target, misattributing them to the last ARRAY_BUFFER or throwing a misleading missing-stride error",
+   "where": "packages/renderer/src/testing/vertexUploads.ts:68",
+   "severity": "low",
+   "scenario": "a float upload to a non-ARRAY_BUFFER target is attributed to the previously bound vertex buffer, or throws a missing-stride error",
+   "fix": [
+    "packages/renderer/src/testing/vertexUploads.ts"
+   ],
+   "size": "line",
+   "cause": "upload capture not filtered by target",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1347
+}

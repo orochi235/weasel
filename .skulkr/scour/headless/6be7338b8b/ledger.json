@@ -1,0 +1,70 @@
+{
+ "area": "headless",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/headless/src/defaultPage.ts",
+  "packages/headless/src/host.ts",
+  "packages/headless/src/index.ts",
+  "packages/headless/src/page.ts",
+  "packages/headless/src/pageLoad.ts",
+  "packages/headless/src/protocol.ts",
+  "packages/headless/src/testing/compareRaster.ts",
+  "packages/headless/src/testing/fixtureScene.ts",
+  "packages/headless/src/testing/protocol.ts",
+  "packages/headless/src/testing/registeredPage.ts",
+  "packages/headless/src/testing/registeredScene.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1770094,
+   "minutes": 0.18431666666666666,
+   "at": "2026-11-26T05:05:50.779Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "holdsTypedArray spreads every array member into one push call, so a snapshot with a nodes array past the argument-count limit throws",
+   "where": "packages/headless/src/protocol.ts:67 (holdsTypedArray)",
+   "severity": "medium",
+   "scenario": "a raw or encoded snapshot with a nodes array past the engine's argument-count limit throws even though each node and the output rectangle are valid; a live scene takes the toJSON branch and avoids it",
+   "size": "line",
+   "cause": "spread of unbounded array into push()",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "a second dispose call resolves immediately while the first is still closing the browser or context",
+   "where": "packages/headless/src/host.ts:162 (dispose)",
+   "severity": "low",
+   "scenario": "one owner starts disposal, another awaits dispose before releasing shared resources and gets an already-resolved promise while the host's browser is still closing",
+   "size": "function",
+   "cause": "disposed flag set before close completes; no shared pending promise",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 630
+}

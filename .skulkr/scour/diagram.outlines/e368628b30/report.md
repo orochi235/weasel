@@ -4,8 +4,8 @@ Repeated blind reviews of the area `diagram.outlines` (11 files) at the frozen c
 `e368628b30`, with no fixes between them, from `codex`.
 Each occasion is one review, or one ingested report; its findings are matched against the ledger of distinct
 defects so far. Reviews stop once fewer than one defect is estimated unseen, the chance that the next occasion
-finds something new falls under 15%, or 40 occasions have run.
-Not stopped yet. `skulkr saturate report diagram.outlines` rewrites this file from the ledger.
+finds something new falls under 15%, the next defect would cost over $1.49, or 40 occasions have run.
+Not stopped yet. `skulkr scour report diagram.outlines` rewrites this file from the ledger.
 
 ## Yield by occasion
 

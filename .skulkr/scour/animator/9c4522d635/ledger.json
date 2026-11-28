@@ -47,6 +47,50 @@
    "minutes": 0.11936666666666666,
    "at": "2026-11-25T21:11:18.443Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.6555821999999998,
+   "minutes": 3.1189333333333336,
+   "at": "2026-11-26T23:42:28.874Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.7148164,
+   "minutes": 2.72175,
+   "at": "2026-11-26T23:45:13.847Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 2.3851624,
+   "minutes": 5.2796666666666665,
+   "at": "2026-11-26T23:50:30.974Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.5034922,
+   "minutes": 3.17775,
+   "at": "2026-11-26T23:53:42.953Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 6
   }
  ],
  "defects": [
@@ -57,13 +101,30 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    2,
+    4,
+    5
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     2,
+     4,
+     5
     ]
-   }
+   },
+   "scenario": "after `hosted.dispose()`, `hosted.animator.tween({...})` still registers through `core.api`. `requestFrame` is suppressed and `tick`/`follow` return early on `disposed`, so the animation never ticks and never reaches the tripwire that would retire it. `animator.isActive()` stays true, `onDone` never runs, and a `keepAlive` or cycle holds its entry for good. `dispose` should leave the animator refusing or immediately retiring new work, not silently parking it.",
+   "cause": "ticks gated on `disposed` while registration is not",
+   "fix": [
+    "packages/animator/src/createHostedAnimator.ts",
+    "packages/animator/src/engine/core.ts",
+    "packages/animator/src/useAnimator.ts"
+   ],
+   "size": "function",
+   "confidence": "likely"
   },
   {
    "id": "D2",
@@ -72,13 +133,232 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    4
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     4
+    ]
+   },
+   "scenario": "`weights` maps point 3 to `NaN` (a brush computed with a zero-size radius divide, or a caller's bad input). `Math.min(1, Math.max(0, NaN))` is NaN, so the clamp the doc promises (\"clamped to 0..1\") does not hold; with other joints on the point, `next[name][i] *= (1 - NaN) / others` writes NaN into each of them and `own[i] = NaN`. Point 3 then has no positive weight and stops following any joint, silently. Should: treat a non-finite weight as 0 (or skip it), as the function already does for the other joints' NaN weights.",
+   "cause": "clamp via min/max passes NaN through",
+   "size": "line",
+   "confidence": "sure"
+  },
+  {
+   "id": "D3",
+   "claim": "toSkinPolygon stores a rect's corners as absolute Float32 coordinates with no origin, so precision is lost far from the origin",
+   "where": "packages/animator/src/rig/skin.ts:40 (toSkinPolygon)",
+   "severity": "medium",
+   "scenario": "a rect path at `x = 10_000_000.3, width = 1.25` is turned into a polygon whose `coords` are a `Float32Array` of world values with no `origin`. Float32 spacing at 1e7 is 1, so the corners round to whole units: the width comes out 1 or 2 instead of 1.25. `skinPath` and `autoSkin` then work from the rounded corners, so the skinned rect jumps or shears near the far origin. The rect's own fields are float64, and `skinPath` itself keeps precision through `coordsFrom(rest.origin, …)`, so this is the one lossy step. It should build the path relative to an origin (`polygonPathFrom`, or `coordsFrom` with an origin taken from the rect).",
+   "fix": [
+    "packages/animator/src/rig/skin.ts"
+   ],
+   "size": "function",
+   "cause": "absolute Float32 coords, no origin",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "tweenVertexColors and staggerVertexColors read the caller's live from/to arrays every frame but commit a copy taken at start, so mid-tween mutations show during the tween and are lost at commit",
+   "where": "packages/animator/src/colorHelpers.ts:93 (tweenVertexColors), packages/animator/src/colorHelpers.ts:181 (staggerVertexColors colorsAt)",
+   "severity": "low",
+   "scenario": "`tweenColors` gives the tween `from: opts.from.slice(), to: opts.to.slice()`, so the target commits the start-time copy of `to`. The `interpolate` it passes ignores its own arguments, though, and calls `interp(opts.from, opts.to, t)` (or `colorsAt`, which closes over `opts.from`/`opts.to`) on the caller's live arrays. A caller who reuses or edits the array in place mid-tween (the registry's own docs describe in-place editing as normal) gets a path that follows the edited colors. When the tween ends it snaps to the committed copy. Frames and destination disagree.",
+   "fix": [
+    "packages/animator/src/colorHelpers.ts"
+   ],
+   "size": "line",
+   "cause": "closure over the caller's arrays rather than the copies",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A loop pass whose child finishes synchronously leaves `current` pointing at the stale child",
+   "where": "packages/animator/src/loop.ts:83 (createLoop / next)",
+   "severity": "low",
+   "scenario": "a factory whose returned animation calls `next` before it returns (a child that ends at once, e.g. a nested `animator.loop(..., { count: 0, onDone: next })`, or a factory calling `next()` itself) re-enters `next`, which starts pass i+1 and sets `current` to that child; the outer `current = supervisor.starting(...)` then overwrites it with pass i's finished handle. `handle.cancel()`, `pause()` and `setTimeScale()` then reach the dead handle and the live pass runs on unaffected. If the nested call finished the loop, `current` is left holding a handle after `finish()`.",
+   "fix": [
+    "packages/animator/src/loop.ts"
+   ],
+   "size": "function",
+   "cause": "assignment after a re-entrant call",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A stagger child that has already finished is counted done before it is added, and is still kept as a live child",
+   "where": "packages/animator/src/stagger.ts:262 (runStagger fire)",
+   "severity": "low",
+   "scenario": "`watchCompletion` fires at once for an id that has already left (a factory returning an empty stagger, a zero-count loop, or a handle it canceled). `noteChildDone` runs first: `running` drops to -1, and played backward (`rate() < 0`) `rewound()` finishes the whole stagger while other items are still running; then `addChild` pushes the dead handle into `children` and bumps `running` back, so later pause/scale calls go to it.",
+   "fix": [
+    "packages/animator/src/stagger.ts"
+   ],
+   "size": "function",
+   "cause": "watcher registered before the child is recorded",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "Skeleton transforms are resolved in Float32, so a rig far from the origin loses precision",
+   "where": "packages/animator/src/rig/resolveSkeleton.ts:20 (toMat3)",
+   "severity": "medium",
+   "scenario": "a rig whose root bind sits at x = 5e6 stores translations with ~0.5-unit steps; `motionsFromRest` then multiplies `world` by `inverse(rest)` in Float32, and the cancellation leaves a nonzero motion at the bind pose, so `skinPath` moves points of a rig that has not moved, and `solveIk`'s tolerance of 0.01 can never be met there.",
+   "fix": [
+    "packages/animator/src/rig/resolveSkeleton.ts",
+    "packages/animator/src/rig/skin.ts",
+    "packages/animator/src/rig/solveIk.ts",
+    "packages/animator/src/rig/skeletonEdits.ts"
+   ],
+   "size": "design",
+   "cause": "Float32 matrices for world-space joint transforms",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A loop whose pass ends without calling onDone stays registered forever, keeping isActive true and the frame loop running",
+   "where": "packages/animator/src/loop.ts:73 (createLoop next), packages/animator/src/loop.ts:124 (createTweenLoop factory)",
+   "severity": "medium",
+   "scenario": "the loop only advances when the pass's handle calls `next` from `onDone`. A pass that is canceled (its own `cancelKey` claimed by another animation, `animator.cancel(childHandle)`), or retired for a throw (a `tweenLoop`'s `onTick` throwing — `onCancel` runs \"in place of `onDone`\" per `TweenOptions.onCancel`, and createTweenLoop passes no `onCancel`), never calls `next`. The loop's supervisor entry stays in the table: its tick returns false every frame, so `animator.isActive()` / `isActive(key)` stay true and the frame loop runs for good, and the loop's `onDone` never comes. `createStagger` already guards against this with `watchCompletion(child.id, …)`; `createLoop` has no equivalent. Should: notice the pass left without `next` (watch its completion) and end or cancel the loop.",
+   "fix": [
+    "packages/animator/src/loop.ts",
+    "packages/animator/src/engine/animatorApi.ts"
+   ],
+   "size": "function",
+   "cause": "loop advances only through the child's `onDone`, no completion watch",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "skinPath writes its output relative to the rest path's origin, so a rect or a polygon with no origin far from the origin loses precision in the skinned result",
+   "where": "packages/animator/src/rig/skin.ts:80 (skinPath)",
+   "severity": "low",
+   "scenario": "the moved points are computed in Float64, then `coordsFrom(rest.origin, moved)` with `rest.origin` undefined writes absolute Float32 coords; a skinned shape at 1e6–1e7 jitters by whole units frame to frame as the rig moves. Choosing an origin (e.g. the first moved point, or the rest origin when present) would keep it.",
+   "fix": [
+    "packages/animator/src/rig/skin.ts"
+   ],
+   "size": "line",
+   "cause": "no origin chosen for the output path",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "An animation started from a cancel callback during useAnimator's unmount cleanup stays registered forever",
+   "where": "packages/animator/src/useAnimator.ts:113 (unmount cleanup)",
+   "severity": "low",
+   "scenario": "a tween with `onCancel: () => animator.spring({ target, to: rest })` (a \"spring back on cancel\"), or a `keepAlive(onCancel)` that restarts an effect. `dispose()` calls `core.api.cancelAll()` while `disposed` is still false, so the new spring registers and commits its `to`; then `disposed = true`, `tick` becomes a no-op and `requestFrame` is suppressed. The spring never ticks or finishes: `animator.isActive()` stays true, its target stays `active`, and a color target it moves keeps its registry slot (`release` refuses an active slot). Setting `disposed` before `cancelAll`, or looping `cancelAll` until nothing is active, would close it.",
+   "fix": [
+    "packages/animator/src/createHostedAnimator.ts",
+    "packages/animator/src/useAnimator.ts"
+   ],
+   "size": "line",
+   "cause": "teardown order lets callbacks register new work",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "axisIndexes returns an axis twice when both a name and its path prefix are listed, so a hold counts that axis twice",
+   "where": "packages/animator/src/axisNames.ts:44 (axisIndexes)",
+   "severity": "low",
+   "scenario": "`animator.hold({ target: rig.target, axes: ['knee', 'knee.rotation'] })` → `['knee']` pushes the knee's five axes and `'knee.rotation'` pushes its rotation index again; the result has a duplicate index. Nothing dedupes, so the hold's per-axis mask/cover arrays see that axis twice (a release commits it twice, a weighted fold may weight it twice). The same comes from `jointAxes(skeleton, ['arm', 'arm'])`. A `Set` over `out` would answer each axis once.",
+   "size": "line",
+   "cause": "no dedupe of resolved indexes",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
     ]
    }
   }
- ]
+ ],
+ "lines": 4153
 }

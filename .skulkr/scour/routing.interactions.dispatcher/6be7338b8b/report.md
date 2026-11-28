@@ -1,0 +1,115 @@
+# routing.interactions.dispatcher: saturation
+
+Repeated blind reviews of the area `routing.interactions.dispatcher` (44 files, 5606 lines) at the frozen commit
+`6be7338b8b`, with no fixes between them, from `claude`, `codex`.
+Each occasion is one review, or one ingested report; its findings are matched against the ledger of distinct
+defects so far. Reviews stop once fewer than 1 defect per thousand lines is estimated unseen, the chance that the next occasion
+finds something new falls under 15%, the next defect would cost over $1.49, or 40 occasions have run.
+Stopped: ready to fix: 8.6 known defects per thousand lines, at least 5. The next defect should cost about $1.26. `skulkr scour report routing.interactions.dispatcher` rewrites this file from the ledger.
+
+## Yield by occasion
+
+The estimates on each row are Chao2 over every occasion up to it. "Unseen" is the estimated number of defects no
+occasion has found; "next-new" is the chance the next occasion's finding is one of them. "$/defect" is what every
+occasion up to the row has cost, divided by the distinct defects found so far.
+
+|   # | source | findings | new | distinct |  Q1 |  Q2 | est. total | unseen | next-new |  cost | $/defect | minutes |
+|----:|--------|---------:|----:|---------:|----:|----:|-----------:|-------:|---------:|------:|---------:|--------:|
+|   1 | claude |        4 |   4 |        4 |   4 |   0 |          – |      – |        – | $2.05 |    $0.51 |     6.2 |
+|   2 | claude |        2 |   2 |        6 |   6 |   0 |       13.5 |    7.5 |   100.0% | $1.84 |    $0.65 |     5.0 |
+|   3 | claude |        4 |   4 |       10 |  10 |   0 |       40.0 |   30.0 |   100.0% | $0.84 |    $0.47 |     3.6 |
+|   4 | claude |        4 |   2 |       12 |  10 |   2 |       30.8 |   18.8 |    63.0% | $1.80 |    $0.54 |     5.5 |
+|   5 | claude |        3 |   2 |       14 |  11 |   3 |       30.1 |   16.1 |    56.9% | $1.29 |    $0.56 |     5.4 |
+|   6 | claude |        3 |   2 |       16 |  12 |   4 |       31.0 |   15.0 |    52.9% | $0.96 |    $0.55 |     3.8 |
+|   7 | claude |        2 |   1 |       17 |  12 |   5 |       29.3 |   12.3 |    47.9% | $1.32 |    $0.59 |     5.3 |
+|   8 | claude |        4 |   4 |       21 |  16 |   5 |       43.4 |   22.4 |    56.5% | $1.33 |    $0.54 |     5.3 |
+|   9 | claude |        4 |   2 |       23 |  17 |   5 |       48.7 |   25.7 |    52.8% | $1.03 |    $0.54 |     4.3 |
+|  10 | claude |        4 |   2 |       25 |  19 |   4 |       65.6 |   40.6 |    53.4% | $1.12 |    $0.54 |     5.1 |
+|  11 | claude |        4 |   2 |       27 |  20 |   4 |       72.5 |   45.5 |    50.6% | $1.03 |    $0.54 |     4.2 |
+|  12 | claude |        3 |   1 |       28 |  20 |   5 |       64.7 |   36.7 |    46.7% | $1.12 |    $0.56 |     4.6 |
+|  13 | claude |        6 |   3 |       31 |  22 |   5 |       75.7 |   44.7 |    45.1% | $1.38 |    $0.55 |     3.4 |
+|  14 | claude |        2 |   0 |       31 |  22 |   4 |       87.2 |   56.2 |    43.7% | $1.10 |    $0.59 |     5.0 |
+|  15 | claude |        4 |   1 |       32 |  22 |   5 |       77.2 |   45.2 |    40.2% | $0.90 |    $0.60 |     3.9 |
+|  16 | claude |        3 |   1 |       33 |  22 |   6 |       70.8 |   37.8 |    37.9% | $1.21 |    $0.62 |     4.7 |
+|  17 | claude |        2 |   0 |       33 |  21 |   7 |       62.6 |   29.6 |    34.8% | $1.02 |    $0.65 |     3.9 |
+|  18 | claude |        4 |   1 |       34 |  20 |   8 |       57.6 |   23.6 |    30.3% | $1.61 |    $0.68 |     3.9 |
+|  19 | claude |        2 |   0 |       34 |  20 |   8 |       57.7 |   23.7 |    29.5% | $0.98 |    $0.70 |     4.1 |
+|  20 | claude |        3 |   0 |       34 |  18 |   9 |       51.1 |   17.1 |    25.1% | $1.04 |    $0.73 |     4.6 |
+|  21 | claude |        4 |   1 |       35 |  18 |   9 |       52.1 |   17.1 |    23.8% | $0.85 |    $0.74 |     3.4 |
+|  22 | claude |        3 |   0 |       35 |  18 |   7 |       57.1 |   22.1 |    23.1% | $1.13 |    $0.77 |     4.5 |
+|  23 | claude |        5 |   0 |       35 |  15 |  10 |       45.8 |   10.8 |    17.7% | $0.88 |    $0.80 |     3.8 |
+|  24 | claude |        3 |   0 |       35 |  15 |  10 |       45.8 |   10.8 |    17.1% | $1.25 |    $0.83 |     5.7 |
+|  25 | claude |        2 |   0 |       35 |  15 |  10 |       45.8 |   10.8 |    16.7% | $0.71 |    $0.85 |     3.0 |
+|  26 | claude |        3 |   2 |       37 |  17 |   9 |       52.4 |   15.4 |    18.5% | $1.13 |    $0.84 |     4.7 |
+|  27 | claude |        5 |   3 |       40 |  20 |   8 |       64.1 |   24.1 |    20.9% | $1.05 |    $0.80 |     4.6 |
+|  28 | claude |        3 |   0 |       40 |  19 |   8 |       61.8 |   21.8 |    19.2% | $1.03 |    $0.83 |     4.8 |
+|  29 | claude |        3 |   0 |       40 |  18 |   8 |       59.6 |   19.6 |    17.6% | $1.19 |    $0.85 |     5.2 |
+|  30 | claude |        6 |   4 |       44 |  21 |   9 |       67.7 |   23.7 |    19.4% | $1.07 |    $0.80 |     4.7 |
+|  31 | codex  |        7 |   4 |       48 |  25 |   9 |       81.6 |   33.6 |    21.8% | $0.31 |    $0.74 |     0.4 |
+
+## Estimates
+
+Chao2 over one source is a floor for what that reviewer can find: its reviews resemble each other, so it misses
+the same things every time. Chapman between two sources is better while they find different kinds of defect.
+
+| over           | estimator | occasions | distinct | est. total | unseen | next-new | overlap |
+|----------------|-----------|----------:|---------:|-----------:|-------:|---------:|--------:|
+| claude         | Chao2     |        30 |       44 |       67.7 |   23.7 |    19.4% |       – |
+| codex          | Chao2     |         1 |        7 |          – |      – |        – |       – |
+| all sources    | Chao2     |        31 |       48 |       81.6 |   33.6 |    21.8% |       – |
+| claude × codex | Chapman   |         – |       48 |       89.0 |   41.0 |        – |       3 |
+
+## Defects
+
+Each source's column counts the occasions that found the defect.
+
+| id  | defect                                                                                                                                                | where                                                                                                                              | first | claude | codex | severity |
+|-----|-------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|------:|-------:|------:|----------|
+| D1  | A keyboard-off dispatcher that activates first on a shared surface keeps a keyboard-on one from ever taking the keys                                  | packages/routing/src/interactions/dispatcher/dispatchCore.ts:236 (createDispatchCore → activate)                                   |     1 |      2 |     0 | medium   |
+| D2  | `isEmptyOngoingHandle` treats a handle with only `onWheel` or `cursor` as empty, so the dispatcher drops it                                           | packages/routing/src/interactions/dispatcher/inFlightGestures.ts:118 (isEmptyOngoingHandle)                                        |     1 |      8 |     1 | medium   |
+| D3  | A press in a nested surface without the pointer channel is run by the outer dispatcher, but the outer never activates for it                          | packages/routing/src/interactions/dispatcher/dispatchCore.ts:236 (activate) vs dispatchCore.ts:181 (pressedNestedIn)               |     1 |      1 |     0 | low      |
+| D4  | The hover cursor override can be written to one sink and cleared from another                                                                         | packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts:50 (cursorOverride)                                           |     1 |      5 |     0 | medium   |
+| D5  | `explain` reports a keymap's own Escape binding as firing when a plain Escape only closes the keymap                                                  | packages/routing/src/interactions/dispatcher/predict.ts:31 (routed / explain)                                                      |     2 |      4 |     1 | low      |
+| D6  | With the pointer channel off, the hover cursor is wiped while a button is held and stays wiped after release until the pointer moves again            | packages/routing/src/interactions/dispatcher/attachInput.ts:182 (listenHover)                                                      |     2 |      3 |     0 | low      |
+| D7  | In-flight cursor evaluates a function-valued Action.cursor without params, so the mid-gesture cursor can differ from the hover cursor                 | packages/routing/src/interactions/dispatcher/inFlightGestures.ts:104 (cursor)                                                      |     3 |      6 |     0 | medium   |
+| D8  | A multitouch gesture whose opening event lacks an angle never accumulates rotation                                                                    | packages/routing/src/interactions/dispatcher/gestureFacts.ts:72 (begin) / :85 (turn)                                               |     3 |      2 |     0 | low      |
+| D9  | explain reports an action as fired for an input that an open keymap withholds                                                                         | packages/routing/src/interactions/dispatcher/predict.ts:84 (explain)                                                               |     3 |      2 |     0 | low      |
+| D10 | A key passed on from the holding dispatcher re-dispatches `over` bindings a peer already tried for that keystroke                                     | packages/routing/src/interactions/dispatcher/channels/keyboard.ts:105 (take) / :95 (onKeyDown)                                     |     3 |      6 |     0 | low      |
+| D11 | `uses` ignores the dispatcher passed to it, so an explicit `on` dispatcher goes unwatched and unsubscribed while it dispatches                        | packages/routing/src/interactions/dispatcher/attachInput.ts:72 (uses) / dispatchCore.ts:223 (dispatch)                             |     4 |      3 |     0 | low      |
+| D12 | A drag deferred by its threshold shows its `activeCursor` before the pointer has crossed the threshold                                                | packages/routing/src/interactions/dispatcher/gestureRun.ts:283 (invokeAction) with deferredStart.ts:58                             |     4 |      2 |     0 | low      |
+| D13 | resolveAll labels an ineligible candidate ranked below the winner `shadowed`, contradicting its contract                                              | packages/routing/src/interactions/dispatcher/walk.ts:206 (verdictsOf)                                                              |     5 |      1 |     0 | low      |
+| D14 | immediateRunParams lets the dispatcher's `viewId` and `roles` overwrite the binding's own params                                                      | packages/routing/src/interactions/dispatcher/inputFacts.ts:118 (immediateRunParams)                                                |     5 |      1 |     0 | low      |
+| D15 | Tearing down a listener set mid-drag leaves the pointer pinned in the view resolver, so later hovers route to the stale view                          | packages/routing/src/interactions/dispatcher/channels/pointer.ts:262 (onCancel), :352 (dispose)                                    |     6 |      9 |     1 | medium   |
+| D16 | In a text field, an AltGr-typed character counts as a Ctrl chord, so an `inFields` Ctrl+Alt binding swallows the typed character                      | packages/routing/src/interactions/dispatcher/channels/keyboard.ts:56 (fieldChord), :118 (consider)                                 |     6 |      1 |     0 | low      |
+| D17 | One pointer leaving the canvas clears pointer-over while another pointer is still over it                                                             | packages/routing/src/interactions/dispatcher/attachInput.ts:205 (trackPointerOver)                                                 |     7 |      1 |     0 | low      |
+| D18 | A key pressed before Cmd and released while Cmd is down is never released, so it stays held forever                                                   | packages/routing/src/interactions/dispatcher/channels/keyboard.ts:131 (onKeyDown / onKeyUp)                                        |     8 |      3 |     0 | medium   |
+| D19 | A keymap leader held before Cmd is never released by Cmd's keyup, so it stays held                                                                    | packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts:28 (press / up)                                                |     8 |      2 |     0 | low      |
+| D20 | The hover cursor leaves a stale live prediction on the trace after recording stops                                                                    | packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts:141 (resolve)                                                 |     8 |      2 |     0 | low      |
+| D21 | An exception thrown by an ongoing handle's onMove or onWheel escapes dispatch, while throws from start, run and onEnd are caught                      | packages/routing/src/interactions/dispatcher/gestureRun.ts:164 (pumpGesture)                                                       |     8 |      1 |     0 | low      |
+| D22 | An ongoing action started from a click, double click or context menu gets no drag.affordance even though the event carries the hit                    | packages/routing/src/interactions/dispatcher/invocationCtx.ts:37 (pressDrag)                                                       |     9 |      1 |     0 | low      |
+| D23 | With keyboard: 'page', keydown is heard on the canvas's own document but keyup, blur and paste only on the global window                              | packages/routing/src/interactions/dispatcher/attachInput.ts:109 (attachInput)                                                      |     9 |      1 |     0 | low      |
+| D24 | A binding to an unregistered action warns on every input, including every pointer move for a hover binding                                            | packages/routing/src/interactions/dispatcher/walk.ts:186 (walk)                                                                    |    10 |      5 |     0 | low      |
+| D25 | A drop whose items fail to materialize, or whose dispatch throws, becomes an unhandled promise rejection                                              | packages/routing/src/interactions/dispatcher/channels/ingest.ts:97 (onDrop)                                                        |    10 |      5 |     0 | low      |
+| D26 | The claimKeys effect takes the keys even when the dispatcher's keyboard channel is off                                                                | packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx:150 (useDispatcherIn, claimKeys effect)                      |    11 |      2 |     0 | low      |
+| D27 | A pointer release that yields to an item's own session skips re-resolving the hover cursor                                                            | packages/routing/src/interactions/dispatcher/channels/pointer.ts:283 (onUp)                                                        |    11 |      1 |     0 | low      |
+| D28 | A WebKit pinch re-routes on every change event, so a pinch drifting across views switches to another view's dispatcher mid-gesture                    | packages/routing/src/interactions/dispatcher/channels/webkitPinch.ts:47 (pinchEventOf)                                             |    12 |      1 |     0 | low      |
+| D29 | Autorepeat stays swallowed for a held key after its gesture has been ended under it                                                                   | packages/routing/src/interactions/dispatcher/channels/keyboard.ts:107 (consider)                                                   |    13 |      1 |     0 | low      |
+| D30 | A wheel over a nested surface whose wheel channel is off is handled by the outer surface, which never activates for it                                | packages/routing/src/interactions/dispatcher/dispatchCore.ts:206 (activate); channels/wheel.ts:24 (onWheel)                        |    13 |      1 |     0 | low      |
+| D31 | DispatchRecord.matched is not in matcher order when a claim barred some bindings                                                                      | packages/routing/src/interactions/dispatcher/buildDispatchRecord.ts:73 (buildDispatchRecord)                                       |    13 |      3 |     0 | low      |
+| D32 | A paste the key-holding dispatcher declines is never offered to the other dispatchers on its surface, unlike a key                                    | packages/routing/src/interactions/dispatcher/channels/ingest.ts:99 (onPaste)                                                       |    15 |      1 |     0 | low      |
+| D33 | The hover cursor's live trace prediction goes stale while the pointer is over an affordance and while a gesture is in flight                          | packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts:121 (resolve)                                                 |    16 |      3 |     0 | low      |
+| D34 | The hover cursor checks for an in-flight gesture only on the routed view's dispatcher, so a gesture running on another dispatcher is missed           | packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts:128 (resolve), :193 (changed)                                 |    18 |      1 |     0 | low      |
+| D35 | A pointer cancel ends its drag with a context at world (0,0) and no `drag` or trail                                                                   | packages/routing/src/interactions/dispatcher/invocationCtx.ts:151 (buildInvocationCtx), reached from gestureRun.ts:57 (endGesture) |    21 |      1 |     0 | medium   |
+| D36 | A keystroke inside a held keymap is marked as having closed the keymap, so its autorepeat is dropped                                                  | packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts:29 (keymapKeys.press)                                          |    26 |      1 |     0 | medium   |
+| D37 | A pointer release after the hover has already left the canvas re-shows the cursor and the painted pointer off the canvas                              | packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts:178 (released)                                                |    26 |      2 |     0 | low      |
+| D38 | A canvas-less dispatcher misses React Aria-style modals, so page keys fire behind the dialog                                                          | packages/routing/src/interactions/dispatcher/channels/modal.ts:33 (inModalOver)                                                    |    27 |      3 |     0 | low      |
+| D39 | A wheel during a drag reaches only the dispatcher of the view under the pointer, not the one running the drag                                         | packages/routing/src/interactions/dispatcher/channels/wheel.ts:33 (onWheel), gestureRun.ts:166 (pumpGesture)                       |    27 |      1 |     0 | low      |
+| D40 | Hover facts go stale through a press nothing hears, so the hover-off and the next `from` name the pre-press spot                                      | packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts:181 (moved / onLeave)                                         |    27 |      2 |     0 | low      |
+| D41 | resolveAll returns no candidates for an input that an open keymap passes on when nothing in the keymap pass fires                                     | packages/routing/src/interactions/dispatcher/predict.ts:41 (routed / resolveAll)                                                   |    30 |      1 |     0 | low      |
+| D42 | A drag that is handed off is re-ranked without keymap routing                                                                                         | packages/routing/src/interactions/dispatcher/handOff.ts:19 (handOff)                                                               |    30 |      1 |     0 | low      |
+| D43 | Immediate params for wheel and pinch drop the bodyTarget and bodyKind the event carries                                                               | packages/routing/src/interactions/dispatcher/inputFacts.ts:147 (carried, 'wheel' / 'pinch' cases)                                  |    30 |      1 |     0 | low      |
+| D44 | A non-modal ARIA dialog is treated as modal whenever any ancestor of the canvas is aria-hidden or inert                                               | packages/routing/src/interactions/dispatcher/channels/modal.ts:33 (inModalOver)                                                    |    30 |      1 |     0 | low      |
+| D45 | Wheel and WebKit pinch send a view's camera the focal point in canvas coordinates instead of view-local ones, so zoom drifts                          | packages/routing/src/interactions/dispatcher/channels/wheel.ts:37 (wheelInput); channels/webkitPinch.ts:47 (pinchEventOf)          |    31 |      0 |     1 | medium   |
+| D46 | A surface leave reports the last hover hit from one view but dispatches on the currently routed view, so the hovered view's leave binding never fires | packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts:177 (onLeave)                                                 |    31 |      0 |     1 | medium   |
+| D47 | The drop preview cache key leaves out resolved binding params, so a stationary OS drag keeps a stale preview after the params change                  | packages/routing/src/interactions/dispatcher/channels/dropPreview.ts:20 (keyOf)                                                    |    31 |      0 |     1 | medium   |
+| D48 | An open keymap takes an inFields chord typed in a text field ahead of the ordinary field-enabled binding                                              | packages/routing/src/interactions/dispatcher/keymapRoute.ts:66 (routeThroughKeymap)                                                |    31 |      0 |     1 | medium   |

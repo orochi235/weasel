@@ -1,0 +1,86 @@
+{
+ "area": "kernel3d",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/kernel3d/src/actionParamSchema.ts",
+  "packages/kernel3d/src/aim.ts",
+  "packages/kernel3d/src/axisMove/action.ts",
+  "packages/kernel3d/src/axisMove/handles.ts",
+  "packages/kernel3d/src/camera.ts",
+  "packages/kernel3d/src/cameraBindings.ts",
+  "packages/kernel3d/src/cameraDep.ts",
+  "packages/kernel3d/src/cameraRig.ts",
+  "packages/kernel3d/src/composePose3.ts",
+  "packages/kernel3d/src/createCameraDep.ts",
+  "packages/kernel3d/src/deps.ts",
+  "packages/kernel3d/src/ground.ts",
+  "packages/kernel3d/src/icons.gen.ts",
+  "packages/kernel3d/src/icons.table.ts",
+  "packages/kernel3d/src/index.ts",
+  "packages/kernel3d/src/insert.ts",
+  "packages/kernel3d/src/kitSettings.ts",
+  "packages/kernel3d/src/lines/head.ts",
+  "packages/kernel3d/src/lines/pack.ts",
+  "packages/kernel3d/src/lines/pass.glsl.ts",
+  "packages/kernel3d/src/lines/pass.ts",
+  "packages/kernel3d/src/logDepth.ts",
+  "packages/kernel3d/src/overlays.ts",
+  "packages/kernel3d/src/pathMotion3.ts",
+  "packages/kernel3d/src/pbt.fixture.ts",
+  "packages/kernel3d/src/pickIndex.ts",
+  "packages/kernel3d/src/pose3.ts",
+  "packages/kernel3d/src/project.ts",
+  "packages/kernel3d/src/screen.ts",
+  "packages/kernel3d/src/screenPose.ts",
+  "packages/kernel3d/src/snap/boxIndex.ts",
+  "packages/kernel3d/src/snap/landing.ts",
+  "packages/kernel3d/src/snap/marks.ts",
+  "packages/kernel3d/src/snap/plane.ts",
+  "packages/kernel3d/src/snap/probes3d.ts",
+  "packages/kernel3d/src/snap/session3d.ts",
+  "packages/kernel3d/src/snap/sources.ts",
+  "packages/kernel3d/src/testScene.ts",
+  "packages/kernel3d/src/toolSets.ts",
+  "packages/kernel3d/src/tools.ts",
+  "packages/kernel3d/src/world.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1638684,
+   "minutes": 0.14903333333333332,
+   "at": "2026-11-26T05:08:07.816Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Screen rays are unit-length but point picking caps t at 1, so nodes more than one world unit past the near plane can't be picked",
+   "where": "packages/kernel3d/src/screen.ts:89 (rayThroughScreenPoint)",
+   "severity": "high",
+   "scenario": "Camera faces a box more than one world unit beyond its near plane; the box is visibly inside the frustum but createPickNearest and createNodeAtPoint3dDep reject it",
+   "fix": [
+    "packages/kernel3d/src/screen.ts",
+    "packages/kernel3d/src/deps.ts",
+    "packages/kernel3d/src/screen.test.ts"
+   ],
+   "size": "line",
+   "cause": "unit-length direction vs t<=1 far-plane convention",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 4364
+}

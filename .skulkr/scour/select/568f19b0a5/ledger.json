@@ -1,0 +1,47 @@
+{
+ "area": "select",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/select/src/index.ts",
+  "packages/select/src/pbt.fixture.ts",
+  "packages/select/src/same.ts",
+  "packages/select/src/select.ts",
+  "packages/select/src/store.ts",
+  "packages/select/src/tree.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2195676,
+   "minutes": 0.08521666666666666,
+   "at": "2026-11-26T23:09:31.270Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Ordered range selection keeps duplicate IDs when the visible order repeats an ID, so Selection.ids can hold the same item twice",
+   "where": "packages/select/src/select.ts:78",
+   "severity": "low",
+   "scenario": "A visible order repeats an ID; the order route returns the filtered slice without deduplicating, so both copies enter Selection.ids, while writing it to createSelectionStore normalizes it",
+   "size": "line",
+   "cause": "order route skips the dedupe the between route does",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 191
+}

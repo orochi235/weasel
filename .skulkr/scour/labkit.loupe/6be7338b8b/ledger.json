@@ -1,0 +1,83 @@
+{
+ "area": "labkit.loupe",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/loupe/CanvasLoupe.tsx",
+  "packages/labkit/src/loupe/DomLoupe.tsx",
+  "packages/labkit/src/loupe/Loupe.less",
+  "packages/labkit/src/loupe/LoupeBubble.tsx",
+  "packages/labkit/src/loupe/LoupeGestures.tsx",
+  "packages/labkit/src/loupe/LoupePainter.tsx",
+  "packages/labkit/src/loupe/SceneLoupe.tsx",
+  "packages/labkit/src/loupe/SourceLoupe.tsx",
+  "packages/labkit/src/loupe/TrialLoupe.tsx",
+  "packages/labkit/src/loupe/canvasLens.ts",
+  "packages/labkit/src/loupe/hostLoupe.ts",
+  "packages/labkit/src/loupe/index.ts",
+  "packages/labkit/src/loupe/sourceLens.ts",
+  "packages/labkit/src/loupe/types.ts",
+  "packages/labkit/src/loupe/useFollowed.ts",
+  "packages/labkit/src/loupe/useLensDamage.ts",
+  "packages/labkit/src/loupe/useLensReport.ts",
+  "packages/labkit/src/loupe/useLoupe.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1687884,
+   "minutes": 0.17141666666666666,
+   "at": "2026-11-26T05:10:29.150Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A null source leaves the last frame visible because the frame loop returns before clearing the destination canvas",
+   "where": "packages/labkit/src/loupe/SourceLoupe.tsx:48",
+   "severity": "medium",
+   "scenario": "source getter returns null after returning a live canvas; the loupe keeps displaying the stale frame while the getter stays null",
+   "fix": [
+    "packages/labkit/src/loupe/SourceLoupe.tsx"
+   ],
+   "size": "line",
+   "cause": "early return skips the clear",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Focusable elements in the aria-hidden magnified DOM copy stay in the tab order, creating duplicate tab stops",
+   "where": "packages/labkit/src/loupe/LoupeBubble.tsx:49",
+   "severity": "medium",
+   "scenario": "render callback draws a button or input; Tab moves focus into the hidden duplicate inside the lens",
+   "fix": [
+    "packages/labkit/src/loupe/LoupeBubble.tsx"
+   ],
+   "size": "line",
+   "cause": "aria-hidden copy not made inert",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1958
+}

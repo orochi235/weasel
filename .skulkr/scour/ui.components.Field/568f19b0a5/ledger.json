@@ -1,0 +1,68 @@
+{
+ "area": "ui.components.Field",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Field/Field.module.css",
+  "packages/ui/src/components/Field/Field.stories.tsx",
+  "packages/ui/src/components/Field/Field.tsx",
+  "packages/ui/src/components/Field/fieldSemantics.tsx",
+  "packages/ui/src/components/Field/fieldSize.module.css",
+  "packages/ui/src/components/Field/fieldSize.ts",
+  "packages/ui/src/components/Field/fieldSlots.tsx",
+  "packages/ui/src/components/Field/index.ts",
+  "packages/ui/src/components/Field/mixedHint.ts",
+  "packages/ui/src/components/Field/racField.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2194476,
+   "minutes": 0.2500833333333333,
+   "at": "2026-11-27T00:24:35.487Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Label htmlFor keeps the generated ID when the child supplies its own ID, so clicking the label does not focus the control",
+   "where": "packages/ui/src/components/Field/Field.tsx:63 (useFieldControl)",
+   "severity": "low",
+   "scenario": "A labeled Input with a caller-supplied id: its accessible name survives via aria-labelledby, but clicking the label focuses nothing",
+   "cause": "label htmlFor not updated to the control's explicit id",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "A boolean true slot counts as content, rendering an empty error, marking a valid field invalid and adding an empty aria description",
+   "where": "packages/ui/src/components/Field/fieldSemantics.tsx:125 (shows)",
+   "severity": "low",
+   "scenario": "error={valid || 'Invalid value'} with a valid field yields true, so a valid input is marked invalid with an empty error description",
+   "cause": "shows treats true as content though React renders it as empty",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 576
+}

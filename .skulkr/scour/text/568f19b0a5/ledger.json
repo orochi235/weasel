@@ -1,0 +1,80 @@
+{
+ "area": "text",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/text/src/bakeTextFit.ts",
+  "packages/text/src/fitBoxToText.ts",
+  "packages/text/src/glyphOutlines.ts",
+  "packages/text/src/glyphTurn.ts",
+  "packages/text/src/hitTest.ts",
+  "packages/text/src/index.ts",
+  "packages/text/src/isTextData.ts",
+  "packages/text/src/joiningRuns.ts",
+  "packages/text/src/joiningTypes.gen.ts",
+  "packages/text/src/markdownRenderer.ts",
+  "packages/text/src/markdownText.ts",
+  "packages/text/src/measure/graphemes.ts",
+  "packages/text/src/measure/lineBoxes.ts",
+  "packages/text/src/measure/measureText.ts",
+  "packages/text/src/measure/measureTextBounds.ts",
+  "packages/text/src/measure/verticalAlign.ts",
+  "packages/text/src/pbt.fixture.ts",
+  "packages/text/src/pose.ts",
+  "packages/text/src/renderLabel.ts",
+  "packages/text/src/runs.ts",
+  "packages/text/src/runs/codePointCuts.ts",
+  "packages/text/src/runs/delimiterRuns.ts",
+  "packages/text/src/runs/effectiveRangeStyle.ts",
+  "packages/text/src/runs/flagRange.ts",
+  "packages/text/src/runs/inheritedStyle.ts",
+  "packages/text/src/runs/rangeStyle.ts",
+  "packages/text/src/runs/resolveRuns.ts",
+  "packages/text/src/runs/smallCaps.ts",
+  "packages/text/src/runs/textTransform.ts",
+  "packages/text/src/syntheticBold.ts",
+  "packages/text/src/syntheticItalic.ts",
+  "packages/text/src/test-seams.ts",
+  "packages/text/src/textClusters.ts",
+  "packages/text/src/textStyle.ts",
+  "packages/text/src/textToPath.ts",
+  "packages/text/src/visualGraphemes.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2219636,
+   "minutes": 0.09078333333333333,
+   "at": "2026-11-26T23:11:21.689Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Turkish lowercase of I + combining dot above split across same-lang styled runs yields dotless i + dot instead of i, because piecesOf drops the contextual mapping when an empty piece opens the second run",
+   "where": "packages/text/src/runs/textTransform.ts:114 (piecesOf)",
+   "severity": "medium",
+   "scenario": "Turkish-language text with lowercase transform where U+0049 ends one styled run and U+0307 begins the next run with the same lang and transform; output is ı + U+0307 rather than i",
+   "fix": [
+    "packages/text/src/runs/textTransform.ts"
+   ],
+   "size": "function",
+   "cause": "contextual case mapping lost across run boundary",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 4235
+}

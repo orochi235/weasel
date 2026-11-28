@@ -26,6 +26,50 @@
    "minutes": 0.1144,
    "at": "2026-11-25T21:12:20.988Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.3314274000000001,
+   "minutes": 2.2311666666666667,
+   "at": "2026-11-26T23:29:34.032Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.5820152,
+   "minutes": 1.0795666666666668,
+   "at": "2026-11-26T23:30:38.983Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.710717,
+   "minutes": 1.5881833333333333,
+   "at": "2026-11-26T23:32:14.424Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.6698464,
+   "minutes": 1.4355666666666667,
+   "at": "2026-11-26T23:33:40.739Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
   }
  ],
  "defects": [
@@ -48,16 +92,184 @@
    "id": "D2",
    "claim": "Soft-mode entry doesn't seal the coalescing group, so a mode write merged into a pre-mode entry survives discard",
    "where": "apps/draw/src/modality/machine.ts:60",
-   "severity": "low",
+   "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    2,
+    3
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     2,
+     3
+    ]
+   },
+   "scenario": "the `modes.undo` pref isn't `'mode'`, so a soft mode records straight to `history` and only notes `firstEntryId`. `enterMode` never calls `history.seal()`. The first `recordEntry` after entry can carry the same `coalesceKey` as the entry on top, which was pushed before the mode opened (`record` in packages/history/src/recording.ts:95 folds it with no time window, since nothing has stepped the stack in between). The in-mode edit then lives inside an entry whose id is below `firstEntryId`. `discardMode` → `undoSinceEntry` stops at that entry, so the edit survives Discard. Sealing at entry would make every in-mode edit a fresh entry with id ≥ `firstEntryId`.",
+   "cause": "missing history.seal() at mode entry",
+   "size": "line",
+   "confidence": "likely",
+   "fix": [
+    "apps/draw/src/modality/machine.ts"
+   ]
+  },
+  {
+   "id": "D3",
+   "claim": "Double-clicking a path with anchors does nothing from a soft mode other than normal, while a path without anchors switches modes",
+   "where": "apps/draw/src/modality/useCanvasModes.ts:58 (useCanvasModes, canEnter)",
+   "severity": "medium",
+   "scenario": "the machine is in `text-edit` (soft, non-scoping), and the user double-clicks a polygon path that has anchors. The trigger's `canEnter` refuses because `hasEditablePath` is true, leaving it to the canvas's `enterPathEdit`. But `enterPathEditAction` is `eligible: { mode: 'normal' }` (packages/path-tools/src/pathEdit/enterPathEdit.ts:58), so nothing takes the double-click and path edit never opens. Double-click a path with no anchors from the same mode and the trigger runs `enterModeOn`, which exits text-edit and enters path-edit. So whether a double-click moves the mode onto a path depends on whether the path has anchors. It should move the mode in both cases, as `createModeTriggersContribution`'s doc promises (\"a double-click on another node moves a mode onto it\").",
+   "fix": [
+    "apps/draw/src/modality/useCanvasModes.ts"
+   ],
+   "size": "line",
+   "cause": "canEnter hands off to an action gated to normal mode",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "Double-click opens path edit on a locked path that Enter refuses",
+   "where": "apps/draw/src/modality/useCanvasModes.ts:58 (useCanvasModes, canEnter)",
+   "severity": "medium",
+   "scenario": "a locked path is selected. Enter goes through `pathToEdit` (line 31), which returns null on `scene.isLocked`, so the key falls through. A double-click on the same path goes through the mode trigger, whose `canEnter` checks only `hasEditablePath`, and through `enterPathEdit`, which checks no lock either. Path edit opens on the locked path and lets its anchors be edited. The two ways of entering path edit give different answers on whether a locked path can be edited.",
+   "fix": [
+    "apps/draw/src/modality/useCanvasModes.ts"
+   ],
+   "size": "function",
+   "cause": "lock check only on the keyboard pathway",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Discard can be redone under one soft-mode setting but not under the other",
+   "where": "apps/draw/src/modality/machine.ts:112 (discardMode)",
+   "severity": "low",
+   "scenario": "With the `modes.undo` = `'mode'` pref, Discard calls `activeJournal.cancel()`, and the session's edits are gone with nothing to redo. With the other setting, `undoSinceEntry` calls `history.undo()`, which moves every in-mode entry onto the redo stack, so Redo (Shift+Mod+Z) right after Discard puts the discarded edits back. One action, \"take back the session's edits\", gives two different answers depending on a pref that the doc says only controls undo granularity.",
+   "fix": [
+    "apps/draw/src/modality/machine.ts",
+    "prune/drop"
+   ],
+   "size": "function",
+   "cause": "undo used as discard",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "The breadcrumb shows a blank name for a target or group whose label is the empty string",
+   "where": "apps/draw/src/modality/useCanvasModes.ts:77 (useModeTargetLabel); apps/draw/src/modality/enteredGroup.ts:43 (useEnteredGroupLabel)",
+   "severity": "low",
+   "scenario": "A node with `data.label === ''` (a label the user cleared in the layers panel) gets `'' ?? …`, which stays `''`. For a mode target, ModeBreadcrumb's `props.targetLabel &&` hides it, so the target isn't named at all, not even by its text or id. For an entered group, the bar renders \"Group · \" followed by an empty span. The fallback should treat an empty label as missing (`||`), as the doc (\"its label, its text, or its id\") intends.",
+   "fix": [
+    "apps/draw/src/modality/useCanvasModes.ts",
+    "apps/draw/src/modality/enteredGroup.ts"
+   ],
+   "size": "line",
+   "cause": "`??` keeps empty string",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "A double-click on a path is swallowed and does nothing while a strict mode is open",
+   "where": "apps/draw/src/modality/useCanvasModes.ts:55 (useCanvasModes, triggers)",
+   "severity": "low",
+   "scenario": "In free-transform or crop, double-click a `path` node whose path has no anchors. The trigger's `canEnter` says yes because the only check is `hasEditablePath`, so the action is enabled and claims the double-click. Its `enter` is `enterModeOn`, which returns without doing anything while a strict mode is open (enterModeOn.ts:14). The gesture is used up and nothing happens, when it should fall through to the next binding on the double-click. `canEnter` should answer no while a strict mode is current, as `enterModeOn` does.",
+   "fix": [
+    "apps/draw/src/modality/useCanvasModes.ts"
+   ],
+   "size": "line",
+   "cause": "canEnter ignores enterModeOn's strict-mode refusal",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "The breadcrumb hard-codes its key caps instead of reading them from the mode's shortcuts, so they go stale when a binding changes",
+   "where": "apps/draw/src/modality/chrome/ModeBreadcrumb.tsx:46 (ModeBreadcrumb)",
+   "severity": "low",
+   "scenario": "The Cancel and Commit buttons always show `⎋` and `⏎`, but the keys that actually commit and cancel come from `mode.commit.shortcut` and `mode.cancel.shortcut` (`createModeShortcutsContribution`). A strict mode with other keys, or none on this platform (`shortcutOn` returns nothing), still shows Escape and Enter. The bar should render the mode's own chords.",
+   "size": "function",
+   "cause": "second copy of the shortcut decision",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "Discarding a soft mode that has no journal leaves pre-mode entries that were undone during the mode still undone",
+   "where": "apps/draw/src/modality/machine.ts:82 (undoSinceEntry)",
+   "severity": "low",
+   "scenario": "Set `modes.undo` to something other than `mode` (no journal). Enter path-edit, press undo twice so an entry made before the mode is undone (its id is < `firstEntryId`), edit once, then discard (Meta+Escape). `undoSinceEntry` undoes only entries with id >= `firstEntryId`, so the new edit is taken back. The pre-mode entry stays undone, and redoing it is no longer possible because the new edit cleared the redo stack. The document does not return to its state at entry, which is what \"take back the session's edits\" means.",
+   "size": "function",
+   "cause": "discard tracks only entries pushed, not undos past entry",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
     ]
    }
   }
- ]
+ ],
+ "lines": 577
 }

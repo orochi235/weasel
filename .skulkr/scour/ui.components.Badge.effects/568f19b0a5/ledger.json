@@ -1,0 +1,64 @@
+{
+ "area": "ui.components.Badge.effects",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Badge/effects/Aqua.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel.tsx",
+  "packages/ui/src/components/Badge/effects/Bevel2.tsx",
+  "packages/ui/src/components/Badge/effects/Bites.tsx",
+  "packages/ui/src/components/Badge/effects/Metal.tsx",
+  "packages/ui/src/components/Badge/effects/Outline.tsx",
+  "packages/ui/src/components/Badge/effects/Perforations.tsx",
+  "packages/ui/src/components/Badge/effects/Puffs.tsx",
+  "packages/ui/src/components/Badge/effects/Rivets.tsx",
+  "packages/ui/src/components/Badge/effects/Scallops.tsx",
+  "packages/ui/src/components/Badge/effects/Shadow.tsx",
+  "packages/ui/src/components/Badge/effects/Sheen.tsx",
+  "packages/ui/src/components/Badge/effects/Spikes.tsx",
+  "packages/ui/src/components/Badge/effects/Sunbeams.tsx",
+  "packages/ui/src/components/Badge/effects/Woodgrain.tsx",
+  "packages/ui/src/components/Badge/effects/bevelBands.ts",
+  "packages/ui/src/components/Badge/effects/bumps.ts",
+  "packages/ui/src/components/Badge/effects/glassStrokes.tsx",
+  "packages/ui/src/components/Badge/effects/index.ts",
+  "packages/ui/src/components/Badge/effects/lightCorner.ts",
+  "packages/ui/src/components/Badge/effects/mixPercent.ts",
+  "packages/ui/src/components/Badge/effects/rangeMask.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.21296759999999998,
+   "minutes": 0.20855,
+   "at": "2026-11-27T00:19:43.756Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Irregular puff heights jump at each crawl-cycle wrap because the height is keyed to an index that shifts by one when phase wraps",
+   "where": "packages/ui/src/components/Badge/effects/Puffs.tsx:25",
+   "severity": "low",
+   "scenario": "Badge crawl animation with nonzero irregularity reaches the end of a cycle; the outline visibly jumps",
+   "fix": [
+    "packages/ui/src/components/Badge/effects/Puffs.tsx"
+   ],
+   "cause": "bump height keyed to phase-relative index rather than absolute bump identity",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1419
+}

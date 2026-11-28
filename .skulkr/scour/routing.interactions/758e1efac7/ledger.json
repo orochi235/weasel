@@ -1,0 +1,1031 @@
+{
+ "area": "routing.interactions",
+ "commit": "758e1efac7f7b00b7fbbcf6a13741249d6c3640f",
+ "files": [
+  "packages/routing/src/interactions/browserReservedKeys.ts",
+  "packages/routing/src/interactions/carry/carry.ts",
+  "packages/routing/src/interactions/carry/index.ts",
+  "packages/routing/src/interactions/elementAt.ts",
+  "packages/routing/src/interactions/handleDrag/handleDrag.ts",
+  "packages/routing/src/interactions/keyHelpers.ts",
+  "packages/routing/src/interactions/pointerSession/index.ts",
+  "packages/routing/src/interactions/pointerSession/pointerSession.ts",
+  "packages/routing/src/interactions/pointerSession/swallowClick.ts",
+  "packages/routing/src/interactions/scratchKey.ts",
+  "packages/routing/src/interactions/sweep/index.ts",
+  "packages/routing/src/interactions/sweep/sweep.ts",
+  "packages/routing/src/interactions/thresholdDrag/index.ts",
+  "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/01-claude.md",
+   "costUsd": 0.7244910000000001,
+   "minutes": 2.6179,
+   "at": "2026-11-25T23:19:44.773Z",
+   "findings": 4
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.6302622,
+   "minutes": 2.1455333333333333,
+   "at": "2026-11-25T23:21:53.651Z",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.891923,
+   "minutes": 2.6523333333333334,
+   "at": "2026-11-25T23:29:46.468Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.7813654,
+   "minutes": 3.409283333333333,
+   "at": "2026-11-25T23:33:11.152Z",
+   "findings": 3
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.6447958,
+   "minutes": 2.4981166666666663,
+   "at": "2026-11-25T23:35:41.154Z",
+   "findings": 5
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.5986806,
+   "minutes": 2.5475,
+   "at": "2026-11-25T23:38:14.131Z",
+   "findings": 3
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.6768942,
+   "minutes": 2.7272666666666665,
+   "at": "2026-11-25T23:40:57.940Z",
+   "findings": 1
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 0.7820770000000001,
+   "minutes": 3.0966666666666667,
+   "at": "2026-11-25T23:44:03.846Z",
+   "findings": 4
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.8568534000000001,
+   "minutes": 3.8864666666666667,
+   "at": "2026-11-25T23:47:57.142Z",
+   "findings": 3
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.9047502000000001,
+   "minutes": 4.173733333333334,
+   "at": "2026-11-25T23:52:07.877Z",
+   "findings": 2
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.5603574,
+   "minutes": 2.35035,
+   "at": "2026-11-25T23:54:29.049Z",
+   "findings": 3
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 0.5022458000000001,
+   "minutes": 2.0736499999999998,
+   "at": "2026-11-25T23:56:33.619Z",
+   "findings": 1
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 0.5981112,
+   "minutes": 2.470683333333333,
+   "at": "2026-11-25T23:59:01.970Z",
+   "findings": 3
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.41679040000000006,
+   "minutes": 1.4868999999999999,
+   "at": "2026-11-26T00:00:31.291Z",
+   "findings": 3
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 0.8178498000000001,
+   "minutes": 3.6296166666666667,
+   "at": "2026-11-26T00:04:09.158Z",
+   "findings": 4
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.7243489999999999,
+   "minutes": 2.75155,
+   "at": "2026-11-26T00:06:54.354Z",
+   "findings": 3
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 0.5253084,
+   "minutes": 2.1434166666666665,
+   "at": "2026-11-26T00:09:03.071Z",
+   "findings": 2
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 0.42395020000000005,
+   "minutes": 1.4404333333333332,
+   "at": "2026-11-26T00:10:29.609Z",
+   "findings": 3
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 0.4865952,
+   "minutes": 1.7911833333333333,
+   "at": "2026-11-26T00:12:17.170Z",
+   "findings": 1
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 0.7174356,
+   "minutes": 3.0484999999999998,
+   "at": "2026-11-26T00:15:20.165Z",
+   "findings": 2
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 0.5136375999999999,
+   "minutes": 2.0143333333333335,
+   "at": "2026-11-26T00:17:21.108Z",
+   "findings": 2
+  },
+  {
+   "n": 22,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/22-claude.md",
+   "costUsd": 0.7474998,
+   "minutes": 3.0434833333333335,
+   "at": "2026-11-26T00:20:23.804Z",
+   "findings": 4
+  },
+  {
+   "n": 23,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/23-claude.md",
+   "costUsd": 0.4776492,
+   "minutes": 1.9302333333333332,
+   "at": "2026-11-26T00:22:19.709Z",
+   "findings": 3
+  },
+  {
+   "n": 24,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/24-claude.md",
+   "costUsd": 0.642915,
+   "minutes": 2.4360666666666666,
+   "at": "2026-11-26T00:24:45.952Z",
+   "findings": 3
+  },
+  {
+   "n": 25,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/25-claude.md",
+   "costUsd": 0.800952,
+   "minutes": 3.3284333333333334,
+   "at": "2026-11-26T00:28:05.743Z",
+   "findings": 4
+  },
+  {
+   "n": 26,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/26-codex.md",
+   "costUsd": 0.2930196,
+   "minutes": 0.38595,
+   "at": "2026-11-26T23:20:44.391Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 8
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "A press that only scrolls under a still pointer reports `moved: false` though its point moved",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:186 (useHandleDrag, `away`)",
+   "severity": "low",
+   "scenario": "press a handle and, without moving the pointer, scroll an ancestor with the wheel or a keyboard, then release. `localOf` folds the scroll into the release point, so `onEnd.point` differs from the press's local point, but `moved` is read off client coordinates only (`away` compares `clientX/Y` with the press), so it comes back `false`. A commit-on-end consumer reads that as \"a press, not a drag\" and throws away an edit whose point did change in the rect's space, the space every other field of `HandleDragEnd` is in.",
+   "fix": [
+    "packages/routing/src/interactions/handleDrag/handleDrag.ts"
+   ],
+   "size": "function",
+   "cause": "`moved` measured in client space, `point` in local space",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    11
+   ],
+   "sources": {
+    "claude": [
+     1,
+     11
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "`overflow: clip` is taken for a sticky box's scrollport",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:93 (scrollersOf)",
+   "severity": "low",
+   "scenario": "a sticky `rectEl` (or one inside a sticky box) whose parent has `overflow: clip` and whose real scroller is further up. `styleOf(p)?.overflow !== 'visible'` treats the clip parent as the box's scrollport, so the sticky offset is read against the clip parent's rect and the real scroller is then added as a plain scroller beside it. CSS does not make a `clip` box a scroll container, so the sticky box sticks in the outer scroller; reading its stuck offset off the wrong box means a scroll during the drag shifts the reported local point by the scroll distance while the box stays stuck on screen.",
+   "fix": [
+    "packages/routing/src/interactions/handleDrag/handleDrag.ts"
+   ],
+   "size": "line",
+   "cause": "scroll-container test counts `clip`",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2,
+    4,
+    5,
+    8,
+    11,
+    14,
+    17,
+    18,
+    20,
+    23,
+    25
+   ],
+   "sources": {
+    "claude": [
+     1,
+     2,
+     4,
+     5,
+     8,
+     11,
+     14,
+     17,
+     18,
+     20,
+     23,
+     25
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "A missed release past the threshold but before activation is reported as a click under `missedRelease: 'click'`",
+   "where": "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts:91 (startThresholdDrag, `missedRelease`)",
+   "severity": "low",
+   "scenario": "with `missedRelease: 'click'`, press, leave the window fast enough that no move inside it crossed the threshold, release outside, and come back: the first move seen has `buttons: 0` and lies far past the threshold. The session asks `missedRelease()` before `onMove` runs, so `activated` is still `false` and the answer is `'end'`. `onEnd` then skips `maybeActivate` (it only runs for `pointerup`) and calls `onClick` for a press that traveled hundreds of pixels. The option's own doc says only a release *below* the threshold is a click.",
+   "fix": [
+    "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+   ],
+   "size": "line",
+   "cause": "threshold not checked for the missed-release move",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "claude": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "`undoKeyStep` hands the page the undo of a text field inside a closed shadow root",
+   "where": "packages/routing/src/interactions/keyHelpers.ts:75 (undoKeyStep)",
+   "severity": "low",
+   "scenario": "a page-level keydown handler calls `undoKeyStep(e)` while focus is in an `<input>` inside a closed shadow root. `e.target` names the host, and `isEditableTarget` can only look past a host through `target.shadowRoot`, which is `null` for a closed root, so the field is not seen as editable and Cmd+Z is returned as `'undo'`: the page undoes its own history instead of the field's text. `e.composedPath()[0]` is the focused element in that case only from inside, so the fix is to test the deepest target the event exposes, or `document.activeElement`'s chain.",
+   "fix": [
+    "packages/routing/src/interactions/keyHelpers.ts",
+    "packages/gestures/src/ui/keyOwner.ts"
+   ],
+   "size": "function",
+   "cause": "retargeted event target, closed shadow root",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "claude": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "onEnd is documented to fire before teardown completes but fires after it",
+   "where": "packages/routing/src/interactions/pointerSession/pointerSession.ts:62 (PointerSessionCallbacks.onEnd), :152 (end)",
+   "severity": "low",
+   "scenario": "a caller reads `session.active`, relies on capture still being held, or calls `heldWithin` from inside `onEnd`, as the doc (\"Fires once, before teardown completes\") promises → `end` runs `teardown()` first, so `active` is already false, capture is released and the session is out of `OPEN`. The doc should say \"after teardown\", or the order should match it.",
+   "size": "line",
+   "cause": "doc contradicts the call order",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    13,
+    15,
+    16
+   ],
+   "sources": {
+    "claude": [
+     2,
+     13,
+     15,
+     16
+    ]
+   },
+   "fix": [
+    "packages/routing/src/interactions/pointerSession/pointerSession.ts"
+   ]
+  },
+  {
+   "id": "D6",
+   "claim": "Carry surfaces in other documents (iframes) are hit-tested with the top document's client point",
+   "where": "packages/routing/src/interactions/carry/carry.ts:82 (surfaceAt)",
+   "severity": "low",
+   "scenario": "one module instance serves a page and a same-origin iframe, and each registers a carry surface → while a carry moves in the parent, `surfaceAt` compares the parent's clientX/Y with the iframe surface's `getBoundingClientRect()`, which is in iframe coordinates, then hit-tests the iframe's document at that point. The iframe surface can receive `enter`/`move`/`drop` for a pointer that is somewhere else entirely. The fix is to skip surfaces whose `ownerDocument` is not the origin's.",
+   "size": "line",
+   "cause": "global surface set not scoped by document",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "browserReservedChord misses Cmd+Shift+[ / ] when the spec is bound by `code`",
+   "where": "packages/routing/src/interactions/browserReservedKeys.ts:84 (keysOf)",
+   "severity": "low",
+   "scenario": "on Apple, `{ kind: 'key', key: '[', code: 'BracketLeft', mods: { mod: true, shift: true } }`. `KeySpec.code` matches the physical key \"whatever a held modifier makes it type\", so this binding fires on Cmd+Shift+[, which Safari and Chrome take as \"previous tab\". `keysOf` maps `BracketLeft` only to its unshifted key `[`. The reserved `[` entry requires shift released, and the reserved `{` entry is never compared because `{` is not among the spec's keys. So `browserReservedChord` returns `null` when it should return the \"previous and next tab on macOS\" chord. The same happens with `BracketRight` / `}`. Digits avoid this only because `345` and `#$%` are both listed.",
+   "size": "function",
+   "cause": "code-to-key map ignores the shifted character",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    14
+   ],
+   "sources": {
+    "claude": [
+     3,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A sticky rect element feeds its own drag back into its coordinate space",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:112 (stickyScrollerOf), :87 (scrollersOf)",
+   "severity": "low",
+   "scenario": "`scrollersOf` starts at `rectEl` itself, so `sticky ??= n` picks `rectEl` when it is `position: sticky`. That includes the default case, where `rectEl` is the HTML handle target. On a stuck axis, `moved()` then reads `box.getBoundingClientRect()` live on every move. If the drag moves that handle (`transform`, `left`/`top`), its rect changes and `localOf` shifts the origin by the same amount. That breaks the contract stated in the doc comment that a handle moving under its own drag must not shift the space its coordinates are reported in. The reported point then drifts or oscillates. The fix is to measure the sticky offset in a way the box's own movement cannot affect, such as its offset against the scroller minus the scroller's scroll at press, or to skip `rectEl` itself.",
+   "size": "function",
+   "cause": "live rect of the box being measured",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    6,
+    25
+   ],
+   "sources": {
+    "claude": [
+     3,
+     6,
+     25
+    ]
+   },
+   "fix": [
+    "handleDrag.ts"
+   ]
+  },
+  {
+   "id": "D9",
+   "claim": "A sweep surface whose items sit in its own shadow root never reaches an item",
+   "where": "packages/routing/src/interactions/sweep/sweep.ts:82 (itemAt)",
+   "severity": "low",
+   "scenario": "the surface is a custom element that renders its toggles in its own shadow root. `elementAt(surface, …)` hit-tests in the tree the surface belongs to (the document), not in `surface.shadowRoot`, so it returns the host, which is `surface` itself. The loop `for (; el && el !== surface; …)` exits at once and returns `null`. `enabled` then answers `NotApplicable`, so the sweep never starts. Items in a nested shadow root inside the surface come back retargeted to their host, so `keyOf` sees only the host, and `el.parentElement` stops at shadow-root boundaries either way. The carry and pointer-session code count shadow content as inside its host (`containsComposed`); the sweep does not.",
+   "fix": [
+    "packages/routing/src/interactions/sweep/sweep.ts",
+    "packages/routing/src/interactions/elementAt.ts"
+   ],
+   "size": "function",
+   "cause": "hit test not descending into the surface's shadow root",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5,
+    13,
+    15,
+    16,
+    18,
+    24
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5,
+     13,
+     15,
+     16,
+     18,
+     24
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "A sticky ancestor stuck to the page viewport has its scroll read off the root element's rect, which itself scrolls, so handle coordinates go wrong while it is stuck and while it rides",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:120 (stickyScrollerOf), :97 (scrollersOf, `p === root`)",
+   "severity": "medium",
+   "scenario": "a handle inside a `position: sticky; top: 0` toolbar with no scrolling ancestor but the page. `scrollersOf` reaches `p === root` and builds `stickyScrollerOf(sticky, root, …)`, whose `moved()` returns `p.top - b.top` with `p = documentElement.getBoundingClientRect()`. The root's rect top is `-scrollY`, so it moves with the scroll. While the toolbar is stuck (`b.top` constant), `moved.y` falls by the page scroll Δ and `localOf` shifts the box down by Δ although it never moved; while it is not yet stuck (box rides the scroll, `b.top` and `p.top` both fall by Δ), `moved.y` stays constant and the real Δ is never compensated. Either way a page scroll during the drag offsets every `onMove`/`onEnd` point by the scroll distance. For a non-root scroller the formula is right because that scroller's border box does not move when it scrolls its content; for the root the scrollport is the viewport (top/left 0), not the root element's box.",
+   "size": "function",
+   "cause": "root element rect used as the viewport scrollport",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    6,
+    7,
+    10,
+    11,
+    12,
+    13,
+    17,
+    18,
+    19,
+    20,
+    25,
+    26
+   ],
+   "sources": {
+    "claude": [
+     4,
+     6,
+     7,
+     10,
+     11,
+     12,
+     13,
+     17,
+     18,
+     19,
+     20,
+     25
+    ],
+    "codex": [
+     26
+    ]
+   },
+   "fix": [
+    "handleDrag.ts",
+    "packages/routing/src/interactions/handleDrag/handleDrag.ts",
+    "packages/routing/src/interactions/handleDrag/handleDrag.test.ts"
+   ]
+  },
+  {
+   "id": "D11",
+   "claim": "A carry's onMove still reaches the source after the carry was canceled from inside that same move",
+   "where": "packages/routing/src/interactions/carry/carry.ts:133 (startCarry, onMove)",
+   "severity": "medium",
+   "scenario": "a surface's `receive('enter' | 'move')` (a carry binding's action) or anything it triggers calls the carry's `cancel()` during `step(e)`. The session aborts, `onCancel` fires the leave and the source's `cb.onCancel`, then control returns to `onMove`, which still calls `cb.onMove?.(e)`: the source hears a move after its cancel and may re-show the drag preview it just tore down. The move should be skipped once `session.active` is false.",
+   "size": "line",
+   "cause": "no active check after step",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    26
+   ],
+   "sources": {
+    "claude": [
+     4
+    ],
+    "codex": [
+     26
+    ]
+   },
+   "fix": [
+    "packages/routing/src/interactions/carry/carry.ts"
+   ]
+  },
+  {
+   "id": "D12",
+   "claim": "A sweep never reaches the items between its last move and the release point",
+   "where": "packages/routing/src/interactions/sweep/sweep.ts:146 (createSweepAction → start → onEnd)",
+   "severity": "medium",
+   "scenario": "a fast flick across a row of toggles where the `pointerup` arrives at a client point past the last `pointermove` (coalesced moves; pointerup is not guaranteed to share the last move's coordinates) → `onEnd` ignores its `ctx` and calls `run.end('commit')` without `travel(end.world)`, so the items between the last move and the release are never entered. The doc promises \"an item a fast drag crossed between two moves is entered too\". The other drags in this area read the release point: carry `step(e)`s on `onEnd`, handleDrag reports `localOf` of the up event.",
+   "fix": [
+    "packages/routing/src/interactions/sweep/sweep.ts"
+   ],
+   "size": "line",
+   "cause": "release point not traveled on commit",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    23,
+    24,
+    26
+   ],
+   "sources": {
+    "claude": [
+     5,
+     23,
+     24
+    ],
+    "codex": [
+     26
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "containsComposed ignores slot assignment, so a slotted item's drag doesn't preempt a surface inside a shadow root",
+   "where": "packages/routing/src/interactions/elementAt.ts:21 (containsComposed)",
+   "severity": "low",
+   "scenario": "a web component whose shadow root holds the dispatcher surface (`<div class=\"list\"><slot></slot></div>`), with the items as light-DOM children slotted into it. An item opens a pointer session on itself → `heldWithin(id, surface)` calls `containsComposed(surface, item)`: `surface.contains(item)` is false, the item's root is the document with no `host`, so the answer is false and the surface's own drag doesn't yield, even though the item is laid out inside it. `surfaceAt` in carry.ts has the same blind spot when it decides which of two nested surfaces is innermost. handleDrag's `flatParentOf` in this same area already walks `assignedSlot`, so \"inside\" means two different things here.",
+   "fix": [
+    "packages/routing/src/interactions/elementAt.ts"
+   ],
+   "size": "function",
+   "cause": "walks shadow hosts, not the flat tree (assignedSlot)",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    21
+   ],
+   "sources": {
+    "claude": [
+     5,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "Sweep can't find items slotted into the surface",
+   "where": "packages/routing/src/interactions/sweep/sweep.ts:91 (itemAt)",
+   "severity": "low",
+   "scenario": "(a) the surface is a custom element whose items live in its own shadow root → `elementAt(surface)` hit-tests in the surface's root (the document), gets back the surface itself (retargeted), and the loop `el !== surface` exits at once → null, so nothing sweeps. (b) the surface is inside a shadow root and its items are slotted light-DOM children → `surface.contains(el)` is false → null. In both cases `enabled` answers NotApplicable for every press. The walk up `parentElement` also stops at a shadow-root boundary instead of following the flat tree.",
+   "fix": [
+    "packages/routing/src/interactions/sweep/sweep.ts",
+    "packages/routing/src/interactions/elementAt.ts"
+   ],
+   "size": "function",
+   "cause": "non-composed contains/parentElement in hit walk",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    9,
+    22
+   ],
+   "sources": {
+    "claude": [
+     5,
+     9,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "handleDrag's containing-block test misses `transform-style: preserve-3d`",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:58 (holdsFixed)",
+   "severity": "low",
+   "scenario": "a `position: fixed` handle panel inside an ancestor with `transform-style: preserve-3d` (and no transform) in a scrolling pane. Chromium makes that ancestor the panel's containing block (CSS Transforms 2), so the panel scrolls with the pane. `holdsFixed` doesn't list it, so `scrollersOf` walks past to the viewport and returns no scrollers. A scroll mid-drag then shifts the reported local coordinates by the scroll distance.",
+   "fix": [
+    "packages/routing/src/interactions/handleDrag/handleDrag.ts"
+   ],
+   "size": "line",
+   "cause": "incomplete containing-block property list",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    16
+   ],
+   "sources": {
+    "claude": [
+     5,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "browserReservedChord returns null for every chord that needs the Windows/Super key, though the desktop takes all of them",
+   "where": "packages/routing/src/interactions/browserReservedKeys.ts:96 (browserReservedChord)",
+   "severity": "low",
+   "scenario": "off Apple, `{ kind: 'key', key: 'l', mods: { meta: true } }` (Win+L, lock screen), or Win+D, Win+E, Win+R, Win+Tab — `!allows(m.meta, false)` returns `null`, reporting the chord free, though Windows and most Linux desktops take every one before the page sees it. The list claims to \"err toward listing a chord\" and to include what \"the desktop under it takes\", yet a kit default bound to Meta off Apple passes the check and never fires.",
+   "fix": [
+    "browserReservedKeys.ts"
+   ],
+   "size": "function",
+   "cause": "meta-required specs short-circuited to \"not reserved\"",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "useHandleDrag ignores page scroll in quirks mode, where the body rather than the root element scrolls the page",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:88 (scrollersOf / scrollerOf)",
+   "severity": "low",
+   "scenario": "a page in quirks mode (no doctype) scrolls through `document.body`, which is `document.scrollingElement`, and `documentElement.scrollTop` stays 0. The chain ends at `root = documentElement`, so when the page scrolls during a drag, `scrollOf` reads 0 and the handle's local coordinates drift by the scroll distance. The root-held cases at lines 88 and 95 should read `ownerDocument.scrollingElement ?? documentElement`.",
+   "size": "line",
+   "cause": "reads documentElement instead of scrollingElement",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "BROWSER_RESERVED_CHORDS leaves out OS-level chords a page can never receive, so browserReservedChord does not flag them",
+   "where": "packages/routing/src/interactions/browserReservedKeys.ts:33 (BROWSER_RESERVED_CHORDS)",
+   "severity": "low",
+   "scenario": "the header says the list is the union across browsers and desktops and \"errs toward listing a chord\". But `browserReservedChord({kind:'key', key:' ', mods:{alt:true}}, false)` returns null, and Alt+Space opens the window menu on Windows and many Linux desktops. On a Mac, `{key:' ', mods:{ctrl:true}}` returns null (Ctrl+Space switches the input source), so does `{key:' ', mods:{mod:true, ctrl:true}}` (the emoji and symbols viewer), and so does `{key:'q', mods:{mod:true, shift:true}}` (Log Out). Off a Mac, Ctrl+Shift+Q (quit in Chrome on Linux and Windows) also returns null. A kit default bound to any of these passes the reserved-key check and never fires.",
+   "size": "line",
+   "cause": "incomplete chord table",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    15,
+    22
+   ],
+   "sources": {
+    "claude": [
+     8,
+     15,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "A sweep hit-tests the press point without the finite-number guard its moves have, so a non-finite press point reaches itemAt",
+   "where": "packages/routing/src/interactions/sweep/sweep.ts:121 (createSweepAction → pressed / itemAt)",
+   "severity": "low",
+   "scenario": "unruled.md (2026-11-11) rules that a sweep skips a point that is not a finite number, and `travel` does that for moves. `enabled(deps, at)` and `start` pass the press point straight to `itemAt` → `elementFromPoint`, though. A press whose point is `NaN` (a synthesized event with no client coordinates, or a dispatcher mapping that divides by 0) makes `elementFromPoint` throw a TypeError, because its arguments are non-unrestricted doubles. The press point should get the same guard and answer `NotApplicable`. Two paths answer the same question two ways.",
+   "size": "line",
+   "cause": "guard applied to moves only",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "A carry surface inside a shadow root is not found when the pointer is over content slotted into it",
+   "where": "packages/routing/src/interactions/carry/carry.ts:89 (surfaceAt)",
+   "severity": "low",
+   "scenario": "a dispatcher with a `carry` channel mounts on an element inside a shadow root, and what fills it is light-DOM content slotted in. The hit from `elementAt` is that slotted light element; `s.element.contains(hit)` is false, so the surface is treated as covered by something else and skipped. A carry over it gets no `enter`/`move`, and a release there drops nowhere (`taken: false`). Containment should follow slot assignment, as for the sweep above.",
+   "fix": [
+    "packages/routing/src/interactions/carry/carry.ts",
+    "packages/routing/src/interactions/elementAt.ts",
+    "packages/routing/src/interactions/sweep/sweep.ts"
+   ],
+   "size": "function",
+   "cause": "light-tree `contains` used where layout is the flat tree",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    14,
+    21,
+    22
+   ],
+   "sources": {
+    "claude": [
+     9,
+     14,
+     21,
+     22
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "A sweep misses an item whose element is reused under a new key",
+   "where": "packages/routing/src/interactions/sweep/sweep.ts:132 (createSweepAction → reach)",
+   "severity": "low",
+   "scenario": "`reach` enters a new item only when its element differs from the current one **and** its key differs. In a surface that recycles elements (a virtualized grid scrolled mid-sweep, or a row re-keyed after `enter` changes data), the element under the pointer stays the same while `keyOf` now names a different item, so that item is never entered. The doc says `enter` fires \"whenever the item under the pointer changes\". The key should decide, with the element only breaking ties for keys `keyOf` builds fresh each call.",
+   "size": "line",
+   "cause": "`&&` where key change alone means a new item",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    25
+   ],
+   "sources": {
+    "claude": [
+     9,
+     25
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "holdsFixed treats `will-change: contents` as making a box the containing block for fixed descendants, though it does not",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:61 (holdsFixed)",
+   "severity": "low",
+   "scenario": "the `will-change` test is `/transform|translate|rotate|scale|perspective|filter|contain/`, and `contain` also matches the value `contents`, which does not create a containing block. Take a `position: fixed` rectEl (say, a fixed HUD with handles) with an ancestor marked `will-change: contents`. `scrollersOf` takes that ancestor as the fixed box's containing block and walks on up from it, adding the page's and other ancestors' scroll offsets. A scroll during the drag then shifts `localOf`'s box although the fixed element never moved. It should match `contain` as a whole word only, e.g. `/(^|,\\s*)contain(\\s*,|$)/` or a token split.",
+   "size": "line",
+   "cause": "substring regex on a keyword list",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    24
+   ],
+   "sources": {
+    "claude": [
+     10,
+     24
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "holdsFixed treats a root element with `filter` or `backdrop-filter` as the containing block for fixed descendants, so a fixed-position rect has the page's scroll subtracted from it",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:58 (holdsFixed / scrollersOf)",
+   "severity": "low",
+   "scenario": "`<html style=\"filter: grayscale(1)\">` (a common dark-mode or accessibility filter) and a handle whose rect element is `position: fixed`. `holds('fixed', style(html))` is true because `holdsFixed` sees `filter`, so `scrollersOf` stops at `html` and pushes `scrollerOf(root)`. The Filter Effects spec exempts the document root: a filter there does not make a containing block for fixed descendants, so the box stays put in the viewport. A wheel scroll of the page during the drag still shifts `localOf`'s box by the scroll delta, and every `onMove` and `onEnd` point comes back offset by however far the page scrolled. The root should never count as a fixed holder for `filter` or `backdrop-filter`.",
+   "size": "line",
+   "cause": "root-element exception missing from holdsFixed",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "swallowNextClick can miss the click a touch release raises, so that click gets through",
+   "where": "packages/routing/src/interactions/pointerSession/swallowClick.ts:26 (swallowNextClick)",
+   "severity": "low",
+   "scenario": "the helper assumes the click a release raises is dispatched in the same task as the `pointerup`. For a touch tap, Chrome dispatches the click from the gesture-tap event, a separate input event after `pointerup`/`touchend`; the `setTimeout(…, 0)` that removes the listener can run first, so the drag's release click lands on what the press began on. Mouse is unaffected.",
+   "size": "function",
+   "cause": "same-task assumption about touch click dispatch",
+   "confidence": "likely",
+   "firstOccasion": 22,
+   "sightings": [
+    22
+   ],
+   "sources": {
+    "claude": [
+     22
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "Sweeping off an item onto a gap and back onto the same item does not enter it again, contrary to its doc",
+   "where": "packages/routing/src/interactions/sweep/sweep.ts:122 (reach)",
+   "severity": "low",
+   "scenario": "the user presses toggle A, drags into the gap beside it, then drags back onto A. `reach` returns early on a null item without resetting `current`, so the return to A matches `current` and `enter` is not called. `SweepRun.enter`'s doc says it is \"called whenever the item under the pointer changes, so an item swept back over is entered again\". Either a gap should clear `current`, or the doc should say that gaps do not count as a change.",
+   "size": "line",
+   "cause": "gap does not clear current item",
+   "confidence": "likely",
+   "firstOccasion": 23,
+   "sightings": [
+    23
+   ],
+   "sources": {
+    "claude": [
+     23
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "Threshold drag delivers the threshold-crossing move after onStart cancels the handle",
+   "where": "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts:77 (startThresholdDrag)",
+   "severity": "medium",
+   "scenario": "onStart calls handle.cancel(); sequence observed start, cancel, move, so the move can recreate a cleared preview",
+   "fix": [
+    "packages/routing/src/interactions/thresholdDrag/thresholdDrag.ts"
+   ],
+   "size": "line",
+   "cause": "no canceled check after onStart",
+   "confidence": "sure",
+   "firstOccasion": 26,
+   "sightings": [
+    26
+   ],
+   "sources": {
+    "codex": [
+     26
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "Carry's rectangle prefilter rejects a surface when the hit is a contained descendant overflowing the surface box",
+   "where": "packages/routing/src/interactions/carry/carry.ts:84 (surfaceAt)",
+   "severity": "medium",
+   "scenario": "Surface x=0–100, child x=90–120 with overflow visible; release at x=110 hits the child but the surface is rejected",
+   "fix": [
+    "packages/routing/src/interactions/carry/carry.ts"
+   ],
+   "size": "line",
+   "cause": "rect gate applied before contained-hit check",
+   "confidence": "sure",
+   "firstOccasion": 26,
+   "sightings": [
+    26
+   ],
+   "sources": {
+    "codex": [
+     26
+    ]
+   }
+  },
+  {
+   "id": "D28",
+   "claim": "Ambient-realm instanceof checks make iframe handles lose the SVG default rect and scroller scale correction",
+   "where": "packages/routing/src/interactions/handleDrag/handleDrag.ts:106 (scrollerOf), :141 (defaultRectEl)",
+   "severity": "medium",
+   "scenario": "Handle portaled into a same-origin iframe: SVG handle measured against its own box; a 2x-scaled iframe scroller's 10px scroll counted as 10 client px instead of 20",
+   "fix": [
+    "packages/routing/src/interactions/handleDrag/handleDrag.ts"
+   ],
+   "size": "line",
+   "cause": "cross-realm instanceof",
+   "confidence": "sure",
+   "firstOccasion": 26,
+   "sightings": [
+    26
+   ],
+   "sources": {
+    "codex": [
+     26
+    ]
+   }
+  },
+  {
+   "id": "D29",
+   "claim": "swallowClick's guard lets later capture listeners on its own target still receive the click",
+   "where": "packages/routing/src/interactions/pointerSession/swallowClick.ts:14 (swallowClick)",
+   "severity": "low",
+   "scenario": "Arm guard on a container, add another capture listener on that container; the next click still reaches it and is processed twice",
+   "fix": [
+    "packages/routing/src/interactions/pointerSession/swallowClick.ts"
+   ],
+   "size": "line",
+   "cause": "stopPropagation without stopImmediatePropagation",
+   "confidence": "sure",
+   "firstOccasion": 26,
+   "sightings": [
+    26
+   ],
+   "sources": {
+    "codex": [
+     26
+    ]
+   }
+  },
+  {
+   "id": "D30",
+   "claim": "Sweep's sample interpolation can step over an item the segment briefly crosses",
+   "where": "packages/routing/src/interactions/sweep/sweep.ts:138 (createSweepAction, travel)",
+   "severity": "low",
+   "scenario": "Item at x=10–30, y=0–20; sweep (7,16.5)→(13,22.5) samples x=9,11,13 and never enters the item",
+   "fix": [
+    "packages/routing/src/interactions/sweep/sweep.ts"
+   ],
+   "size": "function",
+   "cause": "point sampling instead of segment intersection",
+   "confidence": "sure",
+   "firstOccasion": 26,
+   "sightings": [
+    26
+   ],
+   "sources": {
+    "codex": [
+     26
+    ]
+   }
+  }
+ ],
+ "lines": 1164
+}

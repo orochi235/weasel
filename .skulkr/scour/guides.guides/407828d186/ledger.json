@@ -1,0 +1,55 @@
+{
+ "area": "guides.guides",
+ "commit": "407828d186fd5a27bcfa1e5b041eb375ef5eb864",
+ "files": [
+  "packages/guides/src/guides/alignment/derive.ts",
+  "packages/guides/src/guides/alignment/finite.ts",
+  "packages/guides/src/guides/alignment/index.ts",
+  "packages/guides/src/guides/alignment/match.ts",
+  "packages/guides/src/guides/alignment/sceneBounds.ts",
+  "packages/guides/src/guides/alignment/spacing.ts",
+  "packages/guides/src/guides/alignment/types.ts",
+  "packages/guides/src/guides/index.ts",
+  "packages/guides/src/guides/layer.ts",
+  "packages/guides/src/guides/ops.ts",
+  "packages/guides/src/guides/sameGuide.ts",
+  "packages/guides/src/guides/types.ts",
+  "packages/guides/src/guides/useGuides.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1716994,
+   "minutes": 0.10985,
+   "at": "2026-11-25T23:41:20.765Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "worldBoundsOf ignores forNode-specialized pose descriptors, so guide bounds use the base descriptor's geometry",
+   "where": "packages/guides/src/guides/alignment/sceneBounds.ts:40 (worldBoundsOf)",
+   "severity": "medium",
+   "scenario": "A custom node whose forNode-specialized bounds differ from its base pose; guides align to geometry different from what the canvas draws",
+   "fix": [
+    "packages/guides/src/guides/alignment/sceneBounds.ts"
+   ],
+   "size": "line",
+   "cause": "forNode specialization not applied",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ]
+}

@@ -4,8 +4,8 @@ Repeated blind reviews of the area `core.canvas.SceneCanvas.part2` (45 files) at
 `9c4522d635`, with no fixes between them, from `codex`, `claude`.
 Each occasion is one review, or one ingested report; its findings are matched against the ledger of distinct
 defects so far. Reviews stop once fewer than one defect is estimated unseen, the chance that the next occasion
-finds something new falls under 15%, or 40 occasions have run.
-Stopped: the next occasion's chance of a new finding is under 15% (14.2%). `skulkr saturate report core.canvas.SceneCanvas.part2` rewrites this file from the ledger.
+finds something new falls under 15%, the next defect would cost over $1.49, or 40 occasions have run.
+Stopped: the next occasion's chance of a new finding is under 15% (14.2%). The next defect should cost about $1.72. `skulkr scour report core.canvas.SceneCanvas.part2` rewrites this file from the ledger.
 
 ## Yield by occasion
 

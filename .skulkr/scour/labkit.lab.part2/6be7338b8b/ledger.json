@@ -1,0 +1,73 @@
+{
+ "area": "labkit.lab.part2",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/lab/TriallessPage.tsx",
+  "packages/labkit/src/lab/UnreadableRecords.tsx",
+  "packages/labkit/src/lab/Workspace.less",
+  "packages/labkit/src/lab/Workspace.stories.less",
+  "packages/labkit/src/lab/Workspace.stories.tsx",
+  "packages/labkit/src/lab/Workspace.tsx",
+  "packages/labkit/src/lab/fitCheck.ts",
+  "packages/labkit/src/lab/index.ts",
+  "packages/labkit/src/lab/keyClaims.ts",
+  "packages/labkit/src/lab/labAmbient.ts",
+  "packages/labkit/src/lab/labChords.ts",
+  "packages/labkit/src/lab/labChromeAll.ts",
+  "packages/labkit/src/lab/labContextMenus.ts",
+  "packages/labkit/src/lab/labMenus.ts",
+  "packages/labkit/src/lab/labModes.ts",
+  "packages/labkit/src/lab/labProps.ts",
+  "packages/labkit/src/lab/nebula.ts",
+  "packages/labkit/src/lab/openLab.ts",
+  "packages/labkit/src/lab/owningTrial.ts",
+  "packages/labkit/src/lab/panelHost.ts",
+  "packages/labkit/src/lab/presentation.less",
+  "packages/labkit/src/lab/presentation.tsx",
+  "packages/labkit/src/lab/presentationMessages.ts",
+  "packages/labkit/src/lab/snapshotCommands.ts",
+  "packages/labkit/src/lab/still.ts",
+  "packages/labkit/src/lab/storeCommands.ts",
+  "packages/labkit/src/lab/tileChrome.tsx",
+  "packages/labkit/src/lab/trialless.ts",
+  "packages/labkit/src/lab/useFocusPick.ts",
+  "packages/labkit/src/lab/workspaceStore.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1622384,
+   "minutes": 0.1192,
+   "at": "2026-11-26T05:10:13.022Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Presentation posts clock:false and ignores clock commands before a function-declared clock registers, because readiness treats function-valued clock declarations as unclocked",
+   "where": "packages/labkit/src/lab/presentation.tsx:124",
+   "severity": "medium",
+   "scenario": "A lab declares its clock as a function that returns a clock under the current config; presentation messaging attaches before the clock registers, posts clock:false at once, and drops clock commands until registration",
+   "fix": [
+    "packages/labkit/src/lab/presentation.tsx"
+   ],
+   "size": "line",
+   "cause": "function-valued clock declarations not evaluated for readiness",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2612
+}

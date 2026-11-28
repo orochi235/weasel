@@ -1,0 +1,75 @@
+{
+ "area": "minimap",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/minimap/src/MinimapCanvas.tsx",
+  "packages/minimap/src/actionParamSchema.ts",
+  "packages/minimap/src/actions.ts",
+  "packages/minimap/src/createMinimapContribution.ts",
+  "packages/minimap/src/index.ts",
+  "packages/minimap/src/layers.ts",
+  "packages/minimap/src/minimapMath.ts",
+  "packages/minimap/src/pbt.fixture.ts",
+  "packages/minimap/src/useFitView.ts",
+  "packages/minimap/src/useMinimapInput.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1674734,
+   "minutes": 0.19141666666666668,
+   "at": "2026-11-26T05:14:21.996Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Indicator dash lengths are converted using only the x scale, distorting vertical dashes under nonuniform custom fits",
+   "where": "packages/minimap/src/minimapMath.ts:155",
+   "severity": "medium",
+   "scenario": "custom fit with x scale 2 and y scale 4: a vertical dash covers twice the requested screen length while horizontal dashes are correct",
+   "fix": [
+    "packages/minimap/src/minimapMath.ts"
+   ],
+   "size": "line",
+   "cause": "single-axis scale used for both axes",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Minimap pan ignores the release position because onEnd is empty and the camera updates only in onMove",
+   "where": "packages/minimap/src/actions.ts:100",
+   "severity": "low",
+   "scenario": "a committed release carries a point beyond the last move, or arrives before a queued move sample is delivered; the camera stays centered on the previous point",
+   "fix": [
+    "packages/minimap/src/actions.ts"
+   ],
+   "size": "line",
+   "cause": "onEnd does not apply the final point",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1090
+}

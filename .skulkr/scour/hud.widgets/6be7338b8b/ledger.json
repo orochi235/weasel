@@ -1,0 +1,96 @@
+{
+ "area": "hud.widgets",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/hud/src/widgets/ButtonWidget.stories.tsx",
+  "packages/hud/src/widgets/button.ts",
+  "packages/hud/src/widgets/image.ts",
+  "packages/hud/src/widgets/label.ts",
+  "packages/hud/src/widgets/list/ListWidget.stories.tsx",
+  "packages/hud/src/widgets/list/drawList.ts",
+  "packages/hud/src/widgets/list/list.ts",
+  "packages/hud/src/widgets/list/listNav.ts",
+  "packages/hud/src/widgets/rect.ts",
+  "packages/hud/src/widgets/text.ts",
+  "packages/hud/src/widgets/widgets.stories.module.css",
+  "packages/hud/src/widgets/window/roundZones.ts",
+  "packages/hud/src/widgets/window/window.ts",
+  "packages/hud/src/widgets/window/windowDrag.ts",
+  "packages/hud/src/widgets/window/windowFrame.ts",
+  "packages/hud/src/widgets/window/windowLayout.ts",
+  "packages/hud/src/widgets/window/windowLook.ts",
+  "packages/hud/src/widgets/window/zones.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1728434,
+   "minutes": 0.1759,
+   "at": "2026-11-26T05:07:18.855Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Content press released across the border within the drag threshold fires onContentClick with a frame point; release zone unchecked",
+   "where": "packages/hud/src/widgets/window/windowDrag.ts:82",
+   "severity": "medium",
+   "scenario": "pointer down just inside the content, release on the adjacent border within the drag threshold; onContentClick is called with a frame point",
+   "size": "line",
+   "cause": "release branch skips the release-zone check",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Close hit zone spans the full titlebar height in the close columns, so presses below the drawn close box close the window",
+   "where": "packages/hud/src/widgets/window/zones.ts:52",
+   "severity": "low",
+   "scenario": "with defaults, a press and release at y=22 from the top closes the window, though the box ends at y=19",
+   "size": "line",
+   "cause": "hit test ignores the close box's vertical extent",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "setRows clamps scroll without revealing the preserved active row, so a reorder can leave the focused row offscreen yet activatable",
+   "where": "packages/hud/src/widgets/list/list.ts:135 (setRows)",
+   "severity": "medium",
+   "scenario": "a focused fixed-height list whose active row moves from the first visible slot to the bottom; the focus ring disappears and Enter activates the hidden row",
+   "size": "line",
+   "cause": "row updates skip reveal",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1900
+}

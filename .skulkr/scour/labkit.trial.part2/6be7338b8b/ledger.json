@@ -1,0 +1,90 @@
+{
+ "area": "labkit.trial.part2",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/trial/useKeptMarks.ts",
+  "packages/labkit/src/trial/useOrbitView.tsx",
+  "packages/labkit/src/trial/useRestoredHistory.ts",
+  "packages/labkit/src/trial/useRuntimeSections.tsx",
+  "packages/labkit/src/trial/useTrialBody.tsx",
+  "packages/labkit/src/trial/useTrialCamera.tsx",
+  "packages/labkit/src/trial/useTrialChromeContext.ts",
+  "packages/labkit/src/trial/useTrialClock.ts",
+  "packages/labkit/src/trial/useTrialConfig.ts",
+  "packages/labkit/src/trial/useTrialContributions.ts",
+  "packages/labkit/src/trial/useTrialDragDrop.tsx",
+  "packages/labkit/src/trial/useTrialEdits.ts",
+  "packages/labkit/src/trial/useTrialJob.ts",
+  "packages/labkit/src/trial/useTrialLayerStack.tsx",
+  "packages/labkit/src/trial/useTrialLayers.ts",
+  "packages/labkit/src/trial/useTrialMarks.ts",
+  "packages/labkit/src/trial/useTrialOrbit.ts",
+  "packages/labkit/src/trial/useTrialPanels.ts",
+  "packages/labkit/src/trial/useTrialSnapshot.ts",
+  "packages/labkit/src/trial/useTrialTool.ts",
+  "packages/labkit/src/trial/useTrialToolSlot.ts",
+  "packages/labkit/src/trial/useTrialUndo.ts",
+  "packages/labkit/src/trial/useTrialWrites.ts",
+  "packages/labkit/src/trial/useViewPlacement.ts",
+  "packages/labkit/src/trial/useWriteGestures.ts",
+  "packages/labkit/src/trial/watch3d.ts",
+  "packages/labkit/src/trial/writeGesture.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1688284,
+   "minutes": 0.21098333333333333,
+   "at": "2026-11-26T05:13:09.818Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Resize overwrites an edited 3D orbit lens because sitsAt ignores fov/near/far/depth",
+   "where": "packages/labkit/src/trial/useViewPlacement.ts:30",
+   "severity": "medium",
+   "scenario": "A controlled 3D camera has its FOV edited while target, yaw, pitch and distance are unchanged; resizing the viewport replaces the lens edit with the initial view",
+   "fix": [
+    "packages/labkit/src/trial/useViewPlacement.ts"
+   ],
+   "size": "line",
+   "cause": "sitsAt omits the lens fields",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Removing a keyless job capability leaves the old producer running and feeds its items to the no-op reducer",
+   "where": "packages/labkit/src/trial/useTrialJob.ts:26 (useTrialJob)",
+   "severity": "medium",
+   "scenario": "A keyless job is running when its capability is removed; both the old and new keys are null, so the old producer is never aborted",
+   "fix": [
+    "packages/labkit/src/trial/useTrialJob.ts"
+   ],
+   "size": "function",
+   "cause": "a null key on both sides hides the capability change from useJob",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2377
+}

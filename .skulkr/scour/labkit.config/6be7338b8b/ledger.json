@@ -1,0 +1,85 @@
+{
+ "area": "labkit.config",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/config/auto.ts",
+  "packages/labkit/src/config/autoConfig.ts",
+  "packages/labkit/src/config/autoReports.ts",
+  "packages/labkit/src/config/baseNode.ts",
+  "packages/labkit/src/config/builder.ts",
+  "packages/labkit/src/config/compound.ts",
+  "packages/labkit/src/config/curveNode.ts",
+  "packages/labkit/src/config/declarationEmit.fixture.ts",
+  "packages/labkit/src/config/drawsOwn.ts",
+  "packages/labkit/src/config/fieldSweep.ts",
+  "packages/labkit/src/config/fromPrefs.ts",
+  "packages/labkit/src/config/headingLeaf.ts",
+  "packages/labkit/src/config/index.ts",
+  "packages/labkit/src/config/leaves.ts",
+  "packages/labkit/src/config/numberNode.ts",
+  "packages/labkit/src/config/over.ts",
+  "packages/labkit/src/config/path.ts",
+  "packages/labkit/src/config/railConditions.ts",
+  "packages/labkit/src/config/resolve.ts",
+  "packages/labkit/src/config/rules.ts",
+  "packages/labkit/src/config/sectionTree.ts",
+  "packages/labkit/src/config/storedDefault.ts",
+  "packages/labkit/src/config/stutter.ts",
+  "packages/labkit/src/config/toPrefs.ts",
+  "packages/labkit/src/config/types.ts",
+  "packages/labkit/src/config/useConfigSchema.ts",
+  "packages/labkit/src/config/useResolvedConfig.ts",
+  "packages/labkit/src/config/visible.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1684284,
+   "minutes": 0.14845,
+   "at": "2026-11-26T05:09:28.275Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Auto resolvers reading nested auto paths get undefined when the nested auto is declared later, and nested dependency cycles bypass the cycle check, because the demand proxy intercepts only top-level keys",
+   "where": "packages/labkit/src/config/autoConfig.ts:106",
+   "severity": "medium",
+   "scenario": "An earlier resolver reads c.grid.size while grid.size is auto and declared later: it gets undefined, and moving the dependency earlier makes it work",
+   "cause": "demand proxy intercepts only top-level keys",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Epoch ref mutated during render lets an abandoned speculative render invalidate committed auto reports",
+   "where": "packages/labkit/src/config/autoReports.ts:55",
+   "severity": "medium",
+   "scenario": "A transition renders with a path pinned, then suspends or is abandoned; the next committed render with the original auto path invalidates the report on recompute",
+   "cause": "ref mutated during render",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3418
+}

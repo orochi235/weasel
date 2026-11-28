@@ -1,0 +1,803 @@
+{
+ "area": "renderer.part2",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/renderer/src/paintKinds.ts",
+  "packages/renderer/src/paintResources.ts",
+  "packages/renderer/src/paintScratch.ts",
+  "packages/renderer/src/paintToLocalUnits.ts",
+  "packages/renderer/src/paintedBounds.ts",
+  "packages/renderer/src/patterns-builtin.ts",
+  "packages/renderer/src/patterns/commandPaint.ts",
+  "packages/renderer/src/patterns/imagePatternId.ts",
+  "packages/renderer/src/patterns/index.ts",
+  "packages/renderer/src/patterns/patterns-builtin.ts",
+  "packages/renderer/src/patterns/rasterizeTile.ts",
+  "packages/renderer/src/patterns/resolveImage.ts",
+  "packages/renderer/src/patterns/resolveSpec.ts",
+  "packages/renderer/src/patterns/test-utils/fakeOffscreenCanvas.ts",
+  "packages/renderer/src/patterns/tileGeometry.ts",
+  "packages/renderer/src/pbt.fixture.ts",
+  "packages/renderer/src/readPixels.ts",
+  "packages/renderer/src/rendererParts.ts",
+  "packages/renderer/src/rendererTypes.ts",
+  "packages/renderer/src/retain/RetainedSurfaces.ts",
+  "packages/renderer/src/retain/TileTextures.ts",
+  "packages/renderer/src/retain/bakeTile.ts",
+  "packages/renderer/src/retain/contentBounds.ts",
+  "packages/renderer/src/retain/movesWithView.ts",
+  "packages/renderer/src/retain/retainedKey.ts",
+  "packages/renderer/src/retain/tileCull.ts",
+  "packages/renderer/src/spriteSheet.ts",
+  "packages/renderer/src/state/GroupState.ts",
+  "packages/renderer/src/state/colorMatrix.ts",
+  "packages/renderer/src/strokeLengths.ts",
+  "packages/renderer/src/targetRect.ts",
+  "packages/renderer/src/test-seams.ts",
+  "packages/renderer/src/textBounds.ts",
+  "packages/renderer/src/textCommand.ts",
+  "packages/renderer/src/textLayout.ts",
+  "packages/renderer/src/textures/registerTexture.ts",
+  "packages/renderer/src/warmPrograms.ts",
+  "packages/renderer/src/warnOnce.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1810394,
+   "minutes": 0.2009,
+   "at": "2026-11-26T05:22:25.900Z",
+   "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.6262013999999998,
+   "minutes": 4.666366666666667,
+   "at": "2026-11-26T13:36:32.677Z",
+   "findings": 6
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.4735464,
+   "minutes": 5.6485666666666665,
+   "at": "2026-11-26T13:42:11.804Z",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.3403739999999997,
+   "minutes": 5.43275,
+   "at": "2026-11-26T13:47:38.180Z",
+   "findings": 1
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.0886202,
+   "minutes": 4.433166666666667,
+   "at": "2026-11-26T13:52:04.443Z",
+   "findings": 2
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 1.184072,
+   "minutes": 4.7457666666666665,
+   "at": "2026-11-26T13:56:49.546Z",
+   "findings": 4
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 0.9944752,
+   "minutes": 3.6811000000000003,
+   "at": "2026-11-26T14:00:30.900Z",
+   "findings": 2
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.7335657999999998,
+   "minutes": 6.046866666666667,
+   "at": "2026-11-26T14:06:34.015Z",
+   "findings": 1
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.8739632,
+   "minutes": 3.9273833333333332,
+   "at": "2026-11-26T14:10:29.876Z",
+   "findings": 4
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 0.9600594,
+   "minutes": 3.8155666666666668,
+   "at": "2026-11-26T14:14:19.075Z",
+   "findings": 2
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 0.7506667999999999,
+   "minutes": 2.934266666666667,
+   "at": "2026-11-26T14:17:15.347Z",
+   "findings": 2
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 1.0922901999999999,
+   "minutes": 5.34185,
+   "at": "2026-11-26T14:22:36.055Z",
+   "findings": 3
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.2847298000000003,
+   "minutes": 5.024866666666667,
+   "at": "2026-11-26T14:27:37.727Z",
+   "findings": 2
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.831847,
+   "minutes": 3.6428833333333333,
+   "at": "2026-11-26T14:31:16.506Z",
+   "findings": 4
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 1.4540152000000002,
+   "minutes": 5.3256000000000006,
+   "at": "2026-11-26T14:36:36.363Z",
+   "findings": 3
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 1.0273124000000002,
+   "minutes": 4.342499999999999,
+   "at": "2026-11-26T14:40:57.226Z",
+   "findings": 3
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 1.9136824,
+   "minutes": 7.084783333333334,
+   "at": "2026-11-26T14:48:02.517Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Async readback decodes with width/height from the caller's mutable rect instead of the checked copy, misordering rows or throwing if the rect changes before settle",
+   "where": "packages/renderer/src/readPixels.ts:26",
+   "severity": "medium",
+   "scenario": "caller changes or reuses the rect object before the readback promise settles; rows decode with wrong dimensions or the copy throws",
+   "fix": [
+    "packages/renderer/src/readPixels.ts"
+   ],
+   "size": "line",
+   "cause": "callback reads uncaptured caller object",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Failed scratch resize leaves the already-deleted target cached in the scratch field, so a later bake reuses it and cleanup double-deletes it",
+   "where": "packages/renderer/src/retain/TileTextures.ts:58 (scratchFor)",
+   "severity": "medium",
+   "scenario": "createTarget throws during scratch resize; next bake at original size gets a deleted target; dispose deletes it again",
+   "fix": [
+    "packages/renderer/src/retain/TileTextures.ts"
+   ],
+   "size": "line",
+   "cause": "delete before successful replacement",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "chunks tile scattering stops at the first chunk that covers the tile, so every later chunk is dropped",
+   "where": "packages/renderer/src/patterns/tileGeometry.ts:89 (tileGeometry, `chunks` case)",
+   "severity": "low",
+   "scenario": "a `chunks` spec with a large `chunkSize` and a translucent `color` (e.g. `#0008`), where chunk k of N is wide enough to cover the tile. The loop `return`s at chunk k, so chunks k+1..N, which would stack over the covering rect and darken it, are never emitted. The raster and SVG tiles then show a lighter tile than drawing every chunk would. The comment only accounts for the chunks drawn before it (\"what it covers stays under it\"), not for the ones after.",
+   "size": "line",
+   "cause": "early return in place of a cap on the remaining chunks",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3
+    ]
+   },
+   "fix": [
+    "packages/renderer/src/patterns/tileGeometry.ts"
+   ]
+  },
+  {
+   "id": "D4",
+   "claim": "TileTextures.release never evicts from the tile's own size bucket, even when that size was the one freed into longest ago",
+   "where": "packages/renderer/src/retain/TileTextures.ts:96 (release)",
+   "severity": "low",
+   "scenario": "the pool is full (16 textures) and the size being released is the least recently freed-into size. `this.pool.delete(tile.size)` runs before `this.pool.entries().next()`, so the eviction skips that size and frees a texture of the next-oldest size. The released size then moves to newest. The doc says it frees \"one of the size freed into longest ago\", but a size that is freed into repeatedly keeps its textures while other sizes are drained.",
+   "size": "line",
+   "cause": "deleting the map key before picking the oldest",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "createTilePattern rejects a size below 1, though its options say sizes are rounded to whole pixels",
+   "where": "packages/renderer/src/patterns/rasterizeTile.ts:6 (rasterizeTile)",
+   "severity": "low",
+   "scenario": "`createTilePattern({ size: 0.6, draw })`. `TilePatternOptions.size` is documented as \"rounded to whole ones\", which gives 1, but the guard `opts.size >= 1` runs on the unrounded value and returns `null`. `tileSize()` rounds before this check, so built-in specs are not affected; direct callers are.",
+   "fix": [
+    "packages/renderer/src/patterns/rasterizeTile.ts",
+    "packages/renderer/src/patterns/index.ts"
+   ],
+   "size": "line",
+   "cause": "guard checks the value before rounding",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4,
+    6
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "cullToTile builds new group objects and children arrays for every tile on every redraw, so caches keyed on array identity always miss",
+   "where": "packages/renderer/src/retain/tileCull.ts:55 (cullToTile)",
+   "severity": "low",
+   "scenario": "a retained group bigger than `RETAIN_TILE` holds nested groups that are partly culled per tile. Each redraw (draw/retained.ts:167) spreads `{ ...cmd, children }` again. `movesWithView`'s WeakMap memo, `latestTextRefillIn`'s `textsOf`/`latestPart` parts, and any `RetainedKey.children` comparison for a nested group all key on those arrays, so they recompute (walk and collect again) on every tile of every redraw, and never hit.",
+   "fix": [
+    "packages/renderer/src/retain/tileCull.ts"
+   ],
+   "size": "function",
+   "cause": "culled copies are not memoized per tree and tile",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "commandsBounds adds cull slack measured in CSS pixels in whatever units its transform maps into",
+   "where": "packages/renderer/src/retain/contentBounds.ts:99 (commandsBounds)",
+   "severity": "low",
+   "scenario": "`snapOut(listBox(...), 1)` grows the box by `CULL_SLACK_PX` units of the target space. That slack is meant as CSS pixels, and `commandsBounds` documents a `scale` (device pixels per unit) that it passes only to `listBox`. With a page in units 10× larger than device pixels (scale 0.1), the slack is ten times what it should be; with scale 10, a tenth.",
+   "size": "line",
+   "cause": "snapOut given a scale of 1 rather than the slack converted to units",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "_resetPaintDrawKindsForTests leaves the programs of registered kinds in the program registry",
+   "where": "packages/renderer/src/paintKinds.ts:371 (_resetPaintDrawKindsForTests)",
+   "severity": "low",
+   "scenario": "a test registers kind `x` declaring program `p`, then calls the reset. `PROGRAMS_HELD` is cleared but `p` stays in `programSourceRegistry`. A later test registering kind `x` with different source for `p` throws `ExtensionConflictError`, because `heldByKind` no longer knows a kind holds `p`. Whether it throws depends on test order, unless every caller also resets the program registry.",
+   "size": "line",
+   "cause": "the reset drops the bookkeeping without running the releases",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A displaced loader's failed load rejects warmPaintKinds even though the live loader would load the kind",
+   "where": "packages/renderer/src/paintKinds.ts:303 (startLoad)",
+   "severity": "low",
+   "scenario": "`registerPaintDrawKindLoader('x', L1)`; `warmPaintKinds(['x'])` starts L1's load. Before it settles, `registerPaintDrawKindLoader('x', L2)` overrides it. If L1 then resolves, the success handler sees it was displaced and chains `startLoad` onto L2, so the warm resolves once L2 lands. If L1 rejects instead, the rejection handler (`failed`) only logs and rethrows: the warm rejects, `console.error` reports a failure for a loader nothing uses any more, and L1's `started` keeps the rejection. So if L2 is later disposed and L1 uncovered, L1 is never tried again. The doc promises that a load the old loader finishes afterward is ignored, but this path decides displacement only on success.",
+   "fix": [
+    "packages/renderer/src/paintKinds.ts"
+   ],
+   "size": "function",
+   "cause": "displacement check only in the fulfilled branch",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    16
+   ],
+   "sources": {
+    "claude": [
+     3,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "textBoxOf spreads every line into Math.min, which throws on very long text",
+   "where": "packages/renderer/src/textCommand.ts:174 (textBoxOf)",
+   "severity": "low",
+   "scenario": "build a `textCommandFromRuns` text with no `width` or finite `maxWidth`, a `'bounds'` gradient fill, and more lines than the engine allows as call arguments (about 10⁵ or more, as in a log view). Then `Math.min(...lines.map((l) => l.x0))` throws a `RangeError` and the whole command fails to build. A loop over the lines would give the same minimum.",
+   "fix": [
+    "packages/renderer/src/textCommand.ts"
+   ],
+   "size": "line",
+   "cause": "argument spread over an unbounded array",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    12,
+    14,
+    17
+   ],
+   "sources": {
+    "claude": [
+     3,
+     12,
+     14,
+     17
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "shaderBox bounds a custom shader from its GLSL alone, so a WGSL program with its own vertex stage is under-bounded on WebGPU",
+   "where": "packages/renderer/src/paintedBounds.ts:61 (shaderBox)",
+   "severity": "medium",
+   "scenario": "a program registered with `glsl: { frag }` (no `vert`) and `wgsl: { vert, frag }`, drawn by a renderer on WebGPU. `shaderBox` reads only `glsl`, sees no `vert`, and returns `cmd.bounds`; but the WebGPU backend draws the WGSL `vertex`, which can place geometry anywhere. Culling (`cullDrawCommands`), retained-surface bounds (`contentBox`) and tile culling then drop or clip pixels the shader really paints. Likewise a WGSL fragment reading `@builtin(position)` without the frag-origin uniform is never caught. A WGSL-only program (no `glsl`) goes to ANYWHERE, so the question \"can this shader paint outside `bounds`?\" is answered from one language whatever backend draws it. Should answer for the backend in use, or conservatively for either language (any `vert` in either → null).",
+   "fix": [
+    "packages/renderer/src/paintedBounds.ts"
+   ],
+   "size": "function",
+   "cause": "bound decided from GLSL only",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "A paint-kind loader that throws synchronously escapes getPaintDrawKind on every lookup",
+   "where": "packages/renderer/src/paintKinds.ts:316 (startLoad)",
+   "severity": "low",
+   "scenario": "`registerPaintDrawKindLoader('k', () => { throw new Error('x') })` (or any non-async loader that throws before returning a promise). `getPaintDrawKind('k')` calls `void startLoad(id).catch(() => {})`; `loader.load()` throws before `.then`, so the throw propagates out of `startLoad` and out of `getPaintDrawKind` into the painter/renderer, and `loader.started` is never set, so every later lookup (every frame) throws again. Should be caught as a failed load (`Promise.resolve().then(() => loader.load())`), logged once and cached like an async rejection.",
+   "fix": [
+    "packages/renderer/src/paintKinds.ts"
+   ],
+   "size": "line",
+   "cause": "sync loader throw not wrapped in the promise",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    9
+   ],
+   "sources": {
+    "claude": [
+     5,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "A 'bounds' paint of a lazily loaded kind passes through unconverted until the kind loads, and memoized commands keep the unconverted paint",
+   "where": "packages/renderer/src/paintToLocalUnits.ts:24 (paintToLocalUnits), :58 (paintToBoundsUnits)",
+   "severity": "medium",
+   "scenario": "a kind declared with `registerPaintDrawKindLoader` and a node filled `{ kind: 'mykind', units: 'bounds', ... }`. The first `commandPaint` runs before the load lands: `getPaintDrawKind` starts the load and returns `undefined`, so `toLocalUnits` is skipped and the paint comes back still in `'bounds'` units, 0..1 fractions. A painter that memoizes its commands keeps that command. Once the kind lands, its `bind` receives a paint whose geometry is box fractions read as local coordinates, so it draws squeezed into a 1×1 unit square at the origin instead of across the node. It should draw at the node's box. The same happens in reverse in `paintToBoundsUnits`, where an editor normalizing a paint gets back the local paint unchanged.",
+   "fix": [
+    "packages/renderer/src/paintToLocalUnits.ts",
+    "packages/renderer/src/paintKinds.ts",
+    "packages/renderer/src/patterns/commandPaint.ts"
+   ],
+   "size": "design",
+   "cause": "frame conversion silently skipped for a known-but-unloaded kind",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    9,
+    10,
+    14
+   ],
+   "sources": {
+    "claude": [
+     6,
+     9,
+     10,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "A second paint-kind loader declared after the first loader's kind has loaded is never called, contrary to its doc",
+   "where": "packages/renderer/src/paintKinds.ts:248 (registerPaintDrawKindLoader doc), :220 (getPaintDrawKind)",
+   "severity": "low",
+   "scenario": "`registerPaintDrawKindLoader('k', loadA)`. A lookup loads A and registers its draw half. Then `registerPaintDrawKindLoader('k', loadB)`. The doc says \"Declaring a second loader for an id overrides the first, whether or not the first has started or failed: the next lookup calls the new one\". But `getPaintDrawKind` finds A's entry in `KINDS` and never calls `startLoad`, and `warmPaintKinds(['k'])` skips it because `loader.has('k')` is true, so B never runs and A's draw half keeps drawing. Either the doc should say a landed first loader keeps its kind until disposed, or declaring B should drop the kind A registered.",
+   "fix": [
+    "packages/renderer/src/paintKinds.ts"
+   ],
+   "size": "line",
+   "cause": "doc and lookup disagree on an override after a landed load",
+   "confidence": "sure",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "A revived pattern tile can differ from the original because the JSON round-trip turns NaN and Infinity fields into null",
+   "where": "packages/renderer/src/patterns/resolveSpec.ts:45 (specId), :117 (revive)",
+   "severity": "low",
+   "scenario": "a dots spec `{ kind: 'dots', color: 'red', radius: NaN }`. The first build sees `radius` NaN, `!(r >= 0)` holds, and the tile is empty. The id is `JSON.stringify`, so the id holds `\"radius\":null`. After eviction (more than 256 specs, or a public `unregisterTexture`), `getTexture` revives it from the id: `radius` is now `null`, `spec.radius ?? 1` gives 1, and the same handle draws a dot grid. The same goes for `lineWidth: Infinity` (revived as the default width) and `size: Infinity`. A handle should draw the same tile before and after eviction. Also, two specs that draw differently (`radius: NaN` vs `radius: null`) share one id.",
+   "fix": [
+    "packages/renderer/src/patterns/resolveSpec.ts"
+   ],
+   "size": "function",
+   "cause": "lossy JSON encoding used as the rebuild key",
+   "confidence": "sure",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    12,
+    14
+   ],
+   "sources": {
+    "claude": [
+     6,
+     12,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "frameRect returns NaN rects for a sheet with columns: 0, and a negative or fractional index yields a rect off the grid",
+   "where": "packages/renderer/src/spriteSheet.ts:38 (frameRect)",
+   "severity": "low",
+   "scenario": "`frameRect({ frameWidth: 16, frameHeight: 16, columns: 0 }, 0)` → `0 % 0` is NaN, so `x`/`y` are NaN and the image draws nothing, with no error. `frameRect(sheet, 2.5)` gives `col = 2.5`, a source rect straddling two cells (a half-and-half frame), where the doc only promises \"past the last cell\" behavior. A sheet built from metadata whose `columns` came out 0 (an image narrower than one frame) fails silently.",
+   "fix": [
+    "packages/renderer/src/spriteSheet.ts"
+   ],
+   "size": "line",
+   "cause": "unvalidated grid description and index",
+   "confidence": "sure",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "warmPaintKinds resolves without the kind registered when its loader is disposed while the load is in flight",
+   "where": "packages/renderer/src/paintKinds.ts:300 (startLoad)",
+   "severity": "low",
+   "scenario": "`warmPaintKinds(['k'])` starts loader L. Before L resolves, its disposer runs with no other loader for `'k'`. In the `then`, `LOADERS.get(id) !== loader`, `live` is undefined, and the callback returns `undefined`, so the warm promise fulfills. `warmPaintKinds` documents that it \"resolves once every kind is registered\" and rejects for a kind that is \"neither registered nor loadable\". Here `'k'` is neither, and the caller is told it is ready.",
+   "fix": [
+    "packages/renderer/src/paintKinds.ts"
+   ],
+   "size": "function",
+   "cause": "displaced-loader branch treats \"no live loader\" as success",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    8,
+    15
+   ],
+   "sources": {
+    "claude": [
+     7,
+     8,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "An empty group running an unbounded effect is bounded as empty, so culling drops it",
+   "where": "packages/renderer/src/paintedBounds.ts:63 (grown), via commandBox :35",
+   "severity": "low",
+   "scenario": "a group whose children paint nothing (an empty list, or text that lays out no glyph) runs an effect with `reach` unset, such as a generator pass that paints the whole buffer. `listBox` gives `EMPTY`, and `grown(EMPTY, Infinity)` returns `EMPTY` before it checks `Number.isFinite(by)`. `cullDrawCommands`, tile culling and retained `contentBox` therefore treat the group as painting nothing. The documented rule is that a group with an effect of unknown reach is bounded only by its clips, so the result should be `ANYWHERE`.",
+   "size": "line",
+   "cause": "EMPTY short-circuit ahead of the infinite-reach check",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    13,
+    14,
+    15
+   ],
+   "sources": {
+    "claude": [
+     9,
+     13,
+     14,
+     15
+    ]
+   },
+   "fix": [
+    "packages/renderer/src/paintedBounds.ts"
+   ]
+  },
+  {
+   "id": "D19",
+   "claim": "The chunks tile caps its count at s², which still hangs on a large tile",
+   "where": "packages/renderer/src/patterns/tileGeometry.ts:83 (tileGeometry, chunks)",
+   "severity": "low",
+   "scenario": "`{ kind: 'chunks', color, size: 4096, chunkSize: 0.01 }` gives `wanted` ≈ 5.9e10, which the cap reduces to `s*s` = 16.7M. That builds 16.7M or more shape objects (each wrapped copy pushes another), and `drawTileShapes` then makes that many `ellipse` calls: a hang and a memory spike while one tile resolves. The comment says the cap exists so the scatter \"only hangs\" no more. The cap needs to be a fixed bound, or the chunk size needs a floor (below about a pixel adds no coverage).",
+   "size": "function",
+   "cause": "cap scales with tile area, not bounded",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    10,
+    11,
+    17
+   ],
+   "sources": {
+    "claude": [
+     9,
+     10,
+     11,
+     17
+    ]
+   },
+   "fix": [
+    "packages/renderer/src/patterns/tileGeometry.ts",
+    "packages/renderer/src/patterns/rasterizeTile.ts"
+   ]
+  },
+  {
+   "id": "D20",
+   "claim": "getPaintDrawKind never starts a loader whose `has` answers for its own registry when the kind's draw half is registered elsewhere",
+   "where": "packages/renderer/src/paintKinds.ts:250 (getPaintDrawKind)",
+   "severity": "low",
+   "scenario": "`@weasel-js/paint-kinds` declares a loader for `'x'` with `has: (k) => KINDS.has(k)` over its own registry, and the draw half for `'x'` is registered directly with `registerPaintDrawKind`. `PaintDrawKindLoaderOptions.has` says \"a draw half registered elsewhere still loads it\", and `warmPaintKinds` does consult `loader.has`. But `getPaintDrawKind` starts a load only when `KINDS.get(id)` misses, so the first-use lookup never loads the full kind. Its paint-kinds half (its value conversion, etc.) stays absent until someone calls `warmPaintKinds`. The two paths answer \"does this kind need loading\" two different ways.",
+   "fix": [
+    "packages/renderer/src/paintKinds.ts"
+   ],
+   "size": "line",
+   "cause": "lookup tests KINDS, not loader.has",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "A 'bounds' conic gradient keeps its angle unchanged when mapped onto a non-square box, so its sweep is skewed",
+   "where": "packages/renderer/src/paintToLocalUnits.ts:47 (paintToLocalUnits), :79 (paintToBoundsUnits)",
+   "severity": "low",
+   "scenario": "take a conic gradient with `units: 'bounds'` and `angle: π/4` on a 200×100 box. In the box's own frame (SVG objectBoundingBox), its start ray points along bounds direction (1, 1), which is local direction (200, 100), about 26.6°. `paintToLocalUnits` copies `angle` through unchanged, so the gradient starts at 45°: the start ray sits about 18° off from where it should be, and it moves again whenever the box's aspect ratio changes. Linear gradients get the same treatment through `keepBands`, and radial radii are scaled, but a conic's angle is never mapped (`atan2(h·sin a, w·cos a)` going in, and the inverse coming back).",
+   "fix": [
+    "packages/renderer/src/paintToLocalUnits.ts"
+   ],
+   "size": "line",
+   "cause": "conic angle not transformed by the box scale",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "A paint-kind loader whose load fails while another loader displaces it is never retried after it becomes the live loader again",
+   "where": "packages/renderer/src/paintKinds.ts:296 (startLoad)",
+   "severity": "low",
+   "scenario": "`registerPaintDrawKindLoader('k', loadA)`. A lookup starts A's load. Then `registerPaintDrawKindLoader('k', loadB)` displaces A, and A's import rejects. When it succeeds while displaced, the `.then` branch clears `loader.started` so that A \"loads again should it be uncovered\". The rejection goes straight to `failed`, though: it logs `paint kind \"k\" failed to load` for a loader nobody is using, and `A.started` stays a rejected promise. Dispose B, and A is live again. Every `getPaintDrawKind('k')` and `warmPaintKinds(['k'])` gets that rejected promise back, so the kind never draws, although A was never asked to load while it was live. A `warmPaintKinds` started before the displacement also rejects, even though B (the live loader) loads fine. The success path and the failure path answer the displaced case two different ways.",
+   "size": "function",
+   "cause": "displaced check only on the fulfilled branch",
+   "confidence": "sure",
+   "firstOccasion": 13,
+   "sightings": [
+    13,
+    15
+   ],
+   "sources": {
+    "claude": [
+     13,
+     15
+    ]
+   },
+   "fix": [
+    "packages/renderer/src/paintKinds.ts"
+   ]
+  },
+  {
+   "id": "D23",
+   "claim": "getPaintDrawKind starts a loader's load even when that loader's own `has` reports the kind is not needed",
+   "where": "packages/renderer/src/paintKinds.ts:228 (getPaintDrawKind)",
+   "severity": "low",
+   "scenario": "A package registers a loader with a custom `register`/`has` pair, which fills its own registry. `has('k')` returns true, but no draw half is in `KINDS`. Every lookup sees `!entry && LOADERS.has(id)` and calls `startLoad`, which runs `loader.load()`, importing the chunk. Only after that does it notice `loader.has(id)` and register nothing. `warmPaintKinds` asks the same question through `loader.has(id)` and skips the load. So whether the kind \"has landed\" gets two different answers on the two paths, and the loader runs although its docs say \"Whether the kind has landed, so needs no load\".",
+   "size": "line",
+   "cause": "lookup tests KINDS instead of loader.has",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "Reviving an evicted pattern tile bypasses the failed-rasterize memo, so a failing tile retries canvas rasterization on every draw",
+   "where": "packages/renderer/src/patterns/resolveSpec.ts:118 (revive)",
+   "severity": "low",
+   "scenario": "A draw command holds a `pattern:` handle whose tile was evicted (more than `PATTERN_TILE_CACHE_LIMIT` specs, or a public `unregisterTexture`). Rasterizing that spec now fails, for example because `getContext('2d')` returns null under canvas-memory pressure. Every `getTexture` miss calls `revive` → `build`, which allocates a new `OffscreenCanvas` and fails again. That repeats on every lookup of every frame. `resolvePatternSpec` checks `failed` (keyed by `failedUnder`) to stop exactly this, but `revive` never consults it. Expected: `revive` returns early for an id in `failed` under the same `OffscreenCanvas`, as `resolvePatternSpec` does.",
+   "size": "line",
+   "cause": "failed memo checked on one entry path only",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "A tile paint's size has no upper bound, so a very large size allocates a canvas of that size when the tile is rasterized",
+   "where": "packages/renderer/src/patterns/rasterizeTile.ts:5 (rasterizeTile)",
+   "severity": "low",
+   "scenario": "a document deserialized with `{ kind: 'chunks', color: '#000', size: 100000 }`. `tileSize` gives 100000. `rasterizeTile` creates `new OffscreenCanvas(100000, 100000)`; nothing checks it against a texture size limit. Then `tileGeometry` caps the chunk count at `s * s` (1e10), which does not bind here: `wanted = s²·0.35/9 ≈ 3.9e8`. The loop pushes hundreds of millions of ellipse shapes (up to 9 copies each with wraps) and the tab hangs or runs out of memory. The same `tileGeometry` call runs for SVG export. The cap's own comment says it exists to stop hangs (\"past that a scatter covers nothing more, and only hangs\"), but it only bounds small tiles. Expected: the tile side is clamped (or the paint declined) at a bound such as the max texture side, and the shape count is bounded in absolute terms.",
+   "fix": [
+    "packages/renderer/src/patterns/tileGeometry.ts",
+    "packages/renderer/src/patterns/rasterizeTile.ts"
+   ],
+   "size": "function",
+   "cause": "tile size unbounded; shape cap scales with size²",
+   "confidence": "likely",
+   "firstOccasion": 17,
+   "sightings": [
+    17
+   ],
+   "sources": {
+    "claude": [
+     17
+    ]
+   }
+  }
+ ],
+ "lines": 3785
+}

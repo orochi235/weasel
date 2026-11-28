@@ -1,0 +1,220 @@
+{
+ "area": "history",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/history/src/createSwapOp.ts",
+  "packages/history/src/entryOps.ts",
+  "packages/history/src/forks.ts",
+  "packages/history/src/history.ts",
+  "packages/history/src/historyTypes.ts",
+  "packages/history/src/index.ts",
+  "packages/history/src/journal.ts",
+  "packages/history/src/journalSlot.ts",
+  "packages/history/src/op.ts",
+  "packages/history/src/recording.ts",
+  "packages/history/src/restore.ts",
+  "packages/history/src/serialized.ts",
+  "packages/history/src/snapshotShape.ts",
+  "packages/history/src/stackTime.ts",
+  "packages/history/src/stackView.ts",
+  "packages/history/src/textOf.ts",
+  "packages/history/src/versionClock.ts",
+  "packages/history/src/walk.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1630884,
+   "minutes": 0.1326,
+   "at": "2026-11-26T05:06:03.831Z",
+   "findings": 1
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.5087003999999997,
+   "minutes": 7.03015,
+   "at": "2026-11-26T12:02:16.017Z",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.592662,
+   "minutes": 7.249733333333333,
+   "at": "2026-11-26T12:09:31.112Z",
+   "findings": 1
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.8658664,
+   "minutes": 4.88185,
+   "at": "2026-11-26T12:14:24.134Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.8082788000000001,
+   "minutes": 3.9937833333333335,
+   "at": "2026-11-26T12:18:23.868Z",
+   "findings": 1
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Journal commit's touchedIds come from the forward half only, so after timed coalescing the entry omits IDs its undo ops touch and differs from the restored entry's union of both halves",
+   "where": "packages/history/src/recording.ts:102",
+   "severity": "low",
+   "scenario": "Timed coalescing replaces a journal commit's forward ops with a later batch sharing coalesce keys but different args IDs while the original base ops stay for undo; the live entry's touchedIds miss the undo-only IDs, while restore unions both halves and exposes more IDs",
+   "fix": [
+    "packages/history/src/recording.ts"
+   ],
+   "cause": "touchedIds derived from forward half only",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1,
+    2
+   ],
+   "sources": {
+    "codex": [
+     1
+    ],
+    "claude": [
+     2
+    ]
+   },
+   "size": "line"
+  },
+  {
+   "id": "D2",
+   "claim": "A restored entry rebuilds the ops its two halves share as separate ops, so a failed undo replays a shared op twice",
+   "where": "packages/history/src/restore.ts:155 (sharedHalf)",
+   "severity": "low",
+   "scenario": "inside a journal, nudge node A twice (coalesces under key `a`, so its halves split), make a plain relative edit P to another node, then nudge A twice more (a second keyed run). Commit. The parent entry holds forward `[F1, P, F3]` and base `[B1, P, B3]`, with P one op shared by identity. Serialize and restore. `sharedHalf` shares only a common prefix and suffix, so the restored entry holds two distinct P ops. The keys repeat, so `aligned` is false and a failed undo takes `settleApart`. Say `inv(B1)` throws after `inv(B3)` and `inv(P)` ran. In memory, P counts as shared: only `inv(B3)` is reverted, and P is replayed once because it was reached, so P lands once. After the restore, both ran ops count as own: `inv(P)` is reverted (P applied), and then the whole forward half replays (P applied again), so P lands twice and the scene no longer matches the stack. It should land once, as it does before the restore.",
+   "fix": [
+    "packages/history/src/restore.ts"
+   ],
+   "size": "function",
+   "cause": "only the prefix and suffix are shared; a run in the middle is not",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Journal cancel can undo a nested journal's edits ahead of a later outer edit when the outer journal undid and then edited again in between",
+   "where": "packages/history/src/journal.ts:170 (createChildren touched/depth), packages/history/src/journal.ts:253 (cancel)",
+   "severity": "medium",
+   "scenario": "outer journal J holds entries E1..E3 (depth 3). Open child C, edit in it (depth 3 is noted), suspend C. In J, undo twice (depth 1), then apply E' (depth 2). Cancel J. `rewind(3)` does nothing because 3 ≥ 2, so `C.cancel()` undoes C's edit while E', which was applied after C, is still in force. Only then does `inner.goto(0)` undo E'. The docs promise that each child is cancelled \"after undoing this journal's own edits made since\", but E' was made after C and was not undone first. When E' and C's edit don't commute (relative edits to one node, text inserts), the adapter does not return to the state before J opened.",
+   "fix": [
+    "packages/history/src/journal.ts",
+    "packages/history/src/history.ts"
+   ],
+   "size": "design",
+   "cause": "an undo depth stands in for \"edits since\"",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "A goto that throws and walks all the way back rewrites entries' selections without bumping the version or recording a step",
+   "where": "packages/history/src/walk.ts:118 (walkOrReturn)",
+   "severity": "low",
+   "scenario": "a history with `selection`, depth 3; `goto(1)` undoes entry 3 (`stepBack` sets `e3.selectionAfter` to the live selection), then entry 2's inverse throws. `walkOrReturn` redoes entry 3 (`stepForward` overwrites `e3.selectionBefore` with the live selection) and rethrows. The stacks end at the depth they started from, so `reported` skips its report and `getVersion` does not move. But `entries()` now returns different `selectionBefore`/`selectionAfter` for entry 3 than it did before the call, and the next undo/redo restores the selection the failed walk wrote rather than the recorded one. A `useSyncExternalStore` reader keyed on `getVersion` keeps showing the old views. The fix is either to bump when any entry's selection fields changed, or to keep the selection writes from a walk that was rolled back.",
+   "fix": [
+    "packages/history/src/walk.ts"
+   ],
+   "size": "function",
+   "cause": "the selection is written on the way past even by a walk that gets rolled back",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Cancelling a resumed journal changes state beneath the parent's top entry without sealing the parent's coalescing run, so a later edit can coalesce into an entry that no longer matches the state",
+   "where": "packages/history/src/journal.ts:262 (createJournalInternal → cancel)",
+   "severity": "low",
+   "scenario": "a journal J on history H applies X, then `suspend()` (which seals H). H then `applyOps([op keyed 'k'])` → entry A, with the coalesce window open. `resumeJournal(J)`, then `J.cancel()`: `inner.goto(0)` undoes X, which lies beneath A, and `close()` calls `onClose(false)`, which does not seal. H's anchor is still on A, so the next keyed `applyOps` inside the window coalesces into A. One undo then reverts across the cancel's change, which is the thing `suspend`'s seal exists to prevent (\"a suspended journal's edits lie beneath its next push\"). Should: a cancel that undoes edits made before a suspend seals the parent, as suspend does.",
+   "fix": [
+    "packages/history/src/journal.ts",
+    "packages/history/src/journalSlot.ts"
+   ],
+   "size": "line",
+   "cause": "cancel/commit close with `suspended=false`, so no seal, even after a suspend/resume cycle",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A restored snapshot accepts entry ids of zero and below, so a later entry can take id 0, which clear() reserves for the floor",
+   "where": "packages/history/src/snapshotShape.ts:8 (isId); packages/history/src/restore.ts:156 (rebuilt, nextEntryId)",
+   "severity": "low",
+   "scenario": "`restore({ version: 1, undoStack: [], redoStack: [], floor: -3, nextEntryId: -2, droppedEntries: 0 })` passes `snapshotFault`, since ids only need to lie within ±2^52, and `past(-3)` leaves `nextEntryId` at -2. Later pushes take ids -2, -1, 0, …. After a `clear()` (floorId back to 0) on a branching history, an entry with id 0 and the floor share key 0 in `forks`. Then `forkPoint()` answers 0 for both \"at the floor\" and \"at entry 0\", and `branches()`/`switchBranch` list one's futures as the other's, while `evictFloor` strands the wrong branches. Should: reject an id ≤ 0 in a snapshot (live ids start at 1, and 0 means the floor), or clamp `nextEntryId` to at least 1.",
+   "fix": [
+    "packages/history/src/snapshotShape.ts",
+    "packages/history/src/restore.ts"
+   ],
+   "size": "line",
+   "cause": "id validation allows non-positive ids, which collide with floor sentinel 0",
+   "confidence": "likely",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  }
+ ],
+ "lines": 2087
+}

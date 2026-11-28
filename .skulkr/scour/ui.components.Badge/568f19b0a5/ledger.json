@@ -1,0 +1,89 @@
+{
+ "area": "ui.components.Badge",
+ "commit": "568f19b0a5d77f44573db285ca105b338fe55d3f",
+ "files": [
+  "packages/ui/src/components/Badge/Badge.module.css",
+  "packages/ui/src/components/Badge/Badge.stories.module.css",
+  "packages/ui/src/components/Badge/Badge.stories.tsx",
+  "packages/ui/src/components/Badge/Badge.tsx",
+  "packages/ui/src/components/Badge/BadgeDeco.tsx",
+  "packages/ui/src/components/Badge/BadgeLabel.tsx",
+  "packages/ui/src/components/Badge/BadgeRoot.tsx",
+  "packages/ui/src/components/Badge/badgeRoles.ts",
+  "packages/ui/src/components/Badge/catalog.ts",
+  "packages/ui/src/components/Badge/composeOutline.ts",
+  "packages/ui/src/components/Badge/composeSpec.ts",
+  "packages/ui/src/components/Badge/geometry.ts",
+  "packages/ui/src/components/Badge/index.ts",
+  "packages/ui/src/components/Badge/looks.ts",
+  "packages/ui/src/components/Badge/paddingSides.ts",
+  "packages/ui/src/components/Badge/powerlineProps.ts",
+  "packages/ui/src/components/Badge/registryEntry.ts",
+  "packages/ui/src/components/Badge/registryTable.ts",
+  "packages/ui/src/components/Badge/types.ts",
+  "packages/ui/src/components/Badge/useCrawlPhase.ts",
+  "packages/ui/src/components/Badge/useInsets.ts",
+  "packages/ui/src/components/Badge/useSvgBox.ts",
+  "packages/ui/src/components/Badge/variantIcons.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.2206236,
+   "minutes": 0.16295,
+   "at": "2026-11-27T00:18:19.027Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Space keyup on the split label runs the badge action without a matching keydown, so a press begun elsewhere can activate it",
+   "where": "packages/ui/src/components/Badge/BadgeLabel.tsx:74",
+   "severity": "low",
+   "scenario": "Focus moves to the label while Space is held; releasing Space runs the badge action though the press began elsewhere",
+   "fix": [
+    "packages/ui/src/components/Badge/BadgeLabel.tsx"
+   ],
+   "size": "line",
+   "cause": "keyup handled without tracking keydown",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Logical padding is lifted to physical sides assuming horizontal writing mode, putting spacing on the wrong axis in vertical-rl",
+   "where": "packages/ui/src/components/Badge/paddingSides.ts:63",
+   "severity": "low",
+   "scenario": "Badge in vertical-rl with paddingBlock or single-value paddingInline in style; spacing lands on the wrong sides and the label hit area is sized from it",
+   "fix": [
+    "packages/ui/src/components/Badge/paddingSides.ts"
+   ],
+   "size": "function",
+   "cause": "logical-to-physical mapping ignores writing mode",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 1997
+}

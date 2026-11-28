@@ -1,0 +1,102 @@
+{
+ "area": "quantity",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/quantity/src/catalog.ts",
+  "packages/quantity/src/composite.ts",
+  "packages/quantity/src/endless.ts",
+  "packages/quantity/src/fieldLocale.ts",
+  "packages/quantity/src/index.ts",
+  "packages/quantity/src/infinity.ts",
+  "packages/quantity/src/kind.ts",
+  "packages/quantity/src/kinds/measure.ts",
+  "packages/quantity/src/kinds/numeral.ts",
+  "packages/quantity/src/kinds/plain.ts",
+  "packages/quantity/src/kinds/proportion.ts",
+  "packages/quantity/src/kinds/scientific.ts",
+  "packages/quantity/src/localized.ts",
+  "packages/quantity/src/memo.ts",
+  "packages/quantity/src/number.ts",
+  "packages/quantity/src/pbt.fixture.ts",
+  "packages/quantity/src/places.ts",
+  "packages/quantity/src/present.ts",
+  "packages/quantity/src/quantity.ts",
+  "packages/quantity/src/scaleBar.ts",
+  "packages/quantity/src/scope.ts",
+  "packages/quantity/src/spin.ts",
+  "packages/quantity/src/unitExpr.ts",
+  "packages/quantity/src/units.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1769684,
+   "minutes": 0.21973333333333334,
+   "at": "2026-11-26T05:20:03.529Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "snapToStep returns NaN for a positive fine step (1e-21) because the twenty-place cap rounds the scaled step to zero and stepsFrom divides 0/0",
+   "where": "packages/quantity/src/spin.ts:43 (snapToStep)",
+   "severity": "low",
+   "scenario": "snapToStep(1e-21, 1e-21) returns NaN although the input is already an exact step",
+   "size": "line",
+   "cause": "decimal-place cap rounds step to zero",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Duration formatting of a large finite value (Number.MAX_VALUE) overflows when scaled to tenths and renders Infinity/NaN components",
+   "where": "packages/quantity/src/kinds/measure.ts:129",
+   "severity": "low",
+   "scenario": "Number.MAX_VALUE as a duration with one fractional place: total and hours become Infinity, and minutes and seconds become NaN",
+   "size": "line",
+   "cause": "overflow when scaling to fractional units",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "Scale bar length computed through an affine toRoot difference collapses to zero pixels when the scope's offset is large (1e16)",
+   "where": "packages/quantity/src/scaleBar.ts:56",
+   "severity": "low",
+   "scenario": "scope scale factor 1 and offset 1e16, pxPerUnit 1, candidate length 10: toRoot(1) and toRoot(0) round to the same value, so ten units report zero pixels",
+   "size": "line",
+   "cause": "affine offset applied to a length difference",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3048
+}

@@ -1,0 +1,87 @@
+{
+ "area": "labkit.chrome",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/chrome/ChromeRegions.stories.tsx",
+  "packages/labkit/src/chrome/LabChrome.tsx",
+  "packages/labkit/src/chrome/builtins.tsx",
+  "packages/labkit/src/chrome/index.ts",
+  "packages/labkit/src/chrome/labTypes.ts",
+  "packages/labkit/src/chrome/merge.ts",
+  "packages/labkit/src/chrome/regions/OverlayRegion.tsx",
+  "packages/labkit/src/chrome/regions/PaletteRegion.less",
+  "packages/labkit/src/chrome/regions/PaletteRegion.tsx",
+  "packages/labkit/src/chrome/regions/SidebarPanes.stories.tsx",
+  "packages/labkit/src/chrome/regions/SidebarPanes.tsx",
+  "packages/labkit/src/chrome/regions/SidebarRegion.less",
+  "packages/labkit/src/chrome/regions/SidebarRegion.stories.tsx",
+  "packages/labkit/src/chrome/regions/SidebarRegion.tsx",
+  "packages/labkit/src/chrome/regions/StatusRegion.tsx",
+  "packages/labkit/src/chrome/regions/TitleBarRegion.tsx",
+  "packages/labkit/src/chrome/regions/ToolbarRegion.tsx",
+  "packages/labkit/src/chrome/regions/ViewportRegion.less",
+  "packages/labkit/src/chrome/regions/ViewportRegion.tsx",
+  "packages/labkit/src/chrome/regions/groupsOf.ts",
+  "packages/labkit/src/chrome/trialActions.tsx",
+  "packages/labkit/src/chrome/types.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.1707534,
+   "minutes": 0.19428333333333334,
+   "at": "2026-11-26T05:08:56.181Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "useBoundShortcuts' useSyncExternalStore has no server snapshot, so LabHeaderRegion throws during server rendering",
+   "where": "packages/labkit/src/chrome/LabChrome.tsx:116 (LabHeaderRegion)",
+   "severity": "medium",
+   "scenario": "Server-rendering a lab header, even with an empty contribution list or outside an actions provider, throws",
+   "fix": [
+    "packages/labkit/src/chrome/LabChrome.tsx"
+   ],
+   "size": "line",
+   "cause": "missing getServerSnapshot",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Custom-rendered contributions skip the region check in SidebarRegion and SidebarPanes, so foreign-region contributions render in the sidebar",
+   "where": "packages/labkit/src/chrome/regions/SidebarRegion.tsx:127 (SidebarRegion)",
+   "severity": "low",
+   "scenario": "An app passes a mixed contribution collection to the exported SidebarRegion/SidebarPanes; a custom-rendered status or aside contribution renders in the sidebar and takes pane height",
+   "fix": [
+    "packages/labkit/src/chrome/regions/SidebarRegion.tsx"
+   ],
+   "size": "line",
+   "cause": "render check ordered before region check",
+   "confidence": "sure",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2483
+}

@@ -1,0 +1,91 @@
+{
+ "area": "rig",
+ "commit": "0269be874a5adbbc9f6a3bd2b580f6a1dd1dea4f",
+ "files": [
+  "packages/rig/src/actionParamSchema.ts",
+  "packages/rig/src/bone/boneActions.ts",
+  "packages/rig/src/bone/boneOverlay.ts",
+  "packages/rig/src/bone/placedRig.ts",
+  "packages/rig/src/bone/rigEditState.ts",
+  "packages/rig/src/bone/useBoneTool.ts",
+  "packages/rig/src/icons.gen.ts",
+  "packages/rig/src/icons.table.ts",
+  "packages/rig/src/index.ts",
+  "packages/rig/src/kitSettings.ts",
+  "packages/rig/src/pbt.fixture.ts",
+  "packages/rig/src/toolSets.ts",
+  "packages/rig/src/useRigTools.ts",
+  "packages/rig/src/weight/useWeightTool.ts",
+  "packages/rig/src/weight/weightActions.ts",
+  "packages/rig/src/weight/weightOverlay.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.17666339999999997,
+   "minutes": 0.19433333333333333,
+   "at": "2026-11-26T05:23:15.791Z",
+   "findings": 3
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Active joint is stored by name only, so switching rigs silently selects another rig's joint with the same name",
+   "where": "packages/rig/src/bone/rigEditState.ts:27",
+   "severity": "medium",
+   "scenario": "Select a different rig whose auto-generated joint names repeat; the bone and weight actions act on its matching joint",
+   "cause": "joint identity keyed by name without rig",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "Weight stroke re-resolves the rig per dab with the joint name captured at press, so a mid-gesture rig change commits edits to two rigs",
+   "where": "packages/rig/src/weight/weightActions.ts:143",
+   "severity": "medium",
+   "scenario": "Selected or externally supplied rig changes during a weight stroke; the pending map collects edits from both rigs and commits them as one",
+   "cause": "rig not captured at press",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D3",
+   "claim": "sceneReach uses the larger world extent as a circular radius, so under nonuniform zoom, joint picking and the brush overreach what is drawn on screen",
+   "where": "packages/rig/src/bone/placedRig.ts:28 (sceneReach)",
+   "severity": "medium",
+   "scenario": "View with unequal axis scales; input along the more magnified axis reaches beyond the displayed dot or brush ring",
+   "cause": "scalar world radius for an anisotropic screen-space reach",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 954
+}

@@ -1,0 +1,90 @@
+{
+ "area": "labkit.state",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/labkit/src/state/Persistence.tsx",
+  "packages/labkit/src/state/SingletonExperiment.tsx",
+  "packages/labkit/src/state/bindLabStore.ts",
+  "packages/labkit/src/state/context.tsx",
+  "packages/labkit/src/state/document.ts",
+  "packages/labkit/src/state/helpers.ts",
+  "packages/labkit/src/state/hydrate.ts",
+  "packages/labkit/src/state/index.ts",
+  "packages/labkit/src/state/instrumentHooks.ts",
+  "packages/labkit/src/state/labRecordReads.ts",
+  "packages/labkit/src/state/labRecordWrites.ts",
+  "packages/labkit/src/state/labRecords.ts",
+  "packages/labkit/src/state/labStorage.ts",
+  "packages/labkit/src/state/openLabStore.ts",
+  "packages/labkit/src/state/ownUndo.ts",
+  "packages/labkit/src/state/savedUndo.ts",
+  "packages/labkit/src/state/snapshotActions.ts",
+  "packages/labkit/src/state/snapshots.ts",
+  "packages/labkit/src/state/store.ts",
+  "packages/labkit/src/state/trialFields.ts",
+  "packages/labkit/src/state/trialRecordActions.ts",
+  "packages/labkit/src/state/trialRestarts.ts",
+  "packages/labkit/src/state/types.ts",
+  "packages/labkit/src/state/undock.ts",
+  "packages/labkit/src/state/useOpenOnce.ts",
+  "packages/labkit/src/state/usePersistedState.ts",
+  "packages/labkit/src/state/useTrialState.ts",
+  "packages/labkit/src/state/view.ts",
+  "packages/labkit/src/state/watchTrialHistories.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16742839999999998,
+   "minutes": 0.17121666666666666,
+   "at": "2026-11-26T05:12:19.932Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Store opened during render leaks subscriptions when the render is discarded before commit, since cleanup lives only in a passive effect",
+   "where": "packages/labkit/src/state/useOpenOnce.ts:32",
+   "severity": "medium",
+   "scenario": "A render suspends and is discarded before commit; the async open completes and subscribes, and no component closes it",
+   "cause": "side effect in render with cleanup in effect",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "as3DView accepts a stored view with near equal to far, giving a degenerate perspective matrix",
+   "where": "packages/labkit/src/state/view.ts:60 (as3DView)",
+   "severity": "medium",
+   "scenario": "A stored orbit view with equal near and far is reopened; rendering and picking become unusable",
+   "fix": [
+    "packages/labkit/src/state/view.ts"
+   ],
+   "size": "line",
+   "cause": "no near<far cross-field check",
+   "confidence": "likely",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 2877
+}

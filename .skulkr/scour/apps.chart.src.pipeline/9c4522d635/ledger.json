@@ -23,6 +23,50 @@
    "minutes": 0.13915,
    "at": "2026-11-25T21:12:04.663Z",
    "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 0.8529680000000001,
+   "minutes": 1.1448166666666666,
+   "at": "2026-11-26T23:13:26.394Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 0.8949182000000001,
+   "minutes": 2.0281,
+   "at": "2026-11-26T23:15:28.254Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.8938738000000002,
+   "minutes": 1.0901666666666667,
+   "at": "2026-11-26T23:16:33.858Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.7119122,
+   "minutes": 1.7341,
+   "at": "2026-11-26T23:18:18.275Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
   }
  ],
  "defects": [
@@ -33,13 +77,29 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    2,
+    3,
+    5
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     2,
+     3,
+     5
     ]
-   }
+   },
+   "scenario": "while a param slider is dragged, `preview` sets `doc` to each intermediate value and autosave saves it; if the tab closes or reloads mid-drag (or the drag ends in a cancel that the autosave debounce misses), the stored pipeline holds a value the user never committed and that no undo step records. Save (pipelineCommands.ts `pipeline.doc`) likewise writes the preview. Should save `base.current ?? doc`.",
+   "cause": "preview state not separated from committed doc",
+   "fix": [
+    "apps/chart/src/pipeline/usePipelineDoc.ts",
+    "apps/chart/src/pipeline/pipelineCommands.ts"
+   ],
+   "size": "function",
+   "confidence": "likely"
   },
   {
    "id": "D2",
@@ -70,6 +130,147 @@
      1
     ]
    }
+  },
+  {
+   "id": "D4",
+   "claim": "Params that share a label and have no id collide, so one edit rewrites both and React sees duplicate keys",
+   "where": "apps/chart/src/pipeline/ParamPanel.tsx:77 (ParamPanel)",
+   "severity": "low",
+   "scenario": "a stage whose params include two without `id` and with the same `label` (loadable from a `.weaselpipeline.json`; `readEffectDoc` does not reject it) → the panel keys both rows `p.label`, so React warns about duplicate keys and can reuse one row's field state for the other; editing either calls `setParam(doc, stage, label, control)`, whose `addressed` matches every param with that label, so both params take the one control (an enum param can even receive a number control). Should address the param by position or a unique key.",
+   "fix": [
+    "apps/chart/src/pipeline/ParamPanel.tsx",
+    "packages/diagram/src/effect/edit.ts"
+   ],
+   "size": "function",
+   "cause": "label used as identity",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "Pipeline undo history has no bound, and every step holds a whole EffectDoc",
+   "where": "apps/chart/src/pipeline/usePipelineDoc.ts:50 (usePipelineDoc)",
+   "severity": "low",
+   "scenario": "`createHistory(null)` passes no `historyLimit`, and `limitOf(undefined)` is `Infinity`; every slider commit, rename and stage edit pushes a swap op holding `before` and `after` docs (including decoded `places`, params, clusters). A long session — the doc is held above the mode switch so it lives as long as the app — grows without bound. Should pass a `historyLimit`.",
+   "fix": [
+    "apps/chart/src/pipeline/usePipelineDoc.ts"
+   ],
+   "size": "line",
+   "cause": "no history cap",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "change records an undo step even when the doc did not change",
+   "where": "apps/chart/src/pipeline/usePipelineDoc.ts:61 (change)",
+   "severity": "low",
+   "scenario": "File › New on a pipeline that is already the empty one (`emptyPipeline()` returns the shared `EMPTY`, so `before === after`), or renaming a group to its current name (`renameCluster` returns an equal new doc) → a 'New pipeline' / 'Rename group' step is pushed, Undo becomes enabled and does nothing visible, and the redo stack is cleared. Should skip recording when `next === before` (at least the identity case).",
+   "fix": [
+    "apps/chart/src/pipeline/usePipelineDoc.ts"
+   ],
+   "size": "line",
+   "cause": "no no-op guard",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "Editing an audio stage or a group recomputes the domain split and resets the image runner, losing its stepped pass",
+   "where": "apps/chart/src/pipeline/pipelineRun.ts:56 (usePipelineRun)",
+   "severity": "low",
+   "scenario": "Run › Step the image stages to the third stage, then change an audio stage's param (or rename a group, since clusters live on `pipeline`). `splitDomains` builds a new `split.image` object although its stages and wires are unchanged; `useEffectRunner` calls `runner.setPipeline(split.image)`, which compares by identity and calls `dropStepping()`, so the next Step starts again from the first stage. An audio slider drag does this every input tick. Edits outside the image half should leave the image runner's pipeline identity alone (and vice versa for the audio runner's `setPipeline`, which re-syncs its graph on every image edit).",
+   "fix": [
+    "apps/chart/src/pipeline/pipelineAudio.ts"
+   ],
+   "size": "function",
+   "cause": "split rebuilt on every pipeline identity change",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "When a later pick overtakes an earlier source-image pick, the earlier pick's decode failure is still reported",
+   "where": "apps/chart/src/pipeline/pipelineRun.ts:128 (chooseImage)",
+   "severity": "low",
+   "scenario": "the user picks a large or corrupt image, then picks another before the first decodes. If `createImageBitmap(file)` for the first rejects, the rejection propagates before `mine()` is checked, and Choose Source Image's `.catch(reportFailure('Could not read the image'))` shows an error for a pick the user has already replaced. `usePipelineAudio.chooseSource` handles the same case (`if (!current()) return;` in its catch), so the two source pickers answer \"is an overtaken pick's failure reported\" two different ways.",
+   "fix": [
+    "apps/chart/src/pipeline/pipelineRun.ts"
+   ],
+   "size": "function",
+   "cause": "overtaken check skipped on the error path",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "Add Page and Delete Page stay enabled under the Rack and Lanes views, which ignore pages",
+   "where": "apps/chart/src/pipeline/pipelinePages.ts:17 (usePipelinePageCommands)",
+   "severity": "low",
+   "scenario": "`EffectDoc.pages` is drawn only under `nodeGraph` (types.ts: \"The other looks ignore them\"). With View › Look › Rack on, Page › Add Page is enabled and records an 'Add Page' undo step that changes nothing on screen; Delete Page likewise silently drops a page the user cannot see. Both should be disabled unless the look is `nodeGraph`, as Rack Direction is gated on `rack` in pipelineLook.ts.",
+   "fix": [
+    "apps/chart/src/pipeline/pipelinePages.ts",
+    "apps/chart/src/pipeline/PipelineWorkspace.tsx"
+   ],
+   "size": "function",
+   "cause": "command not gated on look",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
   }
- ]
+ ],
+ "lines": 713
 }

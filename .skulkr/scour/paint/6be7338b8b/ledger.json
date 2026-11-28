@@ -1,0 +1,85 @@
+{
+ "area": "paint",
+ "commit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "files": [
+  "packages/paint/src/alignedStrokeRect.ts",
+  "packages/paint/src/chromaCurve.ts",
+  "packages/paint/src/color.ts",
+  "packages/paint/src/colorSpaces.ts",
+  "packages/paint/src/commandPaint.ts",
+  "packages/paint/src/contrast.ts",
+  "packages/paint/src/cssColor.ts",
+  "packages/paint/src/gradient.ts",
+  "packages/paint/src/hex.ts",
+  "packages/paint/src/hexAlpha.ts",
+  "packages/paint/src/hsl.ts",
+  "packages/paint/src/hue.ts",
+  "packages/paint/src/index.ts",
+  "packages/paint/src/isPaint.ts",
+  "packages/paint/src/lerpPaint.ts",
+  "packages/paint/src/mix.ts",
+  "packages/paint/src/paint.ts",
+  "packages/paint/src/paintDefaults.ts",
+  "packages/paint/src/paintKey.ts",
+  "packages/paint/src/paintPreview.ts",
+  "packages/paint/src/paintValue.ts",
+  "packages/paint/src/palette.ts",
+  "packages/paint/src/patternPaint.ts",
+  "packages/paint/src/patternTransform.ts",
+  "packages/paint/src/pbt.fixture.ts",
+  "packages/paint/src/ramp.ts",
+  "packages/paint/src/resolvePaint.ts",
+  "packages/paint/src/scalar.ts",
+  "packages/paint/src/shortArc.ts",
+  "packages/paint/src/strokeTrim.ts",
+  "packages/paint/src/texture.ts",
+  "packages/paint/src/vertexWidth.ts"
+ ],
+ "occasions": [
+  {
+   "n": 1,
+   "source": "codex",
+   "kind": "ingest",
+   "file": "reviews/01-codex.md",
+   "costUsd": 0.16677840000000002,
+   "minutes": 0.14915,
+   "at": "2026-11-26T05:15:20.935Z",
+   "findings": 2
+  }
+ ],
+ "defects": [
+  {
+   "id": "D1",
+   "claim": "Gradient CSS preview drops coincident stops at hard transitions, so the browser blends colors absent from the authored gradient",
+   "where": "packages/paint/src/paintPreview.ts:75",
+   "severity": "low",
+   "scenario": "Red at offsets 0 and 0.5, blue at 0.5 and 1: preview emits red at 45.8% and blue at 50% with no coincident stop, adding blended colors absent from the authored gradient",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  },
+  {
+   "id": "D2",
+   "claim": "withAlpha01 validates hex by prefix and length only, turning malformed input like #abcdefzz into a valid color",
+   "where": "packages/paint/src/hexAlpha.ts:30 (withAlpha01)",
+   "severity": "low",
+   "scenario": "withAlpha01('#abcdefzz', 0.5) returns '#abcdef80' though toHex8 passes the malformed input through; mergeAlphaFromPrev reaches this path after the picked color fails validation",
+   "firstOccasion": 1,
+   "sightings": [
+    1
+   ],
+   "sources": {
+    "codex": [
+     1
+    ]
+   }
+  }
+ ],
+ "lines": 3169
+}

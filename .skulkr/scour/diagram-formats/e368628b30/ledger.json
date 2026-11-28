@@ -52,6 +52,207 @@
    "minutes": 0.14893333333333333,
    "at": "2026-11-25T21:15:42.215Z",
    "findings": 3
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 2.5143383999999998,
+   "minutes": 7.466516666666667,
+   "at": "2026-11-26T15:11:28.607Z",
+   "findings": 5
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.1723105999999999,
+   "minutes": 6.087683333333333,
+   "at": "2026-11-26T15:17:34.016Z",
+   "findings": 5
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.8033736,
+   "minutes": 3.904383333333333,
+   "at": "2026-11-26T15:21:28.452Z",
+   "findings": 2
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.5293412,
+   "minutes": 5.1042000000000005,
+   "at": "2026-11-26T15:28:54.443Z",
+   "findings": 5
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 1.8645282000000003,
+   "minutes": 6.999866666666667,
+   "at": "2026-11-26T15:35:54.581Z",
+   "findings": 6
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.154366,
+   "minutes": 5.226466666666667,
+   "at": "2026-11-26T15:41:08.315Z",
+   "findings": 5
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.0819368,
+   "minutes": 5.574816666666667,
+   "at": "2026-11-26T15:46:42.945Z",
+   "findings": 3
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.285344,
+   "minutes": 6.3741666666666665,
+   "at": "2026-11-26T15:53:05.568Z",
+   "findings": 6
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.4995888,
+   "minutes": 6.964083333333334,
+   "at": "2026-11-26T16:00:03.562Z",
+   "findings": 3
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.7817736000000004,
+   "minutes": 6.409833333333333,
+   "at": "2026-11-26T16:06:28.325Z",
+   "findings": 5
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 2.0313878,
+   "minutes": 9.626983333333333,
+   "at": "2026-11-26T16:16:06.104Z",
+   "findings": 6
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 4.370610600000001,
+   "minutes": 11.607716666666667,
+   "at": "2026-11-26T16:35:50.651Z",
+   "findings": 7
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 3.1362149699999993,
+   "minutes": 10.530583333333334,
+   "at": "2026-11-26T16:47:11.495Z",
+   "matcher": "claude-haiku-5-5",
+   "findings": 7
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 2.10434493,
+   "minutes": 5.47825,
+   "at": "2026-11-26T16:54:50.787Z",
+   "findings": 3
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 1.3622800499999999,
+   "minutes": 7.15965,
+   "at": "2026-11-26T17:02:00.643Z",
+   "findings": 4
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 1.3532738500000003,
+   "minutes": 6.412633333333333,
+   "at": "2026-11-26T17:08:26.242Z",
+   "findings": 4
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 1.3514023499999999,
+   "minutes": 6.761783333333334,
+   "at": "2026-11-26T17:15:12.204Z",
+   "findings": 4
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 1.19369595,
+   "minutes": 5.413666666666667,
+   "at": "2026-11-26T17:20:37.262Z",
+   "findings": 5
+  },
+  {
+   "n": 20,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/20-claude.md",
+   "costUsd": 1.39199645,
+   "minutes": 6.5578666666666665,
+   "at": "2026-11-26T17:27:10.999Z",
+   "findings": 5
+  },
+  {
+   "n": 21,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/21-claude.md",
+   "costUsd": 2.07511425,
+   "minutes": 5.805883333333333,
+   "at": "2026-11-26T17:32:59.848Z",
+   "findings": 4
   }
  ],
  "defects": [
@@ -62,13 +263,21 @@
    "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    19
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     19
     ]
-   }
+   },
+   "scenario": "`{\"kind\":\"sequence\", ..., \"data\":{}}` or a plot page whose `data` lacks its kind and series. `pageProblem` checks only that `data` is an object (graph pages get their lists checked). `read` succeeds, and a TypeError is thrown later, deep in `sequenceLayout` or `plotSpecs`, when the document is opened. The reader should report it the way it reports a graph page with no `nodes` list.",
+   "cause": "validation covers graph pages only",
+   "size": "function",
+   "confidence": "likely"
   },
   {
    "id": "D2",
@@ -99,6 +308,1215 @@
      1
     ]
    }
+  },
+  {
+   "id": "D4",
+   "claim": "documentFromScene drops a shape's header band and header text colors",
+   "where": "packages/diagram-formats/src/sceneReaders.ts:194 (readShape)",
+   "severity": "medium",
+   "scenario": "a class box (header row) whose `colors` set `header: '#ff0000'` and/or `headerText: '#00ff00'` is drawn by `diagramScene` (the band's paint goes on the node's `headerFill`, the title's on the header row's fill via `rowTextColor`, packages/diagram/src/dataColors.ts:42-54). `readShape` builds `colors` from `fill`, `stroke`, the first *non-header* row's text fill, `strokeWidth` and `dash` only; nothing in the package reads `headerFill` or a header row's fill (grep for `headerText|headerFill` in diagram-formats is empty). So the scene → document → JSON round trip (the native format, \"which carries everything the model holds\") comes back with the theme's header colors. Also, a node whose only text row is its header (a folded class box, or one with no fields) gets `text` from `dataOf(undefined)`, so an own text color is lost too and returns to the theme's when it is expanded.",
+   "fix": [
+    "packages/diagram-formats/src/sceneReaders.ts"
+   ],
+   "size": "function",
+   "cause": "reader omits NodeStyle fields `header`/`headerText`",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "documentFromScene drops a container's or pool's own stroke width",
+   "where": "packages/diagram-formats/src/sceneReaders.ts:262 (regionColors)",
+   "severity": "low",
+   "scenario": "a region with `colors.strokeWidth: 3`, from the user, or from DOT's cluster `penwidth` (dot/read.ts readCluster writes `strokeWidth`), is drawn with that width (`regionSpecs.ts:63` → `outlineOf(style, 'region')` uses `style.strokeWidth`). `regionColors` compares only `fill`, `stroke` and title `text`, so on export the width is gone and the box comes back at the theme's width. The node path (`readShape`) does read `stroke.width`.",
+   "fix": [
+    "packages/diagram-formats/src/sceneReaders.ts"
+   ],
+   "size": "line",
+   "cause": "region reader omits strokeWidth",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "DOT reader drops all positions when only invisible nodes lack pos",
+   "where": "packages/diagram-formats/src/dot/read.ts:369 (readDot) / packages/diagram-formats/src/dot/positions.ts:17 (positions)",
+   "severity": "low",
+   "scenario": "a hand-written neato input where every visible node has `pos=\"x,y!\"` and a `style=invis` spacer node has none. `positions` runs over every node, invisible ones included, before they are filtered out, so one unplaced invisible node makes it return `null`: every visible position is thrown away with a \"pos was dropped\" warning and the page is laid out from scratch. It should judge \"every node has a pos\" over the nodes that are kept.",
+   "fix": [
+    "packages/diagram-formats/src/dot/read.ts"
+   ],
+   "size": "line",
+   "cause": "placement checked before invisible filter",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    6
+   ],
+   "sources": {
+    "claude": [
+     2,
+     6
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "DOT inv, oinv and invempty arrowheads read as forward arrows with no warning",
+   "where": "packages/diagram-formats/src/dot/values.ts:134 (ARROWS)",
+   "severity": "low",
+   "scenario": "`a -> b [arrowhead=inv]` draws a triangle pointing back at the tail in Graphviz. The table maps it straight to `'arrow'` (and `oinv`/`invempty` to `'triangle-hollow'`), so the edge reads as pointing the other way. Unlike an unknown name, which `marker()` reports in \"DOT arrowheads drawn as arrows\", these go through silently.",
+   "fix": [
+    "packages/diagram-formats/src/dot/values.ts",
+    "packages/diagram-formats/src/dot/read.ts"
+   ],
+   "size": "function",
+   "cause": "approximation mapped without warning",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    7,
+    14
+   ],
+   "sources": {
+    "claude": [
+     2,
+     7,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "laidOutPage sizes the page from boxes only, ignoring laid-out routes",
+   "where": "packages/diagram-formats/src/pageLayout.ts:86 (laidOutPage)",
+   "severity": "low",
+   "scenario": "a self-loop, or an edge that layout routes around the outside of the nodes, gets `routed` points past the outermost node box. The page's width, height and the top/left shift come only from node and container boxes, so the route (and its label) can fall outside the page or across its margin after import.",
+   "size": "function",
+   "cause": "extent omits edge routes and labels",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    19,
+    21
+   ],
+   "sources": {
+    "claude": [
+     2,
+     19,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "DOT style words other than filled/rounded/dashed/dotted/invis are dropped without a warning",
+   "where": "packages/diagram-formats/src/dot/read.ts:213 (readNode; also readEdge, readCluster via stylesOf/dashOf)",
+   "severity": "low",
+   "scenario": "`a [style=bold]`, `a -> b [style=\"bold,tapered\"]`, `node [style=diagonals]`, `style=striped` on a cluster → the words are read by `stylesOf`, nothing reads them, and no warning is raised; every other attribute a diagram does not hold is listed under \"DOT attributes a diagram does not hold were dropped\". `bold` in particular changes the drawn width (Graphviz draws it as penwidth 2), so the import silently draws a thinner line.",
+   "fix": [
+    "packages/diagram-formats/src/dot/read.ts",
+    "packages/diagram-formats/src/dot/values.ts"
+   ],
+   "size": "function",
+   "cause": "style list read for known words only, unknown words never reported",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    13
+   ],
+   "sources": {
+    "claude": [
+     3,
+     13
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "A connector to a container on the written page that leaves for another page is dropped from graph export with no warning",
+   "where": "packages/diagram-formats/src/graphWrite.ts:104 (graphOut)",
+   "severity": "low",
+   "scenario": "a document whose `crossPageEdges` holds an edge from container `k` (on the page being written) to a node on page 2 → the \"holds one page; connectors to other pages were dropped\" check tests `byId` (nodes only), so it is false, and the edge is never written either; the writer reports nothing. The same edge from a node on the page does warn.",
+   "size": "line",
+   "cause": "page membership checked against nodes only, not `tree.clusterIds`",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "JSON reader accepts ids repeated across pages and repeated page ids, which the document model forbids",
+   "where": "packages/diagram-formats/src/jsonFormat.ts:58 (read / pageProblem)",
+   "severity": "low",
+   "scenario": "a `.diagram.json` with two pages each holding node `a`, or two pages with id `p` → `read` returns it with no warning or error, though `PageBase` says ids share one namespace across the document; `documentSpecs` then feeds both `a`s to one `diagramScene` call, so one node overwrites or collides with the other when the scene is built, far from the reader that could have named the problem. `pageProblem` validates every other structural requirement up front.",
+   "size": "function",
+   "cause": "uniqueness of ids not validated",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    12,
+    19,
+    20,
+    21
+   ],
+   "sources": {
+    "claude": [
+     3,
+     12,
+     19,
+     20,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "DOT pos placement measures the page extent from invisible nodes that are later removed, misplacing or oversizing the page",
+   "where": "packages/diagram-formats/src/dot/read.ts:357 (readDot), packages/diagram-formats/src/dot/positions.ts:19 (positions)",
+   "severity": "low",
+   "scenario": "a neato input graph (no `bb`) with every node given `pos`, one of them `style=invis` far to the left → `positions` takes the page's left/top and size from all nodes including the invisible one, then `readDot` filters it out, so the visible nodes sit offset with empty space where the invisible node was. Likewise an invisible node with no `pos` makes `positions` return `null` and the whole graph is re-laid out, discarding every visible node's `pos` with a \"pos dropped\" warning.",
+   "fix": [
+    "packages/diagram-formats/src/dot/read.ts"
+   ],
+   "size": "function",
+   "cause": "invisible nodes filtered after placement instead of before",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    6,
+    15
+   ],
+   "sources": {
+    "claude": [
+     3,
+     6,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "DOT pos with an empty coordinate is read as 0 instead of being rejected",
+   "where": "packages/diagram-formats/src/dot/positions.ts:19 (positions)",
+   "severity": "low",
+   "scenario": "`a [pos=\"1,\"]` (or `pos=\",2\"`) → `Number('')` is 0 and finite, so the node is placed at y (or x) 0 rather than the pos being refused and the page laid out, as it is for `pos=\"1\"`.",
+   "size": "line",
+   "cause": "`Number('')` treated as a valid coordinate",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "DOT writer puts an unparseable color string inside quotes without escaping it, so the DOT it writes does not parse",
+   "where": "packages/diagram-formats/src/dot/write.ts:45 (color)",
+   "severity": "low",
+   "scenario": "a document (e.g. read from Diagram JSON, whose colors are not validated) holds a node `colors.fill` that paint cannot parse and that contains a `\"`, such as `url(\"#g\")`. `hexColor` returns the string unchanged (`if (!rgba) return css`), and `color()` writes `fillcolor=\"url(\"#g\")\"`. That ends the quoted string early, so `parseDot` throws on the output. The writer should escape the value, as `dotId` does, or drop the color and warn.",
+   "fix": [
+    "packages/diagram-formats/src/dot/write.ts"
+   ],
+   "size": "line",
+   "cause": "value interpolated into quotes without escaping",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    7,
+    15,
+    17
+   ],
+   "sources": {
+    "claude": [
+     4,
+     7,
+     15,
+     17
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "DOT writer drops a graph page's layout with no warning",
+   "where": "packages/diagram-formats/src/dot/write.ts:143 (writeDot)",
+   "severity": "low",
+   "scenario": "a graph page has `layout: { name: 'force' }` or `'tree'`, plus layout options. `writeDot` writes only `rankdir` from `direction`. The page's layout name and its options (`nodeGap`, `rankGap`, …) are not written and no warning is added, even though every other loss (ports, bends, trims, marks) gets one. When read back, the page lays out as `layered`. The writer should warn, or map the layout to a Graphviz `layout=`/`nodesep`/`ranksep`.",
+   "fix": [
+    "packages/diagram-formats/src/dot/write.ts",
+    "packages/diagram-formats/src/graphWrite.ts",
+    "dot/write.ts"
+   ],
+   "size": "function",
+   "cause": "page setting with no warning on the lossy path",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5,
+    6,
+    10,
+    12,
+    16,
+    21
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5,
+     6,
+     10,
+     12,
+     16,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "DOT writer drops a graph page's notation with no warning",
+   "where": "packages/diagram-formats/src/dot/write.ts:150 (writeDot)",
+   "severity": "low",
+   "scenario": "a graph page with `layout: { name: 'tree' }` or `notation: 'class'` written with DIAGRAM_DOT. Only `direction` is written (as `rankdir`), and neither `graphOut` nor `writeDot` adds a warning, so the page reads back as a layered flowchart. Every other thing DOT can't hold (bends, trims, marks, ports, cross-page edges) gets a warning.",
+   "fix": [
+    "packages/diagram-formats/src/dot/write.ts",
+    "packages/diagram-formats/src/graphWrite.ts",
+    "dot/write.ts"
+   ],
+   "size": "function",
+   "cause": "page settings missing from the shared drop warnings",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    10,
+    12,
+    16,
+    21
+   ],
+   "sources": {
+    "claude": [
+     5,
+     10,
+     12,
+     16,
+     21
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "readMarks stops at the first missing mark index and drops every later mark",
+   "where": "packages/diagram-formats/src/markReaders.ts:61 (readMarks)",
+   "severity": "low",
+   "scenario": "a shape drawn with marks `<id>/mark:0..2`, then mark node `<id>/mark:1` is removed from the scene (a delete, or an op that rebuilds only some marks). The loop returns when `scene.get('<id>/mark:1')` is undefined, so `mark:2` is silently missing from the exported DataNode. It should read every mark child.",
+   "size": "function",
+   "cause": "index probe in place of a child walk",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "JSON document whose version is NaN or a fraction is read as version 2",
+   "where": "packages/diagram-formats/src/jsonFormat.ts:63 (read)",
+   "severity": "low",
+   "scenario": "`{\"format\":\"weasel-diagram\",\"version\":1.5,...}` (a NaN can't come from JSON.parse, but a non-integer or negative number can). It passes `typeof === 'number'` and `> VERSION` is false, then `version < 2` picks the upgrade path by plain comparison: 1.5 gets upgraded as v1 and 0 or -3 do too, with no error for a version that never existed. Non-integer and below-1 versions should be refused, the way a version newer than the reader is.",
+   "size": "line",
+   "cause": "version checked for type only, not for being a known integer",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "An empty bb attribute makes DOT pos read as points instead of inches",
+   "where": "packages/diagram-formats/src/dot/positions.ts:17 (positions)",
+   "severity": "low",
+   "scenario": "`digraph { bb=\"\"; a [pos=\"1,1\"]; b [pos=\"2,1\"] }`. `str(root.graph,'bb')` is `''`, which is not `undefined`, so `unit` is 1 and the positions are taken as points: a 72× shrink. The box then falls back to the node extents. Every other attribute in read.ts treats `\"\"` as unset (Graphviz's default), so `bb=\"\"` should give the inch unit too.",
+   "fix": [
+    "packages/diagram-formats/src/dot/read.ts",
+    "packages/diagram-formats/src/dot/positions.ts"
+   ],
+   "size": "line",
+   "cause": "empty-string attribute not treated as unset",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    9,
+    11,
+    14,
+    18
+   ],
+   "sources": {
+    "claude": [
+     5,
+     9,
+     11,
+     14,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "JSON reader copies unknown top-level keys into the document",
+   "where": "packages/diagram-formats/src/jsonFormat.ts:84 (read)",
+   "severity": "low",
+   "scenario": "a file with extra top-level fields (`{\"format\":..., \"version\":2, \"pages\":[...], \"foo\": {...}}`). `const { format, version, ...document } = json` keeps `foo` on the returned DiagramDocument, and the next `write` spreads it back out, so junk survives round trips. The reader also checks nothing past `pages`, `crossPageEdges` and `theme`. Only DiagramDocument's own keys should be picked.",
+   "size": "line",
+   "cause": "rest-spread of unvalidated input",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "An edge to a reopened subgraph joins only the nodes named in that statement, not every node of the subgraph",
+   "where": "packages/diagram-formats/src/dot/read.ts:153 (DotReader.end)",
+   "severity": "low",
+   "scenario": "`digraph { subgraph s { a } subgraph s { b } -> c }` — Graphviz takes a subgraph operand as the whole subgraph (its nodes from every opening), so it draws `a -> c` and `b -> c`; the reader returns only the ids `walk` saw in this opening (`b`), so `a -> c` is lost with no warning",
+   "fix": [
+    "packages/diagram-formats/src/dot/read.ts"
+   ],
+   "size": "function",
+   "cause": "subgraph operand's nodes taken from one statement, not kept per named subgraph",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    7,
+    8,
+    14,
+    17
+   ],
+   "sources": {
+    "claude": [
+     6,
+     7,
+     8,
+     14,
+     17
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "DOT positions are read back rounded to 2 decimals while the writer writes 4, so a placed page moves on a round trip",
+   "where": "packages/diagram-formats/src/dot/positions.ts:4 (round), packages/diagram-formats/src/dot/positions.ts:27 (positions)",
+   "severity": "low",
+   "scenario": "a node at `at.x = 10.004` writes `pos=\"…\"` at four places (`dotNumber`); `positions` reads it through `round` (two places) and the node comes back at `10`; widths go through the same `round` in `readNode`. Write → read is not the identity for any coordinate with a third decimal",
+   "fix": [
+    "packages/diagram-formats/src/dot/positions.ts",
+    "packages/diagram-formats/src/dot/read.ts"
+   ],
+   "size": "line",
+   "cause": "reader rounds coarser than writer",
+   "confidence": "sure",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "Cross-page connectors keep waypoints in the source scene's world, but import places pages in a different world, so the waypoints land in the wrong place",
+   "where": "packages/diagram-formats/src/fromScene.ts:132 (documentFromScene), packages/diagram-formats/src/toScene.ts:62 (graphSpecs)",
+   "severity": "medium",
+   "scenario": "a scene whose page run uses a non-default page layout (pages stacked vertically, or another gap) has a connector from a pasteboard shape to a shape on another page; it is exported to `crossPageEdges` with waypoints and label point in that scene's world coordinates, while its ends are exported page-relative. `documentSpecs` places the pages with `layoutPages(pageList)` (the default layout, since the document carries none) and adds the cross-page edge unshifted, so its bends and label land away from the ends they joined",
+   "fix": [
+    "packages/diagram-formats/src/fromScene.ts",
+    "packages/diagram-formats/src/toScene.ts",
+    "packages/diagram-formats/src/document.ts"
+   ],
+   "size": "design",
+   "cause": "world coordinates tied to a page placement the document does not record",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    8,
+    10,
+    11,
+    12,
+    13,
+    17,
+    19
+   ],
+   "sources": {
+    "claude": [
+     6,
+     8,
+     10,
+     11,
+     12,
+     13,
+     17,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D24",
+   "claim": "A sequence root that is not its page's root is dropped from the export entirely",
+   "where": "packages/diagram-formats/src/fromScene.ts:117 (documentFromScene)",
+   "severity": "medium",
+   "scenario": "a sequence diagram inside a group or container (`pageRootsOf` skips it, so its page stays a graph page), or a second sequence on a page: `kind === 'sequence'` hits `continue` without setting `bucket.sequence`, so the diagram is in no page and nothing reports it lost; the exported graph page has its group but not the sequence it held",
+   "fix": [
+    "packages/diagram-formats/src/fromScene.ts",
+    "packages/diagram-formats/src/pageRoots.ts"
+   ],
+   "size": "design",
+   "cause": "non-root sequences neither exported nor reported",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6,
+    10,
+    11,
+    18
+   ],
+   "sources": {
+    "claude": [
+     6,
+     10,
+     11,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D25",
+   "claim": "exportPageOf climbs past the page run, so a follower kept in the run exports to whichever page the whole run's bounds favor",
+   "where": "packages/diagram-formats/src/exportPage.ts:16 (exportPageOf)",
+   "severity": "medium",
+   "scenario": "a diagram cluster (its `dependsOn` names its members) whose members sit on two pages is placed in the page run (`placeOnPages`: \"a node following others goes … else into the page run\"). `documentFromScene` → `pageOf(cluster)` → `pageIdOf` is null (the run is not a page), so the loop climbs to the outermost ancestor, the page run node itself, and `documentBoundsOf(run)` spans every page; `pageHolding` then answers from the bounds of all pages, not from the cluster's own box, putting the cluster (and its `itemPage`) on an arbitrary page. It should stop below page structure (`isPageStructure`) and measure the node's own outermost non-structure ancestor.",
+   "fix": [
+    "packages/diagram-formats/src/exportPage.ts"
+   ],
+   "size": "line",
+   "cause": "ancestor walk does not stop at page structure",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D26",
+   "claim": "documentSpecs' doc comment says unplaced graph pages use layered, but the code uses the page's own layout and also lays out fully placed pages that have an unboxed pool or empty container",
+   "where": "packages/diagram-formats/src/toScene.ts:62 (documentSpecs doc comment)",
+   "severity": "low",
+   "scenario": "a page with `layout: { name: 'tree' }` is laid out with `tree` (`laidOutPage` reads `page.layout?.name ?? 'layered'`), and a page whose nodes all have `at` but holding a pool with no `box` is laid out too (`needsLayout`), contrary to \"A graph page whose nodes all have a place is drawn where they say\".",
+   "size": "line",
+   "cause": "stale doc comment",
+   "confidence": "sure",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D27",
+   "claim": "decodeEntities reads a named reference spelled &x<hex>; as a hex character reference",
+   "where": "packages/diagram-formats/src/graphRead.ts:45 (decodeEntities)",
+   "severity": "low",
+   "scenario": "DOT HTML label `<a &xa; b>` or Mermaid text holding `&xa;` / `&xcafe;`. The `&` branch's `[a-z]+` alternative (case-insensitive) matches `xa`, and the next test `/^#?x([\\da-f]+)$/i` has an optional `#`, so the bare `xa` counts as hex. `&xa;` becomes U+000A (a line break inside `markupLines`), and `&xcafe;` becomes U+CAFE. Neither is a real entity, so both should stay as written, the way any other unknown name (`&foo;`) does.",
+   "size": "line",
+   "cause": "`#?` lets a named ref take the hex path",
+   "confidence": "sure",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D28",
+   "claim": "An undirected DOT graph with its opening brace on the next line is detected as Mermaid and misread",
+   "where": "packages/diagram-formats/src/formats.ts:23 (detectFormat)",
+   "severity": "medium",
+   "scenario": "`readDocument('graph\\n{\\n  a -- b\\n}\\n')` (or with a `.txt` name, or `graph LR\\n{ … }`, a DOT graph named LR). Mermaid's `detect` tests only the first non-empty line, `graph`, which `FLOWCHART_HEADER` accepts; DOT's `detect` also passes. With no `.dot`/`.gv` file name the first passing format in `DIAGRAM_FORMATS` wins, and Mermaid comes before DOT, so the text goes to the Mermaid flowchart reader, which throws or reads nonsense. It should be read as DOT: the token after the header is `{`, which no Mermaid flowchart has.",
+   "fix": [
+    "packages/diagram-formats/src/formats.ts",
+    "packages/diagram-formats/src/mermaid/format.ts"
+   ],
+   "size": "function",
+   "cause": "two detectors both claim the text; the order picks the wrong one",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D29",
+   "claim": "DOT writer writes rankdir=undefined (or a function's source) for a direction it does not know",
+   "where": "packages/diagram-formats/src/dot/write.ts:150 (writeDot)",
+   "severity": "low",
+   "scenario": "a document read from Diagram JSON (which does not validate `direction`) with `direction: \"TB\"` → `RANKDIR[\"TB\"]` is `undefined`, `undefined !== null`, so the output has `rankdir=undefined;`. With `direction: \"constructor\"` or `\"toString\"` the plain-object lookup goes up the prototype chain and writes `rankdir=function Object() { [native code] };`, which Graphviz cannot parse. Should use `getOwn` and write no `rankdir` for an unknown direction.",
+   "size": "line",
+   "cause": "plain-object lookup on an unvalidated key, `undefined` not mapped to `null`",
+   "confidence": "sure",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    11,
+    17
+   ],
+   "sources": {
+    "claude": [
+     9,
+     11,
+     17
+    ]
+   },
+   "fix": [
+    "packages/diagram-formats/src/dot/write.ts"
+   ]
+  },
+  {
+   "id": "D30",
+   "claim": "Diagram JSON reader accepts a cluster with no members list, which then throws in every graph writer",
+   "where": "packages/diagram-formats/src/jsonFormat.ts:41 (pageProblem)",
+   "severity": "low",
+   "scenario": "a JSON page with `clusters: [{ \"id\": \"g\" }]` passes validation (only `hasId` is checked), reads fine, and then `DIAGRAM_DOT.write` / Mermaid write throw `TypeError: g.members is not iterable` from `clusterTree` (`for (const m of g.members)`, graphWrite.ts:75), as does anything else iterating a cluster's members. The reader exists to say what keeps a page from being drawn, so it should reject (or default) a missing/non-array `members`; the same goes for a container's `members`/`lanes` given as a non-array (a string `members: \"ab\"` iterates characters).",
+   "fix": [
+    "packages/diagram-formats/src/jsonFormat.ts"
+   ],
+   "size": "function",
+   "cause": "validation checks ids only, not the lists consumers iterate",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    20
+   ],
+   "sources": {
+    "claude": [
+     9,
+     20
+    ]
+   }
+  },
+  {
+   "id": "D31",
+   "claim": "DOT writer drops an edge whose end is on no node or box of the page, with no warning",
+   "where": "packages/diagram-formats/src/dot/write.ts:125 (edgeLine)",
+   "severity": "low",
+   "scenario": "a graph page (e.g. from JSON, or hand-built) with an edge `a -> z` where `z` is on another page but the edge sits in `page.data.edges` rather than `crossPageEdges`, or names a missing id. `edgeLine` returns `null` and only warns when an end is a cluster, so the connector vanishes from the export with an empty warnings list. Every other drop in the writer is reported.",
+   "size": "line",
+   "cause": "warning branch covers only the cluster case",
+   "confidence": "sure",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D32",
+   "claim": "&nbsp; at either end of a label line is trimmed away",
+   "where": "packages/diagram-formats/src/graphRead.ts:49 (markupLines)",
+   "severity": "low",
+   "scenario": "a DOT HTML label `<&nbsp;&nbsp;indented>` or a Mermaid label `#nbsp;x`: entities are decoded to U+00A0 first, then each line is `.trim()`ed, and JS `trim` strips U+00A0 too, so the spacing the author wrote explicitly to survive is lost (`indented`). Only the source's own whitespace should be trimmed, before decoding.",
+   "size": "line",
+   "cause": "trim after entity decoding",
+   "confidence": "sure",
+   "firstOccasion": 9,
+   "sightings": [
+    9,
+    18
+   ],
+   "sources": {
+    "claude": [
+     9,
+     18
+    ]
+   },
+   "fix": [
+    "packages/diagram-formats/src/graphRead.ts"
+   ]
+  },
+  {
+   "id": "D33",
+   "claim": "DOT writer drops a page's connector routers with no warning",
+   "where": "packages/diagram-formats/src/dot/write.ts:150 (writeDot)",
+   "severity": "low",
+   "scenario": "a graph page with `layout: { name: 'tree' }`, `notation: 'class'`, or edges with `router: 'orthogonal'` is written as plain DOT. Nothing is warned, although every other loss (ports, bends, trims, marks, dash patterns) is. Reading the file back gives a layered flowchart with straight connectors, and the caller was never told. It should warn, as `graphOut` does for the other dropped fields. Graphviz's `splines=ortho` and `layout=` could also carry some of these.",
+   "fix": [
+    "packages/diagram-formats/src/graphWrite.ts",
+    "dot/write.ts"
+   ],
+   "size": "function",
+   "cause": "missing warnings for page settings and router",
+   "confidence": "sure",
+   "firstOccasion": 10,
+   "sightings": [
+    10,
+    16
+   ],
+   "sources": {
+    "claude": [
+     10,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D34",
+   "claim": "contentPage measures every root, including page structure, so the page it picks is skewed by roots that are not content",
+   "where": "packages/diagram-formats/src/fromScene.ts:37 (contentPage)",
+   "severity": "low",
+   "scenario": "a scene with a page run but no pages left: `placedPagesOf` gives `[]`, so `contentPage` is used. It takes `scene.roots`, unfiltered, and only drops connectors. The page-run node is a root, so its pose joins the bounds while `renderOrderNodes` filters it out. The made-up page then stretches to the run's box (for example, to the origin), and every exported coordinate shifts by that much. It should filter `isPageStructure` as `inWorld().renderOrderNodes` does.",
+   "fix": [
+    "packages/diagram-formats/src/fromScene.ts"
+   ],
+   "size": "line",
+   "cause": "two filters for one question (which roots are content)",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D35",
+   "claim": "A DOT edge end naming both a port and a compass point loses the compass point",
+   "where": "packages/diagram-formats/src/dot/read.ts:279 (portOf)",
+   "severity": "low",
+   "scenario": "`digraph { a:p:n -> b }` (or `tailport=\"p:n\"`). `portOf` gets `port = 'p'`, `compass = 'n'`. Because `port !== undefined`, it warns \"DOT ports a diagram does not have were dropped: a:p:n\" and returns `undefined`, so the edge leaves from no port. The diagram has an `n` port, so the record field `p` is what should drop and `n` should stay, the way `a:n` alone reads as `fromPort: 'n'`.",
+   "size": "line",
+   "cause": "compass discarded whenever a named port is present",
+   "confidence": "sure",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D36",
+   "claim": "DOT compass point `c` is warned about as a dropped port, though it means no port",
+   "where": "packages/diagram-formats/src/dot/read.ts:279 (portOf)",
+   "severity": "low",
+   "scenario": "`a:c -> b`. `COMPASS_POINTS` accepts `c`, so the parser sets `compass: 'c'`. `portOf` treats only `_` as \"no port\", so `c` falls through to the warning \"DOT ports a diagram does not have were dropped: a:c\". Graphviz draws `c` as the center, the same as no port, so nothing was lost, but the import still reports a loss.",
+   "size": "line",
+   "cause": "`c` not treated like `_`",
+   "confidence": "sure",
+   "firstOccasion": 12,
+   "sightings": [
+    12,
+    20
+   ],
+   "sources": {
+    "claude": [
+     12,
+     20
+    ]
+   }
+  },
+  {
+   "id": "D37",
+   "claim": "DOT writer can write pos=\"NaN,…\", which makes the whole page read back as needing layout",
+   "where": "packages/diagram-formats/src/dot/write.ts:55 (nodeAttrs), packages/diagram-formats/src/dot/values.ts:171 (dotNumber)",
+   "severity": "low",
+   "scenario": "`placed` checks only that `at`, `width` and `height` are defined. A node with a non-finite `at.x` (a JSON-sourced page can carry one) gets `pos=\"NaN,…\"`. `dotNumber` returns `String(NaN)`. On reading back, `positions` sees a non-finite center and returns `null`, so every node's position is dropped (warning `pos`) and the page is laid out again. `penwidth`, `width` and `height` guard with `Number.isFinite`; `pos` and `bb` don't.",
+   "size": "line",
+   "cause": "missing finiteness guard on pos/bb",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D38",
+   "claim": "DOT reader keeps a raw line break inside a quoted label as part of one line instead of breaking the line there as Graphviz does",
+   "where": "packages/diagram-formats/src/dot/values.ts:37 (labelLines)",
+   "severity": "low",
+   "scenario": "`a [label=\"first",
+   "size": "line",
+   "cause": "raw newline not treated as a line end",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D39",
+   "claim": "DOT reader reads circle, doublecircle and square at their given width and height instead of forcing them regular as Graphviz does",
+   "where": "packages/diagram-formats/src/dot/read.ts:219 (readNode)",
+   "severity": "low",
+   "scenario": "`a [shape=circle, width=1, height=0.5]`. Graphviz treats circle, doublecircle and square as regular shapes, so it draws a 1in circle: the larger of the sizes the user set, or with none set, a circle sized to the label. The reader maps `circle` to `ellipse` and keeps 72x36, so the import draws a flat ellipse. `square` becomes a 72x36 rectangle the same way. A node with neither size set is left to the diagram's own sizing, which does not keep it round. The reader should make width equal height for these shapes, as it already does for `point`.",
+   "fix": [
+    "packages/diagram-formats/src/dot/read.ts",
+    "packages/diagram-formats/src/dot/values.ts"
+   ],
+   "size": "function",
+   "cause": "regular shapes not given equal width and height",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D40",
+   "claim": "DOT writer writes doubleEllipse as shape=doublecircle, which Graphviz draws as a circle",
+   "where": "packages/diagram-formats/src/dot/values.ts:111 (SHAPE_NAMES, via shapeOf in dot/write.ts nodeAttrs)",
+   "severity": "low",
+   "scenario": "a node `{ outline: 'doubleEllipse', width: 160, height: 60 }` is written as `shape=doublecircle, width=2.2222, height=0.8333`. Graphviz draws `doublecircle` as a regular shape, so it renders a double circle 160pt across instead of a 160x60 double ellipse. No warning is given. `shape=ellipse, peripheries=2` draws what the diagram holds, and the reader would then need to map it back to `doubleEllipse`.",
+   "fix": [
+    "packages/diagram-formats/src/dot/values.ts",
+    "packages/diagram-formats/src/dot/read.ts"
+   ],
+   "size": "function",
+   "cause": "Graphviz treats doublecircle as a regular shape",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D41",
+   "claim": "DOT reader draws no arrowhead for an unrecognized dir value instead of falling back to the default direction",
+   "where": "packages/diagram-formats/src/dot/read.ts:252 (readEdge)",
+   "severity": "low",
+   "scenario": "`digraph { a -> b [dir=Forward] }`, or any misspelled `dir`. Graphviz's `arrow_flags` sets the default first (forward in a digraph) and overrides it only when `dir` exactly matches one of its four values, so it still draws an arrow at `b`. The reader takes any non-empty `dir` as given. `'Forward'` matches none of `forward`, `both` or `back`, so `end` and `start` are both `null`. The edge reads as `markerEnd: null`, with no arrow and no warning. A value that is not one of the four should fall back to the graph's default.",
+   "size": "line",
+   "cause": "an unrecognized `dir` is not replaced by the default",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13,
+    14
+   ],
+   "sources": {
+    "claude": [
+     13,
+     14
+    ]
+   }
+  },
+  {
+   "id": "D42",
+   "claim": "DOT reader drops the color invis with a warning instead of reading it as transparent",
+   "where": "packages/diagram-formats/src/dot/values.ts:89 (dotColor)",
+   "severity": "low",
+   "scenario": "`a [color=invis]`, or a cluster with `pencolor=invis`. Graphviz treats `invis` like `transparent` and `none`. `dotColor` maps only `none` to `transparent`. `invis` goes to `x11Color`, comes back unchanged as `invis`, fails `checkedColor`, and is dropped with \"DOT colors a diagram cannot draw were dropped: invis\". The node then draws with the theme's stroke instead of no stroke.",
+   "size": "line",
+   "cause": "`invis` not mapped to transparent",
+   "confidence": "likely",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D43",
+   "claim": "Quoted DOT strings only handle the quote escape as Graphviz does, so the writer emits strings Graphviz cannot parse and the reader misreads an escaped backslash before a quote",
+   "where": "packages/diagram-formats/src/dot/lex.ts:72 (dotTokens, quotedPart)",
+   "severity": "medium",
+   "scenario": "Take a page named `C:\\` or a node id `ends\\`. `dotId` and `quoteLabel` write it as `\"C:\\\\\"`. In Graphviz's lexer, `\\\"` is the only escape, so `\\\\\"` reads as a literal backslash followed by an escaped quote. The string does not end at that quote and runs on to the next `\"`, so Graphviz rejects the file or reads it wrongly. This package's own lexer reads `\\\\` as a pair (line 72) and accepts the file, which is why write.test.ts's \"ids … holding backslashes\" round trip passes. The same rule hurts on the read side. A Graphviz file whose string holds `\\\\\"`, such as `label=\"a\\\\\"b\"` (which is `a\\\"b` to Graphviz), gets cut at that quote here. `nameOf` (parse.ts:54) also folds `\\\\` to `\\` in ids, so the distinct Graphviz nodes `\"a\\\\b\"` and `\"a\\b\"` merge into one node. Only `\\\"` should be special. A trailing backslash should be written so Graphviz reads it (for example, split with a line continuation) rather than as `\\\\\"`.",
+   "fix": [
+    "packages/diagram-formats/src/dot/lex.ts",
+    "packages/diagram-formats/src/dot/parse.ts",
+    "packages/diagram-formats/src/dot/write.ts",
+    "packages/diagram-formats/src/dot/values.ts"
+   ],
+   "size": "function",
+   "cause": "the lexer treats `\\\\` as an escape that Graphviz does not have",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D44",
+   "claim": "A collapsed node exports every hidden row as visible text, and its collapsed state is dropped without a warning",
+   "where": "packages/diagram-formats/src/rowLines.ts:5 (rowLines), reached through packages/diagram-formats/src/graphWrite.ts:47 (nodeLines)",
+   "severity": "low",
+   "scenario": "Take a class-style node folded to its header. `readShape` (sceneReaders.ts:172-177) gives it `rows: [header, ...folded]` and `collapsed: true`. `rowLines` writes every row as a line and ignores `collapsed`. The DOT label therefore holds all the hidden fields, while `width`/`height` (write.ts:60-61) are the collapsed box's size. Read back, the node is open, and on a placed page its text overflows a header-sized box. Unlike marks, ports and slots, this loss gets no warning. It should write the header alone, or warn that the collapse was dropped.",
+   "fix": [
+    "packages/diagram-formats/src/graphWrite.ts"
+   ],
+   "size": "function",
+   "cause": "`collapsed` is never consulted when rows are flattened to lines",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14
+   ],
+   "sources": {
+    "claude": [
+     14
+    ]
+   }
+  },
+  {
+   "id": "D45",
+   "claim": "sortedPage sorts with localeCompare, which ties distinct ids, so the comparison can fail spuriously",
+   "where": "packages/diagram-formats/src/testing/samePage.ts:5 (byId)",
+   "severity": "low",
+   "scenario": "The property tests draw ids from `oddText`, whose `ODD` set includes U+200B (zero-width space). Under ICU collation, `'a\\u200b'.localeCompare('a') === 0`. Two such nodes or edges keep their input order, so a writer and a reader that list them in different orders compare as unequal even though the same items are on the page. Member lists are sorted by code unit (`.sort()`), so only the top-level lists are affected.",
+   "size": "line",
+   "cause": "collation order used where a total code-unit order is needed",
+   "confidence": "likely",
+   "firstOccasion": 14,
+   "sightings": [
+    14,
+    16
+   ],
+   "sources": {
+    "claude": [
+     14,
+     16
+    ]
+   }
+  },
+  {
+   "id": "D46",
+   "claim": "documentFromScene strips colors against opts.theme but does not record that theme, so writers re-default the stripped colors from the night theme",
+   "where": "packages/diagram-formats/src/fromScene.ts:93 (documentFromScene)",
+   "severity": "medium",
+   "scenario": "a scene with no `diagram:theme` key, exported with `documentFromScene(scene, { theme: paper })`. `readShape`/`readEdge`/`readRegion` drop every color equal to the paper theme's (`ownColors` against `themed`), and the result has no `theme` because `themeValue` is undefined. `graphOut` (DOT, Mermaid) then resolves styles with `diagramThemeFrom(doc.theme)`, which is the night theme, and writes night colors. JSON round-trips the same way, and `documentSpecs` redraws it in night. Every color the author saw in paper is lost. The fix is to set `theme` to `opts.theme`'s id or value when the scene names none.",
+   "fix": [
+    "packages/diagram-formats/src/fromScene.ts"
+   ],
+   "size": "line",
+   "cause": "the theme colors are read against is never written into the document",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D47",
+   "claim": "DOT reader leaves HTML entities literal in plain quoted labels, where Graphviz decodes them",
+   "where": "packages/diagram-formats/src/dot/values.ts:36 (labelLines)",
+   "severity": "low",
+   "scenario": "`a [label=\"Fish &amp; Chips\"]` or `label=\"&#169; 2026\"` → node line reads `Fish &amp; Chips` / `&#169; 2026`; Graphviz's `make_label` runs `htmlEntityUTF8` over every non-HTML label, so it draws `Fish & Chips` / `© 2026`. Only HTML labels (`<...>`) go through `decodeEntities`. Same for edge labels, `taillabel`/`headlabel`, cluster and graph labels, all of which go through `labelLines`. The writer has the mirror gap: a line whose text is literally `&amp;` is written raw and Graphviz draws `&`.",
+   "fix": [
+    "packages/diagram-formats/src/dot/values.ts",
+    "packages/diagram-formats/src/graphRead.ts"
+   ],
+   "size": "function",
+   "cause": "entity decoding applied to HTML labels only",
+   "confidence": "likely",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D48",
+   "claim": "DOT HTML labels decode only six named entities",
+   "where": "packages/diagram-formats/src/graphRead.ts:33 (NAMED / decodeEntities)",
+   "severity": "low",
+   "scenario": "`label=<caf&eacute; &mdash; &copy;>` → line reads `caf&eacute; &mdash; &copy;`; Graphviz supports the full HTML 4 entity table and draws `café — ©`. Any named entity beyond amp/lt/gt/quot/apos/nbsp is left as written.",
+   "size": "line",
+   "cause": "incomplete named-entity table",
+   "confidence": "sure",
+   "firstOccasion": 16,
+   "sightings": [
+    16
+   ],
+   "sources": {
+    "claude": [
+     16
+    ]
+   }
+  },
+  {
+   "id": "D49",
+   "claim": "DOT invisible nodes are read before filtering, so warnings are raised about the shapes, outlines, colors and sizes of nodes that are dropped anyway",
+   "where": "packages/diagram-formats/src/dot/read.ts:374 (readDot)",
+   "severity": "low",
+   "scenario": "`digraph { a [style=invis, shape=star, color=\"/blues9/3\"] }`. `readNode` runs for every node before `unseen` is computed. The result carries \"DOT shapes read as rectangles: star\", \"DOT colors a diagram cannot draw were dropped: /blues9/3\" and \"DOT invisible nodes and edges were left out: a\". The first two describe changes to a node that is never in the document. Only the invisible-node warning should appear. Filtering `unseen` before mapping `readNode` fixes it. That needs `positions` fed the invisible nodes' sizes separately, since Graphviz's `pos`/bbox include them.",
+   "fix": [
+    "packages/diagram-formats/src/dot/read.ts"
+   ],
+   "size": "function",
+   "cause": "read-then-filter order",
+   "confidence": "sure",
+   "firstOccasion": 18,
+   "sightings": [
+    18
+   ],
+   "sources": {
+    "claude": [
+     18
+    ]
+   }
+  },
+  {
+   "id": "D50",
+   "claim": "documentFromScene silently drops a plot root nested inside a group or container on a graph page",
+   "where": "packages/diagram-formats/src/fromScene.ts:102 (documentFromScene)",
+   "severity": "medium",
+   "scenario": "a sequence root that is a child of a container on page 1. `pageRootsOf` counts only content roots, so page 1 stays a graph page. Its `kindOf` is `'sequence'`, and the loop `continue`s without setting `bucket.sequence` because `roots.get(page.id)?.id !== node.id`. A nested plot root has `kindOf` `null` and is skipped too. The container's `membersOf` takes only shapes and containers. So the chart or sequence disappears from the exported document, and every format writes it out without a warning. `documentFromScene` has no warnings channel to report it. The doc comment says only that the page stays a graph page, not that the content is deleted.",
+   "fix": [
+    "packages/diagram-formats/src/fromScene.ts",
+    "packages/diagram-formats/src/pageRoots.ts"
+   ],
+   "size": "design",
+   "cause": "nested roots match no reader and have no warning path",
+   "confidence": "likely",
+   "firstOccasion": 18,
+   "sightings": [
+    18
+   ],
+   "sources": {
+    "claude": [
+     18
+    ]
+   }
+  },
+  {
+   "id": "D51",
+   "claim": "DOT grayN/greyN values differ from Graphviz by one for some N (gray50, gray90)",
+   "where": "packages/diagram-formats/src/dot/values.ts:79 (x11Color)",
+   "severity": "low",
+   "scenario": "`color=gray50`: the formula `Math.round(50 * 2.55)` = `Math.round(127.5)` = 128 gives `#808080`, but Graphviz's X11 table (rgb.txt) has gray50 = 127 (`#7f7f7f`). The same happens for gray90: the formula gives 230 (`#e6e6e6`) where the table has 229 (`#e5e5e5`). Other levels match (gray10 = 26, gray30 = 77, gray70 = 179), so a rounding formula cannot reproduce the table. The file header says `x11.ts` comes from rgb.txt; the gray ramp should come from it too, as a table.",
+   "fix": [
+    "packages/diagram-formats/src/dot/x11.ts"
+   ],
+   "size": "function",
+   "cause": "formula in place of rgb.txt table",
+   "confidence": "likely",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
+  },
+  {
+   "id": "D52",
+   "claim": "JSON reader passes plot page data through without checking it",
+   "where": "packages/diagram-formats/src/jsonFormat.ts:28 (pageProblem)",
+   "severity": "low",
+   "scenario": "`{\"kind\":\"sequence\", ..., \"data\":{}}` or a plot page whose `data` lacks its kind and series. `pageProblem` checks only that `data` is an object (graph pages get their lists checked). `read` succeeds, and a TypeError is thrown later, deep in `sequenceLayout` or `plotSpecs`, when the document is opened. The reader should report it the way it reports a graph page with no `nodes` list.",
+   "size": "function",
+   "cause": "validation covers graph pages only",
+   "confidence": "likely",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
+  },
+  {
+   "id": "D53",
+   "claim": "A scene of a diagram type with no notation (network, bpmn, orgChart) reopens as a flowchart after a document round trip",
+   "where": "packages/diagram-formats/src/fromScene.ts:132 (documentFromScene), packages/diagram-formats/src/toScene.ts:150 (typeOfGraphs)",
+   "severity": "medium",
+   "scenario": "a scene whose `diagram:type` is `network` (catalog.ts declares no `notations` for network, bpmn, orgChart) → `documentFromScene` asks `diagramNotationOf(s)`, which falls back to `FLOWCHART_NOTATION`, so the page gets no `notation` → write as Diagram JSON and read it back → `documentSpecs` → `typeOfGraphs` → `diagramTypeOfNotation(undefined)` = the flowchart type → the scene opens with `diagram:type` flowchart and flowchart stencils. The native format is said to carry everything the model holds, but the type is lost. `graphTemplate` (templates/catalog.ts:37) has the same gap: a network template page carries `notation: 'flowchart'`, so `documentSpecs` of it alone would also name flowchart (templateSpecs hides this by overwriting the doc key).",
+   "fix": [
+    "packages/diagram-formats/src/document.ts",
+    "packages/diagram-formats/src/jsonFormat.ts",
+    "packages/diagram-formats/src/toScene.ts"
+   ],
+   "size": "design",
+   "cause": "diagram type carried only through page notation, which some types lack",
+   "confidence": "likely",
+   "firstOccasion": 20,
+   "sightings": [
+    20
+   ],
+   "sources": {
+    "claude": [
+     20
+    ]
+   }
+  },
+  {
+   "id": "D54",
+   "claim": "A pool nested in a container is left out of the container's members on export",
+   "where": "packages/diagram-formats/src/sceneReaders.ts:283 (membersOf)",
+   "severity": "low",
+   "scenario": "a pool placed inside a container (authoredScene's `parent` allows it) → `readRegion` for the container lists only shapes and role-`container` regions, so the pool is not a member → reimported, the pool sits outside the container and the container fits without it.",
+   "size": "line",
+   "cause": "role filter excludes `pool`",
+   "confidence": "likely",
+   "firstOccasion": 20,
+   "sightings": [
+    20
+   ],
+   "sources": {
+    "claude": [
+     20
+    ]
+   }
+  },
+  {
+   "id": "D55",
+   "claim": "DOT writer writes an unparseable color paint raw and without a warning, so the color is silently lost on the round trip",
+   "where": "packages/diagram-formats/src/dot/write.ts:43 (color)",
+   "severity": "low",
+   "scenario": "a node with `colors: { fill: 'var(--brand)' }` (or any string `tryParseColor` rejects). `hexColor` returns it unchanged, `color()` writes `fillcolor=\"var(--brand)\"` with no warning, Graphviz reads it as an unknown color (black/warning), and `readDot` drops it with \"DOT colors a diagram cannot draw were dropped\". The writer should warn (or omit) where the reader already does.",
+   "fix": [
+    "packages/diagram-formats/src/graphWrite.ts"
+   ],
+   "size": "line",
+   "cause": "unparseable colors pass through hexColor unchecked",
+   "confidence": "likely",
+   "firstOccasion": 21,
+   "sightings": [
+    21
+   ],
+   "sources": {
+    "claude": [
+     21
+    ]
+   }
   }
- ]
+ ],
+ "lines": 3583
 }
