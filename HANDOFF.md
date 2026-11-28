@@ -4,26 +4,16 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## In flight (2026-11-27 evening)
+## In flight (2026-11-28)
 
-- **Scour fix runs 9, 11, 12 and 15 are on main** (batch `batch/2026-11-28-scour15`, gated green at 61beae2354,
-  pushed as 88658f8cbe). Their branches are deleted.
-- **Fix run 14 (`animator.engine`) is skulkr's to land**, through `skulkr scour fix animator.engine --land` under
-  `~/.local/state/weasel-skulkr/merge.lock`. Don't fast-forward main while that lock is held. The skulkr session
-  coordinating it is `skulkr-e0`. Its branches are `scour14-*` and `batch/2026-11-28-scour14`; leave them alone.
-- **Local main is ahead of origin with the quantity tones work, unpushed** (`git log --oneline origin/main..main`).
-  On Mike's say-so, the quantity-tones session fast-forwarded main to it directly, outside a batch, while skulkr's
-  lock was held. A fleet run selected from the diff passed at 94ba62c976. The story commits after it got only
-  targeted runs, and none got a full batch gate. skulkr's landing merges a moved main into its batch and gates
-  again (`gateRun.mjs` catchUpWithMain), so fix run 14's second gate covers the tones work. Pushing main is Mike's
-  call.
-- Run 13 (`SceneCanvas.part2`) left no branches in this checkout.
-- **A session in its own iTerm tab is building the gate rework** (worktree `.worktrees/test-ledger`, branch
-  `test-ledger`), on Mike's "both, gogogo" (2026-11-27). The design has two parts. A pass ledger records each test
-  file's pass under a fingerprint of everything it depends on, so a rerun after a failure skips what already
-  passed. Name-level selection traces each imported name through barrel re-exports, so a narrow fix selects only
-  the tests that use what it changed. A daily full run of main is the safety net. The branch ships with
-  before/after numbers. It will message the controller when ready; merge it through a batch.
+- **Batch `batch/2026-11-28` (worktree `.worktrees/batch-2026-11-28`) holds `outline-mask`**: `outline.mask`, so
+  shapes painted in front cover a selection outline, plus the fix for `check:numeric`, which fails on main
+  (`BandEditor.stories.module.css`). Its `test:batch` run is at ea803bf04a. Green: fast-forward main, tell
+  `skulkr-e0` to set `mask: true` in skulkr's `Treemap.tsx`, and delete the batch and `outline-mask` worktrees and
+  branches. test-ledger's `80814dcd6b` fixes the same stylesheet; drop it from that branch when it batches.
+- **The test-gate rework is unfinished on `test-ledger`** (worktree `.worktrees/test-ledger`; session
+  `test-ledger-39`, which stopped at a usage limit). What is left is in that branch's `HANDOFF.md`, "test-ledger
+  branch". It touches build tooling, so its batch gets a full run. The daily run's launchd install needs Mike's go.
 
 ## Decisions taken in conversation and not visible in the code
 
