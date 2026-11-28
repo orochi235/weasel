@@ -61,3 +61,11 @@ describe('a stroke that paints no line but carries a marker', () => {
     expect(pathCommand(line, null, { width: 2 }, undefined)).not.toHaveProperty('stroke');
   });
 });
+
+describe('hasStroke of an infinite width', () => {
+  it('finds nothing to outline in a stroke the renderer draws no line for', () => {
+    expect(hasStroke({ paint, width: Infinity })).toBe(false);
+    expect(hasStroke({ paint, width: { px: Infinity } })).toBe(false);
+    expect(hasStroke({ paint, width: 2 })).toBe(true);
+  });
+});

@@ -39,3 +39,29 @@ describe('strokedPoseBox', () => {
     expect(wide.y).toBeLessThan(thin.y);
   });
 });
+
+describe('strokedBounds of a stroke that draws no line', () => {
+  it('is null for an infinite width, heads included', () => {
+    for (const width of [Infinity, { px: Infinity }]) {
+      expect(strokedBounds(LINE, { paint: PAINT, width }, 1)).toBeNull();
+      expect(strokedBounds(LINE, { paint: PAINT, width, markerEnd: { key: 'arrow', size: 4 } }, 1)).toBeNull();
+    }
+  });
+
+  it('holds only the heads of a stroke with no paint', () => {
+    const b = strokedBounds(LINE, { width: 20, markerEnd: { key: 'arrow', size: 4 } }, 1)!;
+    const painted = strokedBounds(LINE, { paint: PAINT, width: 20, markerEnd: { key: 'arrow', size: 4 } }, 1)!;
+    expect(b.x).toBeGreaterThan(50);
+    expect(b.height).toBeLessThan(painted.height);
+  });
+});
+
+describe('strokedBounds of a path far from the origin', () => {
+  it('stays within the view tolerance of the stroke', () => {
+    const x = 1e5;
+    const ring = new PathBuilder().moveTo(x, 0).lineTo(x + 100, 0).lineTo(x + 100, 100).lineTo(x, 100).close().build();
+    const b = strokedBounds(ring, { paint: PAINT, width: 2 }, 10)!;
+    expect(b.x).toBeGreaterThan(x - 1 - 0.1);
+    expect(b.x + b.width).toBeLessThan(x + 101 + 0.1);
+  });
+});

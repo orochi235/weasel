@@ -1,5 +1,6 @@
 import { boundsOfPath, poseFrameOf, strokedBounds, type Path } from '@weasel-js/core';
 import { kitStroke } from './strokeOutlineSvg';
+import { corePaint } from './readPaint';
 import { type Matrix, type SvgNode, type SvgStroke, IDENTITY_MATRIX } from './types';
 import { multiply } from './transform';
 import type { Rect } from '@weasel-js/geom';
@@ -49,9 +50,9 @@ type Box = { minX: number; minY: number; maxX: number; maxY: number };
  *  at one document unit per pixel, the scale the root draws at without a `width`. */
 function inked(path: Path, b: Box, stroke: SvgStroke | undefined): Box {
   if (!stroke) return b;
-  const kit = kitStroke(stroke);
-  // SVG draws markers under `stroke="none"` too; an inner stroke boxes only them.
-  const ink = strokedBounds(path, stroke.paint.kind === 'none' ? { ...kit, align: 'inner' } : kit, 1);
+  // SVG draws markers under `stroke="none"` too; a stroke with no paint boxes only them.
+  const paint = corePaint(stroke.paint);
+  const ink = strokedBounds(path, paint ? { ...kitStroke(stroke), paint } : kitStroke(stroke), 1);
   if (!ink) return b;
   return {
     minX: Math.min(b.minX, ink.x),

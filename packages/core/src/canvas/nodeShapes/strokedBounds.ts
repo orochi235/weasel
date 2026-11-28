@@ -1,7 +1,7 @@
 import { boundsOfPath, DEFAULT_FLATTEN_TOLERANCE, type Path } from '@weasel-js/geom';
 import { resolveScreenLength, scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import {
-  markerHeads, strokeAtScale, strokeInsets, tessellateStroke,
+  markerHeads, strokeAtScale, strokeInsets, tessellateStroke, widthHasInk,
   type InsetLength, type ScreenSpace, type StrokeSpaces,
 } from '@weasel-js/stroke';
 import { DEFAULT_FLATTEN_TOLERANCE_PX, resolveStrokeLengths, type GlMat3, type StrokedPathCommand } from '@weasel-js/renderer';
@@ -14,7 +14,8 @@ import { strokeOutsetPerAxis } from './nodePaint';
  * The box `stroke` covers along `path`, from the ribbon the renderer draws:
  * joins, caps, dashes, and per-vertex widths as tessellated, and marker heads.
  * An inner stroke stays inside the path, and an outer one reaches as far out as
- * a centered stroke twice as wide. `null` when the stroke paints nothing.
+ * a centered stroke twice as wide, and one with no paint covers only its
+ * heads. `null` when the stroke paints nothing.
  *
  * With `screen` (see `NodeInkCtx.screen`), each screen-sized part is built the
  * way the renderer builds it under that map, so a `{ px }` stroke is exact in
@@ -23,11 +24,11 @@ import { strokeOutsetPerAxis } from './nodePaint';
 export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?: ScreenMap): Bounds | null {
   const { sized, spaces } = screen ? onScreen(path, stroke, screen) : atScale(stroke, scale);
   const width = resolveScreenLength(sized.width ?? 1, 1);
-  if (!(width > 0)) return null;
+  if (!widthHasInk(width)) return null;
   const box = new Box();
   const align = stroke.align ?? 'center';
   const tolerance = flattenFor(path, scale);
-  if (align !== 'inner') {
+  if (align !== 'inner' && stroke.paint != null) {
     const k = align === 'outer' ? 2 : 1;
     const insets = strokeInsets(sized, width);
     const mesh = tessellateStroke(
@@ -53,8 +54,8 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
   return box.bounds();
 }
 
-/** Below this fraction of a path's size, a coordinate stored as float32 has no more to say. */
-const FINEST = 2 ** -16;
+/** Below this fraction of a coordinate's magnitude, float32 has no more to say: half its 24-bit significand's last place. */
+const FINEST = 2 ** -24;
 
 /**
  * The tolerance to flatten `path` to for its box, and how far to grow the box
