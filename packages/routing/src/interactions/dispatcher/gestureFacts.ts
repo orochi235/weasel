@@ -65,8 +65,8 @@ export function createGestureFacts(): GestureFactsStore {
       if (event.kind === 'multitouch' && event.spread !== undefined) {
         startSpreads.set(gestureId, event.spread);
       }
-      if (event.kind === 'multitouch' && event.angle !== undefined) {
-        turns.set(gestureId, { last: event.angle, total: 0 });
+      if (event.kind === 'multitouch') {
+        turns.set(gestureId, { last: event.angle ?? NaN, total: 0 });
       }
     },
     sample(gestureId, event) {

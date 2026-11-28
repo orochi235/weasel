@@ -58,4 +58,12 @@ describe('InvocationCtx.multiTouch.rotation', () => {
     dispatcher.handleInput({ kind: 'multitouch', fingers: 2, end: 'commit', ...MODS }, ctx);
     expect(seen).toEqual([0, 45, 45]);
   });
+
+  it('turns from the first angle when the gesture opened on an event with none', () => {
+    const { seen, ctx, dispatcher } = setup();
+    dispatcher.handleInput({ kind: 'multitouch', fingers: 2, centroid: { x: 0, y: 0 }, spread: 100, ...MODS }, ctx);
+    dispatcher.handleInput(twoFingers(10), ctx);
+    dispatcher.handleInput(twoFingers(40), ctx);
+    expect(seen).toEqual([0, 0, 30]);
+  });
 });
