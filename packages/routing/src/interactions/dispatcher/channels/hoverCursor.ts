@@ -47,9 +47,17 @@ function cursorOverride(
   cursorSink: () => CursorSink | undefined,
 ): { apply(spec: CursorSpec | null): void; clear(): void } {
   const ownSink = createCursorSink({ element: () => canvas, painted: paintedCursor });
+  let wrote: CursorSink | null = null;
+  // The surface's sink can arrive after the first write, which must not stay on the sink it left.
+  const sink = (): CursorSink => {
+    const next = cursorSink() ?? ownSink;
+    if (wrote !== null && wrote !== next) wrote.setOverride(null);
+    wrote = next;
+    return next;
+  };
   return {
-    apply: (spec) => (cursorSink() ?? ownSink).setOverride(spec === null ? null : resolveCursor(spec)),
-    clear: () => (cursorSink() ?? ownSink).setOverride(null),
+    apply: (spec) => sink().setOverride(spec === null ? null : resolveCursor(spec)),
+    clear: () => sink().setOverride(null),
   };
 }
 
