@@ -41,7 +41,7 @@ const isVitestFile = (path) => {
   );
 };
 
-const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' });
+const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 });
 
 const projectsInTestScript = () => {
   const { scripts } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
