@@ -88,6 +88,17 @@
    "at": "2026-11-27T23:58:28.659Z",
    "matcher": "claude-opus-5-5",
    "findings": 1
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 2.6538812000000003,
+   "minutes": 7.078283333333333,
+   "at": "2026-11-28T00:23:20.362Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
   }
  ],
  "defects": [
@@ -108,13 +119,15 @@
    "sightings": [
     1,
     2,
-    3
+    3,
+    6
    ],
    "sources": {
     "claude": [
      1,
      2,
-     3
+     3,
+     6
     ]
    }
   },
@@ -124,18 +137,20 @@
    "where": "packages/text/src/layout/layoutRuns.ts:244 (layoutRuns, `reads`)",
    "severity": "low",
    "scenario": "take `\"שלום\\n\\nעולם\"` with `align: 'start'` (or `'end'`), `direction: 'auto'` and a bidi engine. The empty middle line gets `reads = directionOfLevel(0)`, which is `'ltr'`, because `line.entries.length === 0`. `alignOffset` then sets its zero-width box (`x0 === x1`, the line's only caret stop) at the left edge, while both neighboring lines sit at the right edge. The caret on the empty line jumps to the opposite side of the box. Expected: an empty line takes the direction of the text around it (the previous paragraph's, or the first resolved one) rather than defaulting to LTR.",
-   "size": "line",
+   "size": "function",
    "cause": "blank line has no paragraph, defaults to level 0",
    "confidence": "likely",
    "firstOccasion": 1,
    "sightings": [
     1,
-    5
+    5,
+    6
    ],
    "sources": {
     "claude": [
      1,
-     5
+     5,
+     6
     ]
    },
    "fix": [
@@ -153,11 +168,13 @@
    "confidence": "likely",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    6
    ],
    "sources": {
     "claude": [
-     1
+     1,
+     6
     ]
    }
   },
@@ -175,11 +192,13 @@
    "confidence": "likely",
    "firstOccasion": 2,
    "sightings": [
-    2
+    2,
+    6
    ],
    "sources": {
     "claude": [
-     2
+     2,
+     6
     ]
    }
   },
@@ -356,6 +375,29 @@
    "sources": {
     "claude": [
      4
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "Underline, strikethrough and overline extend across a wrapped line's trailing spaces, past the aligned edge",
+   "where": "packages/text/src/layout/decorationMetrics.ts:120 (lineDecorations, `add`)",
+   "severity": "medium",
+   "scenario": "an underlined English paragraph, `wrap` on, `align: 'right'` or `'center'`, e.g. \"hello world again\" wrapping after \"hello \". The space that closes line 1 is in the same run and has a paint, so `add` joins it into the stretch and the rule runs to `g.x + g.step` of that space. `placeLine` hangs the space past the aligned edge (`hungWidth`), so the rule sticks out one space past the right edge of the box (and on the left in an RTL paragraph, where `hangsLeft` places the space). Every wrapped line of decorated text gets a rule tail with no ink above it. CSS's default (`text-decoration-skip-spaces: start end`) leaves spaces at the start and end of a line undecorated. The rule should stop at the line's last ink, i.e. leave out what `hungWidth` counts as hanging, and the same goes for leading white space.",
+   "fix": [
+    "packages/text/src/layout/decorationMetrics.ts",
+    "packages/text/src/layout/paintRuns.ts"
+   ],
+   "size": "function",
+   "cause": "rule built from pen positions with no notion of hung white space",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
     ]
    }
   }
