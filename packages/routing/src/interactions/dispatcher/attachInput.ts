@@ -13,6 +13,7 @@ import { carryInput } from './channels/carry';
 import { contextMenuInput } from './channels/contextMenu';
 import { hoverCursorInput, type HoverCursorInput } from './channels/hoverCursor';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
+import { pasteInput } from './channels/paste';
 import { keyboardInput } from './channels/keyboard';
 import { joinSurface } from './channels/keyPeers';
 import { listenerSet, type ListenerSet } from './channels/listeners';
@@ -140,7 +141,7 @@ export function attachInput(
     listeners.on(canvas, 'dragover', ingest.onDragOver);
     listeners.on(canvas, 'dragleave', ingest.onDragLeave);
     listeners.on(canvas, 'drop', ingest.onDrop);
-    listeners.on(win, 'paste', ingest.onPaste);
+    listeners.on(win, 'paste', pasteInput(core));
   }
   const offCarry = channels.carry ? carryInput(core) : null;
   const releaseSurface = canvas ? holdSurface(canvas, channels) : null;

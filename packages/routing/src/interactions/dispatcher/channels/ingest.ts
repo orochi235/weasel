@@ -1,15 +1,13 @@
 /**
- * External-content ingestion: an OS drop on the canvas, a paste on window.
+ * External-content ingestion: an OS drop on the canvas.
  * Items are materialized during the event, since a DataTransfer is only live
  * on the event stack; dispatch happens when materialization resolves.
  */
-import { itemsFromClipboardData, itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
+import { itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
 import { isNode } from '@weasel-js/gestures';
-import { isEditableTarget } from '../../keyHelpers';
 import { eventTaken, takeEvent, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { dropPreview } from './dropPreview';
-import { inModalOver } from './modal';
 
 /** Toggled on the canvas while an OS drag hovers it; consumers style it. */
 export const DROPOVER_CLASS = 'weasel-dropover';
@@ -18,7 +16,6 @@ export function ingestInput(core: DispatchCore): {
   onDragOver: (e: DragEvent) => void;
   onDragLeave: (e: DragEvent) => void;
   onDrop: (e: DragEvent) => void;
-  onPaste: (e: ClipboardEvent) => void;
   /** Take down a drag's preview, for teardown. */
   endPreview: () => void;
 } {
@@ -104,27 +101,5 @@ export function ingestInput(core: DispatchCore): {
     });
   };
 
-  const onPaste = (e: ClipboardEvent) => {
-    // Text-editing surfaces (inputs, the text-edit overlay) own their own
-    // paste — never steal it for scene ingestion.
-    if (e.defaultPrevented || isEditableTarget(e.target) || inModalOver(e.target, core.canvas)) return;
-    // Every dispatcher hears paste on window; only the one holding the keys acts.
-    if (!core.holdsKeys()) return;
-    const cd = e.clipboardData;
-    if (!cd) return;
-    const items = itemsFromClipboardData(cd);
-    if (items.length === 0) return;
-    // Wheel's shape: dispatch first, suppress the default only when a
-    // binding claimed it. Clipboard items materialize synchronously, so
-    // unlike `onDrop` the result is known while `preventDefault` is still
-    // honored — and a paste no binding wanted stays the page's to handle.
-    const result = dispatch({
-      kind: 'paste', items,
-      // ClipboardEvent carries no modifier state.
-      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
-    });
-    if (result === 'handled') e.preventDefault();
-  };
-
-  return { onDragOver, onDragLeave, onDrop, onPaste, endPreview: preview.end };
+  return { onDragOver, onDragLeave, onDrop, endPreview: preview.end };
 }
