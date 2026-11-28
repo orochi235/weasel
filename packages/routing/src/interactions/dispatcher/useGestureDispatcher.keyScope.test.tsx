@@ -272,6 +272,19 @@ describe('a key that reaches the page', () => {
     expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
   });
 
+  it('leaves the keys where they are when a canvas with its keyboard off claims them on mount', () => {
+    const a = vi.fn();
+    const b = vi.fn();
+    render(
+      <Root>
+        <InputScope><Canvas name="a" run={a} claimKeys /></InputScope>
+        <InputScope><Canvas name="b" run={b} claimKeys keyboard={false} /></InputScope>
+      </Root>,
+    );
+    press();
+    expect([a.mock.calls.length, b.mock.calls.length]).toEqual([1, 0]);
+  });
+
   it('stays with a canvas that claims the keys when the registry it dispatches on changes', () => {
     const run = vi.fn();
     function Claiming({ registry }: { registry: ActionsRegistry }): ReactNode {

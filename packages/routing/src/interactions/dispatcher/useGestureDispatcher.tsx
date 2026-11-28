@@ -134,8 +134,8 @@ export function useDispatcherIn(opts: UseGestureDispatcherOptions, activeTool: D
 
   useKeyLease(actions, enabled);
   useEffect(() => {
-    if (enabled && claimKeys) actions.activate();
-  }, [enabled, claimKeys, actions]);
+    if (enabled && claimKeys) actions.activate({ keys: keyboard !== false });
+  }, [enabled, claimKeys, keyboard, actions]);
 
   useEffect(() => {
     if (!enabled) return;
