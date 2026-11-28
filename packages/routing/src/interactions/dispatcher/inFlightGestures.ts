@@ -114,8 +114,14 @@ export function createInFlightGestures(changed: () => void = () => {}): InFlight
   };
 }
 
-/** Whether a handle carries no gesture-processing callbacks or preview data:
- *  the invoker decided at runtime not to engage. */
+/** What a handle can carry that the dispatcher or the canvas reads while it is in flight. */
+const ENGAGING: readonly (keyof OngoingHandle)[] = [
+  'kind', 'cursor', 'onMove', 'onEnd', 'onWheel', 'subscribe', 'overlay',
+  'previewIds', 'previewPose', 'previewData', 'previewOpaqueIds',
+];
+
+/** Whether a handle carries nothing the dispatcher or the canvas reads while
+ *  it is in flight: the invoker decided at runtime not to engage. */
 export function isEmptyOngoingHandle(h: OngoingHandle): boolean {
-  return !h.onMove && !h.onEnd && !h.overlay && !h.previewIds && !h.previewPose;
+  return ENGAGING.every((key) => h[key] === undefined);
 }
