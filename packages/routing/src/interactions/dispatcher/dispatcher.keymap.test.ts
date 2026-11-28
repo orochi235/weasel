@@ -236,3 +236,26 @@ describe('the dispatcher with a keymap open', () => {
     expect(createDispatcher().resolveOnly({ kind: 'pointerdown', ...p } as InputEvent, ctx)).toBeNull();
   });
 });
+
+describe('the dispatcher with a keymap open and a text field focused', () => {
+  it('runs the field-enabled binding outside the keymap, not the keymap binding for the same chord', () => {
+    const stack = createKeymapStack();
+    const save = act('save');
+    const ctrlS = { kind: 'key', key: 's', mods: { ctrl: true } } as const;
+    save.defaultBinding = [{ spec: ctrlS, opts: { inFields: true } }];
+    const keymapSave = act('keymapSave');
+    const entry: Contribution<never> = {
+      id: 'loupe', eligibility: { keymap: true },
+      bindings: [{ spec: ctrlS, actionId: 'keymapSave', opts: { inFields: true } }],
+    };
+    stack.push('loupe', 'Loupe');
+    const ctx = makeCtx({
+      actions: makeRegistry([save, keymapSave]), entriesById: new Map([['loupe', entry]]), keymaps: stack,
+      keyReach: { held: true, over: false, field: true },
+    });
+    stack.batch(() => createDispatcher().handleInput({ kind: 'key', key: 's', ...mods, ctrlKey: true }, ctx));
+    expect(keymapSave.run.mock.calls.length).toBe(0);
+    expect(save.run.mock.calls.length).toBe(1);
+    expect(stack.open().map((k) => k.id)).toEqual(['loupe']);
+  });
+});

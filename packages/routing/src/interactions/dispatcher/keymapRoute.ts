@@ -64,6 +64,8 @@ export function routeThroughKeymap(
   if (!stack || !open || event.kind === 'hover') return undefined;
   const effects = passes.quiet ? NO_EFFECTS : stack;
   const isKey = event.kind === 'key' || event.kind === 'keyHeld';
+  // A chord typed in a text field is never a keymap's, and closes nothing.
+  if (isKey && ctx.keyReach?.field) return passes.run('none', event);
   // A key this surface hears only because the pointer is over it belongs to whoever holds the keys.
   if (isKey && ctx.keyReach && !ctx.keyReach.held) return undefined;
   if (!stillLive(open.id, ctx)) {
