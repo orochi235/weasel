@@ -47,8 +47,9 @@ export function createTracer(read: (file: string) => string): (resolve: ResolveI
       seen.add(`${at}#${name}`);
       const exp = mod.exports.get(name);
       if (exp?.kind === 'local') {
-        const imp = mod.imports.get(exp.local);
-        if (!imp) return `${at}#${exp.local}`;
+        const local = unaliased(mod, exp.local);
+        const imp = mod.imports.get(local);
+        if (!imp) return `${at}#${local}`;
         if (imp.imported === '*') return null;
         const next = await trace.target(imp.spec, at);
         return next ? declaring(next, imp.imported, depth + 1, seen) : null;
@@ -70,4 +71,14 @@ export function createTracer(read: (file: string) => string): (resolve: ResolveI
     };
     return trace;
   };
+}
+
+/** The name `local` is bound to through the module's chain of `const a = b` aliases. */
+function unaliased(mod: ModuleInfo, local: string): string {
+  const seen = new Set<string>();
+  while (!mod.imports.has(local) && mod.aliases.has(local) && !seen.has(local)) {
+    seen.add(local);
+    local = mod.aliases.get(local)!;
+  }
+  return local;
 }
