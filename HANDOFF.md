@@ -18,6 +18,12 @@ For the session picking this up: what is in flight and what has no other home. O
   again (`gateRun.mjs` catchUpWithMain), so fix run 14's second gate covers the tones work. Pushing main is Mike's
   call.
 - Run 13 (`SceneCanvas.part2`) left no branches in this checkout.
+- **A session in its own iTerm tab is building the gate rework** (worktree `.worktrees/test-ledger`, branch
+  `test-ledger`), on Mike's "both, gogogo" (2026-11-27). The design has two parts. A pass ledger records each test
+  file's pass under a fingerprint of everything it depends on, so a rerun after a failure skips what already
+  passed. Name-level selection traces each imported name through barrel re-exports, so a narrow fix selects only
+  the tests that use what it changed. A daily full run of main is the safety net. The branch ships with
+  before/after numbers. It will message the controller when ready; merge it through a batch.
 
 ## Decisions taken in conversation and not visible in the code
 
