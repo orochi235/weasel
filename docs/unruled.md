@@ -4407,3 +4407,9 @@ Calls the lanes made without a ruling:
 - 2026-11-27 (the fixer's call): `animator.cancel(handle)` cancels through `handle.cancel()`, so another animator's
   handle cancels its animation in that animator. Ignoring a handle this animator did not make was the alternative;
   nothing on a handle says which animator made it once a loop, stagger, or timeline rewraps it.
+
+## Audit scour fix eighteen (2026-11-28): select
+
+- 2026-11-28 (the fixer's call): `holderOf`, and `outermost` through it, throw a `RangeError` naming an id when
+  `parentOf` leads back to one the walk already passed, with no override. Stopping at the cycle and answering
+  `null` was the alternative; it would hide a broken tree as an unselected node.

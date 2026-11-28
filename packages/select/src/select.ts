@@ -54,7 +54,7 @@ export function rangeOf<K>(order: readonly K[], from: K, to: K, forceSingle: (id
   const a = order.findIndex((id) => sameId(id, from));
   const b = order.findIndex((id) => sameId(id, to));
   if (a < 0 || b < 0) return [];
-  return order.slice(Math.min(a, b), Math.max(a, b) + 1).filter((id) => !forceSingle(id));
+  return once(order.slice(Math.min(a, b), Math.max(a, b) + 1)).filter((id) => !forceSingle(id));
 }
 
 /** The selection after pressing `id` with `intent`. Returns `state` itself when nothing changes
@@ -63,7 +63,7 @@ export function select<K>(state: Selection<K>, id: K, intent: SelectIntent, cont
   const forceSingle = context.forceSingle ?? never;
   if (forceSingle(id)) intent = 'alone';
   if (intent === 'toggle') {
-    const kept = state.ids.filter((x) => !forceSingle(x));
+    const kept = once(state.ids).filter((x) => !forceSingle(x));
     return { ids: kept.includes(id) ? kept.filter((x) => !sameId(x, id)) : [...kept, id], anchor: id };
   }
   if (intent === 'range' && state.anchor !== null) {
