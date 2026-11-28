@@ -88,16 +88,19 @@ function gridTicks(lo: number, hi: number, interval: Interval): number[] {
   return out;
 }
 
-const pad = (n: number) => String(n).padStart(2, '0');
+const pad = (n: number, width = 2) => String(n).padStart(width, '0');
+/** An ISO 8601 year: four digits at least, so years before 1000 read and sort as years. */
+const isoYear = (year: number) => (year < 0 ? `-${pad(-year, 4)}` : pad(year, 4));
 
 /** `t` written to the precision of `unit`. */
 export function formatInstant(t: number, unit: TimeUnit): string {
   const d = new Date(t);
-  const month = `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}`;
+  const year = isoYear(d.getUTCFullYear());
+  const month = `${year}-${pad(d.getUTCMonth() + 1)}`;
   const date = `${month}-${pad(d.getUTCDate())}`;
   const time = `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
   switch (unit) {
-    case 'year': return String(d.getUTCFullYear());
+    case 'year': return year;
     case 'month': return month;
     case 'day': return date;
     case 'hour':

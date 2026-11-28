@@ -3,7 +3,7 @@ import { bandScale } from './band';
 import { formatNumber, linearScale, niceDomain, tickStep } from './linear';
 import { logScale } from './log';
 import { ordinalScale } from './ordinal';
-import { timeScale } from './time';
+import { formatInstant, timeScale } from './time';
 
 describe('linearScale', () => {
   const s = linearScale({ domain: [0, 100], range: [400, 0] });
@@ -296,5 +296,15 @@ describe('a time scale ticking by weeks', () => {
     expect(ticks[1]! - ticks[0]!).toBe(7 * 24 * 3600 * 1000);
     expect(ticks.map((t) => new Date(t).getUTCDay())).toEqual(ticks.map(() => 1));
     expect(s.tickFormat()(ticks[0]!)).toBe('2026-11-02');
+  });
+});
+
+describe('a time scale before the year 1000', () => {
+  it('labels its years with four digits', () => {
+    const at = (year: number, month = 0) => new Date(0).setUTCFullYear(year, month, 1);
+    expect(formatInstant(at(50, 2), 'day')).toBe('0050-03-01');
+    expect(formatInstant(at(50), 'year')).toBe('0050');
+    expect(formatInstant(at(-50, 2), 'month')).toBe('-0050-03');
+    expect(formatInstant(at(2026), 'year')).toBe('2026');
   });
 });
