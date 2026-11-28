@@ -30,6 +30,7 @@ import { PATH_L, PATH_M, PATH_Z } from '@weasel-js/geom';
 import { effectivePoseFrom, previewPoseIn, previewSourcesFrom } from '@weasel-js/core';
 import { rotationHandleCommands } from './rotationBadge';
 import { createShapeOutliner, shapeOutlineCommands, viewScaleOf } from './shapeOutline';
+import { createOutlineMasker, maskedOutlineCommands, requireMaskScene, viewPaints } from './outlineMask';
 import {
   handleCommandsFor, rectPathFor, resolveHandles,
 } from './handleCommands';
@@ -49,13 +50,13 @@ const DEFAULT_OUTLINE: Required<Pick<CommandStroke, 'paint' | 'width'>> & { pad:
   width: 2,
   pad: 1,
 };
-function resolveOutlineStroke(opts?: CommandStroke & { pad?: number; follow?: unknown }): {
+function resolveOutlineStroke(opts?: CommandStroke & { pad?: number; follow?: unknown; mask?: unknown }): {
   stroke: CommandStroke;
   pad: number;
 } {
   // Everything the consumer set on the stroke reaches the renderer; only the
-  // paint and width take a default, and the layer's own `pad` / `follow` stay out.
-  const { pad, follow: _follow, ...rest } = opts ?? {};
+  // paint and width take a default, and the layer's own `pad` / `follow` / `mask` stay out.
+  const { pad, follow: _follow, mask: _mask, ...rest } = opts ?? {};
   return {
     stroke: {
       ...rest,
@@ -170,6 +171,10 @@ function buildSelectionLayer<TPose>(
     : null;
   const shapes = opts.outline?.follow === 'shape' ? opts.shapes ?? opts.scene : undefined;
   const shapeOutliner = shapes ? createShapeOutliner() : null;
+  if (opts.outline?.mask && !shapes) throw new Error("weasel: outline.mask needs outline.follow: 'shape'.");
+  const maskScene = opts.outline?.mask && shapes ? requireMaskScene(shapes) : null;
+  const masker = maskScene ? createOutlineMasker() : null;
+  const reachPx = resolveScreenLength(stroke.width ?? 1, 1);
   const rotationHandleDistance = passes.handles
     ? rotationBadgeOf(opts)?.distancePx ?? null
     : null;
@@ -221,12 +226,19 @@ function buildSelectionLayer<TPose>(
         let boxed = outlineIds as readonly string[];
         if (shapeOutliner && shapes) {
           const previews = previewSourcesFrom(data);
-          const traced = shapeOutliner.outline(boxed, {
+          const reads = {
             scene: shapes,
-            poseOf: (id) => effectivePoseFrom(data, id) ?? getPose?.(id as never) ?? shapes.get(id as NodeId)?.pose,
-            inFlight: (id) => previewPoseIn(previews, id) != null,
-          }, viewScaleOf(view));
-          for (const cmd of shapeOutlineCommands(traced.paths, stroke, view)) out.push(cmd);
+            poseOf: (id: string) => effectivePoseFrom(data, id) ?? getPose?.(id as never) ?? shapes.get(id as NodeId)?.pose,
+            inFlight: (id: string) => previewPoseIn(previews, id) != null,
+          };
+          const scale = viewScaleOf(view);
+          const traced = shapeOutliner.outline(boxed, reads, scale);
+          const cmds = masker && maskScene
+            ? maskedOutlineCommands(traced, stroke, view, masker.clips(traced.traced, traced.paths, {
+              ...reads, scene: maskScene, ...viewPaints(data, maskScene),
+            }, scale, reachPx))
+            : shapeOutlineCommands(traced.paths, stroke, view);
+          for (const cmd of cmds) out.push(cmd);
           boxed = traced.boxed;
         }
         for (const cmd of outlineCommandsFor(boxed, resolveTargetBounds, stroke, pad, view)) out.push(cmd);

@@ -15,7 +15,7 @@ import { offsetPath, strokeToPath } from '@weasel-js/stroke';
 import type { CommandStroke, Stroke } from '@weasel-js/paint';
 import type { NodeId } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
-import { inheritedPaintIn } from '@weasel-js/core/engine';
+import { inheritedPaintIn, type SceneNode } from '@weasel-js/core/engine';
 import { findShapeInk } from '@weasel-js/core';
 import { nodeOutline } from '@weasel-js/core';
 import { strokeRegion } from '@weasel-js/core';
@@ -42,6 +42,9 @@ interface Edge {
   edge: Path;
 }
 
+/** Each node's drawn edge, kept between frames by the builder that traced it. */
+export type EdgeCache = Map<string, Edge>;
+
 /**
  * A per-layer builder of shape outlines. It keeps each outlined node's drawn
  * edge between frames: growing a curved silhouette past its stroke costs
@@ -50,32 +53,58 @@ interface Edge {
  * move from the committed box to the previewed one.
  */
 export function createShapeOutliner(): {
-  /** World-space paths to stroke, and the ids that have no shape to follow. */
-  outline(ids: readonly string[], reads: ShapeOutlineReads, scale: number): { paths: Path[]; boxed: string[] };
+  /** World-space paths to stroke, the id each traces, and the ids that have no shape to follow. */
+  outline(ids: readonly string[], reads: ShapeOutlineReads, scale: number): { paths: Path[]; traced: string[]; boxed: string[] };
 } {
-  const edges = new Map<string, Edge>();
+  const edges: EdgeCache = new Map();
   return {
     outline(ids, reads, scale) {
       const paths: Path[] = [];
+      const traced: string[] = [];
       const boxed: string[] = [];
       for (const id of ids) {
         const edge = traceEdge(id, reads, scale, edges);
-        if (edge) paths.push(edge);
-        else boxed.push(id);
+        if (edge) {
+          paths.push(edge);
+          traced.push(id);
+        } else boxed.push(id);
       }
       if (edges.size > ids.length) {
         const live = new Set(ids);
         for (const id of edges.keys()) if (!live.has(id)) edges.delete(id);
       }
-      return { paths, boxed };
+      return { paths, traced, boxed };
     },
   };
 }
 
-function traceEdge(id: string, reads: ShapeOutlineReads, scale: number, edges: Map<string, Edge>): Path | null {
+function traceEdge(id: string, reads: ShapeOutlineReads, scale: number, edges: EdgeCache): Path | null {
   const { scene } = reads;
   const node = scene.get(id as NodeId);
   if (!node || node.kind === 'group' || holdsMembers(scene, id as NodeId)) return null;
+  const reach = inkReachOf(id, node, reads, scale);
+  return reach && edgeOfReach(id, reach, reads, scale, edges);
+}
+
+/** How far a node's ink reaches past its silhouette, read for one frame. */
+export interface InkReach {
+  silhouette: Path;
+  /** What an edge built from it is keyed on: the derived path, or the silhouette. */
+  key: Path;
+  pose: unknown;
+  inherited: unknown;
+  stroke: Stroke | undefined;
+  /** World units past the silhouette. */
+  distance: number;
+  open: boolean;
+}
+
+/** `node`'s silhouette and its ink's reach past it, or `null` when it has no
+ *  silhouette or is an open run with no ink. */
+export function inkReachOf(
+  id: string, node: SceneNode<unknown, string, unknown>, reads: ShapeOutlineReads, scale: number,
+): InkReach | null {
+  const { scene } = reads;
   const pose = reads.poseOf(id);
   const derivedPath = scene.derivedPathOf?.(id as NodeId) ?? null;
   const shapes = scene.shapes;
@@ -86,18 +115,26 @@ function traceEdge(id: string, reads: ShapeOutlineReads, scale: number, edges: M
   const distance = (ink?.outset ?? 0) + (ink?.outsetPx ?? 0) / scale;
   const open = isOpen(silhouette);
   if (open && distance <= 0) return null;
+  return { silhouette, key: derivedPath ?? silhouette, pose, inherited, stroke: ink?.stroke, distance, open };
+}
+
+/** The region a node's ink covers, its silhouette grown by `reach`: held in
+ *  `edges` while the shape and the reach stay as they were. */
+export function edgeOfReach(
+  id: string, reach: InkReach, reads: ShapeOutlineReads, scale: number, edges: EdgeCache,
+): Path | null {
+  const { silhouette, key, pose, inherited, distance, open } = reach;
   if (distance <= 0) {
     edges.delete(id);
     return silhouette;
   }
-  const key = derivedPath ?? silhouette;
   const held = edges.get(id);
   if (held && held.key === key && held.inherited === inherited && held.distance === distance) return held.edge;
   if (held && held.inherited === inherited && held.distance === distance && reads.inFlight(id)) {
     const carry = boxMove(held.pose, pose);
     if (carry) return transformPath(held.edge, carry);
   }
-  const edge = open ? inkBand(silhouette, ink?.stroke, pose, distance, scale) : offsetPath(silhouette, distance);
+  const edge = open ? inkBand(silhouette, reach.stroke, pose, distance, scale) : offsetPath(silhouette, distance);
   if (edge.kind === 'polygon' && edge.commands.length === 0) return null;
   edges.set(id, { key, pose, inherited, distance, edge });
   return edge;
@@ -137,8 +174,11 @@ function boxMove(from: unknown, to: unknown): Affine | null {
   return multiply(poseFrameOf(to) ?? identity(), multiply(box, unframe));
 }
 
-/** Screen-space commands stroking `paths` outward at `stroke`'s width in screen pixels. */
-export function shapeOutlineCommands(paths: readonly Path[], stroke: CommandStroke, view: View): DrawCommand[] {
+/** Screen-space commands stroking `paths` outward at `stroke`'s width in
+ *  screen pixels, painted only inside `clip`, a world-space path, when given. */
+export function shapeOutlineCommands(
+  paths: readonly Path[], stroke: CommandStroke, view: View, clip?: Path,
+): DrawCommand[] {
   if (paths.length === 0) return [];
   const w = stroke.width ?? 1;
   const ribbon: CommandStroke = {
@@ -149,6 +189,7 @@ export function shapeOutlineCommands(paths: readonly Path[], stroke: CommandStro
   return [{
     kind: 'group',
     transform: viewToMat3(view),
+    ...(clip ? { clip } : {}),
     children: paths.map((path) => ({ kind: 'path', path, stroke: ribbon })),
   }];
 }

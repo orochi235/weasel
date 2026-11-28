@@ -89,7 +89,7 @@ export type { TransformFinisher, TransformPreview } from '../interactions/action
 export { gestureReaders } from '../interactions/gestures/shared/screenTolerance';
 export type { GestureReaders } from '../interactions/gestures/shared/screenTolerance';
 export { transformOf } from '../affordances/hitAffordanceRegions';
-export { effectivePoseFrom, previewPoseIn, previewSourcesFrom } from '../canvas/drawEnvelope';
+export { effectivePoseFrom, previewPoseIn, previewSourcesFrom, sceneLayerPaintedFrom } from '../canvas/drawEnvelope';
 export { framedBounds } from '../core/geometry/poseDescriptor';
 export { angleOf, normalToWorld, targetCorners } from '../core/geometry/targetFrame';
 export { drawnPose, leafPath, pieceData, storePiece } from '../canvas/deps/pathLeaf';

@@ -291,6 +291,9 @@ const drawnScenes = createPart((scene: Scene<unknown, string, unknown>): DrawnBo
     childrenOf: (id) => scene.childrenOf(id),
     get layers() { return scene.layers; },
     shapes: nodeShapesOf(scene),
+    renderOrderNodes: () => scene.renderOrderNodes(),
+    getVersion: () => scene.getVersion(),
+    get overrides() { return scene.overrides; },
     derivedPathOf: (id) => {
       const node = scene.get(id);
       return node !== undefined && showsComputedPath(scene, node) ? pathOf(node) : null;

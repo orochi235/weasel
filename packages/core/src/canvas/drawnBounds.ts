@@ -34,6 +34,12 @@ export interface DrawnBoundsScene {
   derivedPathOf?(id: NodeId): Path | null;
   /** The painters its nodes are drawn with. Absent, `defaultNodeShapes`. */
   shapes?: NodeShapes;
+  /** Its nodes in paint order, bottom first, as `Scene.renderOrderNodes` answers. */
+  renderOrderNodes?(): readonly { readonly id: NodeId }[];
+  /** A number that changes whenever a node or layer does, as `Scene.getVersion` answers. */
+  getVersion?(): number;
+  /** Its presentation overrides, whose generation changes when one does without a version bump. */
+  readonly overrides?: { getGeneration(): number };
 }
 
 /** How {@link drawnBoundsOf} reads a node. */
