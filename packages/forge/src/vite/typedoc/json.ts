@@ -91,6 +91,8 @@ export interface TdReflection {
   packageName?: string;
   /** A package's version, on the module for each package when TypeDoc read several. */
   packageVersion?: string;
+  /** A class's or interface's `extends`. */
+  extendedTypes?: TdType[];
 }
 
 /** Where an export is: the names of the modules it is in, outermost first, and its own name. */
