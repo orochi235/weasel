@@ -2,9 +2,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import { API_EXPORT } from '../story/api';
 import type { ReadApi } from './apiTable';
-import { storyExports } from './propControls';
-import type { PropReader } from './propTypes';
+import { propControls, storyExports } from './propControls';
+import { createPropReader, type PropReader } from './propTypes';
 import type { TypedocDocs } from './typedoc';
+
+vi.mock('./propTypes', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('./propTypes')>();
+  return { ...actual, createPropReader: vi.fn(actual.createPropReader) };
+});
 
 const API: ReadApi = {
   props: [{ name: 'label', type: 'string', required: true }],
@@ -83,5 +88,22 @@ describe('storyExports', () => {
     expect(out.code).not.toContain(API_EXPORT);
     expect(warn).toHaveBeenCalledTimes(1);
     expect(warn.mock.calls[0]?.[0]).toContain('/repo/chip.stories.ts');
+  });
+});
+
+describe('propControls', () => {
+  it('warns when the TypeScript reader fails, and builds it again for the next story', async () => {
+    vi.mocked(createPropReader).mockRejectedValueOnce(new Error('bad tsconfig')).mockResolvedValueOnce(readerOf());
+    const file = '/repo/chip.stories.ts';
+    const plugin = propControls(() => [file], () => 'Chip', { controls: true, api: false }, {}, false);
+    (plugin.configResolved as (config: { root: string }) => void)({ root: '/repo' });
+    const warn = vi.fn();
+    const transform = plugin.transform as (this: unknown, code: string, id: string) => Promise<{ code: string } | undefined>;
+    const ctx = { warn, addWatchFile: vi.fn() };
+    await expect(transform.call(ctx, 'export default {};\n', file)).resolves.toBeUndefined();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('bad tsconfig'));
+    const out = await transform.call(ctx, 'export default {};\n', file);
+    expect(out?.code).toContain('export default {};');
+    expect(createPropReader).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,6 +1,6 @@
 import { type Stats, unwatchFile, watchFile } from 'node:fs';
-import { resolve } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
+import { posixResolve } from './posixPath.ts';
 import { PROP_ARG_TYPES_EXPORT } from '../csf/propArgTypes.ts';
 import { API_EXPORT } from '../story/api.ts';
 import { createPropReader, type PropControlsOptions, type PropReader } from './propTypes.ts';
@@ -128,7 +128,7 @@ export function propControls(
       reader = null;
       typedoc = undefined;
       if (typedocOptions !== false && readings.api) {
-        const file = resolve(root, typedocOptions.json ?? 'dist/typedoc.json');
+        const file = posixResolve(root, typedocOptions.json ?? 'dist/typedoc.json');
         typedoc = { file, ...typedocSource(file, typedocOptions.href) };
       }
     },
@@ -140,7 +140,16 @@ export function propControls(
     },
     async transform(code, id) {
       if (!stories().includes(id)) return undefined;
-      const props = await (reader ??= createPropReader(root, stories, options));
+      if (!reader) {
+        const building: Promise<PropReader | null> = createPropReader(root, stories, options).catch((err: unknown) => {
+          // Dropped, so the story after a fix to what broke it (often tsconfig.json) builds the reader again.
+          if (reader === building) reader = null;
+          this.warn(`prop controls and the API table are off for this story: the TypeScript reader failed: ${messageOf(err)}`);
+          return null;
+        });
+        reader = building;
+      }
+      const props = await reader;
       if (!props) return undefined;
       const added = storyExports(props, id, fallbackOf(id), readings, (message) => this.warn(message), typedoc);
       if (!added.code) return undefined;

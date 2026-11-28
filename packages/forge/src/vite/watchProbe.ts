@@ -3,13 +3,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { Plugin, ViteDevServer } from 'vite';
 import { messageOf } from '../messageOf.ts';
-import { LONGEST_TIMER_MS, WATCH_RECOVERY } from './watchRecovery.ts';
+import { LONGEST_TIMER_MS, WATCH_RECOVERY, type WatchRecoveryApi } from './watchRecovery.ts';
 
 /** Starts a watch on a directory and returns what stops it. */
 export type WatchDir = (dir: string, onEvent: () => void) => () => void;
 
 export interface FileEventsOptions {
-  /** How long to wait for the report, in milliseconds; past `2 ** 31 - 1`, and at `Infinity`, it waits until the report. Default 5000. */
+  /**
+   * How long to wait for the report, in milliseconds; past `2 ** 31 - 1`, and at `Infinity`, it waits until the report.
+   * Default 5000. A value below 0, or NaN, rejects with a `RangeError`.
+   */
   waitMs?: number;
   /** Default: `fs.watch`. */
   watch?: WatchDir;
@@ -31,6 +34,10 @@ const watchDir: WatchDir = (dir, onEvent) => {
  */
 export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEventsOptions = {}): Promise<boolean> {
   return new Promise((resolve, reject) => {
+    if (!(waitMs >= 0)) {
+      reject(new RangeError(`fileEventsArrive: waitMs must be 0 or more, got ${waitMs}`));
+      return;
+    }
     let dir: string;
     try {
       dir = mkdtempSync(join(tmpdir(), 'forge-watch-'));
@@ -65,6 +72,8 @@ export function fileEventsArrive({ waitMs = WAIT_MS, watch = watchDir }: FileEve
     };
     try {
       stop = watch(dir, () => settle(() => resolve(true)));
+      // A watch that reported before returning had no stopper yet for settle to call.
+      if (settled) stop();
     } catch {
       settle(() => resolve(false));
       return;
@@ -89,9 +98,10 @@ const SILENT =
   'without them, and so does the `watchRecovery()` plugin beside `watchProbe()`. ' +
   FSEVENTSD;
 
-const RECOVERING =
-  'so edits are found by their modification times instead: on the next request for the module, or within seconds ' +
-  'once the watcher is quiet, each logged as it is served. ' +
+const recovering = (sweeps: boolean) =>
+  'so edits are found by their modification times instead: on the next request for the module' +
+  (sweeps ? ', or within seconds once the watcher is quiet' : '') +
+  ', each logged as it is served. ' +
   FSEVENTSD;
 
 /** The plugin's name; forge leaves the probe to it when a server has one. */
@@ -112,9 +122,10 @@ export async function warnWhenWatchIsSilent(server: ViteDevServer, probe: () => 
     return;
   }
   if (arrived) return;
-  const recovering = server.config.plugins.some((p) => p.name === WATCH_RECOVERY);
+  // Only the first copy of the recovery plugin runs.
+  const recovery = server.config.plugins.find((p) => p.name === WATCH_RECOVERY) as Plugin<WatchRecoveryApi> | undefined;
   const lead = probe === fileEventsArrive ? UNREPORTED : PROBED;
-  server.config.logger.warn(lead + (recovering ? RECOVERING : SILENT));
+  server.config.logger.warn(lead + (recovery ? recovering(recovery.api?.sweeps ?? true) : SILENT));
 }
 
 /** Options for the `watchProbe` vite plugin. */

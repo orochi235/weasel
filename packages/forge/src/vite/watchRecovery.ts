@@ -23,6 +23,12 @@ const fallbacks = new WeakSet<Plugin>();
 export const LONGEST_TIMER_MS = 2 ** 31 - 1;
 const STALE_READ_MS = 60_000;
 
+/** What the plugin tells other plugins, as its `api`. */
+export interface WatchRecoveryApi {
+  /** Whether served files are checked once the watcher goes quiet, and not only as they are served. */
+  sweeps: boolean;
+}
+
 const mtimeOf = (file: string): number | undefined => {
   try {
     return statSync(file).mtimeMs;
@@ -110,9 +116,10 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
     for (const file of stamps.keys()) if (missed(file)) recover(file, 'pushing it to the page');
   };
 
-  const self: Plugin = {
+  const self: Plugin<WatchRecoveryApi> = {
     name: WATCH_RECOVERY,
     apply: 'serve',
+    api: { sweeps: quietMs <= LONGEST_TIMER_MS },
     configResolved(config) {
       const copies = config.plugins.filter((p) => p.name === WATCH_RECOVERY);
       active = config.server.watch !== null && (copies.find((p) => !fallbacks.has(p)) ?? copies[0]) === self;
@@ -144,7 +151,7 @@ export function watchRecovery({ quietMs = QUIET_MS }: WatchRecoveryOptions = {})
         if (file && missed(file)) recover(file, 'serving the new text');
         next();
       });
-      if (quietMs <= LONGEST_TIMER_MS) {
+      if (self.api!.sweeps) {
         timer = setInterval(sweep, quietMs);
         timer.unref();
       }
