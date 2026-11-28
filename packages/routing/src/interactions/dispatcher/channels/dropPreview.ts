@@ -10,8 +10,8 @@ import type { InputEvent } from '../matcher';
 
 export interface DropPreview {
   /** Show `winner`'s preview of `event`, replacing what an earlier call showed.
-   *  A repeat of the last call, which a stationary drag sends every few
-   *  milliseconds, changes nothing. */
+   *  A repeat of the last call with the same resolved params, which a
+   *  stationary drag sends every few milliseconds, changes nothing. */
   show(event: Extract<InputEvent, { kind: 'drop' }>, winner: ResolveOnlyResult, ctx: DispatcherContext): void;
   /** Take the preview down. */
   end(): void;
@@ -23,12 +23,33 @@ function keyOf(event: Extract<InputEvent, { kind: 'drop' }>, winner: ResolveOnly
   return `${winner.actionId}|${event.x},${event.y}|${mods}|${mimes}`;
 }
 
+/** Whether two resolutions of a binding's params hold the same values, for thunks that build a fresh object each call. */
+function sameParams(a: Record<string, unknown> | undefined, b: Record<string, unknown> | undefined): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  return keys.every((k) => Object.hasOwn(b, k) && sameValue(a[k], b[k]));
+}
+
+function sameValue(a: unknown, b: unknown): boolean {
+  if (Object.is(a, b)) return true;
+  if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) return false;
+  try {
+    return JSON.stringify(a) === JSON.stringify(b);
+  } catch {
+    return false;
+  }
+}
+
 export function dropPreview(): DropPreview {
   let key: string | null = null;
+  let params: Record<string, unknown> | undefined;
   let stop: (() => void) | null = null;
 
   const end = () => {
     key = null;
+    params = undefined;
     const s = stop;
     stop = null;
     if (!s) return;
@@ -41,9 +62,10 @@ export function dropPreview(): DropPreview {
 
   const show: DropPreview['show'] = (event, winner, ctx) => {
     const next = keyOf(event, winner);
-    if (next === key) return;
+    if (next === key && sameParams(params, winner.params)) return;
     end();
     key = next;
+    params = winner.params;
     const { action } = winner;
     if (!action.preview) return;
     try {
