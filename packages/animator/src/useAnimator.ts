@@ -77,6 +77,7 @@ export function useAnimator(opts: UseAnimatorOptions = {}): Animator {
     };
     return createAnimatorCore({
       now,
+      nowFollows: () => optsRef.current.clock != null,
       // On a clock, a frame asked for from inside one comes with the clock's next move: one shown
       // at the same time would only ask again.
       requestFrame: () => { if (!followingRef.current) frameLoopRef.current.request(); },
