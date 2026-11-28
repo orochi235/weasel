@@ -18,6 +18,41 @@ describe('a step with more digits than its magnitude', () => {
   });
 });
 
+describe('stepTicks', () => {
+  it('refuses a step that is not a positive number', () => {
+    expect(() => stepTicks(0, 10, -1)).toThrow(RangeError);
+    expect(() => stepTicks(0, 10, 0)).toThrow(RangeError);
+    expect(() => stepTicks(0, 10, Number.NaN)).toThrow(RangeError);
+  });
+
+  it('refuses more ticks than its limit, unless the limit is raised', () => {
+    expect(() => stepTicks(0, 1e6, 1e-9)).toThrow(RangeError);
+    expect(() => stepTicks(0, 10, 1, 5)).toThrow(RangeError);
+    expect(stepTicks(0, 10, 1, 11)).toHaveLength(11);
+  });
+
+  it("holds a scale's ticks to a bounded count however many are asked for", () => {
+    expect(linearScale({ domain: [0, 1e6], range: [0, 1] }).ticks(1e15).length).toBeLessThanOrEqual(1_000_000);
+  });
+});
+
+describe('spacedTicks', () => {
+  it('holds the count to a bound for a spacing near zero', () => {
+    const { values } = linearScale({ domain: [0, 1], range: [0, 1000] }).spacedTicks({ minSpacing: 1e-9 });
+    expect(values.length).toBeGreaterThan(0);
+    expect(values.length).toBeLessThanOrEqual(1_000_000);
+  });
+
+  it('refuses a negative inset', () => {
+    expect(() => linearScale({ domain: [0, 1], range: [0, 1000] }).spacedTicks({ minSpacing: 10, inset: -1e9 })).toThrow(RangeError);
+  });
+
+  it('ticks a range wider than the largest double', () => {
+    const { values } = linearScale({ domain: [0, 10], range: [-Number.MAX_VALUE, Number.MAX_VALUE] }).spacedTicks({ minSpacing: 1 });
+    expect(values.length).toBeGreaterThan(0);
+  });
+});
+
 describe('niceDomain of a single value', () => {
   it('widens the far end to a whole step too', () => {
     expect(niceDomain([7.3, 7.3])).toEqual(niceDomain([0, 7.3]));

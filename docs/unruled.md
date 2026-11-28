@@ -4416,3 +4416,12 @@ Calls the lanes made without a ruling:
 - 2026-11-28 (the fixer's call): `holderOf`, and `outermost` through it, throw a `RangeError` naming an id when
   `parentOf` leads back to one the walk already passed, with no override. Stopping at the cycle and answering
   `null` was the alternative; it would hide a broken tree as an unselected node.
+
+## Audit scour fix twenty-one (2026-11-28): scale
+
+- 2026-11-28 (the fixer's call): `stepTicks` throws a `RangeError` for a step that is not a positive finite number
+  (a negative step included), and for more ticks than its `limit` argument, `MAX_TICKS` (1,000,000) by default.
+  Ticking at `|step|`, or returning none, were the alternatives; a caller wanting more raises `limit`.
+- 2026-11-28 (the fixer's call): `spacedTicks` throws a `RangeError` for a negative `inset`, and a `minSpacing` that
+  would lay more than `MAX_TICKS` ticks takes a coarser step rather than throwing; a scale's `ticks(count)` holds
+  `count` to a quarter of `MAX_TICKS` the same way.

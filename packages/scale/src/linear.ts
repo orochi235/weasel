@@ -15,7 +15,8 @@ export interface LinearScaleOptions {
 export interface SpacedTickOptions {
   /** Smallest gap between neighboring ticks, in range units (px, for a scale onto the screen). */
   minSpacing: number;
-  /** Ticks closer than this to either end of the range are dropped, in range units. Default 0. */
+  /** Ticks closer than this to either end of the range are dropped, in range units. Default 0; negative throws a
+   *  `RangeError`. */
   inset?: number;
 }
 
@@ -36,15 +37,20 @@ export interface LinearScale extends ContinuousScale {
   tickStep(count?: number): number;
   /** Ticks on the finest 1/2/5 step that keeps neighbors `minSpacing` apart along the range, so a longer axis
    *  gets more of them. Empty for an empty domain or range, and where `minSpacing` spans more of the domain than
-   *  the largest double. */
+   *  the largest double. A spacing that would lay more than {@link MAX_TICKS} takes a coarser step. */
   spacedTicks(options: SpacedTickOptions): TickSet;
   tickFormat(count?: number): (value: number) => string;
 }
 
 const DEFAULT_TICKS = 5;
 
-/** `count`, or the default for a count that is not a finite number, as a `width / spacing` of 0 / 0 gives. */
-export const tickCount = (count: number | undefined, fallback = DEFAULT_TICKS): number => (Number.isFinite(count) ? count! : fallback);
+/** The most ticks a scale lays, and {@link stepTicks}'s default limit: far past any axis, and short of a hang. */
+export const MAX_TICKS = 1_000_000;
+
+/** `count`, or the default for a count that is not a finite number, as a `width / spacing` of 0 / 0 gives. Held to a
+ *  quarter of {@link MAX_TICKS}, which a round step near it keeps within the bound. */
+export const tickCount = (count: number | undefined, fallback = DEFAULT_TICKS): number =>
+  Number.isFinite(count) ? Math.min(count!, MAX_TICKS / 4) : fallback;
 
 /** The round step, 1, 2 or 5 times a power of ten, that cuts `lo`..`hi` into about `count` pieces. */
 export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number {
@@ -78,12 +84,15 @@ function gridOf(step: number): (i: number) => number {
 export const domainTicks = (lo: number, hi: number, step: number): number[] =>
   lo === hi ? (Number.isFinite(lo) ? [lo] : []) : stepTicks(lo, hi, step);
 
-/** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. */
-export function stepTicks(lo: number, hi: number, step: number): number[] {
+/** Every multiple of `step` from `lo` to `hi`, inclusive; none where those multiples are past counting. Throws a
+ *  `RangeError` for a `step` that is not a positive finite number, or for more than `limit` ticks. */
+export function stepTicks(lo: number, hi: number, step: number, limit = MAX_TICKS): number[] {
+  if (!(step > 0) || !Number.isFinite(step)) throw new RangeError(`stepTicks: step ${step} is not a positive finite number`);
   const [a, b] = lo <= hi ? [lo, hi] : [hi, lo];
   const first = Math.ceil(a / step - 1e-9);
   const last = Math.floor(b / step + 1e-9);
   if (!countable(first) || !countable(last)) return [];
+  if (last - first + 1 > limit) throw new RangeError(`stepTicks: ${last - first + 1} ticks of ${step} pass the limit of ${limit}`);
   const at = gridOf(step);
   const out: number[] = [];
   for (let i = first; i <= last; i++) out.push(at(i));
@@ -96,9 +105,10 @@ function spacedTicks(domain: readonly [number, number], length: number, options:
   const hi = Math.max(domain[0], domain[1]);
   const span = hi - lo;
   const { minSpacing, inset = 0 } = options;
+  if (inset < 0) throw new RangeError(`spacedTicks: inset ${inset} is negative`);
   if (!(span > 0) || !Number.isFinite(span) || !(length > 0) || !(minSpacing > 0)) return { values: [], step: 0, decimals: 0 };
   const perUnit = span / length;
-  const step = niceStep(minSpacing * perUnit);
+  const step = niceStep(Math.max(minSpacing * perUnit, span / (MAX_TICKS - 1)));
   // A spacing whose step in domain units is past the double range is wider than the axis.
   if (!Number.isFinite(step)) return { values: [], step: 0, decimals: 0 };
   const decimals = decimalsOf(step);
