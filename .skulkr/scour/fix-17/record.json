@@ -1,0 +1,832 @@
+{
+ "run": 17,
+ "area": "routing.interactions.dispatcher",
+ "commit": "ce4c8b3c9b17b621bb9b903d4142706e50d690b0",
+ "on": "main",
+ "ledgerCommit": "6be7338b8bdce6605ac6e3dc75ee21365f18be5e",
+ "started": "2026-11-28T01:25:07.301Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "ce4c8b3c9b17b621bb9b903d4142706e50d690b0",
+   "defects": [
+    {
+     "id": "D16",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/keyboard.ts"
+     ]
+    },
+    {
+     "id": "D10",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/keyboard.ts"
+     ]
+    },
+    {
+     "id": "D29",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/keyboard.ts",
+      "packages/routing/src/interactions/dispatcher/channels/overKeys.ts"
+     ]
+    },
+    {
+     "id": "D18",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/keyboard.ts",
+      "packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts"
+     ]
+    },
+    {
+     "id": "D19",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts"
+     ]
+    },
+    {
+     "id": "D36",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/keymapKeys.ts"
+     ]
+    },
+    {
+     "id": "D50",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/overKeys.ts",
+      "packages/routing/src/interactions/dispatcher/channels/keyboard.ts"
+     ]
+    },
+    {
+     "id": "D48",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/keymapRoute.ts",
+      "packages/routing/src/interactions/dispatcher/channels/keyboard.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D16",
+     "verdict": "fixed",
+     "line": "[D16] A character typed with AltGr in a text field counted as a Ctrl chord (scour): fixed 54b3525a46",
+     "sha": "54b3525a46"
+    },
+    {
+     "id": "D10",
+     "verdict": "fixed",
+     "line": "[D10] A keystroke handed on by a peer asked the `over` bindings a second time (scour): fixed 03def15ed4",
+     "sha": "03def15ed4"
+    },
+    {
+     "id": "D29",
+     "verdict": "fixed",
+     "line": "[D29] Autorepeat stayed swallowed after a cancel ended the held key's gesture (scour): fixed be058516d8",
+     "sha": "be058516d8"
+    },
+    {
+     "id": "D18",
+     "verdict": "fixed",
+     "line": "[D18] A key pressed before Cmd and released while Cmd was down was never released (scour): fixed a6a9aae3d8",
+     "sha": "a6a9aae3d8"
+    },
+    {
+     "id": "D19",
+     "verdict": "fixed",
+     "line": "[D19] A keymap leader held before Cmd was never released by Cmd's keyup (scour): fixed 9c0800d62b",
+     "sha": "9c0800d62b"
+    },
+    {
+     "id": "D36",
+     "verdict": "fixed",
+     "line": "[D36] A keystroke inside a held keymap was taken to have closed it, so its autorepeat was dropped (scour): fixed bca55e2d9f",
+     "sha": "bca55e2d9f"
+    },
+    {
+     "id": "D50",
+     "verdict": "fixed",
+     "line": "[D50] On pointer leave, a held key whose gesture had already ended stayed in `held` (scour): fixed 142a31c6f8",
+     "sha": "142a31c6f8"
+    },
+    {
+     "id": "D48",
+     "verdict": "fixed",
+     "line": "[D48] An open keymap took an `inFields` chord typed in a text field ahead of the page's binding (scour): fixed 2747ba0a7a",
+     "sha": "2747ba0a7a"
+    }
+   ],
+   "commits": 11,
+   "branch": "scour17-routing.interactions.dispatcher-b1",
+   "verify": {
+    "ok": true,
+    "files": 17,
+    "testFiles": {
+     "failed": 0,
+     "passed": 3496,
+     "total": 3496
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 2.1836824,
+   "minutes": 25.8501
+  },
+  {
+   "n": 2,
+   "on": "8043ceb6a0e57e6de226da9b54f430ce5194bb1d",
+   "defects": [
+    {
+     "id": "D11",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/attachInput.ts",
+      "packages/routing/src/interactions/dispatcher/dispatcherWatch.ts"
+     ]
+    },
+    {
+     "id": "D23",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/attachInput.ts"
+     ]
+    },
+    {
+     "id": "D49",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/attachInput.ts",
+      "packages/routing/src/interactions/dispatcher/channels/pointer.ts"
+     ]
+    },
+    {
+     "id": "D6",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/attachInput.ts",
+      "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts"
+     ]
+    },
+    {
+     "id": "D17",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/attachInput.ts"
+     ]
+    },
+    {
+     "id": "D4",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts"
+     ]
+    },
+    {
+     "id": "D38",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/modal.ts"
+     ]
+    },
+    {
+     "id": "D44",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/modal.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D11",
+     "verdict": "not a defect",
+     "line": "[D11] `uses` ignores the dispatcher passed to it (scour): not a defect (no longer applies). e5a32c39c9 (\"keep a dispatcher watched for the event it is about to run\") already made `uses` watch `d` even when `d` has left the live list.",
+     "sha": null
+    },
+    {
+     "id": "D23",
+     "verdict": "fixed",
+     "line": "[D23] With `keyboard: 'page'`, keyup and blur were heard on the global window instead of the canvas's (scour): fixed ee7be3a7c4",
+     "sha": "ee7be3a7c4"
+    },
+    {
+     "id": "D49",
+     "verdict": "fixed",
+     "line": "[D49] A hover over a nested dispatcher surface was also routed, hit-tested and given a cursor by the outer surface (scour): fixed 1c1bdfa66b",
+     "sha": "1c1bdfa66b"
+    },
+    {
+     "id": "D6",
+     "verdict": "fixed",
+     "line": "[D6] With the pointer channel off, the hover cursor stayed cleared after a release (scour): fixed bb1dcd6005",
+     "sha": "bb1dcd6005"
+    },
+    {
+     "id": "D17",
+     "verdict": "fixed",
+     "line": "[D17] One pointer leaving cleared pointer-over while another pointer was still over the canvas (scour): fixed 1c1bdfa66b",
+     "sha": "1c1bdfa66b"
+    },
+    {
+     "id": "D4",
+     "verdict": "fixed",
+     "line": "[D4] The hover cursor override could be written to one sink and cleared from another (scour): fixed c406550a42",
+     "sha": "c406550a42"
+    },
+    {
+     "id": "D38",
+     "verdict": "fixed",
+     "line": "[D38] A dispatcher with no canvas missed React Aria-style modals (scour): fixed 82ab4f11c1",
+     "sha": "82ab4f11c1"
+    },
+    {
+     "id": "D44",
+     "verdict": "fixed",
+     "line": "[D44] A non-modal dialog counted as modal whenever any ancestor of the canvas was hidden (scour): fixed 82ab4f11c1",
+     "sha": "82ab4f11c1"
+    }
+   ],
+   "commits": 8,
+   "branch": "scour17-routing.interactions.dispatcher-b2",
+   "verify": {
+    "ok": true,
+    "files": 21,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2989,
+     "total": 2989
+    },
+    "gui": true,
+    "repairs": 1
+   },
+   "repairs": 1,
+   "costUsd": 3.4934745999999994,
+   "minutes": 36.5057
+  },
+  {
+   "n": 3,
+   "on": "cbe9eec4094c5adc7d60a9a3e3fa4a40e44dd171",
+   "defects": [
+    {
+     "id": "D34",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts",
+      "packages/routing/src/interactions/dispatcher/attachInput.ts",
+      "packages/routing/src/interactions/dispatcher/dispatchCore.ts"
+     ]
+    },
+    {
+     "id": "D46",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts"
+     ]
+    },
+    {
+     "id": "D37",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts",
+      "packages/routing/src/interactions/dispatcher/attachInput.ts"
+     ]
+    },
+    {
+     "id": "D40",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts"
+     ]
+    },
+    {
+     "id": "D53",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/pointer.ts"
+     ]
+    },
+    {
+     "id": "D27",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/pointer.ts"
+     ]
+    },
+    {
+     "id": "D14",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/inputFacts.ts"
+     ]
+    },
+    {
+     "id": "D43",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/inputFacts.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D34",
+     "verdict": "fixed",
+     "line": "[D34] the hover cursor reads in-flight gestures only on the routed view's dispatcher (scour): fixed 51b42edefc",
+     "sha": "51b42edefc"
+    },
+    {
+     "id": "D46",
+     "verdict": "fixed",
+     "line": "[D46] the leave hover-off dispatches on the routed view, not the view last hovered (scour): fixed 51b42edefc",
+     "sha": "51b42edefc"
+    },
+    {
+     "id": "D37",
+     "verdict": "fixed",
+     "line": "[D37] a release or move after the pointer left the canvas brings back the cursor and painted pointer (scour): fixed 51b42edefc",
+     "sha": "51b42edefc"
+    },
+    {
+     "id": "D40",
+     "verdict": "fixed",
+     "line": "[D40] hover facts go stale through a press no binding hears (scour): fixed 51b42edefc",
+     "sha": "51b42edefc"
+    },
+    {
+     "id": "D53",
+     "verdict": "fixed",
+     "line": "[D53] when a pinch's fingers land in different views, the first finger's moves are dropped (scour): fixed 418df93f74. The first finger's lift and the pinch's centroid now run on the view it opened in too.",
+     "sha": "418df93f74"
+    },
+    {
+     "id": "D27",
+     "verdict": "fixed",
+     "line": "[D27] a release yielded to an item's session skips re-resolving the hover cursor (scour): fixed a8e9d5eefe. This also covers a press the item took on a move: that release reached no session at all.",
+     "sha": "a8e9d5eefe"
+    },
+    {
+     "id": "D14",
+     "verdict": "fixed",
+     "line": "[D14] binding's `viewId`/`roles` overwritten in immediate params (scour): fixed 2fc0d50dce",
+     "sha": "2fc0d50dce"
+    },
+    {
+     "id": "D43",
+     "verdict": "fixed",
+     "line": "[D43] wheel/pinch immediate params drop `bodyTarget`/`bodyKind` (scour): fixed 2fc0d50dce",
+     "sha": "2fc0d50dce"
+    }
+   ],
+   "commits": 5,
+   "branch": "scour17-routing.interactions.dispatcher-b3",
+   "verify": {
+    "ok": true,
+    "files": 18,
+    "testFiles": {
+     "failed": 0,
+     "passed": 3500,
+     "total": 3500
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 3.101911399999999,
+   "minutes": 25.470866666666666
+  },
+  {
+   "n": 4,
+   "on": "8d803e884ded26d3250276b96fb7c22839325649",
+   "defects": [
+    {
+     "id": "D28",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/webkitPinch.ts"
+     ]
+    },
+    {
+     "id": "D39",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/wheel.ts",
+      "packages/routing/src/interactions/dispatcher/dispatchCore.ts"
+     ]
+    },
+    {
+     "id": "D45",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/wheel.ts",
+      "packages/routing/src/interactions/dispatcher/channels/webkitPinch.ts"
+     ]
+    },
+    {
+     "id": "D30",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/dispatchCore.ts"
+     ]
+    },
+    {
+     "id": "D1",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/dispatchCore.ts"
+     ]
+    },
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/dispatchCore.ts"
+     ]
+    },
+    {
+     "id": "D22",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/invocationCtx.ts"
+     ]
+    },
+    {
+     "id": "D35",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/invocationCtx.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D28",
+     "verdict": "fixed",
+     "line": "[D28] A WebKit pinch reroutes on every change event and can switch views mid-gesture (scour): fixed 68bbefd805",
+     "sha": "68bbefd805"
+    },
+    {
+     "id": "D39",
+     "verdict": "fixed",
+     "line": "[D39] A wheel during a drag reaches only the view under the pointer, not the one running the drag (scour): fixed 68bbefd805",
+     "sha": "68bbefd805"
+    },
+    {
+     "id": "D45",
+     "verdict": "fixed",
+     "line": "[D45] Wheel and WebKit pinch give a view's camera a canvas-local focal point instead of a view-local one (scour): fixed 68bbefd805",
+     "sha": "68bbefd805"
+    },
+    {
+     "id": "D30",
+     "verdict": "fixed",
+     "line": "[D30] A wheel in a nested surface with its wheel channel off is handled by the outer surface, which never activates (scour): fixed fe376593c7",
+     "sha": "fe376593c7"
+    },
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "[D1] A keyboard-off dispatcher that activates first on a shared surface keeps a keyboard-on one from taking the keys (scour): fixed fe376593c7",
+     "sha": "fe376593c7"
+    },
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] A press in a nested surface with its pointer channel off is run by the outer dispatcher, which never activates (scour): fixed fe376593c7. This was my call, recorded in `docs/unruled.md`: an event activates the innermost surface that runs its channel, and the innermost surface it landed in only when no surface runs it. The same rule now covers right-clicks.",
+     "sha": "fe376593c7"
+    },
+    {
+     "id": "D22",
+     "verdict": "fixed",
+     "line": "[D22] An ongoing action started by a click, double click or context menu gets no `drag.affordance` (scour): fixed 6ff9995409",
+     "sha": "6ff9995409"
+    },
+    {
+     "id": "D35",
+     "verdict": "fixed",
+     "line": "[D35] A pointer cancel ends its drag with a context at world (0,0) and no `drag` or trail (scour): fixed 54a3b6eb9b",
+     "sha": "54a3b6eb9b"
+    }
+   ],
+   "commits": 7,
+   "branch": "scour17-routing.interactions.dispatcher-b4",
+   "verify": {
+    "ok": true,
+    "files": 21,
+    "testFiles": {
+     "failed": 0,
+     "passed": 3506,
+     "total": 3506
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 2.4684189999999995,
+   "minutes": 22.578833333333332
+  },
+  {
+   "n": 5,
+   "on": "612c72e8df2171e64e38cd542ba23f2b5ec3665f",
+   "defects": [
+    {
+     "id": "D21",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/gestureRun.ts"
+     ]
+    },
+    {
+     "id": "D12",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/deferredStart.ts",
+      "packages/routing/src/interactions/dispatcher/inFlightGestures.ts"
+     ]
+    },
+    {
+     "id": "D42",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/handOff.ts",
+      "packages/routing/src/interactions/dispatcher/gestureRun.ts"
+     ]
+    },
+    {
+     "id": "D7",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/inFlightGestures.ts",
+      "packages/routing/src/interactions/dispatcher/gestureRun.ts"
+     ]
+    },
+    {
+     "id": "D2",
+     "recurrent": true,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/inFlightGestures.ts"
+     ]
+    },
+    {
+     "id": "D51",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/predict.ts"
+     ]
+    },
+    {
+     "id": "D41",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/predict.ts"
+     ]
+    },
+    {
+     "id": "D31",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/dispatchRecord.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D21",
+     "verdict": "fixed",
+     "line": "[D21] onMove/onWheel throws escape dispatch (scour): fixed 69fe06f978",
+     "sha": "69fe06f978"
+    },
+    {
+     "id": "D12",
+     "verdict": "fixed",
+     "line": "[D12] threshold-held drag shows `activeCursor` before it starts (scour): fixed 526f0d563d",
+     "sha": "526f0d563d"
+    },
+    {
+     "id": "D42",
+     "verdict": "fixed",
+     "line": "[D42] handed-off drag re-ranked without the press's keymap pass (scour): fixed b82d8f76b1",
+     "sha": "b82d8f76b1"
+    },
+    {
+     "id": "D7",
+     "verdict": "fixed",
+     "line": "[D7] in-flight cursor resolves a function `Action.cursor` without the binding's params (scour): fixed 0c19262f7b",
+     "sha": "0c19262f7b"
+    },
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "[D2] `isEmptyOngoingHandle` drops a handle with only `onWheel`, `cursor`, `subscribe` and similar (scour): fixed f5fbe5ce4f",
+     "sha": "f5fbe5ce4f"
+    },
+    {
+     "id": "D51",
+     "verdict": "fixed",
+     "line": "[D51] prediction with a keymap open asks `enabled()` once more than dispatch (scour): fixed 4fa1e9bd6e",
+     "sha": "4fa1e9bd6e"
+    },
+    {
+     "id": "D41",
+     "verdict": "fixed",
+     "line": "[D41] `resolveAll` lists nothing for a passed-on input when no candidate fires (scour): fixed 4fa1e9bd6e",
+     "sha": "4fa1e9bd6e"
+    },
+    {
+     "id": "D31",
+     "verdict": "fixed",
+     "line": "[D31] `DispatchRecord.matched` not in matcher order when a claim bars bindings (scour): fixed 4b53cfd483",
+     "sha": "4b53cfd483"
+    }
+   ],
+   "commits": 7,
+   "branch": "scour17-routing.interactions.dispatcher-b5",
+   "verify": {
+    "ok": true,
+    "files": 24,
+    "testFiles": {
+     "failed": 0,
+     "passed": 3524,
+     "total": 3524
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 2.6341416000000004,
+   "minutes": 25.042733333333334
+  },
+  {
+   "n": 6,
+   "on": "faa0284f84cc95d235757de5367b99e2c048836a",
+   "defects": [
+    {
+     "id": "D55",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/ingest.ts"
+     ]
+    },
+    {
+     "id": "D25",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/ingest.ts"
+     ]
+    },
+    {
+     "id": "D32",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/ingest.ts",
+      "packages/routing/src/interactions/dispatcher/channels/keyPeers.ts"
+     ]
+    },
+    {
+     "id": "D24",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/walk.ts"
+     ]
+    },
+    {
+     "id": "D13",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/walk.ts",
+      "packages/routing/src/interactions/dispatcher/dispatcherApi.ts"
+     ]
+    },
+    {
+     "id": "D52",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/contextMenu.ts"
+     ]
+    },
+    {
+     "id": "D47",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/channels/dropPreview.ts"
+     ]
+    },
+    {
+     "id": "D8",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/gestureFacts.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D55",
+     "verdict": "fixed",
+     "line": "[D55] drop preview restarts when a drag crosses onto a child (scour): fixed fa77b41c68",
+     "sha": "fa77b41c68"
+    },
+    {
+     "id": "D25",
+     "verdict": "fixed",
+     "line": "[D25] a failed drop read or dispatch becomes an unhandled promise rejection (scour): fixed c2a62dd205",
+     "sha": "c2a62dd205"
+    },
+    {
+     "id": "D32",
+     "verdict": "fixed",
+     "line": "[D32] a declined paste never reaches the other dispatchers on its surface (scour): fixed d9a01147f9 (the paste handler moved into `channels/paste.ts` first, in 463d09549c, to keep `ingestInput` under the function-size cap)",
+     "sha": "d9a01147f9"
+    },
+    {
+     "id": "D24",
+     "verdict": "fixed",
+     "line": "[D24] an unregistered-action warning fires on every input (scour): fixed 33bdd25933",
+     "sha": "33bdd25933"
+    },
+    {
+     "id": "D13",
+     "verdict": "fixed",
+     "line": "[D13] resolveAll labels an ineligible candidate below the winner `shadowed` (scour): fixed 2d163fcd9e. A test in `dispatcher.resolveAll.test.ts` pins that label as intended, with its reason, and the `evaluateShadowed` doc agrees with it. Only the `resolveAll` and `ResolvedCandidate` docs contradicted it, so the fix corrects the docs and leaves the behavior alone.",
+     "sha": "2d163fcd9e"
+    },
+    {
+     "id": "D52",
+     "verdict": "not a defect",
+     "line": "[D52] a nested surface with `contextMenu: false` still has its native menu taken by the outer surface (scour): not a defect (contradicted by docs/unruled.md). The 2026-11-27 entry there says a right-click activates the innermost surface that runs the channel, and that surface handles it. `useGestureDispatcher.activateScope.test.tsx` pins this for a nested surface with its menu channel off. The outer surface's options doc also says `contextMenu` suppresses the native menu unconditionally.",
+     "sha": null
+    },
+    {
+     "id": "D47",
+     "verdict": "fixed",
+     "line": "[D47] the drop preview key leaves out resolved params, so the preview goes stale (scour): fixed 7ba9aa9a60. A lint fix followed in d8b193d81d, which compares the params with `deepEqual` from `@weasel-js/registry`.",
+     "sha": "7ba9aa9a60"
+    },
+    {
+     "id": "D8",
+     "verdict": "fixed",
+     "line": "[D8] a multitouch gesture that opens without an angle never accumulates rotation (scour): fixed f81529b39e",
+     "sha": "f81529b39e"
+    }
+   ],
+   "commits": 9,
+   "branch": "scour17-routing.interactions.dispatcher-b6",
+   "verify": {
+    "ok": true,
+    "files": 23,
+    "testFiles": {
+     "failed": 0,
+     "passed": 3510,
+     "total": 3510
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 2.7199218,
+   "minutes": 21.05675
+  },
+  {
+   "n": 7,
+   "on": "4f85c01e9ecfca9f0942be282f7d7501db394dd2",
+   "defects": [
+    {
+     "id": "D26",
+     "recurrent": false,
+     "files": [
+      "packages/routing/src/interactions/dispatcher/useGestureDispatcher.tsx"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D26",
+     "verdict": "fixed",
+     "line": "[D26] mount-time `claimKeys` took the keys while the dispatcher's keyboard was off (scour): fixed 9b2fd052c7. The `claimKeys` mount effect now calls `actions.activate({ keys: keyboard !== false })` and depends on `keyboard`, which matches what a pointer or wheel activation does. Added a test to `useGestureDispatcher.keyScope.test.tsx`: it failed before the fix and passes after. Changeset is `.changeset/claim-keys-keyboard-off.md`.",
+     "sha": "9b2fd052c7"
+    }
+   ],
+   "commits": 2,
+   "branch": "scour17-routing.interactions.dispatcher-b7",
+   "verify": {
+    "ok": true,
+    "files": 4,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2990,
+     "total": 2990
+    },
+    "gui": true,
+    "repairs": 1
+   },
+   "repairs": 1,
+   "costUsd": 1.2959147999999998,
+   "minutes": 8.090683333333333
+  }
+ ]
+}
