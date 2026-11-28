@@ -4,11 +4,14 @@
  */
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
-import { linearScale } from '@weasel-js/scale';
-import { runs, tally, timeoutFor, uniform } from '../../pbt.fixture';
-import { bandBounds, edgeReach, mergeBand, normalizeBands, scaleEdges, splitBands, toggleLock, unitEdges, type Band } from './bands';
+import { runs, tally, timeoutFor, uniform } from './pbt.fixture';
+import { bandBounds, bandIndexAt, edgeReach, mergeBand, normalizeBands, scaleEdges, splitBands, toggleLock, type Band } from './bands';
 
 const RUNS = 300;
+
+/** Band edges on a linear track from `min` to `max`, as `BandEditor` reads them. */
+const unitEdges = (bands: readonly Band<string>[], min: number, max: number): number[] =>
+  [...bands.map((b, i) => (i === 0 ? 0 : Math.min(1, Math.max(0, (b.from - min) / (max - min))))), 1];
 
 /** A partition of `[min, max]` into up to six bands, seams sorted and possibly coincident. */
 const partition = fc.record({
@@ -80,7 +83,7 @@ describe('band edits', () => {
       const out = normalizeBands(moved, min);
       expect(out[0]!.from).toBe(min);
       tiles(out, min, max);
-      const edges = unitEdges(out, linearScale, min, max);
+      const edges = unitEdges(out, min, max);
       expect(edges).toHaveLength(out.length + 1);
       expect(edges[0]).toBe(0);
       expect(edges.at(-1)).toBe(1);
@@ -89,10 +92,26 @@ describe('band edits', () => {
   }, timeoutFor(RUNS, 2));
 });
 
+describe('bandIndexAt', () => {
+  it('finds the band whose bounds hold the value, the later one on a seam, clamped at the ends', () => {
+    fc.assert(fc.property(partition, uniform(-0.5, 1.5), ({ min, max, bands }, f) => {
+      const value = min + f * (max - min);
+      const i = bandIndexAt(bands, value, min, max);
+      const [from, to] = bandBounds(bands, i, min, max);
+      if (value < min) expect(i).toBe(0);
+      else if (value >= max) expect(i).toBe(bandIndexAt(bands, max, min, max));
+      else {
+        expect(from).toBeLessThanOrEqual(value);
+        if (i < bands.length - 1) expect(value).toBeLessThan(to);
+      }
+    }), runs(RUNS));
+  }, timeoutFor(RUNS, 1));
+});
+
 /** Track edges and locks from a partition, as `BandEditor` hands them to `scaleEdges`. */
 const track = fc.tuple(partition, fc.boolean()).map(([{ bands, min, max }, squeeze]) => {
   const locked = bands.map((b) => !!b.locked);
-  const edges = unitEdges(bands, linearScale, min, max);
+  const edges = unitEdges(bands, min, max);
   if (!squeeze) return { edges, locked };
   // Every free band emptied, so a rescale has no lengths to share in proportion.
   const lens = locked.map((l, i) => (l ? edges[i + 1]! - edges[i]! : 0));

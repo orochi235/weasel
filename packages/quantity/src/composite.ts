@@ -1,5 +1,6 @@
 import { textOf, type Part } from './kind';
 import { partsHtml, partsOf, partsToHtml, present, type PresentOptions, type Presentation } from './present';
+import { toneOf } from './tones';
 import { amount, type Display, type Quantity } from './quantity';
 
 /** Options for presenting a range. */
@@ -68,7 +69,10 @@ export function presentRange(from: Quantity, to: Quantity, fallback?: Display, o
   return {
     text: `${textOf(a)}${separator}${textOf(b)}`,
     spoken: spoken.join(options?.spokenSeparator ?? ' to '),
-    html: compositeHtml('range', [partsToHtml(amount(from), a), partsToHtml(amount(to), b)], separator),
+    html: compositeHtml('range', [
+      partsToHtml(amount(from), a, toneOf(from, fallback)),
+      partsToHtml(amount(to), b, toneOf(to, fallback)),
+    ], separator),
   };
 }
 

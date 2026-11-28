@@ -7,10 +7,11 @@ import { ordinalKind, romanKind } from './kinds/numeral';
 import { scientificKind } from './kinds/scientific';
 import { instantKind, relativeKind } from './kinds/time';
 import { infinityParts, infinityWord, readInfinity } from './infinity';
-import { parseNumberIn, type UnitTable } from './number';
+import { parseNumberIn } from './number';
 import { defaultLocale } from './localized';
-import { amount, displayOf, retag, tag, unitOf, type Display, type Quantity, type Tagged } from './quantity';
-import { entryScale, unitScale, type UnitScale, type Unit, type UnitSystem } from './units';
+import { amount, displayOf, unitOf, type Display, type Quantity } from './quantity';
+import { spokenTone, toneAt, type ValueTone } from './tones';
+import type { Unit } from './units';
 
 // Seeded from a static table rather than by each kind registering itself at import, so the package stays
 // free of side effects and a bundler can drop what nobody imports.
@@ -55,12 +56,15 @@ export interface PresentOptions {
 export interface Presentation {
   text: string;
   spoken: string;
-  /** Unstyled: a `<data value>` wrapping one `<span data-part>` per named part. */
+  /** Unstyled: a `<data value>` wrapping one `<span data-part>` per named part. A toned value's `<data>` carries
+   *  `data-tone`, the tone's name or else its index, for a stylesheet to color. */
   html: string;
   mathml?: string;
   /** The display's `form` is `stacked` and there is a `mathml` form: a
    *  renderer that draws MathML draws it in place of `html`. */
   stacked?: true;
+  /** The value's tone, when its display has `tones`. */
+  tone?: ValueTone;
 }
 
 const DEFAULT_DISPLAY: Display = { kind: 'decimal' };
@@ -73,8 +77,9 @@ export function contextFor(q: Quantity, options: PresentOptions | undefined): Fo
 }
 
 /** Parts as the unstyled HTML fragment {@link Presentation.html} describes. */
-export function partsToHtml(value: number, parts: readonly Part[]): string {
-  return `<data value="${escape(String(value))}">${partsHtml(parts)}</data>`;
+export function partsToHtml(value: number, parts: readonly Part[], tone?: ValueTone): string {
+  const toned = tone === undefined ? '' : ` data-tone="${escape(tone.name ?? String(tone.index))}"`;
+  return `<data value="${escape(String(value))}"${toned}>${partsHtml(parts)}</data>`;
 }
 
 /** Parts as HTML with no `<data>` around them: a `<span data-part>` per named part. */
@@ -97,9 +102,14 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
   const display = displayOf(q, fallback) ?? DEFAULT_DISPLAY;
   const kind = displayKindOf(display);
   const value = amount(q);
+  const tone = display.tones === undefined ? undefined : toneAt(display.tones, value);
+  const toned = (out: Presentation): Presentation => {
+    if (tone === undefined) return out;
+    return { ...out, spoken: spokenTone(out.spoken, tone, display.tones), tone };
+  };
   if (isInfinite(value)) {
     const word = infinityWord(display, value > 0 ? 1 : -1);
-    return { text: word.text, spoken: word.spoken, html: partsToHtml(value, infinityParts(value, display)) };
+    return toned({ text: word.text, spoken: word.spoken, html: partsToHtml(value, infinityParts(value, display), tone) });
   }
   const ctx = contextFor(q, options);
   const parts = kind.format(value, display, ctx);
@@ -107,14 +117,14 @@ export function present(q: Quantity, fallback?: Display, options?: PresentOption
   const out: Presentation = {
     text,
     spoken: kind.speak ? kind.speak(value, display, ctx) : spokenSign(text),
-    html: partsToHtml(value, parts),
+    html: partsToHtml(value, parts, tone),
   };
   const mathml = kind.mathml?.(value, display, ctx);
   if (mathml !== undefined) {
     out.mathml = mathml;
     if (display.form === 'stacked') out.stacked = true;
   }
-  return out;
+  return toned(out);
 }
 
 function isInfinite(value: number): boolean {
@@ -131,93 +141,4 @@ export function parseAs(text: string, display?: Display, options?: PresentOption
   if (infinite !== undefined) return infinite;
   if (options?.unit !== undefined) ctx.unit = options.unit;
   return kind.parse ? kind.parse(text, d, ctx) : parseNumberIn(text, undefined, ctx.locale);
-}
-
-/**
- * A short-lived view of a quantity with its presentation as methods. Nothing
- * about it is stored — keep the quantity, and wrap it where it is shown.
- */
-export class QuantityView<Q extends Quantity = Quantity> {
-  constructor(
-    /** The quantity as given. */
-    readonly raw: Q,
-    private readonly fallback?: Display,
-    private readonly options?: PresentOptions,
-  ) {}
-
-  get value(): number {
-    return amount(this.raw);
-  }
-  get unit(): Unit | undefined {
-    return unitOf(this.raw);
-  }
-  /** The display in effect: the value's own, else the fallback. */
-  get display(): Display | undefined {
-    return displayOf(this.raw, this.fallback);
-  }
-  get parts(): Part[] {
-    return partsOf(this.raw, this.fallback, this.options);
-  }
-  get text(): string {
-    return textOf(this.parts);
-  }
-  get spoken(): string {
-    return present(this.raw, this.fallback, this.options).spoken;
-  }
-  get html(): string {
-    return partsToHtml(this.value, this.parts);
-  }
-  get mathml(): string | undefined {
-    return present(this.raw, this.fallback, this.options).mathml;
-  }
-  /** `next` in this quantity's shape — see {@link retag}. */
-  with(next: number): QuantityView<Q> {
-    return new QuantityView(retag(this.raw, next), this.fallback, this.options);
-  }
-  /** Typed text read through this quantity's display; NaN when it does not read. */
-  parse(text: string): number {
-    const unit = this.unit;
-    return parseAs(text, this.display, unit === undefined ? this.options : { ...this.options, unit });
-  }
-  /** The same amount in `target`, converted through `system`, tagged with it. */
-  to(target: Unit, system: UnitSystem): QuantityView {
-    const from = unitScale(system, this.unit ?? system.base);
-    const to = unitScale(system, target);
-    const base = this.value * from.factor + from.offset;
-    const value = (base - to.offset) / to.factor;
-    const shown = (d: Display | undefined): Display | undefined => {
-      if (d?.kind !== 'unit') return d;
-      const accepts = d['accepts'] as UnitTable | undefined;
-      return {
-        ...d,
-        ...(d['unit'] === undefined ? {} : { unit: target }),
-        ...(accepts === undefined ? {} : { accepts: rescaled(accepts, from, to) }),
-      };
-    };
-    const own = typeof this.raw === 'number' ? undefined : this.raw.display;
-    const raw = typeof this.raw === 'number'
-      ? tag(value, undefined, target)
-      : { ...(this.raw as Tagged), value, unit: target, ...(own === undefined ? {} : { display: shown(own) }) };
-    return new QuantityView(raw, shown(this.fallback), this.options);
-  }
-  toJSON(): Q {
-    return this.raw;
-  }
-}
-
-/** `accepts`, whose entries convert into a unit at `from`, converting into the one at `to` instead. */
-function rescaled(accepts: UnitTable, from: Required<UnitScale>, to: Required<UnitScale>): UnitTable {
-  return Object.fromEntries(Object.entries(accepts).map(([name, entry]) => {
-    const { factor, offset } = entryScale(entry);
-    return [name, {
-      factor: (factor * from.factor) / to.factor,
-      offset: (offset * from.factor + from.offset - to.offset) / to.factor,
-    }];
-  }));
-}
-
-/** Wraps `q` for display: `qty(band.from, fraction()).text`. `fallback` is the
- *  display for a value that carries none of its own. */
-export function qty<Q extends Quantity>(q: Q, fallback?: Display, options?: PresentOptions): QuantityView<Q> {
-  return new QuantityView(q, fallback, options);
 }

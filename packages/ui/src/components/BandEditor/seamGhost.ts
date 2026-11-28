@@ -1,4 +1,4 @@
-import { bandBounds, type Band } from './bands';
+import { bandBounds, type Band } from '@weasel-js/quantity';
 import type { DraftGhostAt } from './DraftGhost';
 
 /** Whether two band lists of one length put every seam in the same place. */

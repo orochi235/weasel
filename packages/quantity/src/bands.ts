@@ -1,10 +1,7 @@
-import type { Quantity } from '@weasel-js/quantity';
-import type { ContinuousScaleFactory } from '@weasel-js/scale';
-import { clamp01 } from '@weasel-js/geom';
-import { unitScale } from './scale';
+import type { Quantity } from './quantity';
 
 /** One band. `from` may be a tagged quantity, which keeps its display and
- *  unit through every edit: see `BandEditor`. */
+ *  unit through every edit, as `BandEditor` in `@weasel-js/ui` does. */
 export interface Band<T, F extends Quantity = number> {
   /** Domain value where this band starts. The first band's is normalized to `min`. */
   from: F;
@@ -41,22 +38,19 @@ export function bandBounds<T>(
   return [from, to];
 }
 
+/**
+ * Index of the band holding `value`: the last whose start is at or below it, so a value on a seam belongs to
+ * the band after it. A value below `min` gets the first band and one past `max` the last; NaN gets −1.
+ */
+export function bandIndexAt<T>(bands: readonly Band<T>[], value: number, min: number, max: number): number {
+  if (Number.isNaN(value)) return -1;
+  for (let i = bands.length - 1; i > 0; i--) if (bandBounds(bands, i, min, max)[0] <= value) return i;
+  return bands.length > 0 ? 0 : -1;
+}
+
 /** `bands` with seam *k* moved to `seams[k]`, each band keeping its payload and lock. */
 export function withSeams<T>(bands: readonly Band<T>[], seams: readonly number[]): Band<T>[] {
   return bands.map((b, i) => (i === 0 ? { ...b } : { ...b, from: seams[i - 1]! }));
-}
-
-/** Band edges as track positions: `length + 1` values from 0 to 1. */
-export function unitEdges<T>(
-  bands: readonly Band<T>[],
-  scale: ContinuousScaleFactory,
-  min: number,
-  max: number,
-): number[] {
-  const unit = unitScale(scale, min, max);
-  const edges = bands.map((b, i) => (i === 0 ? 0 : clamp01(unit.position(b.from))));
-  edges.push(1);
-  return edges;
 }
 
 /**

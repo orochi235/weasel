@@ -14,6 +14,21 @@ export function timeoutFor(n: number, msPerRun: number): number {
   return Math.max(5_000, runs(n).numRuns * msPerRun);
 }
 
+/** How often each path ran, so a property that exercised nothing fails rather than passes. */
+export function tally(): { count(what: string): void; atLeast(what: string, n: number): void } {
+  const seen = new Map<string, number>();
+  return {
+    count(what) { seen.set(what, (seen.get(what) ?? 0) + 1); },
+    atLeast(what, n) {
+      if ((seen.get(what) ?? 0) < n) throw new Error(`${what} ran ${seen.get(what) ?? 0} times, wanted ${n}: ${JSON.stringify([...seen])}`);
+    },
+  };
+}
+
+/** A double spread evenly over `min..max`, ends included; `fc.double` crowds toward zero. */
+export const uniform = (min: number, max: number): fc.Arbitrary<number> =>
+  fc.integer({ min: 0, max: 1 << 20 }).map((k) => (k === 1 << 20 ? max : min + ((max - min) * k) / (1 << 20)));
+
 /**
  * Locales that write numbers differently from one another: group marks (`,` `.` space, apostrophe, none), the
  * decimal mark, Indian grouping, a sign wrapped in bidi marks, and non-Latin digits.

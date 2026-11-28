@@ -79,6 +79,36 @@ The word is one `infinity` part with no unit beside it. `parseAs` reads the
 display's words back, and `∞`, `inf` and `infinity` under any display. JSON
 has no Infinity, so a tagged `Infinity` serializes as `null`.
 
+## Tones
+
+Every display can color its value by the band the value falls in. `withTones`
+adds a ramp: a band list (`Band<Tone>[]`, the same model `BandEditor` edits)
+whose every band carries a CSS color and, optionally, a name.
+
+```ts
+import { percent, present, rarityTones, withTones } from '@weasel-js/quantity';
+
+const score = withTones(percent(), rarityTones());
+const p = present(0.93, score);
+p.tone    // { color: '#e8820c', name: 'legendary', index: 4 }
+p.text    // '93%'
+p.spoken  // '93 percent, legendary'
+p.html    // '<data value="0.93" data-tone="legendary">…</data>'
+```
+
+| Field | Meaning |
+|---|---|
+| `stops` | The bands. A value takes the color of the last stop whose `from` is at or below it; past either end it takes the end color, ±Infinity included. NaN has no tone. |
+| `over: [min, max]` | Each `from` is a fraction of `[min, max]` rather than a value. |
+| `blend: true` | Mix neighboring colors in OKLab instead of stepping. The name and index stay those of the stop at or below the value. A color that doesn't parse (a `var(--…)`) can't be mixed, so that pair steps and warns once. |
+| `speak: false` | Keep the tone's name out of the spoken text. By default it is spoken, since color alone doesn't carry meaning to everyone. |
+
+The HTML stays unstyled: the `<data>` gets `data-tone`, the stop's name or else
+its index, for a stylesheet to color. Text and parsing are unchanged.
+`rarityTones(over)` is a ready ramp of common, uncommon, rare, epic and
+legendary (the top tenth), in gray, green, blue, purple and orange; `toneAt` and
+`toneOf` answer the tone without presenting.
+
 ## Adding a kind
 
 ```ts

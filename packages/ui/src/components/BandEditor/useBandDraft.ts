@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import { openPointerSession, type PointerSession } from '@weasel-js/routing';
-import { withSeams, type Band, type RangeEdge } from './bands';
+import { withSeams, type Band, type RangeEdge } from '@weasel-js/quantity';
 import { sameSeams, seamGhost } from './seamGhost';
 import type { DraftGhostAt } from './DraftGhost';
 import type { RangeEdit } from './RangeEdgeHandle';

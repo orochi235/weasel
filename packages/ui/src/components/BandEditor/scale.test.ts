@@ -1,10 +1,17 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { linearScale, logScale, type ContinuousScaleFactory } from '@weasel-js/scale';
 import { prefNumberScale } from '../Prefs/prefNumberScale';
-import { unitScale, withinAxis } from './scale';
+import { unitEdges, unitScale, withinAxis } from './scale';
 
 const MIN = 1 / 64;
 const MAX = 1 / 2;
+
+describe('unitEdges', () => {
+  it('reads the band edges off as track positions from 0 to 1', () => {
+    const bands = [{ from: 7, data: 'a' }, { from: 20, data: 'b' }, { from: 60, data: 'c' }];
+    expect(unitEdges(bands, linearScale, 0, 100)).toEqual([0, 0.2, 0.6, 1]);
+  });
+});
 
 describe('a log axis', () => {
   it('spends more of the track on the narrow end than a linear one', () => {

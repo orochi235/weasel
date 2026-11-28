@@ -1,9 +1,23 @@
 import { clamp01 } from '@weasel-js/geom';
+import type { Band } from '@weasel-js/quantity';
 import type { ContinuousScale, ContinuousScaleFactory } from '@weasel-js/scale';
 
 /** `scale` from `[min, max]` onto the track, `[0, 1]`. */
 export function unitScale(scale: ContinuousScaleFactory, min: number, max: number): ContinuousScale {
   return scale({ domain: [min, max], range: [0, 1] });
+}
+
+/** Band edges as track positions: `length + 1` values from 0 to 1. */
+export function unitEdges<T>(
+  bands: readonly Band<T>[],
+  scale: ContinuousScaleFactory,
+  min: number,
+  max: number,
+): number[] {
+  const unit = unitScale(scale, min, max);
+  const edges = bands.map((b, i) => (i === 0 ? 0 : clamp01(unit.position(b.from))));
+  edges.push(1);
+  return edges;
 }
 
 /** The axis onto the track, and a value's place along it and back, both held to the track's ends. */
