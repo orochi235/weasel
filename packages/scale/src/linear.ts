@@ -1,6 +1,6 @@
 import { niceStep, lerp } from '@weasel-js/geom';
 import { replacedFormat } from './replacedFormat';
-import { FINEST_STEP, formatTick, tickDecimals } from './tickFormat';
+import { FINEST_STEP, MAX_DECIMALS, formatTick, tickDecimals } from './tickFormat';
 import type { ContinuousScale } from './types';
 
 /** Options for {@link linearScale}. */
@@ -55,9 +55,6 @@ export function tickStep(lo: number, hi: number, count = DEFAULT_TICKS): number 
   if (raw === 0) return Math.abs(hi - lo) || (Number.isFinite(lo) ? Math.min(1, 10 ** -tickDecimals([lo])) : 1);
   return niceStep(raw, 'nearest');
 }
-
-/** The most `toFixed` accepts. */
-const MAX_DECIMALS = 100;
 
 /** How many decimals a value on a grid of `step` needs; 0 for a step that is not a positive number. */
 export function decimalsOf(step: number): number {

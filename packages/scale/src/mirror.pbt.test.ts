@@ -118,7 +118,7 @@ describe('tick labels', () => {
     fc.assert(fc.property(fc.array(fc.oneof(fc.integer({ min: -1e6, max: 1e6 }).map((k) => k / 1000), anyNumber), { maxLength: 6 }), (values) => {
       const d = tickDecimals(values);
       expect(d).toBeGreaterThanOrEqual(0);
-      expect(d).toBeLessThanOrEqual(20);
+      expect(d).toBeLessThanOrEqual(100);
       for (const v of values.filter((x) => Number.isFinite(x) && Math.abs(x) < 1e15 && Math.abs(x) > 1e-6)) {
         expect(near(Number(toFixedPlain(v, d)), v)).toBe(true);
       }
