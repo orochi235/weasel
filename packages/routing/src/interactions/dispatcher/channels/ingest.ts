@@ -4,7 +4,7 @@
  * on the event stack; dispatch happens when materialization resolves.
  */
 import { itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
-import { isNode } from '@weasel-js/gestures';
+import { isNode, type IngestItem } from '@weasel-js/gestures';
 import { eventTaken, takeEvent, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { dropPreview } from './dropPreview';
@@ -96,7 +96,15 @@ export function ingestInput(core: DispatchCore): {
     const base = {
       altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
     };
-    void itemsFromDataTransfer(dt).then((items) => {
+    const failed = (err: unknown) => { console.error('weasel dispatcher: a drop failed', err); };
+    let read: Promise<IngestItem[]>;
+    try {
+      read = itemsFromDataTransfer(dt);
+    } catch (err) {
+      failed(err);
+      return;
+    }
+    void read.then((items) => {
       if (core.disposed()) return;
       if (items.length === 0) return;
       // The routed view is whatever moved under the cursor since; the drop
@@ -112,7 +120,7 @@ export function ingestInput(core: DispatchCore): {
       } finally {
         core.setRoutedView(routedNow);
       }
-    });
+    }).catch(failed);
   };
 
   return { onDragOver, onDragEnter, onDragLeave, onDrop, endPreview: preview.end };
