@@ -51,6 +51,204 @@
    "minutes": 0.11905,
    "at": "2026-11-25T21:18:54.383Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 2.0479895999999997,
+   "minutes": 3.850033333333333,
+   "at": "2026-11-28T00:35:43.840Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 2.1356867999999998,
+   "minutes": 4.480766666666667,
+   "at": "2026-11-28T00:40:12.859Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.9495896,
+   "minutes": 7.033916666666666,
+   "at": "2026-11-28T00:47:15.111Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.8896418000000001,
+   "minutes": 3.94365,
+   "at": "2026-11-28T00:51:12.488Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 1.0052572000000002,
+   "minutes": 3.6253833333333336,
+   "at": "2026-11-28T00:54:50.232Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.5253880000000002,
+   "minutes": 5.497199999999999,
+   "at": "2026-11-28T01:00:20.274Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.2329850000000002,
+   "minutes": 4.594433333333333,
+   "at": "2026-11-28T01:04:56.186Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 0.865599,
+   "minutes": 3.268116666666667,
+   "at": "2026-11-28T01:08:12.459Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.1007092,
+   "minutes": 4.460166666666666,
+   "at": "2026-11-28T01:12:40.297Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 11,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/11-claude.md",
+   "costUsd": 1.0990052,
+   "minutes": 3.933183333333333,
+   "at": "2026-11-28T01:16:36.506Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 12,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/12-claude.md",
+   "costUsd": 1.9467486,
+   "minutes": 7.562966666666667,
+   "at": "2026-11-28T01:24:10.501Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 13,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/13-claude.md",
+   "costUsd": 1.5380044,
+   "minutes": 5.762866666666667,
+   "at": "2026-11-28T01:29:56.493Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 14,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/14-claude.md",
+   "costUsd": 0.8348762000000001,
+   "minutes": 2.4170666666666665,
+   "at": "2026-11-28T01:32:21.762Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 15,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/15-claude.md",
+   "costUsd": 1.1449726,
+   "minutes": 4.3833,
+   "at": "2026-11-28T01:36:45.078Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 16,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/16-claude.md",
+   "costUsd": 0.8935946,
+   "minutes": 3.1254833333333334,
+   "at": "2026-11-28T01:39:52.988Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 17,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/17-claude.md",
+   "costUsd": 2.2251684,
+   "minutes": 4.6141000000000005,
+   "at": "2026-11-28T02:46:37.762Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 18,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/18-claude.md",
+   "costUsd": 2.0449786,
+   "minutes": 4.643566666666667,
+   "at": "2026-11-28T02:51:16.587Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 19,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/19-claude.md",
+   "costUsd": 1.3780274000000001,
+   "minutes": 4.6894,
+   "at": "2026-11-28T02:55:58.147Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
   }
  ],
  "defects": [
@@ -83,6 +281,500 @@
      1
     ]
    }
+  },
+  {
+   "id": "D3",
+   "claim": "mergeRegion's welder can map the same point to two different welded points, so a contour's last end and first start come apart",
+   "where": "packages/geom/src/paths/mergeRegion.ts:233 (welder)",
+   "severity": "low",
+   "scenario": "the welder answers the first stored point within `snap` that it meets while walking the 3×3 cells in a fixed order. It does not answer the first point stored. A contour's start S is welded once, at its first segment, onto A. Later, B is stored: B is more than `snap` from A but within `snap` of S (A and B can be up to 2·snap apart). When the contour's last segment ends at S, the welder can meet B's cell before A's and send S to B. The first segment then starts at A and the last ends at B, so the ring no longer closes. `flattenAll` splits it into separate open rings, which throws off the winding counts, and `chain` leaves a gap that `emit` closes with a stray edge. This needs contours with near-coincident corners, which is exactly the case welding is there for.",
+   "fix": [
+    "packages/geom/src/paths/mergeRegion.ts"
+   ],
+   "size": "function",
+   "cause": "welds to the first match in cell order, not the first point stored (or the nearest), and keeps no memo per input point",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "roundRectPath writes duplicate consecutive points when the radius is half a side (pill shapes)",
+   "where": "packages/geom/src/paths/markers.ts:79 (roundRectPath)",
+   "severity": "low",
+   "scenario": "`roundRectPath(0, 0, 40, 20, 10)` clamps the radius to 10 = height/2. The right corners' arcs then end and start at the same point (x+w, y+r): the top-right arc's last sample and the bottom-right arc's first sample. The path gets a zero-length `L` at each side that has no straight run. A stroked pill marker then has degenerate segments, where join and miter math has no direction to work from. The answer should skip a corner's first sample when it equals the previous corner's last.",
+   "size": "function",
+   "cause": "every corner emits both of its end samples, even when the straight run between corners has no length",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    7,
+    10,
+    12,
+    13
+   ],
+   "sources": {
+    "claude": [
+     2,
+     7,
+     10,
+     12,
+     13
+    ]
+   },
+   "fix": [
+    "packages/geom/src/paths/markers.ts"
+   ]
+  },
+  {
+   "id": "D5",
+   "claim": "reachToMeet finds the crossing on one cubic approximation of the arc but places the end on another, so the end lands off the stroke",
+   "where": "packages/geom/src/paths/reachPath.ts:96 (reachToMeet)",
+   "severity": "low",
+   "scenario": "`mode: 'curvature'` (or `'eased'`) end with a large radius, e.g. r = 1000, boundary crossed partway round. The search builds `extensionPieces(frame, reach, ...)`: for an unbounded reach that is one full turn in four quarter cubics, each up to ~2.7e-4·r off the true circle. It records `best`, the cubic arc length to the crossing. `tugOpenEnd(path, end, best)` then rebuilds the arc for `best` alone, with a different piece count, and its end point is computed exactly on the circle (`at(i * step)`). That point is not where the search's cubic crossed the boundary: for r = 1000 it can be ~0.27 units off, either short of the stroke (a visible gap) or past it. A second Reach then finds the same stroke a sliver away (beyond `touching`) and adds another tiny piece. `'eased'` has the same shape of error: `fitSpiral` refits the drawn stretch for each distance, within `FIT_SHARE · ease`.",
+   "fix": [
+    "packages/geom/src/paths/reachPath.ts",
+    "packages/geom/src/paths/pathEndExtension.ts"
+   ],
+   "size": "function",
+   "cause": "crossing measured on one approximation, end placed by another",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "resamplePath with a NaN tolerance halves every piece down to the subdivision limit",
+   "where": "packages/geom/src/paths/resamplePath.ts:58 (resamplePath)",
+   "severity": "low",
+   "scenario": "`opts.tolerance` is NaN, e.g. from an emptied numeric field. `Math.max(NaN, 1e-6)` is NaN, so `worst(...) <= tol` and `err > tol` are both false. No piece is ever taken as straight. The halving test `err > tol` is false too, so pieces are not halved either: every piece is fitted as a cubic, including runs that are dead straight, and their anchors gain handles. A finite tolerance keeps straight runs as lines. The fallback should treat a tolerance that is not a finite positive number as the default 0.5, the way `count` already does.",
+   "size": "line",
+   "cause": "NaN tolerance not defaulted",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    18
+   ],
+   "sources": {
+    "claude": [
+     3,
+     18
+    ]
+   },
+   "fix": [
+    "packages/geom/src/paths/resamplePath.ts",
+    "packages/geom/src/paths/simplifyPath.ts"
+   ]
+  },
+  {
+   "id": "D7",
+   "claim": "pathToD writes no moveto for a subpath that opens without one, so its output draws nothing",
+   "where": "packages/geom/src/paths/pathToD.ts:28 (pathToD)",
+   "severity": "low",
+   "scenario": "a `PolygonPath` whose command stream starts with a drawing command (`[PATH_L, PATH_L]`, coords `[10,0, 10,10]`). `forEachSegment` and every other reader in geom treat it as a subpath opened at the pen, stored (0, 0), which is `origin` in the path's own space. pathToD emits `L10 0L10 10`. SVG data that does not open with a moveto is in error and renders nothing, and `pathFromD` of that string returns an empty path. The round trip loses the whole path. Expected: an `M` at the implied pen, i.e. `M{origin.x} {origin.y}` (0 0 when the path has no origin), before the first drawing command. `PathBuilder` always emits the `M`, so only paths built from raw command arrays reach this.",
+   "fix": [
+    "packages/geom/src/paths/pathToD.ts"
+   ],
+   "size": "function",
+   "cause": "implicit subpath opening not lowered",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    5,
+    6,
+    8,
+    9
+   ],
+   "sources": {
+    "claude": [
+     4,
+     5,
+     6,
+     8,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "splitSubpaths omits the implied moveto when the path's first subpath opens without one",
+   "where": "packages/geom/src/paths/splitSubpaths.ts:46 (placeSubpaths)",
+   "severity": "low",
+   "scenario": "The doc promises that every drawing command that opens a subpath without an `M` \"gets the `M` it implies\". `pen` is only set when a boundary is crossed with `i > cmdStart`. At `i === 0` the condition is false, so for commands `[L, L, Z, M, L, Z]` the first returned subpath is `[L, L, Z]` with no `M` and its `sources` has no -1 entry. Drawn alone that is fine, but a consumer that reorders or joins the parts (for example `joinPaths(splitSubpaths(p).reverse())`, or `splitByClosure` when that subpath ends up after another in its group) draws it from the previous subpath's pen, not from (0, 0).",
+   "fix": [
+    "packages/geom/src/paths/splitSubpaths.ts"
+   ],
+   "size": "line",
+   "cause": "`i > cmdStart` guard skips index 0",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "reachToMeet and extensionPieces use different tests for a straight 'curvature' end, so a near-straight end with no maxDistance extends as a huge full circle",
+   "where": "packages/geom/src/paths/reachPath.ts:96 (reachToMeet)",
+   "severity": "medium",
+   "scenario": "With no `maxDistance` in 'curvature' mode, `reachToMeet` sets `reach = Infinity` whenever `frame.curvature !== 0`. `extensionPieces` decides \"bends\" by `|κ|·distance > STRAIGHT_TURN` (pathEndExtension.ts:71), and with an infinite distance that test passes for any nonzero κ. A curved end that is straight up to float32 noise (say a segment `convertSegments` turned into a curve with handles at thirds, then stored as float32, giving κ ≈ 1e-12) gets four quarter-circle cubics of radius ~1e12. The crossing with a boundary 100 units ahead then sits at `ta` ≈ 1e-10 on a cubic whose control points are 1e12 away, where `segmentCrossings` and `pieceLengthAt` lose precision or miss the hit. The same end with any finite `maxDistance` is grown as a straight line. The straightness decision should be one test, the `STRAIGHT_TURN` one, used in both places.",
+   "fix": [
+    "packages/geom/src/paths/reachPath.ts",
+    "packages/geom/src/paths/pathEndExtension.ts",
+    "packages/geom/src/paths/tugPathEnd.ts"
+   ],
+   "size": "function",
+   "cause": "two straightness tests (`!== 0` vs `STRAIGHT_TURN`)",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    14,
+    15
+   ],
+   "sources": {
+    "claude": [
+     5,
+     14,
+     15
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "zigzagPath never pushes the leading points when a contour starts on a zero-length segment",
+   "where": "packages/geom/src/paths/zigzagPath.ts:36 (zigzagPath)",
+   "severity": "low",
+   "scenario": "a contour whose first segment has no length, e.g. `M0 0 L0 0 L10 0 L10 10 Z` (a doubled anchor, which happens when a pen click lands twice). Each sample on that segment has `dir === null`, and `normal` starts as `{0, 0}`, so the first `pieces` points get no offset and sit on the outline, breaking the alternation the docs promise. The comment says such a point \"keeps the one before's normal\", but the first points have no point before them. Those leading points should take the first non-null normal in the contour.",
+   "size": "line",
+   "cause": "normal seeded with zero instead of the first defined direction",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "reachToMeet skips crossings with the end's own last segment, so a reach that meets that segment finds no crossing",
+   "where": "packages/geom/src/paths/reachPath.ts:42 (segmentsBesideEnd)",
+   "severity": "low",
+   "scenario": "an open path whose last segment is a cubic hooked so its end's extension (tangent, circle of curvature, or eased spiral) runs back across that same segment, e.g. a curvature-mode reach on a curled end, where the circle of curvature follows the last segment back around → the whole end segment is dropped from the candidate strokes, so the first real crossing is missed and the end reaches past it to a further stroke, or returns null. The touch at the end itself, the reason for dropping the segment, is already handled by the `touching` threshold in `reachToMeet`.",
+   "fix": [
+    "packages/geom/src/paths/reachPath.ts"
+   ],
+   "size": "function",
+   "cause": "whole segment excluded instead of only its touch at d≈0",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8,
+    13,
+    19
+   ],
+   "sources": {
+    "claude": [
+     8,
+     13,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "tweenPaths drops a contour that has no segments on one side, so at(1) is not the second shape",
+   "where": "packages/geom/src/paths/tweenPaths.ts:139 (subdivideTo), :218 (lerpContour)",
+   "severity": "low",
+   "scenario": "`a` holds a bare `M` subpath (a lone pen point), which `pathToCubicContours` gives as a contour with no segments, while `b`'s matching contour has k segments. `collapsed()` only runs when the contour is missing altogether (`ca[i] ?? …`), not when it is empty, so `matchContours` calls `subdivideTo([], k)`, which returns `[]` (`segs.length === 0` early return). `lerpContour` maps over `a.segs`, so the result has no segments for every `t`, including `t = 1`, contradicting \"exactly the second at 1\". Expected: an empty contour is treated like a missing one (grown from a point via `collapsed`).",
+   "fix": [
+    "packages/geom/src/paths/tweenPaths.ts"
+   ],
+   "size": "line",
+   "cause": "empty contour not routed to `collapsed`",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "simplifyPath leaves a duplicate seam anchor on a closed subpath when its last corner-to-corner run collapses to one point",
+   "where": "packages/geom/src/paths/simplifyPath.ts:121 (fitStops)",
+   "severity": "low",
+   "scenario": "a closed subpath with corners where the final run (last corner back to `corners[0] + n`) has coincident anchors, e.g. the last anchor duplicated on the first. `sampleRun` dedupes it to one point, the loop `continue`s, so no run is ever fitted with `last = true`; the run before it was fitted with `last = false` and pushed its end anchor, which sits on `out[0]`. The closed result then carries two anchors at one point (a zero-length closing segment) instead of closing on `out[0]`.",
+   "size": "function",
+   "cause": "`last` keyed on the run's position, not on the last run actually fitted",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "tugPathEnd keeps the end anchor's dangling handle on a straight extension piece, so the straight run comes out curved",
+   "where": "packages/geom/src/paths/tugPathEnd.ts:205 (appendPieces)",
+   "severity": "low",
+   "scenario": "`tugPathEnd(set, { sub, end: 'first' }, 40, 'tangent')` on an `AnchorSet` whose first anchor carries an `inHandle` (a pen-drawn set where the first point was dragged, or a last anchor holding an `outHandle`). `atTail` reverses the subpath, so that `inHandle` becomes the tail anchor's `outHandle`. `growTail` only lengthens in place when the last segment is straight; otherwise `appendPieces` pushes the line piece and assigns handles only when `pts.length === 4`. The stale `outHandle` stays on `prev`, so `isStraightSegment(prev, next)` is false and the new segment is drawn as a cubic shaped by that handle. It should be a straight line along the tangent. On a cusp anchor whose dangling handle points off the tangent, the extension visibly bends. Any mode whose first piece is a line takes this path: `'tangent'` always, and `'curvature'` or `'eased'` on an end with no bend.",
+   "fix": [
+    "packages/geom/src/paths/tugPathEnd.ts"
+   ],
+   "size": "line",
+   "cause": "line piece leaves prev.outHandle untouched",
+   "confidence": "likely",
+   "firstOccasion": 11,
+   "sightings": [
+    11
+   ],
+   "sources": {
+    "claude": [
+     11
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "mergeRegion runs quadratically in segment count: overlapCuts tests every segment pair and filledSide computes a full winding for each piece",
+   "where": "packages/geom/src/paths/mergeRegion.ts:92 (overlapCuts), :325 (filledSide → winding)",
+   "severity": "low",
+   "scenario": "a flattened outline of 20,000 straight edges (a traced bitmap, a densely sampled freehand fill) runs `endsAlong` on every pair of line segments (~2·10^8 calls, each allocating arrays), then `winding` walks every ring point twice for every piece. The call blocks for many seconds where a bounding-box prefilter (as `crossingsAmong` presumably has) would make it near-linear.",
+   "fix": [
+    "packages/geom/src/paths/mergeRegion.ts"
+   ],
+   "size": "function",
+   "cause": "no spatial prefilter on pairwise overlap test or winding probe",
+   "confidence": "likely",
+   "firstOccasion": 12,
+   "sightings": [
+    12
+   ],
+   "sources": {
+    "claude": [
+     12
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "pathInWorld can return the input Path instance instead of the fresh Path it promises",
+   "where": "packages/geom/src/paths/pathInWorld.ts:63 (pathInWorld)",
+   "severity": "low",
+   "scenario": "when the path's AABB already equals the pose box and the pose has no rotation or transform, `pathInPoseBox` returns `path` itself and `pathInWorld` returns `local` unchanged, so `pathInWorld(p, pose) === p`. The docstring says \"Returns a fresh `Path` instance; never mutates inputs\", so a caller that trusts it and edits the result in place (for example, writing into `coords`) mutates the stored path.",
+   "fix": [
+    "packages/geom/src/paths/pathInWorld.ts"
+   ],
+   "size": "line",
+   "cause": "docstring contradicts the identity shortcut",
+   "confidence": "sure",
+   "firstOccasion": 13,
+   "sightings": [
+    13
+   ],
+   "sources": {
+    "claude": [
+     13
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "Curvature-mode tug tests a straight end with curvature === 0 while the extension uses a turn threshold, so a near-straight end is handled inconsistently",
+   "where": "packages/geom/src/paths/tugPathEnd.ts:96 (lengthToward)",
+   "severity": "low",
+   "scenario": "a curved end whose curvature is float noise rather than zero. One example: a segment turned into a curve by `convertSegments` (handles at the thirds, then stored as float32, so the cross product reads ~1e-12 instead of 0). With `mode: 'curvature'` and no `maxDistance`, `reachToMeet` sets `reach = Infinity` because `frame.curvature !== 0`. `extensionPieces(frame, Infinity, 'curvature')` then passes its own `|k|·distance > 1e-6` test and draws a full circle of radius ~1e12, in quarter-circle cubics whose chords are ~1e12 long. Crossings with a stroke 100 units ahead fall at t ≈ 1e-10 on such a piece, and the distance read from them (`pieceLengthAt` × a piece length of ~1.6e12) carries an absolute error far larger than the geometry. `lengthToward` takes the same branch and measures by angle about a center ~1e12 away, where `atan2` of the cancelling cross and dot products loses most of its digits. What should happen: the end is treated as straight, as `extensionPieces` itself would treat it for any finite distance, so reach is bounded by the strokes' extent and the length is a plain projection.",
+   "fix": [
+    "packages/geom/src/paths/reachPath.ts",
+    "packages/geom/src/paths/tugPathEnd.ts",
+    "packages/geom/src/paths/pathEndExtension.ts"
+   ],
+   "size": "function",
+   "cause": "straightness decided two ways (exact zero vs STRAIGHT_TURN)",
+   "confidence": "likely",
+   "firstOccasion": 15,
+   "sightings": [
+    15
+   ],
+   "sources": {
+    "claude": [
+     15
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "pathFromD draws the path after an unknown leading command instead of drawing nothing",
+   "where": "packages/geom/src/paths/pathFromD.ts:68 (pathFromD)",
+   "severity": "low",
+   "scenario": "`pathFromD('X M0 0 L10 0')`: `strayPathDataHead` passes (the head is a letter), the unknown `X` is warned about and skipped with `continue`, and the `M`/`L` that follow are drawn. SVG treats an unknown command as an error and renders the path only up to it, so here nothing should be drawn; the same applies mid-path, where SVG stops at the bad letter and this keeps going. This contradicts the function's own rule elsewhere (\"a command with the wrong number of arguments ends the path before it, as SVG renders both\").",
+   "fix": [
+    "packages/geom/src/paths/pathFromD.ts"
+   ],
+   "size": "line",
+   "cause": "unknown command skipped (`continue`) rather than ending the path (`break`)",
+   "confidence": "sure",
+   "firstOccasion": 16,
+   "sightings": [
+    16,
+    18,
+    19
+   ],
+   "sources": {
+    "claude": [
+     16,
+     18,
+     19
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "An out-of-range number in non-arc path data is dropped and the following arguments slide into its slot",
+   "where": "packages/geom/src/paths/pathData.ts:63 (readNumbers)",
+   "severity": "low",
+   "scenario": "`pathFromD('M0 0 L1e400 5 10 10')` → `readNumbers` skips `1e400` (Infinity) and returns `[5, 10, 10]`, so `pathFromD` draws `L5 10` and then stops at the odd argument. Every coordinate after the bad number moves one slot over, so the path is drawn with wrong geometry instead of stopping where the error is. `readArcArgs` already ends the run at such a number; `readNumbers` should do the same (stop, not skip), so the command counts as short and the path ends before it, as SVG does.",
+   "fix": [
+    "packages/geom/src/paths/pathData.ts"
+   ],
+   "size": "line",
+   "cause": "skip instead of stop on a non-finite token",
+   "confidence": "sure",
+   "firstOccasion": 17,
+   "sightings": [
+    17
+   ],
+   "sources": {
+    "claude": [
+     17
+    ]
+   }
+  },
+  {
+   "id": "D20",
+   "claim": "pointAlongPath with t = NaN returns a NaN station instead of a clamped one",
+   "where": "packages/geom/src/paths/pathAt.ts:33 (pointAlongPath)",
+   "severity": "low",
+   "scenario": "`Math.min(Math.max(NaN, 0), 1)` is NaN, so `measure.at(NaN)` runs. In `at`, `target` is NaN too, `segmentAt` falls back to segment 0, and `pointOnSegmentOnly` is evaluated at NaN, giving `{x: NaN, y: NaN}`. The doc says `t` is clamped to 0..1. A NaN fraction can come from a 0/0 ratio upstream, such as a zero-length drag. The same gap exists in `PathMeasure.at`'s own clamp (pathMeasure.ts:146).",
+   "fix": [
+    "packages/geom/src/paths/pathAt.ts",
+    "packages/geom/src/paths/pathMeasure.ts"
+   ],
+   "size": "line",
+   "cause": "Math.min/Math.max let NaN through",
+   "confidence": "sure",
+   "firstOccasion": 17,
+   "sightings": [
+    17,
+    18
+   ],
+   "sources": {
+    "claude": [
+     17,
+     18
+    ]
+   }
+  },
+  {
+   "id": "D21",
+   "claim": "simplifyPath with a NaN tolerance drops straight segments",
+   "where": "packages/geom/src/paths/simplifyPath.ts:105 (fitParams)",
+   "severity": "low",
+   "scenario": "`resamplePath(p, { tolerance: NaN })` (an unparsed field from a panel): `Math.max(NaN, 1e-6)` is NaN, so `worst(...) <= tol` and `err > tol` are both false. fitPiece never accepts the straight answer, never halves, and always emits a cubic, fine; but in simplifyPath the same NaN reaches `sampleRun`, where `Math.min(8, Math.max(1, Math.floor(len / (4 * NaN))))` is NaN and the `k <= steps` loop adds no samples for any straight segment, so straight runs fit as though their far anchors did not exist. Should fall back to the default the way a non-finite `count` does.",
+   "fix": [
+    "packages/geom/src/paths/resamplePath.ts",
+    "packages/geom/src/paths/simplifyPath.ts"
+   ],
+   "size": "line",
+   "cause": "`Math.max` with NaN propagates NaN; no finiteness check",
+   "confidence": "sure",
+   "firstOccasion": 18,
+   "sightings": [
+    18
+   ],
+   "sources": {
+    "claude": [
+     18
+    ]
+   }
+  },
+  {
+   "id": "D22",
+   "claim": "simplifySpan returns one anchor for a run of coincident anchors, so simplifyAnchorsAt deletes the run's last anchor",
+   "where": "packages/geom/src/paths/simplifyPath.ts:97 (simplifySpan); packages/geom/src/paths/simplifyAnchors.ts:47 (simplifyAnchorsAt)",
+   "severity": "low",
+   "scenario": "a run of three or more selected anchors that all sit on one point (stacked by a snap): every `sampleRun` dedupes to one point, `fitStops` adds nothing, and `result` is just the first anchor, with the last anchor's outHandle copied onto it. simplifyAnchorsAt sees `refit.length < end - start + 1` and splices, removing the run's last anchor, which the doc says always stays, and its inHandle is lost.",
+   "fix": [
+    "packages/geom/src/paths/simplifyPath.ts"
+   ],
+   "size": "line",
+   "cause": "no guard that the refit still ends on the run's last anchor",
+   "confidence": "likely",
+   "firstOccasion": 18,
+   "sightings": [
+    18
+   ],
+   "sources": {
+    "claude": [
+     18
+    ]
+   }
+  },
+  {
+   "id": "D23",
+   "claim": "resamplePath's 10,000-anchor cap on spacing counts pieces rather than anchors, so the cap does not limit anchors as intended",
+   "where": "packages/geom/src/paths/resamplePath.ts:121 (allocate)",
+   "severity": "low",
+   "scenario": "a path of many open subpaths with a small `spacing`: the check sums `span.pieces`, but each open subpath writes `pieces + 1` anchors, and one-anchor subpaths add their anchors too. A path of 2,000 open two-anchor subpaths at a spacing giving 5 pieces each sums to 10,000 pieces and passes, writing 12,000 anchors, past the cap the option documents (\"A spacing that would place more than 10,000 anchors places 10,000\"). The count branch does count fixed anchors (`fixedCount`), so the two branches answer the cap differently.",
+   "size": "function",
+   "cause": "spacing branch compares piece total, not anchor total",
+   "confidence": "sure",
+   "firstOccasion": 19,
+   "sightings": [
+    19
+   ],
+   "sources": {
+    "claude": [
+     19
+    ]
+   }
   }
- ]
+ ],
+ "lines": 5272
 }
