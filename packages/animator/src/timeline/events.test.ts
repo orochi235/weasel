@@ -212,6 +212,24 @@ describe('event crossing lateness', () => {
 
   // The tail of the outgoing lap fires after the playhead has already wrapped,
   // so measuring against it reads -48 here rather than 2.
+  it('samples the frame before firing the outgoing lap\'s tail, as it does before the lap it lands in', () => {
+    const h = harness();
+    let shown = NaN;
+    const seen: number[] = [];
+    createTimeline(h.register, 1, {
+      duration: 100,
+      loop: true,
+      tracks: [
+        { kind: 'sampled', keys: [{ t: 0, value: 0 }, { t: 100, value: 100 }], onTick: (v: number) => { shown = v; } },
+        { kind: 'event', events: [{ t: 98, fire: () => seen.push(shown) }] },
+      ],
+    });
+    h.advance(0);
+    h.advance(90);
+    h.advance(110);
+    expect(seen).toEqual([10]);
+  });
+
   it('measures the loop seam tail against the duration, not the wrapped playhead', () => {
     const h = harness();
     const late: number[] = [];

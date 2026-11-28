@@ -69,7 +69,7 @@ export function createTimeline(
 
     // Sampled before fired, so a handler reads the current frame's values.
     sampler.apply(opts.tracks, pos.time());
-    // A handler (on the outgoing lap's tail too) or an `onTick` canceled it: it is off the table, and does nothing more.
+    // An `onTick` canceled it: it is off the table, and does nothing more.
     if (canceled) return true;
     const sought = crossings.fire();
     if (canceled) return true;

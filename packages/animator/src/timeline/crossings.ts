@@ -12,7 +12,8 @@ export interface Crossings {
   frame(rate: number): void;
   /** After the playhead wrapped `laps` laps, below 0 when played back. */
   wrapped(laps: number): void;
-  /** Fires the events the frame's move crossed; answers whether a handler moved the playhead. */
+  /** Fires the events the frame's move crossed, the outgoing lap's tail first; answers whether a
+   *  handler moved the playhead. */
   fire(): boolean;
   /** Books what the frame's clock reaches; `virtualNow` is the entry's clock. */
   book(virtualNow: number): void;
@@ -33,20 +34,28 @@ export function createCrossings(
   }) : null;
   const events = createEventCursor(createEventFirer(report, booker !== null), gone);
   let rate = 0;
-  // A handler on the outgoing lap's tail that seeks ends the frame's crossings, as one in `fire` does.
-  let tailSought = false;
+  // A frame that wrapped forward fires the outgoing lap's tail in `fire`, after the frame is sampled.
+  let tail = false;
 
   return {
-    frame(r) { rate = r; tailSought = false; },
-    // Flush the outgoing pass's tail before re-arming, or an event between the
-    // last tick and `duration` is dropped whenever a frame straddles the seam.
+    frame(r) { rate = r; tail = false; },
     wrapped(laps) {
-      const sought = rate !== 0 && laps > 0 && events.to(opts.tracks, pos.duration());
-      tailSought ||= sought;
-      if (!sought) events.place(laps > 0 ? -Infinity : pos.time(), false);
+      if (rate !== 0 && laps > 0) { tail = true; return; }
+      events.place(laps > 0 ? -Infinity : pos.time(), false);
       if (report?.watched) report.lap(pos.lap());
     },
-    fire: () => tailSought || (rate > 0 ? events.to(opts.tracks, pos.time()) : rate < 0 && events.back(pos.time())),
+    fire() {
+      if (tail) {
+        tail = false;
+        // Flushed before the new lap's, or an event between the last frame and `duration` is dropped.
+        const sought = events.to(opts.tracks, pos.duration());
+        if (!sought) events.place(-Infinity, false);
+        if (report?.watched) report.lap(pos.lap());
+        // A handler there that seeks ends the frame's crossings, as one in the lap it lands in does.
+        if (sought) return true;
+      }
+      return rate > 0 ? events.to(opts.tracks, pos.time()) : rate < 0 && events.back(pos.time());
+    },
     book(virtualNow) { booker?.tick(virtualNow, rate); },
     retract() { booker?.retract(); },
     sought(landed) {
