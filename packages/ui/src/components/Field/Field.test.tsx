@@ -42,11 +42,12 @@ describe('Field', () => {
     expect(screen.getByRole('slider').id).not.toBe('');
   });
 
-  it('leaves a control that names itself alone', () => {
-    render(<Field label="Gain" description="d"><Knob aria-label="Trim" /></Field>);
+  it('treats a true slot as empty, as React draws it', () => {
+    const { container } = render(<Field label="Gain" error={true} description={true}><Knob /></Field>);
     const knob = screen.getByRole('slider');
-    expect(knob).toHaveAccessibleName('Trim');
+    expect(knob).not.toHaveAttribute('aria-invalid');
     expect(knob).not.toHaveAttribute('aria-describedby');
+    expect(container.firstElementChild).not.toHaveAttribute('data-invalid');
   });
 
   it('shows no error for an empty one', () => {
