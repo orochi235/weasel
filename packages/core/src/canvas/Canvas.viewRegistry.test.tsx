@@ -129,4 +129,26 @@ describe('view registration', () => {
       error.mockRestore();
     }
   });
+
+  it('keeps a view its id when it releases one registration and registers the next in the same commit', () => {
+    let registry!: ViewRegistry;
+    render(
+      <ViewRegistryProvider>
+        <Probe onRegistry={(r) => { registry = r; }} />
+      </ViewRegistryProvider>,
+    );
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const view = () => ({ id: 'detail', order: 0 }) as unknown as ViewRegistration;
+      const [held, duplicate, rebuilt] = [view(), view(), view()];
+      const releaseHeld = registry.register(held);
+      registry.register(duplicate);
+      releaseHeld();
+      registry.register(rebuilt);
+      expect(registry.list()).toEqual([rebuilt]);
+      expect(error).toHaveBeenCalledTimes(1);
+    } finally {
+      error.mockRestore();
+    }
+  });
 });
