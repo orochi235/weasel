@@ -66,4 +66,12 @@ describe('keyboardInput', () => {
     expect(calls.length).toBeGreaterThan(before);
     expect(inFlight.has(keyHeldGestureId(' ', 'Space'))).toBe(true);
   });
+
+  it('releases a key pressed before Cmd when Cmd comes up, as its own keyup may never arrive', () => {
+    const { input, inFlight } = channel({ takes: holdsSpace });
+    input.onKeyDown(keydown(SPACE));
+    input.onKeyDown(keydown({ key: 'Meta', code: 'MetaLeft', metaKey: true }));
+    input.onKeyUp(new KeyboardEvent('keyup', { key: 'Meta', code: 'MetaLeft' }));
+    expect(inFlight.size).toBe(0);
+  });
 });

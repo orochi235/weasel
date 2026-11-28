@@ -83,7 +83,14 @@ export function keyboardInput(core: DispatchCore): {
   // Keystrokes this channel's own listener already offered its `over` bindings, which a peer's offer leaves.
   const askedOver = new WeakSet<Event>();
 
+  // macOS sends no keyup for a key released while Cmd is down, so a key already down when Cmd goes down may lose its own.
+  const markCmd = (): void => {
+    for (const [k, down] of downKeys) downKeys.set(k, { ...down, withCmd: true });
+    for (const [k, down] of heldKeys) heldKeys.set(k, { ...down, withCmd: true });
+  };
+
   const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Meta') markCmd();
     // A key that something focused or modal owns is not this page's to press again when the pointer arrives.
     if (inMenu(e.target) || focusedControlOwnsKey(e) || (isEditableTarget(e.target) && !fieldChord(e))) return;
     if (inModalOver(e.target, core.canvas)) return;
