@@ -155,8 +155,9 @@ describe('the dispatch record', () => {
       modifiers: { alt: false, ctrl: false, meta: false, shift: false },
       viewId: null, mode: 'path-edit',
     });
-    // dispatch.cancelAll's engaged phase does not match with nothing in flight.
-    expect(r.matched.map((c) => c.actionId)).toEqual(['escape', 'leavePathEdit', 'tool.resetToDefault']);
+    // dispatch.cancelAll's engaged phase does not match with nothing in flight. Matcher order, before the
+    // context preference ranks leavePathEdit up.
+    expect(r.matched.map((c) => c.actionId)).toEqual(['escape', 'tool.resetToDefault', 'leavePathEdit']);
     expect(r.dropped).toEqual([]);
     expect(rows(r)).toEqual([
       'escape first declined:not-applicable',
@@ -230,6 +231,26 @@ describe('the dispatch record', () => {
     ]);
     expect(r.matched.map((c) => c.actionId)).toEqual(['ports.connect', 'viewport.dragPan']);
     expect(rows(r)).toEqual(['ports.connect first fired']);
+  });
+
+  it('lists a barred binding among the matched in matcher order', () => {
+    const connect: Action = {
+      id: 'ports.connect', label: 'connect',
+      defaultBinding: { kind: 'drag', target: 'affordance:layer:diagram-ports' },
+      invoker: { timing: 'ongoing', start: () => ({ onEnd: vi.fn() }) },
+    };
+    const pan: Action = {
+      id: 'viewport.dragPan', label: 'pan', defaultBinding: { kind: 'drag' }, scope: 'hotkey',
+      invoker: { timing: 'ongoing', start: () => ({ onEnd: vi.fn() }) },
+    };
+    const event = press({
+      affordance: { kind: 'layer:diagram-ports', owner: 'diagram-ports', strength: 'exclusive' },
+    });
+    createDispatcher().handleInput(event, ctxOf([connect, pan]));
+
+    expect(lastRecord().matched.map((c) => [c.actionId, c.scope])).toEqual([
+      ['viewport.dragPan', 'hotkey'], ['ports.connect', 'ambient'],
+    ]);
   });
 
   it('records an ongoing action that bails at start() and the fall-through past it', () => {

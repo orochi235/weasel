@@ -9,11 +9,11 @@ import {
 import type { KitSettingsStore } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
-import { pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
-import { multiTouchGestureId } from '../dispatcher';
+import { landedNestedIn, pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
 import { LONG_PRESS_HAPTIC_MS, type LongPressOptions } from '../longPressState';
 import { underPointer } from '../underPointer';
 import type { HoverCursorInput } from './hoverCursor';
+import { touchView } from './touchView';
 
 type WorldObserver = ((world: { x: number; y: number }) => void) | undefined;
 
@@ -26,7 +26,7 @@ export interface PointerInputOptions {
   onDoubleClick(): WorldObserver;
   /** Outlives this listener set: a re-bind between two clicks must not drop the double click. */
   clicks: ClickMemory;
-  hover: Pick<HoverCursorInput, 'moved' | 'released'>;
+  hover: Pick<HoverCursorInput, 'moved' | 'released' | 'onLeave'>;
   /** See `UseGestureDispatcherOptions.controls`. */
   controls(): 'leave' | 'take';
   /** Whether a secondary press may drag. Only while the contextmenu channel
@@ -40,6 +40,8 @@ export interface PointerInput {
    *  pointer's moves arrive through its session, which keeps seeing them once
    *  the pointer has left the canvas. */
   onHoverMove(e: PointerEvent): void;
+  /** A release on the canvas, heard for a pointer whose press an item's own session took mid-press. */
+  onHoverUp(e: PointerEvent): void;
   onNativeDoubleClick(e: MouseEvent): void;
   /** Whether a touch or pen hold is in progress, firing its long-press if still pending. */
   takeNativeHold(): boolean;
@@ -151,14 +153,12 @@ function heldMoves(
 
 /** The recognizer a pointer channel feeds: dispatching through `core`, timed by `clock`, its thresholds read from the kit settings at each use. */
 function createRecognizer(core: PointerDispatchCore, opts: PointerInputOptions, clock: RecognizerClock) {
+  const touch = touchView(core);
   return createPointerRecognizer({
-    sink: {
-      dispatch: (ev) => core.dispatch(ev),
-      multiTouchInFlight: (fingers) => core.dispatcherNow().inFlight().has(multiTouchGestureId(fingers)),
-    },
+    sink: { dispatch: touch.dispatch, multiTouchInFlight: touch.inFlight },
     clock,
     toWorld: core.toWorld,
-    toSurface: (p) => core.toViewLocal(p.x, p.y),
+    toSurface: (p) => touch.within(() => core.toViewLocal(p.x, p.y)),
     longPressMs: () => opts.longPress()?.duration ?? opts.kitSettings().get('gestures.longPressMs'),
     doubleClickMs: () => opts.kitSettings().get('gestures.doubleClickMs'),
     doubleClickPx: () => opts.kitSettings().get('gestures.doubleClickPx'),
@@ -187,9 +187,14 @@ function createRecognizer(core: PointerDispatchCore, opts: PointerInputOptions, 
  */
 function pressClaims(canvas: Element | null, dragPx: () => number | undefined) {
   const uncaptured = new Map<number, PointerSample>();
+  /** Pointers whose press an item's session took on a move: their release reaches no session here. */
+  const takenOnMove = new Set<number>();
   return {
     uncaptured: (press: PointerSample): void => { uncaptured.set(press.pointerId, press); },
-    drop: (pointerId: number): void => { uncaptured.delete(pointerId); },
+    drop: (pointerId: number): void => { uncaptured.delete(pointerId); takenOnMove.delete(pointerId); },
+    tookOnMove: (pointerId: number): void => { takenOnMove.add(pointerId); },
+    /** Whether a release on `pointerId` lets go of a press an item took on a move. */
+    releasesTaken: (pointerId: number): boolean => takenOnMove.delete(pointerId),
     yielded: (e: PointerEvent, session: PointerSession | undefined): boolean =>
       session !== undefined && canvas !== null && heldWithin(e.pointerId, canvas, session),
     moved(e: PointerEvent, session: PointerSession | undefined): void {
@@ -262,10 +267,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
 
   const onMove = (e: PointerEvent): void => {
     const session = sessions.get(e.pointerId);
-    if (claims.yielded(e, session)) {
-      session!.cancel();
-      return;
-    }
+    if (claims.yielded(e, session)) { session!.cancel(); claims.tookOnMove(e.pointerId); return; }
     claims.moved(e, session);
     routeAt(e.pointerId, e.clientX, e.clientY);
     const sample = sampleOf(e);
@@ -276,7 +278,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
 
   const onUp = (e: PointerEvent, session: PointerSession | undefined): void => {
     // Released before it moved, and the item's own session took the press: it clicks, not this surface.
-    if (claims.yielded(e, session)) { onCancel(e.pointerId); return; }
+    if (claims.yielded(e, session)) { onCancel(e.pointerId); opts.hover.released(e); return; }
     routeAt(e.pointerId, e.clientX, e.clientY);
     drop(e.pointerId);
     menus.ended(e.pointerId, e);
@@ -337,8 +339,12 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       recognizer.press(press);
     },
     onHoverMove(e) {
-      if (!sessions.has(e.pointerId)) onMove(e);
+      if (sessions.has(e.pointerId)) return;
+      // A hover over a surface nested in this one is that surface's, and leaves this one.
+      if (landedNestedIn(canvas, e)) opts.hover.onLeave();
+      else onMove(e);
     },
+    onHoverUp: (e) => { if (claims.releasesTaken(e.pointerId)) opts.hover.released(e); },
     onNativeDoubleClick(e) {
       if (!claimedDoubleClick) return;
       claimedDoubleClick = false;

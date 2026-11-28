@@ -19,7 +19,7 @@ export function uiInvocationCtx(deps: ActionDeps, params?: Record<string, unknow
 // The pointer in client pixels, where the event carries it. Not every kind
 // does, which is why `ctx.screen` is optional.
 function clientPoint(ev: InputEvent): Point2 | undefined {
-  // A wheel's and a pinch's `clientX`/`clientY` are canvas-local.
+  // A wheel's and a pinch's `clientX`/`clientY` are view-local.
   if (ev.kind === 'wheel' || ev.kind === 'pinch') return ev.screen;
   const cx = (ev as { clientX?: number }).clientX;
   const cy = (ev as { clientY?: number }).clientY;
@@ -33,7 +33,7 @@ function pressDrag(
   // as the fallback for a consumer that wired neither.
   const sx = event.x ?? (event.kind === 'click' ? event.pressX : undefined) ?? 0;
   const sy = event.y ?? (event.kind === 'click' ? event.pressY : undefined) ?? 0;
-  const affordance = event.kind === 'pointerdown' ? (event.affordance as AffordanceHit | undefined) : undefined;
+  const affordance = event.affordance as AffordanceHit | undefined;
   return {
     world: { x: sx, y: sy },
     drag: {
@@ -89,6 +89,22 @@ function pumpDrag(
         ? { screenDelta: localDelta(toLocal, origin!.clientX!, origin!.clientY!, eventClientX!, eventClientY!) }
         : {}),
       ...(points !== undefined ? { points } : {}),
+    },
+  };
+}
+
+// A cancel carries no point: the drag ends where it last was, with the trail it had drawn.
+function cancelDrag(facts: GestureFacts): Pick<InvocationCtx, 'world' | 'drag'> | undefined {
+  const { origin, points } = facts;
+  if (!origin) return undefined;
+  const last = points?.at(-1) ?? origin;
+  return {
+    world: { x: last.x, y: last.y },
+    drag: {
+      start: { x: origin.x, y: origin.y },
+      current: { x: last.x, y: last.y },
+      delta: { x: last.x - origin.x, y: last.y - origin.y },
+      ...(points !== undefined ? { points: [...points] } : {}),
     },
   };
 }
@@ -151,6 +167,8 @@ export function buildInvocationCtx(
     Object.assign(base, pressDrag(event));
   } else if (event.kind === 'pointermove' || event.kind === 'pointerup') {
     Object.assign(base, pumpDrag(event, facts, toLocal));
+  } else if (event.kind === 'pointercancel') {
+    Object.assign(base, cancelDrag(facts));
   } else if (event.kind === 'multitouch') {
     base.multiTouch = multiTouchOf(event, facts);
   } else if (event.kind === 'carry') {

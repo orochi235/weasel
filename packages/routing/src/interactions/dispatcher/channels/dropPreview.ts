@@ -3,6 +3,7 @@
  * action its drop would run shows what that would do, through `Action.preview`.
  * A dragover never invokes the action, so this is the only place it is asked.
  */
+import { deepEqual } from '@weasel-js/registry';
 import { createActionDeps } from '../../actions/buildDeps';
 import type { DispatcherContext, ResolveOnlyResult } from '../dispatcherApi';
 import { immediateRunParams } from '../inputFacts';
@@ -10,8 +11,8 @@ import type { InputEvent } from '../matcher';
 
 export interface DropPreview {
   /** Show `winner`'s preview of `event`, replacing what an earlier call showed.
-   *  A repeat of the last call, which a stationary drag sends every few
-   *  milliseconds, changes nothing. */
+   *  A repeat of the last call with the same resolved params, which a
+   *  stationary drag sends every few milliseconds, changes nothing. */
   show(event: Extract<InputEvent, { kind: 'drop' }>, winner: ResolveOnlyResult, ctx: DispatcherContext): void;
   /** Take the preview down. */
   end(): void;
@@ -25,10 +26,12 @@ function keyOf(event: Extract<InputEvent, { kind: 'drop' }>, winner: ResolveOnly
 
 export function dropPreview(): DropPreview {
   let key: string | null = null;
+  let params: Record<string, unknown> | undefined;
   let stop: (() => void) | null = null;
 
   const end = () => {
     key = null;
+    params = undefined;
     const s = stop;
     stop = null;
     if (!s) return;
@@ -41,9 +44,11 @@ export function dropPreview(): DropPreview {
 
   const show: DropPreview['show'] = (event, winner, ctx) => {
     const next = keyOf(event, winner);
-    if (next === key) return;
+    // Params compare by value: a thunk may build a fresh object each call.
+    if (next === key && deepEqual(params, winner.params)) return;
     end();
     key = next;
+    params = winner.params;
     const { action } = winner;
     if (!action.preview) return;
     try {

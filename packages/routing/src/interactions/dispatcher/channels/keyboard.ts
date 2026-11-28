@@ -9,7 +9,8 @@ import type { InputEvent } from '../matcher';
 import { keymapKeys } from './keymapKeys';
 import { passOn, type TakeKey } from './keyPeers';
 import { inModalOver } from './modal';
-import { followPointer, releaseIn, type HeldKey } from './overKeys';
+import { keysDown, physicalKey } from './keysDown';
+import { followPointer, stillHeld } from './overKeys';
 
 /**
  * True when AltGr typed the character `e` reports. A layout that types `[` with
@@ -33,28 +34,16 @@ function keystrokeEvents(e: KeyboardEvent, mods: { altKey: boolean; ctrlKey: boo
   };
 }
 
-type Mods = Pick<KeyboardEvent, 'altKey' | 'ctrlKey' | 'metaKey' | 'shiftKey'>;
-const NO_MODS: Mods = { altKey: false, ctrlKey: false, metaKey: false, shiftKey: false };
-
-/** The `keyHeld` up event releasing `down`, with the modifiers of `mods`. */
-function releaseOf(down: HeldKey, mods: Mods): InputEvent {
-  return {
-    kind: 'keyHeld', key: down.key, ...(down.code !== undefined ? { code: down.code } : {}), phase: 'up',
-    altKey: mods.altKey, ctrlKey: mods.ctrlKey, metaKey: mods.metaKey, shiftKey: mods.shiftKey,
-  };
-}
-
 /** The Alt and Ctrl a keystroke reports, as pressed. */
 const typedMods = (e: KeyboardEvent) => ({ altKey: e.altKey, ctrlKey: e.ctrlKey });
 
-/** A keystroke in a text field that a binding may still take: a chord with Ctrl or Cmd. Any other key is typing. */
-const fieldChord = (e: KeyboardEvent): boolean => e.ctrlKey || e.metaKey;
+/** A keystroke in a text field that a binding may still take: a chord with Ctrl or Cmd. Any other key, AltGr's included, is typing. */
+const fieldChord = (e: KeyboardEvent): boolean => e.metaKey || (e.ctrlKey && !typedWithAltGraph(e));
 
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => isElement(t) && t.closest('[role="menu"]') !== null;
 
 const codeOf = (e: KeyboardEvent): { code?: string } => (e.code ? { code: e.code } : {});
-const physicalKey = (e: KeyboardEvent): string => e.code || e.key.toLowerCase();
 
 export function keyboardInput(core: DispatchCore): {
   onKeyDown: (e: KeyboardEvent) => void;
@@ -71,17 +60,16 @@ export function keyboardInput(core: DispatchCore): {
 } {
   const { dispatch, dispatcherNow } = core;
 
-  // Held keys by physical key, mapped to the `key` they went down as (Shift
-  // pressed mid-hold makes the keyup of an 'o' press report 'O') and the
-  // dispatcher that took the down, which hover may have routed away from.
-  const heldKeys = new Map<string, HeldKey>();
-  // Every key down on the page, taken or not, for `arrive` to press again.
-  const downKeys = new Map<string, Omit<HeldKey, 'on' | 'view'>>();
   const keymaps = keymapKeys(core.keymaps);
+  const keys = keysDown(core, keymaps);
+  const { down: downKeys, held: heldKeys } = keys;
   // Keystrokes already offered here by a peer on the surface, which this channel's own listener leaves.
   const taken = new WeakSet<Event>();
+  // Keystrokes this channel's own listener already offered its `over` bindings, which a peer's offer leaves.
+  const askedOver = new WeakSet<Event>();
 
   const onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Meta') keys.cmdDown();
     // A key that something focused or modal owns is not this page's to press again when the pointer arrives.
     if (inMenu(e.target) || focusedControlOwnsKey(e) || (isEditableTarget(e.target) && !fieldChord(e))) return;
     if (inModalOver(e.target, core.canvas)) return;
@@ -92,13 +80,14 @@ export function keyboardInput(core: DispatchCore): {
     // does the one under the pointer, for its `over` bindings alone.
     const reach: KeyReach = { held: core.holdsKeys(), over: core.pointerOver() };
     if (!reach.held && !reach.over) return;
+    if (reach.over) askedOver.add(e);
     consider(e, reach);
-    if (reach.held && core.canvas) passOn(core.canvas, take, e);
+    if (reach.held && core.canvas) passOn(core.canvas, 'key', take, e);
   };
 
   const take: TakeKey = (e) => {
     taken.add(e);
-    consider(e, { held: true, over: core.pointerOver() });
+    consider(e, { held: true, over: core.pointerOver() && !askedOver.has(e) });
   };
 
   const consider = (e: KeyboardEvent, reach: KeyReach): void => {
@@ -108,7 +97,11 @@ export function keyboardInput(core: DispatchCore): {
     // streamed an 'unhandled' immediate-`key` trace entry per repeat.
     // Autorepeat for a key that ISN'T held still dispatches normally,
     // so things like Cmd+= step-zoom keep auto-repeating.
-    if (e.repeat && (heldKeys.has(physicalKey(e)) || keymaps.quiet(physicalKey(e)))) {
+    const physical = physicalKey(e);
+    const holding = heldKeys.get(physical);
+    // A cancel-all or tool switch may have ended its gesture: the repeat presses it again.
+    if (holding !== undefined && !stillHeld(holding)) heldKeys.delete(physical);
+    if (e.repeat && (heldKeys.has(physical) || keymaps.quiet(physical))) {
       e.preventDefault();
       return;
     }
@@ -146,30 +139,5 @@ export function keyboardInput(core: DispatchCore): {
     return handled;
   };
 
-  const keyUp = (physical: string, e: KeyboardEvent): void => {
-    downKeys.delete(physical);
-    const down = heldKeys.get(physical);
-    if (down === undefined) return;
-    heldKeys.delete(physical);
-    releaseIn(core, down, releaseOf(down, e));
-  };
-
-  const onKeyUp = (e: KeyboardEvent) => {
-    const physical = physicalKey(e);
-    keymaps.up(e, physical);
-    keyUp(physical, e);
-    // macOS sends no keyup for a key released while Cmd is down, so Cmd's own keyup releases it.
-    if (e.key !== 'Meta') return;
-    for (const [k, down] of [...downKeys, ...heldKeys]) if (down.withCmd) keyUp(k, e);
-  };
-
-  const releaseAll = (): void => {
-    downKeys.clear();
-    keymaps.clear();
-    const releasing = [...heldKeys.values()];
-    heldKeys.clear();
-    for (const down of releasing) releaseIn(core, down, releaseOf(down, NO_MODS));
-  };
-
-  return { onKeyDown, onKeyUp, take, releaseAll, ...followPointer(core, downKeys, heldKeys) };
+  return { onKeyDown, onKeyUp: keys.up, take, releaseAll: keys.releaseAll, ...followPointer(core, downKeys, heldKeys) };
 }

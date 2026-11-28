@@ -20,7 +20,7 @@ describe('dispatcher targets in an iframe', () => {
     doc.body.append(outer);
     outer.append(inner);
     inner.append(target);
-    const release = holdSurface(inner, true);
+    const release = holdSurface(inner, { pointer: true });
     expect(pressedNestedIn(outer, target)).toBe(true);
     expect(landedNestedIn(outer, { target } as unknown as Event)).toBe(true);
     release();

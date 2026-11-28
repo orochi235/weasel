@@ -289,5 +289,20 @@ describe('useGestureDispatcher — which drags a canvas accepts', () => {
     expect(dragOver(canvas, [{ kind: 'file', type: '' }]).defaultPrevented).toBe(true);
     expect(dragOver(canvas, [], ['Files']).defaultPrevented).toBe(true);
   });
-});
 
+  it('logs a drop whose items fail to read, rather than leaving the rejection unhandled', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const action = makeProbeAction([{ kind: 'drop' }], vi.fn());
+      const { container } = render(<Harness><Probe actionDef={action} /></Harness>);
+      const canvas = container.querySelector('canvas')!;
+      const denied = { kind: 'string', type: 'text/plain', getAsString: () => { throw new Error('denied'); } };
+      act(() => { canvas.dispatchEvent(makeDropEvent({ dataTransfer: { items: [denied], files: [], types: ['text/plain'] } })); });
+      await waitFor(() => {
+        expect(error.mock.calls.some(([m]) => String(m).startsWith('weasel dispatcher'))).toBe(true);
+      });
+    } finally {
+      error.mockRestore();
+    }
+  });
+});

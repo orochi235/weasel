@@ -11,6 +11,7 @@ import type { ActionsRegistry } from '../actions/registry';
 import type { Dispatcher, DispatcherContext, KeyReach } from './dispatcherApi';
 import type { DispatcherViewTarget, UseGestureDispatcherOptions } from './gestureDispatcherOptions';
 import type { InputEvent } from './matcher';
+import { isMultiTouchGestureId, isPointerGestureId } from './gestureIds';
 import type { KeymapStack } from '../../keymaps/keymapStack';
 
 /** What a channel reads and calls. Every member is a closure over the
@@ -22,6 +23,10 @@ export interface DispatchCore {
   /** Route an event with coordinates. `pointerId` is `null` for input with
    *  nothing to capture: wheel, hover, contextmenu, drop. */
   routeAt(pointerId: number | null, clientX: number, clientY: number): void;
+  /** Route to the view whose dispatcher runs a held pointer's or a hand's
+   *  gesture, when the routed one runs none: input with no pointer of its own
+   *  (a wheel) goes where a live drag is pinned. */
+  routeToHeld(): void;
   /** The routed view's id, and a way to put one back: an event that
    *  dispatches later runs on the view it landed in. */
   routedView(): string | null;
@@ -54,10 +59,12 @@ export interface DispatchCore {
   pointerOver(): boolean;
   setPointerOver(over: boolean): void;
   /** Make this canvas's input scope the active one for the press, wheel or
-   *  menu `event`, unless it landed in another dispatcher's surface nested
-   *  inside this one, or another dispatcher on this surface activated for it
-   *  first: the scope an event lands in is the innermost surface's, and of two
-   *  on one surface, the first attached. With no event, activate unconditionally. */
+   *  menu `event`, unless another dispatcher's surface nested inside this one
+   *  handles it, or another dispatcher on this surface activated for it first:
+   *  the scope is the innermost surface's that runs the event's channel (or,
+   *  with none, the innermost it landed in), and of two on one surface, the
+   *  first attached, though one with its keyboard off leaves the keys to the
+   *  other. With no event, activate unconditionally. */
   activate(event?: Event): void;
   /** Whether the hook's effect has been torn down. */
   disposed(): boolean;
@@ -93,12 +100,18 @@ export interface DispatchCoreSources {
   disposed(): boolean;
 }
 
-// Every element a dispatcher listens on, counted, so a press finds the innermost surface it landed in.
+// Every element a dispatcher listens on, counted, so an event finds the innermost surface it landed in.
 const SURFACES = new WeakMap<Element, number>();
-// Those of them whose dispatcher runs pointer gestures.
-const POINTER_SURFACES = new WeakMap<Element, number>();
-// Events a dispatcher has activated for, so a second one on the same surface leaves them.
+/** The channels whose events activate a scope, and so ask which surface they landed in. */
+export type SurfaceChannel = 'pointer' | 'wheel' | 'contextMenu';
+// Those of them whose dispatcher runs each channel's input.
+const CHANNEL_SURFACES: Record<SurfaceChannel, WeakMap<Element, number>> = {
+  pointer: new WeakMap(), wheel: new WeakMap(), contextMenu: new WeakMap(),
+};
+const CHANNEL_OF: ReadonlyMap<string, SurfaceChannel> = new Map([['pointerdown', 'pointer'], ['wheel', 'wheel'], ['contextmenu', 'contextMenu']]);
+// Events a dispatcher has activated a scope for, and those it took the keys for, so a second one on the same surface leaves them.
 const CLAIMED = new WeakSet<Event>();
+const KEYED = new WeakSet<Event>();
 
 function counted(map: WeakMap<Element, number>, el: Element): () => void {
   map.set(el, (map.get(el) ?? 0) + 1);
@@ -109,17 +122,19 @@ function counted(map: WeakMap<Element, number>, el: Element): () => void {
   };
 }
 
-/** Count `el` as a dispatcher's surface until the returned release runs, and as one running pointer gestures with `pointer`. */
-export function holdSurface(el: Element, pointer: boolean): () => void {
-  const release = counted(SURFACES, el);
-  const releasePointer = pointer ? counted(POINTER_SURFACES, el) : null;
-  return () => { release(); releasePointer?.(); };
+/** Count `el` as a dispatcher's surface until the returned release runs, and as one running each channel `channels` turns on. */
+export function holdSurface(el: Element, channels: Readonly<Partial<Record<SurfaceChannel, boolean>>>): () => void {
+  const releases = [counted(SURFACES, el)];
+  for (const channel of Object.keys(CHANNEL_SURFACES) as SurfaceChannel[]) {
+    if (channels[channel]) releases.push(counted(CHANNEL_SURFACES[channel], el));
+  }
+  return () => { for (const release of releases) release(); };
 }
 
 /** Whether a press on `target` went down in a surface nested inside `surface` that runs pointer gestures of its own. */
 export function pressedNestedIn(surface: Element, target: EventTarget | null): boolean {
   for (let el = isElement(target) ? target : null; el !== null && el !== surface; el = el.parentElement) {
-    if (POINTER_SURFACES.has(el)) return true;
+    if (CHANNEL_SURFACES.pointer.has(el)) return true;
   }
   return false;
 }
@@ -135,16 +150,29 @@ export function eventTaken(event: Event): boolean { return TAKEN.has(event); }
 
 /** Whether `event` landed in another dispatcher's surface nested inside `surface`. */
 export function landedNestedIn(surface: Element | null, event: Event): boolean {
-  const landed = innermostSurface(event.target);
+  const landed = innermostSurface(event.target, SURFACES);
   return landed !== null && landed !== surface;
 }
 
-/** The innermost dispatcher surface holding `target`, or null. */
-function innermostSurface(target: EventTarget | null): Element | null {
+/** The innermost of `surfaces` holding `target`, or null. */
+function innermostSurface(target: EventTarget | null, surfaces: WeakMap<Element, number>): Element | null {
   for (let el = isElement(target) ? target : null; el !== null; el = el.parentElement) {
-    if (SURFACES.has(el)) return el;
+    if (surfaces.has(el)) return el;
   }
   return null;
+}
+
+/** The surface whose scope `event` activates: the innermost one running its channel, which is the one that
+ *  handles it, or with none, the innermost it landed in. */
+function activatingSurface(event: Event): Element | null {
+  const channel = CHANNEL_OF.get(event.type);
+  return (channel ? innermostSurface(event.target, CHANNEL_SURFACES[channel]) : null)
+    ?? innermostSurface(event.target, SURFACES);
+}
+
+function holdsPointer(d: Dispatcher): boolean {
+  for (const id of d.inFlight().keys()) if (isPointerGestureId(id) || isMultiTouchGestureId(id)) return true;
+  return false;
 }
 
 export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCore {
@@ -192,6 +220,12 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     routeDown: (pointerId, clientX, clientY) => {
       routedId = src.views()?.resolver.begin(pointerId, clientX, clientY).id ?? null;
     },
+    routeToHeld: () => {
+      if (holdsPointer(dispatcherNow())) return;
+      if (holdsPointer(src.root().dispatcher)) { routedId = null; return; }
+      const view = src.views()?.targets().find((t) => holdsPointer(t.dispatcher));
+      if (view) routedId = view.id;
+    },
     routeRelease: (pointerId) => { src.views()?.resolver.end(pointerId); },
     routedView: () => routedId,
     setRoutedView: (id) => { routedId = id; },
@@ -219,15 +253,18 @@ export function createDispatchCore(src: DispatchCoreSources): PointerDispatchCor
     activate: (event) => {
       // The wheel listens in the capture phase, so an outer surface can hear an event before
       // the one it landed in: decide by where it landed, not by who heard it first.
+      const keys = src.keys !== false;
       if (event !== undefined) {
-        const landed = innermostSurface(event.target);
+        const landed = activatingSurface(event);
         if (landed !== null && landed !== canvas) return;
         // Two dispatchers can share one surface: a trial's camera listens on the pane its instrument
-        // dispatches on. The first to activate keeps the event, and an instrument attaches first.
-        if (CLAIMED.has(event)) return;
+        // dispatches on. The first to activate keeps the event, and an instrument attaches first;
+        // one with its keyboard off leaves the keys to the next.
+        if (KEYED.has(event) || (!keys && CLAIMED.has(event))) return;
         CLAIMED.add(event);
+        if (keys) KEYED.add(event);
       }
-      src.actions().activate({ keys: src.keys !== false });
+      src.actions().activate({ keys });
     },
     disposed: src.disposed,
   };

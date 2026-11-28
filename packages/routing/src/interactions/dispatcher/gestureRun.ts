@@ -39,6 +39,8 @@ export interface Opened {
   event: InputEvent;
   action: string;
   passed: ReadonlySet<string>;
+  /** The open keymap's pass the press was routed under, which a hand-off ranks the press under again. */
+  keymapPass: DispatcherContext['keymapPass'];
 }
 
 type Reason = 'commit' | 'cancel';
@@ -57,6 +59,16 @@ function runOnEnd(gestureId: string, handle: OngoingHandle, endCtx: InvocationCt
   }
 }
 
+/** Run a handle's `onMove` or `onWheel`, logging a throw as the other handle callbacks' are. */
+function feed<R>(gestureId: string, key: 'onMove' | 'onWheel', call: () => R): R | undefined {
+  try {
+    return call();
+  } catch (err) {
+    console.error(`weasel dispatcher: gesture "${gestureId}" threw on ${key}`, err);
+    return undefined;
+  }
+}
+
 /** End one in-flight gesture. It is out of flight before its `onEnd` runs,
  *  so an `onEnd` that throws, or that reads the dispatcher, sees it gone. */
 function endGesture(run: GestureRun, gestureId: string, event: InputEvent, reason: Reason): boolean {
@@ -69,9 +81,11 @@ function endGesture(run: GestureRun, gestureId: string, event: InputEvent, reaso
   return true;
 }
 
-/** A drag ended by a pass: the press that opened it, every action not to offer it to, and the trail it had drawn. */
+/** A drag ended by a pass: the press that opened it and its keymap pass, every action not to offer it to, and the
+ *  trail it had drawn. */
 export interface Passed {
   event: InputEvent;
+  keymapPass: DispatcherContext['keymapPass'];
   skip: Set<string>;
   trail: readonly DragSample[];
 }
@@ -84,7 +98,7 @@ export function endPassed(run: GestureRun, event: InputEvent): Passed | null {
   // A copy: the passing handle's `onEnd` may keep the live trail it is handed.
   const trail = [...(run.facts.of(gestureId).points ?? [])];
   endGesture(run, gestureId, event, 'cancel');
-  return { event: opened.event, skip: new Set([...opened.passed, opened.action]), trail };
+  return { event: opened.event, keymapPass: opened.keymapPass, skip: new Set([...opened.passed, opened.action]), trail };
 }
 
 /** If the drag `event` belongs to was taken, mark it never to go back to `passed.skip` and give it the trail drawn
@@ -143,7 +157,7 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
     if (!handle) return 'unhandled';
     run.facts.sample(gestureId, event);
     if (!handle.onMove) return 'unhandled';
-    const said = handle.onMove(ctxFor(run, event, {}, gestureId));
+    const said = feed(gestureId, 'onMove', () => handle.onMove!(ctxFor(run, event, {}, gestureId)));
     return said === 'pass' && run.opened.has(gestureId) ? 'pass' : 'handled';
   }
 
@@ -151,7 +165,9 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
   // The newest first, as with the cursor.
   if (event.kind === 'wheel') {
     for (const [gestureId, handle] of [...inFlight.handles].reverse()) {
-      if (handle.onWheel?.(ctxFor(run, event, {}, gestureId)) === true) return 'handled';
+      if (feed(gestureId, 'onWheel', () => handle.onWheel?.(ctxFor(run, event, {}, gestureId))) === true) {
+        return 'handled';
+      }
     }
     return undefined;
   }
@@ -172,7 +188,7 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
     const handle = inFlight.handles.get(gestureId);
     if (handle) {
       run.facts.turn(gestureId, event);
-      handle.onMove?.(ctxFor(run, event, {}, gestureId));
+      feed(gestureId, 'onMove', () => handle.onMove?.(ctxFor(run, event, {}, gestureId)));
       return 'handled';
     }
     // A hand is doing one multitouch gesture at a time, but the gesture id
@@ -193,7 +209,7 @@ function pumpCarry(run: GestureRun, event: InputEvent & { kind: 'carry' }): Outc
   const handle = run.inFlight.handles.get(gestureId);
   if (!handle) return event.stage === 'leave' ? 'unhandled' : undefined;
   if (event.stage === 'move') {
-    handle.onMove?.(ctxFor(run, event, {}, gestureId));
+    feed(gestureId, 'onMove', () => handle.onMove?.(ctxFor(run, event, {}, gestureId)));
     return 'handled';
   }
   return endGesture(run, gestureId, event, event.stage === 'drop' ? 'commit' : 'cancel') ? 'handled' : 'unhandled';
@@ -221,13 +237,14 @@ function reportMisbound(actionId: string, hover: boolean): void {
   );
 }
 
-/** Run the candidate the walk chose. */
+/** Run the candidate the walk chose, for `event` routed under `keymapPass`. */
 export function invokeAction(
   run: GestureRun,
   event: InputEvent,
   match: MatchResult,
   action: Action,
   deps: ActionDeps,
+  keymapPass?: DispatcherContext['keymapPass'],
 ): AttemptResult {
   if (action.invoker && !carryStageFits(event, action.invoker.timing)) return 'empty-handle';
 
@@ -267,10 +284,16 @@ export function invokeAction(
     };
     const endings = run.endings;
     let handle: OngoingHandle;
+    let started: (() => boolean) | undefined;
     try {
-      handle = event.kind === 'pointerdown' && threshold !== undefined && threshold > 0
-        ? deferredStart(begin, threshold, (err) => { threw(err); endGesture(run, gestureId, event, 'cancel'); })
-        : begin();
+      if (event.kind === 'pointerdown' && threshold !== undefined && threshold > 0) {
+        ({ handle, started } = deferredStart(begin, threshold, (err) => {
+          threw(err);
+          endGesture(run, gestureId, event, 'cancel');
+        }));
+      } else {
+        handle = begin();
+      }
     } catch (err) {
       threw(err);
       run.facts.drop(gestureId);
@@ -291,8 +314,13 @@ export function invokeAction(
       runOnEnd(gestureId, handle, uiInvocationCtx({}), 'cancel');
       return 'fired';
     }
-    run.inFlight.open(gestureId, handle, match.ownerId, action, match.binding.opts?.over === true);
-    if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set() });
+    run.inFlight.open(gestureId, handle, match.ownerId, {
+      action,
+      over: match.binding.opts?.over === true,
+      params: () => resolveParams(bindingOptionsOf(match.binding)?.params),
+      ...(started ? { started } : {}),
+    });
+    if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set(), keymapPass });
     return 'fired';
   }
 

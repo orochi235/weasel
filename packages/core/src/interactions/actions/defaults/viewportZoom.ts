@@ -110,7 +110,7 @@ function zoomBindings(wheel: ViewportZoomOptions['wheel']): BoundGesture<ActionP
  * Build a `viewport.zoom` Action descriptor with a configurable wheel trigger
  * and scale clamp. The keyboard bindings (Cmd+=/-/0) and the two trackpad
  * pinch bindings are fixed. A wheel or pinch sample zooms about its focal
- * point, which `zoomAt` expects in canvas-local pixels.
+ * point, which `zoomAt` expects in the view's own pixels.
  */
 export function createViewportZoomAction(
   opts: ViewportZoomOptions = {},
@@ -144,7 +144,7 @@ export function createViewportZoomAction(
         view.stopDecay?.();
         const debug = deps.debug;
         const current = view.get();
-        // Report a zoom about `anchor` (canvas-local px) from `from` to `to`.
+        // Report a zoom about `anchor` (view-local px) from `from` to `to`.
         const record = (from: View, to: View, anchor: { x: number; y: number }) => {
           if (!debug) return;
           const [wx, wy] = screenToWorld(anchor.x, anchor.y, viewToTransform(from));

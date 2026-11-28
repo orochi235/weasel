@@ -24,6 +24,11 @@ export function pointerGestureId(pointerId: number | undefined): string {
   return `pointer-${pointerId ?? 'mouse'}`;
 }
 
+/** Whether `gestureId` is a pointer's own: a press, or the drag that follows it. */
+export function isPointerGestureId(gestureId: string): boolean {
+  return gestureId.startsWith('pointer-');
+}
+
 /** The gesture id a carry by this pointer runs under. */
 export function carryGestureId(pointerId: number | undefined): string {
   return `carry-${pointerId ?? 'mouse'}`;

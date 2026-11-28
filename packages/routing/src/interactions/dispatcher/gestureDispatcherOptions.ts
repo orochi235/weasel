@@ -79,8 +79,11 @@ export interface DispatcherChannels {
   /** `hover` gestures and the hover-cursor pump without the rest of
    *  `pointer`: no press opens a gesture or captures the pointer, so the
    *  element's own clicks and drags are left alone. Omitted, it follows
-   *  `pointer`, which carries hovers whenever it is on. */
-  hover?: boolean;
+   *  `pointer`, which carries hovers whenever it is on. `'through'`, with
+   *  `pointer` off: also hears a hover over a dispatcher surface nested in
+   *  this one, which otherwise counts as having left it — for a watcher
+   *  that tracks the pointer over everything inside it. */
+  hover?: boolean | 'through';
   /** `wheel`. */
   wheel?: boolean;
   /** WebKit's `gesturestart` / `gesturechange` / `gestureend` — Safari's
@@ -240,7 +243,8 @@ export interface UseGestureDispatcherOptions {
 
   /**
    * Converts a client point to CSS pixels from the canvas's top-left: where
-   * the painted cursor draws, where a wheel or pinch zoom anchors, and where a
+   * the painted cursor draws, where a wheel or pinch zoom anchors in a view
+   * with no mapping of its own, and where a
    * pending long-press is published. Without this, the element's rect is
    * subtracted — wrong for a canvas under a CSS transform, whose host already
    * owns the mapping. `<SceneCanvas>` wires it from its own camera, so a

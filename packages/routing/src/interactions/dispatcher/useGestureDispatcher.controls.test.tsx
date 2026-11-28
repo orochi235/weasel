@@ -162,4 +162,42 @@ describe("useGestureDispatcher — controls: 'take'", () => {
     act(() => { press(span, 'pointerdown', 0); press(span, 'pointerup', 0); });
     expect(click).not.toHaveBeenCalled();
   });
+
+  describe('the cursor after a release the item took', () => {
+    const grab = (cursor: string): Action => ({ ...dragAction(() => {}), cursor });
+    const hover = (el: Element, x: number, buttons = 0): void => {
+      el.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, pointerId: 1, buttons, clientX: x, clientY: 0 }));
+    };
+
+    it('re-resolves at a release in place', () => {
+      vi.useFakeTimers();
+      try {
+        const onItemDown = (e: React.PointerEvent<HTMLSpanElement>): void => { openPointerSession(e.currentTarget, e, {}); };
+        const { getByTestId, getByText, rerender } = render(<Harness><TakeProbe actions={[grab('grab')]} onItemDown={onItemDown} /></Harness>);
+        const host = getByTestId('host');
+        const span = getByText('item');
+        act(() => { hover(span, 0); });
+        expect(host.style.cursor).toBe('grab');
+        act(() => { press(span, 'pointerdown', 0); });
+        rerender(<Harness><TakeProbe actions={[grab('crosshair')]} onItemDown={onItemDown} /></Harness>);
+        act(() => { press(span, 'pointerup', 0); vi.runAllTimers(); });
+        expect(host.style.cursor).toBe('crosshair');
+      } finally { vi.useRealTimers(); }
+    });
+
+    it("re-resolves at the release of a press whose item's drag took it", () => {
+      vi.useFakeTimers();
+      try {
+        const { getByTestId, getByText } = render(
+          <Harness><TakeProbe actions={[grab('grab')]} onItemDown={(e) => { openPointerSession(e.currentTarget, e, {}); }} /></Harness>,
+        );
+        const host = getByTestId('host');
+        const span = getByText('item');
+        act(() => { press(span, 'pointerdown', 0); hover(span, 20, 1); hover(span, 30, 1); });
+        expect(host.style.cursor).toBe('');
+        act(() => { press(span, 'pointerup', 30); vi.runAllTimers(); });
+        expect(host.style.cursor).toBe('grab');
+      } finally { vi.useRealTimers(); }
+    });
+  });
 });

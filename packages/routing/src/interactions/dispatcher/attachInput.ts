@@ -5,7 +5,7 @@
  */
 import { heldPointers } from '@weasel-js/gestures';
 import type { CursorSink, PaintedCursorState } from '@weasel-js/cursor';
-import { createDispatchCore, holdSurface, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
+import { createDispatchCore, holdSurface, landedNestedIn, type DispatchCore, type DispatchCoreSources } from './dispatchCore';
 import type { Dispatcher } from './dispatcherApi';
 import type { HeldPointerFeed } from './gestureDispatcherOptions';
 import { dispatcherWatch } from './dispatcherWatch';
@@ -13,6 +13,7 @@ import { carryInput } from './channels/carry';
 import { contextMenuInput } from './channels/contextMenu';
 import { hoverCursorInput, type HoverCursorInput } from './channels/hoverCursor';
 import { DROPOVER_CLASS, ingestInput } from './channels/ingest';
+import { pasteInput } from './channels/paste';
 import { keyboardInput } from './channels/keyboard';
 import { joinSurface } from './channels/keyPeers';
 import { listenerSet, type ListenerSet } from './channels/listeners';
@@ -39,7 +40,7 @@ export interface InputChannels {
   keyboard: boolean | 'first' | 'page';
   pointer: boolean;
   /** Hovers alone. Read only with `pointer` off, which carries them itself. */
-  hover: boolean;
+  hover: boolean | 'through';
   wheel: boolean;
   pinch: boolean;
   contextMenu: boolean;
@@ -82,7 +83,9 @@ export function attachInput(
   const pinch = webkitPinchInput(core);
   const ingest = ingestInput(core);
   const held = canvas ? heldPointers(canvas) : null;
-  const hover = hoverCursorInput(core, src.paintedCursor, () => held?.count() ?? 0, src.cursorSink);
+  const hover = hoverCursorInput(core, {
+    paintedCursor: src.paintedCursor, pointersHeld: () => held?.count() ?? 0, dispatchers: src.dispatchers, cursorSink: src.cursorSink,
+  });
   cursor = hover;
   const pointer: PointerInput = pointerInput(core, {
     longPress: src.longPress,
@@ -106,26 +109,24 @@ export function attachInput(
   };
 
   const listeners = listenerSet();
-  const keyCapture = channels.keyboard === 'first';
-  // The document's bubble phase: after the focused element's own handlers, before every listener on window.
-  const keyTarget: EventTarget = channels.keyboard === 'page' ? (canvas?.ownerDocument ?? document) : window;
-  if (channels.keyboard) {
-    listeners.on(keyTarget, 'keydown', keys.onKeyDown, keyCapture);
-    listeners.on(window, 'keyup', keys.onKeyUp, true);
-  }
-  const leaveKeyPeers = channels.keyboard && canvas ? joinSurface(canvas, keys.take) : null;
-  listeners.on(window, 'blur', onWindowBlur);
+  // The canvas's own window, which an iframe or a popout's canvas does not share with this script.
+  const win: Window = canvas?.ownerDocument.defaultView ?? window;
+  if (channels.keyboard) listenKeys(listeners, win, channels.keyboard, keys);
+  const paste = channels.ingest ? pasteInput(core) : null;
+  const leaveSurfacePeers = canvas ? joinSurface(canvas, { key: channels.keyboard ? keys.take : undefined, paste: paste?.take }) : null;
+  listeners.on(win, 'blur', onWindowBlur);
   // Ahead of the pointer channel's own listener, and whether or not that
   // channel is on: a press with any button makes this the scope chrome and
   // keys reach.
   listeners.on(canvas, 'pointerdown', (e: PointerEvent) => { core.activate(e); });
   // Whether or not the pointer channel is on: it is what an `over` key binding asks.
-  trackPointerOver(listeners, canvas, core, keys);
+  const through = !channels.pointer && channels.hover === 'through';
+  trackPointerOver(listeners, canvas, core, keys, through);
   if (channels.pointer) {
-    listenPointer(listeners, canvas, pointer, hover);
+    listenPointer(listeners, canvas, win, pointer, hover);
     src.heldPointer()?.({ at: pointer.heldAt, repeat: pointer.repeatHeld });
   } else if (channels.hover) {
-    listenHover(listeners, canvas, core, hover);
+    listenHover(listeners, canvas, win, core, hover, through);
   }
   if (channels.wheel) listenWheel(listeners, canvas, wheelInput(core, pinch.live));
   if (channels.pinch) {
@@ -136,22 +137,16 @@ export function attachInput(
   if (channels.contextMenu) {
     listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold, pointer.takeNativeMenu));
   }
-  if (channels.ingest) {
-    listeners.on(canvas, 'dragenter', ingest.onDragOver);
-    listeners.on(canvas, 'dragover', ingest.onDragOver);
-    listeners.on(canvas, 'dragleave', ingest.onDragLeave);
-    listeners.on(canvas, 'drop', ingest.onDrop);
-    listeners.on(window, 'paste', ingest.onPaste);
-  }
+  if (paste) listenIngest(listeners, canvas, ingest, win, paste.onPaste);
   const offCarry = channels.carry ? carryInput(core) : null;
-  const releaseSurface = canvas ? holdSurface(canvas, channels.pointer) : null;
+  const releaseSurface = canvas ? holdSurface(canvas, channels) : null;
 
   return () => {
     if (channels.pointer) src.heldPointer()?.(null);
     listeners.removeAll();
     offDispatchers();
     releaseSurface?.();
-    leaveKeyPeers?.();
+    leaveSurfacePeers?.();
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
     ingest.endPreview();
@@ -168,32 +163,73 @@ export function attachInput(
   };
 }
 
-/** Listen for the wheel in the capture phase, for one that landed here, and in the bubble phase, for one that landed in a nested surface. */
+/** The key channel's listeners: keydown where `keyboard` says, keyup on the window. */
+function listenKeys(
+  listeners: ListenerSet,
+  win: Window,
+  keyboard: true | 'first' | 'page',
+  keys: { onKeyDown: (e: KeyboardEvent) => void; onKeyUp: (e: KeyboardEvent) => void },
+): void {
+  // The document's bubble phase: after the focused element's own handlers, before every listener on window.
+  listeners.on(keyboard === 'page' ? win.document : win, 'keydown', keys.onKeyDown, keyboard === 'first');
+  listeners.on(win, 'keyup', keys.onKeyUp, true);
+}
+
 /** The pointer channel's listeners, and the hover cursor's beside them. */
-function listenPointer(listeners: ListenerSet, canvas: HTMLElement | null, pointer: PointerInput, hover: HoverCursorInput): void {
+function listenPointer(listeners: ListenerSet, canvas: HTMLElement | null, win: Window, pointer: PointerInput, hover: HoverCursorInput): void {
   // Separate from the key channel's listeners, so the cursor also tracks
   // modifiers when `keyboard: false` turns gesture key dispatch off.
-  listeners.on(window, 'keydown', hover.onKey);
-  listeners.on(window, 'keyup', hover.onKey);
-  listeners.on(window, 'keydown', pointer.modifiersChanged);
-  listeners.on(window, 'keyup', pointer.modifiersChanged);
+  listeners.on(win, 'keydown', hover.onKey);
+  listeners.on(win, 'keyup', hover.onKey);
+  listeners.on(win, 'keydown', pointer.modifiersChanged);
+  listeners.on(win, 'keyup', pointer.modifiersChanged);
   listeners.on(canvas, 'pointerleave', hover.onLeave);
   listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
   listeners.on(canvas, 'pointermove', pointer.onHoverMove);
+  listeners.on(canvas, 'pointerup', pointer.onHoverUp);
   listeners.on(canvas, 'dblclick', pointer.onNativeDoubleClick);
 }
 
 /** Hover alone, with the pointer channel off: the moves still route and paint the cursor. */
-function listenHover(listeners: ListenerSet, canvas: HTMLElement | null, core: DispatchCore, hover: HoverCursorInput): void {
-  listeners.on(window, 'keydown', hover.onKey);
-  listeners.on(window, 'keyup', hover.onKey);
+function listenHover(
+  listeners: ListenerSet,
+  canvas: HTMLElement | null,
+  win: Window,
+  core: DispatchCore,
+  hover: HoverCursorInput,
+  through: boolean,
+): void {
+  listeners.on(win, 'keydown', hover.onKey);
+  listeners.on(win, 'keyup', hover.onKey);
   listeners.on(canvas, 'pointerleave', hover.onLeave);
   listeners.on(canvas, 'pointermove', (e: PointerEvent) => {
+    if (!through && landedNestedIn(canvas, e)) {
+      hover.onLeave();
+      return;
+    }
     core.routeAt(null, e.clientX, e.clientY);
     hover.moved(e);
   });
+  // The pointer channel's release does this when it is on.
+  listeners.on(canvas, 'pointerup', hover.released);
 }
 
+/** The ingest channel's listeners: an OS drag over the canvas, and a paste on the window. */
+function listenIngest(
+  listeners: ListenerSet,
+  canvas: HTMLElement | null,
+  ingest: ReturnType<typeof ingestInput>,
+  win: Window,
+  onPaste: (e: ClipboardEvent) => void,
+): void {
+  listeners.on(canvas, 'dragenter', ingest.onDragEnter);
+  listeners.on(canvas, 'dragover', ingest.onDragOver);
+  listeners.on(canvas, 'dragleave', ingest.onDragLeave);
+  listeners.on(canvas, 'drop', ingest.onDrop);
+  listeners.on(win, 'paste', onPaste);
+}
+
+/** Listen for the wheel in the capture phase, for one that landed here, and in the bubble phase, for one that landed in a nested surface. */
 function listenWheel(listeners: ListenerSet, canvas: HTMLElement | null, wheel: ReturnType<typeof wheelInput>): void {
   listeners.on(canvas, 'wheel', wheel.capture, { passive: false, capture: true });
   listeners.on(canvas, 'wheel', wheel.bubble, { passive: false });
@@ -205,16 +241,28 @@ function trackPointerOver(
   canvas: HTMLElement | null,
   core: Pick<DispatchCore, 'pointerOver' | 'setPointerOver'>,
   keys: { arrive: (e: PointerEvent) => void; leave: () => void },
+  through: boolean,
 ): void {
+  /** Each pointer over the canvas: one leaving while another stays leaves the canvas pointed at. */
+  const over = new Set<number>();
+  const onOut = (e: PointerEvent): void => {
+    over.delete(e.pointerId);
+    if (over.size > 0) return;
+    core.setPointerOver(false);
+    keys.leave();
+  };
   const onOver = (e: PointerEvent): void => {
+    // A pointer over a surface nested in this one is that surface's.
+    if (!through && landedNestedIn(canvas, e)) {
+      if (over.has(e.pointerId)) onOut(e);
+      return;
+    }
+    over.add(e.pointerId);
     if (core.pointerOver()) return;
     core.setPointerOver(true);
     keys.arrive(e);
   };
   listeners.on(canvas, 'pointerenter', onOver);
   listeners.on(canvas, 'pointermove', onOver);
-  listeners.on(canvas, 'pointerleave', () => {
-    core.setPointerOver(false);
-    keys.leave();
-  });
+  listeners.on(canvas, 'pointerleave', onOut);
 }

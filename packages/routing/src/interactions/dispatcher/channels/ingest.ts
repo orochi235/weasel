@@ -1,24 +1,22 @@
 /**
- * External-content ingestion: an OS drop on the canvas, a paste on window.
+ * External-content ingestion: an OS drop on the canvas.
  * Items are materialized during the event, since a DataTransfer is only live
  * on the event stack; dispatch happens when materialization resolves.
  */
-import { itemsFromClipboardData, itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
-import { isNode } from '@weasel-js/gestures';
-import { isEditableTarget } from '../../keyHelpers';
+import { itemsFromDataTransfer, itemTypesFromDataTransfer } from '../../../ingestion/ingestItems';
+import { isNode, type IngestItem } from '@weasel-js/gestures';
 import { eventTaken, takeEvent, type DispatchCore } from '../dispatchCore';
 import type { InputEvent } from '../matcher';
 import { dropPreview } from './dropPreview';
-import { inModalOver } from './modal';
 
 /** Toggled on the canvas while an OS drag hovers it; consumers style it. */
 export const DROPOVER_CLASS = 'weasel-dropover';
 
 export function ingestInput(core: DispatchCore): {
   onDragOver: (e: DragEvent) => void;
+  onDragEnter: (e: DragEvent) => void;
   onDragLeave: (e: DragEvent) => void;
   onDrop: (e: DragEvent) => void;
-  onPaste: (e: ClipboardEvent) => void;
   /** Take down a drag's preview, for teardown. */
   endPreview: () => void;
 } {
@@ -38,7 +36,7 @@ export function ingestInput(core: DispatchCore): {
     return { event, winner: core.dispatcherNow().resolveOnly(event, ctx), ctx };
   };
 
-  // Attached to both dragover and dragenter: cancelling dragenter (WHATWG)
+  // Run for dragenter too: cancelling dragenter (WHATWG)
   // guarantees the element stays the active drop target and shows the copy
   // cursor on entry rather than waiting for the first dragover tick.
   const onDragOver = (e: DragEvent) => {
@@ -56,11 +54,25 @@ export function ingestInput(core: DispatchCore): {
     dt.dropEffect = 'copy';
   };
 
-  const onDragLeave = (e: DragEvent) => {
-    // A drag moving onto one of the element's own children has not left it.
-    if (isNode(e.relatedTarget) && canvas?.contains(e.relatedTarget)) return;
+  // Enters less leaves, across the element and its children: some engines give
+  // `dragleave` a null `relatedTarget` as a drag crosses onto a child.
+  let depth = 0;
+  const leaveAll = () => {
+    depth = 0;
     canvas?.classList.remove(DROPOVER_CLASS);
     preview.end();
+  };
+
+  const onDragEnter = (e: DragEvent) => {
+    depth++;
+    onDragOver(e);
+  };
+
+  const onDragLeave = (e: DragEvent) => {
+    depth = Math.max(0, depth - 1);
+    // A drag moving onto one of the element's own children has not left it.
+    if (depth > 0 || (isNode(e.relatedTarget) && canvas?.contains(e.relatedTarget))) return;
+    leaveAll();
   };
 
   // No stopPropagation: handled-ness is only known after the async
@@ -68,8 +80,7 @@ export function ingestInput(core: DispatchCore): {
   // impossible; an unconditional one would swallow drops the kit doesn't
   // dispatch. A surface around this one leaves a drop taken here instead.
   const onDrop = (e: DragEvent) => {
-    canvas?.classList.remove(DROPOVER_CLASS);
-    preview.end();
+    leaveAll();
     const dt = e.dataTransfer;
     if (!dt || eventTaken(e)) return;
     // Which surface owns the drop is settled now, on the item types, as for
@@ -85,7 +96,15 @@ export function ingestInput(core: DispatchCore): {
     const base = {
       altKey: e.altKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, shiftKey: e.shiftKey,
     };
-    void itemsFromDataTransfer(dt).then((items) => {
+    const failed = (err: unknown) => { console.error('weasel dispatcher: a drop failed', err); };
+    let read: Promise<IngestItem[]>;
+    try {
+      read = itemsFromDataTransfer(dt);
+    } catch (err) {
+      failed(err);
+      return;
+    }
+    void read.then((items) => {
       if (core.disposed()) return;
       if (items.length === 0) return;
       // The routed view is whatever moved under the cursor since; the drop
@@ -101,30 +120,8 @@ export function ingestInput(core: DispatchCore): {
       } finally {
         core.setRoutedView(routedNow);
       }
-    });
+    }).catch(failed);
   };
 
-  const onPaste = (e: ClipboardEvent) => {
-    // Text-editing surfaces (inputs, the text-edit overlay) own their own
-    // paste — never steal it for scene ingestion.
-    if (e.defaultPrevented || isEditableTarget(e.target) || inModalOver(e.target, core.canvas)) return;
-    // Every dispatcher hears paste on window; only the one holding the keys acts.
-    if (!core.holdsKeys()) return;
-    const cd = e.clipboardData;
-    if (!cd) return;
-    const items = itemsFromClipboardData(cd);
-    if (items.length === 0) return;
-    // Wheel's shape: dispatch first, suppress the default only when a
-    // binding claimed it. Clipboard items materialize synchronously, so
-    // unlike `onDrop` the result is known while `preventDefault` is still
-    // honored — and a paste no binding wanted stays the page's to handle.
-    const result = dispatch({
-      kind: 'paste', items,
-      // ClipboardEvent carries no modifier state.
-      altKey: false, ctrlKey: false, metaKey: false, shiftKey: false,
-    });
-    if (result === 'handled') e.preventDefault();
-  };
-
-  return { onDragOver, onDragLeave, onDrop, onPaste, endPreview: preview.end };
+  return { onDragOver, onDragEnter, onDragLeave, onDrop, endPreview: preview.end };
 }

@@ -5,7 +5,7 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import { act, render } from '@testing-library/react';
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react';
 import { useGestureDispatcher } from './useGestureDispatcher';
 import { ActiveToolContextProvider } from '../actions/activeToolContext';
 import { DepRegistryProvider } from '../actions/depRegistry';
@@ -16,7 +16,7 @@ import type { Action } from '../actions/action';
 const NO_ENTRIES = new Map();
 const NO_ELEMENT = { current: null };
 
-function Bound({ run }: { run: () => void }): ReactNode {
+function Bound({ run, surface = NO_ELEMENT }: { run: () => void; surface?: RefObject<HTMLDivElement | null> }): ReactNode {
   const registry = useActionsRegistry()!;
   useEffect(() => registry.register({
     id: 'test.paste',
@@ -24,7 +24,7 @@ function Bound({ run }: { run: () => void }): ReactNode {
     defaultBinding: { kind: 'paste' },
     invoker: { timing: 'immediate', run: () => run() },
   } satisfies Action), [registry, run]);
-  useGestureDispatcher({ canvasRef: NO_ELEMENT, actions: registry, entriesById: NO_ENTRIES });
+  useGestureDispatcher({ canvasRef: surface, actions: registry, entriesById: NO_ENTRIES });
   return null;
 }
 
@@ -79,5 +79,27 @@ describe('a paste several dispatchers bind', () => {
       window.removeEventListener('paste', claim, { capture: true });
     }
     expect(run).not.toHaveBeenCalled();
+  });
+
+  it('falls through to the other dispatcher on the surface when the one holding the keys binds none', () => {
+    const run = vi.fn();
+    function Bare({ surface }: { surface: RefObject<HTMLDivElement | null> }): null {
+      useGestureDispatcher({ canvasRef: surface, actions: useActionsRegistry()!, entriesById: NO_ENTRIES });
+      return null;
+    }
+    function Pane(): ReactNode {
+      const surfaceRef = useRef<HTMLDivElement | null>(null);
+      return (
+        <div ref={surfaceRef} data-name="pane">
+          <Root><Bare surface={surfaceRef} /></Root>
+          <Bound run={run} surface={surfaceRef} />
+        </div>
+      );
+    }
+    render(<Root><Pane /></Root>);
+    const pane = document.querySelector('[data-name="pane"]')!;
+    act(() => { pane.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); });
+    expect(paste().defaultPrevented).toBe(true);
+    expect(run).toHaveBeenCalledOnce();
   });
 });

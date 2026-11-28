@@ -32,7 +32,7 @@ export function releaseIn(
 }
 
 /** Whether `down`'s gesture is still in flight: a cancel-all or tool switch may have ended it before its keyup. */
-const stillHeld = (down: HeldKey): boolean =>
+export const stillHeld = (down: HeldKey): boolean =>
   down.on.inFlight().has(keyHeldGestureId(down.key, down.code));
 
 // Only a held key is pressed again: a `key` binding is a single press, which an
@@ -71,6 +71,10 @@ export function followPointer(
 
   const leave = (): void => {
     for (const [physical, down] of [...held]) {
+      if (!stillHeld(down)) {
+        held.delete(physical);
+        continue;
+      }
       const { key, code } = down;
       const ev: InputEvent = {
         kind: 'keyHeld', key, ...(code !== undefined ? { code } : {}), phase: 'up',

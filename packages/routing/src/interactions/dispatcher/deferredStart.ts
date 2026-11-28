@@ -8,11 +8,12 @@ import { isEmptyOngoingHandle } from './inFlightGestures';
  * that declines, with an empty handle, passes the drag on, as it would have fallen through at the
  * press. A release short of the threshold ends a gesture that never started. A `start` that throws is
  * handed to `threw`, which ends the drag, and is never called again. A `start` that ends the drag
- * itself (a `cancelAll` from inside it) has the handle it returns canceled at once.
+ * itself (a `cancelAll` from inside it) has the handle it returns canceled at once. `started` says
+ * whether `start` has returned a handle that engages.
  */
 export function deferredStart(
   start: () => OngoingHandle, thresholdPx: number, threw: (err: unknown) => void,
-): OngoingHandle {
+): { handle: OngoingHandle; started: () => boolean } {
   let inner: OngoingHandle | null = null;
   let failed = false;
   let ended: InvocationCtx | null = null;
@@ -62,8 +63,9 @@ export function deferredStart(
     const value: unknown = Reflect.get(inner, key);
     return typeof value === 'function' ? value.bind(inner) : value;
   };
-  return new Proxy({} as OngoingHandle, {
+  const handle = new Proxy({} as OngoingHandle, {
     get: (_target, key) => read(key),
     has: (_target, key) => read(key) !== undefined,
   });
+  return { handle, started: () => inner !== null && !isEmptyOngoingHandle(inner) };
 }
