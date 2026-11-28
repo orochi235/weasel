@@ -46,7 +46,7 @@ export interface AnimatorCore {
 }
 
 export function createAnimatorCore(host: CoreHost): AnimatorCore {
-  const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
+  const clock: AnimatorClock = { frameT: null, readT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
   /** Animations that threw outside their own ticks, retired by the frame reading them. */
   const faults: [number, unknown][] = [];
@@ -231,6 +231,7 @@ function createPacing(clock: AnimatorClock, wallNow: () => number, now: () => nu
       if (t > clock.frameT) {
         clock.elapsed += (t - clock.frameT) * (clock.paused ? 0 : Math.abs(clock.timeScale));
         clock.frameT = t;
+        clock.readT = t;
       }
       return clock.elapsed;
     },

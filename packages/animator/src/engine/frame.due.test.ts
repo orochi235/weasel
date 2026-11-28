@@ -7,7 +7,7 @@ import { createEmitter } from '@weasel-js/registry';
 
 /** A table and a frame loop with nothing under them, and a log of every tick. */
 function rig(codecFrame: () => void = () => {}) {
-  const clock: AnimatorClock = { frameT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
+  const clock: AnimatorClock = { frameT: null, readT: null, elapsed: 0, timeScale: 1, paused: false, drive: 1 };
   const hub = new AnimatorEventHub();
   const state = { now: 0, tripped: false, asked: 0, resting: false };
   const log: string[] = [];
