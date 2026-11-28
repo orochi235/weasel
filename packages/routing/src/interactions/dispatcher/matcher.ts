@@ -178,6 +178,8 @@ export interface MatchOutcome {
   /** Bindings whose spec matched the event but which the claim barred, in
    *  the same order `matches` uses. Filled only when `collectBarred` is set. */
   barred: MatchResult[];
+  /** `matches` and `barred` together, in that same order; `matches` itself when `collectBarred` is off. */
+  matched: MatchResult[];
   /** Owner of the exclusive claim, when one applied. */
   claimOwner?: string;
 }
@@ -204,25 +206,28 @@ export function matchSortedWithBarred(
     !exclusive || targetConsultsAffordance(specTargetOf(sb.binding.spec));
   const out: MatchResult[] = [];
   const barred: MatchResult[] = [];
+  const matched: MatchResult[] = [];
+  const bySpecificity = (a: MatchResult, b: MatchResult): number => compareSpecificity(a.binding.spec, b.binding.spec, apple);
   for (const scope of SCOPE_PRIORITY) {
     const scopeMatches: MatchResult[] = [];
     const scopeBarred: MatchResult[] = [];
+    const scopeMatched: MatchResult[] = [];
     for (const sb of bindings) {
       if (sb.scope !== scope) continue;
       const admitted = admits(sb);
       if (!admitted && !opts.collectBarred) continue;
       const phaseCtx: PhaseContext = { selfChannel: sb.ownerId, engagedChannels: engaged };
       if (matchSpec(e, sb.binding.spec, apple, phaseCtx)) {
-        (admitted ? scopeMatches : scopeBarred)
-          .push({ binding: sb.binding, scope, ownerId: sb.ownerId });
+        const match: MatchResult = { binding: sb.binding, scope, ownerId: sb.ownerId };
+        (admitted ? scopeMatches : scopeBarred).push(match);
+        if (opts.collectBarred) scopeMatched.push(match);
       }
     }
     // Stable sort by specificity descending. Identical-specificity entries
     // keep their registration order (Array.prototype.sort is stable per ES2019).
-    scopeMatches.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, apple));
-    scopeBarred.sort((a, b) => compareSpecificity(a.binding.spec, b.binding.spec, apple));
-    out.push(...scopeMatches);
-    barred.push(...scopeBarred);
+    out.push(...scopeMatches.sort(bySpecificity));
+    barred.push(...scopeBarred.sort(bySpecificity));
+    if (opts.collectBarred) matched.push(...scopeMatched.sort(bySpecificity));
   }
   // Checked against the final result, not the pool: a binding can declare a
   // `kindOf`/`affordance:` target and still fail to match this particular claim.
@@ -232,7 +237,7 @@ export function matchSortedWithBarred(
     reportDeadClaim(claimOf(e)?.owner, warn);
   }
   const owner = exclusive ? claimOf(e)?.owner : undefined;
-  return { matches: out, barred, ...(owner !== undefined ? { claimOwner: owner } : {}) };
+  return { matches: out, barred, matched: opts.collectBarred ? matched : out, ...(owner !== undefined ? { claimOwner: owner } : {}) };
 }
 
 const EMPTY_ENGAGED: ReadonlySet<string> = new Set();

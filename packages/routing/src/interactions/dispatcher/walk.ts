@@ -125,6 +125,7 @@ export function rank(
   return {
     ordered,
     barred: outcome.barred,
+    matched: outcome.matched,
     ...(outcome.claimOwner !== undefined ? { claimOwner: outcome.claimOwner } : {}),
     actionMap,
     ruleCtx,

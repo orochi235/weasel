@@ -175,6 +175,8 @@ export interface Ranking {
   ordered: MatchResult[];
   /** Matches an exclusive claim barred; collected only when recording. */
   barred: MatchResult[];
+  /** Every match, admitted or barred, in matcher order: before `ordered`'s view and context preferences. */
+  matched: MatchResult[];
   claimOwner?: string;
   actionMap: Map<string, Action>;
   ruleCtx: RuleCtx | undefined;

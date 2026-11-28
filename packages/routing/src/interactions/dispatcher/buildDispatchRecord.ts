@@ -68,7 +68,7 @@ export function buildDispatchRecord(
       ...(world !== undefined ? { world } : {}),
       ...(r.ruleCtx !== undefined ? { mode: r.ruleCtx.mode } : {}),
     },
-    matched: [...r.ordered, ...r.barred].map(candidateOf),
+    matched: r.matched.map(candidateOf),
     dropped,
     ranked,
     predicted,
