@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
-import { isLayerPainted, type RenderLayer } from 'core/layers/render';
+import { paintedLayers, type RenderLayer } from 'core/layers/render';
+import { isVisibleFrom } from './drawEnvelope';
 import type { CanvasProps } from './canvasProps';
 import type { SurfaceHandle } from './viewRegistry';
 
@@ -18,6 +19,8 @@ export interface ExtraLayers {
   /** Bumped on every registration and removal, so a memo reading `extrasRef` re-runs. */
   extrasVersion: number;
   registerLayer(layer: RenderLayer<unknown>): () => void;
+  /** Registered layers the surface paints, in the order it paints them. */
+  paintedExtras(): RenderLayer<unknown>[];
   hitTestExtrasIn: HitTestExtrasIn;
 }
 
@@ -30,11 +33,14 @@ export function useExtraLayers(
 ): ExtraLayers {
   const [extrasVersion, setExtrasVersion] = useState(0);
   const extrasRef = useRef<Set<RenderLayer<unknown>>>(new Set());
-  // One layer object can be registered by several owners; it stays until the last lets go.
-  const holdsRef = useRef(new Map<RenderLayer<unknown>, number>());
+  // One layer object can be registered by several owners; it stays until the
+  // last lets go, at the place of its newest registration still held.
+  const holdsRef = useRef(new Map<RenderLayer<unknown>, number[]>());
+  const seqRef = useRef(0);
   const registerLayer = useCallback((layer: RenderLayer<unknown>) => {
     const holds = holdsRef.current;
-    holds.set(layer, (holds.get(layer) ?? 0) + 1);
+    const seq = seqRef.current++;
+    holds.set(layer, [...(holds.get(layer) ?? []), seq]);
     extrasRef.current.delete(layer);
     extrasRef.current.add(layer);
     setExtrasVersion(n => n + 1);
@@ -42,36 +48,38 @@ export function useExtraLayers(
     return () => {
       if (released) return;
       released = true;
-      const left = (holds.get(layer) ?? 1) - 1;
-      if (left > 0) {
-        holds.set(layer, left);
-        return;
-      }
-      holds.delete(layer);
-      extrasRef.current.delete(layer);
+      const left = (holds.get(layer) ?? []).filter((s) => s !== seq);
+      if (left.length > 0) holds.set(layer, left);
+      else holds.delete(layer);
+      extrasRef.current = new Set([...holds.keys()].sort((a, b) => holds.get(a)!.at(-1)! - holds.get(b)!.at(-1)!));
       setExtrasVersion(n => n + 1);
     };
   }, []);
 
-  // Registration order is draw order, so the last-registered layer gets first
-  // refusal, and registered layers paint above every slot. `<SceneCanvas>`
-  // folds this into its `affordanceAt` thunk; Canvas has the layers but not
-  // the dispatcher.
-  const hitTestExtrasIn = useCallback<HitTestExtrasIn>((worldX, worldY, view, dims, data, only) => {
-    const layers = [...extrasRef.current].reverse().concat([...slotLayersRef.current].reverse());
+  const paintedExtras = useCallback((): RenderLayer<unknown>[] => {
     const gate = gateRef.current;
-    const isVisible = gate.getIsVisible?.() ?? alwaysVisible;
-    const visibility = gate.layerVisibility ?? NO_LAYER_VISIBILITY;
-    const order = gate.layerOrder;
-    for (const layer of layers) {
+    return paintedLayers([...extrasRef.current], gate.layerVisibility ?? NO_LAYER_VISIBILITY, gate.layerOrder);
+  }, [gateRef]);
+
+  // Registered layers paint above every slot unless `layerOrder` says otherwise;
+  // the topmost painted gets first refusal. `<SceneCanvas>` folds this into its
+  // `affordanceAt` thunk; Canvas has the layers but not the dispatcher.
+  const hitTestExtrasIn = useCallback<HitTestExtrasIn>((worldX, worldY, view, dims, data, only) => {
+    const own = [...slotLayersRef.current, ...extrasRef.current];
+    const gate = gateRef.current;
+    // `only` is the asker's own stack, already gated and ordered by its settings.
+    const painted = only
+      ? only.filter((layer) => own.includes(layer))
+      : paintedLayers(own, gate.layerVisibility ?? NO_LAYER_VISIBILITY, gate.layerOrder);
+    const isVisible = isVisibleFrom(data) ?? gate.getIsVisible?.() ?? alwaysVisible;
+    for (let i = painted.length - 1; i >= 0; i--) {
+      const layer = painted[i]!;
       if (!layer.hitTest) continue;
-      if (only && !only.includes(layer)) continue;
-      if (!isLayerPainted(layer, visibility, order)) continue;
       const hit = layer.hitTest(worldX, worldY, data, view, dims, isVisible);
       if (hit) return { layerId: layer.id, hit };
     }
     return null;
   }, [gateRef, slotLayersRef]);
 
-  return { extrasRef, extrasVersion, registerLayer, hitTestExtrasIn };
+  return { extrasRef, extrasVersion, registerLayer, paintedExtras, hitTestExtrasIn };
 }

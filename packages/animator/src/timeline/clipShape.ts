@@ -60,6 +60,13 @@ function retiming(track: Raw, where: string): void {
   }
 }
 
+/** Throws where an item's `t` falls before the one ahead of it: sampling and event search read a track in time order. */
+function inOrder(items: unknown[], where: string, item: string): void {
+  for (let i = 1; i < items.length; i += 1) {
+    need((items[i] as Raw).t as number >= ((items[i - 1] as Raw).t as number), `${where}'s ${item} ${i}'s t`, `is before the ${item} ahead of it`);
+  }
+}
+
 function sampled(track: Raw, where: string): void {
   optionalString(track.target, `${where}'s target`);
   optionalString(track.interpolate, `${where}'s interpolate`);
@@ -74,6 +81,7 @@ function sampled(track: Raw, where: string): void {
     need((key as Raw).value !== undefined, at, 'has no value');
     easing((key as Raw).easing, `${at}'s easing`);
   });
+  inOrder(keys as unknown[], where, 'key');
 }
 
 function events(track: Raw, where: string): void {
@@ -84,6 +92,7 @@ function events(track: Raw, where: string): void {
     need(typeof (event as Raw).t === 'number', `${at}'s t`, 'is not a number');
     need(typeof (event as Raw).name === 'string', `${at}'s name`, 'is not a string');
   });
+  inOrder(track.events as unknown[], where, 'event');
 }
 
 function timeline(v: unknown, where: string, depth: number): void {

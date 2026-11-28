@@ -37,6 +37,15 @@ describe('hasStroke', () => {
     expect(hasStroke({ paint, width: { px: 0 } })).toBe(false);
     expect(hasStroke(null)).toBe(false);
   });
+
+  it('counts no stroke whose dash is non-finite, which draws no line', () => {
+    expect(hasStroke({ paint, width: 2, dash: [Infinity, 1] })).toBe(false);
+  });
+
+  it('counts no stroke of infinite width, which draws no line', () => {
+    expect(hasStroke({ paint, width: Infinity })).toBe(false);
+    expect(hasStroke({ paint, width: { px: Infinity } })).toBe(false);
+  });
 });
 
 describe('a stroke that paints no line but carries a marker', () => {
@@ -50,5 +59,13 @@ describe('a stroke that paints no line but carries a marker', () => {
   it('reaches the draw command, with no paint, for the renderer to draw its heads', () => {
     expect(pathCommand(line, null, headed, undefined)).toMatchObject({ stroke: { width: 2, markerEnd: 'arrow' } });
     expect(pathCommand(line, null, { width: 2 }, undefined)).not.toHaveProperty('stroke');
+  });
+});
+
+describe('hasStroke of an infinite width', () => {
+  it('finds nothing to outline in a stroke the renderer draws no line for', () => {
+    expect(hasStroke({ paint, width: Infinity })).toBe(false);
+    expect(hasStroke({ paint, width: { px: Infinity } })).toBe(false);
+    expect(hasStroke({ paint, width: 2 })).toBe(true);
   });
 });

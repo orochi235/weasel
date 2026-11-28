@@ -124,6 +124,183 @@ describe('readTypedoc in a project whose paths are relative to each package', ()
     expect(docs.component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
     expect(docs.component('Button', join(root, 'ui', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The ui label.');
   });
+
+  it("gives a package TypeDoc did not read no other package's docs for a same-named component", () => {
+    const one: TdReflection = { id: 0, name: 'docs', kind: 1, children: [{ id: 10, name: '@a/ui', kind: 2, packageVersion: '1.0.0', children: [button(11, 'The ui label.')] }] };
+    expect(readTypedoc(one, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))).toBeNull();
+    expect(readTypedoc(one, 0).component('Button', join(root, 'ui', 'src', 'Button.tsx'))).not.toBeNull();
+    const single: TdReflection = { id: 0, name: 'docs', kind: 1, packageName: '@a/ui', children: [button(11, 'The ui label.')] };
+    expect(readTypedoc(single, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))).toBeNull();
+  });
+
+  it('takes a match whose path reaches above the package, whatever package TypeDoc read', () => {
+    const merged = { ...button(11, 'The kit label.'), sources: [{ fileName: 'kit/src/Button.tsx' }] };
+    const project: TdReflection = { id: 0, name: 'docs', kind: 1, packageName: 'root', children: [merged] };
+    expect(readTypedoc(project, 0).component('Button', join(root, 'kit', 'src', 'Button.tsx'))?.props.get('label')?.description).toBe('The kit label.');
+  });
+});
+
+describe('readTypedoc on a lone component', () => {
+  const text = (value: string) => ({ summary: [{ kind: 'text', text: value }] });
+  const lone = (fileName: string, props: TdReflection[]): TdReflection => ({
+    id: 0,
+    name: 'docs',
+    kind: 1,
+    children: [
+      {
+        id: 1,
+        name: 'Button',
+        variant: 'declaration',
+        kind: 64,
+        sources: [{ fileName }],
+        signatures: [
+          {
+            id: 2,
+            name: 'Button',
+            variant: 'signature',
+            kind: 4096,
+            parameters: [
+              {
+                id: 3,
+                name: 'props',
+                variant: 'param',
+                kind: 32768,
+                type: { type: 'reflection', declaration: { id: 4, name: '__type', variant: 'declaration', kind: 65536, children: props } },
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  const label: TdReflection = { id: 5, name: 'label', variant: 'declaration', kind: 1024, comment: text('The label.') };
+
+  it('documents a prop declared as a method from its signature\'s comment', () => {
+    const onSelect: TdReflection = {
+      id: 6,
+      name: 'onSelect',
+      variant: 'declaration',
+      kind: 2048,
+      signatures: [{ id: 7, name: 'onSelect', variant: 'signature', kind: 4096, comment: text('Called on a pick.') }],
+    };
+    const docs = readTypedoc(lone('src/Button.tsx', [onSelect]), 0).component('Button', '/repo/src/Button.tsx');
+    expect(docs?.props.get('onSelect')?.description).toBe('Called on a pick.');
+  });
+
+  it('matches a source TypeDoc wrote above its base path, with ../', () => {
+    const docs = readTypedoc(lone('../other/src/Button.tsx', [label]), 0).component('Button', '/repo/other/src/Button.tsx');
+    expect(docs?.props.get('label')?.description).toBe('The label.');
+  });
+});
+
+describe('readTypedoc on the shapes a component and its props are declared in', () => {
+  const FILE = '/repo/src/Thing.tsx';
+  const sources = [{ fileName: 'src/Thing.tsx' }];
+  const said = (text: string) => ({ summary: [{ kind: 'text', text }] });
+  const prop = (id: number, name: string, text: string): TdReflection => ({ id, name, variant: 'declaration', kind: 1024, comment: said(text) });
+  const react = (name: string, ...typeArguments: TdType[]): TdType => ({ type: 'reference', name, target: { packageName: '@types/react' }, typeArguments });
+  const to = (target: number, name: string): TdType => ({ type: 'reference', target, name });
+  const object = (id: number, children: TdReflection[]): TdType => ({
+    type: 'reflection',
+    declaration: { id, name: '__type', variant: 'declaration', kind: 65536, children },
+  });
+  const buttonProps: TdReflection = {
+    id: 100,
+    name: 'ButtonProps',
+    variant: 'declaration',
+    kind: 256,
+    sources,
+    children: [prop(101, 'onClick', 'Fires on a click.'), prop(102, 'label', 'The text.')],
+  };
+  const project = (...exports: TdReflection[]): unknown => ({ id: 0, name: 'docs', kind: 1, children: [buttonProps, ...exports] });
+  const fn = (id: number, props: TdType): TdReflection => ({
+    id,
+    name: 'Thing',
+    variant: 'declaration',
+    kind: 64,
+    sources,
+    signatures: [{ id: id + 1, name: 'Thing', variant: 'signature', kind: 4096, parameters: [{ id: id + 2, name: 'props', variant: 'param', kind: 32768, type: props }] }],
+  });
+
+  it('reads the props of a component wrapped in memo', () => {
+    const memo: TdReflection = {
+      id: 200,
+      name: 'Thing',
+      variant: 'declaration',
+      kind: 32,
+      sources,
+      type: react('MemoExoticComponent', {
+        type: 'reflection',
+        declaration: {
+          id: 201,
+          name: '__type',
+          variant: 'declaration',
+          kind: 65536,
+          signatures: [{ id: 202, name: '__type', variant: 'signature', kind: 4096, parameters: [{ id: 203, name: 'props', variant: 'param', kind: 32768, type: to(100, 'ButtonProps') }] }],
+        },
+      }),
+    };
+    expect(readTypedoc(project(memo), 0).component('Thing', FILE)?.props.get('label')).toEqual({ description: 'The text.' });
+  });
+
+  it('reads a prop redeclared beside Omit as its own, and leaves out what Omit drops and Pick does not take', () => {
+    const props: TdType = {
+      type: 'intersection',
+      types: [react('Omit', to(100, 'ButtonProps'), { type: 'literal', value: 'onClick' }), object(301, [prop(302, 'onClick', 'Fires with the row id.')])],
+    };
+    const omitted = readTypedoc(project(fn(300, props)), 0).component('Thing', FILE)!;
+    expect(omitted.props.get('onClick')).toEqual({ description: 'Fires with the row id.' });
+    expect(omitted.props.get('label')).toEqual({ description: 'The text.' });
+    const keys = { type: 'union', types: [{ type: 'literal', value: 'label' }] };
+    const picked = readTypedoc(project(fn(300, react('Pick', to(100, 'ButtonProps'), keys))), 0).component('Thing', FILE)!;
+    expect([...picked.props.keys()]).toEqual(['label']);
+  });
+
+  const handle: TdReflection = {
+    id: 400,
+    name: 'ThingHandle',
+    variant: 'declaration',
+    kind: 128,
+    sources,
+    children: [
+      {
+        id: 401,
+        name: 'value',
+        variant: 'declaration',
+        kind: 262144,
+        getSignature: { id: 402, name: 'value', variant: 'signature', kind: 524288, comment: said('The current value.') },
+      },
+    ],
+  };
+
+  it("reads a ref handle's accessor's comment from its get or set signature", () => {
+    const props = object(501, [{ id: 502, name: 'ref', variant: 'declaration', kind: 1024, type: react('Ref', to(400, 'ThingHandle')) }]);
+    const thing = readTypedoc(project(handle, fn(500, props)), 0).component('Thing', FILE)!;
+    expect(thing.members.get('value')).toEqual({ description: 'The current value.', signatures: [] });
+  });
+
+  it('reads the props and instance members of a class component', () => {
+    const thing: TdReflection = {
+      id: 600,
+      name: 'Thing',
+      variant: 'declaration',
+      kind: 128,
+      sources,
+      extendedTypes: [react('Component', to(100, 'ButtonProps'), { type: 'intrinsic', name: 'any' })],
+      children: [
+        {
+          id: 601,
+          name: 'focus',
+          variant: 'declaration',
+          kind: 2048,
+          signatures: [{ id: 602, name: 'focus', variant: 'signature', kind: 4096, comment: said('Moves focus here.'), type: { type: 'intrinsic', name: 'void' } }],
+        },
+      ],
+    };
+    const docs = readTypedoc(project(thing), 0).component('Thing', FILE)!;
+    expect(docs.props.get('label')).toEqual({ description: 'The text.' });
+    expect(docs.members.get('focus')).toEqual({ description: 'Moves focus here.', signatures: ['() => void'] });
+  });
 });
 
 describe('withTypedoc', () => {
@@ -258,6 +435,12 @@ describe('typeText', () => {
     expect(typeText(mapped({ readonlyModifier: '+' }))).toBe('{ readonly [K in keyof T]: T[K] }');
     const renamed: TdType = { type: 'templateLiteral', head: 'on', tail: [[k, '']] };
     expect(typeText(mapped({ nameType: renamed }))).toBe('{ [K in keyof T as `on${K}`]: T[K] }');
+  });
+
+  it("escapes a backtick, a backslash and a `${` in a template literal type's text", () => {
+    const str: TdType = { type: 'intrinsic', name: 'string' };
+    const t: TdType = { type: 'templateLiteral', head: 'a`b', tail: [[str, '\\${c']] };
+    expect(typeText(t)).toBe('`a\\`b${string}\\\\\\${c`');
   });
 
   it("prints a signature's type parameters with their constraints and defaults", () => {

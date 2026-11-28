@@ -48,9 +48,10 @@ describe('drawnBoundsOf', () => {
       .toEqual({ x: -2.5, y: -2.5, width: 105, height: 105 });
   });
 
-  it('reads a variable-width stroke at its widest', () => {
+  it('reads a variable-width stroke by the width at each corner', () => {
+    // Only the top-right corner is wide; the other sides stand off by half the narrow width.
     expect(boxOf({ shape: 'rect', stroke: stroke({ width: 2, vertexWidths: [2, 20, 2, 2] }) }))
-      .toEqual({ x: -10, y: -10, width: 120, height: 120 });
+      .toEqual({ x: -1, y: -10, width: 111, height: 111 });
   });
 
   it('is the pose box when stroke is opted out', () => {

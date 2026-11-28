@@ -58,3 +58,32 @@ describe('createStoryIndex', () => {
     expect([...index.files().keys()]).toEqual([join(dir, 'a.stories.tsx')]);
   });
 });
+
+describe('createStoryIndex settle', () => {
+  let dir = '';
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  it('keeps out a story file unlinked while its wrappers were being resolved', async () => {
+    dir = realpathSync(mkdtempSync(join(tmpdir(), 'forge-story-index-')));
+    writeFileSync(join(dir, 'forge.ts'), 'export function meta(m) { return m; }\nexport function story(s) { return s; }\n');
+    writeFileSync(join(dir, 'helper.ts'), "export { meta } from '@weasel-js/forge';\n");
+    const file = join(dir, 'a.stories.tsx');
+    writeFileSync(file, "import { meta } from './helper';\nexport default meta({ title: 'ui/A' });\nexport const First = {};\n");
+    const errors: unknown[] = [];
+    const index = createStoryIndex({ stories: ['*.stories.tsx'], root: () => dir, logger: () => undefined, logError: (err) => errors.push(err) });
+    let release = () => {};
+    const gate = new Promise<void>((r) => (release = r));
+    const blocking = async (spec: string) => {
+      await gate;
+      if (spec === '@weasel-js/forge') return join(dir, 'forge.ts');
+      return spec === './helper' ? join(dir, 'helper.ts') : null;
+    };
+    const settling = index.settleAll(blocking);
+    rmSync(file);
+    await index.update(file, 'unlink', resolveImport);
+    release();
+    await settling;
+    expect([...index.files().keys()]).toEqual([]);
+    expect(errors).toEqual([]);
+  });
+});

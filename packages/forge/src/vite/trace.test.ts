@@ -39,3 +39,50 @@ describe('what a module declares', () => {
     expect(await trace().declaring('/kit.ts', 'Icons')).toBeNull();
   });
 });
+
+describe('a name more than one export * answers for', () => {
+  const files: Record<string, string> = {
+    '/kit.ts': "export * from './a';\nexport * from './b';\nexport * from './c';\n",
+    '/a.ts': 'export function story() {}\nexport function meta() {}\n',
+    '/b.ts': 'export function story() {}\n',
+    '/c.ts': "export { meta } from './a';\n",
+  };
+  const trace = () => createTracer((file) => files[file]!)(async (spec) => `/${spec.slice(2)}.ts`);
+
+  it('is ambiguous, and exported by neither, when the modules declare it differently', async () => {
+    expect(await trace().declaring('/kit.ts', 'story')).toBeNull();
+  });
+
+  it('is exported when every module answers with the same binding', async () => {
+    expect(await trace().declaring('/kit.ts', 'meta')).toBe('/a.ts#meta');
+  });
+});
+
+describe('local aliases', () => {
+  const files: Record<string, string> = {
+    '/helper.ts': [
+      "import { meta } from './forge';",
+      'export const defineMeta = meta;',
+      'const inner = meta as typeof meta;',
+      'export const twice = inner;',
+      'export default twice;',
+      'export let later = meta;',
+      'const a = b;',
+      'const b = a;',
+      'export { a };',
+    ].join('\n'),
+    '/forge.ts': 'export function meta() {}\n',
+  };
+  const trace = () => createTracer((file) => files[file]!)(async (spec) => `/${spec.slice(2)}.ts`);
+
+  it('follows a const bound to another name to what that name is declared as', async () => {
+    expect(await trace().declaring('/helper.ts', 'defineMeta')).toBe('/forge.ts#meta');
+    expect(await trace().declaring('/helper.ts', 'twice')).toBe('/forge.ts#meta');
+    expect(await trace().declaring('/helper.ts', 'default')).toBe('/forge.ts#meta');
+  });
+
+  it('stops at a let, which may be reassigned, and at a cycle', async () => {
+    expect(await trace().declaring('/helper.ts', 'later')).toBe('/helper.ts#later');
+    expect(await trace().declaring('/helper.ts', 'a')).toBe('/helper.ts#a');
+  });
+});

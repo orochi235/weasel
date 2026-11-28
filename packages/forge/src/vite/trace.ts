@@ -47,8 +47,9 @@ export function createTracer(read: (file: string) => string): (resolve: ResolveI
       seen.add(`${at}#${name}`);
       const exp = mod.exports.get(name);
       if (exp?.kind === 'local') {
-        const imp = mod.imports.get(exp.local);
-        if (!imp) return `${at}#${exp.local}`;
+        const local = unaliased(mod, exp.local);
+        const imp = mod.imports.get(local);
+        if (!imp) return `${at}#${local}`;
         if (imp.imported === '*') return null;
         const next = await trace.target(imp.spec, at);
         return next ? declaring(next, imp.imported, depth + 1, seen) : null;
@@ -59,13 +60,25 @@ export function createTracer(read: (file: string) => string): (resolve: ResolveI
         return next ? declaring(next, exp.imported, depth + 1, seen) : null;
       }
       if (name === 'default') return null;
+      // A name two `export *` modules declare differently is ambiguous, and the module exports neither.
+      const found = new Set<string>();
       for (const spec of mod.stars) {
         const next = await trace.target(spec, at);
-        const found = next ? await declaring(next, name, depth + 1, seen) : null;
-        if (found) return found;
+        const binding = next ? await declaring(next, name, depth + 1, seen) : null;
+        if (binding) found.add(binding);
       }
-      return null;
+      return found.size === 1 ? [...found][0]! : null;
     };
     return trace;
   };
+}
+
+/** The name `local` is bound to through the module's chain of `const a = b` aliases. */
+function unaliased(mod: ModuleInfo, local: string): string {
+  const seen = new Set<string>();
+  while (!mod.imports.has(local) && mod.aliases.has(local) && !seen.has(local)) {
+    seen.add(local);
+    local = mod.aliases.get(local)!;
+  }
+  return local;
 }

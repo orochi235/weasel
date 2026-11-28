@@ -77,6 +77,11 @@ describe('strokeHasInk', () => {
     expect(strokeHasInk({ paint: { color: '#000' }, width: { px: 0 } })).toBe(false);
   });
 
+  it('is false for an infinite width, which the tessellator draws nothing for', () => {
+    expect(strokeHasInk({ paint: { color: '#000' }, width: Infinity })).toBe(false);
+    expect(strokeHasInk({ paint: { color: '#000' }, width: { px: Infinity } })).toBe(false);
+  });
+
   it('is true for a painted stroke at the default width', () => {
     expect(strokeHasInk({ paint: { color: '#000' } })).toBe(true);
     expect(strokeHasInk({ paint: { color: '#000' }, width: { px: 1 } })).toBe(true);

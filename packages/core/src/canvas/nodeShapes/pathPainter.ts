@@ -42,7 +42,8 @@ export const PATH_PAINTER: NodeShapeEntry<unknown, RectPose> = {
     const d = node.data as { path: Path };
     return pathInPoseBox(d.path, pose);
   },
-  ink: (node, _pose, ctx) => {
+  ink: (node, pose, ctx) => {
+    if (ctx?.derivedPath != null) return DERIVED_PAINTER.ink!(node, pose, ctx);
     const { fill, stroke } = pathPaintOf(node.data as PathData, ctx?.inherited);
     return { filled: fill !== null, ...inkReach(stroke ?? null, ctx?.scale), ...inkStroke(stroke ?? null) };
   },

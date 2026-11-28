@@ -1,7 +1,7 @@
 import { boundsOfPath, DEFAULT_FLATTEN_TOLERANCE, type Path } from '@weasel-js/geom';
 import { resolveScreenLength, scaleVertexWidth, type Stroke } from '@weasel-js/paint';
 import {
-  markerHeads, strokeAtScale, strokeInsets, tessellateStroke,
+  markerHeads, strokeAtScale, strokeInsets, tessellateStroke, widthHasInk,
   type InsetLength, type ScreenSpace, type StrokeSpaces,
 } from '@weasel-js/stroke';
 import { DEFAULT_FLATTEN_TOLERANCE_PX, resolveStrokeLengths, type GlMat3, type StrokedPathCommand } from '@weasel-js/renderer';
@@ -14,7 +14,8 @@ import { strokeOutsetPerAxis } from './nodePaint';
  * The box `stroke` covers along `path`, from the ribbon the renderer draws:
  * joins, caps, dashes, and per-vertex widths as tessellated, and marker heads.
  * An inner stroke stays inside the path, and an outer one reaches as far out as
- * a centered stroke twice as wide. `null` when the stroke paints nothing.
+ * a centered stroke twice as wide, and one with no paint covers only its
+ * heads. `null` when the stroke paints nothing.
  *
  * With `screen` (see `NodeInkCtx.screen`), each screen-sized part is built the
  * way the renderer builds it under that map, so a `{ px }` stroke is exact in
@@ -23,11 +24,11 @@ import { strokeOutsetPerAxis } from './nodePaint';
 export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?: ScreenMap): Bounds | null {
   const { sized, spaces } = screen ? onScreen(path, stroke, screen) : atScale(stroke, scale);
   const width = resolveScreenLength(sized.width ?? 1, 1);
-  if (!(width > 0)) return null;
+  if (!widthHasInk(width)) return null;
   const box = new Box();
   const align = stroke.align ?? 'center';
   const tolerance = flattenFor(path, scale);
-  if (align !== 'inner') {
+  if (align !== 'inner' && stroke.paint != null) {
     const k = align === 'outer' ? 2 : 1;
     const insets = strokeInsets(sized, width);
     const mesh = tessellateStroke(
@@ -53,8 +54,8 @@ export function strokedBounds(path: Path, stroke: Stroke, scale: number, screen?
   return box.bounds();
 }
 
-/** Below this fraction of a path's size, a coordinate stored as float32 has no more to say. */
-const FINEST = 2 ** -16;
+/** Below this fraction of a coordinate's magnitude, float32 has no more to say: half its 24-bit significand's last place. */
+const FINEST = 2 ** -24;
 
 /**
  * The tolerance to flatten `path` to for its box, and how far to grow the box
@@ -125,6 +126,55 @@ interface DrawnRecord {
   box: Bounds | null;
 }
 
+/** How an outline inscribed in its pose box meets the box: a rect's sides lie on it, an ellipse's curve
+ *  touches it, and a `'sharp'` outline (a polygon, a star) has corners sharper than a right angle. */
+export type PoseOutline = 'rect' | 'ellipse' | 'sharp';
+
+/**
+ * The box `stroke` covers along an `outline` inscribed in the pose box, `pathAt(pose)`: the pose box grown by
+ * an even outset where that is exact, and measured from the ribbon where something sticks out of it.
+ */
+export function poseOutlineDrawnBounds(
+  node: { data?: unknown },
+  pose: Bounds,
+  stroke: Stroke | null,
+  ctx: NodeInkCtx | undefined,
+  outline: PoseOutline,
+  pathAt: (pose: Bounds) => Path,
+): Bounds {
+  if (stroke === null) return normalized(pose);
+  const box = outline === 'sharp' || reachesUnevenly(stroke)
+    ? strokedPoseBox(node, pose, stroke, ctx, pathAt)
+    : outsetPoseBox(pose, stroke, ctx);
+  return outline === 'rect' || stroke.cap !== 'square' ? box : union(box, squareCapReach(pathAt(pose), stroke, ctx));
+}
+
+/**
+ * The box every square cap a trim could open on `path` stays inside: an animated trim is never seen here, and a
+ * cap's corner stands half the width along the tangent past the ribbon's edge, so √2 times the ribbon's reach.
+ * A rect's caps lie along its sides, inside its even outset.
+ */
+function squareCapReach(path: Path, stroke: Stroke, ctx: NodeInkCtx | undefined): Bounds {
+  const { markerStart: _s, markerMid: _m, markerEnd: _e, ...line } = stroke;
+  const r = strokeOutsetPerAxis(line, ctx);
+  const b = boundsOfPath(path);
+  const x = r.x * Math.SQRT2, y = r.y * Math.SQRT2;
+  return { x: b.x - x, y: b.y - y, width: b.width + 2 * x, height: b.height + 2 * y };
+}
+
+function union(a: Bounds, b: Bounds): Bounds {
+  const x = Math.min(a.x, b.x), y = Math.min(a.y, b.y);
+  return { x, y, width: Math.max(a.x + a.width, b.x + b.width) - x, height: Math.max(a.y + a.height, b.y + b.height) - y };
+}
+
+/** Whether `stroke`'s reach past a smooth closed outline is uneven: a marker head, a width that varies along it,
+ *  or a square cap on an end a dash or a trim opens, whose corners stand off a curve. */
+function reachesUnevenly(stroke: Stroke): boolean {
+  if (stroke.markerStart !== undefined || stroke.markerMid !== undefined || stroke.markerEnd !== undefined) return true;
+  if ((stroke.vertexWidths?.length ?? 0) > 0) return true;
+  return stroke.cap === 'square' && ((stroke.dash?.length ?? 0) > 0 || stroke.trim !== undefined);
+}
+
 /** The pose box grown by a uniform stroke outset: exact for a rect or an
  *  ellipse, whose stroke reaches the same distance past the box on every side. */
 export function outsetPoseBox(pose: Bounds, stroke: Stroke | null, ctx: NodeInkCtx | undefined): Bounds {
@@ -167,6 +217,27 @@ export function strokedPoseBox(
   const x1 = Math.max(box.x + box.width, pose.x + held.box.x + held.box.width);
   const y1 = Math.max(box.y + box.height, pose.y + held.box.y + held.box.height);
   return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
+
+interface PathStrokedRecord {
+  stroke: Stroke;
+  scale: number;
+  screen: ScreenMap | undefined;
+  box: Bounds | null;
+}
+
+const PATH_STROKED = new WeakMap<Path, PathStrokedRecord>();
+
+/**
+ * {@link strokedBounds}, kept per path, which is immutable, on the stroke, the scale and the screen map: a
+ * snap reads the drawn box of every candidate on each pointer move, and a node that stays put keeps its path.
+ */
+export function strokedPathBounds(path: Path, stroke: Stroke, scale: number, screen?: ScreenMap): Bounds | null {
+  const held = PATH_STROKED.get(path);
+  if (held && held.stroke === stroke && held.scale === scale && sameMap(held.screen, screen)) return held.box;
+  const box = strokedBounds(path, stroke, scale, screen);
+  PATH_STROKED.set(path, { stroke, scale, screen, box });
+  return box;
 }
 
 function sameMap(m: ScreenMap | undefined, n: ScreenMap | undefined): boolean {

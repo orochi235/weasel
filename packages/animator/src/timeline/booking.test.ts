@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeTimeline, type MakeTimelineOptions } from './createTimeline.test-harness';
-import type { EventTrack, TimelineEvent, Track } from './types';
+import { createTimeline } from './createTimeline';
+import type { EventTrack, TimelineEvent, TimelineOptions, Track } from './types';
 
 const START = 5000;
 
@@ -140,6 +141,34 @@ describe('event booking', () => {
     expect(r.whens().sort()).toEqual([START + 500, START + 600]);
   });
 
+  it('books each of two places one track is nested at the same time, as it fires each', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const nested = { tracks: [track] };
+    const r = rig({
+      duration: 1000,
+      tracks: [{ kind: 'timeline', at: 0, timeline: nested }, { kind: 'timeline', at: 0, timeline: nested }],
+    });
+    track.events = [bookingEvent(r.log, 50)];
+    r.frame(0);
+    expect(r.whens()).toEqual([START + 50, START + 50]);
+  });
+
+  it('books the longer of two places one track is nested at the same time to its own end', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({
+      duration: 1000,
+      loop: true,
+      lookahead: 300,
+      tracks: [
+        { kind: 'timeline', at: 0, timeline: { duration: 100, tracks: [track] } },
+        { kind: 'timeline', at: 0, timeline: { duration: 200, tracks: [track] } },
+      ],
+    });
+    track.events = [bookingEvent(r.log, 150)];
+    r.frame(0);
+    expect(r.whens()).toEqual([START + 150]);
+  });
+
   it('books nothing of a nested timeline past the duration it declares', () => {
     const track: EventTrack = { kind: 'event', events: [] };
     const r = rig({
@@ -224,6 +253,52 @@ describe('event booking across transport changes', () => {
     expect(whens).toEqual([START + 80]);
   });
 
+  it('does not book again an event a seek short of it left standing with no stop', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 1000, tracks: [track] });
+    const whens: number[] = [];
+    track.events = [{ t: 150, book: (when) => { whens.push(when); } }];
+    r.frame(0);
+    r.frame(90);
+    r.handle.seek(100);
+    r.frame(100);
+    r.frame(160);
+    expect(whens).toEqual([START + 150]);
+  });
+
+  it('books again an event a seek back past it will play again', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({ duration: 1000, tracks: [track] });
+    const whens: number[] = [];
+    track.events = [{ t: 150, book: (when) => { whens.push(when); } }];
+    r.frame(0);
+    r.frame(90);
+    r.frame(200);
+    r.handle.seek(100);
+    r.frame(210);
+    expect(whens).toEqual([START + 150, START + 250]);
+  });
+
+  it('books again what the playhead played back over once it plays forward', () => {
+    const r = withEvents({ duration: 1000 }, [300, 400]);
+    for (let v = 0; v <= 500; v += 50) r.frame(v);
+    r.handle.setTimeScale(-1);
+    for (let v = 450; v >= 200; v -= 50) r.frame(1000 - v, v);
+    r.handle.setTimeScale(1);
+    for (let v = 250; v <= 450; v += 50) r.frame(1000 - 200 + (v - 200), v);
+    expect(r.log.map((b) => b.label)).toEqual(['@300', '@400', '@300', '@400']);
+  });
+
+  it('books again what a backward lap crossing played back over', () => {
+    const r = withEvents({ duration: 1000, loop: true }, [900]);
+    for (let v = 0; v <= 1100; v += 50) r.frame(v);
+    r.handle.setTimeScale(-1);
+    for (let v = 1050; v >= 800; v -= 50) r.frame(2200 - v, v);
+    r.handle.setTimeScale(1);
+    for (let v = 850; v <= 1000; v += 50) r.frame(2200 - 800 + (v - 800), v);
+    expect(r.log.filter((b) => !b.stopped).map((b) => b.label)).toEqual(['@900', '@900']);
+  });
+
   it('retimes a pending booking when the time scale changes', () => {
     const r = withEvents({ duration: 1000 }, [80]);
     r.frame(0);
@@ -267,6 +342,26 @@ describe('event booking across transport changes', () => {
     });
     r.frame(3010);
     expect(r.log.map((b) => b.label)).toEqual(['@3050']);
+  });
+
+  it('books the tracks an edit put in place of the options\' array, as it fires them', () => {
+    let now = START;
+    const log: Booked[] = [];
+    let tick: (v: number, s?: number) => boolean = () => true;
+    const opts: TimelineOptions = {
+      duration: 1000,
+      tracks: [{ kind: 'event', events: [bookingEvent(log, 200, 'old')] }],
+      booking: { clock: { now: () => now } },
+    };
+    const handle = createTimeline((seed) => {
+      tick = seed.tick;
+      return { id: seed.id, cancel() {}, pause() {}, resume() {}, setTimeScale() {}, timeScale: () => 1, isPaused: () => false };
+    }, 1, opts);
+    tick(0, 1);
+    handle.edit(() => { opts.tracks = [{ kind: 'event', events: [bookingEvent(log, 50, 'new')] }]; });
+    now = START + 10;
+    tick(10, 1);
+    expect(log.map((b) => b.label)).toEqual(['new']);
   });
 
   it('books a nested track moved back to where it was from the playhead on, not from where it left', () => {

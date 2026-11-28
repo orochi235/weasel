@@ -5,7 +5,8 @@ export const PART_CACHE_ALLOWED = new Map([
   ['packages/core/src/canvas/canvasRenderer.ts', ['the tenants of a canvas and its lease, each deleted when the last one goes', 2]],
   ['packages/core/src/canvas/nodeOutline.ts', 'replaced when the painters or their geometry generations change'],
   ['packages/core/src/canvas/nodeShapeRegistry.ts', ["`orders` is replaced when the memo generation moves; `tiersOf` is read without being made", 2]],
-  ['packages/core/src/canvas/nodeShapes/derivedPainter.ts', 'the entry turns on the pose and is replaced when it changes'],
+  ['packages/core/src/canvas/nodeShapes/derivedPainter.ts', 'the entry turns on the pose frame and is replaced when it changes'],
+  ['packages/core/src/canvas/nodeShapes/strokedBounds.ts', 'the entry turns on the stroke, scale and screen map and is replaced on every miss'],
   ['packages/core/src/canvas/tileHosts.ts', 'made only once a frame tiles a layer, and read by tileHostOf without being made'],
   ['packages/core/src/canvas/renderWorker/liveClients.ts', 'entries are deleted on release'],
   ['packages/core/src/core/scene/depFrame.ts', 'the entry turns on the matrix and is replaced when its key changes'],
@@ -65,7 +66,7 @@ export const PART_CACHE_ALLOWED = new Map([
   // ui, labkit, forge, prefs, routing
   ['packages/forge/src/shell/revealTrial.ts', 'replaced with a new timer and deleted when it fires'],
   ['packages/forge/src/timeline/moves.ts', 'set to a speed the caller gives, and read with a fallback'],
-  ['packages/forge/src/vite/warnOnce.ts', 'a part, but plugin source loads before @weasel-js/registry is built, so it cannot import createPart'],
+  ['packages/forge/src/vite/warnNew.ts', 'a part, but plugin source loads before @weasel-js/registry is built, so it cannot import createPart'],
   ['packages/labkit/src/config/compound.ts', 'set when a leaf is built from its node, and read without being made'],
   ['packages/labkit/src/lab/openLab.ts', 'read without being made'],
   ['packages/labkit/src/state/ownUndo.ts', 'read without being made'],

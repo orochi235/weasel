@@ -87,6 +87,12 @@ export interface TdReflection {
   /** A type parameter's default. */
   default?: TdType;
   inheritedFrom?: TdType;
+  /** A project's package, when TypeDoc read one package. */
+  packageName?: string;
+  /** A package's version, on the module for each package when TypeDoc read several. */
+  packageVersion?: string;
+  /** A class's or interface's `extends`. */
+  extendedTypes?: TdType[];
 }
 
 /** Where an export is: the names of the modules it is in, outermost first, and its own name. */
@@ -104,23 +110,27 @@ export interface TdIndex {
   exportOf: Map<number, TypedocTarget>;
   /** The exports themselves, which are what a component is looked up among. */
   exports: TdReflection[];
+  /** The package each export was documented as part of, by the export's id, where TypeDoc says. */
+  packageOf: Map<number, string>;
 }
 
 export function indexProject(project: TdReflection): TdIndex {
-  const index: TdIndex = { byId: new Map(), exportOf: new Map(), exports: [] };
-  const walk = (container: TdReflection, modules: string[], prefix: string) => {
+  const index: TdIndex = { byId: new Map(), exportOf: new Map(), exports: [], packageOf: new Map() };
+  const walk = (container: TdReflection, modules: string[], prefix: string, pkg: string | undefined) => {
     for (const child of container.children ?? []) {
       if (child.kind === Kind.Module) {
-        walk(child, [...modules, child.name], '');
+        const own = modules.length === 0 && child.packageVersion !== undefined ? child.name : pkg;
+        walk(child, [...modules, child.name], '', own);
         continue;
       }
       const name = prefix + child.name;
       if (child.kind === Kind.Namespace) {
-        walk(child, modules, `${name}.`);
+        walk(child, modules, `${name}.`, pkg);
         continue;
       }
       if (child.variant === 'reference') continue;
       index.exports.push(child);
+      if (pkg !== undefined) index.packageOf.set(child.id, pkg);
       const target = { modules, name };
       for (const nested of reflectionsUnder(child)) {
         index.byId.set(nested.id, nested);
@@ -128,7 +138,7 @@ export function indexProject(project: TdReflection): TdIndex {
       }
     }
   };
-  walk(project, [], '');
+  walk(project, [], '', project.packageName);
   return index;
 }
 

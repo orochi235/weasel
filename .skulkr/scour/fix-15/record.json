@@ -1,0 +1,257 @@
+{
+ "run": 15,
+ "area": "animator.timeline",
+ "commit": "471ca1528c407484acdf7c57c5ade381f11336f3",
+ "on": "main",
+ "ledgerCommit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "started": "2026-11-27T23:13:55.021Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "471ca1528c407484acdf7c57c5ade381f11336f3",
+   "defects": [
+    {
+     "id": "D11",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/createTimeline.ts",
+      "packages/animator/src/timeline/playhead.ts"
+     ]
+    },
+    {
+     "id": "D7",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/createTimeline.ts"
+     ]
+    },
+    {
+     "id": "D4",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/createTimeline.ts",
+      "packages/animator/src/timeline/types.ts",
+      "packages/animator/src/timeline/trackHolds.ts"
+     ]
+    },
+    {
+     "id": "D1",
+     "recurrent": true,
+     "files": [
+      "packages/animator/src/timeline/playhead.ts"
+     ]
+    },
+    {
+     "id": "D2",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/playhead.ts"
+     ]
+    },
+    {
+     "id": "D10",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/trackHolds.ts"
+     ]
+    },
+    {
+     "id": "D14",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/clip.ts"
+     ]
+    },
+    {
+     "id": "D13",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/clipShape.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D11",
+     "verdict": "not fixed",
+     "line": "[D11] paused timeline at the end of its last lap finishes while paused, and the event at its end never fires (scour): not fixed (a repair reverted its fix a3c61e4c92 to pass verify)",
+     "sha": null
+    },
+    {
+     "id": "D7",
+     "verdict": "fixed",
+     "line": "[D7] seek to the seam of a finished timeline with laps left does not revive it (scour): fixed d7e34ffefa",
+     "sha": "d7e34ffefa"
+    },
+    {
+     "id": "D4",
+     "verdict": "fixed",
+     "line": "[D4] edit or non-reviving seek on a finished timeline skips the resample (scour): fixed 793c065e9b",
+     "sha": "793c065e9b"
+    },
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "[D1] fractional or NaN loop count corrupts lap accounting (scour): fixed 4df050a823",
+     "sha": "4df050a823"
+    },
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "[D2] huge advance on an endless timeline leaves the loop budget NaN (scour): fixed 04edeaa9c2",
+     "sha": "04edeaa9c2"
+    },
+    {
+     "id": "D10",
+     "verdict": "fixed",
+     "line": "[D10] editing a passed last key leaves the target on the old value (scour): fixed 34d214dcff",
+     "sha": "34d214dcff"
+    },
+    {
+     "id": "D14",
+     "verdict": "fixed",
+     "line": "[D14] toClip overflows the stack on a cyclic value (scour): fixed 29b5776c8e",
+     "sha": "29b5776c8e"
+    },
+    {
+     "id": "D13",
+     "verdict": "fixed",
+     "line": "[D13] bindClip accepts unsorted keys and events (scour): fixed eb526588e0",
+     "sha": "eb526588e0"
+    }
+   ],
+   "commits": 9,
+   "branch": "scour15-animator.timeline-b1",
+   "verify": {
+    "ok": true,
+    "files": 18,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2779,
+     "total": 2779
+    },
+    "gui": true,
+    "repairs": 1
+   },
+   "repairs": 1,
+   "costUsd": 2.9632240000000003,
+   "minutes": 25.891516666666668
+  },
+  {
+   "n": 2,
+   "on": "cc908f88a4bfaa3716f219d498117149f50435e5",
+   "defects": [
+    {
+     "id": "D6",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/booking.ts"
+     ]
+    },
+    {
+     "id": "D12",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/booking.ts"
+     ]
+    },
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/booking.ts"
+     ]
+    },
+    {
+     "id": "D8",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/booking.ts"
+     ]
+    },
+    {
+     "id": "D9",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/crossings.ts"
+     ]
+    },
+    {
+     "id": "D5",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/fireEvents.ts"
+     ]
+    },
+    {
+     "id": "D15",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/timeline/targetStops.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D6",
+     "verdict": "fixed",
+     "line": "[D6] an EventTrack placed twice at the same root offset fired twice but was booked once or not at all (scour): fixed 9fe5882232",
+     "sha": "9fe5882232"
+    },
+    {
+     "id": "D12",
+     "verdict": "fixed",
+     "line": "[D12] events played back over at a non-positive rate were never booked again once forward play resumed, across a backward lap crossing too (scour): fixed 99943f5a7e",
+     "sha": "99943f5a7e"
+    },
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] a seek cleared standing handle-less bookings, so the same crossing was booked twice (scour): fixed 045ea23406",
+     "sha": "045ea23406"
+    },
+    {
+     "id": "D8",
+     "verdict": "fixed",
+     "line": "[D8] booker kept the tracks array captured at creation while firing reread `opts.tracks` (scour): fixed 80708a4440",
+     "sha": "80708a4440"
+    },
+    {
+     "id": "D9",
+     "verdict": "fixed",
+     "line": "[D9] handlers on the outgoing lap's tail ran before the frame was sampled (scour): fixed 9f78475e97. The tail now fires inside `fire()`, after sampling, and the lap report follows it. As a result, an `onTick` that cancels the timeline on a wrapping frame now drops that frame's tail and lap report, just as it already dropped the in-lap events.",
+     "sha": "9f78475e97"
+    },
+    {
+     "id": "D5",
+     "verdict": "fixed",
+     "line": "[D5] a nested timeline event's lateBy was measured against the clamped nested end instead of the frame (scour): fixed 6c42cc9774. The retimed branch had the same mistake and also reported lateness in the nested clock's ms; both are now in root ms. Through a remap, lateness inside a run is interpolated linearly between the run's ends.",
+     "sha": "6c42cc9774"
+    },
+    {
+     "id": "D15",
+     "verdict": "fixed",
+     "line": "[D15] targetStops wrote the angle unwrap into a key's own value when custom `axes.to` returned its input (scour): fixed 387dbd6e6b",
+     "sha": "387dbd6e6b"
+    }
+   ],
+   "commits": 10,
+   "branch": "scour15-animator.timeline-b2",
+   "verify": {
+    "ok": true,
+    "files": 16,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2783,
+     "total": 2783
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 2.8821179999999984,
+   "minutes": 30.724716666666666
+  }
+ ],
+ "finished": "2026-11-28T00:24:48.774Z"
+}

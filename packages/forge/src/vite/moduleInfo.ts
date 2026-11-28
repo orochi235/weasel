@@ -17,6 +17,8 @@ export interface ModuleInfo {
   stars: string[];
   /** Per top-level binding, the names its declaration refers to and does not declare itself. */
   refs: Map<string, Set<string>>;
+  /** `const a = b`: each top-level const bound to nothing but another name, to that name. */
+  aliases: Map<string, string>;
 }
 
 /** What `code`, the source of `file`, imports, exports and declares at its top level. */
@@ -26,6 +28,7 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
   const exports = new Map<string, Export>();
   const stars: string[] = [];
   const refs = new Map<string, Set<string>>();
+  const aliases = new Map<string, string>();
   /** `const { a: b } = ns`: each name destructured off a top-level identifier, which may be a namespace import. */
   const picked: { local: string; from: string; imported: string }[] = [];
   const declare = (name: string, node: t.Node | null | undefined) => refs.set(name, node ? freeNames(node) : new Set());
@@ -35,22 +38,27 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
     switch (decl.type) {
       case 'FunctionDeclaration':
       case 'ClassDeclaration':
-        if (!decl.id) return [];
+        if (!decl.id || decl.declare) return [];
         declare(decl.id.name, decl);
         return [decl.id.name];
       case 'VariableDeclaration':
+        if (decl.declare) return [];
         return decl.declarations.flatMap((d) => {
           if (d.id.type === 'Identifier') {
             declare(d.id.name, d.init);
+            const target = decl.kind === 'const' && d.init ? bareName(d.init) : null;
+            if (target) aliases.set(d.id.name, target);
             return [d.id.name];
           }
           const names = patternNames(d.id);
           for (const name of names) declare(name, d);
           if (d.id.type === 'ObjectPattern' && d.init?.type === 'Identifier') {
             for (const p of d.id.properties) {
-              if (p.type === 'ObjectProperty' && !p.computed && p.value.type === 'Identifier') {
-                picked.push({ local: p.value.name, from: d.init.name, imported: p.key.type === 'Identifier' ? p.key.name : nameOf(p.key as t.StringLiteral) });
-              }
+              if (p.type !== 'ObjectProperty' || p.computed || p.value.type !== 'Identifier') continue;
+              const key = p.key;
+              const imported =
+                key.type === 'Identifier' ? key.name : key.type === 'StringLiteral' || key.type === 'NumericLiteral' ? String(key.value) : null;
+              if (imported !== null) picked.push({ local: p.value.name, from: d.init.name, imported });
             }
           }
           return names;
@@ -93,7 +101,8 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
         if (stmt.exportKind !== 'type') stars.push(stmt.source.value);
         break;
       case 'ExportDefaultDeclaration': {
-        const decl = stmt.declaration;
+        const decl = stmt.declaration as t.ExportDefaultDeclaration['declaration'] | t.TSInterfaceDeclaration;
+        if (decl.type === 'TSInterfaceDeclaration' || decl.type === 'TSDeclareFunction') break;
         const named = (decl.type === 'FunctionDeclaration' || decl.type === 'ClassDeclaration') && decl.id ? decl.id.name : null;
         if (named) declare(named, decl);
         else if (decl.type === 'Identifier') {
@@ -112,7 +121,23 @@ export function moduleInfo(code: string, file: string): ModuleInfo {
     const ns = imports.get(from);
     if (ns?.imported === '*' && !imports.has(local)) imports.set(local, { spec: ns.spec, imported });
   }
-  return { imports, exports, stars, refs };
+  return { imports, exports, stars, refs, aliases };
+}
+
+/** The name `expr` is, through parentheses and type-only wrappers, or null when it is anything else. */
+function bareName(expr: t.Expression): string | null {
+  switch (expr.type) {
+    case 'Identifier':
+      return expr.name;
+    case 'ParenthesizedExpression':
+    case 'TSAsExpression':
+    case 'TSSatisfiesExpression':
+    case 'TSNonNullExpression':
+    case 'TSTypeAssertion':
+      return bareName(expr.expression);
+    default:
+      return null;
+  }
 }
 
 function nameOf(node: t.Identifier | t.StringLiteral): string {

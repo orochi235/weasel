@@ -14,7 +14,8 @@ export function targetStops<T>(track: SampledTrack<T>): TargetStops<T> {
   const { axes } = stateOf(track.target!);
   const stops: number[][] = [];
   for (const k of track.keys) {
-    const row = axes.to(k.value);
+    // Copied: `axes.to` may hand back the key's own array, which the unwrap below would write into.
+    const row = Array.from(axes.to(k.value));
     if (row.length !== axes.count || !row.every((x) => typeof x === 'number' && !Number.isNaN(x))) {
       throw new Error("sampleTrack: a key's value is not its target's shape");
     }

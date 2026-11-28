@@ -8,7 +8,7 @@ import type { RectPose } from 'core/scene/types';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { isRectPose } from 'core/geometry/autoPoseDescriptor';
 import { poseBoxBounds } from './poseBox';
-import { outsetPoseBox } from './strokedBounds';
+import { poseOutlineDrawnBounds } from './strokedBounds';
 
 /**
  * What a group paints of its own: its pose box, filled with `background` and
@@ -58,6 +58,7 @@ export function groupBoxBounds(data: unknown, pose: unknown, ctx: NodeInkCtx | u
 }
 
 /** The box a group's box paint covers, its border included, or `null` when it paints none. */
-export function groupBoxDrawnBounds(data: unknown, pose: unknown, ctx: NodeInkCtx | undefined): Bounds | null {
-  return paintsGroupBox(data, pose) ? outsetPoseBox(pose, boxPaintOf(data).stroke, ctx) : null;
+export function groupBoxDrawnBounds(node: { data?: unknown }, pose: unknown, ctx: NodeInkCtx | undefined): Bounds | null {
+  if (!paintsGroupBox(node.data, pose)) return null;
+  return poseOutlineDrawnBounds(node, pose, boxPaintOf(node.data).stroke, ctx, 'rect', groupBoxPath);
 }

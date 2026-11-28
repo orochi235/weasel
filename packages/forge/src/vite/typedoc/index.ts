@@ -1,5 +1,6 @@
 import { readFileSync, statSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { relative } from 'node:path';
+import { packageRootOf } from '../packageName.ts';
 import type { ApiMember, ApiProp } from '../../story/api.ts';
 import type { ReadApi } from '../apiTable.ts';
 import { indexProject, Kind, type TdIndex, type TdReflection, type TdType, type TypedocHref } from './json.ts';
@@ -49,7 +50,9 @@ export function readTypedoc(project: unknown, mtime: number, href?: TypedocHref)
       if (!found) return null;
       const props = new Map<string, TdReflection>();
       const handle: TdType[] = [];
-      collect(index, propsTypeOf(found), props, handle, new Set());
+      collect(index, propsTypeOf(index, found), props, handle, new Set());
+      // A class component's ref holds its instance.
+      if (found.kind === Kind.Class) handle.push({ type: 'reference', target: found.id, name: found.name });
       const ref = props.get('ref');
       if (ref?.type) handle.push(ref.type);
       props.delete('ref');
@@ -60,7 +63,7 @@ export function readTypedoc(project: unknown, mtime: number, href?: TypedocHref)
       const page = target && href?.(target);
       return {
         ...(page ? { href: page } : {}),
-        props: new Map([...props].map(([key, prop]) => [key, entryDocs(prop, prop.comment, linker)])),
+        props: new Map([...props].map(([key, prop]) => [key, entryDocs(prop, commentOf(prop), linker)])),
         members: new Map([...members].map(([key, member]) => [key, memberDocs(member, linker)])),
       };
     },
@@ -72,14 +75,15 @@ const suffixOf = (e: TdReflection, at: string): number =>
   Math.max(
     0,
     ...(e.sources ?? []).map(({ fileName }) => {
-      const tail = slashed(fileName).replace(/^\.\//, '');
+      const tail = slashed(fileName).replace(/^(?:\.\.?\/)+/, '');
       return at.endsWith(`/${tail}`) ? tail.length : 0;
     }),
   );
 
 /**
  * The component export `name` declared in `file`. TypeDoc may write each package's paths relative to that package,
- * so where two packages' files share the suffix, the one in a module named for `file`'s package is taken, else none.
+ * so a match that reaches no higher than `file`'s package is taken only from a module named for that package: where
+ * TypeDoc names the package it documented, or where two packages' files share the suffix.
  */
 function exportIn(index: TdIndex, name: string, file: string): TdReflection | undefined {
   const at = slashed(file);
@@ -89,39 +93,41 @@ function exportIn(index: TdIndex, name: string, file: string): TdReflection | un
     .filter(({ suffix }) => suffix > 0);
   const best = Math.max(0, ...scored.map(({ suffix }) => suffix));
   const found = scored.filter(({ suffix }) => suffix === best).map(({ e }) => e);
-  if (found.length <= 1) return found[0];
-  const pkg = packageNameOf(dirname(file));
-  const own = found.filter((e) => {
-    const [outer] = index.exportOf.get(e.id)?.modules ?? [];
-    return pkg !== undefined && (outer === pkg || outer?.startsWith(`${pkg}/`));
-  });
+  if (found.length === 0) return undefined;
+  const pkg = packageRootOf(file);
+  const named = (module: string | undefined) =>
+    pkg !== null && (module === pkg.name || module?.startsWith(`${pkg.name}/`) === true);
+  if (found.length === 1) {
+    const documented = index.packageOf.get(found[0]!.id);
+    const above = !pkg || best > slashed(relative(pkg.dir, file)).length;
+    return above || documented === undefined || named(documented) ? found[0] : undefined;
+  }
+  if (!pkg) return undefined;
+  const own = found.filter((e) => named(index.exportOf.get(e.id)?.modules[0]));
   return own.length === 1 ? own[0] : undefined;
 }
 
-/** The name in the nearest `package.json` at or above `dir` that has one. */
-function packageNameOf(dir: string): string | undefined {
-  for (let at = dir; ; at = dirname(at)) {
-    try {
-      const { name } = JSON.parse(readFileSync(join(at, 'package.json'), 'utf8')) as { name?: unknown };
-      if (typeof name === 'string') return name;
-    } catch {
-      // No manifest here, or one that does not parse: look further up.
-    }
-    if (dirname(at) === at) return undefined;
-  }
+/**
+ * A function component's first parameter; a class component's `P` in `Component<P>`; a value's type, such as
+ * `forwardRef`'s exotic component.
+ */
+function propsTypeOf(index: TdIndex, component: TdReflection, seen = new Set<number>()): TdType | undefined {
+  if (component.kind !== Kind.Class) return component.signatures?.[0]?.parameters?.[0]?.type ?? component.type;
+  const [base] = component.extendedTypes ?? [];
+  if (!base || seen.has(component.id)) return undefined;
+  seen.add(component.id);
+  const declared = inProject(index, base);
+  return declared ? propsTypeOf(index, declared, seen) : base.typeArguments?.[0];
 }
-
-/** A function component's first parameter; a value's type, such as `forwardRef`'s exotic component. */
-const propsTypeOf = (component: TdReflection): TdType | undefined =>
-  component.signatures?.[0]?.parameters?.[0]?.type ?? component.type;
 
 const inProject = (index: TdIndex, type: TdType): TdReflection | undefined =>
   type.type === 'reference' && typeof type.target === 'number' ? index.byId.get(type.target) : undefined;
 
 /**
  * Every member `type` declares, into `props`. A reference outside the project is looked through to its type
- * arguments (`ForwardRefExoticComponent<P>`, `PropsWithChildren<P>`), except `RefAttributes<H>`, whose `H` is the
- * ref's handle.
+ * arguments (`ForwardRefExoticComponent<P>`, `PropsWithChildren<P>`, `MemoExoticComponent<C>`), except
+ * `RefAttributes<H>`, whose `H` is the ref's handle, and `Omit` and `Pick`, which drop or take their keys. Where two
+ * parts declare one name, the first is kept.
  */
 function collect(index: TdIndex, type: TdType | undefined, props: Map<string, TdReflection>, handle: TdType[], seen: Set<number>) {
   if (!type) return;
@@ -132,12 +138,24 @@ function collect(index: TdIndex, type: TdType | undefined, props: Map<string, Td
   } else if (type.type === 'mapped') {
     collect(index, type.templateType, props, handle, seen);
   } else if (type.type === 'reflection') {
-    for (const child of type.declaration?.children ?? []) if (!props.has(child.name)) props.set(child.name, child);
+    const { children, signatures } = type.declaration ?? {};
+    for (const child of children ?? []) if (!props.has(child.name)) props.set(child.name, child);
+    // A lone call signature is a function component, as `memo`'s argument is: its props are its first parameter.
+    if (!children?.length && signatures?.length === 1) collect(index, signatures[0]!.parameters?.[0]?.type, props, handle, seen);
   } else if (type.type === 'reference') {
     const declared = inProject(index, type);
     if (!declared) {
-      if (type.name === 'RefAttributes' && type.typeArguments?.[0]) handle.push(type.typeArguments[0]);
-      else for (const argument of type.typeArguments ?? []) collect(index, argument, props, handle, seen);
+      const [base, keyType] = type.typeArguments ?? [];
+      if (type.name === 'RefAttributes' && base) handle.push(base);
+      else if ((type.name === 'Omit' || type.name === 'Pick') && base && keyType) {
+        const keys = keysOf(index, keyType);
+        const taken = new Map<string, TdReflection>();
+        collect(index, base, taken, handle, seen);
+        for (const [name, child] of taken) {
+          if (keys && keys.has(name) === (type.name === 'Omit')) continue;
+          if (!props.has(name)) props.set(name, child);
+        }
+      } else for (const argument of type.typeArguments ?? []) collect(index, argument, props, handle, seen);
       return;
     }
     if (seen.has(declared.id)) return;
@@ -145,6 +163,22 @@ function collect(index: TdIndex, type: TdType | undefined, props: Map<string, Td
     if (declared.kind === Kind.TypeAlias) collect(index, declared.type, props, handle, seen);
     else for (const child of declared.children ?? []) if (!props.has(child.name)) props.set(child.name, child);
   }
+}
+
+/** The string literals `type` names, as `Omit` and `Pick` take them; undefined where it names any other type. */
+function keysOf(index: TdIndex, type: TdType): Set<string> | undefined {
+  if (type.type === 'literal') return typeof type.value === 'string' ? new Set([type.value]) : undefined;
+  if (type.type === 'union') {
+    const keys = new Set<string>();
+    for (const part of type.types ?? []) {
+      const found = keysOf(index, part);
+      if (!found) return undefined;
+      for (const key of found) keys.add(key);
+    }
+    return keys;
+  }
+  const declared = inProject(index, type);
+  return declared?.kind === Kind.TypeAlias && declared.type ? keysOf(index, declared.type) : undefined;
 }
 
 /** The project type a ref holds: `Ref<H>`, `RefObject<H | null>` and the like looked through to `H`. */
@@ -171,6 +205,9 @@ function membersOf(index: TdIndex, type: TdType | undefined, members: Map<string
   collect(index, type, members, ignored, seen);
 }
 
+/** A prop's or member's comment: TypeDoc writes a method's on its first signature. */
+const commentOf = (entry: TdReflection): TdReflection['comment'] => entry.comment ?? entry.signatures?.[0]?.comment;
+
 function entryDocs(entry: TdReflection, comment: TdReflection['comment'], linker: Linker): EntryDocs {
   const docs: EntryDocs = {};
   const description = descriptionOf(comment, linker);
@@ -187,7 +224,7 @@ function entryDocs(entry: TdReflection, comment: TdReflection['comment'], linker
 function memberDocs(member: TdReflection, linker: Linker): MemberDocs {
   const signatures = member.kind === Kind.Method ? (member.signatures ?? []) : [];
   return {
-    ...entryDocs(member, member.comment ?? signatures[0]?.comment, linker),
+    ...entryDocs(member, commentOf(member) ?? (member.getSignature ?? member.setSignature)?.comment, linker),
     signatures: signatures.map(signatureText),
   };
 }

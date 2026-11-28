@@ -36,7 +36,7 @@ export function typeText(type: TdType | undefined): string {
     case 'conditional':
       return `${grouped(type.checkType, ['conditional', 'function'])} extends ${grouped(type.extendsType, ['conditional'])} ? ${typeText(type.trueType)} : ${typeText(type.falseType)}`;
     case 'templateLiteral':
-      return `\`${type.head ?? ''}${(type.tail ?? []).map(([t, text]) => `\${${typeText(t)}}${text}`).join('')}\``;
+      return `\`${templateText(type.head ?? '')}${(type.tail ?? []).map(([t, text]) => `\${${typeText(t)}}${templateText(text)}`).join('')}\``;
     case 'predicate':
       return `${type.asserts ? 'asserts ' : ''}${type.name}${type.targetType ? ` is ${typeText(type.targetType)}` : ''}`;
     case 'mapped': {
@@ -50,6 +50,11 @@ export function typeText(type: TdType | undefined): string {
     default:
       return type.name ?? 'unknown';
   }
+}
+
+/** A template literal type's text part as source writes it: a backslash, a backtick or `${` escaped. */
+function templateText(text: string): string {
+  return text.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 }
 
 function literalText(value: unknown): string {

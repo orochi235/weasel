@@ -161,6 +161,27 @@ describe('imperative view', () => {
     expect(apiRef.current!.getView()).toEqual({ x: 0, y: 0, scale: { x: 1, y: 1 } });
   });
 
+  it('paints a resize with the view already held inside viewBounds', async () => {
+    const apiRef = { current: null as CanvasExtensionApi | null };
+    const seen: number[] = [];
+    const layer = probeLayer(() => { if (apiRef.current) seen.push(apiRef.current.getView().x); });
+    const props = {
+      ref: apiRef, height: 80, layers: { probe: { layer } },
+      defaultView: { x: 100, y: 0, scale: { x: 1, y: 1 } },
+      viewBounds: { x: 0, y: 0, width: 200, height: 80 },
+    };
+    const { rerender } = render(<Canvas {...props} width={100} />);
+    await frame();
+    expect(apiRef.current!.getView().x).toBe(100);
+
+    seen.length = 0;
+    rerender(<Canvas {...props} width={150} />);
+    await frame();
+    await frame();
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((x) => x === 50)).toBe(true);
+  });
+
   it('fires onViewChange for every imperative write', async () => {
     const onViewChange = vi.fn();
     const apiRef = { current: null as CanvasExtensionApi | null };

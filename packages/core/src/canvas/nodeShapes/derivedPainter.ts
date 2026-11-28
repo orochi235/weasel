@@ -1,35 +1,36 @@
-import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Path } from '@weasel-js/geom';
+import { boundsOfPath, pathThroughPoseFrame, poseFrameOf, type Affine, type Path } from '@weasel-js/geom';
 import type { Stroke, Fill, Inherit } from '@weasel-js/paint';
-import type { NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
+import type { NodeInk, NodeInkCtx, NodeShapeEntry } from 'canvas/NodeShape';
 import type { Bounds } from 'core/viewport/fitViewToBounds';
 import { unionBounds } from 'core/geometry/unionBounds';
 import type { DrawCommand } from '@weasel-js/renderer';
 import { derivedPartsOf, resolvePartPaint, type DerivedPart } from 'core/scene/derivedParts';
 import { derivesPath } from './memo';
 import type { InheritedPaint } from 'core/scene/inheritedPaint';
-import { strokedBounds } from './strokedBounds';
+import { strokedPathBounds } from './strokedBounds';
 import { inkCovers, trimmedOutline, type PickReach, type TrimmedOutline } from './pickOutline';
 import { inkReach, inkStroke, pathCommand, withAnimatedStrokeTrim, withAnimatedTrim, withAnimatedVertexColors } from './nodePaint';
 import {
   INHERIT, resolveFill, resolveStroke, strokeTrimKey,
 } from '@weasel-js/paint';
 
-/** A derived part's path framed by one pose, and its trimmed outline under one trim. */
+/** A derived part's path framed by one pose frame, and its trimmed outline under one trim. */
 interface FramedPart {
-  pose: unknown;
+  frame: Affine;
   world: Path;
   trimKey?: string;
   trimmed?: TrimmedOutline;
 }
 
 // Kept per part path, which is immutable, so the length tables and corners built on the framed
-// outline are reused across picks; a new pose object or trim replaces the entry.
+// outline are reused across picks; a new frame or trim replaces the entry. Keyed on the frame's values, not
+// the pose object: a per-frame override rewrites one pose buffer in place.
 const FRAMED = new WeakMap<Path, FramedPart>();
 
-function framedPart(path: Path, pose: unknown): FramedPart {
+function framedPart(path: Path, pose: unknown, frame: Affine): FramedPart {
   const hit = FRAMED.get(path);
-  if (hit && hit.pose === pose) return hit;
-  const made: FramedPart = { pose, world: pathThroughPoseFrame(path, pose) };
+  if (hit && hit.frame.every((v, i) => v === frame[i])) return hit;
+  const made: FramedPart = { frame, world: pathThroughPoseFrame(path, pose) };
   FRAMED.set(path, made);
   return made;
 }
@@ -50,7 +51,7 @@ export function derivedDrawnBounds(node: { data?: unknown }, ctx: NodeInkCtx | u
   const d = node.data as PaintData | null;
   const painted = (p: Path, fill: Fill | null, stroke: Stroke | null): Bounds[] => {
     if (fill === null && stroke === null) return [];
-    const stroked = stroke === null ? null : strokedBounds(p, stroke, ctx?.scale ?? 1, ctx?.screen);
+    const stroked = stroke === null ? null : strokedPathBounds(p, stroke, ctx?.scale ?? 1, ctx?.screen);
     return stroked === null ? [boundsOfPath(p)] : [boundsOfPath(p), stroked];
   };
   const parts = derivedPartsOf(path);
@@ -121,6 +122,8 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
   drawnBounds: (node, _pose, ctx) => derivedDrawnBounds(node, ctx),
   ink: (node, _pose, ctx) => {
     const d = node.data as PaintData | null;
+    const parts = derivedPartsOf(ctx?.derivedPath);
+    if (parts !== undefined) return partsInk(parts, d, ctx);
     const stroke = resolveStroke(d?.stroke, ctx?.inherited?.stroke);
     return {
       filled: resolveFill(d?.fill, ctx?.inherited?.fill) !== null,
@@ -129,6 +132,22 @@ export const DERIVED_PAINTER: NodeShapeEntry = {
     };
   },
 };
+
+/** The ink of a path drawn in `parts`, each in its own paint: filled if any part is, and reaching as far as
+ *  the farthest part's stroke on each side. It names no stroke, since no one stroke runs along the whole path. */
+function partsInk(parts: readonly DerivedPart[], d: PaintData | null, ctx: NodeInkCtx | undefined): NodeInk {
+  const ink: NodeInk = { filled: false, outset: 0, inset: 0 };
+  for (const part of parts) {
+    const { fill, stroke } = resolvePartPaint(part, d, ctx?.inherited);
+    const r = inkReach(stroke, ctx?.scale);
+    ink.filled ||= fill !== null;
+    ink.outset = Math.max(ink.outset, r.outset);
+    ink.inset = Math.max(ink.inset, r.inset);
+    if (r.outsetPx !== undefined) ink.outsetPx = Math.max(ink.outsetPx ?? 0, r.outsetPx);
+    if (r.insetPx !== undefined) ink.insetPx = Math.max(ink.insetPx ?? 0, r.insetPx);
+  }
+  return ink;
+}
 
 /**
  * Whether a derived path in `parts` covers the world point (x, y): each part
@@ -140,10 +159,10 @@ export function partsCover(
   opts: PickReach & { inherited?: InheritedPaint },
 ): boolean {
   const d = node.data as PaintData | null;
-  const framed = poseFrameOf(pose) !== null;
+  const frame = poseFrameOf(pose);
   return parts.some((part) => {
     const { fill, stroke } = resolvePartPaint(part, d, opts.inherited);
-    const framing = framed ? framedPart(part.path, pose) : null;
+    const framing = frame ? framedPart(part.path, pose, frame) : null;
     const world = framing?.world ?? part.path;
     const ink = { filled: fill !== null, ...inkReach(stroke, opts.scale) };
     const trim = stroke?.trim;

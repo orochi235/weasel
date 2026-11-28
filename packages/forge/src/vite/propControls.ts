@@ -1,5 +1,6 @@
-import { resolve } from 'node:path';
-import type { Plugin } from 'vite';
+import { type Stats, unwatchFile, watchFile } from 'node:fs';
+import type { Plugin, ViteDevServer } from 'vite';
+import { posixResolve } from './posixPath.ts';
 import { PROP_ARG_TYPES_EXPORT } from '../csf/propArgTypes.ts';
 import { API_EXPORT } from '../story/api.ts';
 import { createPropReader, type PropControlsOptions, type PropReader } from './propTypes.ts';
@@ -76,6 +77,27 @@ export function storyExports(
   return { code, sources };
 }
 
+/** How often the dev server checks TypeDoc's JSON for a new write, in milliseconds. */
+const TYPEDOC_POLL_MS = 1000;
+
+/**
+ * Reloads each of `stories` the dev server has served when the JSON at `file` is written. Polled, because vite's
+ * watcher ignores the build's output directory, where the JSON is by default, and a file not there yet. Returns the
+ * stop.
+ */
+function reloadOnTypedoc(server: ViteDevServer, file: string, stories: ReadonlySet<string>): () => void {
+  const client = server.environments.client;
+  const reload = (now: Stats, before: Stats) => {
+    if (now.mtimeMs === before.mtimeMs) return;
+    for (const id of stories) {
+      const mod = client.moduleGraph.getModuleById(id);
+      if (mod) client.reloadModule(mod).catch((err: unknown) => server.config.logger.error(`[forge] ${messageOf(err)}`));
+    }
+  };
+  watchFile(file, { interval: TYPEDOC_POLL_MS, persistent: false }, reload);
+  return () => unwatchFile(file, reload);
+}
+
 /**
  * Appends to each story module the argTypes read from the props of its meta's `component`, which the CSF loader merges
  * under the story's own, and the component's API, which its index page shows. `stories` are the story files, as
@@ -92,25 +114,48 @@ export function propControls(
   let typedoc: TypedocReading | undefined;
   /** Built on the first story module served, so the TypeScript program costs nothing until a story is opened. */
   let reader: Promise<PropReader | null> | null = null;
+  let serving = false;
+  /** The story modules served with an API reading, which a new TypeDoc JSON reloads. */
+  const served = new Set<string>();
+  /** Each open server's stop for its TypeDoc poll, oldest first, as a restart opens the new before closing the old. */
+  const stops: (() => void)[] = [];
   return {
     name: 'weaselforge:prop-controls',
     configResolved(config) {
       root = config.root;
+      serving = config.command === 'serve';
+      served.clear();
       reader = null;
       typedoc = undefined;
       if (typedocOptions !== false && readings.api) {
-        const file = resolve(root, typedocOptions.json ?? 'dist/typedoc.json');
+        const file = posixResolve(root, typedocOptions.json ?? 'dist/typedoc.json');
         typedoc = { file, ...typedocSource(file, typedocOptions.href) };
       }
     },
+    configureServer(server) {
+      if (typedoc) stops.push(reloadOnTypedoc(server, typedoc.file, served));
+    },
+    closeServer() {
+      stops.shift()?.();
+    },
     async transform(code, id) {
       if (!stories().includes(id)) return undefined;
-      const props = await (reader ??= createPropReader(root, stories, options));
+      if (!reader) {
+        const building: Promise<PropReader | null> = createPropReader(root, stories, options).catch((err: unknown) => {
+          // Dropped, so the story after a fix to what broke it (often tsconfig.json) builds the reader again.
+          if (reader === building) reader = null;
+          this.warn(`prop controls and the API table are off for this story: the TypeScript reader failed: ${messageOf(err)}`);
+          return null;
+        });
+        reader = building;
+      }
+      const props = await reader;
       if (!props) return undefined;
       const added = storyExports(props, id, fallbackOf(id), readings, (message) => this.warn(message), typedoc);
       if (!added.code) return undefined;
+      if (serving && typedoc) served.add(id);
       // A props type imported as a type is not in the module graph, so an edit to it would not reach the story.
-      for (const source of new Set(added.sources)) this.addWatchFile(source);
+      for (const source of new Set(added.sources)) if (!(serving && source === typedoc?.file)) this.addWatchFile(source);
       return { code: code + added.code, map: null };
     },
   };

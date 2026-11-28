@@ -94,4 +94,13 @@ describe('sampling a track with a target', () => {
     expect(sampleTrack(t, 25)).toBeCloseTo(25, 9);
     expect(sampleTrack(t, 100)).toBe(100);
   });
+  it('leaves a key\'s value as written when custom axes hand back the array they were given', () => {
+    let v = [0];
+    const target = createTarget<number[]>({ get: () => v, set: (n) => { v = n; }, axes: { count: 1, to: (x) => x, from: Array.from, angles: [0] } });
+    const second = [6];
+    const t: SampledTrack<number[]> = { kind: 'sampled', target, keys: [{ t: 0, value: [0] }, { t: 100, value: second }] };
+    sampleTrack(t, 50);
+    expect(second).toEqual([6]);
+    expect(sampleTrack(t, 100)).toEqual([expect.closeTo(6 - Math.PI * 2, 9)]);
+  });
 });

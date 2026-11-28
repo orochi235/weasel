@@ -64,7 +64,7 @@ export function nodeBroadBox(
   out: Box2,
   shapes?: NodeShapes,
 ): number {
-  const ctx = inherited === undefined && shapes === undefined ? UNINHERITED : { scale: 1, inherited, shapes };
+  const ctx = inherited === undefined && shapes === undefined && derived == null ? UNINHERITED : { scale: 1, inherited, shapes, derivedPath: derived };
   const ink = findShapeInk(node as never, pose, ctx);
   const outset = Math.max(0, ink?.outset ?? 0);
   out[0] = out[1] = Infinity;

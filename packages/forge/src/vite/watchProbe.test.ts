@@ -70,6 +70,26 @@ describe('fileEventsArrive', () => {
     await arrived;
   });
 
+  it('closes a watch that reports before it has returned its stopper', async () => {
+    let closed = 0;
+    const watch: WatchDir = (_dir, onEvent) => {
+      onEvent();
+      return () => {
+        closed++;
+      };
+    };
+    await expect(fileEventsArrive({ watch })).resolves.toBe(true);
+    expect(closed).toBe(1);
+  });
+
+  it('rejects a wait that is not a number of milliseconds, leaving no watch or directory behind', async () => {
+    for (const waitMs of [Number.NaN, -1]) {
+      const { state, watch } = fakeWatch();
+      await expect(fileEventsArrive({ watch, waitMs })).rejects.toThrow(RangeError);
+      expect(state.dir).toBe('');
+    }
+  });
+
   it('answers false when the watch cannot start', async () => {
     const watch: WatchDir = () => {
       throw new Error('EMFILE');
@@ -114,6 +134,13 @@ describe('warnWhenWatchIsSilent', () => {
     await warnWhenWatchIsSilent(server, async () => false);
     expect(warn.mock.calls[0]?.[0]).toContain('modification times');
     expect(warn.mock.calls[0]?.[0]).not.toContain('will not reach the page');
+  });
+
+  it('promises no sweep when the recovery plugin checks files only as they are served', async () => {
+    const { server, warn } = serverWith(undefined, [watchRecovery({ quietMs: Infinity })]);
+    await warnWhenWatchIsSilent(server, async () => false);
+    expect(warn.mock.calls[0]?.[0]).toContain('modification times');
+    expect(warn.mock.calls[0]?.[0]).not.toContain('within seconds');
   });
 
   it('warns that it could not check, rather than rejecting, when the probe fails', async () => {
