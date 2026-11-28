@@ -1,4 +1,5 @@
 import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { cloneElement, type ReactElement } from 'react';
 import { describe, expect, it } from 'vitest';
 import { Checkbox } from '../Checkbox/Checkbox';
@@ -113,5 +114,30 @@ describe('a compound field', () => {
     );
     expect(screen.getByRole('group', { name: 'Size' })).toHaveAccessibleDescription('Too wide.');
     expect(screen.getByRole('spinbutton')).not.toHaveAttribute('aria-invalid');
+  });
+});
+
+describe("a click on a Field's label", () => {
+  it('focuses a control given an id of its own', async () => {
+    renderWithIcons(<Field label="Amount"><Input id="amount" /></Field>);
+    await userEvent.click(screen.getByText('Amount'));
+    expect(screen.getByRole('textbox')).toHaveFocus();
+  });
+
+  it("focuses a Select's trigger without opening it", async () => {
+    renderWithIcons(<Field label="Font"><Select options={OPTIONS} /></Field>);
+    await userEvent.click(screen.getByText('Font'));
+    expect(screen.getAllByRole('button')[0]).toHaveFocus();
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+});
+
+describe('a control drawing its own label in a Field', () => {
+  it("still takes the field's description and error", () => {
+    renderWithIcons(<Field description="Required to continue." error="You must accept the terms."><Checkbox>Accept terms</Checkbox></Field>);
+    const box = screen.getByRole('checkbox');
+    expect(box).toHaveAccessibleName('Accept terms');
+    expect(box).toHaveAccessibleDescription('Required to continue. You must accept the terms.');
+    expect(box).toHaveAttribute('aria-invalid', 'true');
   });
 });
