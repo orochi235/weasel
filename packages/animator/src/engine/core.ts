@@ -63,23 +63,7 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
   let nextId = 1;
   let atEnd = false;
   const pacing = createPacing(clock, host.wall ?? defaultWall, host.now, () => !frame.framing() && !table.awake && handoffs.any());
-  /** Which of the host's clocks `clock.frameT` stands on, and the last followed frame's time. */
-  let frameOn: 'tick' | 'follow' = 'tick';
-  let followedT = 0;
-  const seedClock = (): void => {
-    if (clock.frameT != null) return;
-    // Where `now` is not on the followed clock, the last followed frame is the nearest reading of it.
-    const follows = host.nowFollows?.() ?? false;
-    if (follows) frameOn = 'follow';
-    clock.frameT = frameOn === 'follow' && !follows ? followedT : host.now();
-    pacing.seeded();
-  };
-  /** A frame on the other clock than the last one's advances by nothing: the two need not share an origin. */
-  const frameOnto = (on: 'tick' | 'follow', t: number): void => {
-    if (frameOn !== on && clock.frameT != null) clock.frameT = t;
-    frameOn = on;
-    if (on === 'follow') followedT = t;
-  };
+  const { seedClock, frameOnto } = frameOrigin(clock, host, pacing.seeded);
 
   /** Targets whose holds a tick touched, folded again once the frame's ticks are done. */
   const touched = new Set<TargetState>();
@@ -176,6 +160,29 @@ export function createAnimatorCore(host: CoreHost): AnimatorCore {
       pacing.resume();
       handoffs.resumed();
       if (handoffs.any()) host.requestFrame();
+    },
+  };
+}
+
+/** Where the frame clock starts: `seedClock` seeds it from idle, and `frameOnto` says which of the
+ *  host's clocks the coming frame's time is on. */
+function frameOrigin(clock: AnimatorClock, host: Pick<CoreHost, 'now' | 'nowFollows'>, seeded: () => void) {
+  let frameOn: 'tick' | 'follow' = 'tick';
+  let followedT = 0;
+  return {
+    seedClock(): void {
+      if (clock.frameT != null) return;
+      // Where `now` is not on the followed clock, the last followed frame is the nearest reading of it.
+      const follows = host.nowFollows?.() ?? false;
+      if (follows) frameOn = 'follow';
+      clock.frameT = frameOn === 'follow' && !follows ? followedT : host.now();
+      seeded();
+    },
+    /** A frame on the other clock than the last one's advances by nothing: the two need not share an origin. */
+    frameOnto(on: 'tick' | 'follow', t: number): void {
+      if (frameOn !== on && clock.frameT != null) clock.frameT = t;
+      frameOn = on;
+      if (on === 'follow') followedT = t;
     },
   };
 }
