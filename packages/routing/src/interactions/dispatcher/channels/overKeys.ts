@@ -71,6 +71,10 @@ export function followPointer(
 
   const leave = (): void => {
     for (const [physical, down] of [...held]) {
+      if (!stillHeld(down)) {
+        held.delete(physical);
+        continue;
+      }
       const { key, code } = down;
       const ev: InputEvent = {
         kind: 'keyHeld', key, ...(code !== undefined ? { code } : {}), phase: 'up',
