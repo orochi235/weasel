@@ -141,6 +141,34 @@ describe('event booking', () => {
     expect(r.whens().sort()).toEqual([START + 500, START + 600]);
   });
 
+  it('books each of two places one track is nested at the same time, as it fires each', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const nested = { tracks: [track] };
+    const r = rig({
+      duration: 1000,
+      tracks: [{ kind: 'timeline', at: 0, timeline: nested }, { kind: 'timeline', at: 0, timeline: nested }],
+    });
+    track.events = [bookingEvent(r.log, 50)];
+    r.frame(0);
+    expect(r.whens()).toEqual([START + 50, START + 50]);
+  });
+
+  it('books the longer of two places one track is nested at the same time to its own end', () => {
+    const track: EventTrack = { kind: 'event', events: [] };
+    const r = rig({
+      duration: 1000,
+      loop: true,
+      lookahead: 300,
+      tracks: [
+        { kind: 'timeline', at: 0, timeline: { duration: 100, tracks: [track] } },
+        { kind: 'timeline', at: 0, timeline: { duration: 200, tracks: [track] } },
+      ],
+    });
+    track.events = [bookingEvent(r.log, 150)];
+    r.frame(0);
+    expect(r.whens()).toEqual([START + 150]);
+  });
+
   it('books nothing of a nested timeline past the duration it declares', () => {
     const track: EventTrack = { kind: 'event', events: [] };
     const r = rig({

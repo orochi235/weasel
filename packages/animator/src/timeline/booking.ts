@@ -56,6 +56,9 @@ interface Cursor { lap: number; r: number; open?: boolean }
 
 interface Booking {
   event: TimelineEvent;
+  track: EventTrack;
+  /** The placement of `track` it was booked from: see {@link placeKey}. */
+  place: string;
   lap: number;
   r: number;
   when: number;
@@ -71,10 +74,19 @@ const lapsOf = (laps: number, duration: number): number => (laps === 0 ? 0 : lap
 
 const isAfter = (a: Cursor, b: Cursor): boolean => a.lap > b.lap || (a.lap === b.lap && a.r > b.r);
 
-/** Cursors by track, then by the root time it is placed at: one track nested in two places is two runs of events. */
-type Cursors = Map<EventTrack, Map<number, Cursor>>;
+/** Cursors by track, then by placement: one track nested in two places is two runs of events. */
+type Cursors = Map<EventTrack, Map<string, Cursor>>;
 
-function placesOf(cursors: Cursors, track: EventTrack): Map<number, Cursor> {
+/** Names a placement of a track by the root time it starts at and where it stops, counting the ones a scan already
+ *  met with the same two: a placement is the same one from scan to scan while the tree around it is. */
+function placeKey(scanned: Map<string, Cursor> | undefined, at: number, end: number): string {
+  const base = `${at}:${end}`;
+  let key = base;
+  for (let n = 1; scanned?.has(key); n += 1) key = `${base}#${n}`;
+  return key;
+}
+
+function placesOf(cursors: Cursors, track: EventTrack): Map<string, Cursor> {
   let placed = cursors.get(track);
   if (!placed) cursors.set(track, placed = new Map());
   return placed;
@@ -131,7 +143,8 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
     const duration = host.duration();
     const playhead = host.playhead();
     const { events } = track;
-    let c = scanned.get(track)?.get(at) ?? cursors.get(track)?.get(at) ?? start;
+    const place = placeKey(scanned.get(track), at, end);
+    let c = cursors.get(track)?.get(place) ?? start;
     for (;;) {
       const lapStart = lapsOf(c.lap - lap, duration);
       if (lapStart > horizon) break;
@@ -149,7 +162,7 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
       c = { lap: c.lap, r };
       for (let j = i; j < events.length && events[j].t === events[i].t; j += 1) {
         const ev = events[j];
-        if (!ev.book || bookings.some((b) => b.event === ev && b.lap === c.lap && b.r === r)) continue;
+        if (!ev.book || bookings.some((b) => b.event === ev && b.lap === c.lap && b.r === r && b.track === track && b.place === place)) continue;
         if ((playhead - u) / scale > maxLate) continue;
         const when = clock.whenFor(u, playhead, scale, now);
         let handle: EventBookingHandle | undefined;
@@ -158,10 +171,10 @@ export function createBooker(opts: EventBooking, host: BookerHost): Booker {
         } catch (err) {
           console.error('timeline: book threw', err);
         }
-        bookings.push({ event: ev, lap: c.lap, r, when, handle });
+        bookings.push({ event: ev, track, place, lap: c.lap, r, when, handle });
       }
     }
-    placesOf(scanned, track).set(at, c);
+    placesOf(scanned, track).set(place, c);
   };
 
   const visit = (
