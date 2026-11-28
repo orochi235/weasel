@@ -2,6 +2,6 @@
 '@weasel-js/animator': patch
 ---
 
-A seek that lands short of an event already booked with no stop handle leaves that booking standing instead of booking the event a second time.
+A seek that lands short of an event booked with no stop handle no longer books that event a second time.
 
 <!-- entry: fix -->
