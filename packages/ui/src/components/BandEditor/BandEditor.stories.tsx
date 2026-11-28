@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from 'react';
+import { useState, type ComponentType, type ReactNode } from 'react';
 import type { Meta, StoryObj } from '@weasel-js/forge';
 import {
   fraction,
@@ -182,7 +182,7 @@ function toneSheet(tones: Tones): string {
   return tones.stops.map(({ data }) => `.${s.tones} [data-tone="${data.name}"] { color: ${data.color}; }`).join('\n');
 }
 
-function TonesWrapper({ label }: { label?: string }) {
+function TonesWrapper({ label }: { label?: ReactNode }) {
   const [stops, setStops] = useState<Band<Tone>[]>(() => [...RARITY.stops]);
   const display = withTones(percent(), { ...RARITY, stops });
   return (
