@@ -187,9 +187,14 @@ function createRecognizer(core: PointerDispatchCore, opts: PointerInputOptions, 
  */
 function pressClaims(canvas: Element | null, dragPx: () => number | undefined) {
   const uncaptured = new Map<number, PointerSample>();
+  /** Pointers whose press an item's session took on a move: their release reaches no session here. */
+  const takenOnMove = new Set<number>();
   return {
     uncaptured: (press: PointerSample): void => { uncaptured.set(press.pointerId, press); },
-    drop: (pointerId: number): void => { uncaptured.delete(pointerId); },
+    drop: (pointerId: number): void => { uncaptured.delete(pointerId); takenOnMove.delete(pointerId); },
+    tookOnMove: (pointerId: number): void => { takenOnMove.add(pointerId); },
+    /** Whether a release on `pointerId` lets go of a press an item took on a move. */
+    releasesTaken: (pointerId: number): boolean => takenOnMove.delete(pointerId),
     yielded: (e: PointerEvent, session: PointerSession | undefined): boolean =>
       session !== undefined && canvas !== null && heldWithin(e.pointerId, canvas, session),
     moved(e: PointerEvent, session: PointerSession | undefined): void {
@@ -257,18 +262,12 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   let claimedDoubleClick = false;
   const hold = holdClock(core);
   const menus = nativeMenus();
-  /** Pointers whose press an item's session took on a move: their release reaches no session here. */
-  const yieldedHeld = new Set<number>();
 
   const recognizer = createRecognizer(core, opts, hold.clock);
 
   const onMove = (e: PointerEvent): void => {
     const session = sessions.get(e.pointerId);
-    if (claims.yielded(e, session)) {
-      session!.cancel();
-      yieldedHeld.add(e.pointerId);
-      return;
-    }
+    if (claims.yielded(e, session)) { session!.cancel(); claims.tookOnMove(e.pointerId); return; }
     claims.moved(e, session);
     routeAt(e.pointerId, e.clientX, e.clientY);
     const sample = sampleOf(e);
@@ -279,11 +278,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
 
   const onUp = (e: PointerEvent, session: PointerSession | undefined): void => {
     // Released before it moved, and the item's own session took the press: it clicks, not this surface.
-    if (claims.yielded(e, session)) {
-      onCancel(e.pointerId);
-      opts.hover.released(e);
-      return;
-    }
+    if (claims.yielded(e, session)) { onCancel(e.pointerId); opts.hover.released(e); return; }
     routeAt(e.pointerId, e.clientX, e.clientY);
     drop(e.pointerId);
     menus.ended(e.pointerId, e);
@@ -311,7 +306,6 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   return {
     onPointerDown(e) {
       claimedDoubleClick = false;
-      yieldedHeld.delete(e.pointerId);
       if (!canvas) return;
       const taken = takesPress(e, canvas, opts);
       if (!taken) return;
@@ -350,9 +344,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       if (landedNestedIn(canvas, e)) opts.hover.onLeave();
       else onMove(e);
     },
-    onHoverUp(e) {
-      if (yieldedHeld.delete(e.pointerId)) opts.hover.released(e);
-    },
+    onHoverUp: (e) => { if (claims.releasesTaken(e.pointerId)) opts.hover.released(e); },
     onNativeDoubleClick(e) {
       if (!claimedDoubleClick) return;
       claimedDoubleClick = false;
