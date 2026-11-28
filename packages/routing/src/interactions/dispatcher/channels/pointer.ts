@@ -10,10 +10,10 @@ import type { KitSettingsStore } from '@weasel-js/react';
 import { after } from '@weasel-js/registry';
 import { heldWithin, openPointerSession, type PointerSession } from '../../pointerSession';
 import { landedNestedIn, pressedNestedIn, type PointerDispatchCore } from '../dispatchCore';
-import { multiTouchGestureId } from '../dispatcher';
 import { LONG_PRESS_HAPTIC_MS, type LongPressOptions } from '../longPressState';
 import { underPointer } from '../underPointer';
 import type { HoverCursorInput } from './hoverCursor';
+import { touchView } from './touchView';
 
 type WorldObserver = ((world: { x: number; y: number }) => void) | undefined;
 
@@ -153,14 +153,12 @@ function heldMoves(
 
 /** The recognizer a pointer channel feeds: dispatching through `core`, timed by `clock`, its thresholds read from the kit settings at each use. */
 function createRecognizer(core: PointerDispatchCore, opts: PointerInputOptions, clock: RecognizerClock) {
+  const touch = touchView(core);
   return createPointerRecognizer({
-    sink: {
-      dispatch: (ev) => core.dispatch(ev),
-      multiTouchInFlight: (fingers) => core.dispatcherNow().inFlight().has(multiTouchGestureId(fingers)),
-    },
+    sink: { dispatch: touch.dispatch, multiTouchInFlight: touch.inFlight },
     clock,
     toWorld: core.toWorld,
-    toSurface: (p) => core.toViewLocal(p.x, p.y),
+    toSurface: (p) => touch.within(() => core.toViewLocal(p.x, p.y)),
     longPressMs: () => opts.longPress()?.duration ?? opts.kitSettings().get('gestures.longPressMs'),
     doubleClickMs: () => opts.kitSettings().get('gestures.doubleClickMs'),
     doubleClickPx: () => opts.kitSettings().get('gestures.doubleClickPx'),
