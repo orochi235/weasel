@@ -308,3 +308,13 @@ describe('a time scale before the year 1000', () => {
     expect(formatInstant(at(2026), 'year')).toBe('2026');
   });
 });
+
+describe('a time scale ticking by seconds across midnight', () => {
+  it('labels midnight with the date it starts', () => {
+    const midnight = Date.UTC(2026, 0, 2);
+    const s = timeScale({ domain: [midnight - 120000, midnight + 120000], range: [0, 100] });
+    const write = s.tickFormat(8);
+    expect(s.ticks(8).map(write)).toContain('2026-01-02');
+    expect(write(midnight + 30000)).toBe('00:00:30');
+  });
+});

@@ -103,10 +103,11 @@ export function formatInstant(t: number, unit: TimeUnit): string {
     case 'year': return year;
     case 'month': return month;
     case 'day': return date;
-    case 'hour':
-    case 'minute': return d.getUTCHours() === 0 && d.getUTCMinutes() === 0 ? date : time;
-    case 'second': return `${time}:${pad(d.getUTCSeconds())}`;
   }
+  const seconds = unit === 'second' ? d.getUTCSeconds() : 0;
+  // Midnight, to the unit's precision, reads as the date it starts, so an axis shows the day it crosses into.
+  if (d.getUTCHours() === 0 && d.getUTCMinutes() === 0 && seconds === 0) return date;
+  return unit === 'second' ? `${time}:${pad(seconds)}` : time;
 }
 
 /** A time scale from `domain`, in milliseconds since the epoch, onto `range`. */
