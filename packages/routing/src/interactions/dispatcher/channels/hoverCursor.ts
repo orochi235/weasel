@@ -4,21 +4,13 @@
  * a press there would do.
  */
 import { createCursorSink, resolveCursor, type CursorSink, type CursorSpec, type PaintedCursorState } from '@weasel-js/cursor';
-import type { EventModifiers, HoverWhere } from '@weasel-js/gestures';
 import { actionCursor } from '../../actions/action';
 import type { DispatchCore } from '../dispatchCore';
-import type { ResolveOnlyResult } from '../dispatcherApi';
+import type { Dispatcher, ResolveOnlyResult } from '../dispatcherApi';
 import type { InputEvent } from '../matcher';
-import { underPointer, type UnderPointer } from '../underPointer';
+import { underPointer } from '../underPointer';
 import { anyBinding } from '../walk';
-
-type Hover = EventModifiers & { clientX: number; clientY: number };
-
-const whereOf = ({ affordance, bodyTarget, bodyKind }: UnderPointer): HoverWhere => ({
-  ...(affordance !== undefined ? { affordance } : {}),
-  ...(bodyTarget !== undefined ? { bodyTarget } : {}),
-  ...(bodyKind !== undefined ? { bodyKind } : {}),
-});
+import { hoverReports, type Hover } from './hoverFacts';
 
 const hoverOf = (e: Hover): Hover => ({
   clientX: e.clientX, clientY: e.clientY,
@@ -92,29 +84,43 @@ function routeIdle(core: Pick<DispatchCore, 'routeAt'>, pointersHeld: () => numb
   return at;
 }
 
-export function hoverCursorInput(
-  core: DispatchCore,
-  paintedCursor: () => PaintedCursorState | undefined,
+export interface HoverCursorSources {
+  paintedCursor: () => PaintedCursorState | undefined;
   /** Pointers down on the canvas with any button, `heldPointers`' count. */
-  pointersHeld: () => number,
+  pointersHeld: () => number;
+  /** Every live dispatcher on the surface: a gesture in flight on any of them owns the cursor. */
+  dispatchers: () => readonly Dispatcher[];
   /** The surface's own sink, which also holds its tool cursor. Without one
    *  the override is written to the canvas and removed when it clears. */
-  cursorSink: () => CursorSink | undefined = () => undefined,
-): HoverCursorInput {
-  const { canvas, routeAt, toWorld, target, dispatch, dispatcherNow, ctxNow } = core;
-  const override = cursorOverride(canvas, paintedCursor, cursorSink);
+  cursorSink?: () => CursorSink | undefined;
+}
+
+/** The dispatcher a gesture is in flight on, the routed view's first. */
+function flyingOn(core: Pick<DispatchCore, 'dispatcherNow'>, dispatchers: () => readonly Dispatcher[]): Dispatcher | null {
+  const routed = core.dispatcherNow();
+  if (routed.inFlight().size > 0) return routed;
+  return dispatchers().find((d) => d.inFlight().size > 0) ?? null;
+}
+
+export function hoverCursorInput(core: DispatchCore, src: HoverCursorSources): HoverCursorInput {
+  const { paintedCursor, pointersHeld } = src;
+  const { canvas, routeAt, toWorld, target, dispatcherNow, ctxNow } = core;
+  const override = cursorOverride(canvas, paintedCursor, src.cursorSink ?? (() => undefined));
   let last: Hover | null = null;
   /** Whether a gesture was in flight at the last notify. */
   let flying = false;
+  /** Whether the pointer left the canvas: what a held one does outside shows nothing until it is back. */
+  let left = false;
   /** What the last move found under the pointer, so its hover and its cursor hit-test once. */
-  let facts: { at: Hover; where: UnderPointer } | null = null;
+  const reports = hoverReports(core, pointersHeld);
   const heard = hoverHeard(pointersHeld, ctxNow);
 
   const resolve = (): void => {
     if (!canvas || !last) return;
-    if (pointersHeld() > 0 || dispatcherNow().inFlight().size > 0) {
+    const on = flyingOn(core, src.dispatchers);
+    if (pointersHeld() > 0 || on) {
       ctxNow().trace?.setLive(null);
-      override.apply(dispatcherNow().inFlightCursor());
+      override.apply((on ?? dispatcherNow()).inFlightCursor());
       return;
     }
     const h = last;
@@ -122,7 +128,7 @@ export function hoverCursorInput(
     // is never unpinned by a hover refresh.
     routeAt(null, h.clientX, h.clientY);
     const w = toWorld(h.clientX, h.clientY);
-    const where = facts?.at === h ? facts.where : underPointer(target(), h, w);
+    const where = reports.whereAt(h) ?? underPointer(target(), h, w);
     const ctx = ctxNow();
     const d = dispatcherNow();
     const press: InputEvent = { kind: 'pointerdown', x: w.x, y: w.y, clientX: h.clientX, clientY: h.clientY, ...where };
@@ -153,43 +159,42 @@ export function hoverCursorInput(
     setTimeout(() => { if (!core.disposed()) refresh(); }, 0);
   };
 
-  const hoverAt = (at: Hover): void => {
-    const w = toWorld(at.clientX, at.clientY);
-    const where = underPointer(target(), at, w);
-    const from = facts ? { from: whereOf(facts.where) } : {};
-    const held = pointersHeld() > 0 ? { held: true } : {};
-    facts = { at, where };
-    dispatch({ kind: 'hover', x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, ...from, ...held });
-  };
-
   const clear = (): void => {
     if (last) {
       ctxNow().trace?.setLive(null);
       paintedCursor()?.clearPointer();
     }
-    facts = null;
+    reports.forget();
     last = null;
     override.clear();
   };
 
+  /** Whether the pointer is off the canvas it left, so nothing is shown for it. */
+  const away = (): boolean => {
+    if (left && canvas && !core.pointerOver()) return true;
+    left = false;
+    return false;
+  };
+
   return {
     moved(e) {
+      if (away()) return;
       last = hoverOf(e);
-      if (heard.hears()) hoverAt(last);
+      if (heard.hears()) reports.hover(last);
+      else reports.unheard();
       refresh();
     },
     released(e) {
       heard.forget();
+      if (away()) return;
       last = hoverOf(e);
+      reports.released(last);
       refreshSoon();
     },
     onLeave() {
-      if (facts) {
-        const { at, where } = facts;
-        const w = toWorld(at.clientX, at.clientY);
-        dispatch({ kind: 'hover', off: true, x: w.x, y: w.y, clientX: at.clientX, clientY: at.clientY, ...where, from: whereOf(where) });
-      }
+      reports.leave(last);
       clear();
+      left = true;
     },
     onKey(e) {
       if (!last) return;
@@ -198,14 +203,15 @@ export function hoverCursorInput(
       const changed = prev.altKey !== last.altKey || prev.ctrlKey !== last.ctrlKey
         || prev.metaKey !== last.metaKey || prev.shiftKey !== last.shiftKey;
       // A modifier changing over a resting pointer is a hover with new modifiers.
-      if (changed && heard.hears()) hoverAt(routeIdle(core, pointersHeld, last));
+      if (changed && heard.hears()) reports.hover(routeIdle(core, pointersHeld, last));
       refreshSoon();
     },
     changed() {
       const was = flying;
-      flying = dispatcherNow().inFlight().size > 0;
+      const on = flyingOn(core, src.dispatchers);
+      flying = on !== null;
       if (!canvas || !last) return;
-      if (flying) override.apply(dispatcherNow().inFlightCursor());
+      if (on) override.apply(on.inFlightCursor());
       // The last gesture ended with no release or keyup over the pointer to resolve the idle cursor.
       else if (was) refreshSoon();
     },

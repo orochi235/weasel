@@ -82,7 +82,9 @@ export function attachInput(
   const pinch = webkitPinchInput(core);
   const ingest = ingestInput(core);
   const held = canvas ? heldPointers(canvas) : null;
-  const hover = hoverCursorInput(core, src.paintedCursor, () => held?.count() ?? 0, src.cursorSink);
+  const hover = hoverCursorInput(core, {
+    paintedCursor: src.paintedCursor, pointersHeld: () => held?.count() ?? 0, dispatchers: src.dispatchers, cursorSink: src.cursorSink,
+  });
   cursor = hover;
   const pointer: PointerInput = pointerInput(core, {
     longPress: src.longPress,
