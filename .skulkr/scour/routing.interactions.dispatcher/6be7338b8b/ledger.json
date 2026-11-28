@@ -358,6 +358,61 @@
    "at": "2026-11-26T23:20:12.140Z",
    "matcher": "claude-opus-5-5",
    "findings": 7
+  },
+  {
+   "n": 32,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/32-claude.md",
+   "costUsd": 2.3979897999999995,
+   "minutes": 5.2290833333333335,
+   "at": "2026-11-28T00:55:28.500Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 6
+  },
+  {
+   "n": 33,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/33-claude.md",
+   "costUsd": 1.6051192,
+   "minutes": 5.68475,
+   "at": "2026-11-28T01:01:09.812Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 34,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/34-claude.md",
+   "costUsd": 1.3628048,
+   "minutes": 4.969216666666667,
+   "at": "2026-11-28T01:06:08.266Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 35,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/35-claude.md",
+   "costUsd": 1.2086810000000001,
+   "minutes": 4.478866666666667,
+   "at": "2026-11-28T01:10:37.822Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  },
+  {
+   "n": 36,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/36-claude.md",
+   "costUsd": 1.2277259999999999,
+   "minutes": 4.7378,
+   "at": "2026-11-28T01:15:22.276Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
   }
  ],
  "defects": [
@@ -408,7 +463,8 @@
     15,
     16,
     17,
-    31
+    31,
+    35
    ],
    "sources": {
     "claude": [
@@ -419,7 +475,8 @@
      14,
      15,
      16,
-     17
+     17,
+     35
     ],
     "codex": [
      31
@@ -607,12 +664,16 @@
    "firstOccasion": 3,
    "sightings": [
     3,
-    18
+    18,
+    35,
+    36
    ],
    "sources": {
     "claude": [
      3,
-     18
+     18,
+     35,
+     36
     ]
    },
    "fix": [
@@ -635,7 +696,9 @@
     13,
     15,
     22,
-    24
+    24,
+    32,
+    33
    ],
    "sources": {
     "claude": [
@@ -644,7 +707,9 @@
      13,
      15,
      22,
-     24
+     24,
+     32,
+     33
     ]
    },
    "fix": [
@@ -710,18 +775,21 @@
    "severity": "low",
    "scenario": "two bindings match a key; the first passes and would fire, the second's action has an `eligible` rule that is false. `resolveAll` (default `evaluateShadowed: false`) reports the second as `{ kind: 'shadowed' }`. `Dispatcher.resolveAll`'s doc (dispatcherApi.ts) says \"Nothing is dropped: candidates that resolveOnly's walk would filter out are kept here and labeled `ineligible` instead\", and `shadowed` means \"never asked\". Eligibility was already evaluated in `rank` (`r.eligible`), so the rule's verdict is known and free; an inspector showing why a binding is dead reads \"shadowed\" for an action that could never fire in this context.",
    "fix": [
-    "packages/routing/src/interactions/dispatcher/walk.ts"
+    "packages/routing/src/interactions/dispatcher/walk.ts",
+    "packages/routing/src/interactions/dispatcher/dispatcherApi.ts"
    ],
    "size": "line",
    "cause": "ineligible branch gated on `fired && !evaluateShadowed`",
    "confidence": "sure",
    "firstOccasion": 5,
    "sightings": [
-    5
+    5,
+    33
    ],
    "sources": {
     "claude": [
-     5
+     5,
+     33
     ]
    }
   },
@@ -771,7 +839,8 @@
     24,
     25,
     29,
-    31
+    31,
+    34
    ],
    "sources": {
     "claude": [
@@ -783,7 +852,8 @@
      21,
      24,
      25,
-     29
+     29,
+     34
     ],
     "codex": [
      31
@@ -848,13 +918,15 @@
    "sightings": [
     8,
     23,
-    28
+    28,
+    32
    ],
    "sources": {
     "claude": [
      8,
      23,
-     28
+     28,
+     32
     ]
    }
   },
@@ -873,12 +945,14 @@
    "firstOccasion": 8,
    "sightings": [
     8,
-    23
+    23,
+    32
    ],
    "sources": {
     "claude": [
      8,
-     23
+     23,
+     32
     ]
    }
   },
@@ -1005,7 +1079,8 @@
     13,
     20,
     23,
-    27
+    27,
+    35
    ],
    "sources": {
     "claude": [
@@ -1013,7 +1088,8 @@
      13,
      20,
      23,
-     27
+     27,
+     35
     ]
    },
    "fix": [
@@ -1189,13 +1265,17 @@
    "sightings": [
     16,
     18,
-    21
+    21,
+    35,
+    36
    ],
    "sources": {
     "claude": [
      16,
      18,
-     21
+     21,
+     35,
+     36
     ]
    },
    "fix": [
@@ -1210,18 +1290,25 @@
    "scenario": "on a surface with views, a key-held ongoing gesture starts on view A's dispatcher (for example an `over` key binding), and the pointer, with no button held, then moves into view B. `resolve` routes to B, reads `dispatcherNow().inFlight().size === 0`, and shows B's idle prediction instead of A's `inFlightCursor`. `changed()` likewise sets `flying` from B's dispatcher alone, so when A's gesture ends nothing triggers `refreshSoon`. Expected: in-flight state is read across `src.dispatchers()` (or the dispatcher that holds the gesture), as `cancelAll` on teardown already does.",
    "fix": [
     "packages/routing/src/interactions/dispatcher/channels/hoverCursor.ts",
-    "packages/routing/src/interactions/dispatcher/attachInput.ts"
+    "packages/routing/src/interactions/dispatcher/attachInput.ts",
+    "packages/routing/src/interactions/dispatcher/dispatchCore.ts"
    ],
    "size": "function",
    "cause": "per-view in-flight check",
    "confidence": "likely",
    "firstOccasion": 18,
    "sightings": [
-    18
+    18,
+    32,
+    33,
+    35
    ],
    "sources": {
     "claude": [
-     18
+     18,
+     32,
+     33,
+     35
     ]
    }
   },
@@ -1537,6 +1624,154 @@
    "sources": {
     "codex": [
      31
+    ]
+   }
+  },
+  {
+   "id": "D49",
+   "claim": "A hover over a nested dispatcher surface is also routed, hit-tested and given a cursor by the outer surface",
+   "where": "packages/routing/src/interactions/dispatcher/attachInput.ts:178 (listenPointer pointermove), :205 (trackPointerOver); channels/pointer.ts:351 (onHoverMove)",
+   "severity": "medium",
+   "scenario": "a panel that runs its own dispatcher sits inside a canvas that runs another. The pointer moves over the panel. The panel's `pointermove` bubbles to the outer canvas, whose `onHoverMove` → `onMove` → `hover.moved` hit-tests the outer scene under the panel, dispatches `hover` events to the outer bindings (a hover highlight on whatever lies under the panel), and resolves and paints the outer cursor (including a painted cursor through `setPointer`). `trackPointerOver` also keeps the outer `pointerOver` true, so the outer surface's `over` key bindings fire alongside the panel's. Presses get the nesting check (`pressedNestedIn`), and so do wheel, contextmenu, pinch and drop (`landedNestedIn`/`eventTaken`), but hover and `over` do not. What should happen: a move that landed in a nested surface is treated like a leave for the outer one.",
+   "fix": [
+    "packages/routing/src/interactions/dispatcher/attachInput.ts",
+    "packages/routing/src/interactions/dispatcher/channels/pointer.ts"
+   ],
+   "size": "function",
+   "cause": "no nesting check on hover/over",
+   "confidence": "likely",
+   "firstOccasion": 32,
+   "sightings": [
+    32
+   ],
+   "sources": {
+    "claude": [
+     32
+    ]
+   }
+  },
+  {
+   "id": "D50",
+   "claim": "An over-held key whose gesture was ended elsewhere is never removed from `held` on leave",
+   "where": "packages/routing/src/interactions/dispatcher/channels/overKeys.ts:79 (leave)",
+   "severity": "low",
+   "scenario": "Space taken by an `over` binding, then the gesture is ended by `cancelAll` (tool switch, Escape) while Space stays down. On pointer leave, `releaseIn` finds nothing in flight and returns 'unhandled', so the entry stays in `held` (`heldKeys`). Until Space's keyup arrives, `consider` treats every autorepeat as a key \"already engaged\": it calls preventDefault and skips dispatch, so an ordinary `key` binding on Space (or the page's own default) never sees the repeats. The same stale entry follows any held key whose gesture `cancelAll` ends. What should happen: the entry is dropped whenever its gesture is no longer in flight (`stillHeld` false), not only when the release is handled.",
+   "fix": [
+    "packages/routing/src/interactions/dispatcher/channels/overKeys.ts",
+    "packages/routing/src/interactions/dispatcher/channels/keyboard.ts"
+   ],
+   "size": "line",
+   "cause": "removal gated on release outcome rather than liveness",
+   "confidence": "likely",
+   "firstOccasion": 32,
+   "sightings": [
+    32
+   ],
+   "sources": {
+    "claude": [
+     32
+    ]
+   }
+  },
+  {
+   "id": "D51",
+   "claim": "With a keymap open, prediction calls `enabled()` one more time than the dispatch it predicts, so its verdict can differ from what dispatch does",
+   "where": "packages/routing/src/interactions/dispatcher/predict.ts:22 (routed), :48 (resolveAll), :62 (resolveOnly), :88 (explain)",
+   "severity": "low",
+   "scenario": "a keymap is open and the hover cursor calls `resolveOnly(press)` per move. `routed` runs `routeThroughKeymap`, whose `run` callback already walks (asking `enabled()` on the candidates) to learn whether the pass fires; then `resolveOnly` / `resolveAll` / `explain` walk the same ranked context again, asking every gate a second time. `ResolveAllOptions.evaluateShadowed`'s doc promises that the default walk keeps `resolveOnly`'s `enabled()` call count identical to a real dispatch, which walks each pass once. Expected: keep the walk `routed` already made (its `Walked`) and reuse it rather than walking again.",
+   "fix": [
+    "packages/routing/src/interactions/dispatcher/predict.ts"
+   ],
+   "size": "function",
+   "cause": "walk result of the keymap pass discarded and recomputed",
+   "confidence": "sure",
+   "firstOccasion": 34,
+   "sightings": [
+    34
+   ],
+   "sources": {
+    "claude": [
+     34
+    ]
+   }
+  },
+  {
+   "id": "D52",
+   "claim": "A nested surface with `contextMenu: false` still has its native context menu taken by the outer surface",
+   "where": "packages/routing/src/interactions/dispatcher/channels/contextMenu.ts:19 (onContextMenu)",
+   "severity": "low",
+   "scenario": "an outer canvas with the contextmenu channel on contains an inner dispatcher surface that set `channels.contextMenu: false` (\"Off leaves the browser's native menu in place\"). A right-click inside the inner surface fires `contextmenu`, which bubbles to the outer listener. That listener calls `preventDefault()` unconditionally before anything else; `eventTaken` is false because the inner surface has no listener, so the outer also routes and dispatches the right-click on its own bindings. The native menu never opens over the inner surface. Wheel (`landedNestedIn`) and pointerdown (`pressedNestedIn`) both check for a nested surface; this channel doesn't. Expected: leave an event that landed in a nested surface without the channel to the browser, or at least don't suppress its default before knowing whether anything here takes it.",
+   "size": "function",
+   "cause": "no nested-surface check before the unconditional preventDefault",
+   "confidence": "likely",
+   "firstOccasion": 34,
+   "sightings": [
+    34
+   ],
+   "sources": {
+    "claude": [
+     34
+    ]
+   }
+  },
+  {
+   "id": "D53",
+   "claim": "When the two fingers of a pinch land in different views, the first finger's moves are dropped",
+   "where": "packages/routing/src/interactions/dispatcher/channels/pointer.ts:171 (createRecognizer multiTouchInFlight), :270 (onMove)",
+   "severity": "low",
+   "scenario": "on a surface with several views, finger A goes down in view 1 (pinned there by `routeDown`), and finger B goes down in view 2. B's press runs `claimForMultiTouch` while routed to view 2, so the multitouch handle opens on view 2's dispatcher. Then A moves: `onMove` → `routeAt(A, …)` routes to view 1, and the recognizer's `sink.multiTouchInFlight(2)` asks `core.dispatcherNow()` (view 1), which has nothing in flight, so no multitouch event goes out for A's moves. Only B's moves drive the pinch, so the spread and centroid update only when B moves. Expected: a multitouch gesture runs on the one view it opened in, whichever finger moves.",
+   "size": "function",
+   "cause": "multitouch routed per finger's pin, not per gesture",
+   "confidence": "likely",
+   "firstOccasion": 34,
+   "sightings": [
+    34
+   ],
+   "sources": {
+    "claude": [
+     34
+    ]
+   }
+  },
+  {
+   "id": "D54",
+   "claim": "Rebinding the input listeners cancels ongoing handles started from the UI, not just pointer gestures",
+   "where": "packages/routing/src/interactions/dispatcher/attachInput.ts:163 (attachInput teardown)",
+   "severity": "low",
+   "scenario": "A color slider is mid-scrub through `actions.begin(...)`, which is `beginUiOngoing` on the dispatcher SceneCanvas shares. Anything that re-runs the attach effect fires the teardown: toggling `enableKeybindings` (→ `keyboard`), any `channels` flag, or `yieldKeys`. The teardown calls `d.cancelAll('cancel')` on every dispatcher. `cancelAll` also clears `uiOngoing` and cancels the slider's handle, so the scrub is reverted even though no pointer, key or gesture of these listeners was involved. The teardown only needs to end gestures its own listeners would never see end (pointer, key-held, carry). The UI-driven `ui-*` handles should be left alone.",
+   "fix": [
+    "packages/routing/src/interactions/dispatcher/dispatcher.ts",
+    "packages/routing/src/interactions/dispatcher/dispatcherApi.ts"
+   ],
+   "size": "design",
+   "cause": "cancelAll used as a teardown-scoped cancel",
+   "confidence": "likely",
+   "firstOccasion": 36,
+   "sightings": [
+    36
+   ],
+   "sources": {
+    "claude": [
+     36
+    ]
+   }
+  },
+  {
+   "id": "D55",
+   "claim": "A drag that crosses a child element of the canvas fires dragleave, which tears down the drop preview and rebuilds it",
+   "where": "packages/routing/src/interactions/dispatcher/channels/ingest.ts:63 (onDragLeave)",
+   "severity": "low",
+   "scenario": "The surface element has children (overlay layers, HUD). An OS file drag moves from the element onto a child. Where the engine gives `dragleave` a null `relatedTarget` (Safari has historically done this), the guard fails, so the class is removed and `preview.end()` runs. The next `dragover` then calls `show` with `key` reset, which starts `action.preview` again. The preview flickers and restarts at every child boundary. The fix is to count enter/leave depth, or to treat a null `relatedTarget` as unknown and leave the end to the next `dragover` that finds no winner.",
+   "size": "function",
+   "cause": "relies on relatedTarget for containment",
+   "confidence": "likely",
+   "firstOccasion": 36,
+   "sightings": [
+    36
+   ],
+   "sources": {
+    "claude": [
+     36
     ]
    }
   }

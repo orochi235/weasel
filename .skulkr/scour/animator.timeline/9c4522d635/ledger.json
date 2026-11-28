@@ -30,6 +30,50 @@
    "minutes": 0.16748333333333335,
    "at": "2026-11-25T21:11:49.944Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.4097260000000003,
+   "minutes": 4.28035,
+   "at": "2026-11-26T23:58:42.086Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 6
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.0491590000000002,
+   "minutes": 4.206366666666666,
+   "at": "2026-11-27T00:02:55.184Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 0.9161726,
+   "minutes": 3.852666666666667,
+   "at": "2026-11-27T00:06:46.708Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 1.082768,
+   "minutes": 4.389483333333334,
+   "at": "2026-11-27T00:11:11.176Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 7
   }
  ],
  "defects": [
@@ -37,16 +81,33 @@
    "id": "D1",
    "claim": "A fractional or NaN loop count is accepted unvalidated and corrupts playhead lap accounting (half laps, lap ID 0.5, NaN lap count)",
    "where": "packages/animator/src/timeline/playhead.ts:8",
-   "severity": "low",
+   "severity": "medium",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    2,
+    3,
+    4,
+    5
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     2,
+     3,
+     4,
+     5
     ]
-   }
+   },
+   "scenario": "`loop: 2.5` gives `loopsLeft = 1.5`. A frame that crosses two or more laps computes `Math.min(Math.floor(t / d), 1.5) = 1.5`, so `take(1.5)` makes `lap` 1.5, and `lapBack` subtracts 1.5 durations, which lands the playhead mid-lap rather than on a lap boundary. `lap` is then non-integer, which breaks booking's (lap, r) crossing identity and `lapsOf(c.lap - lap, …)` arithmetic. `loop: NaN` makes `loopsLeft` NaN, and the next wrap sets `t` to NaN. Nothing rounds or refuses a non-integer count.",
+   "cause": "loop count not floored or validated",
+   "fix": [
+    "packages/animator/src/timeline/playhead.ts"
+   ],
+   "size": "line",
+   "confidence": "sure"
   },
   {
    "id": "D2",
@@ -62,6 +123,295 @@
      1
     ]
    }
+  },
+  {
+   "id": "D3",
+   "claim": "A seek forgets standing bookings, so an event already booked without a handle is booked a second time for the same crossing",
+   "where": "packages/animator/src/timeline/booking.ts:195 (createBooker → seek)",
+   "severity": "medium",
+   "scenario": "booking with lookahead 100, a handle-less `book` (returns void) on an event at t=150; the playhead stands at 90, so the event is booked for about now+60 ms and, having no handle, stands. A seek to 90 or 100 (a scrubber writing the current time, or a small step back within the lap) calls `retract` (which keeps handle-less bookings, and handle-bearing ones whose `when <= now`) and then `seek`, which sets `bookings = []`. The next tick scans from the new open cursor, the dedup check `bookings.some(b => b.event === ev && b.lap === c.lap && b.r === r)` finds nothing, and it books the same (lap 0, r 150) crossing again. The cue plays twice. The firing side fires it once, and `types.ts` says a re-booking happens only after a returned handle was stopped.",
+   "fix": [
+    "packages/animator/src/timeline/booking.ts"
+   ],
+   "size": "line",
+   "cause": "seek clears the bookings retract deliberately left standing",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "edit, and a seek that does not revive, on a finished timeline skip the resample that the edit and seek contracts promise",
+   "where": "packages/animator/src/timeline/createTimeline.ts:126 (sampleNow)",
+   "severity": "medium",
+   "scenario": "a non-looping timeline plays to its end and retires (`entry.retire()`, `sampler.release()`). The consumer then calls `handle.edit(() => { track.keys[last].value = 42 })` without extending the duration. `rearm` returns early (`pos.atEnd(false)`), so the entry stays off the table, and `sampleNow` skips because `entry.live()` is false. No `onTick` hears the new value and no target shows it, although `TimelineHandle.edit` says it will \"sample the tracks again where the playhead stands\", and `seek` says tracks \"are sampled at `t` at once\". `seek(duration())` on a finished timeline has the same gap.",
+   "fix": [
+    "packages/animator/src/timeline/createTimeline.ts",
+    "packages/animator/src/timeline/types.ts",
+    "packages/animator/src/timeline/trackHolds.ts"
+   ],
+   "size": "function",
+   "cause": "sampleNow is gated on the entry being live",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    4,
+    5
+   ],
+   "sources": {
+    "claude": [
+     2,
+     4,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A nested timeline's events fire with lateBy measured against the nested end instead of the frame",
+   "where": "packages/animator/src/timeline/fireEvents.ts:81 (createEventFirer, nested branch)",
+   "severity": "low",
+   "scenario": "a nested timeline at `at` 0 with `duration` 100 holds an event at t=100. A frame moves the root playhead from 95 to 130. The recursion passes `to = Math.min(to - track.at, end)` = 100, so the event fires with `lateBy = 0` (and `report.fire` gets 0), although it was crossed 30 ms before the frame. The booking side for the same event uses the real playhead (`(playhead - u) / scale` against `maxLate`), so firing and booking judge lateness differently. `TimelineEvent.fire` documents an exception only for the root loop seam.",
+   "size": "function",
+   "cause": "clamped `to` reused as the lateness reference",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    3,
+    4
+   ],
+   "sources": {
+    "claude": [
+     2,
+     3,
+     4
+    ]
+   },
+   "fix": [
+    "packages/animator/src/timeline/fireEvents.ts"
+   ]
+  },
+  {
+   "id": "D6",
+   "claim": "An EventTrack placed twice at the same root offset fires twice, but its second placement is booked once or not at all",
+   "where": "packages/animator/src/timeline/booking.ts:124 (scanTrack) and :139 (dedup)",
+   "severity": "low",
+   "scenario": "one `EventTrack` object is reused in two `TimelineTrack`s that both start at the same root `at`, for example with nested durations 100 and 200. Cursors are keyed by (track, root `at`), so the second placement starts from the first placement's scanned cursor. On an endless loop, that cursor has already run past `end` 100 into later laps, so events between 100 and 200 in the second placement are never booked. Even with equal ends, the dedup by `(event, lap, r)` books each crossing once, while `fireEvents` walks both placements and fires twice. Firing and booking answer \"how many runs\" differently.",
+   "size": "function",
+   "cause": "placement keyed by root offset, not by placement identity",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "With laps left, a seek to the seam of a finished timeline does not revive it, though a live timeline plays on from the same spot",
+   "where": "packages/animator/src/timeline/createTimeline.ts:115 (rearm)",
+   "severity": "low",
+   "scenario": "a timeline finishes at `duration` with `loop: false`, then `setLoop(true)` and `seek(duration())`. `landing` puts it on the seam with laps left, which `Playhead.onSeam` documents as \"where a seek to the end of a lap leaves it\" and which a live timeline treats as the end of a lap that plays into the next. But `rearm` checks only `pos.atEnd(false)` (`t >= duration`) and ignores `lapsLeft`, so the timeline stays retired. The same seek on a live timeline continues into the next lap.",
+   "size": "line",
+   "cause": "rearm's end test ignores laps left",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "The booker keeps the tracks array captured at creation, while firing, sampling and duration reread opts.tracks, so the two disagree once the tracks change",
+   "where": "packages/animator/src/timeline/crossings.ts:33 (createCrossings)",
+   "severity": "low",
+   "scenario": "a consumer keeps the options object it passed and, in `handle.edit(() => { opts.tracks = next; })`, replaces the array → `tracksEnd`, `sampler.apply`, `events.to` and `handle.tracks()` all read `next`, but `createBooker`'s `host.tracks` is still the old array, so `book` keeps booking the removed events and never books the new ones. Every other reader answers \"which tracks\" from `opts.tracks` at call time.",
+   "fix": [
+    "packages/animator/src/timeline/booking.ts",
+    "BookerHost.tracks"
+   ],
+   "size": "line",
+   "cause": "tracks array captured once",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "Handlers on the outgoing lap's tail run before the frame is sampled",
+   "where": "packages/animator/src/timeline/createTimeline.ts:66 (tick)",
+   "severity": "low",
+   "scenario": "a looping timeline whose frame straddles the seam → `pos.advance` calls `crossings.wrapped`, which fires the tail events (`events.to(…, duration)`) before `sampler.apply` runs. A tail handler that reads a target or an `onTick`-fed value sees the previous frame's sample. The comment at the `sampler.apply` call says sampling comes before firing so a handler reads the current frame's values; the in-lap events fired by `crossings.fire()` get that, the tail events do not.",
+   "fix": [
+    "packages/animator/src/timeline/crossings.ts"
+   ],
+   "size": "function",
+   "cause": "tail fired inside advance",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    4
+   ],
+   "sources": {
+    "claude": [
+     3,
+     4
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "Editing a track's last key leaves the target showing the old value while onTick gets the new one",
+   "where": "packages/animator/src/timeline/trackHolds.ts:113 (place)",
+   "severity": "medium",
+   "scenario": "the playhead stands past a targeted track's last key (`where === 'after'`), and `handle.edit` changes that key's value → `sampleNow` samples the new value and passes it to `onTick`, but `place` commits only when `h.where !== 'after'`, so the target keeps the old final value. `edit` is documented to sample the tracks again where the playhead stands, and the track and its own `onTick` now disagree.",
+   "fix": [
+    "packages/animator/src/timeline/trackHolds.ts",
+    "h.edit"
+   ],
+   "size": "line",
+   "cause": "after-branch ignores edits",
+   "confidence": "sure",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "A paused timeline seeked to its end, or created paused with duration 0, finishes while paused and the event at the end never fires",
+   "where": "packages/animator/src/timeline/createTimeline.ts:69 (tick)",
+   "severity": "medium",
+   "scenario": "a non-looping timeline is paused, then `seek(duration())` is called (or `animator.timeline({ tracks: [event at t=0], autoplay: false })`, whose duration is 0). The next frame ticks it at rate 0 (frame.ts:80 still ticks paused entries): `parked` is false because `onSeam` requires laps left, so `finished = pos.atEnd(false)` is true. `crossings.fire()` fires nothing at rate 0, but `onDone` runs while paused and the entry retires. `resume()` does not revive it, and `rearm` refuses at the end anyway, so the event sitting at the end never fires. The same seek made while playing fires it on the next frame. types.ts says an event the playhead sits on \"fires when playback next advances from there and never while paused\". Instead it is lost, and `onDone` arrives while paused. The seam case (`parked`) already holds a paused playhead that is still on a lap. The last lap's end needs the same treatment: a held playhead at its end should not finish until it plays.",
+   "fix": [
+    "packages/animator/src/timeline/createTimeline.ts",
+    "packages/animator/src/timeline/playhead.ts"
+   ],
+   "size": "function",
+   "cause": "`parked` covers only a seam with laps left",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4
+   ],
+   "sources": {
+    "claude": [
+     4
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "Events the playhead played back over (non-positive scale) are never booked when forward playback resumes",
+   "where": "packages/animator/src/timeline/booking.ts:170 (createBooker → tick, `!(scale > 0)` branch)",
+   "severity": "medium",
+   "scenario": "a booked timeline plays forward at rate 1 to 500; its cursors have scanned to ~600. It then plays at rate -1. The first backward frame calls `clock.halt()`, which answers true, and `stopWhere` pulls every cursor back to the playhead (~499). On later backward frames `halt()` answers false (`lastScale` is already 0), so the cursors stay at 499 while the playhead goes back to 200. When rate 1 resumes, `scanTrack` starts from the cursors at 499, so the bookable events in (200, 499] are never booked. Firing does fire them, because `EventCursor.back` moved the firing cursor back to 200. A backward lap crossing (lap decreases) leaves cursors a whole lap ahead in the same way. What should happen: on resume, booking starts from where the playhead stands, as firing does.",
+   "fix": [
+    "packages/animator/src/timeline/booking.ts"
+   ],
+   "size": "line",
+   "cause": "cursors are pulled back only on the first held/backward frame, not as the playhead keeps moving back",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "bindClip accepts unsorted keys and events, which breaks sampling, holds and event search",
+   "where": "packages/animator/src/timeline/clipShape.ts:44 (sampled / events)",
+   "severity": "low",
+   "scenario": "a clip file with keys `[{t:100},{t:0}]` or events `[{t:50},{t:10}]` passes `checkClip`. `trackHolds.place` takes `keys[0]`/`keys[last]` as the bounds, so the playhead reads as \"after\" at t=50 and the target is committed early. `firstAfter`/`firstAtOrAfter` binary-search unsorted events, so events are skipped or fired twice. The `types.ts` contract requires the keys and events to be sorted ascending, and the clip check is meant to refuse a bad file naming where. What should happen: refuse, or sort, a decreasing `t`.",
+   "size": "function",
+   "cause": "shape check covers types only, not ordering",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D14",
+   "claim": "toClip on a cyclic key value or event data overflows the stack instead of naming the offending track",
+   "where": "packages/animator/src/timeline/clip.ts:168 (isClipValue)",
+   "severity": "low",
+   "scenario": "a key value `const v = { a: 1 }; v.self = v;` makes `isClipValue` recurse until it throws `RangeError: Maximum call stack size exceeded`. `toClip`'s documented \"Throws, naming the track, on … a value JSON would not read back\" is not met.",
+   "size": "function",
+   "cause": "no visited set in the recursive value check",
+   "confidence": "sure",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "targetStops writes the angle unwrap into the key's own value when a target's axes.to returns its input object",
+   "where": "packages/animator/src/timeline/targetStops.ts:24 (targetStops)",
+   "severity": "low",
+   "scenario": "a target made with custom axes `{ to: (v) => v, from: Array.from, angles: [0] }` (the `TargetAxes.to` contract does not ask for a fresh array). The keys are `[0]` and `[6]`. The short-way unwrap runs `row[0] = prev[0] + short[0]`, which rewrites the second key's `value` array in place, to about -0.28. The edited key is then what an editor reads back and what `toClip` writes. The built-in axes slice their input, so only custom axes hit this. What should happen: copy `row` before adjusting it.",
+   "size": "line",
+   "cause": "mutating the array `axes.to` returned",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5
+   ],
+   "sources": {
+    "claude": [
+     5
+    ]
+   }
   }
- ]
+ ],
+ "lines": 1806
 }

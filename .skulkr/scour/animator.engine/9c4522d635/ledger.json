@@ -47,6 +47,105 @@
    "minutes": 0.16631666666666667,
    "at": "2026-11-25T21:11:49.857Z",
    "findings": 2
+  },
+  {
+   "n": 2,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/02-claude.md",
+   "costUsd": 1.9011398,
+   "minutes": 5.27415,
+   "at": "2026-11-26T23:52:49.410Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 3,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/03-claude.md",
+   "costUsd": 1.094353,
+   "minutes": 4.46235,
+   "at": "2026-11-26T23:57:18.696Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 4,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/04-claude.md",
+   "costUsd": 1.0196076,
+   "minutes": 4.30205,
+   "at": "2026-11-27T00:01:38.225Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 1
+  },
+  {
+   "n": 5,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/05-claude.md",
+   "costUsd": 0.9222203999999999,
+   "minutes": 4.274816666666666,
+   "at": "2026-11-27T00:05:55.747Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 1.2496456,
+   "minutes": 5.422316666666667,
+   "at": "2026-11-27T00:11:21.688Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 4
+  },
+  {
+   "n": 7,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/07-claude.md",
+   "costUsd": 1.8941932,
+   "minutes": 5.200933333333333,
+   "at": "2026-11-27T00:16:35.251Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
+  },
+  {
+   "n": 8,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/08-claude.md",
+   "costUsd": 1.1192461999999999,
+   "minutes": 5.2817,
+   "at": "2026-11-27T00:21:52.996Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
+  },
+  {
+   "n": 9,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/09-claude.md",
+   "costUsd": 1.5908445999999998,
+   "minutes": 6.610333333333333,
+   "at": "2026-11-27T00:28:30.889Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 2
+  },
+  {
+   "n": 10,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/10-claude.md",
+   "costUsd": 1.7534264000000002,
+   "minutes": 4.285233333333333,
+   "at": "2026-11-27T00:32:48.506Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 5
   }
  ],
  "defects": [
@@ -72,13 +171,421 @@
    "severity": "low",
    "firstOccasion": 1,
    "sightings": [
-    1
+    1,
+    6
    ],
    "sources": {
     "codex": [
      1
+    ],
+    "claude": [
+     6
+    ]
+   },
+   "scenario": "a target's setter throws as a canceled animation commits. `table.cancelAll` empties the table and then rethrows, so `host.halt()` on the next line never runs and the requested frame is not canceled. On unmount (`useAnimator` cleanup), the frame loop gets one more frame after everything was supposed to stop. `createHostedAnimator.dispose` also leaves `disposed` false and the overrides uncleared, because the same throw escapes there.",
+   "cause": "halt not in a finally",
+   "size": "line",
+   "confidence": "sure"
+  },
+  {
+   "id": "D3",
+   "claim": "An animation paused at its end while playing backward is treated as playing forward and finishes at `to`",
+   "where": "packages/animator/src/engine/tweenAnimation.ts:69 (startTween tick); also offsetTween.ts:106, handoff/run.ts:139",
+   "severity": "medium",
+   "scenario": "a loop run backward (or a timeline under a negative time scale) starts a tween at its end (`startAt = ms`, playing backward). Then the animator is paused (`api.pause()`), or the tween's handle is paused. `frame.tick` passes `scale = 0`, because `clock.paused` and `anim.paused` both zero the scale. The animation's own clock still reads `ms`, so `t >= 1 && scale >= 0` holds and the tween emits `o.to` and finishes. offsetTween's `scale >= 0 && nowMs >= o.ms` and run.ts's `scale >= 0 && at >= motion.ms` do the same. A paused animation should stay where it is. Instead it completes forward, at the wrong end, and fires `onDone`. startTween has no `due`, so it is ticked every frame while paused. offsetTween and runs stay in the schedule's every-frame set under `clock.paused`, because `schedule.rateOf` does not read the animator's pause.",
+   "fix": [
+    "packages/animator/src/engine/tweenAnimation.ts",
+    "packages/animator/src/engine/offsetTween.ts",
+    "packages/animator/src/engine/handoff/run.ts"
+   ],
+   "size": "function",
+   "cause": "a scale of 0 is read as forward; the direction is lost while paused",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D4",
+   "claim": "A handed-off run released while paused and playing backward continues forward",
+   "where": "packages/animator/src/engine/handoff/run.ts:107 (release)",
+   "severity": "medium",
+   "scenario": "a compositor run plays backward because of a negative per-animation time scale or the animator's backward direction, and its handle is paused. Then a hold or a main-thread animation on the target calls `s.handoff.release()`. `backward = table.rateOf(a) < 0` reads 0 while `a.paused`, so `takeBack` builds a forward continuation. With a negative `timeScale`, `child.setTimeScale(a.timeScale)` then runs that forward tween backward from 0, so it ends at once at where the run stood rather than at the run's start. With the animator's direction negative, the child is registered under that direction and runs backward from 0 in the same way. In both cases the continuation does not carry the backward run on to the start. The direction should come from `timeScale * direction` whatever the pause.",
+   "fix": [
+    "packages/animator/src/engine/handoff/run.ts",
+    "packages/animator/src/engine/handoff/handoffs.ts"
+   ],
+   "size": "line",
+   "cause": "`rateOf` is 0 while paused, so it loses the sign",
+   "confidence": "likely",
+   "firstOccasion": 2,
+   "sightings": [
+    2,
+    5,
+    6,
+    7
+   ],
+   "sources": {
+    "claude": [
+     2,
+     5,
+     6,
+     7
+    ]
+   }
+  },
+  {
+   "id": "D5",
+   "claim": "A throw from onDone in a taken-back run's continuation leaves the original run's row on the table forever",
+   "where": "packages/animator/src/engine/handoff/run.ts:113 (release, done callback)",
+   "severity": "low",
+   "scenario": "a run handed to the compositor is taken back (for example by a hold), and the caller's `onDone` throws when the continuation ends. The callback calls `ctx.reportEnd(id); ends.onDone?.(); ctx.finish(id)`. The throw skips `ctx.finish(id)` and propagates out of the child's tick. `frame.retireThrown` drops only the child. The parent row stays: `ended`, deferred to `Infinity`, counted in `waiting`. `isActive(key)` stays true, it shows in `live()`, and it keeps its key until something interrupts or cancels it. A main-thread tween whose `onDone` throws is dropped by `retireThrown` instead.",
+   "fix": [
+    "packages/animator/src/engine/handoff/run.ts"
+   ],
+   "size": "line",
+   "cause": "finish is not in a `finally` around the user's onDone",
+   "confidence": "sure",
+   "firstOccasion": 2,
+   "sightings": [
+    2
+   ],
+   "sources": {
+    "claude": [
+     2
+    ]
+   }
+  },
+  {
+   "id": "D6",
+   "claim": "A taken-back compositor run's row stays on the table forever when its main-thread continuation leaves without finishing",
+   "where": "packages/animator/src/engine/handoff/run.ts:107 (launch → release)",
+   "severity": "medium",
+   "scenario": "An element-target tween with `compositor: 'prefer'` is handed off. A hold or a second animation on the target then calls `s.handoff.release()`. `release` defers the parent row to `Infinity` and starts a child through `continueOnMainThread`. Only the child's `onDone` ends the parent (`ctx.reportEnd`/`ctx.finish`). If the child leaves any other way, the parent row is never taken off. Two such ways: the child's commit in `end` throws because the target's setter throws, so `retireThrown` cancels the child; or the user's `easing`/`interpolate` throws on a progress value that keyframe sampling never hit, so the codec faults the child id. Either way the parent stays on the table with `due: Infinity`, holding its `cancelKey` and its target. Consequences: `isActive()` and `isActive(key)` stay true, `onDone` never fires, and every later handoff on that target is refused with \"another animation is moving its target\". The parent should leave whenever its child does, finished or canceled.",
+   "fix": [
+    "packages/animator/src/engine/handoff/run.ts",
+    "packages/animator/src/engine/handoff/takeBack.ts"
+   ],
+   "size": "function",
+   "cause": "parent's exit wired only to the child's onDone",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    5
+   ],
+   "sources": {
+    "claude": [
+     3,
+     5
+    ]
+   }
+  },
+  {
+   "id": "D7",
+   "claim": "follow measures a frame against a clock seeded from host.now(), which a hosted animator's outside clock may not share",
+   "where": "packages/animator/src/engine/core.ts:151 (createAnimatorCore → follow; seedClock at :62)",
+   "severity": "medium",
+   "scenario": "Take `createHostedAnimator({ now: () => performance.now(), … })` driven by `follow(timelineT, 1)`. Its docs put `tick`'s `t` on the host's clock and `follow`'s `t` on an outside clock. With the animator idle (`frameT` null), a tween starts. `seedClock` sets `frameT = host.now()`, say 50000. The next `follow(1200, 1)` computes `moved = 1200 - 50000 < 0`, so `driveTo` turns the drive to -1, and `frame.tick` advances `elapsed` by about 48800 ms played backward. The new tween reads `nowMs <= 0` at once and ends at its `from`, with `onDone` fired, instead of playing forward. The same happens when one host mixes `tick` and `follow`: `frameT` is left on the other clock and the first frame jumps. `useAnimator` hides this because its `now()` returns `clock.elapsed` and it calls `resumed()` when the clock changes; the core and `createHostedAnimator` do neither. The first followed frame after a seed should advance by 0, not by the gap between clocks.",
+   "fix": [
+    "packages/animator/src/engine/core.ts",
+    "packages/animator/src/createHostedAnimator.ts"
+   ],
+   "size": "function",
+   "cause": "seed clock and followed clock not the same origin",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3
+   ],
+   "sources": {
+    "claude": [
+     3
+    ]
+   }
+  },
+  {
+   "id": "D8",
+   "claim": "A target whose show throws while only a timeline hold moves it logs an error every frame and is never stopped",
+   "where": "packages/animator/src/engine/core.ts:89 (targets stop), packages/animator/src/engine/offsets.ts:203 (createTargetBook stop)",
+   "severity": "medium",
+   "scenario": "A timeline track holds an element target through `startTimeline`'s `openHold` (animatorApi.ts:85), and that target's `show` throws. `createTargetBook.stop` calls `owner.stop(s)`. That retires only what `table.on(s)` lists, plus `s.parts`. The timeline's hold is in neither: the timeline row is not filed under the target, and `openHold` never adds a part (only holdRows does). So nothing detaches the target. It stays in `showing`, `show` throws again next frame, and `console.error` fires every frame for as long as the timeline holds. The hold that should stop never does.",
+   "fix": [
+    "packages/animator/src/engine/holds.ts",
+    "packages/animator/src/engine/animatorApi.ts"
+   ],
+   "size": "function",
+   "cause": "openHold registers no stop with the target",
+   "confidence": "likely",
+   "firstOccasion": 3,
+   "sightings": [
+    3,
+    9
+   ],
+   "sources": {
+    "claude": [
+     3,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D9",
+   "claim": "A throw from a just-rested target's publish is swallowed with no log and the target is not stopped",
+   "where": "packages/animator/src/engine/offsets.ts:233 (createTargetBook publish, via show/showNow)",
+   "severity": "low",
+   "scenario": "a target with `show` and `publish` comes to rest (its last animation detaches, so `detach` moves it from `showing` to `rested`). The next frame's `show()` calls `shown(s, s.get())` for it, which queues `s.publish`, then runs `rested.clear()` **before** `publish()`. If that `publish` throws, the catch looks for its owner in `[...showing, ...rested]`. The target is in neither set any more, so `stop` never runs and, since only `stop` logs, nothing is logged. The error disappears without a trace. `showNow` has the same hole: `rested.delete(s)` runs before `publish()`, so a rested target whose publish throws there is also swallowed silently. What should happen: the throw is logged (`console.error`) like any other failed show or publish, whether or not some target still owns that function.",
+   "fix": [
+    "packages/animator/src/engine/offsets.ts"
+   ],
+   "size": "function",
+   "cause": "owner lookup runs after `rested` was cleared; logging happens only inside `stop`",
+   "confidence": "sure",
+   "firstOccasion": 4,
+   "sightings": [
+    4,
+    6,
+    7,
+    10
+   ],
+   "sources": {
+    "claude": [
+     4,
+     6,
+     7,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D10",
+   "claim": "A compositor run never claims its target, so another animator can take the target back before it is refused",
+   "where": "packages/animator/src/engine/offsets.ts:262 (createTargetBook → check)",
+   "severity": "medium",
+   "scenario": "animator A hands a tween on an element target to the compositor. `launch` sets `s.handoff` but never calls `targets.attach`, so `s.owner` stays null. Animator B then starts `tween({ target })`. `startOffsetTween` → `check(s)` passes because the owner is null, and `s.handoff?.release()` takes A's run back onto A's main thread, where A's continuation attaches and makes A the owner. B's `attach` then throws \"being moved by another animator\". B's call is refused, but by then it has already turned A's compositor run into a main-thread tween, and has already interrupted B's own cancelKey. `refusal` in eligible.ts does treat `s.handoff` with no row of its own as another animator, so the two checks answer the same question differently.",
+   "fix": [
+    "packages/animator/src/engine/offsets.ts",
+    "packages/animator/src/engine/handoff/run.ts"
+   ],
+   "size": "function",
+   "cause": "ownership check ignores s.handoff",
+   "confidence": "likely",
+   "firstOccasion": 5,
+   "sightings": [
+    5,
+    8,
+    9
+   ],
+   "sources": {
+    "claude": [
+     5,
+     8,
+     9
+    ]
+   }
+  },
+  {
+   "id": "D11",
+   "claim": "axesFor accepts ±Infinity, which turns a target's offsets into NaN",
+   "where": "packages/animator/src/engine/offsets.ts:8 (axesFor)",
+   "severity": "low",
+   "scenario": "`animator.tween({ target, to: { x: Infinity }, ms: 300 })`. The check refuses only NaN, so `to` is committed as Infinity. `travel(base, to)` is −Infinity, and the codec's voice from −Infinity to 0 (and `plus(to, offset)` in `onTick`) produces Infinity − Infinity = NaN. The target then shows NaN, and `shareBehind` divides Infinity by Infinity. The same goes for `from`, `velocity` and `setTarget`. The frame-time check (`checkFrame`) and `timeScaleOf` both refuse non-finite values, so this is the one entry point that lets them in.",
+   "size": "line",
+   "cause": "NaN-only guard instead of Number.isFinite",
+   "confidence": "likely",
+   "firstOccasion": 6,
+   "sightings": [
+    6
+   ],
+   "sources": {
+    "claude": [
+     6
+    ]
+   }
+  },
+  {
+   "id": "D12",
+   "claim": "A setter that throws in holdRows' leave stops the loop early, so the rows after it stay held forever",
+   "where": "packages/animator/src/engine/holdRows.ts:51 (startHoldRows → leave)",
+   "severity": "medium",
+   "scenario": "a rows hold over rows 0..9 is released or canceled with commit, and committing row 3 throws inside `leaveHold` → `absorb` → `s.set`. The `for` loop aborts, so rows 4..9 are never let go and `store.drop(layer)` never runs. Those rows keep `s.held > 0`, the animator still owns them (`owner` token, `live`), and their `parts` entries stay. `retire` swallows the throw and takes the row off the table, so nothing ever releases those holds again, and another animator's `check` on those targets keeps refusing. `leaveHold` says outright that a throwing setter \"still takes the hold off the target\", and core's own target `stop` uses `each` for this reason. `leave` should let go of every row through `each` and then drop the layer.",
+   "fix": [
+    "packages/animator/src/engine/holdRows.ts"
+   ],
+   "size": "function",
+   "cause": "loop not guarded per item (no `each`)",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    10
+   ],
+   "sources": {
+    "claude": [
+     7,
+     10
+    ]
+   }
+  },
+  {
+   "id": "D13",
+   "claim": "A release that throws leaves the hold registered on the animator's table",
+   "where": "packages/animator/src/engine/holdAnimation.ts:45, packages/animator/src/engine/holdRows.ts:86 (release)",
+   "severity": "low",
+   "scenario": "`handle.release()` on a hold whose target setter throws while committing. `held.leave(...)` (or `leave(...)`) throws before `ctx.finish(id)`, so the row stays on the table with its hold already gone. `isActive(key)` still answers true, the `cancelKey` stays claimed (a `keepExisting` start then shares it), and `live()` keeps listing it until someone cancels it explicitly. `ctx.finish(id)` belongs in a `finally`.",
+   "size": "line",
+   "cause": "finish not reached on throw",
+   "confidence": "sure",
+   "firstOccasion": 7,
+   "sightings": [
+    7,
+    10
+   ],
+   "sources": {
+    "claude": [
+     7,
+     10
+    ]
+   },
+   "fix": [
+    "packages/animator/src/engine/holdAnimation.ts",
+    "packages/animator/src/engine/holdRows.ts"
+   ]
+  },
+  {
+   "id": "D14",
+   "claim": "Reading the clock between frames adds elapsed time that the next tick adds again, so up to one frame is counted twice",
+   "where": "packages/animator/src/engine/core.ts:206 (createPacing → current), packages/animator/src/engine/frame.ts (tick)",
+   "severity": "low",
+   "scenario": "only compositor runs are active (`asleep`), and something reads `elapsed()` between frames at host time N, for example registering a new animation. `current()` adds `N - frameT` and sets `frameT = N`. The frame that follows arrives with a rAF timestamp t < N (Chrome stamps rAF with the frame's begin time, which can come before the tasks that ran in that frame). `frame.tick` computes `max(0, t - N) = 0` and then sets `frameT = t`, moving it backward. The next frame charges `t2 - t`, which counts the span t..N a second time. Every animation clock and every compositor placement then runs that much ahead. `tick` should not move `frameT` backward when that would charge time already counted.",
+   "fix": [
+    "packages/animator/src/engine/frame.ts"
+   ],
+   "size": "line",
+   "cause": "frameT rewound below a value counted on read",
+   "confidence": "likely",
+   "firstOccasion": 7,
+   "sightings": [
+    7
+   ],
+   "sources": {
+    "claude": [
+     7
+    ]
+   }
+  },
+  {
+   "id": "D15",
+   "claim": "cancelAll cancels the host frame after the onCancel reports run, so a frame requested by an animation one of those reports starts is canceled and that animation stalls",
+   "where": "packages/animator/src/engine/animatorApi.ts:150 (createAnimatorApi, cancelAll)",
+   "severity": "medium",
+   "scenario": "`animator.watch((e) => { if (e.type === 'cancel') animator.tween({...}) })`, then `animator.cancelAll()`. `table.cancelAll` runs `cleared()` and then emits the `cancel` events. The listener registers a tween, and `register` calls `requestFrame` because no frame is running. Control comes back to `cancelAll`, which then calls `host.halt()` (`cancelFrame`) and drops that request. The new tween sits on the table with no frame coming and never ticks or finishes until something unrelated asks for a frame. The same happens to anything started from a completion watcher (`fireCompletion`) or from a target's `show`/`publish` called by `cleared()`. Expected: the halt covers only the frames of what was canceled, so an animation registered after the table was emptied still gets its frame.",
+   "fix": [
+    "packages/animator/src/engine/animatorApi.ts",
+    "packages/animator/src/engine/table.ts"
+   ],
+   "size": "line",
+   "cause": "halt runs after the reports, not before them (or not only when the table is empty)",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D16",
+   "claim": "A coast started with an explicit `from` on a target with holds is shifted by the pending offset beside those holds, so it starts from the wrong place",
+   "where": "packages/animator/src/engine/offsetPhysics.ts:95 (startOffsetPhysics, committed/start)",
+   "severity": "low",
+   "scenario": "a target is held by a hold covering some axes, and an earlier animation stopped while held, which left `s.beside` nonzero. A decay or coast (`to` null) then starts on the target with `from: F`. Because `dest` is null, `committed = before` leaves `beside` out (the spring branch uses `takeUp`, which includes it), and nothing clears `beside` (no `commitOver`). So `start = F - before`, while `readTarget` still adds `beside` (target.ts:261). The target shows `F + beside`, not `F`, and when the coast ends `keep` folds the offset into `beside` again. A spring, or a tween started with the same `from`, starts at `F`.",
+   "size": "line",
+   "cause": "the coast branch reads the committed value without `beside`",
+   "confidence": "likely",
+   "firstOccasion": 8,
+   "sightings": [
+    8
+   ],
+   "sources": {
+    "claude": [
+     8
+    ]
+   }
+  },
+  {
+   "id": "D17",
+   "claim": "A timeline track's hold is not released when the target is stopped with target.stop() or when its table row is removed, so the hold keeps moving the target",
+   "where": "packages/animator/src/engine/animatorApi.ts:84 (startTimeline hold), packages/animator/src/engine/holds.ts:150 (openHold)",
+   "severity": "medium",
+   "scenario": "a timeline track holds element or row target `t`. `openHold` attaches `t` (raising `live`) but registers no table row on `t` and adds nothing to `s.parts`. The owner's `stop` in core.ts:90 stops only `table.on(s)` and `s.parts`. So (a) `t.stop()`, documented as \"Stops every animation moving it\", leaves the track's hold showing and `t.active` true. (b) `RowTable.remove(row)`, which stops whatever moves the row through the same owner stop, leaves the hold on a freed row whose index is reused by the next `add`. (c) When `t`'s `show` throws, `TargetBook.stop` calls `owner.stop(s)`, the hold stays, `t` stays in `showing`, and every following frame calls the throwing `show` and logs again. `startHoldRows` avoids this by adding a `part` per row; the timeline's holds should do the same (or leave through `parts`).",
+   "fix": [
+    "packages/animator/src/engine/holds.ts",
+    "packages/animator/src/engine/animatorApi.ts"
+   ],
+   "size": "function",
+   "cause": "open hold not registered as a part of its target",
+   "confidence": "likely",
+   "firstOccasion": 9,
+   "sightings": [
+    9
+   ],
+   "sources": {
+    "claude": [
+     9
+    ]
+   }
+  },
+  {
+   "id": "D18",
+   "claim": "A handed-off run whose target setter throws on end or cancel never cancels its browser animation",
+   "where": "packages/animator/src/engine/handoff/run.ts:110 (launch → end), packages/animator/src/engine/handoff/run.ts:156 (seed.onCancel)",
+   "severity": "medium",
+   "scenario": "An element target's setter throws when the run commits. `end` calls `s.set(...)` before `letGo`. The throw escapes the tick, and `retireThrown` → `table.retire` → `onCancel` calls `s.set(...)` again before `letGo`. That throw is caught as \"threw again\", and `letGo` is never reached. Result: the `Element.animate` animation (`fill: 'both'`) keeps showing on the element, `s.handoff` still points at the dead run (so later handoffs on that target are refused as \"another animator\"), and the run stays in `Handoffs.runs`. Because the run stays in `runs`, `keepsTime()` is true forever, `frameT` is never nulled, and `handoffs.frame()` re-places a dead animation every frame. The main-thread path guards exactly this case with `leaveTarget`'s try/finally (\"a setter that throws there still stops its voices\"); this path should do the same.",
+   "fix": [
+    "packages/animator/src/engine/handoff/run.ts"
+   ],
+   "size": "function",
+   "cause": "commit not wrapped in try/finally around letGo",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
+    ]
+   }
+  },
+  {
+   "id": "D19",
+   "claim": "A closed-form spring played back to its start emits its voice's reading instead of `from`",
+   "where": "packages/animator/src/engine/physicsAnimation.ts:101 (startPhysics tick)",
+   "severity": "low",
+   "scenario": "The comment promises \"Played backward, it ends where it started, as a tween does.\" On the axes path it emits `axes.from(reader.motion().value)` instead. When `nowMs <= 0` arrives before the voice is rewound, that reading is one frame's step short of `from`. After a `setTarget` that switches held↔free, `codec.retarget` re-cues the voice, `spring.from` becomes the re-cue point, and a fully rewound voice reports that point instead of `o.from`. The tween path emits `o.from` exactly. The non-axes path emits `o.from` too, so the two paths answer the same question differently.",
+   "size": "line",
+   "cause": "end value read from voice, not from o.from",
+   "confidence": "likely",
+   "firstOccasion": 10,
+   "sightings": [
+    10
+   ],
+   "sources": {
+    "claude": [
+     10
     ]
    }
   }
- ]
+ ],
+ "lines": 4511
 }
