@@ -8,6 +8,8 @@ export interface KeymapKeys {
   press(e: KeyboardEvent, physical: string, run: () => void): void;
   /** A key came up. */
   up(e: KeyboardEvent, physical: string): void;
+  /** Cmd went down: every key down now may lose its keyup, so Cmd's own keyup stands in for theirs. */
+  cmdDown(): void;
   clear(): void;
 }
 
@@ -36,6 +38,10 @@ export function keymapKeys(stack: () => KeymapStack | undefined): KeymapKeys {
       if (e.key !== 'Meta') return;
       for (const [k, withCmd] of [...leaders]) if (withCmd) release(k);
       for (const [k, withCmd] of [...quiet]) if (withCmd) quiet.delete(k);
+    },
+    cmdDown: () => {
+      for (const k of leaders.keys()) leaders.set(k, true);
+      for (const k of quiet.keys()) quiet.set(k, true);
     },
     clear: () => {
       leaders.clear();

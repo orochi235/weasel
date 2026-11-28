@@ -87,6 +87,7 @@ export function keyboardInput(core: DispatchCore): {
   const markCmd = (): void => {
     for (const [k, down] of downKeys) downKeys.set(k, { ...down, withCmd: true });
     for (const [k, down] of heldKeys) heldKeys.set(k, { ...down, withCmd: true });
+    keymaps.cmdDown();
   };
 
   const onKeyDown = (e: KeyboardEvent) => {

@@ -20,3 +20,13 @@ it('keeps dropping them across Cmd coming up when Cmd was not down with the keys
   keys.up(new KeyboardEvent('keyup', { key: 'Meta', code: 'MetaLeft' }), 'MetaLeft');
   expect(keys.quiet('KeyX')).toBe(true);
 });
+
+it('releases a leader held before Cmd went down when Cmd comes up', () => {
+  const released: string[] = [];
+  const stack = { innermost: () => null, holdOpened: () => true, release: (by: string) => released.push(by) } as unknown as KeymapStack;
+  const keys = keymapKeys(() => stack);
+  keys.press(new KeyboardEvent('keydown', { key: 'a', code: 'KeyA' }), 'KeyA', () => {});
+  keys.cmdDown();
+  keys.up(new KeyboardEvent('keyup', { key: 'Meta', code: 'MetaLeft' }), 'MetaLeft');
+  expect(released).toEqual(['key:KeyA']);
+});
