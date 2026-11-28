@@ -345,3 +345,12 @@ describe('a log scale over a domain narrow for its magnitude', () => {
     }
   });
 });
+
+describe('a log scale in a base near 1', () => {
+  it('is built without listing every power its domain holds', () => {
+    const start = performance.now();
+    const s = logScale({ domain: [1, 1.05], range: [0, 1], base: 1 + 1e-9 });
+    expect(performance.now() - start).toBeLessThan(100);
+    expect(s.ticks().length).toBeGreaterThan(1);
+  });
+});

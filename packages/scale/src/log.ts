@@ -41,7 +41,7 @@ export function logScale(opts: LogScaleOptions): LogScale {
       }
     : (v: number) => (log(v) - l0) / (l1 - l0);
   const map = (v: number) => (d1 === d0 ? (r0 + r1) / 2 : lerp(r0, r1, along(v)));
-  const powerTicks = (count: number, thin = true): number[] => {
+  const powerTicks = (count: number, thin = true, limit = Infinity): number[] => {
     const [lo, hi] = l0 <= l1 ? [l0, l1] : [l1, l0];
     if (!Number.isFinite(lo) || !Number.isFinite(hi)) return [];
     const first = Math.floor(lo + 1e-9);
@@ -60,11 +60,12 @@ export function logScale(opts: LogScaleOptions): LogScale {
         // Powers deep in the subnormals can round onto one another.
         if (v >= vlo - slack && v <= vhi + slack && v !== out.at(-1)) out.push(v);
       }
+      if (out.length >= limit) break;
     }
     return l0 <= l1 ? out : out.reverse();
   };
   // A domain holding fewer than two powers is nearly linear across it, and ticks and reads as a linear one would.
-  const linear = d0 === d1 || powerTicks(0, false).length < 2;
+  const linear = d0 === d1 || powerTicks(0, false, 2).length < 2;
   const ticks = (count = 5): number[] => {
     const n = tickCount(count);
     return linear ? domainTicks(d0, d1, tickStep(d0, d1, n)) : powerTicks(n);
