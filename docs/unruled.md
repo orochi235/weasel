@@ -570,6 +570,9 @@ The snap pipeline ([snapping.md](./snapping.md)) landed on 2026-10-18 with these
   neither notifies nor replaces the object `get` returns, as an edit that changes nothing does nothing; the
   plane keeps its own copies of `pan`, `zoom`, and `anchor` pairs, so a caller's later edit to an object it
   passed is not a change the plane misses.
+- 2026-11-28 (my call, scour fix 19): `createParallaxPlane`'s `get` answers a frozen object, its pairs frozen too, so
+  an in-place edit throws in strict code rather than moving the plane at the next unrelated repaint with no subscriber
+  told. There is no opt-out: `set` is the way to write, and it notifies.
 - Open (parallax second property pass, 2026-11-11): `createParallaxPlane`'s `set` compares opts by shape, so a
   write that means the same plane notifies: `pan: 1` over `{ x: 1, y: 1 }`, `zoom: 1` or `zoom: undefined` where none
   was set, `anchor: { x: 0, y: 0 }` where none was. Whether "changes nothing" means the derived view or the opts.
