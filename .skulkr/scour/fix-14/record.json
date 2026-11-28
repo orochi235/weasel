@@ -1,0 +1,341 @@
+{
+ "run": 14,
+ "area": "animator.engine",
+ "commit": "471ca1528c407484acdf7c57c5ade381f11336f3",
+ "on": "main",
+ "ledgerCommit": "9c4522d63555ec5f264441bcef4cd6a1917eac02",
+ "started": "2026-11-27T23:13:33.513Z",
+ "batches": [
+  {
+   "n": 1,
+   "on": "471ca1528c407484acdf7c57c5ade381f11336f3",
+   "defects": [
+    {
+     "id": "D4",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/handoff/run.ts",
+      "packages/animator/src/engine/handoff/handoffs.ts"
+     ]
+    },
+    {
+     "id": "D6",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/handoff/run.ts",
+      "packages/animator/src/engine/handoff/takeBack.ts"
+     ]
+    },
+    {
+     "id": "D18",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/handoff/run.ts"
+     ]
+    },
+    {
+     "id": "D5",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/handoff/run.ts"
+     ]
+    },
+    {
+     "id": "D11",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/offsets.ts"
+     ]
+    },
+    {
+     "id": "D9",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/offsets.ts"
+     ]
+    },
+    {
+     "id": "D10",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/offsets.ts",
+      "packages/animator/src/engine/handoff/run.ts"
+     ]
+    },
+    {
+     "id": "D3",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/tweenAnimation.ts",
+      "packages/animator/src/engine/offsetTween.ts",
+      "packages/animator/src/engine/handoff/run.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D4",
+     "verdict": "fixed",
+     "line": "[D4] scour: paused backward handed-off run continues forward | fixed 546d55225a",
+     "sha": "546d55225a"
+    },
+    {
+     "id": "D6",
+     "verdict": "fixed",
+     "line": "[D6] scour: taken-back run's row stays forever when its continuation is canceled or throws | fixed 92ed49e117",
+     "sha": "92ed49e117"
+    },
+    {
+     "id": "D18",
+     "verdict": "fixed",
+     "line": "[D18] scour: handed-off run whose setter throws on end/cancel never cancels its browser animation | fixed 70c6a0e6e4 (the throw happens on cancel; a tween's end commits nothing, but the same guard now covers a coast's end commit)",
+     "sha": "70c6a0e6e4"
+    },
+    {
+     "id": "D5",
+     "verdict": "fixed",
+     "line": "[D5] scour: onDone throw in a taken-back continuation leaves the parent row | fixed cf64d67073",
+     "sha": "cf64d67073"
+    },
+    {
+     "id": "D11",
+     "verdict": "fixed",
+     "line": "[D11] scour: axesFor accepts ±Infinity | fixed 9026d5d5e6",
+     "sha": "9026d5d5e6"
+    },
+    {
+     "id": "D9",
+     "verdict": "fixed",
+     "line": "[D9] scour: a just-rested target's publish throw is swallowed with no log | fixed f1f8f4da7d",
+     "sha": "f1f8f4da7d"
+    },
+    {
+     "id": "D10",
+     "verdict": "fixed",
+     "line": "[D10] scour: compositor run never claims its target, so another animator takes it back before being refused | fixed d483ff9e88 (holds were refused the same way)",
+     "sha": "d483ff9e88"
+    },
+    {
+     "id": "D3",
+     "verdict": "fixed",
+     "line": "[D3] scour: paused backward animation at its end finishes forward at `to` | fixed 1282399010 (a scale of 0 now ends nothing except a tween of 0 ms or less, which matches how the timeline already treats a rate of 0)",
+     "sha": "1282399010"
+    }
+   ],
+   "commits": 10,
+   "branch": "scour14-animator.engine-b1",
+   "verify": {
+    "ok": true,
+    "files": 20,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2791,
+     "total": 2791
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 3.4652022,
+   "minutes": 32.19971666666667
+  },
+  {
+   "n": 2,
+   "on": "89914157eeed35aa18ca3e053837af361e071d54",
+   "defects": [
+    {
+     "id": "D17",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/holds.ts",
+      "packages/animator/src/engine/animatorApi.ts"
+     ]
+    },
+    {
+     "id": "D1",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/animatorApi.ts"
+     ]
+    },
+    {
+     "id": "D2",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/animatorApi.ts"
+     ]
+    },
+    {
+     "id": "D15",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/animatorApi.ts",
+      "packages/animator/src/engine/table.ts"
+     ]
+    },
+    {
+     "id": "D8",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/holds.ts",
+      "packages/animator/src/engine/animatorApi.ts"
+     ]
+    },
+    {
+     "id": "D13",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/holdAnimation.ts",
+      "packages/animator/src/engine/holdRows.ts"
+     ]
+    },
+    {
+     "id": "D12",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/holdRows.ts"
+     ]
+    },
+    {
+     "id": "D7",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/core.ts",
+      "packages/animator/src/createHostedAnimator.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D17",
+     "verdict": "fixed",
+     "line": "[D17] timeline hold not released on `target.stop()` / row removal (scour): fixed 9aff74ee59",
+     "sha": "9aff74ee59"
+    },
+    {
+     "id": "D1",
+     "verdict": "fixed",
+     "line": "[D1] `cancel` with another animator's handle retires this animator's animation with the same id (scour): fixed b4ed075ab3. This needed a behavior call, which I made and recorded in `docs/unruled.md`: `cancel(handle)` now calls `handle.cancel()`, so another animator's handle cancels in its own animator.",
+     "sha": "b4ed075ab3"
+    },
+    {
+     "id": "D2",
+     "verdict": "fixed",
+     "line": "[D2] a throwing `onCancel` in `cancelAll` skips `cancelFrame`, and `dispose` stays undisposed (scour): fixed 1217af4f2d",
+     "sha": "1217af4f2d"
+    },
+    {
+     "id": "D15",
+     "verdict": "fixed",
+     "line": "[D15] `cancelAll` halts after its reports, dropping the frame an animation started from a report asked for (scour): fixed 1217af4f2d",
+     "sha": "1217af4f2d"
+    },
+    {
+     "id": "D8",
+     "verdict": "fixed",
+     "line": "[D8] a target whose `show` throws under a timeline hold logs every frame and is never stopped (scour): fixed 9aff74ee59",
+     "sha": "9aff74ee59"
+    },
+    {
+     "id": "D13",
+     "verdict": "fixed",
+     "line": "[D13] a release that throws leaves the hold on the table (scour): fixed be0b2d3de4",
+     "sha": "be0b2d3de4"
+    },
+    {
+     "id": "D12",
+     "verdict": "fixed",
+     "line": "[D12] a throwing setter in `holdRows`' leave keeps the later rows held (scour): fixed e408cca94e",
+     "sha": "e408cca94e"
+    },
+    {
+     "id": "D7",
+     "verdict": "fixed",
+     "line": "[D7] `follow` measures its first frame against a clock seeded from `host.now()` (scour): fixed d6c394873d. I also split `createAnimatorCore` for `check:size` (9d763d385b). Commits db32602c84 (a test type fix) and 5c5a852ac6 (changeset titles shortened) fix no defect.",
+     "sha": "d6c394873d"
+    }
+   ],
+   "commits": 9,
+   "branch": "scour14-animator.engine-b2",
+   "verify": {
+    "ok": true,
+    "files": 20,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2765,
+     "total": 2765
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 3.0315729999999994,
+   "minutes": 34.9088
+  },
+  {
+   "n": 3,
+   "on": "dd352c46d79fdd72a7460173ef953c2bf3ec4c6c",
+   "defects": [
+    {
+     "id": "D14",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/frame.ts"
+     ]
+    },
+    {
+     "id": "D16",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/offsetPhysics.ts"
+     ]
+    },
+    {
+     "id": "D19",
+     "recurrent": false,
+     "files": [
+      "packages/animator/src/engine/physicsAnimation.ts"
+     ]
+    }
+   ],
+   "verdicts": [
+    {
+     "id": "D14",
+     "verdict": "fixed",
+     "line": "[D14] Reading the clock between frames counted up to a frame twice (scour): fixed 9ee75de3d4",
+     "sha": "9ee75de3d4"
+    },
+    {
+     "id": "D16",
+     "verdict": "fixed",
+     "line": "[D16] A coast started with `from` beside a hold started from the wrong place (scour): fixed a2ce4f3b9a",
+     "sha": "a2ce4f3b9a"
+    },
+    {
+     "id": "D19",
+     "verdict": "not a defect",
+     "line": "[D19] A spring played back to its start emitted its voice's reading instead of `from` (scour): not a defect (no longer applies). `startPhysics` now has one path, and every backward variant I tried ended exactly at `from`: after a retarget, through an outside clock, the handle's or the animator's `setTimeScale(-1)`, a start between frames, and a first backward frame past the start. The held↔free re-cue the finding describes happens only on target springs, which `startPhysics` does not run.",
+     "sha": null
+    }
+   ],
+   "commits": 2,
+   "branch": "scour14-animator.engine-b3",
+   "verify": {
+    "ok": true,
+    "files": 8,
+    "testFiles": {
+     "failed": 0,
+     "passed": 2767,
+     "total": 2767
+    },
+    "gui": true,
+    "repairs": 0
+   },
+   "repairs": 0,
+   "costUsd": 1.6841300000000001,
+   "minutes": 20.962833333333332
+  }
+ ],
+ "finished": "2026-11-28T00:47:36.040Z",
+ "relanded": "2026-11-28T00:57:35.452Z"
+}
