@@ -192,6 +192,8 @@ function listenHover(listeners: ListenerSet, canvas: HTMLElement | null, core: D
     core.routeAt(null, e.clientX, e.clientY);
     hover.moved(e);
   });
+  // The pointer channel's release does this when it is on.
+  listeners.on(canvas, 'pointerup', hover.released);
 }
 
 function listenWheel(listeners: ListenerSet, canvas: HTMLElement | null, wheel: ReturnType<typeof wheelInput>): void {

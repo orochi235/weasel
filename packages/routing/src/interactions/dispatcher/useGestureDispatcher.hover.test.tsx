@@ -282,6 +282,22 @@ describe('the hover channel on its own', () => {
     expect(start).not.toHaveBeenCalled();
   });
 
+  it('shows the hover cursor again as soon as a button held over the canvas is released', async () => {
+    const fire = mount([{
+      id: 'drag', label: 'drag', defaultBinding: { kind: 'drag' }, cursor: 'grab',
+      invoker: { timing: 'ongoing', start: () => ({ onMove: () => {}, onEnd: () => {} }) },
+    }], () => 'empty', HOVER_ONLY);
+    const canvas = document.querySelector('canvas')!;
+    fire('pointermove', { clientX: 5, clientY: 5 });
+    expect(canvas.style.cursor).toBe('grab');
+    fire('pointerdown', { clientX: 5, clientY: 5, button: 0, buttons: 1 });
+    fire('pointermove', { clientX: 9, clientY: 5, buttons: 1 });
+    expect(canvas.style.cursor).toBe('');
+    fire('pointerup', { clientX: 9, clientY: 5, button: 0 });
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    expect(canvas.style.cursor).toBe('grab');
+  });
+
   it('stays off with the pointer channel unless asked for', () => {
     const aim = vi.fn();
     const fire = mount([follow('aim', aim)], () => 'empty', { pointer: false });
