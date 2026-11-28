@@ -7,8 +7,8 @@ For the session picking this up: what is in flight and what has no other home. O
 ## In flight (2026-11-28)
 
 - **The test-gate rework is unfinished on `test-ledger`** (worktree `.worktrees/test-ledger`; session
-  `test-ledger-39`, which stopped at a usage limit). What is left is in that branch's `HANDOFF.md`, "test-ledger
-  branch". Its `80814dcd6b` (the `check:numeric` stylesheet fix) is already on main another way; drop it there. It touches build tooling, so its batch gets a full run. The daily run's launchd install needs Mike's go.
+  `test-ledger-39`, which stopped at a usage limit; a fresh session picks it up). What is left is in that branch's `HANDOFF.md`, "test-ledger
+  branch". It touches build tooling, so its batch gets a full run. The daily run's launchd install needs Mike's go.
 
 ## Decisions taken in conversation and not visible in the code
 
