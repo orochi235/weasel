@@ -34,14 +34,15 @@ export function useSurfaceSize(props: SurfaceSizeProps, element: RefObject<HTMLE
   const onResize = useLatest(props.onResize);
   const reported = useRef<CanvasSize | null>(null);
   // Passive, so a consumer's state set from it renders after the resize callback rather than inside it.
+  const unmeasured = (props.width === undefined && width === 0) || (props.height === undefined && height === 0);
   useEffect(() => {
-    // A filling axis reads 0 until measured, and that is no size to report.
-    if (width === 0 || height === 0) return;
+    // A filling axis reads 0 until measured, and that is no size to report; a 0 given as a prop is one.
+    if (unmeasured) return;
     const was = reported.current;
     if (was && was.width === width && was.height === height) return;
     reported.current = { width, height };
     onResize.current?.({ width, height });
-  }, [width, height, onResize]);
+  }, [width, height, unmeasured, onResize]);
 
   return { width, height };
 }

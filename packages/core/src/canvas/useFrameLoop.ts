@@ -16,8 +16,9 @@ export interface FrameLoop {
   /** Mark the surface dirty and schedule a frame. Identity is stable for the
    *  lifetime of the component — consumers capture it. */
   requestRedraw(): void;
-  /** `requestRedraw`, painting in the caller's stack as `syncPaint` does whatever that is set to. */
-  paintNow(): void;
+  /** `requestRedraw`, painting in the caller's stack as `syncPaint` does whatever that is set to. Returns
+   *  whether pixels landed there; when they did not, a frame is scheduled to retry. */
+  paintNow(): boolean;
   /** Run `fn` after every landed paint, with the frame's time. Returns an
    *  unsubscribe. */
   subscribeFrame(fn: (time: number) => void): () => void;
@@ -63,23 +64,24 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
   /** `frame.request`, which doesn't exist until after `runPaint` is built. */
   const rearmRef = useRef<(() => void) | null>(null);
 
-  const runPaint = useCallback((at: number) => {
+  const runPaint = useCallback((at: number): boolean => {
     const time = Math.max(at, lastTimeRef.current);
     lastTimeRef.current = time;
     dirtyRef.current = false;
     paintingRef.current = true;
-    let landed = false;
     try {
       beforeRef.current.emit(time);
-      landed = paintRef.current();
+      const landed = paintRef.current();
+      // Any paint that returns ends the recovery, so a later throw gets its own retry.
+      retriedRef.current = false;
       if (!landed) {
         dirtyRef.current = true;
-        return;
+        return false;
       }
-      retriedRef.current = false;
       // Notified inside the guard: a subscriber calling `requestRedraw` under
       // `syncPaint` would otherwise re-enter this synchronously, without bound.
       subsRef.current.emit(time);
+      return true;
     } catch (err) {
       // A throw skips the `!landed` branch above, so without this the surface
       // is left clean but unpainted — the pixels on screen are whatever the
@@ -111,19 +113,19 @@ export function useFrameLoop(paint: () => boolean, options: FrameLoopOptions = {
     rearmRef.current = () => { frame.request(); };
   });
 
-  const redraw = useCallback((inPlace: boolean) => {
+  const redraw = useCallback((inPlace: boolean): boolean => {
     dirtyRef.current = true;
     // The gate suppresses the sync path too: a background tab still commits
     // React updates, and that is the one paint browser throttling does not stop.
     // A request made from inside a draw or a frame subscriber would recurse
     // forever if it painted here, so re-entrant ones fall through to a frame.
-    if (inPlace && aliveRef.current && !paintingRef.current && frame.isVisible()) {
-      runPaint(performance.now());
-      return;
+    if (inPlace && aliveRef.current && !paintingRef.current && frame.isVisible() && runPaint(performance.now())) {
+      return true;
     }
     frame.request();
+    return false;
   }, [frame, runPaint]);
-  const requestRedraw = useCallback(() => redraw(syncRef.current), [redraw, syncRef]);
+  const requestRedraw = useCallback(() => { redraw(syncRef.current); }, [redraw, syncRef]);
   const paintNow = useCallback(() => redraw(true), [redraw]);
 
   const subscribeFrame = useCallback((fn: (time: number) => void) => subsRef.current.subscribe(fn), []);

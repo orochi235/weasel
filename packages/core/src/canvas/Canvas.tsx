@@ -74,6 +74,8 @@ function CanvasInner<TPose>(
   // no prop can reach the paint without repainting it. The thunk defers to
   // `useCanvasPaint` below, which needs inputs this render has not computed yet.
   const paintRef = useRef<() => boolean>(() => false);
+  // Ahead of the surface, whose resize paint would otherwise show the view before it is held in its bounds.
+  useReclampOnResize(viewState.reclamp, width, height);
   const { lease, requestRedraw, subscribeFrame, subscribeBeforePaint, subscribeResume } = useCanvasSurface(
     useCallback(() => paintRef.current(), []),
     { syncPaint: props.syncPaint ?? false, target: canvasRef, dpr: props.dpr, redrawOn: props.redrawOn, shaders: props.shaders, onCommit: 'redraw', size: { width, height },
@@ -146,7 +148,6 @@ function CanvasInner<TPose>(
     announceControlled();
   });
 
-  useReclampOnResize(viewState.reclamp, width, height);
   useCanvasPaint(paintRef, lease, elements, { ...frame, inputsRef: paintInputsRef, gateRef }, markPainted, requestRedraw, readIdsRef, stackRef);
   useEffect(() => clearSubscribers, [clearSubscribers]);
 

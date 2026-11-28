@@ -8,13 +8,12 @@ function resolveToolsCursor(tools: ToolsApi): ResolvedCursor | undefined {
   const id = tools.routed;
   const tool = id === null ? undefined : getOwn(tools.registry, id);
   if (!tool?.cursor) return undefined;
-  if (typeof tool.cursor !== 'function') return resolveCursor(tool.cursor);
   try {
-    return resolveCursor(tool.cursor());
+    return resolveCursor(typeof tool.cursor === 'function' ? tool.cursor() : tool.cursor);
   } catch (err) {
     if (!reported.has(tool)) {
       reported.add(tool);
-      console.error(`[weasel] tool "${id}" threw from its cursor(); it shows no cursor of its own until that is fixed.`, err);
+      console.error(`[weasel] tool "${id}" has a cursor that cannot be shown; it shows no cursor of its own until that is fixed.`, err);
     }
     return undefined;
   }

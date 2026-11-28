@@ -56,12 +56,13 @@ export function useCanvasSurface(
   useRedrawOnShaderSource(options.shaders, requestRedraw);
   useRedrawOn(options.redrawOn, requestRedraw);
   const resized = usePaintOnResize(options.size, loop.paintNow);
-  useRedrawOnCommit(options.onCommit, () => paint(lease), requestRedraw, resized);
+  useRedrawOnCommit(options.onCommit, loop.paintNow, requestRedraw, resized);
   return { ...loop, lease };
 }
 
-/** Paints a commit that resized the surface in place. Returns whether this commit did. */
-function usePaintOnResize(size: CanvasSurfaceOptions['size'], paintNow: () => void): { readonly current: boolean } {
+/** Paints a commit that resized the surface in place, or on the next frame if that paint does not land.
+ *  Returns whether this commit resized. */
+function usePaintOnResize(size: CanvasSurfaceOptions['size'], paintNow: () => boolean): { readonly current: boolean } {
   const last = useRef<{ width: number; height: number } | null>(null);
   const resized = useRef(false);
   const width = size?.width ?? 0;
@@ -87,7 +88,6 @@ function useRedrawOnCommit(
     if (!mode || resized.current) return;
     if (mode === 'redraw' || paintedRef.current) { requestRedraw(); return; }
     paintedRef.current = paintNow();
-    if (!paintedRef.current) requestRedraw();
   });
   // The renderer is freed on unmount; a remount (StrictMode) paints its first
   // frame in place again.
