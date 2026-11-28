@@ -120,7 +120,7 @@ export function useFieldIds({
   };
 }
 
-/** Whether a label, description or error slot has anything to show: React draws nothing for `true`, as for `false`. */
+/** Whether a slot (a label, an output, a description, an error) has anything to show: React draws nothing for `true`, as for `false`. */
 export function shows(slot: ReactNode): boolean {
   return slot != null && typeof slot !== 'boolean' && slot !== '';
 }

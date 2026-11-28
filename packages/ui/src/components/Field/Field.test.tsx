@@ -50,6 +50,12 @@ describe('Field', () => {
     expect(container.firstElementChild).not.toHaveAttribute('data-invalid');
   });
 
+  it.each([null, false, ''])('draws no output, and no head without a label, for an empty one (%j)', (empty) => {
+    const { container } = render(<Field output={empty}><Knob /></Field>);
+    expect(container.querySelector('output')).toBeNull();
+    expect(container.firstElementChild!.children).toHaveLength(1);
+  });
+
   it('shows no error for an empty one', () => {
     render(<Field label="Gain" error=""><Knob /></Field>);
     expect(screen.getByRole('slider')).not.toHaveAttribute('aria-invalid');
