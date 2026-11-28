@@ -82,7 +82,7 @@ export function keyboardInput(core: DispatchCore): {
     if (!reach.held && !reach.over) return;
     if (reach.over) askedOver.add(e);
     consider(e, reach);
-    if (reach.held && core.canvas) passOn(core.canvas, take, e);
+    if (reach.held && core.canvas) passOn(core.canvas, 'key', take, e);
   };
 
   const take: TakeKey = (e) => {

@@ -7,12 +7,12 @@ describe('joinSurface', () => {
   it('lets a release called twice leave a channel that joined since in place', () => {
     const surface = document.createElement('div');
     const first = vi.fn();
-    const leave = joinSurface(surface, first);
+    const leave = joinSurface(surface, { key: first });
     leave();
     const later = vi.fn();
-    joinSurface(surface, later);
+    joinSurface(surface, { key: later });
     leave();
-    passOn(surface, () => {}, key());
+    passOn(surface, 'key', () => {}, key());
     expect(first).not.toHaveBeenCalled();
     expect(later).toHaveBeenCalledOnce();
   });
@@ -20,11 +20,12 @@ describe('joinSurface', () => {
   it('lets a channel joined twice leave once per release', () => {
     const surface = document.createElement('div');
     const take = vi.fn();
-    const leaveA = joinSurface(surface, take);
-    joinSurface(surface, take);
+    const peer = { key: take };
+    const leaveA = joinSurface(surface, peer);
+    joinSurface(surface, peer);
     leaveA();
     leaveA();
-    passOn(surface, () => {}, key());
+    passOn(surface, 'key', () => {}, key());
     expect(take).toHaveBeenCalledOnce();
   });
 });

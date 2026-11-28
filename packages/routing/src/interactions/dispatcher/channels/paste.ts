@@ -2,15 +2,29 @@
 import { itemsFromClipboardData } from '../../../ingestion/ingestItems';
 import { isEditableTarget } from '../../keyHelpers';
 import type { DispatchCore } from '../dispatchCore';
+import { passOn, type TakePaste } from './keyPeers';
 import { inModalOver } from './modal';
 
-export function pasteInput(core: DispatchCore): (e: ClipboardEvent) => void {
-  return (e) => {
+export function pasteInput(core: DispatchCore): { onPaste: (e: ClipboardEvent) => void; take: TakePaste } {
+  // Pastes already offered here by a peer on the surface, which this channel's own listener leaves.
+  const taken = new WeakSet<Event>();
+
+  const onPaste = (e: ClipboardEvent): void => {
     // Text-editing surfaces (inputs, the text-edit overlay) own their own
     // paste — never steal it for scene ingestion.
-    if (e.defaultPrevented || isEditableTarget(e.target) || inModalOver(e.target, core.canvas)) return;
+    if (e.defaultPrevented || taken.has(e) || isEditableTarget(e.target) || inModalOver(e.target, core.canvas)) return;
     // Every dispatcher hears paste on window; only the one holding the keys acts.
     if (!core.holdsKeys()) return;
+    consider(e);
+    if (core.canvas) passOn(core.canvas, 'paste', take, e);
+  };
+
+  const take: TakePaste = (e) => {
+    taken.add(e);
+    consider(e);
+  };
+
+  const consider = (e: ClipboardEvent): void => {
     const cd = e.clipboardData;
     if (!cd) return;
     const items = itemsFromClipboardData(cd);
@@ -26,4 +40,6 @@ export function pasteInput(core: DispatchCore): (e: ClipboardEvent) => void {
     });
     if (result === 'handled') e.preventDefault();
   };
+
+  return { onPaste, take };
 }

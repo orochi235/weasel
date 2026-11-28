@@ -112,7 +112,8 @@ export function attachInput(
   // The canvas's own window, which an iframe or a popout's canvas does not share with this script.
   const win: Window = canvas?.ownerDocument.defaultView ?? window;
   if (channels.keyboard) listenKeys(listeners, win, channels.keyboard, keys);
-  const leaveKeyPeers = channels.keyboard && canvas ? joinSurface(canvas, keys.take) : null;
+  const paste = channels.ingest ? pasteInput(core) : null;
+  const leaveSurfacePeers = canvas ? joinSurface(canvas, { key: channels.keyboard ? keys.take : undefined, paste: paste?.take }) : null;
   listeners.on(win, 'blur', onWindowBlur);
   // Ahead of the pointer channel's own listener, and whether or not that
   // channel is on: a press with any button makes this the scope chrome and
@@ -136,13 +137,7 @@ export function attachInput(
   if (channels.contextMenu) {
     listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold, pointer.takeNativeMenu));
   }
-  if (channels.ingest) {
-    listeners.on(canvas, 'dragenter', ingest.onDragEnter);
-    listeners.on(canvas, 'dragover', ingest.onDragOver);
-    listeners.on(canvas, 'dragleave', ingest.onDragLeave);
-    listeners.on(canvas, 'drop', ingest.onDrop);
-    listeners.on(win, 'paste', pasteInput(core));
-  }
+  if (paste) listenIngest(listeners, canvas, ingest, win, paste.onPaste);
   const offCarry = channels.carry ? carryInput(core) : null;
   const releaseSurface = canvas ? holdSurface(canvas, channels) : null;
 
@@ -151,7 +146,7 @@ export function attachInput(
     listeners.removeAll();
     offDispatchers();
     releaseSurface?.();
-    leaveKeyPeers?.();
+    leaveSurfacePeers?.();
     offCarry?.();
     canvas?.classList.remove(DROPOVER_CLASS);
     ingest.endPreview();
@@ -217,6 +212,21 @@ function listenHover(
   });
   // The pointer channel's release does this when it is on.
   listeners.on(canvas, 'pointerup', hover.released);
+}
+
+/** The ingest channel's listeners: an OS drag over the canvas, and a paste on the window. */
+function listenIngest(
+  listeners: ListenerSet,
+  canvas: HTMLElement | null,
+  ingest: ReturnType<typeof ingestInput>,
+  win: Window,
+  onPaste: (e: ClipboardEvent) => void,
+): void {
+  listeners.on(canvas, 'dragenter', ingest.onDragEnter);
+  listeners.on(canvas, 'dragover', ingest.onDragOver);
+  listeners.on(canvas, 'dragleave', ingest.onDragLeave);
+  listeners.on(canvas, 'drop', ingest.onDrop);
+  listeners.on(win, 'paste', onPaste);
 }
 
 /** Listen for the wheel in the capture phase, for one that landed here, and in the bubble phase, for one that landed in a nested surface. */
