@@ -188,6 +188,7 @@ function listenPointer(listeners: ListenerSet, canvas: HTMLElement | null, win: 
   listeners.on(canvas, 'pointerleave', hover.onLeave);
   listeners.on(canvas, 'pointerdown', pointer.onPointerDown);
   listeners.on(canvas, 'pointermove', pointer.onHoverMove);
+  listeners.on(canvas, 'pointerup', pointer.onHoverUp);
   listeners.on(canvas, 'dblclick', pointer.onNativeDoubleClick);
 }
 

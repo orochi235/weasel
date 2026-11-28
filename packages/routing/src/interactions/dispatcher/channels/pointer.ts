@@ -40,6 +40,8 @@ export interface PointerInput {
    *  pointer's moves arrive through its session, which keeps seeing them once
    *  the pointer has left the canvas. */
   onHoverMove(e: PointerEvent): void;
+  /** A release on the canvas, heard for a pointer whose press an item's own session took mid-press. */
+  onHoverUp(e: PointerEvent): void;
   onNativeDoubleClick(e: MouseEvent): void;
   /** Whether a touch or pen hold is in progress, firing its long-press if still pending. */
   takeNativeHold(): boolean;
@@ -257,6 +259,8 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   let claimedDoubleClick = false;
   const hold = holdClock(core);
   const menus = nativeMenus();
+  /** Pointers whose press an item's session took on a move: their release reaches no session here. */
+  const yieldedHeld = new Set<number>();
 
   const recognizer = createRecognizer(core, opts, hold.clock);
 
@@ -264,6 +268,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
     const session = sessions.get(e.pointerId);
     if (claims.yielded(e, session)) {
       session!.cancel();
+      yieldedHeld.add(e.pointerId);
       return;
     }
     claims.moved(e, session);
@@ -276,7 +281,11 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
 
   const onUp = (e: PointerEvent, session: PointerSession | undefined): void => {
     // Released before it moved, and the item's own session took the press: it clicks, not this surface.
-    if (claims.yielded(e, session)) { onCancel(e.pointerId); return; }
+    if (claims.yielded(e, session)) {
+      onCancel(e.pointerId);
+      opts.hover.released(e);
+      return;
+    }
     routeAt(e.pointerId, e.clientX, e.clientY);
     drop(e.pointerId);
     menus.ended(e.pointerId, e);
@@ -304,6 +313,7 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
   return {
     onPointerDown(e) {
       claimedDoubleClick = false;
+      yieldedHeld.delete(e.pointerId);
       if (!canvas) return;
       const taken = takesPress(e, canvas, opts);
       if (!taken) return;
@@ -341,6 +351,9 @@ export function pointerInput(core: PointerDispatchCore, opts: PointerInputOption
       // A hover over a surface nested in this one is that surface's, and leaves this one.
       if (landedNestedIn(canvas, e)) opts.hover.onLeave();
       else onMove(e);
+    },
+    onHoverUp(e) {
+      if (yieldedHeld.delete(e.pointerId)) opts.hover.released(e);
     },
     onNativeDoubleClick(e) {
       if (!claimedDoubleClick) return;
