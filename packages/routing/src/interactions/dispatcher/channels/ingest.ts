@@ -14,6 +14,7 @@ export const DROPOVER_CLASS = 'weasel-dropover';
 
 export function ingestInput(core: DispatchCore): {
   onDragOver: (e: DragEvent) => void;
+  onDragEnter: (e: DragEvent) => void;
   onDragLeave: (e: DragEvent) => void;
   onDrop: (e: DragEvent) => void;
   /** Take down a drag's preview, for teardown. */
@@ -35,7 +36,7 @@ export function ingestInput(core: DispatchCore): {
     return { event, winner: core.dispatcherNow().resolveOnly(event, ctx), ctx };
   };
 
-  // Attached to both dragover and dragenter: cancelling dragenter (WHATWG)
+  // Run for dragenter too: cancelling dragenter (WHATWG)
   // guarantees the element stays the active drop target and shows the copy
   // cursor on entry rather than waiting for the first dragover tick.
   const onDragOver = (e: DragEvent) => {
@@ -53,11 +54,25 @@ export function ingestInput(core: DispatchCore): {
     dt.dropEffect = 'copy';
   };
 
-  const onDragLeave = (e: DragEvent) => {
-    // A drag moving onto one of the element's own children has not left it.
-    if (isNode(e.relatedTarget) && canvas?.contains(e.relatedTarget)) return;
+  // Enters less leaves, across the element and its children: some engines give
+  // `dragleave` a null `relatedTarget` as a drag crosses onto a child.
+  let depth = 0;
+  const leaveAll = () => {
+    depth = 0;
     canvas?.classList.remove(DROPOVER_CLASS);
     preview.end();
+  };
+
+  const onDragEnter = (e: DragEvent) => {
+    depth++;
+    onDragOver(e);
+  };
+
+  const onDragLeave = (e: DragEvent) => {
+    depth = Math.max(0, depth - 1);
+    // A drag moving onto one of the element's own children has not left it.
+    if (depth > 0 || (isNode(e.relatedTarget) && canvas?.contains(e.relatedTarget))) return;
+    leaveAll();
   };
 
   // No stopPropagation: handled-ness is only known after the async
@@ -65,8 +80,7 @@ export function ingestInput(core: DispatchCore): {
   // impossible; an unconditional one would swallow drops the kit doesn't
   // dispatch. A surface around this one leaves a drop taken here instead.
   const onDrop = (e: DragEvent) => {
-    canvas?.classList.remove(DROPOVER_CLASS);
-    preview.end();
+    leaveAll();
     const dt = e.dataTransfer;
     if (!dt || eventTaken(e)) return;
     // Which surface owns the drop is settled now, on the item types, as for
@@ -101,5 +115,5 @@ export function ingestInput(core: DispatchCore): {
     });
   };
 
-  return { onDragOver, onDragLeave, onDrop, endPreview: preview.end };
+  return { onDragOver, onDragEnter, onDragLeave, onDrop, endPreview: preview.end };
 }

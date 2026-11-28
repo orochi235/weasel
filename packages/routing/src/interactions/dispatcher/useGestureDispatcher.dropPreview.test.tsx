@@ -111,6 +111,22 @@ describe('useGestureDispatcher — drop preview', () => {
     expect(hide).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the preview up across a child when the leave names no related target', () => {
+    const { action, preview, hide } = previewing();
+    const { canvas } = mount(action);
+    const child = canvas.appendChild(document.createElement('span'));
+    drag(canvas, 'dragenter');
+    drag(child, 'dragenter');
+    drag(canvas, 'dragleave', { relatedTarget: null });
+    drag(child, 'dragover');
+    expect(hide).not.toHaveBeenCalled();
+    expect(preview).toHaveBeenCalledTimes(1);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(true);
+    drag(child, 'dragleave', { relatedTarget: null });
+    expect(hide).toHaveBeenCalledTimes(1);
+    expect(canvas.classList.contains('weasel-dropover')).toBe(false);
+  });
+
   it('previews with the view and modifier roles the drop itself runs with', async () => {
     const roles = { 'drop.copy': { label: 'Copy', keys: ['alt'] } } as const;
     const run = vi.fn();

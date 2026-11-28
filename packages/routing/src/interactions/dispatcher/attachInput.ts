@@ -137,7 +137,7 @@ export function attachInput(
     listeners.on(canvas, 'contextmenu', contextMenuInput(core, pointer.takeNativeHold, pointer.takeNativeMenu));
   }
   if (channels.ingest) {
-    listeners.on(canvas, 'dragenter', ingest.onDragOver);
+    listeners.on(canvas, 'dragenter', ingest.onDragEnter);
     listeners.on(canvas, 'dragover', ingest.onDragOver);
     listeners.on(canvas, 'dragleave', ingest.onDragLeave);
     listeners.on(canvas, 'drop', ingest.onDrop);
