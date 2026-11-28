@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import type { Logger } from 'vite';
 import type * as t from '@babel/types';
 import { type Bindings, bindingsOf, calleeOf, exportedName, objectOf, parseFile, prop, stringOf } from './ast.ts';
-import { warnOnce } from './warnOnce.ts';
+import { warnNew } from './warnNew.ts';
 
 /** A shell config module's default export as the object literal its source writes, with the file's top-level `const`s. */
 function configOf(code: string, file: string): { config: t.ObjectExpression | null; bindings: Bindings; wrappers: Set<string> } | null {
@@ -80,8 +80,8 @@ export interface ShellFields {
   allowOrigins: readonly string[];
 }
 
-/** Reads `file`'s shell fields; none when there is no file or it cannot be read. Warns once through `logger` of
- *  each `allowOrigins` entry left out. */
+/** Reads `file`'s shell fields; none when there is no file or it cannot be read. Warns through `logger` of each
+ *  `allowOrigins` entry left out that was not left out the last time. */
 export function readShellFields(file: string | undefined, logger?: Logger): ShellFields {
   let code: string;
   try {
@@ -90,12 +90,11 @@ export function readShellFields(file: string | undefined, logger?: Logger): Shel
   } catch {
     return { title: undefined, allowOrigins: [] };
   }
-  return { title: shellTitle(code, file), allowOrigins: shellAllowOrigins(code, file, (entry) => warnDroppedOrigin(logger, entry)) };
+  const dropped: string[] = [];
+  const allowOrigins = shellAllowOrigins(code, file, (entry) => dropped.push(droppedOriginText(entry)));
+  warnNew(logger, 'allowOrigins', dropped);
+  return { title: shellTitle(code, file), allowOrigins };
 }
 
-function warnDroppedOrigin(logger: Logger | undefined, entry: string): void {
-  warnOnce(
-    logger,
-    `[forge] capture.allowOrigins entry ${entry} is not a URL written out as a string, so captures will not load from it. Write it with its scheme, as 'https://fonts.gstatic.com'.`,
-  );
-}
+const droppedOriginText = (entry: string) =>
+  `[forge] capture.allowOrigins entry ${entry} is not a URL written out as a string, so captures will not load from it. Write it with its scheme, as 'https://fonts.gstatic.com'.`;

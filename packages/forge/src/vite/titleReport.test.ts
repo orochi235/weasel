@@ -56,6 +56,18 @@ describe('warnShared', () => {
     );
   });
 
+  it('warns again of a shared id that was fixed and then brought back', () => {
+    const warn = vi.fn();
+    const logger = { warn } as unknown as Logger;
+    const a = entry('ui/Chip', '/r/a.stories.tsx', 'Primary');
+    const b = entry('ui/Chip', '/r/b.stories.tsx', 'Primary');
+    warnShared([a, b], '/r', logger);
+    warnShared([a, b], '/r', logger);
+    warnShared([a], '/r', logger);
+    warnShared([a, b], '/r', logger);
+    expect(warn).toHaveBeenCalledTimes(2);
+  });
+
   it('lists each file once in the report when one of them declares the id twice', () => {
     const entries = [entry('ui/Bar', '/r/a.stories.tsx', 'Lab'), entry('ui/Bar', '/r/a.stories.tsx', 'lab'), entry('ui/Bar', '/r/b.stories.tsx', 'Lab')];
     expect(titleReport(entries, '/r').lines[0]).toBe('ui-bar--lab  declared by a.stories.tsx, b.stories.tsx');
