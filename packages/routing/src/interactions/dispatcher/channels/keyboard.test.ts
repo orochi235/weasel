@@ -47,4 +47,13 @@ describe('keyboardInput', () => {
     expect(calls).toEqual([]);
     expect(e.defaultPrevented).toBe(false);
   });
+
+  it('asks its `over` bindings once when a peer hands on a keystroke its own listener already offered them', () => {
+    const { input, calls } = channel({ held: false, over: true });
+    const e = keydown({ key: 'a', code: 'KeyA' });
+    input.onKeyDown(e);
+    input.take(e);
+    expect(calls.filter((c) => c.reach?.over)).toHaveLength(2);
+    expect(calls.filter((c) => c.reach?.held)).toHaveLength(2);
+  });
 });

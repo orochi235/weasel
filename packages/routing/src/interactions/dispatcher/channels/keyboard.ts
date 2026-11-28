@@ -80,6 +80,8 @@ export function keyboardInput(core: DispatchCore): {
   const keymaps = keymapKeys(core.keymaps);
   // Keystrokes already offered here by a peer on the surface, which this channel's own listener leaves.
   const taken = new WeakSet<Event>();
+  // Keystrokes this channel's own listener already offered its `over` bindings, which a peer's offer leaves.
+  const askedOver = new WeakSet<Event>();
 
   const onKeyDown = (e: KeyboardEvent) => {
     // A key that something focused or modal owns is not this page's to press again when the pointer arrives.
@@ -92,13 +94,14 @@ export function keyboardInput(core: DispatchCore): {
     // does the one under the pointer, for its `over` bindings alone.
     const reach: KeyReach = { held: core.holdsKeys(), over: core.pointerOver() };
     if (!reach.held && !reach.over) return;
+    if (reach.over) askedOver.add(e);
     consider(e, reach);
     if (reach.held && core.canvas) passOn(core.canvas, take, e);
   };
 
   const take: TakeKey = (e) => {
     taken.add(e);
-    consider(e, { held: true, over: core.pointerOver() });
+    consider(e, { held: true, over: core.pointerOver() && !askedOver.has(e) });
   };
 
   const consider = (e: KeyboardEvent, reach: KeyReach): void => {
