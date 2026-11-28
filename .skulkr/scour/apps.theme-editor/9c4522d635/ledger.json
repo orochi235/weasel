@@ -62,6 +62,17 @@
    "at": "2026-11-28T00:16:30.057Z",
    "matcher": "claude-opus-5-5",
    "findings": 3
+  },
+  {
+   "n": 6,
+   "source": "claude",
+   "kind": "review",
+   "file": "reviews/06-claude.md",
+   "costUsd": 0.3595508,
+   "minutes": 0.75805,
+   "at": "2026-11-28T00:22:32.905Z",
+   "matcher": "claude-opus-5-5",
+   "findings": 3
   }
  ],
  "defects": [
@@ -98,7 +109,8 @@
     1,
     3,
     4,
-    5
+    5,
+    6
    ],
    "sources": {
     "codex": [
@@ -107,7 +119,8 @@
     "claude": [
      3,
      4,
-     5
+     5,
+     6
     ]
    },
    "scenario": "`writeFileSync(PALETTE_FILES.lego, …)` succeeds, then the Copic write fails (permission, disk full) → legoColors.ts is new and copicColors.ts old; the comment \"a failure leaves both files as they were\" covers only render failures",
@@ -131,13 +144,15 @@
    "sightings": [
     2,
     3,
-    5
+    5,
+    6
    ],
    "sources": {
     "claude": [
      2,
      3,
-     5
+     5,
+     6
     ]
    },
    "fix": [
@@ -155,11 +170,13 @@
    "confidence": "sure",
    "firstOccasion": 2,
    "sightings": [
-    2
+    2,
+    6
    ],
    "sources": {
     "claude": [
-     2
+     2,
+     6
     ]
    }
   },
