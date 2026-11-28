@@ -2,10 +2,14 @@
 export type ParentOf<K> = (id: K) => K | null | undefined;
 
 /** The selected id that holds `id`: `id` itself when it is selected, else its nearest selected
- *  ancestor, else `null`. A node is selected whenever something holds it. */
+ *  ancestor, else `null`. A node is selected whenever something holds it. Throws a `RangeError`
+ *  when `parentOf` leads back to an id the walk already passed. */
 export function holderOf<K>(selected: ReadonlySet<K>, id: K, parentOf: ParentOf<K>): K | null {
+  const seen = new Set<K>();
   for (let at: K | null | undefined = id; at != null; at = parentOf(at)) {
     if (selected.has(at)) return at;
+    if (seen.has(at)) throw new RangeError(`holderOf: parentOf has a cycle through ${String(at)}`);
+    seen.add(at);
   }
   return null;
 }

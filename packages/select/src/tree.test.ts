@@ -31,3 +31,17 @@ describe('holderOf', () => {
     expect(holderOf(new Set(['c']), 'a1', parentOf)).toBeNull();
   });
 });
+
+describe('a parentOf with a cycle', () => {
+  const cyclic: Record<string, string> = { a: 'b', b: 'a', x: 'a' };
+  const cyclicParentOf = (id: string) => cyclic[id];
+
+  it('throws from holderOf rather than walking forever', () => {
+    expect(() => holderOf(new Set(['z']), 'x', cyclicParentOf)).toThrow(RangeError);
+    expect(holderOf(new Set(['b']), 'x', cyclicParentOf)).toBe('b');
+  });
+
+  it('throws from outermost rather than walking forever', () => {
+    expect(() => outermost(['x', 'z'], cyclicParentOf)).toThrow(/cycle/);
+  });
+});
