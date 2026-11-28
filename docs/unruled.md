@@ -20,6 +20,13 @@ Either/ors an agent settled on 2026-10-11, one commit each: `9dfd8a5aa`, `d3635e
 - Ruled 2026-11-10: `keySpecRoute` writes a spec's phase in the route's phase slot, and gives `null` for a
   spec with a physical key `code` or more than one key, which the route grammar has no form for.
 
+- 2026-11-27 (my call, scour fix 17): a dialog without `aria-modal` counts as modal only when the hiding is the
+  dialog's: the canvas sits in an `inert` or `aria-hidden` element beside one holding the dialog, or, with no canvas,
+  everything outside the dialog is hidden (scripts, styles, and `aria-live` regions aside). Any hidden ancestor of the
+  canvas counting, as before, blocked keys from non-modal popovers.
+- 2026-11-27 (my call, scour fix 17): every window listener of a dispatcher (keydown with `keyboard: true` or `'first'`,
+  keyup, blur, paste, and the hover cursor's modifier keys) is on the canvas's own window, so a canvas in an iframe or
+  a popout no longer hears the window of the script that mounted it.
 - 2026-11-27 (my call, scour of routing interactions): `swallowNextClick` holds its guard until a click, the next
   press or key in the target's window, or 500 ms, rather than to the end of the release's task, so a touch tap's later
   click is still swallowed. A script's `click()` within 500 ms of a drag, with no press or key between, is swallowed too.
