@@ -47,8 +47,8 @@ function releaseOf(down: HeldKey, mods: Mods): InputEvent {
 /** The Alt and Ctrl a keystroke reports, as pressed. */
 const typedMods = (e: KeyboardEvent) => ({ altKey: e.altKey, ctrlKey: e.ctrlKey });
 
-/** A keystroke in a text field that a binding may still take: a chord with Ctrl or Cmd. Any other key is typing. */
-const fieldChord = (e: KeyboardEvent): boolean => e.ctrlKey || e.metaKey;
+/** A keystroke in a text field that a binding may still take: a chord with Ctrl or Cmd. Any other key, AltGr's included, is typing. */
+const fieldChord = (e: KeyboardEvent): boolean => e.metaKey || (e.ctrlKey && !typedWithAltGraph(e));
 
 /** True inside an open ARIA menu, which owns every key typed in it. */
 const inMenu = (t: EventTarget | null): boolean => isElement(t) && t.closest('[role="menu"]') !== null;
