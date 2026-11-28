@@ -1,7 +1,7 @@
 import { drawOneLayer, subscribeToSources, type RenderLayer } from '@weasel-js/core';
 import type { View } from '@weasel-js/core';
 import { deriveParallaxView, type ParallaxOptions } from '@weasel-js/core';
-import { isParallaxSource, type ParallaxSource } from './createParallaxPlane';
+import { frozenOpts, isParallaxSource, type ParallaxSource } from './createParallaxPlane';
 
 /** Options for `createParallaxLayer`. */
 export interface CreateParallaxLayerOptions<TData> {
@@ -11,7 +11,8 @@ export interface CreateParallaxLayerOptions<TData> {
   source: RenderLayer<TData>[];
   /** How the plane tracks the camera. Pass a `ParallaxSource` (such as
    *  `createParallaxPlane`) to change it after the layer is built — an
-   *  animator tweening `pan` or `zoom` writes the plane, not the layer. */
+   *  animator tweening `pan` or `zoom` writes the plane, not the layer. Plain
+   *  opts are copied when the layer is built. */
   parallax: ParallaxOptions | ParallaxSource;
   /** Where the camera view comes from. Defaults to the view the Canvas hands
    *  the layer — the `view` prop. A consumer running a 60 Hz camera through
@@ -42,7 +43,9 @@ export function createParallaxLayer<TData>(
   opts: CreateParallaxLayerOptions<TData>,
 ): RenderLayer<TData> {
   const { id, label, source, parallax, getOuterView } = opts;
-  const read = isParallaxSource(parallax) ? () => parallax.get() : () => parallax;
+  // Fixed opts are copied here, so editing the object passed in never moves the plane at some unrelated repaint.
+  const fixed = isParallaxSource(parallax) ? undefined : frozenOpts(parallax);
+  const read = isParallaxSource(parallax) ? () => parallax.get() : () => fixed!;
   const fromSources = subscribeToSources(source);
   return {
     id,

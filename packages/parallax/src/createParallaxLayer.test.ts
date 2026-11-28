@@ -30,6 +30,16 @@ describe('createParallaxLayer', () => {
     expect(l.draw(undefined, outer, dims)).toEqual([]);
   });
 
+  it('copies plain opts when built, so a later edit to them moves nothing', () => {
+    const { layer, draw } = makeSpyLayer();
+    const opts = { pan: 0.5 };
+    const l = createParallaxLayer({ id: 'p', label: 'P', source: [layer], parallax: opts });
+    l.draw(undefined, outer, dims);
+    opts.pan = 0.2;
+    l.draw(undefined, outer, dims);
+    expect(draw.mock.calls[1]![1]).toEqual(draw.mock.calls[0]![1]);
+  });
+
   it('passes the derived view to source layers', () => {
     const { layer, draw } = makeSpyLayer();
     const l = createParallaxLayer({
