@@ -56,4 +56,14 @@ describe('keyboardInput', () => {
     expect(calls.filter((c) => c.reach?.over)).toHaveLength(2);
     expect(calls.filter((c) => c.reach?.held)).toHaveLength(2);
   });
+
+  it('presses a held key again on autorepeat once something other than its keyup ended its gesture', () => {
+    const { input, calls, inFlight } = channel({ takes: holdsSpace });
+    input.onKeyDown(keydown(SPACE));
+    inFlight.clear();
+    const before = calls.length;
+    input.onKeyDown(keydown({ ...SPACE, repeat: true }));
+    expect(calls.length).toBeGreaterThan(before);
+    expect(inFlight.has(keyHeldGestureId(' ', 'Space'))).toBe(true);
+  });
 });

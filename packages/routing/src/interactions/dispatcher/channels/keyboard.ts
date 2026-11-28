@@ -9,7 +9,7 @@ import type { InputEvent } from '../matcher';
 import { keymapKeys } from './keymapKeys';
 import { passOn, type TakeKey } from './keyPeers';
 import { inModalOver } from './modal';
-import { followPointer, releaseIn, type HeldKey } from './overKeys';
+import { followPointer, releaseIn, stillHeld, type HeldKey } from './overKeys';
 
 /**
  * True when AltGr typed the character `e` reports. A layout that types `[` with
@@ -111,7 +111,11 @@ export function keyboardInput(core: DispatchCore): {
     // streamed an 'unhandled' immediate-`key` trace entry per repeat.
     // Autorepeat for a key that ISN'T held still dispatches normally,
     // so things like Cmd+= step-zoom keep auto-repeating.
-    if (e.repeat && (heldKeys.has(physicalKey(e)) || keymaps.quiet(physicalKey(e)))) {
+    const physical = physicalKey(e);
+    const holding = heldKeys.get(physical);
+    // A cancel-all or tool switch may have ended its gesture: the repeat presses it again.
+    if (holding !== undefined && !stillHeld(holding)) heldKeys.delete(physical);
+    if (e.repeat && (heldKeys.has(physical) || keymaps.quiet(physical))) {
       e.preventDefault();
       return;
     }
