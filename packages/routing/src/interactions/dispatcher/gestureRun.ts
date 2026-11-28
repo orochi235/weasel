@@ -57,6 +57,16 @@ function runOnEnd(gestureId: string, handle: OngoingHandle, endCtx: InvocationCt
   }
 }
 
+/** Run a handle's `onMove` or `onWheel`, logging a throw as the other handle callbacks' are. */
+function feed<R>(gestureId: string, key: 'onMove' | 'onWheel', call: () => R): R | undefined {
+  try {
+    return call();
+  } catch (err) {
+    console.error(`weasel dispatcher: gesture "${gestureId}" threw on ${key}`, err);
+    return undefined;
+  }
+}
+
 /** End one in-flight gesture. It is out of flight before its `onEnd` runs,
  *  so an `onEnd` that throws, or that reads the dispatcher, sees it gone. */
 function endGesture(run: GestureRun, gestureId: string, event: InputEvent, reason: Reason): boolean {
@@ -143,7 +153,7 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
     if (!handle) return 'unhandled';
     run.facts.sample(gestureId, event);
     if (!handle.onMove) return 'unhandled';
-    const said = handle.onMove(ctxFor(run, event, {}, gestureId));
+    const said = feed(gestureId, 'onMove', () => handle.onMove!(ctxFor(run, event, {}, gestureId)));
     return said === 'pass' && run.opened.has(gestureId) ? 'pass' : 'handled';
   }
 
@@ -151,7 +161,9 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
   // The newest first, as with the cursor.
   if (event.kind === 'wheel') {
     for (const [gestureId, handle] of [...inFlight.handles].reverse()) {
-      if (handle.onWheel?.(ctxFor(run, event, {}, gestureId)) === true) return 'handled';
+      if (feed(gestureId, 'onWheel', () => handle.onWheel?.(ctxFor(run, event, {}, gestureId))) === true) {
+        return 'handled';
+      }
     }
     return undefined;
   }
@@ -172,7 +184,7 @@ export function pumpGesture(run: GestureRun, event: InputEvent, reach?: KeyReach
     const handle = inFlight.handles.get(gestureId);
     if (handle) {
       run.facts.turn(gestureId, event);
-      handle.onMove?.(ctxFor(run, event, {}, gestureId));
+      feed(gestureId, 'onMove', () => handle.onMove?.(ctxFor(run, event, {}, gestureId)));
       return 'handled';
     }
     // A hand is doing one multitouch gesture at a time, but the gesture id
@@ -193,7 +205,7 @@ function pumpCarry(run: GestureRun, event: InputEvent & { kind: 'carry' }): Outc
   const handle = run.inFlight.handles.get(gestureId);
   if (!handle) return event.stage === 'leave' ? 'unhandled' : undefined;
   if (event.stage === 'move') {
-    handle.onMove?.(ctxFor(run, event, {}, gestureId));
+    feed(gestureId, 'onMove', () => handle.onMove?.(ctxFor(run, event, {}, gestureId)));
     return 'handled';
   }
   return endGesture(run, gestureId, event, event.stage === 'drop' ? 'commit' : 'cancel') ? 'handled' : 'unhandled';
