@@ -39,6 +39,8 @@ export interface Opened {
   event: InputEvent;
   action: string;
   passed: ReadonlySet<string>;
+  /** The open keymap's pass the press was routed under, which a hand-off ranks the press under again. */
+  keymapPass: DispatcherContext['keymapPass'];
 }
 
 type Reason = 'commit' | 'cancel';
@@ -79,9 +81,11 @@ function endGesture(run: GestureRun, gestureId: string, event: InputEvent, reaso
   return true;
 }
 
-/** A drag ended by a pass: the press that opened it, every action not to offer it to, and the trail it had drawn. */
+/** A drag ended by a pass: the press that opened it and its keymap pass, every action not to offer it to, and the
+ *  trail it had drawn. */
 export interface Passed {
   event: InputEvent;
+  keymapPass: DispatcherContext['keymapPass'];
   skip: Set<string>;
   trail: readonly DragSample[];
 }
@@ -94,7 +98,7 @@ export function endPassed(run: GestureRun, event: InputEvent): Passed | null {
   // A copy: the passing handle's `onEnd` may keep the live trail it is handed.
   const trail = [...(run.facts.of(gestureId).points ?? [])];
   endGesture(run, gestureId, event, 'cancel');
-  return { event: opened.event, skip: new Set([...opened.passed, opened.action]), trail };
+  return { event: opened.event, keymapPass: opened.keymapPass, skip: new Set([...opened.passed, opened.action]), trail };
 }
 
 /** If the drag `event` belongs to was taken, mark it never to go back to `passed.skip` and give it the trail drawn
@@ -233,13 +237,14 @@ function reportMisbound(actionId: string, hover: boolean): void {
   );
 }
 
-/** Run the candidate the walk chose. */
+/** Run the candidate the walk chose, for `event` routed under `keymapPass`. */
 export function invokeAction(
   run: GestureRun,
   event: InputEvent,
   match: MatchResult,
   action: Action,
   deps: ActionDeps,
+  keymapPass?: DispatcherContext['keymapPass'],
 ): AttemptResult {
   if (action.invoker && !carryStageFits(event, action.invoker.timing)) return 'empty-handle';
 
@@ -315,7 +320,7 @@ export function invokeAction(
       params: () => resolveParams(bindingOptionsOf(match.binding)?.params),
       ...(started ? { started } : {}),
     });
-    if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set() });
+    if (event.kind === 'pointerdown') run.opened.set(gestureId, { event, action: action.id, passed: new Set(), keymapPass });
     return 'fired';
   }
 

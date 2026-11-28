@@ -90,8 +90,8 @@ export function createDispatcher(opts?: {
     inFlight, facts, viewId: () => routedView, apple: () => routedApple, toLocal: () => routedToLocal, opened: new Map(),
     endings: 0,
   };
-  const invoking = (event: InputEvent): Attempt =>
-    (match, action, deps) => invokeAction(run, event, match, action, deps);
+  const invoking = (event: InputEvent, keymapPass?: DispatcherContext['keymapPass']): Attempt =>
+    (match, action, deps) => invokeAction(run, event, match, action, deps, keymapPass);
 
   function handleInput(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
     routedView = ctx.viewId;
@@ -114,7 +114,7 @@ export function createDispatcher(opts?: {
   function route(event: InputEvent, ctx: DispatcherContext): 'handled' | 'unhandled' {
     const trace = ctx.trace?.recording() ? ctx.trace : null;
     const r = rank(event, ctx, inFlight.engagedOwners(), trace !== null);
-    const walked = walk(r, event, ctx, invoking(event), false);
+    const walked = walk(r, event, ctx, invoking(event, ctx.keymapPass), false);
     const outcome: 'handled' | 'unhandled' = walked.stop === 'fired' ? 'handled' : 'unhandled';
     trace?.push(buildDispatchRecord(r, walked, event, ctx, false, outcome));
     if (outcome === 'unhandled' && ctx.refused && event.kind === 'key' && !event.repeat) {
