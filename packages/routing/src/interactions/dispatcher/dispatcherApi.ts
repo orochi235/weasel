@@ -132,10 +132,11 @@ export interface ResolveOnlyResult {
  *  - `ineligible`  — the action's `eligible` rule evaluated false against the
  *    live `RuleCtx`. `reason` is the rule, serialized.
  *  - `disabled`    — `enabled()` returned a disabled reason, carried verbatim.
- *  - `shadowed`    — never asked, for one of two reasons: something above it
- *    already fired, or it is a repeat binding of the action that itself won
- *    higher in the list (several bindings may point at one action, and the
- *    dispatcher runs each action at most once). A repeat of an action that was
+ *  - `shadowed`    — outranked, for one of two reasons: something above it
+ *    already fired, which by default is reported over its own `eligible`
+ *    rule and leaves `enabled()` unasked, or it is a repeat binding of the
+ *    action that itself won higher in the list (several bindings may point
+ *    at one action, and the dispatcher runs each action at most once). A repeat of an action that was
  *    already judged `ineligible` or `disabled` is NOT shadowed — it inherits
  *    that action's verdict, since that is the reason it doesn't fire.
  */
@@ -207,8 +208,9 @@ export interface Dispatcher {
   /**
    * Every binding that matches `event`, in dispatch precedence order, each
    * with a verdict explaining whether it would fire. Nothing is dropped:
-   * candidates that `resolveOnly`'s walk would filter out are kept here and
-   * labeled `ineligible` instead. Pure query, and it shares `resolveOnly`'s
+   * candidates that `resolveOnly`'s walk would filter out are kept here,
+   * labeled `ineligible` above the winner and `shadowed` below it unless
+   * `evaluateShadowed` is on. Pure query, and it shares `resolveOnly`'s
    * known divergence from a real dispatch. An input an open keymap withholds
    * (a key it swallows, a press kept for the click it binds) lists none.
    *
