@@ -108,7 +108,7 @@ export type SurfaceChannel = 'pointer' | 'wheel' | 'contextMenu';
 const CHANNEL_SURFACES: Record<SurfaceChannel, WeakMap<Element, number>> = {
   pointer: new WeakMap(), wheel: new WeakMap(), contextMenu: new WeakMap(),
 };
-const CHANNEL_OF: Readonly<Record<string, SurfaceChannel>> = { pointerdown: 'pointer', wheel: 'wheel', contextmenu: 'contextMenu' };
+const CHANNEL_OF: ReadonlyMap<string, SurfaceChannel> = new Map([['pointerdown', 'pointer'], ['wheel', 'wheel'], ['contextmenu', 'contextMenu']]);
 // Events a dispatcher has activated a scope for, and those it took the keys for, so a second one on the same surface leaves them.
 const CLAIMED = new WeakSet<Event>();
 const KEYED = new WeakSet<Event>();
@@ -165,7 +165,7 @@ function innermostSurface(target: EventTarget | null, surfaces: WeakMap<Element,
 /** The surface whose scope `event` activates: the innermost one running its channel, which is the one that
  *  handles it, or with none, the innermost it landed in. */
 function activatingSurface(event: Event): Element | null {
-  const channel = CHANNEL_OF[event.type];
+  const channel = CHANNEL_OF.get(event.type);
   return (channel ? innermostSurface(event.target, CHANNEL_SURFACES[channel]) : null)
     ?? innermostSurface(event.target, SURFACES);
 }
