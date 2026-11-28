@@ -73,9 +73,9 @@
    "verdicts": [
     {
      "id": "D11",
-     "verdict": "fixed",
-     "line": "[D11] paused timeline at the end of its last lap finishes while paused, and the event at its end never fires (scour): fixed a3c61e4c92",
-     "sha": "a3c61e4c92"
+     "verdict": "not fixed",
+     "line": "[D11] paused timeline at the end of its last lap finishes while paused, and the event at its end never fires (scour): not fixed (a repair reverted its fix a3c61e4c92 to pass verify)",
+     "sha": null
     },
     {
      "id": "D7",
@@ -252,5 +252,6 @@
    "costUsd": 2.8821179999999984,
    "minutes": 30.724716666666666
   }
- ]
+ ],
+ "finished": "2026-11-28T00:24:48.774Z"
 }
