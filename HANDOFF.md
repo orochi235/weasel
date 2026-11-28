@@ -4,10 +4,20 @@ For the session picking this up: what is in flight and what has no other home. O
 `docs/TODO.md`. Calls made without a ruling are `docs/unruled.md`. Decisions and traps from finished arcs are
 `docs/retained.md`.
 
-## Held scour branches
+## In flight (2026-11-27 evening)
 
-The scour fixer branches for nodeShapes (`scour11-*`) and `forge.vite.part2` (`scour9-*`) are held out of batches
-until those areas finish. Runs 12 (`core.canvas.part4`) and 13 (`SceneCanvas.part2`) have unmerged branches too.
+- **Scour fix runs 9, 11, 12 and 15 are on main** (batch `batch/2026-11-28-scour15`, gated green at 61beae2354,
+  pushed as 88658f8cbe). Their branches are deleted.
+- **Fix run 14 (`animator.engine`) is skulkr's to land**, through `skulkr scour fix animator.engine --land` under
+  `~/.local/state/weasel-skulkr/merge.lock`. Don't fast-forward main while that lock is held. The skulkr session
+  coordinating it is `skulkr-e0`. Its branches are `scour14-*` and `batch/2026-11-28-scour14`; leave them alone.
+- **Local main is ahead of origin with the quantity tones work, unpushed** (`git log --oneline origin/main..main`).
+  On Mike's say-so, the quantity-tones session fast-forwarded main to it directly, outside a batch, while skulkr's
+  lock was held. A fleet run selected from the diff passed at 94ba62c976. The story commits after it got only
+  targeted runs, and none got a full batch gate. skulkr's landing merges a moved main into its batch and gates
+  again (`gateRun.mjs` catchUpWithMain), so fix run 14's second gate covers the tones work. Pushing main is Mike's
+  call.
+- Run 13 (`SceneCanvas.part2`) left no branches in this checkout.
 
 ## Decisions taken in conversation and not visible in the code
 
@@ -17,6 +27,10 @@ until those areas finish. Runs 12 (`core.canvas.part4`) and 13 (`SceneCanvas.par
   `sources`, which are 2D-typed on purpose, and a 3D host warns once if handed any.
 - Slider's slim face was dropped on Mike's word (2026-10-24), when `density` became `trackHeight`, `thumbSize`
   and a `dot` thumb shape.
+- Quantity tones (2026-11-27): a ramp is a display option every kind honors, like `infinity`. It ships stepped
+  and `blend` modes (blend uses paint's OKLab code, so quantity depends on paint). `html` carries `data-tone`
+  and no inline color. `spoken` appends the tone's name. Mike asked for the band-list model moved from ui's
+  BandEditor into quantity in the same change.
 
 ## Traps
 
