@@ -39,7 +39,7 @@ export interface InputChannels {
   keyboard: boolean | 'first' | 'page';
   pointer: boolean;
   /** Hovers alone. Read only with `pointer` off, which carries them itself. */
-  hover: boolean;
+  hover: boolean | 'through';
   wheel: boolean;
   pinch: boolean;
   contextMenu: boolean;
@@ -116,12 +116,13 @@ export function attachInput(
   // keys reach.
   listeners.on(canvas, 'pointerdown', (e: PointerEvent) => { core.activate(e); });
   // Whether or not the pointer channel is on: it is what an `over` key binding asks.
-  trackPointerOver(listeners, canvas, core, keys);
+  const through = !channels.pointer && channels.hover === 'through';
+  trackPointerOver(listeners, canvas, core, keys, through);
   if (channels.pointer) {
     listenPointer(listeners, canvas, win, pointer, hover);
     src.heldPointer()?.({ at: pointer.heldAt, repeat: pointer.repeatHeld });
   } else if (channels.hover) {
-    listenHover(listeners, canvas, win, core, hover);
+    listenHover(listeners, canvas, win, core, hover, through);
   }
   if (channels.wheel) listenWheel(listeners, canvas, wheelInput(core, pinch.live));
   if (channels.pinch) {
@@ -191,12 +192,19 @@ function listenPointer(listeners: ListenerSet, canvas: HTMLElement | null, win: 
 }
 
 /** Hover alone, with the pointer channel off: the moves still route and paint the cursor. */
-function listenHover(listeners: ListenerSet, canvas: HTMLElement | null, win: Window, core: DispatchCore, hover: HoverCursorInput): void {
+function listenHover(
+  listeners: ListenerSet,
+  canvas: HTMLElement | null,
+  win: Window,
+  core: DispatchCore,
+  hover: HoverCursorInput,
+  through: boolean,
+): void {
   listeners.on(win, 'keydown', hover.onKey);
   listeners.on(win, 'keyup', hover.onKey);
   listeners.on(canvas, 'pointerleave', hover.onLeave);
   listeners.on(canvas, 'pointermove', (e: PointerEvent) => {
-    if (landedNestedIn(canvas, e)) {
+    if (!through && landedNestedIn(canvas, e)) {
       hover.onLeave();
       return;
     }
@@ -219,6 +227,7 @@ function trackPointerOver(
   canvas: HTMLElement | null,
   core: Pick<DispatchCore, 'pointerOver' | 'setPointerOver'>,
   keys: { arrive: (e: PointerEvent) => void; leave: () => void },
+  through: boolean,
 ): void {
   /** Each pointer over the canvas: one leaving while another stays leaves the canvas pointed at. */
   const over = new Set<number>();
@@ -230,7 +239,7 @@ function trackPointerOver(
   };
   const onOver = (e: PointerEvent): void => {
     // A pointer over a surface nested in this one is that surface's.
-    if (landedNestedIn(canvas, e)) {
+    if (!through && landedNestedIn(canvas, e)) {
       if (over.has(e.pointerId)) onOut(e);
       return;
     }

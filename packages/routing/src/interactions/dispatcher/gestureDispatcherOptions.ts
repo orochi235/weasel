@@ -79,8 +79,11 @@ export interface DispatcherChannels {
   /** `hover` gestures and the hover-cursor pump without the rest of
    *  `pointer`: no press opens a gesture or captures the pointer, so the
    *  element's own clicks and drags are left alone. Omitted, it follows
-   *  `pointer`, which carries hovers whenever it is on. */
-  hover?: boolean;
+   *  `pointer`, which carries hovers whenever it is on. `'through'`, with
+   *  `pointer` off: also hears a hover over a dispatcher surface nested in
+   *  this one, which otherwise counts as having left it — for a watcher
+   *  that tracks the pointer over everything inside it. */
+  hover?: boolean | 'through';
   /** `wheel`. */
   wheel?: boolean;
   /** WebKit's `gesturestart` / `gesturechange` / `gestureend` — Safari's

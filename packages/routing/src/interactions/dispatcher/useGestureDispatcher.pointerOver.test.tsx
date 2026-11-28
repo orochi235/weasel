@@ -127,3 +127,25 @@ describe.each([
     expect(peek.mock.calls).toEqual([[true], [false]]);
   });
 });
+
+describe("a hover-only surface with hover: 'through'", () => {
+  it('keeps hearing hovers over a surface nested in it', () => {
+    const hovered = vi.fn();
+    function Nested(): ReactNode {
+      const outerRef = useRef<HTMLDivElement | null>(null);
+      const innerRef = useRef<HTMLCanvasElement | null>(null);
+      return (
+        <div ref={outerRef}>
+          <Surface surface={outerRef} hovered={hovered} channels={{ pointer: false, hover: 'through' }} />
+          <Root>
+            <Surface surface={innerRef} />
+            <canvas ref={innerRef} />
+          </Root>
+        </div>
+      );
+    }
+    render(<Root><Nested /></Root>);
+    pointer(document.querySelector('canvas')!, 'pointermove', 1);
+    expect(hovered).toHaveBeenCalled();
+  });
+});

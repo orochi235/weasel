@@ -38,7 +38,8 @@ export interface LensActionsProps<C> {
 const NO_TOOLS: ReadonlyMap<string, Tool> = new Map();
 const CHANNELS = {
   pointer: false,
-  hover: true,
+  // The lens covers the pointer while it follows, and its canvas is a dispatcher surface of its own.
+  hover: 'through',
   wheel: false,
   pinch: false,
   contextMenu: false,
