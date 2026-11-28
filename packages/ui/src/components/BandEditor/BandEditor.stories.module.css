@@ -4,8 +4,8 @@
 }
 
 .samples {
+  composes: numeric from '@weasel-js/theme/numeric.module.css';
   display: flex;
   gap: 16px;
   margin: 0;
-  font-variant-numeric: tabular-nums;
 }
