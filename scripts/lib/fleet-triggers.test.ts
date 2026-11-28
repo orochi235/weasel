@@ -41,7 +41,7 @@ describe('the fleet triggers', () => {
 
   it('cover nothing vitest does not load', () => {
     const loaded = new Set(ENTRIES.flatMap(reached));
-    const tracked = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8' }).split('\n').filter(Boolean);
+    const tracked = execFileSync('git', ['ls-files'], { cwd: ROOT, encoding: 'utf8', maxBuffer: 1 << 26 }).split('\n').filter(Boolean);
     const unloaded = tracked.filter((path) => !isTestFile(path) && !loaded.has(path) && LOADED.some((glob) => matchesGlob(path, glob)));
     expect(unloaded).toEqual([]);
   });
